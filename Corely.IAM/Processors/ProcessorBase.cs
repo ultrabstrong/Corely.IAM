@@ -15,7 +15,8 @@ internal abstract class ProcessorBase
     protected ProcessorBase(
         IMapProvider mapProvider,
         IValidationProvider validationProvider,
-        ILogger logger)
+        ILogger logger
+    )
     {
         _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
         _mapProvider = mapProvider.ThrowIfNull(nameof(mapProvider));
@@ -32,16 +33,21 @@ internal abstract class ProcessorBase
     {
         try
         {
-            return _mapProvider.MapTo<T>(source); ;
+            return _mapProvider.MapTo<T>(source);
+            ;
         }
         catch (Exception ex)
         {
-            using var scope = Logger.BeginScope(new Dictionary<string, object?>
-                {
-                    { "@MapSource", source }
-                });
+            using var scope = Logger.BeginScope(
+                new Dictionary<string, object?> { { "@MapSource", source } }
+            );
 
-            Logger.LogWarning(ex, "Failed to map {MapSourceType} to {MapDestinationType}", source?.GetType()?.Name, typeof(T)?.Name);
+            Logger.LogWarning(
+                ex,
+                "Failed to map {MapSourceType} to {MapDestinationType}",
+                source?.GetType()?.Name,
+                typeof(T)?.Name
+            );
             throw;
         }
     }
@@ -58,8 +64,10 @@ internal abstract class ProcessorBase
         {
             var state = new Dictionary<string, object?>();
 
-            if (ex is ValidationException validationException
-                && validationException.ValidationResult != null)
+            if (
+                ex is ValidationException validationException
+                && validationException.ValidationResult != null
+            )
             {
                 state.Add("@ValidationResult", validationException.ValidationResult);
             }
@@ -70,14 +78,29 @@ internal abstract class ProcessorBase
         }
     }
 
-    protected async Task<TResult> LogRequestResultAspect<TRequest, TResult>(string className, string methodName, TRequest request, Func<Task<TResult>> next)
+    protected async Task<TResult> LogRequestResultAspect<TRequest, TResult>(
+        string className,
+        string methodName,
+        TRequest request,
+        Func<Task<TResult>> next
+    )
     {
         try
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
-            Logger.LogDebug("[{Class}] {Method} starting with request {@Request}", className, methodName, request);
+            Logger.LogDebug(
+                "[{Class}] {Method} starting with request {@Request}",
+                className,
+                methodName,
+                request
+            );
             var result = await next();
-            Logger.LogDebug("[{Class}] {Method} completed with result {@Result}", className, methodName, result);
+            Logger.LogDebug(
+                "[{Class}] {Method} completed with result {@Result}",
+                className,
+                methodName,
+                result
+            );
             return result;
         }
         catch (Exception ex)
@@ -87,12 +110,22 @@ internal abstract class ProcessorBase
         }
     }
 
-    protected async Task<TResult> LogRequestAspect<TRequest, TResult>(string className, string methodName, TRequest request, Func<Task<TResult>> next)
+    protected async Task<TResult> LogRequestAspect<TRequest, TResult>(
+        string className,
+        string methodName,
+        TRequest request,
+        Func<Task<TResult>> next
+    )
     {
         try
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
-            Logger.LogDebug("[{Class}] {Method} starting with request {@Request}", className, methodName, request);
+            Logger.LogDebug(
+                "[{Class}] {Method} starting with request {@Request}",
+                className,
+                methodName,
+                request
+            );
             var result = await next();
             Logger.LogDebug("[{Class}] {Method} completed with result", className, methodName);
             return result;
@@ -104,12 +137,22 @@ internal abstract class ProcessorBase
         }
     }
 
-    protected async Task LogRequestAspect<TRequest>(string className, string methodName, TRequest request, Func<Task> next)
+    protected async Task LogRequestAspect<TRequest>(
+        string className,
+        string methodName,
+        TRequest request,
+        Func<Task> next
+    )
     {
         try
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
-            Logger.LogDebug("[{Class}] {Method} starting with request {@Request}", className, methodName, request);
+            Logger.LogDebug(
+                "[{Class}] {Method} starting with request {@Request}",
+                className,
+                methodName,
+                request
+            );
             await next();
             Logger.LogDebug("[{Class}] {Method} completed with result", className, methodName);
         }
@@ -120,7 +163,11 @@ internal abstract class ProcessorBase
         }
     }
 
-    protected async Task<TResult> LogAspect<TResult>(string className, string methodName, Func<Task<TResult>> next)
+    protected async Task<TResult> LogAspect<TResult>(
+        string className,
+        string methodName,
+        Func<Task<TResult>> next
+    )
     {
         try
         {

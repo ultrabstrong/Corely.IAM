@@ -13,35 +13,36 @@ public partial class MultipleUserSecurityKeys : Migration
         // CUSTOM : Drop FK references
         migrationBuilder.DropForeignKey(
             name: "FK_UserSymmetricKeys_Users_UserId",
-            table: "UserSymmetricKeys");
+            table: "UserSymmetricKeys"
+        );
 
         migrationBuilder.DropForeignKey(
             name: "FK_UserAsymmetricKeys_Users_UserId",
-            table: "UserAsymmetricKeys");
+            table: "UserAsymmetricKeys"
+        );
         // END CUSTOM
 
-        migrationBuilder.DropPrimaryKey(
-            name: "PK_UserSymmetricKeys",
-            table: "UserSymmetricKeys");
+        migrationBuilder.DropPrimaryKey(name: "PK_UserSymmetricKeys", table: "UserSymmetricKeys");
 
-        migrationBuilder.DropPrimaryKey(
-            name: "PK_UserAsymmetricKeys",
-            table: "UserAsymmetricKeys");
+        migrationBuilder.DropPrimaryKey(name: "PK_UserAsymmetricKeys", table: "UserAsymmetricKeys");
 
         migrationBuilder.AddColumn<int>(
             name: "Id",
             table: "UserSymmetricKeys",
             type: "int",
             // CUSTOM: Modified generated settings
-            nullable: true);
+            nullable: true
+        );
         // END CUSTOM
 
         // CUSTOM: Backfill ids in existing records
-        migrationBuilder.Sql(@"
+        migrationBuilder.Sql(
+            @"
                 SET @row_number = 0;
                 UPDATE `UserSymmetricKeys` 
                 SET `Id` = (@row_number := @row_number + 1);
-            ");
+            "
+        );
         // END CUSTOM
 
         migrationBuilder.AddColumn<int>(
@@ -49,42 +50,53 @@ public partial class MultipleUserSecurityKeys : Migration
             table: "UserAsymmetricKeys",
             type: "int",
             // CUSTOM: Modified generated settings
-            nullable: true);
+            nullable: true
+        );
         // END CUSTOM
 
         // CUSTOM: Backfill ids in existing records
-        migrationBuilder.Sql(@"
+        migrationBuilder.Sql(
+            @"
                 SET @row_number = 0;
                 UPDATE `UserAsymmetricKeys` 
                 SET `Id` = (@row_number := @row_number + 1);
-            ");
+            "
+        );
         // END CUSTOM
 
         migrationBuilder.AddPrimaryKey(
             name: "PK_UserSymmetricKeys",
             table: "UserSymmetricKeys",
-            column: "Id");
+            column: "Id"
+        );
 
         migrationBuilder.AddPrimaryKey(
             name: "PK_UserAsymmetricKeys",
             table: "UserAsymmetricKeys",
-            column: "Id");
+            column: "Id"
+        );
 
         migrationBuilder.CreateIndex(
             name: "IX_UserSymmetricKeys_UserId_KeyUsedFor",
             table: "UserSymmetricKeys",
             columns: ["UserId", "KeyUsedFor"],
-            unique: true);
+            unique: true
+        );
 
         migrationBuilder.CreateIndex(
             name: "IX_UserAsymmetricKeys_UserId_KeyUsedFor",
             table: "UserAsymmetricKeys",
             columns: ["UserId", "KeyUsedFor"],
-            unique: true);
+            unique: true
+        );
 
         // CUSTOM: Modify Id column to be auto-increment and restore FK references
-        migrationBuilder.Sql("ALTER TABLE `UserAsymmetricKeys` MODIFY COLUMN `Id` int NOT NULL AUTO_INCREMENT FIRST;");
-        migrationBuilder.Sql("ALTER TABLE `UserSymmetricKeys` MODIFY COLUMN `Id` int NOT NULL AUTO_INCREMENT FIRST;");
+        migrationBuilder.Sql(
+            "ALTER TABLE `UserAsymmetricKeys` MODIFY COLUMN `Id` int NOT NULL AUTO_INCREMENT FIRST;"
+        );
+        migrationBuilder.Sql(
+            "ALTER TABLE `UserSymmetricKeys` MODIFY COLUMN `Id` int NOT NULL AUTO_INCREMENT FIRST;"
+        );
 
         migrationBuilder.AddForeignKey(
             name: "FK_UserSymmetricKeys_Users_UserId",
@@ -92,7 +104,8 @@ public partial class MultipleUserSecurityKeys : Migration
             column: "UserId",
             principalTable: "Users",
             principalColumn: "Id",
-            onDelete: ReferentialAction.Cascade);
+            onDelete: ReferentialAction.Cascade
+        );
 
         migrationBuilder.AddForeignKey(
             name: "FK_UserAsymmetricKeys_Users_UserId",
@@ -100,7 +113,8 @@ public partial class MultipleUserSecurityKeys : Migration
             column: "UserId",
             principalTable: "Users",
             principalColumn: "Id",
-            onDelete: ReferentialAction.Cascade);
+            onDelete: ReferentialAction.Cascade
+        );
         // END CUSTOM
     }
 
@@ -110,46 +124,44 @@ public partial class MultipleUserSecurityKeys : Migration
         // CUSTOM : Drop FK references
         migrationBuilder.DropForeignKey(
             name: "FK_UserSymmetricKeys_Users_UserId",
-            table: "UserSymmetricKeys");
+            table: "UserSymmetricKeys"
+        );
 
         migrationBuilder.DropForeignKey(
             name: "FK_UserAsymmetricKeys_Users_UserId",
-            table: "UserAsymmetricKeys");
+            table: "UserAsymmetricKeys"
+        );
         // END CUSTOM
 
-        migrationBuilder.DropPrimaryKey(
-            name: "PK_UserSymmetricKeys",
-            table: "UserSymmetricKeys");
+        migrationBuilder.DropPrimaryKey(name: "PK_UserSymmetricKeys", table: "UserSymmetricKeys");
 
         migrationBuilder.DropIndex(
             name: "IX_UserSymmetricKeys_UserId_KeyUsedFor",
-            table: "UserSymmetricKeys");
+            table: "UserSymmetricKeys"
+        );
 
-        migrationBuilder.DropPrimaryKey(
-            name: "PK_UserAsymmetricKeys",
-            table: "UserAsymmetricKeys");
+        migrationBuilder.DropPrimaryKey(name: "PK_UserAsymmetricKeys", table: "UserAsymmetricKeys");
 
         migrationBuilder.DropIndex(
             name: "IX_UserAsymmetricKeys_UserId_KeyUsedFor",
-            table: "UserAsymmetricKeys");
+            table: "UserAsymmetricKeys"
+        );
 
-        migrationBuilder.DropColumn(
-            name: "Id",
-            table: "UserSymmetricKeys");
+        migrationBuilder.DropColumn(name: "Id", table: "UserSymmetricKeys");
 
-        migrationBuilder.DropColumn(
-            name: "Id",
-            table: "UserAsymmetricKeys");
+        migrationBuilder.DropColumn(name: "Id", table: "UserAsymmetricKeys");
 
         migrationBuilder.AddPrimaryKey(
             name: "PK_UserSymmetricKeys",
             table: "UserSymmetricKeys",
-            column: "UserId");
+            column: "UserId"
+        );
 
         migrationBuilder.AddPrimaryKey(
             name: "PK_UserAsymmetricKeys",
             table: "UserAsymmetricKeys",
-            column: "UserId");
+            column: "UserId"
+        );
 
         // CUSTOM: Restore FK references
         migrationBuilder.AddForeignKey(
@@ -158,7 +170,8 @@ public partial class MultipleUserSecurityKeys : Migration
             column: "UserId",
             principalTable: "Users",
             principalColumn: "Id",
-            onDelete: ReferentialAction.Cascade);
+            onDelete: ReferentialAction.Cascade
+        );
 
         migrationBuilder.AddForeignKey(
             name: "FK_UserAsymmetricKeys_Users_UserId",
@@ -166,7 +179,8 @@ public partial class MultipleUserSecurityKeys : Migration
             column: "UserId",
             principalTable: "Users",
             principalColumn: "Id",
-            onDelete: ReferentialAction.Cascade);
+            onDelete: ReferentialAction.Cascade
+        );
         // END CUSTOM
     }
 }

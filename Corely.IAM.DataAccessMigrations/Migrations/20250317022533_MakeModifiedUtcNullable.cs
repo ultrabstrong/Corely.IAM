@@ -18,7 +18,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 nullable: true,
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldDefaultValueSql: "(UTC_TIMESTAMP)");
+                oldDefaultValueSql: "(UTC_TIMESTAMP)"
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -27,7 +28,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 nullable: true,
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldDefaultValueSql: "(UTC_TIMESTAMP)");
+                oldDefaultValueSql: "(UTC_TIMESTAMP)"
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -36,7 +38,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 nullable: true,
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldDefaultValueSql: "(UTC_TIMESTAMP)");
+                oldDefaultValueSql: "(UTC_TIMESTAMP)"
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -45,7 +48,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 nullable: true,
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldDefaultValueSql: "(UTC_TIMESTAMP)");
+                oldDefaultValueSql: "(UTC_TIMESTAMP)"
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -54,7 +58,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 nullable: true,
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldDefaultValueSql: "(UTC_TIMESTAMP)");
+                oldDefaultValueSql: "(UTC_TIMESTAMP)"
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -63,7 +68,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 nullable: true,
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldDefaultValueSql: "(UTC_TIMESTAMP)");
+                oldDefaultValueSql: "(UTC_TIMESTAMP)"
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -72,7 +78,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 nullable: true,
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldDefaultValueSql: "(UTC_TIMESTAMP)");
+                oldDefaultValueSql: "(UTC_TIMESTAMP)"
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -81,7 +88,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 nullable: true,
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldDefaultValueSql: "(UTC_TIMESTAMP)");
+                oldDefaultValueSql: "(UTC_TIMESTAMP)"
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -90,7 +98,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 nullable: true,
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldDefaultValueSql: "(UTC_TIMESTAMP)");
+                oldDefaultValueSql: "(UTC_TIMESTAMP)"
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -99,7 +108,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 nullable: true,
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldDefaultValueSql: "(UTC_TIMESTAMP)");
+                oldDefaultValueSql: "(UTC_TIMESTAMP)"
+            );
         }
 
         /// <inheritdoc />
@@ -113,7 +123,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 defaultValueSql: "(UTC_TIMESTAMP)",
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -123,7 +134,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 defaultValueSql: "(UTC_TIMESTAMP)",
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -133,7 +145,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 defaultValueSql: "(UTC_TIMESTAMP)",
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -143,7 +156,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 defaultValueSql: "(UTC_TIMESTAMP)",
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -153,7 +167,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 defaultValueSql: "(UTC_TIMESTAMP)",
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -163,7 +178,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 defaultValueSql: "(UTC_TIMESTAMP)",
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -173,7 +189,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 defaultValueSql: "(UTC_TIMESTAMP)",
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -183,7 +200,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 defaultValueSql: "(UTC_TIMESTAMP)",
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -193,7 +211,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 defaultValueSql: "(UTC_TIMESTAMP)",
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldNullable: true);
+                oldNullable: true
+            );
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "ModifiedUtc",
@@ -203,7 +222,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 defaultValueSql: "(UTC_TIMESTAMP)",
                 oldClrType: typeof(DateTime),
                 oldType: "TIMESTAMP",
-                oldNullable: true);
+                oldNullable: true
+            );
         }
     }
 }

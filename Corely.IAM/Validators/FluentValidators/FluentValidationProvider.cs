@@ -7,9 +7,7 @@ internal sealed class FluentValidationProvider : IValidationProvider
     private readonly IFluentValidatorFactory _fluentValidatorFactory;
     private readonly IMapper _mapper;
 
-    public FluentValidationProvider(
-        IFluentValidatorFactory fluentValidatorFactory,
-        IMapper mapper)
+    public FluentValidationProvider(IFluentValidatorFactory fluentValidatorFactory, IMapper mapper)
     {
         _fluentValidatorFactory = fluentValidatorFactory;
         _mapper = mapper;
@@ -22,11 +20,7 @@ internal sealed class FluentValidationProvider : IValidationProvider
         {
             corelyResult = new()
             {
-                Errors = [new()
-                    {
-                        Message = "Model is null",
-                        PropertyName = typeof(T).Name
-                    }]
+                Errors = [new() { Message = "Model is null", PropertyName = typeof(T).Name }],
             };
         }
         else
@@ -36,7 +30,8 @@ internal sealed class FluentValidationProvider : IValidationProvider
             corelyResult = _mapper.Map<ValidationResult>(fluentResult);
         }
 
-        corelyResult.Message = $"Validation for {typeof(T).Name} {(corelyResult.IsValid ? "succeeded" : "failed")}";
+        corelyResult.Message =
+            $"Validation for {typeof(T).Name} {(corelyResult.IsValid ? "succeeded" : "failed")}";
 
         return corelyResult;
     }

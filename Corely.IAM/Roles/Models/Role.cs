@@ -1,4 +1,5 @@
 ﻿namespace Corely.IAM.Roles.Models;
+
 public class Role
 {
     public int Id { get; set; }

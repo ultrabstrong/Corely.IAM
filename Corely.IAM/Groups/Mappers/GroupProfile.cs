@@ -8,7 +8,6 @@ internal class GroupProfile : Profile
 {
     public GroupProfile()
     {
-        CreateMap<Group, GroupEntity>(MemberList.Source)
-            .ReverseMap();
+        CreateMap<Group, GroupEntity>(MemberList.Source).ReverseMap();
     }
 }

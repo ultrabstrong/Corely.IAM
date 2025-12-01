@@ -4,10 +4,7 @@ public enum CreateGroupResultCode
 {
     Success,
     GroupExistsError,
-    AccountNotFoundError
+    AccountNotFoundError,
 }
 
-internal record CreateGroupResult(
-    CreateGroupResultCode ResultCode,
-    string Message,
-    int CreatedId);
+internal record CreateGroupResult(CreateGroupResultCode ResultCode, string Message, int CreatedId);

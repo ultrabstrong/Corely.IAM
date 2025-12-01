@@ -5,12 +5,12 @@ public enum AddUsersToGroupResultCode
     Success,
     PartialSuccess,
     InvalidUserIdsError,
-    GroupNotFoundError
+    GroupNotFoundError,
 }
 
 internal record AddUsersToGroupResult(
     AddUsersToGroupResultCode ResultCode,
     string? Message,
     int AddedUserCount,
-    List<int> InvalidUserIds = null);
-
+    List<int> InvalidUserIds = null
+);

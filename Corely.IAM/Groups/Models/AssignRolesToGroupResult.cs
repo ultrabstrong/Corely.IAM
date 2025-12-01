@@ -5,11 +5,12 @@ public enum AssignRolesToGroupResultCode
     Success,
     PartialSuccess,
     InvalidRoleIdsError,
-    GroupNotFoundError
+    GroupNotFoundError,
 }
 
 internal record AssignRolesToGroupResult(
     AssignRolesToGroupResultCode ResultCode,
     string? Message,
     int AddedRoleCount,
-    List<int> InvalidRoleIds = null);
+    List<int> InvalidRoleIds = null
+);

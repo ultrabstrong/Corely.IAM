@@ -7,19 +7,17 @@ namespace Corely.IAM.Roles.Entities;
 
 internal sealed class RoleEntityConfiguration : EntityConfigurationBase<RoleEntity, int>
 {
-    public RoleEntityConfiguration(IEFDbTypes efDbTypes) : base(efDbTypes)
-    {
-    }
+    public RoleEntityConfiguration(IEFDbTypes efDbTypes)
+        : base(efDbTypes) { }
+
     protected override void ConfigureInternal(EntityTypeBuilder<RoleEntity> builder)
     {
-        builder.Property(e => e.Name)
-            .IsRequired()
-            .HasMaxLength(RoleConstants.ROLE_NAME_MAX_LENGTH);
+        builder.Property(e => e.Name).IsRequired().HasMaxLength(RoleConstants.ROLE_NAME_MAX_LENGTH);
 
-        builder.HasIndex(e => new { e.AccountId, e.Name })
-            .IsUnique();
+        builder.HasIndex(e => new { e.AccountId, e.Name }).IsUnique();
 
-        builder.HasMany(e => e.Permissions)
+        builder
+            .HasMany(e => e.Permissions)
             .WithMany(e => e.Roles)
             .UsingEntity(j => j.ToTable("RolePermissions"));
     }

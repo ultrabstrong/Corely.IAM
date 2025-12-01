@@ -2,6 +2,7 @@
 using Corely.IAM.Roles.Models;
 
 namespace Corely.IAM.Roles.Mappers;
+
 internal class CreateRoleRequestProfile : Profile
 {
     public CreateRoleRequestProfile()

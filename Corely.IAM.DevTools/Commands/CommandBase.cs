@@ -1,9 +1,8 @@
-﻿using Corely.IAM.DevTools.Attributes;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Binding;
 using System.CommandLine.NamingConventionBinder;
 using System.Reflection;
-
+using Corely.IAM.DevTools.Attributes;
 
 namespace Corely.IAM.DevTools.Commands;
 
@@ -14,20 +13,18 @@ internal abstract class CommandBase : Command
     private readonly Dictionary<string, Argument> _arguments = [];
     private readonly Dictionary<string, Option> _options = [];
 
-    protected CommandBase(
-        string name,
-        string description,
-        string additionalDescription)
-        : this(name, $"{description}{Environment.NewLine}{additionalDescription}")
-    { }
+    protected CommandBase(string name, string description, string additionalDescription)
+        : this(name, $"{description}{Environment.NewLine}{additionalDescription}") { }
 
-    protected CommandBase(
-        string name,
-        string description)
+    protected CommandBase(string name, string description)
         : base(name, description)
     {
         var type = GetType();
-        foreach (var property in type.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+        foreach (
+            var property in type.GetProperties(
+                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly
+            )
+        )
         {
             var optionAttribute = property.GetCustomAttribute<OptionAttribute>();
             if (optionAttribute == null)
@@ -52,17 +49,19 @@ internal abstract class CommandBase : Command
         Handler = CommandHandler.Create(InvokeExecute);
     }
 
-    private bool CreateArgument(PropertyInfo property, ArgumentAttribute? argumentAttribute, out Argument argument)
+    private bool CreateArgument(
+        PropertyInfo property,
+        ArgumentAttribute? argumentAttribute,
+        out Argument argument
+    )
     {
         var argumentGenericType = typeof(Argument<>).MakeGenericType(property.PropertyType);
         var optionalText = argumentAttribute?.IsRequired ?? false ? string.Empty : "[Optional] ";
 
         var argumentInstance = Activator.CreateInstance(
             argumentGenericType,
-            [
-                property.Name,
-                    $"{optionalText}{argumentAttribute?.Description}"
-            ]);
+            [property.Name, $"{optionalText}{argumentAttribute?.Description}"]
+        );
 
         if (argumentInstance is Argument arg)
         {
@@ -86,15 +85,17 @@ internal abstract class CommandBase : Command
         return false;
     }
 
-    private bool CreateOption(PropertyInfo property, OptionAttribute optionAttribute, out Option option)
+    private bool CreateOption(
+        PropertyInfo property,
+        OptionAttribute optionAttribute,
+        out Option option
+    )
     {
         var optionGenericType = typeof(Option<>).MakeGenericType(property.PropertyType);
         var optionInstance = Activator.CreateInstance(
             optionGenericType,
-            [
-                optionAttribute.Aliases,
-                    optionAttribute.Description
-            ]);
+            [optionAttribute.Aliases, optionAttribute.Description]
+        );
 
         if (optionInstance is Option opt)
         {
@@ -115,11 +116,17 @@ internal abstract class CommandBase : Command
     private async Task InvokeExecute(BindingContext context)
     {
         var type = GetType();
-        foreach (var property in type.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+        foreach (
+            var property in type.GetProperties(
+                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly
+            )
+        )
         {
             var value = _options.TryGetValue(type.FullName + property.Name, out Option? option)
                 ? context.ParseResult.GetValueForOption(option)
-                : context.ParseResult.GetValueForArgument(_arguments[type.FullName + property.Name]);
+                : context.ParseResult.GetValueForArgument(
+                    _arguments[type.FullName + property.Name]
+                );
 
             if (value != null)
             {
@@ -131,9 +138,11 @@ internal abstract class CommandBase : Command
         {
             await ExecuteAsync();
         }
-        catch (Exception ex) when (ex is ArgumentException
-            || ex is ArgumentNullException
-            || ex is NotSupportedException)
+        catch (Exception ex)
+            when (ex is ArgumentException
+                || ex is ArgumentNullException
+                || ex is NotSupportedException
+            )
         {
             ShowHelp(ex.Message);
         }

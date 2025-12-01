@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
@@ -42,4 +41,7 @@
     </None>
   </ItemGroup>
 
+  <Target Name="FormatWithCSharpier" BeforeTargets="CoreCompile">
+    <Exec Command="csharpier check ." ContinueOnError="false" IgnoreExitCode="false" />
+  </Target>
 </Project>

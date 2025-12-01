@@ -4,10 +4,11 @@ public enum CreateAccountResultCode
 {
     Success,
     AccountExistsError,
-    UserOwnerNotFoundError
+    UserOwnerNotFoundError,
 }
 
 internal record CreateAccountResult(
     CreateAccountResultCode ResultCode,
     string Message,
-    int CreatedId);
+    int CreatedId
+);

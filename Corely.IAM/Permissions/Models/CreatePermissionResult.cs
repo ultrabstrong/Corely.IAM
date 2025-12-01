@@ -4,10 +4,11 @@ public enum CreatePermissionResultCode
 {
     Success,
     PermissionExistsError,
-    AccountNotFoundError
+    AccountNotFoundError,
 }
 
 internal record CreatePermissionResult(
     CreatePermissionResultCode ResultCode,
     string Message,
-    int CreatedId);
+    int CreatedId
+);

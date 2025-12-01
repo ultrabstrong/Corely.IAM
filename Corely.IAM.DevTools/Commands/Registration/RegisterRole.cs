@@ -1,11 +1,12 @@
-﻿using Corely.Common.Extensions;
+﻿using System.Text.Json;
+using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Validators;
-using System.Text.Json;
 
 namespace Corely.IAM.DevTools.Commands.Registration;
+
 internal partial class Registration : CommandBase
 {
     internal class RegisterRole : CommandBase
@@ -18,12 +19,13 @@ internal partial class Registration : CommandBase
 
         private readonly IRegistrationService _registrationService;
 
-        public RegisterRole(IRegistrationService registrationService) : base("role", "Register a new role")
+        public RegisterRole(IRegistrationService registrationService)
+            : base("role", "Register a new role")
         {
             _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
         }
 
-        protected async override Task ExecuteAsync()
+        protected override async Task ExecuteAsync()
         {
             if (Create)
             {
@@ -38,7 +40,8 @@ internal partial class Registration : CommandBase
         private async Task RegisterRoleAsync()
         {
             var request = ReadRequestJson<RegisterRoleRequest>(RequestJsonFile);
-            if (request == null) return;
+            if (request == null)
+                return;
             try
             {
                 foreach (var registerRequest in request)

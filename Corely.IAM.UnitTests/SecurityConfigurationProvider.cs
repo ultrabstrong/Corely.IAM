@@ -12,6 +12,6 @@ internal class SecurityConfigurationProvider : ISecurityConfigurationProvider
         _symmetricKey = new AesKeyProvider().CreateKey();
     }
 
-    public ISymmetricKeyStoreProvider GetSystemSymmetricKey()
-        => new InMemorySymmetricKeyStoreProvider(_symmetricKey);
+    public ISymmetricKeyStoreProvider GetSystemSymmetricKey() =>
+        new InMemorySymmetricKeyStoreProvider(_symmetricKey);
 }

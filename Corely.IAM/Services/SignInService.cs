@@ -19,7 +19,8 @@ internal class SignInService : ISignInService
         ILogger<SignInService> logger,
         IUserProcessor userProcessor,
         IBasicAuthProcessor basicAuthProcessor,
-        IOptions<SecurityOptions> securityOptions)
+        IOptions<SecurityOptions> securityOptions
+    )
     {
         _logger = logger.ThrowIfNull(nameof(logger));
         _userProcessor = userProcessor.ThrowIfNull(nameof(userProcessor));
@@ -37,16 +38,26 @@ internal class SignInService : ISignInService
         if (user == null)
         {
             _logger.LogDebug("User {Username} not found", request.Username);
-            return new SignInResult(SignInResultCode.UserNotFoundError, "User not found", string.Empty);
+            return new SignInResult(
+                SignInResultCode.UserNotFoundError,
+                "User not found",
+                string.Empty
+            );
         }
 
         if (user.FailedLoginsSinceLastSuccess >= _securityOptions.MaxLoginAttempts)
         {
             _logger.LogDebug("User {Username} is locked out", request.Username);
-            return new SignInResult(SignInResultCode.UserLockedError, "User is locked out", string.Empty);
+            return new SignInResult(
+                SignInResultCode.UserLockedError,
+                "User is locked out",
+                string.Empty
+            );
         }
 
-        var isValidPassword = await _basicAuthProcessor.VerifyBasicAuthAsync(new(user.Id, request.Password));
+        var isValidPassword = await _basicAuthProcessor.VerifyBasicAuthAsync(
+            new(user.Id, request.Password)
+        );
         if (!isValidPassword)
         {
             user.FailedLoginsSinceLastSuccess++;
@@ -55,9 +66,16 @@ internal class SignInService : ISignInService
 
             await _userProcessor.UpdateUserAsync(user);
 
-            _logger.LogDebug("User {Username} failed to sign in (invalid password)", request.Username);
+            _logger.LogDebug(
+                "User {Username} failed to sign in (invalid password)",
+                request.Username
+            );
 
-            return new SignInResult(SignInResultCode.PasswordMismatchError, "Invalid password", string.Empty);
+            return new SignInResult(
+                SignInResultCode.PasswordMismatchError,
+                "Invalid password",
+                string.Empty
+            );
         }
         user.TotalSuccessfulLogins++;
         user.FailedLoginsSinceLastSuccess = 0;

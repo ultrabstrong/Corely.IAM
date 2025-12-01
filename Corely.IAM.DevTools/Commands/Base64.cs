@@ -11,9 +11,8 @@ internal class Base64 : CommandBase
     [Option("-d", "--decode", Description = "Value to decode")]
     private string Decode { get; init; } = null!;
 
-    public Base64() : base("base64", "Base64 operations")
-    {
-    }
+    public Base64()
+        : base("base64", "Base64 operations") { }
 
     protected override void Execute()
     {

@@ -3,6 +3,7 @@ using Corely.IAM.Permissions.Models;
 using FluentValidation;
 
 namespace Corely.IAM.Permissions.Validators;
+
 internal class PermissionValidator : AbstractValidator<Permission>
 {
     public PermissionValidator()

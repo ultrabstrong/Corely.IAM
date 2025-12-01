@@ -8,7 +8,6 @@ internal sealed class BasicAuthProfile : Profile
 {
     public BasicAuthProfile()
     {
-        CreateMap<BasicAuth, BasicAuthEntity>(MemberList.Source)
-            .ReverseMap();
+        CreateMap<BasicAuth, BasicAuthEntity>(MemberList.Source).ReverseMap();
     }
 }

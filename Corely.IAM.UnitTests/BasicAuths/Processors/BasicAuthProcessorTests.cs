@@ -25,7 +25,8 @@ public class BasicAuthProcessorTests
             _serviceFactory.GetRequiredService<IPasswordValidationProvider>(),
             _serviceFactory.GetRequiredService<IMapProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
-            _serviceFactory.GetRequiredService<ILogger<BasicAuthProcessor>>());
+            _serviceFactory.GetRequiredService<ILogger<BasicAuthProcessor>>()
+        );
     }
 
     [Fact]
@@ -56,7 +57,9 @@ public class BasicAuthProcessorTests
     {
         var request = new UpsertBasicAuthRequest(1, "password");
 
-        var ex = await Record.ExceptionAsync(() => _basicAuthProcessor.UpsertBasicAuthAsync(request));
+        var ex = await Record.ExceptionAsync(() =>
+            _basicAuthProcessor.UpsertBasicAuthAsync(request)
+        );
 
         Assert.NotNull(ex);
         var pvex = Assert.IsType<PasswordValidationException>(ex);
@@ -64,7 +67,6 @@ public class BasicAuthProcessorTests
         Assert.False(pvex.PasswordValidationResult.IsSuccess);
         Assert.NotEmpty(pvex.PasswordValidationResult.ValidationFailures);
     }
-
 
     [Fact]
     public async Task UpsertBasicAuthAsync_Throws_WithNullRequest()
@@ -117,5 +119,4 @@ public class BasicAuthProcessorTests
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
     }
-
 }

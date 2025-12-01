@@ -2,7 +2,4 @@
 
 namespace Corely.IAM.UnitTests.Validators;
 
-public class ValidationExceptionTests
-    : ExceptionTestsBase<ValidationException>
-{
-}
+public class ValidationExceptionTests : ExceptionTestsBase<ValidationException> { }

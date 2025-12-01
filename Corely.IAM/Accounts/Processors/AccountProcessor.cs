@@ -23,7 +23,8 @@ internal class AccountProcessor : ProcessorBase, IAccountProcessor
         ISecurityProcessor securityService,
         IMapProvider mapProvider,
         IValidationProvider validationProvider,
-        ILogger<AccountProcessor> logger)
+        ILogger<AccountProcessor> logger
+    )
         : base(mapProvider, validationProvider, logger)
     {
         _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
@@ -33,65 +34,99 @@ internal class AccountProcessor : ProcessorBase, IAccountProcessor
 
     public async Task<CreateAccountResult> CreateAccountAsync(CreateAccountRequest request)
     {
-        return await LogRequestResultAspect(nameof(AccountProcessor), nameof(CreateAccountAsync), request, async () =>
-        {
-            var account = MapThenValidateTo<Account>(request);
-
-            var existingAccount = await _accountRepo.GetAsync(a => a.AccountName == request.AccountName);
-            if (existingAccount != null)
+        return await LogRequestResultAspect(
+            nameof(AccountProcessor),
+            nameof(CreateAccountAsync),
+            request,
+            async () =>
             {
-                Logger.LogWarning("Account {Account} already exists", request.AccountName);
-                return new CreateAccountResult(CreateAccountResultCode.AccountExistsError, $"Account {request.AccountName} already exists", -1);
+                var account = MapThenValidateTo<Account>(request);
+
+                var existingAccount = await _accountRepo.GetAsync(a =>
+                    a.AccountName == request.AccountName
+                );
+                if (existingAccount != null)
+                {
+                    Logger.LogWarning("Account {Account} already exists", request.AccountName);
+                    return new CreateAccountResult(
+                        CreateAccountResultCode.AccountExistsError,
+                        $"Account {request.AccountName} already exists",
+                        -1
+                    );
+                }
+
+                var userEntity = await _userRepo.GetAsync(u => u.Id == request.OwnerUserId);
+                if (userEntity == null)
+                {
+                    Logger.LogWarning("User with Id {UserId} not found", request.OwnerUserId);
+                    return new CreateAccountResult(
+                        CreateAccountResultCode.UserOwnerNotFoundError,
+                        $"User with Id {request.OwnerUserId} not found",
+                        -1
+                    );
+                }
+
+                account.SymmetricKeys =
+                [
+                    _securityService.GetSymmetricEncryptionKeyEncryptedWithSystemKey(),
+                ];
+                account.AsymmetricKeys =
+                [
+                    _securityService.GetAsymmetricEncryptionKeyEncryptedWithSystemKey(),
+                    _securityService.GetAsymmetricSignatureKeyEncryptedWithSystemKey(),
+                ];
+
+                var accountEntity = MapTo<AccountEntity>(account)!; // account is validated
+                accountEntity.Users = [userEntity];
+                var created = await _accountRepo.CreateAsync(accountEntity);
+
+                return new CreateAccountResult(
+                    CreateAccountResultCode.Success,
+                    string.Empty,
+                    created.Id
+                );
             }
-
-            var userEntity = await _userRepo.GetAsync(u => u.Id == request.OwnerUserId);
-            if (userEntity == null)
-            {
-                Logger.LogWarning("User with Id {UserId} not found", request.OwnerUserId);
-                return new CreateAccountResult(CreateAccountResultCode.UserOwnerNotFoundError, $"User with Id {request.OwnerUserId} not found", -1);
-            }
-
-            account.SymmetricKeys = [_securityService.GetSymmetricEncryptionKeyEncryptedWithSystemKey()];
-            account.AsymmetricKeys = [
-                _securityService.GetAsymmetricEncryptionKeyEncryptedWithSystemKey(),
-                _securityService.GetAsymmetricSignatureKeyEncryptedWithSystemKey()];
-
-            var accountEntity = MapTo<AccountEntity>(account)!; // account is validated
-            accountEntity.Users = [userEntity];
-            var created = await _accountRepo.CreateAsync(accountEntity);
-
-            return new CreateAccountResult(CreateAccountResultCode.Success, string.Empty, created.Id);
-        });
+        );
     }
 
     public async Task<Account?> GetAccountAsync(int accountId)
     {
-        return await LogRequestAspect(nameof(AccountProcessor), nameof(GetAccountAsync), accountId, async () =>
-        {
-            var accountEntity = await _accountRepo.GetAsync(a => a.Id == accountId);
-            var account = MapTo<Account>(accountEntity);
-
-            if (account == null)
+        return await LogRequestAspect(
+            nameof(AccountProcessor),
+            nameof(GetAccountAsync),
+            accountId,
+            async () =>
             {
-                Logger.LogInformation("Account with Id {AccountId} not found", accountId);
+                var accountEntity = await _accountRepo.GetAsync(a => a.Id == accountId);
+                var account = MapTo<Account>(accountEntity);
+
+                if (account == null)
+                {
+                    Logger.LogInformation("Account with Id {AccountId} not found", accountId);
+                }
+                return account;
             }
-            return account;
-        });
+        );
     }
 
     public async Task<Account?> GetAccountAsync(string accountName)
     {
-        return await LogRequestResultAspect(nameof(AccountProcessor), nameof(GetAccountAsync), accountName, async () =>
-        {
-            var accountEntity = await _accountRepo.GetAsync(a => a.AccountName == accountName);
-            var account = MapTo<Account>(accountEntity);
-
-            if (account == null)
+        return await LogRequestResultAspect(
+            nameof(AccountProcessor),
+            nameof(GetAccountAsync),
+            accountName,
+            async () =>
             {
-                Logger.LogInformation("Account with name {AccountName} not found", accountName);
-            }
+                var accountEntity = await _accountRepo.GetAsync(a => a.AccountName == accountName);
+                var account = MapTo<Account>(accountEntity);
 
-            return account;
-        });
+                if (account == null)
+                {
+                    Logger.LogInformation("Account with name {AccountName} not found", accountName);
+                }
+
+                return account;
+            }
+        );
     }
 }

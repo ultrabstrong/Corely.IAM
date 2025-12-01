@@ -20,22 +20,24 @@ public class EFServiceFactoryTests : ServiceFactoryGenericTests
         }
     }
 
-    private class MockServiceFactory(IServiceCollection serviceCollection, IConfiguration configuration)
-        : EFServiceFactory(serviceCollection, configuration)
+    private class MockServiceFactory(
+        IServiceCollection serviceCollection,
+        IConfiguration configuration
+    ) : EFServiceFactory(serviceCollection, configuration)
     {
         private class MockSecurityConfigurationProvider : ISecurityConfigurationProvider
         {
             public ISymmetricKeyStoreProvider GetSystemSymmetricKey() => null!;
         }
 
-        protected override ISecurityConfigurationProvider GetSecurityConfigurationProvider()
-            => new MockSecurityConfigurationProvider();
+        protected override ISecurityConfigurationProvider GetSecurityConfigurationProvider() =>
+            new MockSecurityConfigurationProvider();
 
-        protected override void AddLogging(ILoggingBuilder builder)
-            => builder.AddProvider(NullLoggerProvider.Instance);
+        protected override void AddLogging(ILoggingBuilder builder) =>
+            builder.AddProvider(NullLoggerProvider.Instance);
 
-        protected override IEFConfiguration GetEFConfiguration(IServiceProvider sp)
-            => new TestEFConfiguration();
+        protected override IEFConfiguration GetEFConfiguration(IServiceProvider sp) =>
+            new TestEFConfiguration();
     }
 
     private readonly MockServiceFactory _mockServiceFactory = new(ServiceCollection, Configuration);

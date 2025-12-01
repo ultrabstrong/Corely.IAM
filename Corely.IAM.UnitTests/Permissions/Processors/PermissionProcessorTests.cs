@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Permissions.Processors;
+
 public class PermissionProcessorTests
 {
     private const string VALID_PERMISSION_NAME = "permissionname";
@@ -27,7 +28,8 @@ public class PermissionProcessorTests
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IMapProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
-            _serviceFactory.GetRequiredService<ILogger<GroupProcessor>>());
+            _serviceFactory.GetRequiredService<ILogger<GroupProcessor>>()
+        );
     }
 
     private async Task<int> CreateAccountAsync()
@@ -42,7 +44,8 @@ public class PermissionProcessorTests
     [Fact]
     public async Task CreatePermissionAsync_Fails_WhenAccountDoesNotExist()
     {
-        var request = _fixture.Build<CreatePermissionRequest>()
+        var request = _fixture
+            .Build<CreatePermissionRequest>()
             .With(r => r.PermissionName, VALID_PERMISSION_NAME)
             .Create();
 
@@ -54,7 +57,8 @@ public class PermissionProcessorTests
     [Fact]
     public async Task CreatePermissionAsync_Fails_WhenPermissionExists()
     {
-        var request = _fixture.Build<CreatePermissionRequest>()
+        var request = _fixture
+            .Build<CreatePermissionRequest>()
             .With(r => r.PermissionName, VALID_PERMISSION_NAME)
             .With(r => r.OwnerAccountId, await CreateAccountAsync())
             .Create();
@@ -69,7 +73,8 @@ public class PermissionProcessorTests
     public async Task CreatePermissionAsync_ReturnsCreatePermissionResult()
     {
         var accountId = await CreateAccountAsync();
-        var request = _fixture.Build<CreatePermissionRequest>()
+        var request = _fixture
+            .Build<CreatePermissionRequest>()
             .With(r => r.PermissionName, VALID_PERMISSION_NAME)
             .With(r => r.OwnerAccountId, accountId)
             .Create();
@@ -80,9 +85,10 @@ public class PermissionProcessorTests
 
         // Verify permission is linked to account id
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
-        var permissionEntity = await permissionRepo.GetAsync(p =>
-            p.Id == result.CreatedId,
-            include: q => q.Include(g => g.Account));
+        var permissionEntity = await permissionRepo.GetAsync(
+            p => p.Id == result.CreatedId,
+            include: q => q.Include(g => g.Account)
+        );
         Assert.NotNull(permissionEntity);
         // Assert.NotNull(permissionEntity.Account); // Account not available for memory mock repo
         Assert.Equal(accountId, permissionEntity.AccountId);
@@ -98,10 +104,25 @@ public class PermissionProcessorTests
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var permissions = await permissionRepo.ListAsync(p => p.AccountId == accountId);
         Assert.Equal(5, permissions.Count);
-        Assert.Contains(permissions, p => p.Name == PermissionConstants.ADMIN_USER_ACCESS_PERMISSION_NAME);
-        Assert.Contains(permissions, p => p.Name == PermissionConstants.ADMIN_ACCOUNT_ACCESS_PERMISSION_NAME);
-        Assert.Contains(permissions, p => p.Name == PermissionConstants.ADMIN_GROUP_ACCESS_PERMISSION_NAME);
-        Assert.Contains(permissions, p => p.Name == PermissionConstants.ADMIN_ROLE_ACCESS_PERMISSION_NAME);
-        Assert.Contains(permissions, p => p.Name == PermissionConstants.ADMIN_PERMISSION_ACCESS_PERMISSION_NAME);
+        Assert.Contains(
+            permissions,
+            p => p.Name == PermissionConstants.ADMIN_USER_ACCESS_PERMISSION_NAME
+        );
+        Assert.Contains(
+            permissions,
+            p => p.Name == PermissionConstants.ADMIN_ACCOUNT_ACCESS_PERMISSION_NAME
+        );
+        Assert.Contains(
+            permissions,
+            p => p.Name == PermissionConstants.ADMIN_GROUP_ACCESS_PERMISSION_NAME
+        );
+        Assert.Contains(
+            permissions,
+            p => p.Name == PermissionConstants.ADMIN_ROLE_ACCESS_PERMISSION_NAME
+        );
+        Assert.Contains(
+            permissions,
+            p => p.Name == PermissionConstants.ADMIN_PERMISSION_ACCESS_PERMISSION_NAME
+        );
     }
 }

@@ -18,10 +18,7 @@ public class BasicAuthValidatorTests
     {
         var basicAuth = new Corely.IAM.BasicAuths.Models.BasicAuth
         {
-            Password = new HashedValue(Mock.Of<IHashProvider>())
-            {
-                Hash = password
-            }
+            Password = new HashedValue(Mock.Of<IHashProvider>()) { Hash = password },
         };
 
         var result = _validator.TestValidate(basicAuth);
@@ -30,17 +27,14 @@ public class BasicAuthValidatorTests
     }
 
     public static IEnumerable<object[]> InvalidPasswordData() =>
-    [
-        [new string('a', BasicAuthConstants.PASSWORD_MAX_LENGTH + 1)]
-    ];
+        [
+            [new string('a', BasicAuthConstants.PASSWORD_MAX_LENGTH + 1)],
+        ];
 
     [Fact]
     public void BasicAuthValidator_HasValidationError_WhenPasswordIsNull()
     {
-        var basicAuth = new Corely.IAM.BasicAuths.Models.BasicAuth
-        {
-            Password = null
-        };
+        var basicAuth = new Corely.IAM.BasicAuths.Models.BasicAuth { Password = null };
 
         var result = _validator.TestValidate(basicAuth);
         result.ShouldHaveValidationErrorFor(x => x.Password);

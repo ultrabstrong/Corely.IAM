@@ -2,25 +2,23 @@
 
 namespace Corely.IAM.UnitTests.Mappers.AutoMapper;
 
-public abstract class BidirectionalProfileTestsBase
-    : ProfileTestsBase
+public abstract class BidirectionalProfileTestsBase : ProfileTestsBase
 {
     [Fact]
     public abstract void ReverseMap_MapsDestinationToSource();
 }
 
-public abstract class BidirectionalProfileDelegateTestsBase
-    : BidirectionalProfileTestsBase
+public abstract class BidirectionalProfileDelegateTestsBase : BidirectionalProfileTestsBase
 {
     protected abstract BidirectionalProfileTestsBase GetDelegate();
 
     [Fact]
-    public override void Map_MapsSourceToDestination()
-        => GetDelegate().Map_MapsSourceToDestination();
+    public override void Map_MapsSourceToDestination() =>
+        GetDelegate().Map_MapsSourceToDestination();
 
     [Fact]
-    public override void ReverseMap_MapsDestinationToSource()
-        => GetDelegate().ReverseMap_MapsDestinationToSource();
+    public override void ReverseMap_MapsDestinationToSource() =>
+        GetDelegate().ReverseMap_MapsDestinationToSource();
 }
 
 public abstract class BidirectionalProfileTestsBase<TSource, TDestination>
@@ -50,7 +48,6 @@ public abstract class BidirectionalProfileTestsBase<TSource, TDestination>
 
     protected virtual TSource ApplySourceModifications(TSource source) => source;
 
-
     [Fact]
     public override void ReverseMap_MapsDestinationToSource()
     {
@@ -59,9 +56,11 @@ public abstract class BidirectionalProfileTestsBase<TSource, TDestination>
         mapper.Map<TSource>(modifiedDestination);
     }
 
-    protected virtual TDestination GetDestination() => GetMock<TDestination>(GetDestinationParams());
+    protected virtual TDestination GetDestination() =>
+        GetMock<TDestination>(GetDestinationParams());
 
     protected virtual object[] GetDestinationParams() => [];
 
-    protected virtual TDestination ApplyDestinatonModifications(TDestination destination) => destination;
+    protected virtual TDestination ApplyDestinatonModifications(TDestination destination) =>
+        destination;
 }

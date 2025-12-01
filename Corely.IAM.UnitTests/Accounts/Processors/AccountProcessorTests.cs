@@ -28,7 +28,8 @@ public class AccountProcessorTests
             _serviceFactory.GetRequiredService<ISecurityProcessor>(),
             _serviceFactory.GetRequiredService<IMapProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
-            _serviceFactory.GetRequiredService<ILogger<AccountProcessor>>());
+            _serviceFactory.GetRequiredService<ILogger<AccountProcessor>>()
+        );
     }
 
     private async Task<int> CreateUserAsync()
@@ -65,7 +66,8 @@ public class AccountProcessorTests
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var accountEntity = await accountRepo.GetAsync(
             a => a.Id == result.CreatedId,
-            include: q => q.Include(a => a.Users));
+            include: q => q.Include(a => a.Users)
+        );
         Assert.NotNull(accountEntity);
         Assert.NotNull(accountEntity.Users);
         Assert.Single(accountEntity.Users);

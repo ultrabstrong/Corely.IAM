@@ -7,9 +7,9 @@ public class NullEmptyAndWhitespace : IEnumerable<object[]>
     private readonly List<object[]> _data =
     [
         [null],
-            [string.Empty],
-            [" "],
-        ];
+        [string.Empty],
+        [" "],
+    ];
 
     public IEnumerator<object[]> GetEnumerator() => _data.GetEnumerator();
 

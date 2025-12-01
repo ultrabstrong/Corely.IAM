@@ -8,12 +8,13 @@ using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
-using Corely.IAM.Validators;
 using Corely.IAM.UnitTests.ClassData;
+using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Roles.Processors;
+
 public class RoleProcessorTests
 {
     private const string VALID_ROLE_NAME = "rolename";
@@ -30,7 +31,8 @@ public class RoleProcessorTests
             _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>(),
             _serviceFactory.GetRequiredService<IMapProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
-            _serviceFactory.GetRequiredService<ILogger<GroupProcessor>>());
+            _serviceFactory.GetRequiredService<ILogger<GroupProcessor>>()
+        );
     }
 
     private async Task<int> CreateAccountAsync()
@@ -48,13 +50,9 @@ public class RoleProcessorTests
         var permission = new PermissionEntity
         {
             Id = permissionId,
-            Roles =
-                roleIds
-                    ?.Select(r => new RoleEntity { Id = r })
-                    ?.ToList()
-                ?? [],
+            Roles = roleIds?.Select(r => new RoleEntity { Id = r })?.ToList() ?? [],
             AccountId = accountId,
-            Account = new AccountEntity { Id = accountId }
+            Account = new AccountEntity { Id = accountId },
         };
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var created = await permissionRepo.CreateAsync(permission);
@@ -68,7 +66,7 @@ public class RoleProcessorTests
         {
             Name = VALID_ROLE_NAME,
             AccountId = accountId,
-            Account = new AccountEntity { Id = accountId }
+            Account = new AccountEntity { Id = accountId },
         };
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var created = await roleRepo.CreateAsync(role);
@@ -110,7 +108,8 @@ public class RoleProcessorTests
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var roleEntity = await roleRepo.GetAsync(
             r => r.Id == result.CreatedId,
-            include: q => q.Include(r => r.Account));
+            include: q => q.Include(r => r.Account)
+        );
         Assert.NotNull(roleEntity);
         //Assert.NotNull(roleEntity.Account); // Account not available for memory mock repo
         Assert.Equal(accountId, roleEntity.AccountId);
@@ -207,8 +206,14 @@ public class RoleProcessorTests
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
-        Assert.Equal(AssignPermissionsToRoleResultCode.InvalidPermissionIdsError, result.ResultCode);
-        Assert.Equal("All permission ids are invalid (not found, from different account, or already assigned to role)", result.Message);
+        Assert.Equal(
+            AssignPermissionsToRoleResultCode.InvalidPermissionIdsError,
+            result.ResultCode
+        );
+        Assert.Equal(
+            "All permission ids are invalid (not found, from different account, or already assigned to role)",
+            result.Message
+        );
     }
 
     [Fact]
@@ -225,7 +230,8 @@ public class RoleProcessorTests
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var roleEntity = await roleRepo.GetAsync(
             r => r.Id == roleId,
-            include: q => q.Include(r => r.Permissions));
+            include: q => q.Include(r => r.Permissions)
+        );
 
         Assert.NotNull(roleEntity);
         Assert.NotNull(roleEntity.Permissions);
@@ -238,12 +244,18 @@ public class RoleProcessorTests
         var (roleId, accountId) = await CreateRoleAsync();
         var existingPermissionId = await CreatePermissionAsync(accountId, roleId);
         var newPermissionId = await CreatePermissionAsync(accountId, roleId + 1);
-        var request = new AssignPermissionsToRoleRequest([existingPermissionId, newPermissionId], roleId);
+        var request = new AssignPermissionsToRoleRequest(
+            [existingPermissionId, newPermissionId],
+            roleId
+        );
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
         Assert.Equal(AssignPermissionsToRoleResultCode.PartialSuccess, result.ResultCode);
-        Assert.Equal("Some permission ids are invalid (not found, from different account, or already assigned to role)", result.Message);
+        Assert.Equal(
+            "Some permission ids are invalid (not found, from different account, or already assigned to role)",
+            result.Message
+        );
         Assert.Equal(1, result.AddedPermissionCount);
         Assert.NotEmpty(result.InvalidPermissionIds);
         Assert.Contains(existingPermissionId, result.InvalidPermissionIds);
@@ -259,11 +271,13 @@ public class RoleProcessorTests
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
         Assert.Equal(AssignPermissionsToRoleResultCode.PartialSuccess, result.ResultCode);
-        Assert.Equal("Some permission ids are invalid (not found, from different account, or already assigned to role)", result.Message);
+        Assert.Equal(
+            "Some permission ids are invalid (not found, from different account, or already assigned to role)",
+            result.Message
+        );
         Assert.NotEmpty(result.InvalidPermissionIds);
         Assert.Contains(-1, result.InvalidPermissionIds);
     }
-
 
     [Fact]
     public async Task AssignPermissionsToRoleAsync_PartiallySucceeds_WhenSomePermissionsBelongToDifferentAccount()
@@ -271,12 +285,18 @@ public class RoleProcessorTests
         var (roleId, accountId) = await CreateRoleAsync();
         var permissionIdSameAccount = await CreatePermissionAsync(accountId);
         var permissionIdDifferentAccount = await CreatePermissionAsync(accountId + 1);
-        var request = new AssignPermissionsToRoleRequest([permissionIdSameAccount, permissionIdDifferentAccount], roleId);
+        var request = new AssignPermissionsToRoleRequest(
+            [permissionIdSameAccount, permissionIdDifferentAccount],
+            roleId
+        );
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
         Assert.Equal(AssignPermissionsToRoleResultCode.PartialSuccess, result.ResultCode);
-        Assert.Equal("Some permission ids are invalid (not found, from different account, or already assigned to role)", result.Message);
+        Assert.Equal(
+            "Some permission ids are invalid (not found, from different account, or already assigned to role)",
+            result.Message
+        );
         Assert.Equal(1, result.AddedPermissionCount);
         Assert.NotEmpty(result.InvalidPermissionIds);
         Assert.Contains(permissionIdDifferentAccount, result.InvalidPermissionIds);
@@ -286,14 +306,24 @@ public class RoleProcessorTests
     public async Task AssignPermissionsToRoleAsync_Fails_WhenAllPermissionsExistForRole()
     {
         var (roleId, accountId) = await CreateRoleAsync();
-        var permissionIds = new List<int> { await CreatePermissionAsync(accountId, roleId), await CreatePermissionAsync(accountId, roleId) };
+        var permissionIds = new List<int>
+        {
+            await CreatePermissionAsync(accountId, roleId),
+            await CreatePermissionAsync(accountId, roleId),
+        };
         var request = new AssignPermissionsToRoleRequest(permissionIds, roleId);
         await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
-        Assert.Equal(AssignPermissionsToRoleResultCode.InvalidPermissionIdsError, result.ResultCode);
-        Assert.Equal("All permission ids are invalid (not found, from different account, or already assigned to role)", result.Message);
+        Assert.Equal(
+            AssignPermissionsToRoleResultCode.InvalidPermissionIdsError,
+            result.ResultCode
+        );
+        Assert.Equal(
+            "All permission ids are invalid (not found, from different account, or already assigned to role)",
+            result.Message
+        );
         Assert.Equal(permissionIds, result.InvalidPermissionIds);
     }
 
@@ -306,8 +336,14 @@ public class RoleProcessorTests
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
-        Assert.Equal(AssignPermissionsToRoleResultCode.InvalidPermissionIdsError, result.ResultCode);
-        Assert.Equal("All permission ids are invalid (not found, from different account, or already assigned to role)", result.Message);
+        Assert.Equal(
+            AssignPermissionsToRoleResultCode.InvalidPermissionIdsError,
+            result.ResultCode
+        );
+        Assert.Equal(
+            "All permission ids are invalid (not found, from different account, or already assigned to role)",
+            result.Message
+        );
         Assert.Equal(0, result.AddedPermissionCount);
         Assert.Equal(permissionIds, result.InvalidPermissionIds);
     }
@@ -316,13 +352,23 @@ public class RoleProcessorTests
     public async Task AssignPermissionsToRoleAsync_Fails_WhenAllPermissionsBelongToDifferentAccount()
     {
         var (roleId, accountId) = await CreateRoleAsync();
-        var permissionIds = new List<int>() { await CreatePermissionAsync(accountId + 1), await CreatePermissionAsync(accountId + 2) };
+        var permissionIds = new List<int>()
+        {
+            await CreatePermissionAsync(accountId + 1),
+            await CreatePermissionAsync(accountId + 2),
+        };
         var request = new AssignPermissionsToRoleRequest(permissionIds, roleId);
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
-        Assert.Equal(AssignPermissionsToRoleResultCode.InvalidPermissionIdsError, result.ResultCode);
-        Assert.Equal("All permission ids are invalid (not found, from different account, or already assigned to role)", result.Message);
+        Assert.Equal(
+            AssignPermissionsToRoleResultCode.InvalidPermissionIdsError,
+            result.ResultCode
+        );
+        Assert.Equal(
+            "All permission ids are invalid (not found, from different account, or already assigned to role)",
+            result.Message
+        );
         Assert.Equal(0, result.AddedPermissionCount);
         Assert.Equal(permissionIds, result.InvalidPermissionIds);
     }

@@ -10,14 +10,16 @@ namespace Corely.IAM.UnitTests.Security.Mappers;
 
 public class SymmetricKeyProfileTests
 {
-    public class ToSymmetricKeyEntity
-        : BidirectionalProfileDelegateTestsBase
+    public class ToSymmetricKeyEntity : BidirectionalProfileDelegateTestsBase
     {
         private class Delegate : BidirectionalProfileTestsBase<SymmetricKey, SymmetricKeyEntity>
         {
-            protected override SymmetricKeyEntity ApplyDestinatonModifications(SymmetricKeyEntity destination)
+            protected override SymmetricKeyEntity ApplyDestinatonModifications(
+                SymmetricKeyEntity destination
+            )
             {
-                destination.EncryptedKey = $"{SymmetricEncryptionConstants.AES_CODE}:{new Fixture().Create<string>()}";
+                destination.EncryptedKey =
+                    $"{SymmetricEncryptionConstants.AES_CODE}:{new Fixture().Create<string>()}";
                 return destination;
             }
         }
@@ -25,14 +27,17 @@ public class SymmetricKeyProfileTests
         protected override BidirectionalProfileTestsBase GetDelegate() => new Delegate();
     }
 
-    public class ToAccountSymmetricKeyEntity
-    : BidirectionalProfileDelegateTestsBase
+    public class ToAccountSymmetricKeyEntity : BidirectionalProfileDelegateTestsBase
     {
-        private class Delegate : BidirectionalProfileTestsBase<SymmetricKey, AccountSymmetricKeyEntity>
+        private class Delegate
+            : BidirectionalProfileTestsBase<SymmetricKey, AccountSymmetricKeyEntity>
         {
-            protected override AccountSymmetricKeyEntity ApplyDestinatonModifications(AccountSymmetricKeyEntity destination)
+            protected override AccountSymmetricKeyEntity ApplyDestinatonModifications(
+                AccountSymmetricKeyEntity destination
+            )
             {
-                destination.EncryptedKey = $"{SymmetricEncryptionConstants.AES_CODE}:{new Fixture().Create<string>()}";
+                destination.EncryptedKey =
+                    $"{SymmetricEncryptionConstants.AES_CODE}:{new Fixture().Create<string>()}";
                 return destination;
             }
         }
@@ -40,14 +45,16 @@ public class SymmetricKeyProfileTests
         protected override BidirectionalProfileTestsBase GetDelegate() => new Delegate();
     }
 
-    public class ToUserSymmetricKeyEntity
-        : BidirectionalProfileDelegateTestsBase
+    public class ToUserSymmetricKeyEntity : BidirectionalProfileDelegateTestsBase
     {
         private class Delegate : BidirectionalProfileTestsBase<SymmetricKey, UserSymmetricKeyEntity>
         {
-            protected override UserSymmetricKeyEntity ApplyDestinatonModifications(UserSymmetricKeyEntity destination)
+            protected override UserSymmetricKeyEntity ApplyDestinatonModifications(
+                UserSymmetricKeyEntity destination
+            )
             {
-                destination.EncryptedKey = $"{SymmetricEncryptionConstants.AES_CODE}:{new Fixture().Create<string>()}";
+                destination.EncryptedKey =
+                    $"{SymmetricEncryptionConstants.AES_CODE}:{new Fixture().Create<string>()}";
                 return destination;
             }
         }

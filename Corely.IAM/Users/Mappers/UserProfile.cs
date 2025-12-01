@@ -8,7 +8,6 @@ internal sealed class UserProfile : Profile
 {
     public UserProfile()
     {
-        CreateMap<User, UserEntity>(MemberList.Source)
-            .ReverseMap();
+        CreateMap<User, UserEntity>(MemberList.Source).ReverseMap();
     }
 }

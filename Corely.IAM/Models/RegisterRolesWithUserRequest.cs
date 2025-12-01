@@ -1,4 +1,3 @@
 ﻿namespace Corely.IAM.Models;
-public record RegisterRolesWithUserRequest(
-    List<int> RoleIds,
-    int UserId);
+
+public record RegisterRolesWithUserRequest(List<int> RoleIds, int UserId);

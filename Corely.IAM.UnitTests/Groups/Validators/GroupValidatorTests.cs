@@ -13,10 +13,7 @@ public class GroupValidatorTests
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]
     public void GroupValidator_HasValidationError_WhenGroupNameInvalid(string groupName)
     {
-        var group = new Group
-        {
-            Name = groupName
-        };
+        var group = new Group { Name = groupName };
 
         var result = _validator.TestValidate(group);
         result.ShouldHaveValidationErrorFor(x => x.Name);
@@ -25,10 +22,7 @@ public class GroupValidatorTests
     [Theory, MemberData(nameof(InvalidGroupTestData))]
     public void GroupValidator_HasValidationError_WhenGroupNameLengthInvalid(string groupName)
     {
-        var group = new Group
-        {
-            Name = groupName
-        };
+        var group = new Group { Name = groupName };
 
         var result = _validator.TestValidate(group);
         result.ShouldHaveValidationErrorFor(x => x.Name);
@@ -37,6 +31,6 @@ public class GroupValidatorTests
     public static IEnumerable<object[]> InvalidGroupTestData =>
         [
             [new string('a', GroupConstants.GROUP_NAME_MIN_LENGTH - 1)],
-            [new string('a', GroupConstants.GROUP_NAME_MAX_LENGTH + 1)]
+            [new string('a', GroupConstants.GROUP_NAME_MAX_LENGTH + 1)],
         ];
 }

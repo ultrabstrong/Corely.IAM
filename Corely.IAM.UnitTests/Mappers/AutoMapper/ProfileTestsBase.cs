@@ -22,18 +22,16 @@ public abstract class ProfileTestsBase
     }
 }
 
-public abstract class ProfileDelegateTestsBase
-    : ProfileTestsBase
+public abstract class ProfileDelegateTestsBase : ProfileTestsBase
 {
     protected abstract ProfileTestsBase GetDelegate();
 
     [Fact]
-    public override void Map_MapsSourceToDestination()
-        => GetDelegate().Map_MapsSourceToDestination();
+    public override void Map_MapsSourceToDestination() =>
+        GetDelegate().Map_MapsSourceToDestination();
 }
 
-public abstract class ProfileTestsBase<TSource, TDestination>
-    : ProfileTestsBase
+public abstract class ProfileTestsBase<TSource, TDestination> : ProfileTestsBase
     where TSource : class
     where TDestination : class
 {

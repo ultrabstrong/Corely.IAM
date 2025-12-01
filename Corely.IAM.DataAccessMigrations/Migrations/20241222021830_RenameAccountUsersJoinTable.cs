@@ -12,29 +12,32 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
         {
             migrationBuilder.DropForeignKey(
                 name: "FK_AccountEntityUserEntity_Accounts_AccountsId",
-                table: "AccountEntityUserEntity");
+                table: "AccountEntityUserEntity"
+            );
 
             migrationBuilder.DropForeignKey(
                 name: "FK_AccountEntityUserEntity_Users_UsersId",
-                table: "AccountEntityUserEntity");
+                table: "AccountEntityUserEntity"
+            );
 
             migrationBuilder.DropPrimaryKey(
                 name: "PK_AccountEntityUserEntity",
-                table: "AccountEntityUserEntity");
+                table: "AccountEntityUserEntity"
+            );
 
-            migrationBuilder.RenameTable(
-                name: "AccountEntityUserEntity",
-                newName: "UserAccounts");
+            migrationBuilder.RenameTable(name: "AccountEntityUserEntity", newName: "UserAccounts");
 
             migrationBuilder.RenameIndex(
                 name: "IX_AccountEntityUserEntity_UsersId",
                 table: "UserAccounts",
-                newName: "IX_UserAccounts_UsersId");
+                newName: "IX_UserAccounts_UsersId"
+            );
 
             migrationBuilder.AddPrimaryKey(
                 name: "PK_UserAccounts",
                 table: "UserAccounts",
-                columns: new[] { "AccountsId", "UsersId" });
+                columns: new[] { "AccountsId", "UsersId" }
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_UserAccounts_Accounts_AccountsId",
@@ -42,7 +45,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 column: "AccountsId",
                 principalTable: "Accounts",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_UserAccounts_Users_UsersId",
@@ -50,7 +54,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 column: "UsersId",
                 principalTable: "Users",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
         }
 
         /// <inheritdoc />
@@ -58,29 +63,29 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
         {
             migrationBuilder.DropForeignKey(
                 name: "FK_UserAccounts_Accounts_AccountsId",
-                table: "UserAccounts");
+                table: "UserAccounts"
+            );
 
             migrationBuilder.DropForeignKey(
                 name: "FK_UserAccounts_Users_UsersId",
-                table: "UserAccounts");
+                table: "UserAccounts"
+            );
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_UserAccounts",
-                table: "UserAccounts");
+            migrationBuilder.DropPrimaryKey(name: "PK_UserAccounts", table: "UserAccounts");
 
-            migrationBuilder.RenameTable(
-                name: "UserAccounts",
-                newName: "AccountEntityUserEntity");
+            migrationBuilder.RenameTable(name: "UserAccounts", newName: "AccountEntityUserEntity");
 
             migrationBuilder.RenameIndex(
                 name: "IX_UserAccounts_UsersId",
                 table: "AccountEntityUserEntity",
-                newName: "IX_AccountEntityUserEntity_UsersId");
+                newName: "IX_AccountEntityUserEntity_UsersId"
+            );
 
             migrationBuilder.AddPrimaryKey(
                 name: "PK_AccountEntityUserEntity",
                 table: "AccountEntityUserEntity",
-                columns: new[] { "AccountsId", "UsersId" });
+                columns: new[] { "AccountsId", "UsersId" }
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_AccountEntityUserEntity_Accounts_AccountsId",
@@ -88,7 +93,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 column: "AccountsId",
                 principalTable: "Accounts",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
 
             migrationBuilder.AddForeignKey(
                 name: "FK_AccountEntityUserEntity_Users_UsersId",
@@ -96,7 +102,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 column: "UsersId",
                 principalTable: "Users",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Cascade
+            );
         }
     }
 }

@@ -11,9 +11,8 @@ internal class Url : CommandBase
     [Option("-d", "--decode", Description = "Value to decode")]
     private string Decode { get; init; } = null!;
 
-    public Url() : base("url", "Url encode/decode operations")
-    {
-    }
+    public Url()
+        : base("url", "Url encode/decode operations") { }
 
     protected override void Execute()
     {

@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -45,4 +44,7 @@
     <ProjectReference Include="..\Corely.IAM\Corely.IAM.csproj" />
   </ItemGroup>
 
+  <Target Name="FormatWithCSharpier" BeforeTargets="CoreCompile">
+    <Exec Command="csharpier check ." ContinueOnError="false" IgnoreExitCode="false" />
+  </Target>
 </Project>

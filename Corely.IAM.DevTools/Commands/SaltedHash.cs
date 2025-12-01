@@ -11,9 +11,12 @@ internal class SaltedHash : CommandBase
     [Argument("Value to hash", false)]
     private string Value { get; init; } = null!;
 
-    public SaltedHash() : base("shash", "Salted hash operations", "Default: List hash types if no argument or option is provided")
-    {
-    }
+    public SaltedHash()
+        : base(
+            "shash",
+            "Salted hash operations",
+            "Default: List hash types if no argument or option is provided"
+        ) { }
 
     protected override void Execute()
     {

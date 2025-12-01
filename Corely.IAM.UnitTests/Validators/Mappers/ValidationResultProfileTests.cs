@@ -7,7 +7,5 @@ namespace Corely.IAM.UnitTests.Validators.Mappers;
 public class ValidationResultProfileTests
 {
     public class ToCorelyValidationResult
-        : ProfileTestsBase<FluentValidationResult, CorelyValidationResult>
-    {
-    }
+        : ProfileTestsBase<FluentValidationResult, CorelyValidationResult> { }
 }

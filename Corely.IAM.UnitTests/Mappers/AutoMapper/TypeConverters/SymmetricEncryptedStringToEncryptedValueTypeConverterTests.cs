@@ -14,8 +14,9 @@ public class SymmetricEncryptedStringToEncryptedValueTypeConverterTests
     public SymmetricEncryptedStringToEncryptedValueTypeConverterTests()
     {
         var encryptionProvider = Mock.Of<ISymmetricEncryptionProvider>();
-        var encryptionProviderFactory = Mock.Of<ISymmetricEncryptionProviderFactory>(
-            f => f.GetProviderForDecrypting(It.IsAny<string>()) == encryptionProvider);
+        var encryptionProviderFactory = Mock.Of<ISymmetricEncryptionProviderFactory>(f =>
+            f.GetProviderForDecrypting(It.IsAny<string>()) == encryptionProvider
+        );
 
         _converter = new(encryptionProviderFactory);
     }

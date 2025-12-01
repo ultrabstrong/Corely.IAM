@@ -9,12 +9,20 @@ internal class SymmetricEncryption : CommandBase
 {
     private const string DEFAULT_ENCRYPTION_TYPE = SymmetricEncryptionConstants.AES_CODE;
 
-    private readonly SymmetricEncryptionProviderFactory _encryptionProviderFactory = new(DEFAULT_ENCRYPTION_TYPE);
+    private readonly SymmetricEncryptionProviderFactory _encryptionProviderFactory = new(
+        DEFAULT_ENCRYPTION_TYPE
+    );
 
-    [Argument("Key to validate (default), encrypt value (-e flag), or decrypt value (-d flag)", false)]
+    [Argument(
+        "Key to validate (default), encrypt value (-e flag), or decrypt value (-d flag)",
+        false
+    )]
     private string Key { get; init; } = null!;
 
-    [Argument("Code for encryption type to use (hint: use -l to list codes. default used if code not provided)", false)]
+    [Argument(
+        "Code for encryption type to use (hint: use -l to list codes. default used if code not provided)",
+        false
+    )]
     private string EncryptionTypeCode { get; init; } = DEFAULT_ENCRYPTION_TYPE;
 
     [Option("-l", "--list", Description = "List asymmetric encryption providers")]
@@ -32,9 +40,12 @@ internal class SymmetricEncryption : CommandBase
     [Option("-v", "--validate", Description = "Validate a key")]
     private bool Validate { get; init; }
 
-    public SymmetricEncryption() : base("sym-encrypt", "Symmetric encryption operations", "Use at least one flag to perform an operation")
-    {
-    }
+    public SymmetricEncryption()
+        : base(
+            "sym-encrypt",
+            "Symmetric encryption operations",
+            "Use at least one flag to perform an operation"
+        ) { }
 
     protected override void Execute()
     {
@@ -59,11 +70,13 @@ internal class SymmetricEncryption : CommandBase
             ValidateKey();
         }
 
-        if (!List
+        if (
+            !List
             && !Create
             && string.IsNullOrEmpty(ToEncrypt)
             && string.IsNullOrEmpty(ToDecrypt)
-            && !Validate)
+            && !Validate
+        )
         {
             ShowHelp();
         }
@@ -74,7 +87,9 @@ internal class SymmetricEncryption : CommandBase
         var providers = _encryptionProviderFactory.ListProviders();
         foreach (var (providerCode, providerType) in providers)
         {
-            Console.WriteLine($"Code {providerCode} = {providerType.Name} {(providerCode == DEFAULT_ENCRYPTION_TYPE ? "(default)" : "")}");
+            Console.WriteLine(
+                $"Code {providerCode} = {providerType.Name} {(providerCode == DEFAULT_ENCRYPTION_TYPE ? "(default)" : "")}"
+            );
         }
     }
 

@@ -12,27 +12,21 @@ public partial class UserEncryptionKeysCascadeDelete : Migration
     {
         migrationBuilder.DropForeignKey(
             name: "FK_Users_UserAsymmetricKeys_AsymmetricKeyUserId",
-            table: "Users");
+            table: "Users"
+        );
 
         migrationBuilder.DropForeignKey(
             name: "FK_Users_UserSymmetricKeys_SymmetricKeyUserId",
-            table: "Users");
+            table: "Users"
+        );
 
-        migrationBuilder.DropIndex(
-            name: "IX_Users_AsymmetricKeyUserId",
-            table: "Users");
+        migrationBuilder.DropIndex(name: "IX_Users_AsymmetricKeyUserId", table: "Users");
 
-        migrationBuilder.DropIndex(
-            name: "IX_Users_SymmetricKeyUserId",
-            table: "Users");
+        migrationBuilder.DropIndex(name: "IX_Users_SymmetricKeyUserId", table: "Users");
 
-        migrationBuilder.DropColumn(
-            name: "AsymmetricKeyUserId",
-            table: "Users");
+        migrationBuilder.DropColumn(name: "AsymmetricKeyUserId", table: "Users");
 
-        migrationBuilder.DropColumn(
-            name: "SymmetricKeyUserId",
-            table: "Users");
+        migrationBuilder.DropColumn(name: "SymmetricKeyUserId", table: "Users");
 
         migrationBuilder.AddForeignKey(
             name: "FK_UserAsymmetricKeys_Users_UserId",
@@ -40,7 +34,8 @@ public partial class UserEncryptionKeysCascadeDelete : Migration
             column: "UserId",
             principalTable: "Users",
             principalColumn: "Id",
-            onDelete: ReferentialAction.Cascade);
+            onDelete: ReferentialAction.Cascade
+        );
 
         migrationBuilder.AddForeignKey(
             name: "FK_UserSymmetricKeys_Users_UserId",
@@ -48,7 +43,8 @@ public partial class UserEncryptionKeysCascadeDelete : Migration
             column: "UserId",
             principalTable: "Users",
             principalColumn: "Id",
-            onDelete: ReferentialAction.Cascade);
+            onDelete: ReferentialAction.Cascade
+        );
     }
 
     /// <inheritdoc />
@@ -56,46 +52,54 @@ public partial class UserEncryptionKeysCascadeDelete : Migration
     {
         migrationBuilder.DropForeignKey(
             name: "FK_UserAsymmetricKeys_Users_UserId",
-            table: "UserAsymmetricKeys");
+            table: "UserAsymmetricKeys"
+        );
 
         migrationBuilder.DropForeignKey(
             name: "FK_UserSymmetricKeys_Users_UserId",
-            table: "UserSymmetricKeys");
+            table: "UserSymmetricKeys"
+        );
 
         migrationBuilder.AddColumn<int>(
             name: "AsymmetricKeyUserId",
             table: "Users",
             type: "int",
-            nullable: true);
+            nullable: true
+        );
 
         migrationBuilder.AddColumn<int>(
             name: "SymmetricKeyUserId",
             table: "Users",
             type: "int",
-            nullable: true);
+            nullable: true
+        );
 
         migrationBuilder.CreateIndex(
             name: "IX_Users_AsymmetricKeyUserId",
             table: "Users",
-            column: "AsymmetricKeyUserId");
+            column: "AsymmetricKeyUserId"
+        );
 
         migrationBuilder.CreateIndex(
             name: "IX_Users_SymmetricKeyUserId",
             table: "Users",
-            column: "SymmetricKeyUserId");
+            column: "SymmetricKeyUserId"
+        );
 
         migrationBuilder.AddForeignKey(
             name: "FK_Users_UserAsymmetricKeys_AsymmetricKeyUserId",
             table: "Users",
             column: "AsymmetricKeyUserId",
             principalTable: "UserAsymmetricKeys",
-            principalColumn: "UserId");
+            principalColumn: "UserId"
+        );
 
         migrationBuilder.AddForeignKey(
             name: "FK_Users_UserSymmetricKeys_SymmetricKeyUserId",
             table: "Users",
             column: "SymmetricKeyUserId",
             principalTable: "UserSymmetricKeys",
-            principalColumn: "UserId");
+            principalColumn: "UserId"
+        );
     }
 }

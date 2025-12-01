@@ -4,10 +4,11 @@ public enum RegisterAccountResultCode
 {
     Success,
     AccountCreationError,
-    SystemRoleAssignmentError
+    SystemRoleAssignmentError,
 }
 
 public record RegisterAccountResult(
     RegisterAccountResultCode ResultCode,
     string? Message,
-    int CreatedAccountId);
+    int CreatedAccountId
+);

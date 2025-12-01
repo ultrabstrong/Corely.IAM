@@ -1,9 +1,9 @@
 ﻿using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Validators;
+using Corely.IAM.UnitTests.ClassData;
 using Corely.Security.Encryption.Models;
 using Corely.Security.Encryption.Providers;
-using Corely.IAM.UnitTests.ClassData;
 using FluentValidation.TestHelper;
 
 namespace Corely.IAM.UnitTests.Security.Validators;
@@ -15,10 +15,7 @@ public class AsymmetricKeyValidatorTests
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]
     public void AsymmetricKeyValidator_HasValidationError_WhenPublicKeyInvalid(string publicKey)
     {
-        var asymmetricKey = new AsymmetricKey
-        {
-            PublicKey = publicKey
-        };
+        var asymmetricKey = new AsymmetricKey { PublicKey = publicKey };
 
         var result = _validator.TestValidate(asymmetricKey);
         result.ShouldHaveValidationErrorFor(x => x.PublicKey);
@@ -27,11 +24,7 @@ public class AsymmetricKeyValidatorTests
     [Fact]
     public void AsymmetricKeyValidator_HasValidationError_WhenPrivateKeyIsNull()
     {
-        var asymmetricKey = new AsymmetricKey
-        {
-            PublicKey = "public key",
-            PrivateKey = null
-        };
+        var asymmetricKey = new AsymmetricKey { PublicKey = "public key", PrivateKey = null };
 
         var result = _validator.TestValidate(asymmetricKey);
         result.ShouldHaveValidationErrorFor(x => x.PrivateKey);
@@ -45,8 +38,8 @@ public class AsymmetricKeyValidatorTests
             PublicKey = "public key",
             PrivateKey = new SymmetricEncryptedValue(new AesEncryptionProvider())
             {
-                Secret = privateKey
-            }
+                Secret = privateKey,
+            },
         };
 
         var result = _validator.TestValidate(asymmetricKey);
@@ -62,8 +55,8 @@ public class AsymmetricKeyValidatorTests
             PublicKey = "public key",
             PrivateKey = new SymmetricEncryptedValue(new AesEncryptionProvider())
             {
-                Secret = "private key"
-            }
+                Secret = "private key",
+            },
         };
 
         var result = _validator.TestValidate(asymmetricKey);
@@ -71,7 +64,9 @@ public class AsymmetricKeyValidatorTests
     }
 
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]
-    public void AsymmetricKeyValidator_HasValidationError_WhenProviderTypeCodeInvalid(string providerTypeCode)
+    public void AsymmetricKeyValidator_HasValidationError_WhenProviderTypeCodeInvalid(
+        string providerTypeCode
+    )
     {
         var asymmetricKey = new AsymmetricKey
         {
@@ -79,9 +74,9 @@ public class AsymmetricKeyValidatorTests
             PublicKey = "public key",
             PrivateKey = new SymmetricEncryptedValue(new AesEncryptionProvider())
             {
-                Secret = "private key"
+                Secret = "private key",
             },
-            ProviderTypeCode = providerTypeCode
+            ProviderTypeCode = providerTypeCode,
         };
         var result = _validator.TestValidate(asymmetricKey);
         result.ShouldHaveValidationErrorFor(x => x.ProviderTypeCode);

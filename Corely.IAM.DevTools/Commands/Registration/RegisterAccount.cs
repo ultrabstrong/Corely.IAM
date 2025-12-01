@@ -1,9 +1,9 @@
-﻿using Corely.Common.Extensions;
+﻿using System.Text.Json;
+using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Validators;
-using System.Text.Json;
 
 namespace Corely.IAM.DevTools.Commands.Registration;
 
@@ -19,16 +19,16 @@ internal partial class Registration : CommandBase
 
         private readonly IRegistrationService _registrationService;
 
-        public RegisterAccount(IRegistrationService registrationService) : base("account", "Register a new account")
+        public RegisterAccount(IRegistrationService registrationService)
+            : base("account", "Register a new account")
         {
             _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
         }
 
-        protected async override Task ExecuteAsync()
+        protected override async Task ExecuteAsync()
         {
             if (Create)
             {
-
                 CreateSampleJson(RequestJsonFile, new RegisterAccountRequest("accountName", 1));
             }
             else
@@ -40,7 +40,8 @@ internal partial class Registration : CommandBase
         private async Task RegisterAccountAsync()
         {
             var request = ReadRequestJson<RegisterAccountRequest>(RequestJsonFile);
-            if (request == null) return;
+            if (request == null)
+                return;
 
             try
             {

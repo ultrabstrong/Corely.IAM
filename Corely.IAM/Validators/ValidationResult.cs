@@ -10,10 +10,7 @@ public class ValidationResult
     {
         if (!IsValid)
         {
-            throw new ValidationException(Message)
-            {
-                ValidationResult = this
-            };
+            throw new ValidationException(Message) { ValidationResult = this };
         }
     }
 }

@@ -19,18 +19,24 @@ internal class SecurityProcessor : ISecurityProcessor
         ISecurityConfigurationProvider securityConfigurationProvider,
         ISymmetricEncryptionProviderFactory symmetricEncryptionProviderFactory,
         IAsymmetricEncryptionProviderFactory asymmetricEncryptionProviderFactory,
-        IAsymmetricSignatureProviderFactory asymmetricSignatureProviderFactory)
+        IAsymmetricSignatureProviderFactory asymmetricSignatureProviderFactory
+    )
     {
-        _securityConfigurationProvider = securityConfigurationProvider.ThrowIfNull(nameof(securityConfigurationProvider));
+        _securityConfigurationProvider = securityConfigurationProvider.ThrowIfNull(
+            nameof(securityConfigurationProvider)
+        );
 
-        _symmetricEncryptionProviderFactory = symmetricEncryptionProviderFactory
-            .ThrowIfNull(nameof(symmetricEncryptionProviderFactory));
+        _symmetricEncryptionProviderFactory = symmetricEncryptionProviderFactory.ThrowIfNull(
+            nameof(symmetricEncryptionProviderFactory)
+        );
 
-        _asymmetricEncryptionProviderFactory = asymmetricEncryptionProviderFactory
-            .ThrowIfNull(nameof(asymmetricEncryptionProviderFactory));
+        _asymmetricEncryptionProviderFactory = asymmetricEncryptionProviderFactory.ThrowIfNull(
+            nameof(asymmetricEncryptionProviderFactory)
+        );
 
-        _asymmetricSignatureProviderFactory = asymmetricSignatureProviderFactory
-            .ThrowIfNull(nameof(asymmetricSignatureProviderFactory));
+        _asymmetricSignatureProviderFactory = asymmetricSignatureProviderFactory.ThrowIfNull(
+            nameof(asymmetricSignatureProviderFactory)
+        );
     }
 
     public SymmetricKey GetSymmetricEncryptionKeyEncryptedWithSystemKey()
@@ -39,7 +45,10 @@ internal class SecurityProcessor : ISecurityProcessor
         var symmetricEncryptionProvider = _symmetricEncryptionProviderFactory.GetDefaultProvider();
 
         var decryptedKey = symmetricEncryptionProvider.GetSymmetricKeyProvider().CreateKey();
-        var encryptedKey = symmetricEncryptionProvider.Encrypt(decryptedKey, systemKeyStoreProvider);
+        var encryptedKey = symmetricEncryptionProvider.Encrypt(
+            decryptedKey,
+            systemKeyStoreProvider
+        );
 
         var symmetricKey = new SymmetricKey
         {
@@ -48,8 +57,8 @@ internal class SecurityProcessor : ISecurityProcessor
             Version = systemKeyStoreProvider.GetCurrentVersion(),
             Key = new SymmetricEncryptedValue(symmetricEncryptionProvider)
             {
-                Secret = encryptedKey
-            }
+                Secret = encryptedKey,
+            },
         };
         return symmetricKey;
     }
@@ -57,11 +66,17 @@ internal class SecurityProcessor : ISecurityProcessor
     public AsymmetricKey GetAsymmetricEncryptionKeyEncryptedWithSystemKey()
     {
         var systemKeyStoreProvider = _securityConfigurationProvider.GetSystemSymmetricKey();
-        var asymmetricEncryptionProvider = _asymmetricEncryptionProviderFactory.GetDefaultProvider();
+        var asymmetricEncryptionProvider =
+            _asymmetricEncryptionProviderFactory.GetDefaultProvider();
         var symmetricEncryptionProvider = _symmetricEncryptionProviderFactory.GetDefaultProvider();
 
-        var (publickey, privateKey) = asymmetricEncryptionProvider.GetAsymmetricKeyProvider().CreateKeys();
-        var encryptedPrivateKey = symmetricEncryptionProvider.Encrypt(privateKey, systemKeyStoreProvider);
+        var (publickey, privateKey) = asymmetricEncryptionProvider
+            .GetAsymmetricKeyProvider()
+            .CreateKeys();
+        var encryptedPrivateKey = symmetricEncryptionProvider.Encrypt(
+            privateKey,
+            systemKeyStoreProvider
+        );
 
         var asymmetricKey = new AsymmetricKey
         {
@@ -71,8 +86,8 @@ internal class SecurityProcessor : ISecurityProcessor
             PublicKey = publickey,
             PrivateKey = new SymmetricEncryptedValue(symmetricEncryptionProvider)
             {
-                Secret = encryptedPrivateKey
-            }
+                Secret = encryptedPrivateKey,
+            },
         };
         return asymmetricKey;
     }
@@ -83,8 +98,13 @@ internal class SecurityProcessor : ISecurityProcessor
         var asymmetricSignatureProvider = _asymmetricSignatureProviderFactory.GetDefaultProvider();
         var symmetricEncryptionProvider = _symmetricEncryptionProviderFactory.GetDefaultProvider();
 
-        var (publickey, privateKey) = asymmetricSignatureProvider.GetAsymmetricKeyProvider().CreateKeys();
-        var encryptedPrivateKey = symmetricEncryptionProvider.Encrypt(privateKey, systemKeyStoreProvider);
+        var (publickey, privateKey) = asymmetricSignatureProvider
+            .GetAsymmetricKeyProvider()
+            .CreateKeys();
+        var encryptedPrivateKey = symmetricEncryptionProvider.Encrypt(
+            privateKey,
+            systemKeyStoreProvider
+        );
 
         var asymmetricKey = new AsymmetricKey
         {
@@ -94,8 +114,8 @@ internal class SecurityProcessor : ISecurityProcessor
             PublicKey = publickey,
             PrivateKey = new SymmetricEncryptedValue(symmetricEncryptionProvider)
             {
-                Secret = encryptedPrivateKey
-            }
+                Secret = encryptedPrivateKey,
+            },
         };
         return asymmetricKey;
     }
@@ -113,9 +133,15 @@ internal class SecurityProcessor : ISecurityProcessor
         return symmetricEncryptionProvider.Decrypt(encryptedValue, systemKeyStoreProvider);
     }
 
-    public SigningCredentials GetAsymmetricSigningCredentials(string providerTypeCode, string key, bool isKeyPrivate)
+    public SigningCredentials GetAsymmetricSigningCredentials(
+        string providerTypeCode,
+        string key,
+        bool isKeyPrivate
+    )
     {
-        var asymmetricSignatureProvider = _asymmetricSignatureProviderFactory.GetProvider(providerTypeCode);
+        var asymmetricSignatureProvider = _asymmetricSignatureProviderFactory.GetProvider(
+            providerTypeCode
+        );
         return asymmetricSignatureProvider.GetSigningCredentials(key, isKeyPrivate);
     }
 }

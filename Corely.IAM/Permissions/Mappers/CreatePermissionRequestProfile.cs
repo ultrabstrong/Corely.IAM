@@ -2,6 +2,7 @@
 using Corely.IAM.Permissions.Models;
 
 namespace Corely.IAM.Permissions.Mappers;
+
 internal class CreatePermissionRequestProfile : Profile
 {
     public CreatePermissionRequestProfile()

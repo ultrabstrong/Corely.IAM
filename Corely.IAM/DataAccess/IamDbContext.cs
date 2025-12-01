@@ -11,11 +11,16 @@ internal class IamDbContext : DbContext
     private readonly IEFConfiguration _efConfiguration;
 
     public IamDbContext(IEFConfiguration efConfiguration)
-        : base() { _efConfiguration = efConfiguration; }
+        : base()
+    {
+        _efConfiguration = efConfiguration;
+    }
 
     public IamDbContext(DbContextOptions<IamDbContext> opts, IEFConfiguration efConfiguration)
-        : base(opts) { _efConfiguration = efConfiguration; }
-
+        : base(opts)
+    {
+        _efConfiguration = efConfiguration;
+    }
 
     public DbSet<AccountEntity> Accounts { get; set; } = null!;
     public DbSet<UserEntity> Users { get; set; } = null!;
@@ -28,14 +33,21 @@ internal class IamDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        var configTypes = new Type[] { typeof(EntityConfigurationBase<>), typeof(EntityConfigurationBase<,>) };
+        var configTypes = new Type[]
+        {
+            typeof(EntityConfigurationBase<>),
+            typeof(EntityConfigurationBase<,>),
+        };
         foreach (var configType in configTypes)
         {
-            var configs = GetType().Assembly.GetTypes()
-            .Where(t => t.IsClass
-                && !t.IsAbstract
-                && t.BaseType?.IsGenericType == true
-                && t.BaseType.GetGenericTypeDefinition() == configType);
+            var configs = GetType()
+                .Assembly.GetTypes()
+                .Where(t =>
+                    t.IsClass
+                    && !t.IsAbstract
+                    && t.BaseType?.IsGenericType == true
+                    && t.BaseType.GetGenericTypeDefinition() == configType
+                );
 
             foreach (var t in configs)
             {

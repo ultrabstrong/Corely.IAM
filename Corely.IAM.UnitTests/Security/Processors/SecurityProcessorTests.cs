@@ -1,11 +1,11 @@
 ﻿using Corely.IAM;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Processors;
+using Corely.IAM.UnitTests.ClassData;
 using Corely.Security.Encryption.Factories;
 using Corely.Security.Encryption.Providers;
 using Corely.Security.Signature.Factories;
 using Corely.Security.Signature.Providers;
-using Corely.IAM.UnitTests.ClassData;
 
 namespace Corely.IAM.UnitTests.Security.Processors;
 
@@ -16,26 +16,32 @@ public class SecurityProcessorTests
     private readonly IAsymmetricEncryptionProvider _asymmetricEncryptionProvider;
     private readonly IAsymmetricSignatureProvider _asymmetricSignatureProvider;
     private readonly SecurityProcessor _securityProcessor;
+
     public SecurityProcessorTests()
     {
         var serviceFactory = new ServiceFactory();
 
-        _securityConfigurationProvider = serviceFactory.GetRequiredService<ISecurityConfigurationProvider>();
+        _securityConfigurationProvider =
+            serviceFactory.GetRequiredService<ISecurityConfigurationProvider>();
 
-        var symmetricEncryptionProviderFactory = serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>();
+        var symmetricEncryptionProviderFactory =
+            serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>();
         _symmetricEncryptionProvider = symmetricEncryptionProviderFactory.GetDefaultProvider();
 
-        var asymmetricEncryptionProviderFactory = serviceFactory.GetRequiredService<IAsymmetricEncryptionProviderFactory>();
+        var asymmetricEncryptionProviderFactory =
+            serviceFactory.GetRequiredService<IAsymmetricEncryptionProviderFactory>();
         _asymmetricEncryptionProvider = asymmetricEncryptionProviderFactory.GetDefaultProvider();
 
-        var asymmetricSignatureProviderFactory = serviceFactory.GetRequiredService<IAsymmetricSignatureProviderFactory>();
+        var asymmetricSignatureProviderFactory =
+            serviceFactory.GetRequiredService<IAsymmetricSignatureProviderFactory>();
         _asymmetricSignatureProvider = asymmetricSignatureProviderFactory.GetDefaultProvider();
 
         _securityProcessor = new(
             _securityConfigurationProvider,
             symmetricEncryptionProviderFactory,
             asymmetricEncryptionProviderFactory,
-            asymmetricSignatureProviderFactory);
+            asymmetricSignatureProviderFactory
+        );
     }
 
     [Fact]
@@ -51,9 +57,9 @@ public class SecurityProcessorTests
 
         var decryptedKey = _securityProcessor.DecryptWithSystemKey(result.Key.Secret);
 
-        Assert.True(_symmetricEncryptionProvider
-            .GetSymmetricKeyProvider()
-            .IsKeyValid(decryptedKey));
+        Assert.True(
+            _symmetricEncryptionProvider.GetSymmetricKeyProvider().IsKeyValid(decryptedKey)
+        );
     }
 
     [Fact]
@@ -70,9 +76,11 @@ public class SecurityProcessorTests
 
         var decryptedPrivateKey = _securityProcessor.DecryptWithSystemKey(result.PrivateKey.Secret);
 
-        Assert.True(_asymmetricEncryptionProvider
-            .GetAsymmetricKeyProvider()
-            .IsKeyValid(result.PublicKey, decryptedPrivateKey));
+        Assert.True(
+            _asymmetricEncryptionProvider
+                .GetAsymmetricKeyProvider()
+                .IsKeyValid(result.PublicKey, decryptedPrivateKey)
+        );
     }
 
     [Fact]
@@ -89,22 +97,25 @@ public class SecurityProcessorTests
 
         var decryptedPrivateKey = _securityProcessor.DecryptWithSystemKey(result.PrivateKey.Secret);
 
-        Assert.True(_asymmetricSignatureProvider
-            .GetAsymmetricKeyProvider()
-            .IsKeyValid(result.PublicKey, decryptedPrivateKey));
+        Assert.True(
+            _asymmetricSignatureProvider
+                .GetAsymmetricKeyProvider()
+                .IsKeyValid(result.PublicKey, decryptedPrivateKey)
+        );
     }
 
     [Fact]
     public void DecryptWithSystemKey_ReturnsDecryptedValue()
     {
         var symmetricKey = _securityProcessor.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
-        var expectedDecryptedValue = symmetricKey.Key.GetDecrypted(_securityConfigurationProvider.GetSystemSymmetricKey());
+        var expectedDecryptedValue = symmetricKey.Key.GetDecrypted(
+            _securityConfigurationProvider.GetSystemSymmetricKey()
+        );
 
         var decryptedValue = _securityProcessor.DecryptWithSystemKey(symmetricKey.Key.Secret);
 
         Assert.Equal(expectedDecryptedValue, decryptedValue);
     }
-
 
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]
     public void DecryptWithSystemKey_ReturnsEmptyString_WithEmptyInput(string encryptedValue)
@@ -120,7 +131,11 @@ public class SecurityProcessorTests
         var asymmetricKey = _securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey();
         var privateKey = _securityProcessor.DecryptWithSystemKey(asymmetricKey.PrivateKey.Secret);
 
-        var credentials = _securityProcessor.GetAsymmetricSigningCredentials(asymmetricKey.ProviderTypeCode, privateKey, true);
+        var credentials = _securityProcessor.GetAsymmetricSigningCredentials(
+            asymmetricKey.ProviderTypeCode,
+            privateKey,
+            true
+        );
 
         Assert.NotNull(credentials);
     }
@@ -131,7 +146,11 @@ public class SecurityProcessorTests
         var asymmetricKey = _securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey();
         var publicKey = asymmetricKey.PublicKey;
 
-        var credentials = _securityProcessor.GetAsymmetricSigningCredentials(asymmetricKey.ProviderTypeCode, publicKey, false);
+        var credentials = _securityProcessor.GetAsymmetricSigningCredentials(
+            asymmetricKey.ProviderTypeCode,
+            publicKey,
+            false
+        );
 
         Assert.NotNull(credentials);
     }

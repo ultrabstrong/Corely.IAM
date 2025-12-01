@@ -7,40 +7,44 @@ namespace Corely.IAM.Accounts.Entities;
 
 internal sealed class AccountEntityConfiguration : EntityConfigurationBase<AccountEntity, int>
 {
-    public AccountEntityConfiguration(IEFDbTypes efDbTypes) : base(efDbTypes)
-    {
-    }
+    public AccountEntityConfiguration(IEFDbTypes efDbTypes)
+        : base(efDbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<AccountEntity> builder)
     {
-        builder.Property(e => e.AccountName)
+        builder
+            .Property(e => e.AccountName)
             .IsRequired()
             .HasMaxLength(AccountConstants.ACCOUNT_NAME_MAX_LENGTH);
 
-        builder.HasIndex(e => e.AccountName)
-            .IsUnique();
+        builder.HasIndex(e => e.AccountName).IsUnique();
 
-        builder.HasMany(e => e.Groups)
+        builder
+            .HasMany(e => e.Groups)
             .WithOne(e => e.Account)
             .HasForeignKey(p => p.AccountId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(e => e.Roles)
+        builder
+            .HasMany(e => e.Roles)
             .WithOne(e => e.Account)
             .HasForeignKey(p => p.AccountId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(e => e.Permissions)
+        builder
+            .HasMany(e => e.Permissions)
             .WithOne(e => e.Account)
             .HasForeignKey(p => p.AccountId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(e => e.SymmetricKeys)
+        builder
+            .HasMany(e => e.SymmetricKeys)
             .WithOne()
             .HasForeignKey(p => p.AccountId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(e => e.AsymmetricKeys)
+        builder
+            .HasMany(e => e.AsymmetricKeys)
             .WithOne()
             .HasForeignKey(p => p.AccountId)
             .OnDelete(DeleteBehavior.Cascade);

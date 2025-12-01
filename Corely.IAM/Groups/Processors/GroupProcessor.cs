@@ -26,7 +26,8 @@ internal class GroupProcessor : ProcessorBase, IGroupProcessor
         IReadonlyRepo<RoleEntity> roleRepo,
         IMapProvider mapProvider,
         IValidationProvider validationProvider,
-        ILogger<GroupProcessor> logger)
+        ILogger<GroupProcessor> logger
+    )
         : base(mapProvider, validationProvider, logger)
     {
         _groupRepo = groupRepo.ThrowIfNull(nameof(groupRepo));
@@ -37,116 +38,200 @@ internal class GroupProcessor : ProcessorBase, IGroupProcessor
 
     public async Task<CreateGroupResult> CreateGroupAsync(CreateGroupRequest request)
     {
-        return await LogRequestResultAspect(nameof(GroupProcessor), nameof(CreateGroupAsync), request, async () =>
-        {
-            var group = MapThenValidateTo<Group>(request);
-
-            if (await _groupRepo.AnyAsync(g =>
-                g.AccountId == group.AccountId && g.Name == group.Name))
+        return await LogRequestResultAspect(
+            nameof(GroupProcessor),
+            nameof(CreateGroupAsync),
+            request,
+            async () =>
             {
-                Logger.LogWarning("Group with name {GroupName} already exists", group.Name);
-                return new CreateGroupResult(CreateGroupResultCode.GroupExistsError, $"Group with name {group.Name} already exists", -1);
+                var group = MapThenValidateTo<Group>(request);
+
+                if (
+                    await _groupRepo.AnyAsync(g =>
+                        g.AccountId == group.AccountId && g.Name == group.Name
+                    )
+                )
+                {
+                    Logger.LogWarning("Group with name {GroupName} already exists", group.Name);
+                    return new CreateGroupResult(
+                        CreateGroupResultCode.GroupExistsError,
+                        $"Group with name {group.Name} already exists",
+                        -1
+                    );
+                }
+
+                var accountEntity = await _accountRepo.GetAsync(a => a.Id == group.AccountId);
+                if (accountEntity == null)
+                {
+                    Logger.LogWarning("Account with Id {AccountId} not found", group.AccountId);
+                    return new CreateGroupResult(
+                        CreateGroupResultCode.AccountNotFoundError,
+                        $"Account with Id {group.AccountId} not found",
+                        -1
+                    );
+                }
+
+                var groupEntity = MapTo<GroupEntity>(group)!; // group is validated
+                var created = await _groupRepo.CreateAsync(groupEntity);
+
+                return new CreateGroupResult(
+                    CreateGroupResultCode.Success,
+                    string.Empty,
+                    created.Id
+                );
             }
-
-            var accountEntity = await _accountRepo.GetAsync(a => a.Id == group.AccountId);
-            if (accountEntity == null)
-            {
-                Logger.LogWarning("Account with Id {AccountId} not found", group.AccountId);
-                return new CreateGroupResult(CreateGroupResultCode.AccountNotFoundError, $"Account with Id {group.AccountId} not found", -1);
-            }
-
-            var groupEntity = MapTo<GroupEntity>(group)!; // group is validated
-            var created = await _groupRepo.CreateAsync(groupEntity);
-
-            return new CreateGroupResult(CreateGroupResultCode.Success, string.Empty, created.Id);
-        });
+        );
     }
 
     public async Task<AddUsersToGroupResult> AddUsersToGroupAsync(AddUsersToGroupRequest request)
     {
-        return await LogRequestResultAspect(nameof(GroupProcessor), nameof(AddUsersToGroupAsync), request, async () =>
-        {
-            var groupEntity = await _groupRepo.GetAsync(g => g.Id == request.GroupId);
-            if (groupEntity == null)
+        return await LogRequestResultAspect(
+            nameof(GroupProcessor),
+            nameof(AddUsersToGroupAsync),
+            request,
+            async () =>
             {
-                Logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
-                return new AddUsersToGroupResult(AddUsersToGroupResultCode.GroupNotFoundError,
-                    $"Group with Id {request.GroupId} not found", 0, request.UserIds);
+                var groupEntity = await _groupRepo.GetAsync(g => g.Id == request.GroupId);
+                if (groupEntity == null)
+                {
+                    Logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
+                    return new AddUsersToGroupResult(
+                        AddUsersToGroupResultCode.GroupNotFoundError,
+                        $"Group with Id {request.GroupId} not found",
+                        0,
+                        request.UserIds
+                    );
+                }
+
+                var userEntities = await _userRepo.ListAsync(u =>
+                    request.UserIds.Contains(u.Id) // user exists
+                    && !u.Groups!.Any(g => g.Id == groupEntity.Id) // user not already in group
+                    && u.Accounts!.Any(a => a.Id == groupEntity.AccountId)
+                ); // user belongs to the same account as group
+
+                if (userEntities.Count == 0)
+                {
+                    Logger.LogInformation(
+                        "All user ids are invalid (not found, from different account, or already exist in group) : {@InvalidUserIds}",
+                        request.UserIds
+                    );
+                    return new AddUsersToGroupResult(
+                        AddUsersToGroupResultCode.InvalidUserIdsError,
+                        "All user ids are invalid (not found, from different account, or already exist in group)",
+                        0,
+                        request.UserIds
+                    );
+                }
+
+                groupEntity.Users ??= [];
+                foreach (var user in userEntities)
+                {
+                    groupEntity.Users.Add(user);
+                }
+
+                await _groupRepo.UpdateAsync(groupEntity);
+
+                var invalidUserIds = request
+                    .UserIds.Except(userEntities.Select(u => u.Id))
+                    .ToList();
+                if (invalidUserIds.Count > 0)
+                {
+                    Logger.LogInformation(
+                        "Some user ids are invalid (not found, from different account, or already exist in group) : {@InvalidUserIds}",
+                        invalidUserIds
+                    );
+                    return new AddUsersToGroupResult(
+                        AddUsersToGroupResultCode.PartialSuccess,
+                        "Some user ids are invalid (not found, from different account, or already exist in group)",
+                        userEntities.Count,
+                        invalidUserIds
+                    );
+                }
+
+                return new AddUsersToGroupResult(
+                    AddUsersToGroupResultCode.Success,
+                    string.Empty,
+                    userEntities.Count,
+                    invalidUserIds
+                );
             }
-
-            var userEntities = await _userRepo.ListAsync(
-                u => request.UserIds.Contains(u.Id) // user exists
-                && !u.Groups!.Any(g => g.Id == groupEntity.Id) // user not already in group
-                && u.Accounts!.Any(a => a.Id == groupEntity.AccountId)); // user belongs to the same account as group
-
-            if (userEntities.Count == 0)
-            {
-                Logger.LogInformation("All user ids are invalid (not found, from different account, or already exist in group) : {@InvalidUserIds}", request.UserIds);
-                return new AddUsersToGroupResult(AddUsersToGroupResultCode.InvalidUserIdsError,
-                    "All user ids are invalid (not found, from different account, or already exist in group)", 0, request.UserIds);
-            }
-
-            groupEntity.Users ??= [];
-            foreach (var user in userEntities)
-            {
-                groupEntity.Users.Add(user);
-            }
-
-            await _groupRepo.UpdateAsync(groupEntity);
-
-            var invalidUserIds = request.UserIds.Except(userEntities.Select(u => u.Id)).ToList();
-            if (invalidUserIds.Count > 0)
-            {
-                Logger.LogInformation("Some user ids are invalid (not found, from different account, or already exist in group) : {@InvalidUserIds}", invalidUserIds);
-                return new AddUsersToGroupResult(AddUsersToGroupResultCode.PartialSuccess,
-                    "Some user ids are invalid (not found, from different account, or already exist in group)", userEntities.Count, invalidUserIds);
-            }
-
-            return new AddUsersToGroupResult(AddUsersToGroupResultCode.Success, string.Empty, userEntities.Count, invalidUserIds);
-        });
+        );
     }
 
-    public async Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(AssignRolesToGroupRequest request)
+    public async Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(
+        AssignRolesToGroupRequest request
+    )
     {
-        return await LogRequestResultAspect(nameof(GroupProcessor), nameof(AssignRolesToGroupAsync), request, async () =>
-        {
-            var groupEntity = await _groupRepo.GetAsync(g => g.Id == request.GroupId);
-            if (groupEntity == null)
+        return await LogRequestResultAspect(
+            nameof(GroupProcessor),
+            nameof(AssignRolesToGroupAsync),
+            request,
+            async () =>
             {
-                Logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
-                return new AssignRolesToGroupResult(AssignRolesToGroupResultCode.GroupNotFoundError,
-                    $"Group with Id {request.GroupId} not found", 0, request.RoleIds);
+                var groupEntity = await _groupRepo.GetAsync(g => g.Id == request.GroupId);
+                if (groupEntity == null)
+                {
+                    Logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
+                    return new AssignRolesToGroupResult(
+                        AssignRolesToGroupResultCode.GroupNotFoundError,
+                        $"Group with Id {request.GroupId} not found",
+                        0,
+                        request.RoleIds
+                    );
+                }
+
+                var roleEntities = await _roleRepo.ListAsync(r =>
+                    request.RoleIds.Contains(r.Id) // role exists
+                    && !r.Groups!.Any(g => g.Id == groupEntity.Id) // role not already assigned to group
+                    && r.Account!.Id == groupEntity.AccountId
+                ); // role belongs to the same account as group
+
+                if (roleEntities.Count == 0)
+                {
+                    Logger.LogInformation(
+                        "All role ids are invalid (not found, from different account, or already assigned to group) : {@InvalidRoleIds}",
+                        request.RoleIds
+                    );
+                    return new AssignRolesToGroupResult(
+                        AssignRolesToGroupResultCode.InvalidRoleIdsError,
+                        "All role ids are invalid (not found, from different account, or already assigned to group)",
+                        0,
+                        request.RoleIds
+                    );
+                }
+
+                groupEntity.Roles ??= [];
+                foreach (var role in roleEntities)
+                {
+                    groupEntity.Roles.Add(role);
+                }
+
+                await _groupRepo.UpdateAsync(groupEntity);
+
+                var invalidRoleIds = request
+                    .RoleIds.Except(roleEntities.Select(r => r.Id))
+                    .ToList();
+                if (invalidRoleIds.Count > 0)
+                {
+                    Logger.LogInformation(
+                        "Some role ids are invalid (not found, from different account, or already assigned to group) : {@InvalidRoleIds}",
+                        invalidRoleIds
+                    );
+                    return new AssignRolesToGroupResult(
+                        AssignRolesToGroupResultCode.PartialSuccess,
+                        "Some role ids are invalid (not found, from different account, or already assigned to group)",
+                        roleEntities.Count,
+                        invalidRoleIds
+                    );
+                }
+
+                return new AssignRolesToGroupResult(
+                    AssignRolesToGroupResultCode.Success,
+                    string.Empty,
+                    roleEntities.Count,
+                    invalidRoleIds
+                );
             }
-
-            var roleEntities = await _roleRepo.ListAsync(
-                r => request.RoleIds.Contains(r.Id) // role exists
-                && !r.Groups!.Any(g => g.Id == groupEntity.Id) // role not already assigned to group
-                && r.Account!.Id == groupEntity.AccountId); // role belongs to the same account as group
-
-            if (roleEntities.Count == 0)
-            {
-                Logger.LogInformation("All role ids are invalid (not found, from different account, or already assigned to group) : {@InvalidRoleIds}", request.RoleIds);
-                return new AssignRolesToGroupResult(AssignRolesToGroupResultCode.InvalidRoleIdsError,
-                    "All role ids are invalid (not found, from different account, or already assigned to group)", 0, request.RoleIds);
-            }
-
-            groupEntity.Roles ??= [];
-            foreach (var role in roleEntities)
-            {
-                groupEntity.Roles.Add(role);
-            }
-
-            await _groupRepo.UpdateAsync(groupEntity);
-
-            var invalidRoleIds = request.RoleIds.Except(roleEntities.Select(r => r.Id)).ToList();
-            if (invalidRoleIds.Count > 0)
-            {
-                Logger.LogInformation("Some role ids are invalid (not found, from different account, or already assigned to group) : {@InvalidRoleIds}", invalidRoleIds);
-                return new AssignRolesToGroupResult(AssignRolesToGroupResultCode.PartialSuccess,
-                    "Some role ids are invalid (not found, from different account, or already assigned to group)", roleEntities.Count, invalidRoleIds);
-            }
-
-            return new AssignRolesToGroupResult(AssignRolesToGroupResultCode.Success, string.Empty, roleEntities.Count, invalidRoleIds);
-        });
+        );
     }
 }

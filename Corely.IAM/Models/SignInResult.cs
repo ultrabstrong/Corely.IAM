@@ -5,10 +5,7 @@ public enum SignInResultCode
     Success,
     UserNotFoundError,
     UserLockedError,
-    PasswordMismatchError
+    PasswordMismatchError,
 }
 
-public record SignInResult(
-    SignInResultCode ResultCode,
-    string? Message,
-    string? AuthToken);
+public record SignInResult(SignInResultCode ResultCode, string? Message, string? AuthToken);

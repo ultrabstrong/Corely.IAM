@@ -3,8 +3,7 @@ using Corely.IAM.UnitTests.Mappers.AutoMapper;
 
 namespace Corely.IAM.UnitTests.Accounts.Mappers;
 
-public class CreateAccountRequestProfileTests
-    : ProfileDelegateTestsBase
+public class CreateAccountRequestProfileTests : ProfileDelegateTestsBase
 {
     private class Delegate : ProfileTestsBase<CreateAccountRequest, Account>;
 

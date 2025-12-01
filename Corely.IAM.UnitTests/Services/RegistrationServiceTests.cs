@@ -34,17 +34,36 @@ public class RegistrationServiceTests : ProcessorBaseTests
 
     private CreateAccountResultCode _createAccountResultCode = CreateAccountResultCode.Success;
     private CreateUserResultCode _createUserResultCode = CreateUserResultCode.Success;
-    private UpsertBasicAuthResultCode _upsertBasicAuthResultCode = UpsertBasicAuthResultCode.Success;
+    private UpsertBasicAuthResultCode _upsertBasicAuthResultCode =
+        UpsertBasicAuthResultCode.Success;
     private CreateGroupResultCode _createGroupResultCode = CreateGroupResultCode.Success;
     private CreateRoleResultCode _createRoleResultCode = CreateRoleResultCode.Success;
-    private CreatePermissionResultCode _createPermissionResultCode = CreatePermissionResultCode.Success;
+    private CreatePermissionResultCode _createPermissionResultCode =
+        CreatePermissionResultCode.Success;
 
-    private AddUsersToGroupResult _addUsersToGroupResult = new(AddUsersToGroupResultCode.Success, string.Empty, 0);
-    private AssignRolesToGroupResult _assignRolesToGroupResult = new(AssignRolesToGroupResultCode.Success, string.Empty, 0);
-    private AssignRolesToUserResult _assignRolesToUserResult = new(AssignRolesToUserResultCode.Success, string.Empty, 0);
-    private AssignPermissionsToRoleResult _assignPermissionsToRoleResult = new(AssignPermissionsToRoleResultCode.Success, string.Empty, 0);
+    private AddUsersToGroupResult _addUsersToGroupResult = new(
+        AddUsersToGroupResultCode.Success,
+        string.Empty,
+        0
+    );
+    private AssignRolesToGroupResult _assignRolesToGroupResult = new(
+        AssignRolesToGroupResultCode.Success,
+        string.Empty,
+        0
+    );
+    private AssignRolesToUserResult _assignRolesToUserResult = new(
+        AssignRolesToUserResultCode.Success,
+        string.Empty,
+        0
+    );
+    private AssignPermissionsToRoleResult _assignPermissionsToRoleResult = new(
+        AssignPermissionsToRoleResultCode.Success,
+        string.Empty,
+        0
+    );
 
-    public RegistrationServiceTests() : base()
+    public RegistrationServiceTests()
+        : base()
     {
         _accountProcessorMock = GetMockAccountProcessor();
         _userProcessorMock = GetMockUserProcessor();
@@ -61,18 +80,22 @@ public class RegistrationServiceTests : ProcessorBaseTests
             _groupProcessorMock.Object,
             _roleProcessorMock.Object,
             _permissionProcessorMock.Object,
-            _unitOfWorkProviderMock.Object);
+            _unitOfWorkProviderMock.Object
+        );
     }
 
     private Mock<IAccountProcessor> GetMockAccountProcessor()
     {
         var mock = new Mock<IAccountProcessor>();
 
-        mock
-            .Setup(m => m.CreateAccountAsync(
-                It.IsAny<CreateAccountRequest>()))
+        mock.Setup(m => m.CreateAccountAsync(It.IsAny<CreateAccountRequest>()))
             .ReturnsAsync(() =>
-                new CreateAccountResult(_createAccountResultCode, string.Empty, _fixture.Create<int>()));
+                new CreateAccountResult(
+                    _createAccountResultCode,
+                    string.Empty,
+                    _fixture.Create<int>()
+                )
+            );
 
         return mock;
     }
@@ -81,15 +104,12 @@ public class RegistrationServiceTests : ProcessorBaseTests
     {
         var mock = new Mock<IUserProcessor>();
 
-        mock
-            .Setup(m => m.CreateUserAsync(
-                It.IsAny<CreateUserRequest>()))
+        mock.Setup(m => m.CreateUserAsync(It.IsAny<CreateUserRequest>()))
             .ReturnsAsync(() =>
-                new CreateUserResult(_createUserResultCode, string.Empty, _fixture.Create<int>()));
+                new CreateUserResult(_createUserResultCode, string.Empty, _fixture.Create<int>())
+            );
 
-        mock
-            .Setup(m => m.AssignRolesToUserAsync(
-                It.IsAny<AssignRolesToUserRequest>()))
+        mock.Setup(m => m.AssignRolesToUserAsync(It.IsAny<AssignRolesToUserRequest>()))
             .ReturnsAsync(() => _assignRolesToUserResult);
 
         return mock;
@@ -99,12 +119,15 @@ public class RegistrationServiceTests : ProcessorBaseTests
     {
         var mock = new Mock<IBasicAuthProcessor>();
 
-        mock
-            .Setup(m => m.UpsertBasicAuthAsync(
-                It.IsAny<UpsertBasicAuthRequest>()))
+        mock.Setup(m => m.UpsertBasicAuthAsync(It.IsAny<UpsertBasicAuthRequest>()))
             .ReturnsAsync(() =>
-                new UpsertBasicAuthResult(_upsertBasicAuthResultCode, string.Empty,
-                    _fixture.Create<int>(), _fixture.Create<UpsertType>()));
+                new UpsertBasicAuthResult(
+                    _upsertBasicAuthResultCode,
+                    string.Empty,
+                    _fixture.Create<int>(),
+                    _fixture.Create<UpsertType>()
+                )
+            );
 
         return mock;
     }
@@ -113,20 +136,15 @@ public class RegistrationServiceTests : ProcessorBaseTests
     {
         var mock = new Mock<IGroupProcessor>();
 
-        mock
-            .Setup(m => m.CreateGroupAsync(
-                It.IsAny<CreateGroupRequest>()))
+        mock.Setup(m => m.CreateGroupAsync(It.IsAny<CreateGroupRequest>()))
             .ReturnsAsync(() =>
-                new CreateGroupResult(_createGroupResultCode, string.Empty, _fixture.Create<int>()));
+                new CreateGroupResult(_createGroupResultCode, string.Empty, _fixture.Create<int>())
+            );
 
-        mock
-            .Setup(m => m.AddUsersToGroupAsync(
-                It.IsAny<AddUsersToGroupRequest>()))
+        mock.Setup(m => m.AddUsersToGroupAsync(It.IsAny<AddUsersToGroupRequest>()))
             .ReturnsAsync(() => _addUsersToGroupResult);
 
-        mock
-            .Setup(m => m.AssignRolesToGroupAsync(
-                It.IsAny<AssignRolesToGroupRequest>()))
+        mock.Setup(m => m.AssignRolesToGroupAsync(It.IsAny<AssignRolesToGroupRequest>()))
             .ReturnsAsync(() => _assignRolesToGroupResult);
 
         return mock;
@@ -136,21 +154,15 @@ public class RegistrationServiceTests : ProcessorBaseTests
     {
         var mock = new Mock<IRoleProcessor>();
 
-        mock
-            .Setup(m => m.CreateRoleAsync(
-                It.IsAny<CreateRoleRequest>()))
+        mock.Setup(m => m.CreateRoleAsync(It.IsAny<CreateRoleRequest>()))
             .ReturnsAsync(() =>
-                new CreateRoleResult(_createRoleResultCode, string.Empty, _fixture.Create<int>()));
+                new CreateRoleResult(_createRoleResultCode, string.Empty, _fixture.Create<int>())
+            );
 
-        mock
-            .Setup(m => m.GetRoleAsync(
-                It.IsAny<string>(),
-                It.IsAny<int>()))
+        mock.Setup(m => m.GetRoleAsync(It.IsAny<string>(), It.IsAny<int>()))
             .ReturnsAsync(() => _fixture.Create<Role>());
 
-        mock
-            .Setup(m => m.AssignPermissionsToRoleAsync(
-                It.IsAny<AssignPermissionsToRoleRequest>()))
+        mock.Setup(m => m.AssignPermissionsToRoleAsync(It.IsAny<AssignPermissionsToRoleRequest>()))
             .ReturnsAsync(() => _assignPermissionsToRoleResult);
 
         return mock;
@@ -160,11 +172,14 @@ public class RegistrationServiceTests : ProcessorBaseTests
     {
         var mock = new Mock<IPermissionProcessor>();
 
-        mock
-            .Setup(m => m.CreatePermissionAsync(
-                It.IsAny<CreatePermissionRequest>()))
+        mock.Setup(m => m.CreatePermissionAsync(It.IsAny<CreatePermissionRequest>()))
             .ReturnsAsync(() =>
-                new CreatePermissionResult(_createPermissionResultCode, string.Empty, _fixture.Create<int>()));
+                new CreatePermissionResult(
+                    _createPermissionResultCode,
+                    string.Empty,
+                    _fixture.Create<int>()
+                )
+            );
 
         return mock;
     }
@@ -177,7 +192,10 @@ public class RegistrationServiceTests : ProcessorBaseTests
         var result = await _registrationService.RegisterUserAsync(request);
 
         Assert.Equal(RegisterUserResultCode.Success, result.ResultCode);
-        _unitOfWorkProviderMock.Verify(m => m.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkProviderMock.Verify(
+            m => m.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -189,8 +207,14 @@ public class RegistrationServiceTests : ProcessorBaseTests
         var result = await _registrationService.RegisterUserAsync(request);
 
         Assert.Equal(RegisterUserResultCode.UserCreationError, result.ResultCode);
-        _basicAuthProcessorMock.Verify(m => m.UpsertBasicAuthAsync(It.IsAny<UpsertBasicAuthRequest>()), Times.Never);
-        _unitOfWorkProviderMock.Verify(m => m.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _basicAuthProcessorMock.Verify(
+            m => m.UpsertBasicAuthAsync(It.IsAny<UpsertBasicAuthRequest>()),
+            Times.Never
+        );
+        _unitOfWorkProviderMock.Verify(
+            m => m.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -202,7 +226,10 @@ public class RegistrationServiceTests : ProcessorBaseTests
         var result = await _registrationService.RegisterUserAsync(request);
 
         Assert.Equal(RegisterUserResultCode.BasicAuthCreationError, result.ResultCode);
-        _unitOfWorkProviderMock.Verify(m => m.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkProviderMock.Verify(
+            m => m.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -222,9 +249,18 @@ public class RegistrationServiceTests : ProcessorBaseTests
         var result = await _registrationService.RegisterAccountAsync(request);
 
         Assert.Equal(RegisterAccountResultCode.Success, result.ResultCode);
-        _roleProcessorMock.Verify(m => m.CreateDefaultSystemRolesAsync(It.IsAny<int>()), Times.Once);
-        _userProcessorMock.Verify(m => m.AssignRolesToUserAsync(It.IsAny<AssignRolesToUserRequest>()), Times.Once);
-        _unitOfWorkProviderMock.Verify(m => m.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _roleProcessorMock.Verify(
+            m => m.CreateDefaultSystemRolesAsync(It.IsAny<int>()),
+            Times.Once
+        );
+        _userProcessorMock.Verify(
+            m => m.AssignRolesToUserAsync(It.IsAny<AssignRolesToUserRequest>()),
+            Times.Once
+        );
+        _unitOfWorkProviderMock.Verify(
+            m => m.CommitAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -236,25 +272,37 @@ public class RegistrationServiceTests : ProcessorBaseTests
         var result = await _registrationService.RegisterAccountAsync(request);
 
         Assert.Equal(RegisterAccountResultCode.AccountCreationError, result.ResultCode);
-        _unitOfWorkProviderMock.Verify(m => m.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkProviderMock.Verify(
+            m => m.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
     public async Task RegisterAccountAsync_Fails_WhenAssignOwnerRoleFails()
     {
-        _assignRolesToUserResult = new(AssignRolesToUserResultCode.UserNotFoundError, string.Empty, -1);
+        _assignRolesToUserResult = new(
+            AssignRolesToUserResultCode.UserNotFoundError,
+            string.Empty,
+            -1
+        );
         var request = _fixture.Create<RegisterAccountRequest>();
 
         var result = await _registrationService.RegisterAccountAsync(request);
 
         Assert.Equal(RegisterAccountResultCode.SystemRoleAssignmentError, result.ResultCode);
-        _unitOfWorkProviderMock.Verify(m => m.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkProviderMock.Verify(
+            m => m.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
     public async Task RegisterAccountAsync_Throws_WithNullRequest()
     {
-        var ex = await Record.ExceptionAsync(() => _registrationService.RegisterAccountAsync(null!));
+        var ex = await Record.ExceptionAsync(() =>
+            _registrationService.RegisterAccountAsync(null!)
+        );
 
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
@@ -271,7 +319,9 @@ public class RegistrationServiceTests : ProcessorBaseTests
     [Theory]
     [InlineData(CreateGroupResultCode.GroupExistsError)]
     [InlineData(CreateGroupResultCode.AccountNotFoundError)]
-    public async Task RegisterGroupAsync_Fails_WhenGroupProcessorFails(CreateGroupResultCode createGroupResultCode)
+    public async Task RegisterGroupAsync_Fails_WhenGroupProcessorFails(
+        CreateGroupResultCode createGroupResultCode
+    )
     {
         _createGroupResultCode = createGroupResultCode;
         var request = _fixture.Create<RegisterGroupRequest>();
@@ -300,7 +350,9 @@ public class RegistrationServiceTests : ProcessorBaseTests
     [Theory]
     [InlineData(CreateRoleResultCode.RoleExistsError)]
     [InlineData(CreateRoleResultCode.AccountNotFoundError)]
-    public async Task RegisterRoleAsync_Fails_WhenRoleProcessorFails(CreateRoleResultCode createRoleResultCode)
+    public async Task RegisterRoleAsync_Fails_WhenRoleProcessorFails(
+        CreateRoleResultCode createRoleResultCode
+    )
     {
         _createRoleResultCode = createRoleResultCode;
         var request = _fixture.Create<RegisterRoleRequest>();
@@ -327,7 +379,9 @@ public class RegistrationServiceTests : ProcessorBaseTests
     [Theory]
     [InlineData(CreatePermissionResultCode.PermissionExistsError)]
     [InlineData(CreatePermissionResultCode.AccountNotFoundError)]
-    public async Task RegisterPermissionAsync_Fails_WhenPermissionProcessorFails(CreatePermissionResultCode createPermissionResultCode)
+    public async Task RegisterPermissionAsync_Fails_WhenPermissionProcessorFails(
+        CreatePermissionResultCode createPermissionResultCode
+    )
     {
         _createPermissionResultCode = createPermissionResultCode;
         var request = _fixture.Create<RegisterPermissionRequest>();
@@ -338,7 +392,9 @@ public class RegistrationServiceTests : ProcessorBaseTests
     [Fact]
     public async Task RegisterPermissionAsync_Throws_WithNullRequest()
     {
-        var ex = await Record.ExceptionAsync(() => _registrationService.RegisterPermissionAsync(null!));
+        var ex = await Record.ExceptionAsync(() =>
+            _registrationService.RegisterPermissionAsync(null!)
+        );
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
     }
@@ -346,7 +402,9 @@ public class RegistrationServiceTests : ProcessorBaseTests
     [Fact]
     public async Task RegisterUsersWithGroupAsync_Throws_WithNullRequest()
     {
-        var ex = await Record.ExceptionAsync(() => _registrationService.RegisterUsersWithGroupAsync(null!));
+        var ex = await Record.ExceptionAsync(() =>
+            _registrationService.RegisterUsersWithGroupAsync(null!)
+        );
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
     }
@@ -355,7 +413,10 @@ public class RegistrationServiceTests : ProcessorBaseTests
     public async Task RegisterUsersWithGroupAsync_Succeeds_WhenAllServicesSucceed()
     {
         var request = _fixture.Create<RegisterUsersWithGroupRequest>();
-        _addUsersToGroupResult = _fixture.Create<AddUsersToGroupResult>() with { ResultCode = AddUsersToGroupResultCode.Success };
+        _addUsersToGroupResult = _fixture.Create<AddUsersToGroupResult>() with
+        {
+            ResultCode = AddUsersToGroupResultCode.Success,
+        };
 
         var result = await _registrationService.RegisterUsersWithGroupAsync(request);
 
@@ -369,7 +430,10 @@ public class RegistrationServiceTests : ProcessorBaseTests
     public async Task RegisterUsersWithGroupAsync_Fails_WhenGroupProcessorFails()
     {
         var request = _fixture.Create<RegisterUsersWithGroupRequest>();
-        _addUsersToGroupResult = _fixture.Create<AddUsersToGroupResult>() with { ResultCode = AddUsersToGroupResultCode.GroupNotFoundError };
+        _addUsersToGroupResult = _fixture.Create<AddUsersToGroupResult>() with
+        {
+            ResultCode = AddUsersToGroupResultCode.GroupNotFoundError,
+        };
 
         var result = await _registrationService.RegisterUsersWithGroupAsync(request);
 
@@ -382,7 +446,9 @@ public class RegistrationServiceTests : ProcessorBaseTests
     [Fact]
     public async Task RegisterRolesWithGroup_Throws_WithNullRequest()
     {
-        var ex = await Record.ExceptionAsync(() => _registrationService.RegisterRolesWithGroupAsync(null!));
+        var ex = await Record.ExceptionAsync(() =>
+            _registrationService.RegisterRolesWithGroupAsync(null!)
+        );
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
     }
@@ -391,7 +457,10 @@ public class RegistrationServiceTests : ProcessorBaseTests
     public async Task RegisterRolesWithGroup_Succeeds_WhenAllServicesSucceed()
     {
         var request = _fixture.Create<RegisterRolesWithGroupRequest>();
-        _assignRolesToGroupResult = _fixture.Create<AssignRolesToGroupResult>() with { ResultCode = AssignRolesToGroupResultCode.Success };
+        _assignRolesToGroupResult = _fixture.Create<AssignRolesToGroupResult>() with
+        {
+            ResultCode = AssignRolesToGroupResultCode.Success,
+        };
 
         var result = await _registrationService.RegisterRolesWithGroupAsync(request);
 
@@ -405,7 +474,10 @@ public class RegistrationServiceTests : ProcessorBaseTests
     public async Task RegisterRolesWithGroup_Fails_WhenGroupProcessorFails()
     {
         var request = _fixture.Create<RegisterRolesWithGroupRequest>();
-        _assignRolesToGroupResult = _fixture.Create<AssignRolesToGroupResult>() with { ResultCode = AssignRolesToGroupResultCode.GroupNotFoundError };
+        _assignRolesToGroupResult = _fixture.Create<AssignRolesToGroupResult>() with
+        {
+            ResultCode = AssignRolesToGroupResultCode.GroupNotFoundError,
+        };
 
         var result = await _registrationService.RegisterRolesWithGroupAsync(request);
 
@@ -418,7 +490,9 @@ public class RegistrationServiceTests : ProcessorBaseTests
     [Fact]
     public async Task RegisterRolesWithUser_Throws_WithNullRequest()
     {
-        var ex = await Record.ExceptionAsync(() => _registrationService.RegisterRolesWithUserAsync(null!));
+        var ex = await Record.ExceptionAsync(() =>
+            _registrationService.RegisterRolesWithUserAsync(null!)
+        );
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
     }
@@ -427,7 +501,10 @@ public class RegistrationServiceTests : ProcessorBaseTests
     public async Task RegisterRolesWithUser_Succeeds_WhenAllServicesSucceed()
     {
         var request = _fixture.Create<RegisterRolesWithUserRequest>();
-        _assignRolesToUserResult = _fixture.Create<AssignRolesToUserResult>() with { ResultCode = AssignRolesToUserResultCode.Success };
+        _assignRolesToUserResult = _fixture.Create<AssignRolesToUserResult>() with
+        {
+            ResultCode = AssignRolesToUserResultCode.Success,
+        };
 
         var result = await _registrationService.RegisterRolesWithUserAsync(request);
 
@@ -441,7 +518,10 @@ public class RegistrationServiceTests : ProcessorBaseTests
     public async Task RegisterRolesWithUser_Fails_WhenUserProcessorFails()
     {
         var request = _fixture.Create<RegisterRolesWithUserRequest>();
-        _assignRolesToUserResult = _fixture.Create<AssignRolesToUserResult>() with { ResultCode = AssignRolesToUserResultCode.UserNotFoundError };
+        _assignRolesToUserResult = _fixture.Create<AssignRolesToUserResult>() with
+        {
+            ResultCode = AssignRolesToUserResultCode.UserNotFoundError,
+        };
 
         var result = await _registrationService.RegisterRolesWithUserAsync(request);
 
@@ -454,7 +534,9 @@ public class RegistrationServiceTests : ProcessorBaseTests
     [Fact]
     public async Task RegisterPermissionsWithRole_Throws_WithNullRequest()
     {
-        var ex = await Record.ExceptionAsync(() => _registrationService.RegisterPermissionsWithRoleAsync(null!));
+        var ex = await Record.ExceptionAsync(() =>
+            _registrationService.RegisterPermissionsWithRoleAsync(null!)
+        );
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
     }
@@ -463,27 +545,45 @@ public class RegistrationServiceTests : ProcessorBaseTests
     public async Task RegisterPermissionsWithRole_Succeeds_WhenAllServicesSucceed()
     {
         var request = _fixture.Create<RegisterPermissionsWithRoleRequest>();
-        _assignPermissionsToRoleResult = _fixture.Create<AssignPermissionsToRoleResult>() with { ResultCode = AssignPermissionsToRoleResultCode.Success };
+        _assignPermissionsToRoleResult = _fixture.Create<AssignPermissionsToRoleResult>() with
+        {
+            ResultCode = AssignPermissionsToRoleResultCode.Success,
+        };
 
         var result = await _registrationService.RegisterPermissionsWithRoleAsync(request);
 
         Assert.Equal(AssignPermissionsToRoleResultCode.Success, result.ResultCode);
         Assert.Equal(_assignPermissionsToRoleResult.Message, result.Message);
-        Assert.Equal(_assignPermissionsToRoleResult.AddedPermissionCount, result.RegisteredPermissionCount);
-        Assert.Equal(_assignPermissionsToRoleResult.InvalidPermissionIds.Count, result.InvalidPermissionIds.Count);
+        Assert.Equal(
+            _assignPermissionsToRoleResult.AddedPermissionCount,
+            result.RegisteredPermissionCount
+        );
+        Assert.Equal(
+            _assignPermissionsToRoleResult.InvalidPermissionIds.Count,
+            result.InvalidPermissionIds.Count
+        );
     }
 
     [Fact]
     public async Task RegisterPermissionsWithRole_Fails_WhenRoleProcessorFails()
     {
         var request = _fixture.Create<RegisterPermissionsWithRoleRequest>();
-        _assignPermissionsToRoleResult = _fixture.Create<AssignPermissionsToRoleResult>() with { ResultCode = AssignPermissionsToRoleResultCode.RoleNotFoundError };
+        _assignPermissionsToRoleResult = _fixture.Create<AssignPermissionsToRoleResult>() with
+        {
+            ResultCode = AssignPermissionsToRoleResultCode.RoleNotFoundError,
+        };
 
         var result = await _registrationService.RegisterPermissionsWithRoleAsync(request);
 
         Assert.Equal(AssignPermissionsToRoleResultCode.RoleNotFoundError, result.ResultCode);
         Assert.Equal(_assignPermissionsToRoleResult.Message, result.Message);
-        Assert.Equal(_assignPermissionsToRoleResult.AddedPermissionCount, result.RegisteredPermissionCount);
-        Assert.Equal(_assignPermissionsToRoleResult.InvalidPermissionIds.Count, result.InvalidPermissionIds.Count);
+        Assert.Equal(
+            _assignPermissionsToRoleResult.AddedPermissionCount,
+            result.RegisteredPermissionCount
+        );
+        Assert.Equal(
+            _assignPermissionsToRoleResult.InvalidPermissionIds.Count,
+            result.InvalidPermissionIds.Count
+        );
     }
 }

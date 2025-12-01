@@ -4,9 +4,9 @@ using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
+using Corely.IAM.UnitTests.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
-using Corely.IAM.UnitTests.Processors;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -23,9 +23,11 @@ public class SignInServiceTests : ProcessorBaseTests
 
     private readonly User _user;
 
-    public SignInServiceTests() : base()
+    public SignInServiceTests()
+        : base()
     {
-        _user = _fixture.Build<User>()
+        _user = _fixture
+            .Build<User>()
             .Without(u => u.SymmetricKeys)
             .Without(u => u.AsymmetricKeys)
             .Create();
@@ -37,20 +39,15 @@ public class SignInServiceTests : ProcessorBaseTests
             _serviceFactory.GetRequiredService<ILogger<SignInService>>(),
             _userProcessorMock.Object,
             _basicAuthProcessorMock.Object,
-            Options.Create(new SecurityOptions()
-            {
-                MaxLoginAttempts = MAX_LOGIN_ATTEMPTS
-            }));
+            Options.Create(new SecurityOptions() { MaxLoginAttempts = MAX_LOGIN_ATTEMPTS })
+        );
     }
 
     private Mock<IUserProcessor> GetMockUserProcessor()
     {
         var mock = new Mock<IUserProcessor>();
 
-        mock
-            .Setup(m => m.GetUserAsync(
-                It.IsAny<string>()))
-            .ReturnsAsync(() => _user);
+        mock.Setup(m => m.GetUserAsync(It.IsAny<string>())).ReturnsAsync(() => _user);
 
         return mock;
     }
@@ -59,14 +56,11 @@ public class SignInServiceTests : ProcessorBaseTests
     {
         var mock = new Mock<IBasicAuthProcessor>();
 
-        mock
-            .Setup(m => m.VerifyBasicAuthAsync(
-                It.IsAny<VerifyBasicAuthRequest>()))
+        mock.Setup(m => m.VerifyBasicAuthAsync(It.IsAny<VerifyBasicAuthRequest>()))
             .ReturnsAsync(true);
 
         return mock;
     }
-
 
     [Fact]
     public async Task SignInAsync_SucceedsAndUpdateSuccessfulLogin_WhenUserExistsAndPasswordIsValid()
@@ -82,10 +76,10 @@ public class SignInServiceTests : ProcessorBaseTests
 
         Assert.Equal(SignInResultCode.Success, result.ResultCode);
 
-        _userProcessorMock
-            .Verify(m => m.UpdateUserAsync(It.Is<User>(u =>
-                HasUpdatedSuccessLogins(u))),
-            Times.Once);
+        _userProcessorMock.Verify(
+            m => m.UpdateUserAsync(It.Is<User>(u => HasUpdatedSuccessLogins(u))),
+            Times.Once
+        );
     }
 
     private static bool HasUpdatedSuccessLogins(User modified)
@@ -104,9 +98,7 @@ public class SignInServiceTests : ProcessorBaseTests
     {
         var request = _fixture.Create<SignInRequest>();
 
-        _userProcessorMock
-            .Setup(m => m.GetUserAsync(request.Username))
-            .ReturnsAsync((User)null!);
+        _userProcessorMock.Setup(m => m.GetUserAsync(request.Username)).ReturnsAsync((User)null!);
 
         var result = await _signInService.SignInAsync(request);
 
@@ -139,8 +131,7 @@ public class SignInServiceTests : ProcessorBaseTests
         _user.LastFailedLoginUtc = null;
 
         _basicAuthProcessorMock
-            .Setup(m => m.VerifyBasicAuthAsync(
-                It.IsAny<VerifyBasicAuthRequest>()))
+            .Setup(m => m.VerifyBasicAuthAsync(It.IsAny<VerifyBasicAuthRequest>()))
             .ReturnsAsync(false);
 
         var result = await _signInService.SignInAsync(request);
@@ -149,10 +140,10 @@ public class SignInServiceTests : ProcessorBaseTests
         Assert.Equal("Invalid password", result.Message);
         Assert.Equal(string.Empty, result.AuthToken);
 
-        _userProcessorMock
-            .Verify(m => m.UpdateUserAsync(It.Is<User>(u =>
-                HasUpdatedFailedLogins(u))),
-            Times.Once);
+        _userProcessorMock.Verify(
+            m => m.UpdateUserAsync(It.Is<User>(u => HasUpdatedFailedLogins(u))),
+            Times.Once
+        );
     }
 
     private static bool HasUpdatedFailedLogins(User modified)

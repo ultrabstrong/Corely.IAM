@@ -5,11 +5,12 @@ public enum AssignPermissionsToRoleResultCode
     Success,
     PartialSuccess,
     InvalidPermissionIdsError,
-    RoleNotFoundError
+    RoleNotFoundError,
 }
 
 internal record AssignPermissionsToRoleResult(
     AssignPermissionsToRoleResultCode ResultCode,
     string? Message,
     int AddedPermissionCount,
-    List<int> InvalidPermissionIds = null);
+    List<int> InvalidPermissionIds = null
+);

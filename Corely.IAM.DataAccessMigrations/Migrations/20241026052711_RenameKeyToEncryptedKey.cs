@@ -13,22 +13,26 @@ public partial class RenameKeyToEncryptedKey : Migration
         migrationBuilder.RenameColumn(
             name: "Key",
             table: "UserSymmetricKeys",
-            newName: "EncryptedKey");
+            newName: "EncryptedKey"
+        );
 
         migrationBuilder.RenameColumn(
             name: "PrivateKey",
             table: "UserAsymmetricKeys",
-            newName: "EncryptedPrivateKey");
+            newName: "EncryptedPrivateKey"
+        );
 
         migrationBuilder.RenameColumn(
             name: "Key",
             table: "AccountSymmetricKeys",
-            newName: "EncryptedKey");
+            newName: "EncryptedKey"
+        );
 
         migrationBuilder.RenameColumn(
             name: "PrivateKey",
             table: "AccountAsymmetricKeys",
-            newName: "EncryptedPrivateKey");
+            newName: "EncryptedPrivateKey"
+        );
     }
 
     /// <inheritdoc />
@@ -37,21 +41,25 @@ public partial class RenameKeyToEncryptedKey : Migration
         migrationBuilder.RenameColumn(
             name: "EncryptedKey",
             table: "UserSymmetricKeys",
-            newName: "Key");
+            newName: "Key"
+        );
 
         migrationBuilder.RenameColumn(
             name: "EncryptedPrivateKey",
             table: "UserAsymmetricKeys",
-            newName: "PrivateKey");
+            newName: "PrivateKey"
+        );
 
         migrationBuilder.RenameColumn(
             name: "EncryptedKey",
             table: "AccountSymmetricKeys",
-            newName: "Key");
+            newName: "Key"
+        );
 
         migrationBuilder.RenameColumn(
             name: "EncryptedPrivateKey",
             table: "AccountAsymmetricKeys",
-            newName: "PrivateKey");
+            newName: "PrivateKey"
+        );
     }
 }

@@ -9,7 +9,9 @@ internal class UpsertBasicAuthRequestProfile : Profile
     public UpsertBasicAuthRequestProfile()
     {
         CreateMap<UpsertBasicAuthRequest, BasicAuth>(MemberList.Source)
-            .ForMember(dest => dest.Password,
-                opt => opt.ConvertUsing<PlainStringToHashedStringValueConverter, string>());
+            .ForMember(
+                dest => dest.Password,
+                opt => opt.ConvertUsing<PlainStringToHashedStringValueConverter, string>()
+            );
     }
 }

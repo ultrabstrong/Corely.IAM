@@ -3,5 +3,5 @@
 public enum KeyUsedFor
 {
     Encryption,
-    Signature
+    Signature,
 }

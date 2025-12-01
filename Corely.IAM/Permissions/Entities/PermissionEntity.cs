@@ -3,6 +3,7 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Roles.Entities;
 
 namespace Corely.IAM.Permissions.Entities;
+
 internal class PermissionEntity : IHasIdPk<int>, IHasCreatedUtc, IHasModifiedUtc
 {
     public int Id { get; set; }

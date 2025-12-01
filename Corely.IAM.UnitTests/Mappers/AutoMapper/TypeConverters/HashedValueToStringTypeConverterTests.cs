@@ -15,8 +15,7 @@ public class HashedValueToStringTypeConverterTests
     public void Convert_ReturnsString()
     {
         var value = _fixture.Create<string>();
-        var hashedValue = new HashedValue(Mock.Of<IHashProvider>())
-        { Hash = value };
+        var hashedValue = new HashedValue(Mock.Of<IHashProvider>()) { Hash = value };
 
         var result = _converter.Convert(hashedValue, default, default);
 
@@ -34,8 +33,7 @@ public class HashedValueToStringTypeConverterTests
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]
     public void Convert_ReturnsNullEmptyOrWhitespace(string value)
     {
-        var hashedValue = new HashedValue(Mock.Of<IHashProvider>())
-        { Hash = value };
+        var hashedValue = new HashedValue(Mock.Of<IHashProvider>()) { Hash = value };
 
         var result = _converter.Convert(hashedValue, default, default);
 

@@ -9,15 +9,23 @@ internal class AsymmetricSignature : CommandBase
 {
     private const string DEFAULT_SIGNATURE_TYPE = AsymmetricSignatureConstants.ECDSA_SHA256_CODE;
 
-    private readonly AsymmetricSignatureProviderFactory _signatureProviderFactory = new(DEFAULT_SIGNATURE_TYPE);
+    private readonly AsymmetricSignatureProviderFactory _signatureProviderFactory = new(
+        DEFAULT_SIGNATURE_TYPE
+    );
 
-    [Argument("File with keys to sign message (default), validate (-v flag), or decrypt value (-d flag). Format public<newline>private", false)]
+    [Argument(
+        "File with keys to sign message (default), validate (-v flag), or decrypt value (-d flag). Format public<newline>private",
+        false
+    )]
     private string KeyFile { get; init; } = null!;
 
     [Argument("Message to sign or verify", false)]
     private string Message { get; init; } = null!;
 
-    [Argument("Code for signature type to use (hint: use -l to list codes. default used if code not provided)", false)]
+    [Argument(
+        "Code for signature type to use (hint: use -l to list codes. default used if code not provided)",
+        false
+    )]
     private string SignatureTypeCode { get; init; } = DEFAULT_SIGNATURE_TYPE;
 
     [Option("-l", "--list", Description = "List asymmetric signature providers")]
@@ -32,9 +40,12 @@ internal class AsymmetricSignature : CommandBase
     [Option("-v", "--validate", Description = "Validate a key")]
     private bool Validate { get; init; }
 
-    public AsymmetricSignature() : base("asym-sign", "Asymmetric signature operations", "Use at least one flag to perform an operation")
-    {
-    }
+    public AsymmetricSignature()
+        : base(
+            "asym-sign",
+            "Asymmetric signature operations",
+            "Use at least one flag to perform an operation"
+        ) { }
 
     protected override void Execute()
     {
@@ -62,11 +73,13 @@ internal class AsymmetricSignature : CommandBase
             ValidateKey();
         }
 
-        if (!List
+        if (
+            !List
             && !Create
             && string.IsNullOrEmpty(Message)
             && string.IsNullOrEmpty(Signature)
-            && !Validate)
+            && !Validate
+        )
         {
             ShowHelp();
         }
@@ -88,14 +101,18 @@ internal class AsymmetricSignature : CommandBase
         var providers = _signatureProviderFactory.ListProviders();
         foreach (var (providerCode, providerType) in providers)
         {
-            Console.WriteLine($"Code {providerCode} = {providerType.Name} {(providerCode == DEFAULT_SIGNATURE_TYPE ? "(default)" : "")}");
+            Console.WriteLine(
+                $"Code {providerCode} = {providerType.Name} {(providerCode == DEFAULT_SIGNATURE_TYPE ? "(default)" : "")}"
+            );
         }
     }
 
     private void CreateKeys()
     {
         var asymmetricEncryptionProvider = _signatureProviderFactory.GetProvider(SignatureTypeCode);
-        var (publicKey, privateKey) = asymmetricEncryptionProvider.GetAsymmetricKeyProvider().CreateKeys();
+        var (publicKey, privateKey) = asymmetricEncryptionProvider
+            .GetAsymmetricKeyProvider()
+            .CreateKeys();
         File.WriteAllText(KeyFile, $"{publicKey}{Environment.NewLine}{privateKey}");
         Console.WriteLine($"Keys written to {KeyFile}");
     }
@@ -104,7 +121,9 @@ internal class AsymmetricSignature : CommandBase
     {
         var asymmetricEncryptionProvider = _signatureProviderFactory.GetProvider(SignatureTypeCode);
         var (publicKey, privateKey) = ReadKeysFromFile();
-        var isValid = asymmetricEncryptionProvider.GetAsymmetricKeyProvider().IsKeyValid(publicKey, privateKey);
+        var isValid = asymmetricEncryptionProvider
+            .GetAsymmetricKeyProvider()
+            .IsKeyValid(publicKey, privateKey);
         Console.WriteLine(isValid ? "Keys are valid" : "Keys are not valid");
     }
 

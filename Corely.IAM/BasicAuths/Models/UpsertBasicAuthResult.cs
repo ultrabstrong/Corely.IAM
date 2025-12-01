@@ -5,11 +5,12 @@ namespace Corely.IAM.BasicAuths.Models;
 public enum UpsertBasicAuthResultCode
 {
     Success,
-    Failure
+    Failure,
 }
 
 internal record UpsertBasicAuthResult(
     UpsertBasicAuthResultCode ResultCode,
     string? Message,
     int CreatedId,
-    UpsertType UpsertType);
+    UpsertType UpsertType
+);

@@ -9,15 +9,23 @@ internal class SymmetricSignature : CommandBase
 {
     private const string DEFAULT_SIGNATURE_TYPE = SymmetricSignatureConstants.HMAC_SHA256_CODE;
 
-    private readonly SymmetricSignatureProviderFactory _signatureProviderFactory = new(DEFAULT_SIGNATURE_TYPE);
+    private readonly SymmetricSignatureProviderFactory _signatureProviderFactory = new(
+        DEFAULT_SIGNATURE_TYPE
+    );
 
-    [Argument("Key to sign message (default), validate (-v flag), or verify signature (-s flag)", false)]
+    [Argument(
+        "Key to sign message (default), validate (-v flag), or verify signature (-s flag)",
+        false
+    )]
     private string Key { get; init; } = null!;
 
     [Argument("Message to sign or verify", false)]
     private string Message { get; init; } = null!;
 
-    [Argument("Code for signature type to use (hint: use -l to list codes. default used if code not provided)", false)]
+    [Argument(
+        "Code for signature type to use (hint: use -l to list codes. default used if code not provided)",
+        false
+    )]
     private string SignatureTypeCode { get; init; } = DEFAULT_SIGNATURE_TYPE;
 
     [Option("-l", "--list", Description = "List symmetric signature providers")]
@@ -32,9 +40,12 @@ internal class SymmetricSignature : CommandBase
     [Option("-v", "--validate", Description = "Validate a key")]
     private bool Validate { get; init; }
 
-    public SymmetricSignature() : base("sym-sign", "Symmetric signature operations", "Use at least one flag to perform an operation")
-    {
-    }
+    public SymmetricSignature()
+        : base(
+            "sym-sign",
+            "Symmetric signature operations",
+            "Use at least one flag to perform an operation"
+        ) { }
 
     protected override void Execute()
     {
@@ -62,11 +73,13 @@ internal class SymmetricSignature : CommandBase
             ValidateKey();
         }
 
-        if (!List
+        if (
+            !List
             && !Create
             && string.IsNullOrEmpty(Message)
             && string.IsNullOrEmpty(Signature)
-            && !Validate)
+            && !Validate
+        )
         {
             ShowHelp();
         }
@@ -77,7 +90,9 @@ internal class SymmetricSignature : CommandBase
         var providers = _signatureProviderFactory.ListProviders();
         foreach (var (providerCode, providerType) in providers)
         {
-            Console.WriteLine($"Code {providerCode} = {providerType.Name} {(providerCode == DEFAULT_SIGNATURE_TYPE ? "(default)" : "")}");
+            Console.WriteLine(
+                $"Code {providerCode} = {providerType.Name} {(providerCode == DEFAULT_SIGNATURE_TYPE ? "(default)" : "")}"
+            );
         }
     }
 

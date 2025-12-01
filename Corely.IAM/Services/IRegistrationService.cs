@@ -9,8 +9,16 @@ public interface IRegistrationService
     Task<RegisterGroupResult> RegisterGroupAsync(RegisterGroupRequest request);
     Task<RegisterRoleResult> RegisterRoleAsync(RegisterRoleRequest request);
     Task<RegisterPermissionResult> RegisterPermissionAsync(RegisterPermissionRequest request);
-    Task<RegisterUsersWithGroupResult> RegisterUsersWithGroupAsync(RegisterUsersWithGroupRequest request);
-    Task<RegisterRolesWithGroupResult> RegisterRolesWithGroupAsync(RegisterRolesWithGroupRequest request);
-    Task<RegisterRolesWithUserResult> RegisterRolesWithUserAsync(RegisterRolesWithUserRequest request);
-    Task<RegisterPermissionsWithRoleResult> RegisterPermissionsWithRoleAsync(RegisterPermissionsWithRoleRequest request);
+    Task<RegisterUsersWithGroupResult> RegisterUsersWithGroupAsync(
+        RegisterUsersWithGroupRequest request
+    );
+    Task<RegisterRolesWithGroupResult> RegisterRolesWithGroupAsync(
+        RegisterRolesWithGroupRequest request
+    );
+    Task<RegisterRolesWithUserResult> RegisterRolesWithUserAsync(
+        RegisterRolesWithUserRequest request
+    );
+    Task<RegisterPermissionsWithRoleResult> RegisterPermissionsWithRoleAsync(
+        RegisterPermissionsWithRoleRequest request
+    );
 }

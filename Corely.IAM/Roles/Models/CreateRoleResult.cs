@@ -4,10 +4,7 @@ public enum CreateRoleResultCode
 {
     Success,
     RoleExistsError,
-    AccountNotFoundError
+    AccountNotFoundError,
 }
 
-internal record CreateRoleResult(
-    CreateRoleResultCode ResultCode,
-    string Message,
-    int CreatedId);
+internal record CreateRoleResult(CreateRoleResultCode ResultCode, string Message, int CreatedId);

@@ -4,8 +4,7 @@ using Corely.IAM.UnitTests.Mappers.AutoMapper;
 
 namespace Corely.IAM.UnitTests.Groups.Mappers;
 
-public class GroupProfileTests
-    : BidirectionalProfileDelegateTestsBase
+public class GroupProfileTests : BidirectionalProfileDelegateTestsBase
 {
     private class Delegate : BidirectionalProfileTestsBase<Group, GroupEntity>;
 

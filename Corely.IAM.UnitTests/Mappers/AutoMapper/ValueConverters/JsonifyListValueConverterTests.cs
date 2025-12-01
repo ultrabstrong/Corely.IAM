@@ -1,6 +1,6 @@
-﻿using AutoFixture;
+﻿using System.Text.Json;
+using AutoFixture;
 using Corely.IAM.Mappers.AutoMapper.ValueConverters;
-using System.Text.Json;
 
 namespace Corely.IAM.UnitTests.Mappers.AutoMapper.ValueConverters;
 

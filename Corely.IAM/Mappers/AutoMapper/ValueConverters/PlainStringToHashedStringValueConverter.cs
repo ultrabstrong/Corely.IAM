@@ -5,7 +5,8 @@ using Corely.Security.Hashing.Models;
 
 namespace Corely.IAM.Mappers.AutoMapper.ValueConverters;
 
-internal sealed class PlainStringToHashedStringValueConverter : IValueConverter<string, IHashedValue>
+internal sealed class PlainStringToHashedStringValueConverter
+    : IValueConverter<string, IHashedValue>
 {
     private readonly IHashProviderFactory _hashProviderFactory;
 

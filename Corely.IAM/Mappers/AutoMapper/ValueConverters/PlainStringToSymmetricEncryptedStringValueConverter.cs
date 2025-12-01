@@ -6,16 +6,20 @@ using Corely.Security.Encryption.Providers;
 
 namespace Corely.IAM.Mappers.AutoMapper.ValueConverters;
 
-internal sealed class PlainStringToSymmetricEncryptedStringValueConverter : IValueConverter<string, ISymmetricEncryptedValue>
+internal sealed class PlainStringToSymmetricEncryptedStringValueConverter
+    : IValueConverter<string, ISymmetricEncryptedValue>
 {
     private readonly ISecurityConfigurationProvider _securityConfigurationProvider;
     private readonly ISymmetricEncryptionProvider _symmetricEncryptionProvider;
 
     public PlainStringToSymmetricEncryptedStringValueConverter(
         ISecurityConfigurationProvider securityConfigurationProvider,
-        ISymmetricEncryptionProviderFactory symmetricEncryptionProviderFactory)
+        ISymmetricEncryptionProviderFactory symmetricEncryptionProviderFactory
+    )
     {
-        _securityConfigurationProvider = securityConfigurationProvider.ThrowIfNull(nameof(securityConfigurationProvider));
+        _securityConfigurationProvider = securityConfigurationProvider.ThrowIfNull(
+            nameof(securityConfigurationProvider)
+        );
         _symmetricEncryptionProvider = symmetricEncryptionProviderFactory
             .ThrowIfNull(nameof(symmetricEncryptionProviderFactory))
             .GetDefaultProvider();
@@ -27,7 +31,7 @@ internal sealed class PlainStringToSymmetricEncryptedStringValueConverter : IVal
         var secret = _symmetricEncryptionProvider.Encrypt(sourceMember, systemKeyStoreProvider);
         var symmetricEncryptedValue = new SymmetricEncryptedValue(_symmetricEncryptionProvider)
         {
-            Secret = secret
+            Secret = secret,
         };
         return symmetricEncryptedValue;
     }

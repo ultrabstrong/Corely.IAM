@@ -3,8 +3,7 @@ using Corely.IAM.UnitTests.Mappers.AutoMapper;
 
 namespace Corely.IAM.UnitTests.BasicAuths.Mappers;
 
-public class UpsertBasicAuthRequestProfileTests
-    : ProfileDelegateTestsBase
+public class UpsertBasicAuthRequestProfileTests : ProfileDelegateTestsBase
 {
     private class Delegate : ProfileTestsBase<UpsertBasicAuthRequest, BasicAuth>;
 

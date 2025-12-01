@@ -26,7 +26,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM;
 
-public abstract class ServiceFactoryBase(IServiceCollection serviceCollection, IConfiguration configuration)
+public abstract class ServiceFactoryBase(
+    IServiceCollection serviceCollection,
+    IConfiguration configuration
+)
 {
     protected IServiceCollection ServiceCollection { get; } = serviceCollection;
     protected IConfiguration Configuration { get; } = configuration;
@@ -36,31 +39,47 @@ public abstract class ServiceFactoryBase(IServiceCollection serviceCollection, I
         ServiceCollection.AddAutoMapper(cfg => { }, typeof(IMapProvider).Assembly);
         ServiceCollection.AddScoped<IMapProvider, AutoMapperMapProvider>();
 
-
-        ServiceCollection.AddValidatorsFromAssemblyContaining<FluentValidationProvider>(includeInternalTypes: true);
+        ServiceCollection.AddValidatorsFromAssemblyContaining<FluentValidationProvider>(
+            includeInternalTypes: true
+        );
         ServiceCollection.AddScoped<IFluentValidatorFactory, FluentValidatorFactory>();
         ServiceCollection.AddScoped<IValidationProvider, FluentValidationProvider>();
 
+        ServiceCollection.AddSingleton<
+            ISymmetricEncryptionProviderFactory,
+            SymmetricEncryptionProviderFactory
+        >(serviceProvider => new SymmetricEncryptionProviderFactory(
+            SymmetricEncryptionConstants.AES_CODE
+        ));
 
-        ServiceCollection.AddSingleton<ISymmetricEncryptionProviderFactory, SymmetricEncryptionProviderFactory>(serviceProvider =>
-            new SymmetricEncryptionProviderFactory(SymmetricEncryptionConstants.AES_CODE));
+        ServiceCollection.AddSingleton<
+            IAsymmetricEncryptionProviderFactory,
+            AsymmetricEncryptionProviderFactory
+        >(serviceProvider => new AsymmetricEncryptionProviderFactory(
+            AsymmetricEncryptionConstants.RSA_CODE
+        ));
 
-        ServiceCollection.AddSingleton<IAsymmetricEncryptionProviderFactory, AsymmetricEncryptionProviderFactory>(serviceProvider =>
-            new AsymmetricEncryptionProviderFactory(AsymmetricEncryptionConstants.RSA_CODE));
+        ServiceCollection.AddSingleton<
+            IAsymmetricSignatureProviderFactory,
+            AsymmetricSignatureProviderFactory
+        >(serviceProvider => new AsymmetricSignatureProviderFactory(
+            AsymmetricSignatureConstants.ECDSA_SHA256_CODE
+        ));
 
-        ServiceCollection.AddSingleton<IAsymmetricSignatureProviderFactory, AsymmetricSignatureProviderFactory>(serviceProvider =>
-            new AsymmetricSignatureProviderFactory(AsymmetricSignatureConstants.ECDSA_SHA256_CODE));
-
-        ServiceCollection.AddSingleton<IHashProviderFactory, HashProviderFactory>(_ =>
-            new HashProviderFactory(HashConstants.SALTED_SHA256_CODE));
+        ServiceCollection.AddSingleton<IHashProviderFactory, HashProviderFactory>(
+            _ => new HashProviderFactory(HashConstants.SALTED_SHA256_CODE)
+        );
 
         ServiceCollection.AddSingleton<ISecurityProcessor, SecurityProcessor>();
         ServiceCollection.AddScoped<IPasswordValidationProvider, PasswordValidationProvider>();
 
         ServiceCollection.AddScoped(serviceProvider => GetSecurityConfigurationProvider());
-        ServiceCollection.Configure<SecurityOptions>(Configuration.GetSection(SecurityOptions.NAME));
-        ServiceCollection.Configure<PasswordValidationOptions>(Configuration.GetSection(PasswordValidationOptions.NAME));
-
+        ServiceCollection.Configure<SecurityOptions>(
+            Configuration.GetSection(SecurityOptions.NAME)
+        );
+        ServiceCollection.Configure<PasswordValidationOptions>(
+            Configuration.GetSection(PasswordValidationOptions.NAME)
+        );
 
         ServiceCollection.AddScoped<IAccountProcessor, AccountProcessor>();
         ServiceCollection.AddScoped<IUserProcessor, UserProcessor>();
@@ -72,7 +91,6 @@ public abstract class ServiceFactoryBase(IServiceCollection serviceCollection, I
         ServiceCollection.AddScoped<IRegistrationService, RegistrationService>();
         ServiceCollection.AddScoped<IDeregistrationService, DeregistrationService>();
         ServiceCollection.AddScoped<ISignInService, SignInService>();
-
 
         ServiceCollection.AddLogging(AddLogging);
         AddDataServices();

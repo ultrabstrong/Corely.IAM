@@ -14,8 +14,9 @@ public class HashedStringToHashedValueTypeConverterTests
     public HashedStringToHashedValueTypeConverterTests()
     {
         var hashProvider = Mock.Of<IHashProvider>();
-        var hashProviderFactory = Mock.Of<IHashProviderFactory>(
-            f => f.GetProviderToVerify(It.IsAny<string>()) == hashProvider);
+        var hashProviderFactory = Mock.Of<IHashProviderFactory>(f =>
+            f.GetProviderToVerify(It.IsAny<string>()) == hashProvider
+        );
 
         _converter = new(hashProviderFactory);
     }

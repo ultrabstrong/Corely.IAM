@@ -15,18 +15,15 @@ public class AccountValidatorTests
     [MemberData(nameof(InvalidAccountTestData))]
     public void AccountValidator_HasValidationError_WhenAccountNameInvalid(string accountName)
     {
-        var account = new Account
-        {
-            AccountName = accountName
-        };
+        var account = new Account { AccountName = accountName };
 
         var result = _validator.TestValidate(account);
         result.ShouldHaveValidationErrorFor(x => x.AccountName);
     }
 
     public static IEnumerable<object[]> InvalidAccountTestData =>
-    [
-        [new string('a', AccountConstants.ACCOUNT_NAME_MIN_LENGTH - 1)],
-            [new string('a', AccountConstants.ACCOUNT_NAME_MAX_LENGTH + 1)]
-    ];
+        [
+            [new string('a', AccountConstants.ACCOUNT_NAME_MIN_LENGTH - 1)],
+            [new string('a', AccountConstants.ACCOUNT_NAME_MAX_LENGTH + 1)],
+        ];
 }

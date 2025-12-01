@@ -3,5 +3,5 @@
 public enum UpsertType
 {
     Create,
-    Update
+    Update,
 }

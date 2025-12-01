@@ -4,8 +4,7 @@ using Serilog.Events;
 
 namespace Corely.IAM.ConsoleApp.SerilogCustomization;
 
-public class SerilogRedactionEnricher(List<IRedactionProvider> redactors)
-    : ILogEventEnricher
+public class SerilogRedactionEnricher(List<IRedactionProvider> redactors) : ILogEventEnricher
 {
     private readonly List<IRedactionProvider> _redactors = redactors;
 
@@ -16,7 +15,9 @@ public class SerilogRedactionEnricher(List<IRedactionProvider> redactors)
             foreach (var redactor in _redactors)
             {
                 var redactedValue = redactor.Redact(property.Value.ToString());
-                logEvent.AddOrUpdateProperty(new LogEventProperty(property.Key, new ScalarValue(redactedValue)));
+                logEvent.AddOrUpdateProperty(
+                    new LogEventProperty(property.Key, new ScalarValue(redactedValue))
+                );
             }
         }
     }

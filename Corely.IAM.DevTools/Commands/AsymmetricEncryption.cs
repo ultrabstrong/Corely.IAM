@@ -9,12 +9,20 @@ internal class AsymmetricEncryption : CommandBase
 {
     private const string DEFAULT_ENCRYPTION_TYPE = AsymmetricEncryptionConstants.RSA_CODE;
 
-    private readonly AsymmetricEncryptionProviderFactory _encryptionProviderFactory = new(DEFAULT_ENCRYPTION_TYPE);
+    private readonly AsymmetricEncryptionProviderFactory _encryptionProviderFactory = new(
+        DEFAULT_ENCRYPTION_TYPE
+    );
 
-    [Argument("File with keys to validate (default), encrypt value (-e flag), or decrypt value (-d flag). Format public<newline>private", false)]
+    [Argument(
+        "File with keys to validate (default), encrypt value (-e flag), or decrypt value (-d flag). Format public<newline>private",
+        false
+    )]
     private string KeyFile { get; init; } = null!;
 
-    [Argument("Code for encryption type to use (hint: use -l to list codes. default used if code not provided)", false)]
+    [Argument(
+        "Code for encryption type to use (hint: use -l to list codes. default used if code not provided)",
+        false
+    )]
     private string EncryptionTypeCode { get; init; } = DEFAULT_ENCRYPTION_TYPE;
 
     [Option("-l", "--list", Description = "List asymmetric encryption providers")]
@@ -32,9 +40,12 @@ internal class AsymmetricEncryption : CommandBase
     [Option("-v", "--validate", Description = "Validate a key")]
     private bool Validate { get; init; }
 
-    public AsymmetricEncryption() : base("asym-encrypt", "Asymmetric encryption operations", "Use at least one flag to perform an operation")
-    {
-    }
+    public AsymmetricEncryption()
+        : base(
+            "asym-encrypt",
+            "Asymmetric encryption operations",
+            "Use at least one flag to perform an operation"
+        ) { }
 
     protected override void Execute()
     {
@@ -43,11 +54,14 @@ internal class AsymmetricEncryption : CommandBase
             ListProviders();
         }
 
-        if ((Create
-            || !string.IsNullOrEmpty(ToEncrypt)
-            || !string.IsNullOrEmpty(ToDecrypt)
-            || Validate)
-            && !File.Exists(KeyFile))
+        if (
+            (
+                Create
+                || !string.IsNullOrEmpty(ToEncrypt)
+                || !string.IsNullOrEmpty(ToDecrypt)
+                || Validate
+            ) && !File.Exists(KeyFile)
+        )
         {
             Error($"{nameof(KeyFile)} does not exist: {KeyFile}");
             return;
@@ -70,11 +84,13 @@ internal class AsymmetricEncryption : CommandBase
             ValidateKey();
         }
 
-        if (!List
+        if (
+            !List
             && !Create
             && string.IsNullOrEmpty(ToEncrypt)
             && string.IsNullOrEmpty(ToDecrypt)
-            && !Validate)
+            && !Validate
+        )
         {
             ShowHelp();
         }
@@ -96,23 +112,33 @@ internal class AsymmetricEncryption : CommandBase
         var providers = _encryptionProviderFactory.ListProviders();
         foreach (var (providerCode, providerType) in providers)
         {
-            Console.WriteLine($"Code {providerCode} = {providerType.Name} {(providerCode == DEFAULT_ENCRYPTION_TYPE ? "(default)" : "")}");
+            Console.WriteLine(
+                $"Code {providerCode} = {providerType.Name} {(providerCode == DEFAULT_ENCRYPTION_TYPE ? "(default)" : "")}"
+            );
         }
     }
 
     private void CreateKeys()
     {
-        var asymmetricEncryptionProvider = _encryptionProviderFactory.GetProvider(EncryptionTypeCode);
-        var (publicKey, privateKey) = asymmetricEncryptionProvider.GetAsymmetricKeyProvider().CreateKeys();
+        var asymmetricEncryptionProvider = _encryptionProviderFactory.GetProvider(
+            EncryptionTypeCode
+        );
+        var (publicKey, privateKey) = asymmetricEncryptionProvider
+            .GetAsymmetricKeyProvider()
+            .CreateKeys();
         File.WriteAllText(KeyFile, $"{publicKey}{Environment.NewLine}{privateKey}");
         Console.WriteLine($"Keys written to {KeyFile}");
     }
 
     private void ValidateKey()
     {
-        var asymmetricEncryptionProvider = _encryptionProviderFactory.GetProvider(EncryptionTypeCode);
+        var asymmetricEncryptionProvider = _encryptionProviderFactory.GetProvider(
+            EncryptionTypeCode
+        );
         var (publicKey, privateKey) = ReadKeysFromFile();
-        var isValid = asymmetricEncryptionProvider.GetAsymmetricKeyProvider().IsKeyValid(publicKey, privateKey);
+        var isValid = asymmetricEncryptionProvider
+            .GetAsymmetricKeyProvider()
+            .IsKeyValid(publicKey, privateKey);
         Console.WriteLine($"Keys are {(isValid ? "valid" : "invalid")}");
     }
 

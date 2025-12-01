@@ -44,34 +44,28 @@ public abstract class ServiceFactoryGenericTests
     }
 
     public static IEnumerable<object[]> GetRequiredServiceData =>
-    [
-        [typeof(ISecurityConfigurationProvider)],
-        [typeof(IPasswordValidationProvider)],
-        [typeof(IOptions<PasswordValidationOptions>)],
-        [typeof(IOptions<SecurityOptions>)],
-
-        [typeof(IMapProvider)],
-
-        [typeof(IValidationProvider)],
-
-        [typeof(ISymmetricEncryptionProviderFactory)],
-        [typeof(IAsymmetricEncryptionProviderFactory)],
-        [typeof(IHashProviderFactory)],
-
-        [typeof(IAccountProcessor)],
-        [typeof(IUserProcessor)],
-        [typeof(IBasicAuthProcessor)],
-        [typeof(IGroupProcessor)],
-        [typeof(IRoleProcessor)],
-        [typeof(IPermissionProcessor)],
-        [typeof(IRegistrationService)],
-        [typeof(IDeregistrationService)],
-        [typeof(ISecurityProcessor)],
-
-        // Repos are registered as generics. Only need to test each one once.
-        [typeof(IReadonlyRepo<AccountEntity>)],
-        [typeof(IRepo<AccountEntity>)],
-
-        [typeof(IUnitOfWorkProvider)]
-    ];
+        [
+            [typeof(ISecurityConfigurationProvider)],
+            [typeof(IPasswordValidationProvider)],
+            [typeof(IOptions<PasswordValidationOptions>)],
+            [typeof(IOptions<SecurityOptions>)],
+            [typeof(IMapProvider)],
+            [typeof(IValidationProvider)],
+            [typeof(ISymmetricEncryptionProviderFactory)],
+            [typeof(IAsymmetricEncryptionProviderFactory)],
+            [typeof(IHashProviderFactory)],
+            [typeof(IAccountProcessor)],
+            [typeof(IUserProcessor)],
+            [typeof(IBasicAuthProcessor)],
+            [typeof(IGroupProcessor)],
+            [typeof(IRoleProcessor)],
+            [typeof(IPermissionProcessor)],
+            [typeof(IRegistrationService)],
+            [typeof(IDeregistrationService)],
+            [typeof(ISecurityProcessor)],
+            // Repos are registered as generics. Only need to test each one once.
+            [typeof(IReadonlyRepo<AccountEntity>)],
+            [typeof(IRepo<AccountEntity>)],
+            [typeof(IUnitOfWorkProvider)],
+        ];
 }

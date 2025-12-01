@@ -4,11 +4,12 @@ public enum RegisterUserResultCode
 {
     Success,
     UserCreationError,
-    BasicAuthCreationError
+    BasicAuthCreationError,
 }
 
 public record RegisterUserResult(
     RegisterUserResultCode ResultCode,
     string? Message,
     int CreatedUserId,
-    int CreatedAuthId);
+    int CreatedAuthId
+);

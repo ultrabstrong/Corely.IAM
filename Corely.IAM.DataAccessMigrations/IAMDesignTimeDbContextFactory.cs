@@ -10,7 +10,9 @@ internal class IAMDesignTimeDbContextFactory : IDesignTimeDbContextFactory<IamDb
     {
         try
         {
-            var configuration = new EFMySqlConfiguration(ConfigurationProvider.GetConnectionString());
+            var configuration = new EFMySqlConfiguration(
+                ConfigurationProvider.GetConnectionString()
+            );
             var optionsBuilder = new DbContextOptionsBuilder<IamDbContext>();
             configuration.Configure(optionsBuilder);
             return new IamDbContext(configuration);

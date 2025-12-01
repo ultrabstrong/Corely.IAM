@@ -1,12 +1,11 @@
-﻿using Corely.Common.Extensions;
+﻿using System.Text.Json;
+using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Validators;
-using System.Text.Json;
 
 namespace Corely.IAM.DevTools.Commands.Registration;
-
 
 internal partial class Registration : CommandBase
 {
@@ -20,12 +19,13 @@ internal partial class Registration : CommandBase
 
         private readonly IRegistrationService _registrationService;
 
-        public RegisterUsersWithGroup(IRegistrationService registrationService) : base("users-with-group", "Register a new user with group")
+        public RegisterUsersWithGroup(IRegistrationService registrationService)
+            : base("users-with-group", "Register a new user with group")
         {
             _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
         }
 
-        protected async override Task ExecuteAsync()
+        protected override async Task ExecuteAsync()
         {
             if (Create)
             {
@@ -40,12 +40,15 @@ internal partial class Registration : CommandBase
         private async Task RegisterUserWithGroupAsync()
         {
             var request = ReadRequestJson<RegisterUsersWithGroupRequest>(RequestJsonFile);
-            if (request == null) return;
+            if (request == null)
+                return;
             try
             {
                 foreach (var registerRequest in request)
                 {
-                    var result = await _registrationService.RegisterUsersWithGroupAsync(registerRequest);
+                    var result = await _registrationService.RegisterUsersWithGroupAsync(
+                        registerRequest
+                    );
                     Console.WriteLine(JsonSerializer.Serialize(result));
                 }
             }

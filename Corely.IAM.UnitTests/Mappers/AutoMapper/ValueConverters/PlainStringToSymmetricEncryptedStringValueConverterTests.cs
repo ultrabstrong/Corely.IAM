@@ -17,8 +17,10 @@ public class PlainStringToSymmetricEncryptedStringValueConverterTests
         var serviceFactory = new ServiceFactory();
         _valueConverter = new(
             serviceFactory.GetRequiredService<ISecurityConfigurationProvider>(),
-            serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>());
-        _securityConfigurationProviderMock = serviceFactory.GetRequiredService<ISecurityConfigurationProvider>();
+            serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>()
+        );
+        _securityConfigurationProviderMock =
+            serviceFactory.GetRequiredService<ISecurityConfigurationProvider>();
     }
 
     [Fact]
@@ -30,7 +32,10 @@ public class PlainStringToSymmetricEncryptedStringValueConverterTests
 
         Assert.NotNull(result);
         Assert.IsType<SymmetricEncryptedValue>(result);
-        Assert.Equal(plainString, result.GetDecrypted(_securityConfigurationProviderMock.GetSystemSymmetricKey()));
+        Assert.Equal(
+            plainString,
+            result.GetDecrypted(_securityConfigurationProviderMock.GetSystemSymmetricKey())
+        );
     }
 
     [Theory, ClassData(typeof(EmptyAndWhitespace))]
@@ -39,6 +44,9 @@ public class PlainStringToSymmetricEncryptedStringValueConverterTests
         var result = _valueConverter.Convert(value, default);
 
         Assert.NotNull(result.Secret);
-        Assert.Equal(value, result.GetDecrypted(_securityConfigurationProviderMock.GetSystemSymmetricKey()));
+        Assert.Equal(
+            value,
+            result.GetDecrypted(_securityConfigurationProviderMock.GetSystemSymmetricKey())
+        );
     }
 }

@@ -8,7 +8,6 @@ internal class AccountProfile : Profile
 {
     public AccountProfile()
     {
-        CreateMap<Account, AccountEntity>(MemberList.Source)
-            .ReverseMap();
+        CreateMap<Account, AccountEntity>(MemberList.Source).ReverseMap();
     }
 }

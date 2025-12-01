@@ -3,6 +3,7 @@ using Corely.IAM.Roles.Models;
 using FluentValidation;
 
 namespace Corely.IAM.Roles.Validators;
+
 internal class RoleValidator : AbstractValidator<Role>
 {
     public RoleValidator()

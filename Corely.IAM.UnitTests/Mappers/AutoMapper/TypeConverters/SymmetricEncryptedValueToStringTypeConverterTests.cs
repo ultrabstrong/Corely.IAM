@@ -16,7 +16,9 @@ public class SymmetricEncryptedValueToStringTypeConverterTests
     {
         var value = _fixture.Create<string>();
         var encryptedValue = new SymmetricEncryptedValue(Mock.Of<ISymmetricEncryptionProvider>())
-        { Secret = value };
+        {
+            Secret = value,
+        };
 
         var result = _converter.Convert(encryptedValue, default, default);
 
@@ -35,7 +37,9 @@ public class SymmetricEncryptedValueToStringTypeConverterTests
     public void Convert_ReturnsNullEmptyOrWhitespace(string value)
     {
         var encryptedValue = new SymmetricEncryptedValue(Mock.Of<ISymmetricEncryptionProvider>())
-        { Secret = value };
+        {
+            Secret = value,
+        };
 
         var result = _converter.Convert(encryptedValue, default, default);
 

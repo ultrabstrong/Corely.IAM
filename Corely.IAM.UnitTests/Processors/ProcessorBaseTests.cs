@@ -1,7 +1,6 @@
 ﻿using AutoFixture;
-using AutoMapper;
-using Corely.IAM.Mappers;
 using Corely.IAM.Processors;
+using Corely.IAM.Users.Mappers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Validators;
 using Microsoft.Extensions.Logging;
@@ -12,16 +11,8 @@ public class ProcessorBaseTests
 {
     private class MockProcessorBase : ProcessorBase
     {
-        public MockProcessorBase(
-            IMapProvider mapProvider,
-            IValidationProvider validationProvider,
-            ILogger logger
-        )
-            : base(mapProvider, validationProvider, logger) { }
-
-        public new T MapThenValidateTo<T>(object? source) => base.MapThenValidateTo<T>(source);
-
-        public new T? MapTo<T>(object? source) => base.MapTo<T>(source);
+        public MockProcessorBase(IValidationProvider validationProvider, ILogger logger)
+            : base(validationProvider, logger) { }
 
         public new T Validate<T>(T? model) => base.Validate(model);
 
@@ -69,93 +60,15 @@ public class ProcessorBaseTests
     public ProcessorBaseTests()
     {
         _mockProcessorBase = new MockProcessorBase(
-            _serviceFactory.GetRequiredService<IMapProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<ILogger<ProcessorBaseTests>>()
         );
     }
 
     [Fact]
-    public void MapThenValidateTo_ReturnsValidDestination_IfSourceIsValid()
-    {
-        var createUserRequest = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var user = _mockProcessorBase.MapThenValidateTo<User>(createUserRequest);
-
-        Assert.NotNull(user);
-        Assert.Equal(createUserRequest.Username, user.Username);
-        Assert.Equal(createUserRequest.Email, user.Email);
-    }
-
-    [Fact]
-    public void MapThenValidateTo_Throws_WhenSourceIsNull()
-    {
-        var ex = Record.Exception(() => _mockProcessorBase.MapThenValidateTo<object>(null!));
-        Assert.NotNull(ex);
-        Assert.IsType<ArgumentNullException>(ex);
-    }
-
-    [Fact]
-    public void MapThenValidateTo_Throws_IfDestinationIsUnmapped()
-    {
-        var createUserRequest = _fixture.Create<CreateUserRequest>();
-
-        var ex = Record.Exception(() =>
-            _mockProcessorBase.MapThenValidateTo<CreateUserResult>(createUserRequest)
-        );
-
-        Assert.NotNull(ex);
-        Assert.IsType<AutoMapperMappingException>(ex);
-    }
-
-    [Fact]
-    public void MapThenValidateTo_Throws_IfDestinationIsInvalid()
-    {
-        var createUserRequest = _fixture.Create<CreateUserRequest>();
-
-        var ex = Record.Exception(() =>
-            _mockProcessorBase.MapThenValidateTo<User>(createUserRequest)
-        );
-
-        Assert.NotNull(ex);
-        Assert.IsType<ValidationException>(ex);
-    }
-
-    [Fact]
-    public void MapTo_ReturnsValidDestination_IfSourceIsValid()
-    {
-        var createUserRequest = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var user = _mockProcessorBase.MapTo<User>(createUserRequest);
-
-        Assert.NotNull(user);
-        Assert.Equal(createUserRequest.Username, user.Username);
-        Assert.Equal(createUserRequest.Email, user.Email);
-    }
-
-    [Fact]
-    public void MapTo_ReturnsNull_WhenSourceIsNull()
-    {
-        var destination = _mockProcessorBase.MapTo<object>(null);
-        Assert.Null(destination);
-    }
-
-    [Fact]
-    public void MapTo_Throws_IfDestinationIsInvalid()
-    {
-        var createUserRequest = _fixture.Create<CreateUserRequest>();
-
-        var ex = Record.Exception(() =>
-            _mockProcessorBase.MapTo<CreateUserResult>(createUserRequest)
-        );
-
-        Assert.NotNull(ex);
-        Assert.IsType<AutoMapperMappingException>(ex);
-    }
-
-    [Fact]
     public void Validate_DoesNotThrow_IfModelIsValid()
     {
-        var createUserRequest = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var user = _mockProcessorBase.MapTo<User>(createUserRequest);
+        var user = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL).ToUser();
 
         var ex = Record.Exception(() => _mockProcessorBase.Validate(user));
 

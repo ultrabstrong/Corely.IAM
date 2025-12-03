@@ -20,7 +20,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="15.1.0" />
     <PackageReference Include="Corely.Common" Version="1.1.1" />
     <PackageReference Include="Corely.DataAccess" Version="2.2.5" />
     <PackageReference Include="Corely.Security" Version="1.0.1" />

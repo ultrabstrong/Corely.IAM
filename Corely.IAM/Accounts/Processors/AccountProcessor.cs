@@ -1,8 +1,8 @@
 ﻿using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.Mappers;
 using Corely.IAM.Processors;
 using Corely.IAM.Security.Processors;
 using Corely.IAM.Users.Entities;
@@ -21,11 +21,10 @@ internal class AccountProcessor : ProcessorBase, IAccountProcessor
         IRepo<AccountEntity> accountRepo,
         IReadonlyRepo<UserEntity> userRepo,
         ISecurityProcessor securityService,
-        IMapProvider mapProvider,
         IValidationProvider validationProvider,
         ILogger<AccountProcessor> logger
     )
-        : base(mapProvider, validationProvider, logger)
+        : base(validationProvider, logger)
     {
         _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
         _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
@@ -40,7 +39,7 @@ internal class AccountProcessor : ProcessorBase, IAccountProcessor
             request,
             async () =>
             {
-                var account = MapThenValidateTo<Account>(request);
+                var account = Validate(request.ToAccount());
 
                 var existingAccount = await _accountRepo.GetAsync(a =>
                     a.AccountName == request.AccountName
@@ -76,7 +75,7 @@ internal class AccountProcessor : ProcessorBase, IAccountProcessor
                     _securityService.GetAsymmetricSignatureKeyEncryptedWithSystemKey(),
                 ];
 
-                var accountEntity = MapTo<AccountEntity>(account)!; // account is validated
+                var accountEntity = account.ToEntity(); // account is validated
                 accountEntity.Users = [userEntity];
                 var created = await _accountRepo.CreateAsync(accountEntity);
 
@@ -98,7 +97,7 @@ internal class AccountProcessor : ProcessorBase, IAccountProcessor
             async () =>
             {
                 var accountEntity = await _accountRepo.GetAsync(a => a.Id == accountId);
-                var account = MapTo<Account>(accountEntity);
+                var account = accountEntity?.ToModel();
 
                 if (account == null)
                 {
@@ -118,7 +117,7 @@ internal class AccountProcessor : ProcessorBase, IAccountProcessor
             async () =>
             {
                 var accountEntity = await _accountRepo.GetAsync(a => a.AccountName == accountName);
-                var account = MapTo<Account>(accountEntity);
+                var account = accountEntity?.ToModel();
 
                 if (account == null)
                 {

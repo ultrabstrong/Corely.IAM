@@ -1,11 +1,12 @@
 ﻿using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Entities;
+using Corely.IAM.BasicAuths.Mappers;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.Enums;
-using Corely.IAM.Mappers;
 using Corely.IAM.Processors;
 using Corely.IAM.Validators;
+using Corely.Security.Hashing.Factories;
 using Corely.Security.Password;
 using Corely.Security.PasswordValidation.Providers;
 using Microsoft.Extensions.Logging;
@@ -16,20 +17,22 @@ internal class BasicAuthProcessor : ProcessorBase, IBasicAuthProcessor
 {
     private readonly IRepo<BasicAuthEntity> _basicAuthRepo;
     private readonly IPasswordValidationProvider _passwordValidationProvider;
+    private readonly IHashProviderFactory _hashProviderFactory;
 
     public BasicAuthProcessor(
         IRepo<BasicAuthEntity> basicAuthRepo,
         IPasswordValidationProvider passwordValidationProvider,
-        IMapProvider mapProvider,
+        IHashProviderFactory hashProviderFactory,
         IValidationProvider validationProvider,
         ILogger<BasicAuthProcessor> logger
     )
-        : base(mapProvider, validationProvider, logger)
+        : base(validationProvider, logger)
     {
         _basicAuthRepo = basicAuthRepo.ThrowIfNull(nameof(basicAuthRepo));
         _passwordValidationProvider = passwordValidationProvider.ThrowIfNull(
             nameof(passwordValidationProvider)
         );
+        _hashProviderFactory = hashProviderFactory.ThrowIfNull(nameof(hashProviderFactory));
     }
 
     public async Task<UpsertBasicAuthResult> UpsertBasicAuthAsync(UpsertBasicAuthRequest request)
@@ -40,7 +43,7 @@ internal class BasicAuthProcessor : ProcessorBase, IBasicAuthProcessor
             request,
             async () =>
             {
-                var basicAuth = MapThenValidateTo<BasicAuth>(request);
+                var basicAuth = Validate(request.ToBasicAuth(_hashProviderFactory));
 
                 var passwordValidationResults = _passwordValidationProvider.ValidatePassword(
                     request.Password
@@ -53,7 +56,7 @@ internal class BasicAuthProcessor : ProcessorBase, IBasicAuthProcessor
                     );
                 }
 
-                var basicAuthEntity = MapTo<BasicAuthEntity>(basicAuth)!; // basicAuth is validated
+                var basicAuthEntity = basicAuth.ToEntity(_hashProviderFactory);
 
                 var existingAuth = await _basicAuthRepo.GetAsync(e =>
                     e.UserId == basicAuthEntity.UserId
@@ -107,7 +110,7 @@ internal class BasicAuthProcessor : ProcessorBase, IBasicAuthProcessor
                 var basicAuthEntity = await _basicAuthRepo.GetAsync(e =>
                     e.UserId == request.UserId
                 );
-                var basicAuth = MapTo<BasicAuth>(basicAuthEntity);
+                var basicAuth = basicAuthEntity?.ToModel(_hashProviderFactory);
 
                 if (basicAuth == null)
                 {

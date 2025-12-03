@@ -2,7 +2,6 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Processors;
-using Corely.IAM.Mappers;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
@@ -26,9 +25,8 @@ public class PermissionProcessorTests
         _permissionProcessor = new PermissionProcessor(
             _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
-            _serviceFactory.GetRequiredService<IMapProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
-            _serviceFactory.GetRequiredService<ILogger<GroupProcessor>>()
+            _serviceFactory.GetRequiredService<ILogger<PermissionProcessor>>()
         );
     }
 

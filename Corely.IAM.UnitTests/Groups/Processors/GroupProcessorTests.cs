@@ -4,7 +4,6 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
-using Corely.IAM.Mappers;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.UnitTests.ClassData;
 using Corely.IAM.Users.Entities;
@@ -29,7 +28,6 @@ public class GroupProcessorTests
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<RoleEntity>>(),
-            _serviceFactory.GetRequiredService<IMapProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<ILogger<GroupProcessor>>()
         );

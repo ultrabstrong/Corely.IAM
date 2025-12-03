@@ -2,12 +2,13 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Entities;
+using Corely.IAM.Groups.Mappers;
 using Corely.IAM.Groups.Models;
-using Corely.IAM.Mappers;
 using Corely.IAM.Processors;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Validators;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Groups.Processors;
@@ -24,11 +25,10 @@ internal class GroupProcessor : ProcessorBase, IGroupProcessor
         IReadonlyRepo<AccountEntity> accountRepo,
         IReadonlyRepo<UserEntity> userRepo,
         IReadonlyRepo<RoleEntity> roleRepo,
-        IMapProvider mapProvider,
         IValidationProvider validationProvider,
         ILogger<GroupProcessor> logger
     )
-        : base(mapProvider, validationProvider, logger)
+        : base(validationProvider, logger)
     {
         _groupRepo = groupRepo.ThrowIfNull(nameof(groupRepo));
         _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
@@ -44,7 +44,7 @@ internal class GroupProcessor : ProcessorBase, IGroupProcessor
             request,
             async () =>
             {
-                var group = MapThenValidateTo<Group>(request);
+                var group = Validate(request.ToGroup());
 
                 if (
                     await _groupRepo.AnyAsync(g =>
@@ -71,7 +71,7 @@ internal class GroupProcessor : ProcessorBase, IGroupProcessor
                     );
                 }
 
-                var groupEntity = MapTo<GroupEntity>(group)!; // group is validated
+                var groupEntity = group.ToEntity(); // group is validated
                 var created = await _groupRepo.CreateAsync(groupEntity);
 
                 return new CreateGroupResult(

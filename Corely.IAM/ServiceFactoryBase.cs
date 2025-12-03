@@ -1,8 +1,6 @@
 ﻿using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Processors;
-using Corely.IAM.Mappers;
-using Corely.IAM.Mappers.AutoMapper;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Models;
@@ -36,9 +34,6 @@ public abstract class ServiceFactoryBase(
 
     public void AddIAMServices()
     {
-        ServiceCollection.AddAutoMapper(cfg => { }, typeof(IMapProvider).Assembly);
-        ServiceCollection.AddScoped<IMapProvider, AutoMapperMapProvider>();
-
         ServiceCollection.AddValidatorsFromAssemblyContaining<FluentValidationProvider>(
             includeInternalTypes: true
         );

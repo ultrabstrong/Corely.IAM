@@ -1,11 +1,12 @@
-﻿using Corely.DataAccess.Interfaces.Repos;
+﻿using Corely.Common.Extensions;
+using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Processors;
-using Corely.IAM.Mappers;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Processors;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Roles.Mappers;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Validators;
 using Microsoft.Extensions.Logging;
@@ -22,15 +23,14 @@ internal class RoleProcessor : ProcessorBase, IRoleProcessor
         IRepo<RoleEntity> roleRepo,
         IReadonlyRepo<AccountEntity> accountRepo,
         IReadonlyRepo<PermissionEntity> permissionRepo,
-        IMapProvider mapProvider,
         IValidationProvider validationProvider,
-        ILogger<GroupProcessor> logger
+        ILogger<RoleProcessor> logger
     )
-        : base(mapProvider, validationProvider, logger)
+        : base(validationProvider, logger)
     {
-        _roleRepo = roleRepo;
-        _accountRepo = accountRepo;
-        _permissionRepo = permissionRepo;
+        _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
+        _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
+        _permissionRepo = permissionRepo.ThrowIfNull(nameof(permissionRepo));
     }
 
     public async Task<CreateRoleResult> CreateRoleAsync(CreateRoleRequest createRoleRequest)
@@ -41,7 +41,7 @@ internal class RoleProcessor : ProcessorBase, IRoleProcessor
             createRoleRequest,
             async () =>
             {
-                var role = MapThenValidateTo<Role>(createRoleRequest);
+                var role = Validate(createRoleRequest.ToRole());
 
                 if (
                     await _roleRepo.AnyAsync(r =>
@@ -68,7 +68,7 @@ internal class RoleProcessor : ProcessorBase, IRoleProcessor
                     );
                 }
 
-                var roleEntity = MapTo<RoleEntity>(role)!; // role is validated
+                var roleEntity = role.ToEntity(); // role is validated
                 var created = await _roleRepo.CreateAsync(roleEntity);
 
                 return new CreateRoleResult(CreateRoleResultCode.Success, string.Empty, created.Id);
@@ -119,7 +119,7 @@ internal class RoleProcessor : ProcessorBase, IRoleProcessor
                     return null;
                 }
 
-                var role = MapTo<Role>(roleEntity);
+                var role = roleEntity.ToModel();
                 return role;
             }
         );
@@ -143,7 +143,7 @@ internal class RoleProcessor : ProcessorBase, IRoleProcessor
                     return null;
                 }
 
-                var role = MapTo<Role>(roleEntity);
+                var role = roleEntity.ToModel();
                 return role;
             }
         );

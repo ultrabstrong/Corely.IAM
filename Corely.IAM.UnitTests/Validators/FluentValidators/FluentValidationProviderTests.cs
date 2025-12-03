@@ -1,5 +1,4 @@
 ﻿using AutoFixture;
-using AutoMapper;
 using Corely.IAM.Validators.FluentValidators;
 using FluentValidation;
 using CorelyValidationException = Corely.IAM.Validators.ValidationException;
@@ -14,16 +13,13 @@ public class FluentValidationProviderTests
 
     private readonly FluentValidationProvider _provider;
     private readonly Fixture _fixture = new();
-    private readonly ServiceFactory _serviceFactory = new();
 
     public FluentValidationProviderTests()
     {
         var serviceProviderMock = GetMockServiceProvider();
         var fluentValidatorFactory = new FluentValidatorFactory(serviceProviderMock);
 
-        var mapper = _serviceFactory.GetRequiredService<IMapper>();
-
-        _provider = new FluentValidationProvider(fluentValidatorFactory, mapper);
+        _provider = new FluentValidationProvider(fluentValidatorFactory);
     }
 
     private static IServiceProvider GetMockServiceProvider()

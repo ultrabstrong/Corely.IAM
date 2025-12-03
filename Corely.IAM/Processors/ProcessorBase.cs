@@ -1,5 +1,4 @@
 ﻿using Corely.Common.Extensions;
-using Corely.IAM.Mappers;
 using Corely.IAM.Validators;
 using Microsoft.Extensions.Logging;
 
@@ -8,48 +7,13 @@ namespace Corely.IAM.Processors;
 internal abstract class ProcessorBase
 {
     private readonly IValidationProvider _validationProvider;
-    private readonly IMapProvider _mapProvider;
 
     protected readonly ILogger Logger;
 
-    protected ProcessorBase(
-        IMapProvider mapProvider,
-        IValidationProvider validationProvider,
-        ILogger logger
-    )
+    protected ProcessorBase(IValidationProvider validationProvider, ILogger logger)
     {
         _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
-        _mapProvider = mapProvider.ThrowIfNull(nameof(mapProvider));
         Logger = logger.ThrowIfNull(nameof(logger));
-    }
-
-    protected T MapThenValidateTo<T>(object? source)
-    {
-        var mapped = MapTo<T>(source);
-        return Validate(mapped);
-    }
-
-    protected T? MapTo<T>(object? source)
-    {
-        try
-        {
-            return _mapProvider.MapTo<T>(source);
-            ;
-        }
-        catch (Exception ex)
-        {
-            using var scope = Logger.BeginScope(
-                new Dictionary<string, object?> { { "@MapSource", source } }
-            );
-
-            Logger.LogWarning(
-                ex,
-                "Failed to map {MapSourceType} to {MapDestinationType}",
-                source?.GetType()?.Name,
-                typeof(T)?.Name
-            );
-            throw;
-        }
     }
 
     protected T Validate<T>(T? model)

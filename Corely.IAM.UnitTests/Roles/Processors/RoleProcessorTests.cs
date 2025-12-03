@@ -2,7 +2,6 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Processors;
-using Corely.IAM.Mappers;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
@@ -29,9 +28,8 @@ public class RoleProcessorTests
             _serviceFactory.GetRequiredService<IRepo<RoleEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>(),
-            _serviceFactory.GetRequiredService<IMapProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
-            _serviceFactory.GetRequiredService<ILogger<GroupProcessor>>()
+            _serviceFactory.GetRequiredService<ILogger<RoleProcessor>>()
         );
     }
 

@@ -4,7 +4,6 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Processors;
-using Corely.IAM.Mappers;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Models;
@@ -49,7 +48,6 @@ public abstract class ServiceFactoryGenericTests
             [typeof(IPasswordValidationProvider)],
             [typeof(IOptions<PasswordValidationOptions>)],
             [typeof(IOptions<SecurityOptions>)],
-            [typeof(IMapProvider)],
             [typeof(IValidationProvider)],
             [typeof(ISymmetricEncryptionProviderFactory)],
             [typeof(IAsymmetricEncryptionProviderFactory)],

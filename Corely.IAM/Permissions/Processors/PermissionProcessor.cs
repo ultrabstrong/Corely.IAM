@@ -1,9 +1,9 @@
 ﻿using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Processors;
-using Corely.IAM.Mappers;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
+using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Processors;
 using Corely.IAM.Validators;
@@ -19,11 +19,10 @@ internal class PermissionProcessor : ProcessorBase, IPermissionProcessor
     public PermissionProcessor(
         IRepo<PermissionEntity> permissionRepo,
         IReadonlyRepo<AccountEntity> accountRepo,
-        IMapProvider mapProvider,
         IValidationProvider validationProvider,
-        ILogger<GroupProcessor> logger
+        ILogger<PermissionProcessor> logger
     )
-        : base(mapProvider, validationProvider, logger)
+        : base(validationProvider, logger)
     {
         _permissionRepo = permissionRepo;
         _accountRepo = accountRepo;
@@ -37,7 +36,7 @@ internal class PermissionProcessor : ProcessorBase, IPermissionProcessor
             request,
             async () =>
             {
-                var permission = MapThenValidateTo<Permission>(request);
+                var permission = Validate(request.ToPermission());
 
                 if (
                     await _permissionRepo.AnyAsync(p =>
@@ -70,7 +69,7 @@ internal class PermissionProcessor : ProcessorBase, IPermissionProcessor
                     );
                 }
 
-                var permissionEntity = MapTo<PermissionEntity>(permission)!; // permission is validated
+                var permissionEntity = permission.ToEntity(); // permission is validated
                 var created = await _permissionRepo.CreateAsync(permissionEntity);
 
                 return new CreatePermissionResult(

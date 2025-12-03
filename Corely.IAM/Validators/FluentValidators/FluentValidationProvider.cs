@@ -1,16 +1,14 @@
-﻿using AutoMapper;
+﻿using Corely.IAM.Validators.Mappers;
 
 namespace Corely.IAM.Validators.FluentValidators;
 
 internal sealed class FluentValidationProvider : IValidationProvider
 {
     private readonly IFluentValidatorFactory _fluentValidatorFactory;
-    private readonly IMapper _mapper;
 
-    public FluentValidationProvider(IFluentValidatorFactory fluentValidatorFactory, IMapper mapper)
+    public FluentValidationProvider(IFluentValidatorFactory fluentValidatorFactory)
     {
         _fluentValidatorFactory = fluentValidatorFactory;
-        _mapper = mapper;
     }
 
     public ValidationResult Validate<T>(T model)
@@ -27,7 +25,7 @@ internal sealed class FluentValidationProvider : IValidationProvider
         {
             var validator = _fluentValidatorFactory.GetValidator<T>();
             var fluentResult = validator.Validate(model);
-            corelyResult = _mapper.Map<ValidationResult>(fluentResult);
+            corelyResult = fluentResult.ToValidationResult();
         }
 
         corelyResult.Message =

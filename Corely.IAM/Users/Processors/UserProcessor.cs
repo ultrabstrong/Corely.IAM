@@ -2,14 +2,15 @@
 using System.Security.Claims;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
-using Corely.IAM.Mappers;
 using Corely.IAM.Processors;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Processors;
 using Corely.IAM.Users.Entities;
+using Corely.IAM.Users.Mappers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Validators;
+using Corely.Security.Encryption.Factories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -21,20 +22,24 @@ internal class UserProcessor : ProcessorBase, IUserProcessor
     private readonly IRepo<UserEntity> _userRepo;
     private readonly IReadonlyRepo<RoleEntity> _roleRepo;
     private readonly ISecurityProcessor _securityProcessor;
+    private readonly ISymmetricEncryptionProviderFactory _encryptionProviderFactory;
 
     public UserProcessor(
         IRepo<UserEntity> userRepo,
         IReadonlyRepo<RoleEntity> roleRepo,
         ISecurityProcessor securityProcessor,
-        IMapProvider mapProvider,
+        ISymmetricEncryptionProviderFactory encryptionProviderFactory,
         IValidationProvider validationProvider,
         ILogger<UserProcessor> logger
     )
-        : base(mapProvider, validationProvider, logger)
+        : base(validationProvider, logger)
     {
         _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
         _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
         _securityProcessor = securityProcessor.ThrowIfNull(nameof(securityProcessor));
+        _encryptionProviderFactory = encryptionProviderFactory.ThrowIfNull(
+            nameof(encryptionProviderFactory)
+        );
     }
 
     public async Task<CreateUserResult> CreateUserAsync(CreateUserRequest request)
@@ -45,7 +50,7 @@ internal class UserProcessor : ProcessorBase, IUserProcessor
             request,
             async () =>
             {
-                var user = MapThenValidateTo<User>(request);
+                var user = Validate(request.ToUser());
 
                 var existingUser = await _userRepo.GetAsync(u =>
                     u.Username == request.Username || u.Email == request.Email
@@ -91,7 +96,7 @@ internal class UserProcessor : ProcessorBase, IUserProcessor
                     _securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey(),
                 ];
 
-                var userEntity = MapTo<UserEntity>(user)!; // user is validated
+                var userEntity = user.ToEntity(_encryptionProviderFactory); // user is validated
                 var created = await _userRepo.CreateAsync(userEntity);
 
                 return new CreateUserResult(CreateUserResultCode.Success, string.Empty, created.Id);
@@ -115,7 +120,7 @@ internal class UserProcessor : ProcessorBase, IUserProcessor
                     return null;
                 }
 
-                var user = MapTo<User>(userEntity);
+                var user = userEntity.ToModel();
                 return user;
             }
         );
@@ -137,7 +142,7 @@ internal class UserProcessor : ProcessorBase, IUserProcessor
                     return null;
                 }
 
-                var user = MapTo<User>(userEntity);
+                var user = userEntity.ToModel();
                 return user;
             }
         );
@@ -151,7 +156,7 @@ internal class UserProcessor : ProcessorBase, IUserProcessor
             async () =>
             {
                 Validate(user);
-                var userEntity = MapTo<UserEntity>(user)!; // user is validated
+                var userEntity = user.ToEntity(); // user is validated
                 await _userRepo.UpdateAsync(userEntity);
             }
         );

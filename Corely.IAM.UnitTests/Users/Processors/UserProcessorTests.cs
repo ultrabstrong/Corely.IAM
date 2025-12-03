@@ -2,13 +2,13 @@
 using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
-using Corely.IAM.Mappers;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Processors;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Validators;
+using Corely.Security.Encryption.Factories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -29,7 +29,7 @@ public class UserProcessorTests
             _serviceFactory.GetRequiredService<IRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<RoleEntity>>(),
             _serviceFactory.GetRequiredService<ISecurityProcessor>(),
-            _serviceFactory.GetRequiredService<IMapProvider>(),
+            _serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<ILogger<UserProcessor>>()
         );

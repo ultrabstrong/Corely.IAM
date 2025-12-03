@@ -3,8 +3,8 @@ using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Enums;
-using Corely.IAM.Mappers;
 using Corely.IAM.Validators;
+using Corely.Security.Hashing.Factories;
 using Corely.Security.Password;
 using Corely.Security.PasswordValidation.Providers;
 using Microsoft.Extensions.Logging;
@@ -23,7 +23,7 @@ public class BasicAuthProcessorTests
         _basicAuthProcessor = new BasicAuthProcessor(
             _serviceFactory.GetRequiredService<IRepo<BasicAuthEntity>>(),
             _serviceFactory.GetRequiredService<IPasswordValidationProvider>(),
-            _serviceFactory.GetRequiredService<IMapProvider>(),
+            _serviceFactory.GetRequiredService<IHashProviderFactory>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<ILogger<BasicAuthProcessor>>()
         );

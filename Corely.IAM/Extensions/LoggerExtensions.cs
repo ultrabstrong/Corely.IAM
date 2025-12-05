@@ -58,4 +58,41 @@ internal static class LoggerExtensions
             throw;
         }
     }
+
+    public static async Task ExecuteWithLogging<TRequest>(
+        this ILogger logger,
+        string className,
+        TRequest request,
+        Func<Task> operation,
+        [CallerMemberName] string methodName = ""
+    )
+    {
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+            logger.LogTrace(
+                "[{Class}] {Method} starting with request {@Request}",
+                className,
+                methodName,
+                request
+            );
+
+            var stopwatch = Stopwatch.StartNew();
+            await operation();
+            stopwatch.Stop();
+
+            logger.LogTrace(
+                "[{Class}] {Method} completed in {ElapsedMs}ms",
+                className,
+                methodName,
+                stopwatch.ElapsedMilliseconds
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[{Class}] {Method} failed", className, methodName);
+            throw;
+        }
+    }
 }

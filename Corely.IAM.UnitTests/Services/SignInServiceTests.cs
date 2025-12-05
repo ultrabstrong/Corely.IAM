@@ -4,7 +4,6 @@ using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
-using Corely.IAM.UnitTests.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Microsoft.Extensions.Logging;
@@ -12,10 +11,11 @@ using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.UnitTests.Services;
 
-public class SignInServiceTests : ProcessorBaseTests
+public class SignInServiceTests
 {
     private const int MAX_LOGIN_ATTEMPTS = 5;
 
+    private readonly ServiceFactory _serviceFactory = new();
     private readonly Fixture _fixture = new();
     private readonly Mock<IUserProcessor> _userProcessorMock;
     private readonly Mock<IBasicAuthProcessor> _basicAuthProcessorMock;
@@ -24,7 +24,6 @@ public class SignInServiceTests : ProcessorBaseTests
     private readonly User _user;
 
     public SignInServiceTests()
-        : base()
     {
         _user = _fixture
             .Build<User>()

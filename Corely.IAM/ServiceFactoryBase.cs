@@ -76,21 +76,30 @@ public abstract class ServiceFactoryBase(
             Configuration.GetSection(PasswordValidationOptions.NAME)
         );
 
-        ServiceCollection.AddScoped<IAccountProcessor, AccountProcessor>();
-        ServiceCollection.Decorate<IAccountProcessor, LoggingAccountProcessorDecorator>();
-
-        ServiceCollection.AddScoped<IUserProcessor, UserProcessor>();
-        ServiceCollection.AddScoped<IBasicAuthProcessor, BasicAuthProcessor>();
-        ServiceCollection.AddScoped<IGroupProcessor, GroupProcessor>();
-        ServiceCollection.AddScoped<IRoleProcessor, RoleProcessor>();
-        ServiceCollection.AddScoped<IPermissionProcessor, PermissionProcessor>();
-
         ServiceCollection.AddScoped<IRegistrationService, RegistrationService>();
         ServiceCollection.AddScoped<IDeregistrationService, DeregistrationService>();
         ServiceCollection.AddScoped<ISignInService, SignInService>();
 
         ServiceCollection.AddLogging(AddLogging);
         AddDataServices();
+
+        ServiceCollection.AddScoped<IAccountProcessor, AccountProcessor>();
+        ServiceCollection.Decorate<IAccountProcessor, LoggingAccountProcessorDecorator>();
+
+        ServiceCollection.AddScoped<IUserProcessor, UserProcessor>();
+        ServiceCollection.Decorate<IUserProcessor, LoggingUserProcessorDecorator>();
+
+        ServiceCollection.AddScoped<IBasicAuthProcessor, BasicAuthProcessor>();
+        ServiceCollection.Decorate<IBasicAuthProcessor, LoggingBasicAuthProcessorDecorator>();
+
+        ServiceCollection.AddScoped<IGroupProcessor, GroupProcessor>();
+        ServiceCollection.Decorate<IGroupProcessor, LoggingGroupProcessorDecorator>();
+
+        ServiceCollection.AddScoped<IRoleProcessor, RoleProcessor>();
+        ServiceCollection.Decorate<IRoleProcessor, LoggingRoleProcessorDecorator>();
+
+        ServiceCollection.AddScoped<IPermissionProcessor, PermissionProcessor>();
+        ServiceCollection.Decorate<IPermissionProcessor, LoggingPermissionProcessorDecorator>();
     }
 
     protected abstract void AddLogging(ILoggingBuilder builder);

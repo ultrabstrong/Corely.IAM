@@ -13,15 +13,15 @@ using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Services;
-using Corely.IAM.UnitTests.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Services;
 
-public class RegistrationServiceTests : ProcessorBaseTests
+public class RegistrationServiceTests
 {
+    private readonly ServiceFactory _serviceFactory = new();
     private readonly Fixture _fixture = new();
     private readonly Mock<IUnitOfWorkProvider> _unitOfWorkProviderMock = new();
     private readonly Mock<IAccountProcessor> _accountProcessorMock;
@@ -63,7 +63,6 @@ public class RegistrationServiceTests : ProcessorBaseTests
     );
 
     public RegistrationServiceTests()
-        : base()
     {
         _accountProcessorMock = GetMockAccountProcessor();
         _userProcessorMock = GetMockUserProcessor();

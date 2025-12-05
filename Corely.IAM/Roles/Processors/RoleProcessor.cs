@@ -2,7 +2,6 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Permissions.Entities;
-using Corely.IAM.Processors;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Mappers;
@@ -12,12 +11,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Roles.Processors;
 
-internal class RoleProcessor : ProcessorBase, IRoleProcessor
+internal class RoleProcessor : IRoleProcessor
 {
     private readonly IRepo<RoleEntity> _roleRepo;
     private readonly IReadonlyRepo<AccountEntity> _accountRepo;
     private readonly IReadonlyRepo<PermissionEntity> _permissionRepo;
     private readonly IValidationProvider _validationProvider;
+    private readonly ILogger<RoleProcessor> _logger;
 
     public RoleProcessor(
         IRepo<RoleEntity> roleRepo,
@@ -26,56 +26,46 @@ internal class RoleProcessor : ProcessorBase, IRoleProcessor
         IValidationProvider validationProvider,
         ILogger<RoleProcessor> logger
     )
-        : base(logger)
     {
         _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
         _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
         _permissionRepo = permissionRepo.ThrowIfNull(nameof(permissionRepo));
         _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
+        _logger = logger.ThrowIfNull(nameof(logger));
     }
 
     public async Task<CreateRoleResult> CreateRoleAsync(CreateRoleRequest createRoleRequest)
     {
-        return await LogRequestResultAspect(
-            nameof(RoleProcessor),
-            nameof(CreateRoleAsync),
-            createRoleRequest,
-            async () =>
-            {
-                var role = createRoleRequest.ToRole();
-                _validationProvider.ThrowIfInvalid(role);
+        ArgumentNullException.ThrowIfNull(createRoleRequest, nameof(createRoleRequest));
 
-                if (
-                    await _roleRepo.AnyAsync(r =>
-                        r.AccountId == role.AccountId && r.Name == role.Name
-                    )
-                )
-                {
-                    Logger.LogWarning("Role with name {RoleName} already exists", role.Name);
-                    return new CreateRoleResult(
-                        CreateRoleResultCode.RoleExistsError,
-                        $"Role with name {role.Name} already exists",
-                        -1
-                    );
-                }
+        var role = createRoleRequest.ToRole();
+        _validationProvider.ThrowIfInvalid(role);
 
-                var accountEntity = await _accountRepo.GetAsync(a => a.Id == role.AccountId);
-                if (accountEntity == null)
-                {
-                    Logger.LogWarning("Account with Id {AccountId} not found", role.AccountId);
-                    return new CreateRoleResult(
-                        CreateRoleResultCode.AccountNotFoundError,
-                        $"Account with Id {role.AccountId} not found",
-                        -1
-                    );
-                }
+        if (await _roleRepo.AnyAsync(r => r.AccountId == role.AccountId && r.Name == role.Name))
+        {
+            _logger.LogWarning("Role with name {RoleName} already exists", role.Name);
+            return new CreateRoleResult(
+                CreateRoleResultCode.RoleExistsError,
+                $"Role with name {role.Name} already exists",
+                -1
+            );
+        }
 
-                var roleEntity = role.ToEntity(); // role is validated
-                var created = await _roleRepo.CreateAsync(roleEntity);
+        var accountEntity = await _accountRepo.GetAsync(a => a.Id == role.AccountId);
+        if (accountEntity == null)
+        {
+            _logger.LogWarning("Account with Id {AccountId} not found", role.AccountId);
+            return new CreateRoleResult(
+                CreateRoleResultCode.AccountNotFoundError,
+                $"Account with Id {role.AccountId} not found",
+                -1
+            );
+        }
 
-                return new CreateRoleResult(CreateRoleResultCode.Success, string.Empty, created.Id);
-            }
-        );
+        var roleEntity = role.ToEntity();
+        var created = await _roleRepo.CreateAsync(roleEntity);
+
+        return new CreateRoleResult(CreateRoleResultCode.Success, string.Empty, created.Id);
     }
 
     public async Task CreateDefaultSystemRolesAsync(int ownerAccountId)
@@ -107,124 +97,100 @@ internal class RoleProcessor : ProcessorBase, IRoleProcessor
 
     public async Task<Role?> GetRoleAsync(int roleId)
     {
-        return await LogRequestAspect(
-            nameof(RoleProcessor),
-            nameof(GetRoleAsync),
-            roleId,
-            async () =>
-            {
-                var roleEntity = await _roleRepo.GetAsync(r => r.Id == roleId);
+        var roleEntity = await _roleRepo.GetAsync(r => r.Id == roleId);
 
-                if (roleEntity == null)
-                {
-                    Logger.LogInformation("Role with Id {RoleId} not found", roleId);
-                    return null;
-                }
+        if (roleEntity == null)
+        {
+            _logger.LogInformation("Role with Id {RoleId} not found", roleId);
+            return null;
+        }
 
-                var role = roleEntity.ToModel();
-                return role;
-            }
-        );
+        return roleEntity.ToModel();
     }
 
-    public Task<Role?> GetRoleAsync(string roleName, int ownerAccountId)
+    public async Task<Role?> GetRoleAsync(string roleName, int ownerAccountId)
     {
-        return LogRequestAspect(
-            nameof(RoleProcessor),
-            nameof(GetRoleAsync),
-            roleName,
-            async () =>
-            {
-                var roleEntity = await _roleRepo.GetAsync(r =>
-                    r.Name == roleName && r.AccountId == ownerAccountId
-                );
-
-                if (roleEntity == null)
-                {
-                    Logger.LogInformation("Role with name {RoleName} not found", roleName);
-                    return null;
-                }
-
-                var role = roleEntity.ToModel();
-                return role;
-            }
+        var roleEntity = await _roleRepo.GetAsync(r =>
+            r.Name == roleName && r.AccountId == ownerAccountId
         );
+
+        if (roleEntity == null)
+        {
+            _logger.LogInformation("Role with name {RoleName} not found", roleName);
+            return null;
+        }
+
+        return roleEntity.ToModel();
     }
 
     public async Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(
         AssignPermissionsToRoleRequest request
     )
     {
-        return await LogRequestResultAspect(
-            nameof(RoleProcessor),
-            nameof(AssignPermissionsToRoleAsync),
-            request,
-            async () =>
-            {
-                var roleEntity = await _roleRepo.GetAsync(r => r.Id == request.RoleId);
-                if (roleEntity == null)
-                {
-                    Logger.LogWarning("Role with Id {RoleId} not found", request.RoleId);
-                    return new AssignPermissionsToRoleResult(
-                        AssignPermissionsToRoleResultCode.RoleNotFoundError,
-                        $"Role with Id {request.RoleId} not found",
-                        0,
-                        request.PermissionIds
-                    );
-                }
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-                var permissionEntities = await _permissionRepo.ListAsync(p =>
-                    request.PermissionIds.Contains(p.Id) // permission exists
-                    && !p.Roles!.Any(r => r.Id == roleEntity.Id) // permission not already assigned to role
-                    && p.Account!.Id == roleEntity.AccountId
-                ); // permission belongs to the same account as role
+        var roleEntity = await _roleRepo.GetAsync(r => r.Id == request.RoleId);
+        if (roleEntity == null)
+        {
+            _logger.LogWarning("Role with Id {RoleId} not found", request.RoleId);
+            return new AssignPermissionsToRoleResult(
+                AssignPermissionsToRoleResultCode.RoleNotFoundError,
+                $"Role with Id {request.RoleId} not found",
+                0,
+                request.PermissionIds
+            );
+        }
 
-                if (permissionEntities.Count == 0)
-                {
-                    Logger.LogInformation(
-                        "All permission ids are invalid (not found, from different account, or already assigned to role) : {@InvalidPermissionIds}",
-                        request.PermissionIds
-                    );
-                    return new AssignPermissionsToRoleResult(
-                        AssignPermissionsToRoleResultCode.InvalidPermissionIdsError,
-                        "All permission ids are invalid (not found, from different account, or already assigned to role)",
-                        0,
-                        request.PermissionIds
-                    );
-                }
+        var permissionEntities = await _permissionRepo.ListAsync(p =>
+            request.PermissionIds.Contains(p.Id)
+            && !p.Roles!.Any(r => r.Id == roleEntity.Id)
+            && p.Account!.Id == roleEntity.AccountId
+        );
 
-                roleEntity.Permissions ??= [];
-                foreach (var permission in permissionEntities)
-                {
-                    roleEntity.Permissions.Add(permission);
-                }
+        if (permissionEntities.Count == 0)
+        {
+            _logger.LogInformation(
+                "All permission ids are invalid (not found, from different account, or already assigned to role) : {@InvalidPermissionIds}",
+                request.PermissionIds
+            );
+            return new AssignPermissionsToRoleResult(
+                AssignPermissionsToRoleResultCode.InvalidPermissionIdsError,
+                "All permission ids are invalid (not found, from different account, or already assigned to role)",
+                0,
+                request.PermissionIds
+            );
+        }
 
-                await _roleRepo.UpdateAsync(roleEntity);
+        roleEntity.Permissions ??= [];
+        foreach (var permission in permissionEntities)
+        {
+            roleEntity.Permissions.Add(permission);
+        }
 
-                var invalidPermissionIds = request
-                    .PermissionIds.Except(permissionEntities.Select(p => p.Id))
-                    .ToList();
-                if (invalidPermissionIds.Count > 0)
-                {
-                    Logger.LogInformation(
-                        "Some permission ids are invalid (not found, from different account, or already assigned to role) : {@InvalidPermissionIds}",
-                        invalidPermissionIds
-                    );
-                    return new AssignPermissionsToRoleResult(
-                        AssignPermissionsToRoleResultCode.PartialSuccess,
-                        "Some permission ids are invalid (not found, from different account, or already assigned to role)",
-                        permissionEntities.Count,
-                        invalidPermissionIds
-                    );
-                }
+        await _roleRepo.UpdateAsync(roleEntity);
 
-                return new AssignPermissionsToRoleResult(
-                    AssignPermissionsToRoleResultCode.Success,
-                    string.Empty,
-                    permissionEntities.Count,
-                    invalidPermissionIds
-                );
-            }
+        var invalidPermissionIds = request
+            .PermissionIds.Except(permissionEntities.Select(p => p.Id))
+            .ToList();
+        if (invalidPermissionIds.Count > 0)
+        {
+            _logger.LogInformation(
+                "Some permission ids are invalid (not found, from different account, or already assigned to role) : {@InvalidPermissionIds}",
+                invalidPermissionIds
+            );
+            return new AssignPermissionsToRoleResult(
+                AssignPermissionsToRoleResultCode.PartialSuccess,
+                "Some permission ids are invalid (not found, from different account, or already assigned to role)",
+                permissionEntities.Count,
+                invalidPermissionIds
+            );
+        }
+
+        return new AssignPermissionsToRoleResult(
+            AssignPermissionsToRoleResultCode.Success,
+            string.Empty,
+            permissionEntities.Count,
+            invalidPermissionIds
         );
     }
 }

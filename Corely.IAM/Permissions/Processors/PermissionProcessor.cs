@@ -5,17 +5,17 @@ using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Permissions.Models;
-using Corely.IAM.Processors;
 using Corely.IAM.Validators;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Permissions.Processors;
 
-internal class PermissionProcessor : ProcessorBase, IPermissionProcessor
+internal class PermissionProcessor : IPermissionProcessor
 {
     private readonly IRepo<PermissionEntity> _permissionRepo;
     private readonly IReadonlyRepo<AccountEntity> _accountRepo;
     private readonly IValidationProvider _validationProvider;
+    private readonly ILogger<PermissionProcessor> _logger;
 
     public PermissionProcessor(
         IRepo<PermissionEntity> permissionRepo,
@@ -23,64 +23,55 @@ internal class PermissionProcessor : ProcessorBase, IPermissionProcessor
         IValidationProvider validationProvider,
         ILogger<PermissionProcessor> logger
     )
-        : base(logger)
     {
         _permissionRepo = permissionRepo.ThrowIfNull(nameof(permissionRepo));
         _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
         _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
+        _logger = logger.ThrowIfNull(nameof(logger));
     }
 
     public async Task<CreatePermissionResult> CreatePermissionAsync(CreatePermissionRequest request)
     {
-        return await LogRequestResultAspect(
-            nameof(PermissionProcessor),
-            nameof(CreatePermissionAsync),
-            request,
-            async () =>
-            {
-                var permission = request.ToPermission();
-                _validationProvider.ThrowIfInvalid(permission);
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-                if (
-                    await _permissionRepo.AnyAsync(p =>
-                        p.AccountId == permission.AccountId && p.Name == permission.Name
-                    )
-                )
-                {
-                    Logger.LogWarning(
-                        "Permission with name {PermissionName} already exists",
-                        permission.Name
-                    );
-                    return new CreatePermissionResult(
-                        CreatePermissionResultCode.PermissionExistsError,
-                        $"Permission with name {permission.Name} already exists",
-                        -1
-                    );
-                }
+        var permission = request.ToPermission();
+        _validationProvider.ThrowIfInvalid(permission);
 
-                var accountEntity = await _accountRepo.GetAsync(a => a.Id == permission.AccountId);
-                if (accountEntity == null)
-                {
-                    Logger.LogWarning(
-                        "Account with Id {AccountId} not found",
-                        permission.AccountId
-                    );
-                    return new CreatePermissionResult(
-                        CreatePermissionResultCode.AccountNotFoundError,
-                        $"Account with Id {permission.AccountId} not found",
-                        -1
-                    );
-                }
+        if (
+            await _permissionRepo.AnyAsync(p =>
+                p.AccountId == permission.AccountId && p.Name == permission.Name
+            )
+        )
+        {
+            _logger.LogWarning(
+                "Permission with name {PermissionName} already exists",
+                permission.Name
+            );
+            return new CreatePermissionResult(
+                CreatePermissionResultCode.PermissionExistsError,
+                $"Permission with name {permission.Name} already exists",
+                -1
+            );
+        }
 
-                var permissionEntity = permission.ToEntity(); // permission is validated
-                var created = await _permissionRepo.CreateAsync(permissionEntity);
+        var accountEntity = await _accountRepo.GetAsync(a => a.Id == permission.AccountId);
+        if (accountEntity == null)
+        {
+            _logger.LogWarning("Account with Id {AccountId} not found", permission.AccountId);
+            return new CreatePermissionResult(
+                CreatePermissionResultCode.AccountNotFoundError,
+                $"Account with Id {permission.AccountId} not found",
+                -1
+            );
+        }
 
-                return new CreatePermissionResult(
-                    CreatePermissionResultCode.Success,
-                    "Permission created successfully",
-                    created.Id
-                );
-            }
+        var permissionEntity = permission.ToEntity();
+        var created = await _permissionRepo.CreateAsync(permissionEntity);
+
+        return new CreatePermissionResult(
+            CreatePermissionResultCode.Success,
+            "Permission created successfully",
+            created.Id
         );
     }
 

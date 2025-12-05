@@ -230,6 +230,99 @@ public class LoggerExtensionsTests
         );
     }
 
+    [Fact]
+    public async Task ExecuteWithLoggingVoid_LogsEntryAndExit()
+    {
+        // Arrange
+        var request = "test-request";
+        var operationExecuted = false;
+
+        // Act
+        await _mockLogger.Object.ExecuteWithLogging(
+            "TestClass",
+            request,
+            () =>
+            {
+                operationExecuted = true;
+                return Task.CompletedTask;
+            }
+        );
+
+        // Assert
+        Assert.True(operationExecuted);
+
+        // Verify entry log
+        _mockLogger.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Trace,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("starting with request")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
+
+        // Verify exit log
+        _mockLogger.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Trace,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("completed")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task ExecuteWithLoggingVoid_LogsException_WhenOperationThrows()
+    {
+        // Arrange
+        var request = "test-request";
+        var expectedException = new InvalidOperationException("Test exception");
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _mockLogger.Object.ExecuteWithLogging(
+                "TestClass",
+                request,
+                () => Task.FromException(expectedException)
+            )
+        );
+
+        Assert.Equal(expectedException, ex);
+
+        // Verify error log
+        _mockLogger.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("failed")),
+                    It.Is<Exception>(e => e == expectedException),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task ExecuteWithLoggingVoid_ThrowsArgumentNullException_WhenRequestIsNull()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _mockLogger.Object.ExecuteWithLogging<string?>(
+                "TestClass",
+                null,
+                () => Task.CompletedTask
+            )
+        );
+    }
+
     private async Task<string> ExecuteWithLoggingWrapper(string request, string result)
     {
         return await _mockLogger.Object.ExecuteWithLogging(

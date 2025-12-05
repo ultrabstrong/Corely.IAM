@@ -23,33 +23,27 @@ internal class LoggingAccountProcessorDecorator : IAccountProcessor
         _logger = logger.ThrowIfNull(nameof(logger));
     }
 
-    public async Task<CreateAccountResult> CreateAccountAsync(CreateAccountRequest request)
-    {
-        return await _logger.ExecuteWithLogging(
+    public async Task<CreateAccountResult> CreateAccountAsync(CreateAccountRequest request) =>
+        await _logger.ExecuteWithLogging(
             nameof(AccountProcessor),
             request,
             () => _inner.CreateAccountAsync(request),
             logResult: true
         );
-    }
 
-    public async Task<Account?> GetAccountAsync(int accountId)
-    {
-        return await _logger.ExecuteWithLogging(
+    public async Task<Account?> GetAccountAsync(int accountId) =>
+        await _logger.ExecuteWithLogging(
             nameof(AccountProcessor),
             accountId,
             () => _inner.GetAccountAsync(accountId),
             logResult: false
         );
-    }
 
-    public async Task<Account?> GetAccountAsync(string accountName)
-    {
-        return await _logger.ExecuteWithLogging(
+    public async Task<Account?> GetAccountAsync(string accountName) =>
+        await _logger.ExecuteWithLogging(
             nameof(AccountProcessor),
             accountName,
             () => _inner.GetAccountAsync(accountName),
             logResult: true
         );
-    }
 }

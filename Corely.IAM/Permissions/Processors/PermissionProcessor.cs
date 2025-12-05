@@ -1,6 +1,6 @@
-﻿using Corely.DataAccess.Interfaces.Repos;
+﻿using Corely.Common.Extensions;
+using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
-using Corely.IAM.Groups.Processors;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
@@ -15,6 +15,7 @@ internal class PermissionProcessor : ProcessorBase, IPermissionProcessor
 {
     private readonly IRepo<PermissionEntity> _permissionRepo;
     private readonly IReadonlyRepo<AccountEntity> _accountRepo;
+    private readonly IValidationProvider _validationProvider;
 
     public PermissionProcessor(
         IRepo<PermissionEntity> permissionRepo,
@@ -22,10 +23,11 @@ internal class PermissionProcessor : ProcessorBase, IPermissionProcessor
         IValidationProvider validationProvider,
         ILogger<PermissionProcessor> logger
     )
-        : base(validationProvider, logger)
+        : base(logger)
     {
-        _permissionRepo = permissionRepo;
-        _accountRepo = accountRepo;
+        _permissionRepo = permissionRepo.ThrowIfNull(nameof(permissionRepo));
+        _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
+        _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
     }
 
     public async Task<CreatePermissionResult> CreatePermissionAsync(CreatePermissionRequest request)
@@ -36,7 +38,8 @@ internal class PermissionProcessor : ProcessorBase, IPermissionProcessor
             request,
             async () =>
             {
-                var permission = Validate(request.ToPermission());
+                var permission = request.ToPermission();
+                _validationProvider.ThrowIfInvalid(permission);
 
                 if (
                     await _permissionRepo.AnyAsync(p =>

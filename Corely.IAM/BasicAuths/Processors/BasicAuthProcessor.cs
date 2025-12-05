@@ -18,6 +18,7 @@ internal class BasicAuthProcessor : ProcessorBase, IBasicAuthProcessor
     private readonly IRepo<BasicAuthEntity> _basicAuthRepo;
     private readonly IPasswordValidationProvider _passwordValidationProvider;
     private readonly IHashProviderFactory _hashProviderFactory;
+    private readonly IValidationProvider _validationProvider;
 
     public BasicAuthProcessor(
         IRepo<BasicAuthEntity> basicAuthRepo,
@@ -26,13 +27,14 @@ internal class BasicAuthProcessor : ProcessorBase, IBasicAuthProcessor
         IValidationProvider validationProvider,
         ILogger<BasicAuthProcessor> logger
     )
-        : base(validationProvider, logger)
+        : base(logger)
     {
         _basicAuthRepo = basicAuthRepo.ThrowIfNull(nameof(basicAuthRepo));
         _passwordValidationProvider = passwordValidationProvider.ThrowIfNull(
             nameof(passwordValidationProvider)
         );
         _hashProviderFactory = hashProviderFactory.ThrowIfNull(nameof(hashProviderFactory));
+        _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
     }
 
     public async Task<UpsertBasicAuthResult> UpsertBasicAuthAsync(UpsertBasicAuthRequest request)
@@ -43,7 +45,8 @@ internal class BasicAuthProcessor : ProcessorBase, IBasicAuthProcessor
             request,
             async () =>
             {
-                var basicAuth = Validate(request.ToBasicAuth(_hashProviderFactory));
+                var basicAuth = request.ToBasicAuth(_hashProviderFactory);
+                _validationProvider.ThrowIfInvalid(basicAuth);
 
                 var passwordValidationResults = _passwordValidationProvider.ValidatePassword(
                     request.Password

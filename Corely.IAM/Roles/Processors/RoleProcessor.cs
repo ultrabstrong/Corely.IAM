@@ -1,7 +1,6 @@
 ﻿using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
-using Corely.IAM.Groups.Processors;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Processors;
 using Corely.IAM.Roles.Constants;
@@ -18,6 +17,7 @@ internal class RoleProcessor : ProcessorBase, IRoleProcessor
     private readonly IRepo<RoleEntity> _roleRepo;
     private readonly IReadonlyRepo<AccountEntity> _accountRepo;
     private readonly IReadonlyRepo<PermissionEntity> _permissionRepo;
+    private readonly IValidationProvider _validationProvider;
 
     public RoleProcessor(
         IRepo<RoleEntity> roleRepo,
@@ -26,11 +26,12 @@ internal class RoleProcessor : ProcessorBase, IRoleProcessor
         IValidationProvider validationProvider,
         ILogger<RoleProcessor> logger
     )
-        : base(validationProvider, logger)
+        : base(logger)
     {
         _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
         _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
         _permissionRepo = permissionRepo.ThrowIfNull(nameof(permissionRepo));
+        _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
     }
 
     public async Task<CreateRoleResult> CreateRoleAsync(CreateRoleRequest createRoleRequest)
@@ -41,7 +42,8 @@ internal class RoleProcessor : ProcessorBase, IRoleProcessor
             createRoleRequest,
             async () =>
             {
-                var role = Validate(createRoleRequest.ToRole());
+                var role = createRoleRequest.ToRole();
+                _validationProvider.ThrowIfInvalid(role);
 
                 if (
                     await _roleRepo.AnyAsync(r =>

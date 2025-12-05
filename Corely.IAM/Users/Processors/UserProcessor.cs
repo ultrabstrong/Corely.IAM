@@ -23,6 +23,7 @@ internal class UserProcessor : ProcessorBase, IUserProcessor
     private readonly IReadonlyRepo<RoleEntity> _roleRepo;
     private readonly ISecurityProcessor _securityProcessor;
     private readonly ISymmetricEncryptionProviderFactory _encryptionProviderFactory;
+    private readonly IValidationProvider _validationProvider;
 
     public UserProcessor(
         IRepo<UserEntity> userRepo,
@@ -32,7 +33,7 @@ internal class UserProcessor : ProcessorBase, IUserProcessor
         IValidationProvider validationProvider,
         ILogger<UserProcessor> logger
     )
-        : base(validationProvider, logger)
+        : base(logger)
     {
         _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
         _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
@@ -40,6 +41,7 @@ internal class UserProcessor : ProcessorBase, IUserProcessor
         _encryptionProviderFactory = encryptionProviderFactory.ThrowIfNull(
             nameof(encryptionProviderFactory)
         );
+        _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
     }
 
     public async Task<CreateUserResult> CreateUserAsync(CreateUserRequest request)
@@ -50,7 +52,8 @@ internal class UserProcessor : ProcessorBase, IUserProcessor
             request,
             async () =>
             {
-                var user = Validate(request.ToUser());
+                var user = request.ToUser();
+                _validationProvider.ThrowIfInvalid(user);
 
                 var existingUser = await _userRepo.GetAsync(u =>
                     u.Username == request.Username || u.Email == request.Email
@@ -155,7 +158,7 @@ internal class UserProcessor : ProcessorBase, IUserProcessor
             nameof(UpdateUserAsync),
             async () =>
             {
-                Validate(user);
+                _validationProvider.ThrowIfInvalid(user);
                 var userEntity = user.ToEntity(); // user is validated
                 await _userRepo.UpdateAsync(userEntity);
             }

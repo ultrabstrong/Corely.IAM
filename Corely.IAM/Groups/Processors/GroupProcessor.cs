@@ -8,7 +8,6 @@ using Corely.IAM.Processors;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Validators;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Groups.Processors;
@@ -19,6 +18,7 @@ internal class GroupProcessor : ProcessorBase, IGroupProcessor
     private readonly IReadonlyRepo<AccountEntity> _accountRepo;
     private readonly IReadonlyRepo<UserEntity> _userRepo;
     private readonly IReadonlyRepo<RoleEntity> _roleRepo;
+    private readonly IValidationProvider _validationProvider;
 
     public GroupProcessor(
         IRepo<GroupEntity> groupRepo,
@@ -28,12 +28,13 @@ internal class GroupProcessor : ProcessorBase, IGroupProcessor
         IValidationProvider validationProvider,
         ILogger<GroupProcessor> logger
     )
-        : base(validationProvider, logger)
+        : base(logger)
     {
         _groupRepo = groupRepo.ThrowIfNull(nameof(groupRepo));
         _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
         _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
         _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
+        _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
     }
 
     public async Task<CreateGroupResult> CreateGroupAsync(CreateGroupRequest request)
@@ -44,7 +45,8 @@ internal class GroupProcessor : ProcessorBase, IGroupProcessor
             request,
             async () =>
             {
-                var group = Validate(request.ToGroup());
+                var group = request.ToGroup();
+                _validationProvider.ThrowIfInvalid(group);
 
                 if (
                     await _groupRepo.AnyAsync(g =>

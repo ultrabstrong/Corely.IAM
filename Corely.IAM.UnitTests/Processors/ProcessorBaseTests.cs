@@ -1,8 +1,5 @@
 ﻿using AutoFixture;
 using Corely.IAM.Processors;
-using Corely.IAM.Users.Mappers;
-using Corely.IAM.Users.Models;
-using Corely.IAM.Validators;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Processors;
@@ -11,10 +8,8 @@ public class ProcessorBaseTests
 {
     private class MockProcessorBase : ProcessorBase
     {
-        public MockProcessorBase(IValidationProvider validationProvider, ILogger logger)
-            : base(validationProvider, logger) { }
-
-        public new T Validate<T>(T? model) => base.Validate(model);
+        public MockProcessorBase(ILogger logger)
+            : base(logger) { }
 
         public new async Task<TResult> LogRequestResultAspect<TRequest, TResult>(
             string className,
@@ -47,8 +42,6 @@ public class ProcessorBaseTests
             await base.LogAspect(className, methodName, next);
     }
 
-    private const string VALID_USERNAME = "username";
-    private const string VALID_EMAIL = "email@x.y";
     private const string TEST_CLASS_NAME = nameof(TEST_CLASS_NAME);
     private const string TEST_METHOD_NAME = nameof(TEST_METHOD_NAME);
 
@@ -60,27 +53,8 @@ public class ProcessorBaseTests
     public ProcessorBaseTests()
     {
         _mockProcessorBase = new MockProcessorBase(
-            _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<ILogger<ProcessorBaseTests>>()
         );
-    }
-
-    [Fact]
-    public void Validate_DoesNotThrow_IfModelIsValid()
-    {
-        var user = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL).ToUser();
-
-        var ex = Record.Exception(() => _mockProcessorBase.Validate(user));
-
-        Assert.Null(ex);
-    }
-
-    [Fact]
-    public void Validate_Throws_WhenModelIsNull()
-    {
-        var ex = Record.Exception(() => _mockProcessorBase.Validate<object>(null!));
-        Assert.NotNull(ex);
-        Assert.IsType<ArgumentNullException>(ex);
     }
 
     [Fact]

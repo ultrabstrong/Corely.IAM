@@ -23,19 +23,20 @@ namespace Corely.IAM.UnitTests;
 
 public abstract class ServiceFactoryGenericTests
 {
-    protected abstract ServiceFactoryBase ServiceFactory { get; }
-
-    private static readonly IServiceCollection _serviceCollection = new ServiceCollection();
-    private static readonly IConfiguration _configuration = new ConfigurationManager();
-
-    protected static IServiceCollection ServiceCollection => _serviceCollection;
-    protected static IConfiguration Configuration => _configuration;
+    protected abstract ServiceFactoryBase CreateServiceFactory(
+        IServiceCollection serviceCollection,
+        IConfiguration configuration
+    );
 
     [Theory, MemberData(nameof(GetRequiredServiceData))]
     public void ServiceFactoryBase_ProvidesService(Type serviceType)
     {
-        ServiceFactory.AddIAMServices();
-        var serviceProvider = ServiceCollection.BuildServiceProvider();
+        var serviceCollection = new ServiceCollection();
+        var configuration = new ConfigurationManager();
+        var serviceFactory = CreateServiceFactory(serviceCollection, configuration);
+
+        serviceFactory.AddIAMServices();
+        var serviceProvider = serviceCollection.BuildServiceProvider();
 
         var service = serviceProvider.GetRequiredService(serviceType);
 

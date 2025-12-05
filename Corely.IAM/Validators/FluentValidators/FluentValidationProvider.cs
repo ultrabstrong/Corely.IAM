@@ -1,14 +1,20 @@
 ﻿using Corely.IAM.Validators.Mappers;
+using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Validators.FluentValidators;
 
 internal sealed class FluentValidationProvider : IValidationProvider
 {
     private readonly IFluentValidatorFactory _fluentValidatorFactory;
+    private readonly ILogger<FluentValidationProvider> _logger;
 
-    public FluentValidationProvider(IFluentValidatorFactory fluentValidatorFactory)
+    public FluentValidationProvider(
+        IFluentValidatorFactory fluentValidatorFactory,
+        ILogger<FluentValidationProvider> logger
+    )
     {
         _fluentValidatorFactory = fluentValidatorFactory;
+        _logger = logger;
     }
 
     public ValidationResult Validate<T>(T model)
@@ -36,6 +42,25 @@ internal sealed class FluentValidationProvider : IValidationProvider
 
     public void ThrowIfInvalid<T>(T model)
     {
-        Validate(model).ThrowIfInvalid();
+        try
+        {
+            Validate(model).ThrowIfInvalid();
+        }
+        catch (Exception ex)
+        {
+            var state = new Dictionary<string, object?>();
+
+            if (
+                ex is ValidationException validationException
+                && validationException.ValidationResult != null
+            )
+            {
+                state.Add("@ValidationResult", validationException.ValidationResult);
+            }
+
+            using var scope = _logger.BeginScope(state);
+            _logger.LogWarning(ex, "Validation failed for {ModelType}", model?.GetType()?.Name);
+            throw;
+        }
     }
 }

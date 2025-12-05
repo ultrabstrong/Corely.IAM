@@ -1,6 +1,7 @@
 ﻿using AutoFixture;
 using Corely.IAM.Validators.FluentValidators;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 using CorelyValidationException = Corely.IAM.Validators.ValidationException;
 using FluentValidationFailure = FluentValidation.Results.ValidationFailure;
 using FluentValidationResult = FluentValidation.Results.ValidationResult;
@@ -18,8 +19,9 @@ public class FluentValidationProviderTests
     {
         var serviceProviderMock = GetMockServiceProvider();
         var fluentValidatorFactory = new FluentValidatorFactory(serviceProviderMock);
+        var loggerMock = new Mock<ILogger<FluentValidationProvider>>();
 
-        _provider = new FluentValidationProvider(fluentValidatorFactory);
+        _provider = new FluentValidationProvider(fluentValidatorFactory, loggerMock.Object);
     }
 
     private static IServiceProvider GetMockServiceProvider()

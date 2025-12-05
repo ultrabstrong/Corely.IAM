@@ -40,7 +40,11 @@ public class EFServiceFactoryTests : ServiceFactoryGenericTests
             new TestEFConfiguration();
     }
 
-    private readonly MockServiceFactory _mockServiceFactory = new(ServiceCollection, Configuration);
-
-    protected override ServiceFactoryBase ServiceFactory => _mockServiceFactory;
+    protected override ServiceFactoryBase CreateServiceFactory(
+        IServiceCollection serviceCollection,
+        IConfiguration configuration
+    )
+    {
+        return new MockServiceFactory(serviceCollection, configuration);
+    }
 }

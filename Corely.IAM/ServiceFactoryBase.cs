@@ -2,7 +2,6 @@
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Permissions.Processors;
-using Corely.IAM.Processors.Decorators;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Processors;

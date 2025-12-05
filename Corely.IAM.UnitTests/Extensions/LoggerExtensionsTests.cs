@@ -34,7 +34,7 @@ public class LoggerExtensionsTests
         _mockLogger.Verify(
             x =>
                 x.Log(
-                    LogLevel.Debug,
+                    LogLevel.Trace,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("starting with request")),
                     It.IsAny<Exception>(),
@@ -47,7 +47,7 @@ public class LoggerExtensionsTests
         _mockLogger.Verify(
             x =>
                 x.Log(
-                    LogLevel.Debug,
+                    LogLevel.Trace,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>(
                         (v, t) =>
@@ -83,7 +83,7 @@ public class LoggerExtensionsTests
         _mockLogger.Verify(
             x =>
                 x.Log(
-                    LogLevel.Debug,
+                    LogLevel.Trace,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("with result")),
                     It.IsAny<Exception>(),
@@ -112,7 +112,7 @@ public class LoggerExtensionsTests
         _mockLogger.Verify(
             x =>
                 x.Log(
-                    LogLevel.Debug,
+                    LogLevel.Trace,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>(
                         (v, t) =>
@@ -194,7 +194,7 @@ public class LoggerExtensionsTests
         _mockLogger.Verify(
             x =>
                 x.Log(
-                    LogLevel.Debug,
+                    LogLevel.Trace,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("ms")),
                     It.IsAny<Exception>(),
@@ -218,7 +218,7 @@ public class LoggerExtensionsTests
         _mockLogger.Verify(
             x =>
                 x.Log(
-                    LogLevel.Debug,
+                    LogLevel.Trace,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>(
                         (v, t) => v.ToString()!.Contains("ExecuteWithLoggingWrapper")

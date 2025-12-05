@@ -1,14 +1,10 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Extensions;
 using Microsoft.Extensions.Logging;
 
-namespace Corely.IAM.Processors.Decorators;
+namespace Corely.IAM.Accounts.Processors;
 
-/// <summary>
-/// Decorator that logs method entry, exit, and exceptions for account processor operations.
-/// </summary>
 internal class LoggingAccountProcessorDecorator : IAccountProcessor
 {
     private readonly IAccountProcessor _inner;

@@ -19,7 +19,7 @@ internal static class LoggerExtensions
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-            logger.LogDebug(
+            logger.LogTrace(
                 "[{Class}] {Method} starting with request {@Request}",
                 className,
                 methodName,
@@ -32,7 +32,7 @@ internal static class LoggerExtensions
 
             if (logResult)
             {
-                logger.LogDebug(
+                logger.LogTrace(
                     "[{Class}] {Method} completed in {ElapsedMs}ms with result {@Result}",
                     className,
                     methodName,
@@ -42,7 +42,7 @@ internal static class LoggerExtensions
             }
             else
             {
-                logger.LogDebug(
+                logger.LogTrace(
                     "[{Class}] {Method} completed in {ElapsedMs}ms",
                     className,
                     methodName,

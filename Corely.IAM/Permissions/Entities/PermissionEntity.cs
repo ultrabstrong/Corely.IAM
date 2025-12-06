@@ -7,10 +7,9 @@ namespace Corely.IAM.Permissions.Entities;
 internal class PermissionEntity : IHasIdPk<int>, IHasCreatedUtc, IHasModifiedUtc
 {
     public int Id { get; set; }
-    public string Name { get; set; } = null!;
-    public string? Description { get; set; } = null!;
+    public string? Description { get; set; }
     public int AccountId { get; set; }
-    public virtual AccountEntity? Account { get; set; } = null!;
+    public virtual AccountEntity? Account { get; set; }
     public virtual ICollection<RoleEntity>? Roles { get; set; }
     public string ResourceType { get; set; } = null!;
     public int ResourceId { get; set; }

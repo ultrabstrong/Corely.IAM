@@ -11,10 +11,15 @@ public class PermissionMapperTests
     {
         // Arrange
         var request = new CreatePermissionRequest(
-            PermissionName: "TestPermission",
             OwnerAccountId: 123,
             ResourceType: "TestResource",
-            ResourceId: 456
+            ResourceId: 456,
+            Create: true,
+            Read: true,
+            Update: false,
+            Delete: false,
+            Execute: true,
+            Description: "Test Description"
         );
 
         // Act
@@ -22,10 +27,15 @@ public class PermissionMapperTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("TestPermission", result.Name);
         Assert.Equal(123, result.AccountId);
         Assert.Equal("TestResource", result.ResourceType);
         Assert.Equal(456, result.ResourceId);
+        Assert.True(result.Create);
+        Assert.True(result.Read);
+        Assert.False(result.Update);
+        Assert.False(result.Delete);
+        Assert.True(result.Execute);
+        Assert.Equal("Test Description", result.Description);
     }
 
     [Fact]
@@ -33,7 +43,6 @@ public class PermissionMapperTests
     {
         // Arrange
         var request = new CreatePermissionRequest(
-            PermissionName: "TestPermission",
             OwnerAccountId: 123,
             ResourceType: "TestResource",
             ResourceId: 456
@@ -53,32 +62,44 @@ public class PermissionMapperTests
     }
 
     [Theory]
-    [InlineData("Read", 1, "User", 100)]
-    [InlineData("Write", 2, "Document", 200)]
-    [InlineData("", 0, "", 0)]
+    [InlineData(1, "User", 100, true, false, false, false, false)]
+    [InlineData(2, "Document", 200, false, true, false, false, false)]
+    [InlineData(0, "", 0, false, false, false, false, false)]
     public void ToPermission_ShouldMapVariousInputs(
-        string permissionName,
         int accountId,
         string resourceType,
-        int resourceId
+        int resourceId,
+        bool create,
+        bool read,
+        bool update,
+        bool delete,
+        bool execute
     )
     {
         // Arrange
         var request = new CreatePermissionRequest(
-            PermissionName: permissionName,
             OwnerAccountId: accountId,
             ResourceType: resourceType,
-            ResourceId: resourceId
+            ResourceId: resourceId,
+            Create: create,
+            Read: read,
+            Update: update,
+            Delete: delete,
+            Execute: execute
         );
 
         // Act
         var result = request.ToPermission();
 
         // Assert
-        Assert.Equal(permissionName, result.Name);
         Assert.Equal(accountId, result.AccountId);
         Assert.Equal(resourceType, result.ResourceType);
         Assert.Equal(resourceId, result.ResourceId);
+        Assert.Equal(create, result.Create);
+        Assert.Equal(read, result.Read);
+        Assert.Equal(update, result.Update);
+        Assert.Equal(delete, result.Delete);
+        Assert.Equal(execute, result.Execute);
     }
 
     [Fact]
@@ -88,7 +109,6 @@ public class PermissionMapperTests
         var permission = new Permission
         {
             Id = 42,
-            Name = "TestPermission",
             Description = "Test Description",
             AccountId = 123,
             ResourceType = "TestResource",
@@ -106,7 +126,6 @@ public class PermissionMapperTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(42, result.Id);
-        Assert.Equal("TestPermission", result.Name);
         Assert.Equal("Test Description", result.Description);
         Assert.Equal(123, result.AccountId);
         Assert.Equal("TestResource", result.ResourceType);
@@ -125,7 +144,6 @@ public class PermissionMapperTests
         var permission = new Permission
         {
             Id = 1,
-            Name = "Test",
             AccountId = 100,
             ResourceType = "Resource",
             ResourceId = 1,
@@ -146,7 +164,6 @@ public class PermissionMapperTests
         var entity = new PermissionEntity
         {
             Id = 42,
-            Name = "TestPermission",
             Description = "Test Description",
             AccountId = 123,
             ResourceType = "TestResource",
@@ -166,7 +183,6 @@ public class PermissionMapperTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(42, result.Id);
-        Assert.Equal("TestPermission", result.Name);
         Assert.Equal("Test Description", result.Description);
         Assert.Equal(123, result.AccountId);
         Assert.Equal("TestResource", result.ResourceType);
@@ -185,7 +201,6 @@ public class PermissionMapperTests
         var originalPermission = new Permission
         {
             Id = 99,
-            Name = "RoundTripPermission",
             Description = "Round trip test",
             AccountId = 456,
             ResourceType = "TestResource",
@@ -203,7 +218,6 @@ public class PermissionMapperTests
 
         // Assert
         Assert.Equal(originalPermission.Id, resultPermission.Id);
-        Assert.Equal(originalPermission.Name, resultPermission.Name);
         Assert.Equal(originalPermission.Description, resultPermission.Description);
         Assert.Equal(originalPermission.AccountId, resultPermission.AccountId);
         Assert.Equal(originalPermission.ResourceType, resultPermission.ResourceType);
@@ -216,12 +230,11 @@ public class PermissionMapperTests
     }
 
     [Theory]
-    [InlineData(1, "Admin", "Admin permission", 100, "User", 1, true, true, true, true, true)]
-    [InlineData(2, "Read", null, 200, "Document", 2, false, true, false, false, false)]
-    [InlineData(0, "", "", 0, "", 0, false, false, false, false, false)]
+    [InlineData(1, "Admin permission", 100, "User", 1, true, true, true, true, true)]
+    [InlineData(2, null, 200, "Document", 2, false, true, false, false, false)]
+    [InlineData(0, "", 0, "", 0, false, false, false, false, false)]
     public void ToEntity_ShouldMapVariousInputs(
         int id,
-        string name,
         string? description,
         int accountId,
         string resourceType,
@@ -237,7 +250,6 @@ public class PermissionMapperTests
         var permission = new Permission
         {
             Id = id,
-            Name = name,
             Description = description,
             AccountId = accountId,
             ResourceType = resourceType,
@@ -254,7 +266,6 @@ public class PermissionMapperTests
 
         // Assert
         Assert.Equal(id, result.Id);
-        Assert.Equal(name, result.Name);
         Assert.Equal(description, result.Description);
         Assert.Equal(accountId, result.AccountId);
         Assert.Equal(resourceType, result.ResourceType);
@@ -267,12 +278,11 @@ public class PermissionMapperTests
     }
 
     [Theory]
-    [InlineData(1, "Admin", "Admin permission", 100, "User", 1, true, true, true, true, true)]
-    [InlineData(2, "Read", null, 200, "Document", 2, false, true, false, false, false)]
-    [InlineData(0, "", "", 0, "", 0, false, false, false, false, false)]
+    [InlineData(1, "Admin permission", 100, "User", 1, true, true, true, true, true)]
+    [InlineData(2, null, 200, "Document", 2, false, true, false, false, false)]
+    [InlineData(0, "", 0, "", 0, false, false, false, false, false)]
     public void ToModel_ShouldMapVariousInputs(
         int id,
-        string name,
         string? description,
         int accountId,
         string resourceType,
@@ -288,7 +298,6 @@ public class PermissionMapperTests
         var entity = new PermissionEntity
         {
             Id = id,
-            Name = name,
             Description = description,
             AccountId = accountId,
             ResourceType = resourceType,
@@ -305,7 +314,6 @@ public class PermissionMapperTests
 
         // Assert
         Assert.Equal(id, result.Id);
-        Assert.Equal(name, result.Name);
         Assert.Equal(description, result.Description);
         Assert.Equal(accountId, result.AccountId);
         Assert.Equal(resourceType, result.ResourceType);
@@ -315,5 +323,62 @@ public class PermissionMapperTests
         Assert.Equal(update, result.Update);
         Assert.Equal(delete, result.Delete);
         Assert.Equal(execute, result.Execute);
+    }
+
+    [Fact]
+    public void DisplayName_ShouldFormatCorrectly_WhenResourceIdIsZero()
+    {
+        // Arrange
+        var permission = new Permission
+        {
+            ResourceType = "group",
+            ResourceId = 0,
+            Create = true,
+            Read = true,
+            Update = false,
+            Delete = false,
+            Execute = false,
+        };
+
+        // Act & Assert
+        Assert.Equal("group - all CRudx", permission.DisplayName);
+    }
+
+    [Fact]
+    public void DisplayName_ShouldFormatCorrectly_WhenResourceIdIsSpecific()
+    {
+        // Arrange
+        var permission = new Permission
+        {
+            ResourceType = "group",
+            ResourceId = 42,
+            Create = false,
+            Read = true,
+            Update = false,
+            Delete = false,
+            Execute = false,
+        };
+
+        // Act & Assert
+        Assert.Equal("group - 42 cRudx", permission.DisplayName);
+    }
+
+    [Fact]
+    public void DisplayName_ShouldShowAllCrudxFlags()
+    {
+        // Arrange
+        var permission = new Permission
+        {
+            ResourceType = "user",
+            ResourceId = 0,
+            Create = true,
+            Read = true,
+            Update = true,
+            Delete = true,
+            Execute = true,
+        };
+
+        // Act & Assert
+        Assert.Equal("user - all CRUDX", permission.DisplayName);
     }
 }

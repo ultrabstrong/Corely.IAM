@@ -1,7 +1,6 @@
 ﻿using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Permissions.Models;
@@ -39,17 +38,25 @@ internal class PermissionProcessor : IPermissionProcessor
 
         if (
             await _permissionRepo.AnyAsync(p =>
-                p.AccountId == permission.AccountId && p.Name == permission.Name
+                p.AccountId == permission.AccountId
+                && p.ResourceType == permission.ResourceType
+                && p.ResourceId == permission.ResourceId
+                && p.Create == permission.Create
+                && p.Read == permission.Read
+                && p.Update == permission.Update
+                && p.Delete == permission.Delete
+                && p.Execute == permission.Execute
             )
         )
         {
             _logger.LogWarning(
-                "Permission with name {PermissionName} already exists",
-                permission.Name
+                "Permission already exists for {ResourceType} - {ResourceId}",
+                permission.ResourceType,
+                permission.ResourceId
             );
             return new CreatePermissionResult(
                 CreatePermissionResultCode.PermissionExistsError,
-                $"Permission with name {permission.Name} already exists",
+                $"Permission already exists for {permission.ResourceType} - {permission.ResourceId}",
                 -1
             );
         }
@@ -82,27 +89,62 @@ internal class PermissionProcessor : IPermissionProcessor
             new()
             {
                 AccountId = accountId,
-                Name = PermissionConstants.ADMIN_USER_ACCESS_PERMISSION_NAME,
+                ResourceType = "user",
+                ResourceId = 0,
+                Create = true,
+                Read = true,
+                Update = true,
+                Delete = true,
+                Execute = true,
+                Description = "Admin User Access",
             },
             new()
             {
                 AccountId = accountId,
-                Name = PermissionConstants.ADMIN_ACCOUNT_ACCESS_PERMISSION_NAME,
+                ResourceType = "account",
+                ResourceId = 0,
+                Create = true,
+                Read = true,
+                Update = true,
+                Delete = true,
+                Execute = true,
+                Description = "Admin Account Access",
             },
             new()
             {
                 AccountId = accountId,
-                Name = PermissionConstants.ADMIN_GROUP_ACCESS_PERMISSION_NAME,
+                ResourceType = "group",
+                ResourceId = 0,
+                Create = true,
+                Read = true,
+                Update = true,
+                Delete = true,
+                Execute = true,
+                Description = "Admin Group Access",
             },
             new()
             {
                 AccountId = accountId,
-                Name = PermissionConstants.ADMIN_ROLE_ACCESS_PERMISSION_NAME,
+                ResourceType = "role",
+                ResourceId = 0,
+                Create = true,
+                Read = true,
+                Update = true,
+                Delete = true,
+                Execute = true,
+                Description = "Admin Role Access",
             },
             new()
             {
                 AccountId = accountId,
-                Name = PermissionConstants.ADMIN_PERMISSION_ACCESS_PERMISSION_NAME,
+                ResourceType = "permission",
+                ResourceId = 0,
+                Create = true,
+                Read = true,
+                Update = true,
+                Delete = true,
+                Execute = true,
+                Description = "Admin Permission Access",
             },
         ];
 

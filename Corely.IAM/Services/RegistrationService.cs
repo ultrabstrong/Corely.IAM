@@ -253,28 +253,39 @@ internal class RegistrationService : IRegistrationService
     )
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _logger.LogInformation("Registering permission {PermissionName}", request.PermissionName);
+        _logger.LogInformation(
+            "Registering permission for {ResourceType} - {ResourceId}",
+            request.ResourceType,
+            request.ResourceId
+        );
 
         var result = await _permissionProcessor.CreatePermissionAsync(
             new(
-                request.PermissionName,
                 request.OwnerAccountId,
                 request.ResourceType,
-                request.ResourceId
+                request.ResourceId,
+                request.Create,
+                request.Read,
+                request.Update,
+                request.Delete,
+                request.Execute,
+                request.Description
             )
         );
         if (result.ResultCode != CreatePermissionResultCode.Success)
         {
             _logger.LogInformation(
-                "Registering permission failed for permission name {PermissionName}",
-                request.PermissionName
+                "Registering permission failed for {ResourceType} - {ResourceId}",
+                request.ResourceType,
+                request.ResourceId
             );
             return new RegisterPermissionResult(result.ResultCode, result.Message, -1);
         }
 
         _logger.LogInformation(
-            "Permission {PermissionName} registered with Id {PermissionId}",
-            request.PermissionName,
+            "Permission for {ResourceType} - {ResourceId} registered with Id {PermissionId}",
+            request.ResourceType,
+            request.ResourceId,
             result.CreatedId
         );
         return new RegisterPermissionResult(result.ResultCode, string.Empty, result.CreatedId);

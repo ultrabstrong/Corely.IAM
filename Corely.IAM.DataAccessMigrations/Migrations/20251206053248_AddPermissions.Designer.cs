@@ -12,15 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Corely.IAM.DataAccessMigrations.Migrations
 {
     [DbContext(typeof(IamDbContext))]
-    [Migration("20250130140725_IncreseEntityNameMaxLength")]
-    partial class IncreseEntityNameMaxLength
+    [Migration("20251206053248_AddPermissions")]
+    partial class AddPermissions
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.10")
+                .HasAnnotation("ProductVersion", "9.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -64,10 +64,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.Property<DateTime>("ModifiedUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP")
-                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
 
                     b.Property<string>("ProviderTypeCode")
                         .IsRequired()
@@ -106,10 +104,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                         .HasColumnType("TIMESTAMP")
                         .HasDefaultValueSql("(UTC_TIMESTAMP)");
 
-                    b.Property<DateTime>("ModifiedUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP")
-                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
 
                     b.HasKey("Id");
 
@@ -144,10 +140,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.Property<DateTime>("ModifiedUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP")
-                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
 
                     b.Property<string>("ProviderTypeCode")
                         .IsRequired()
@@ -177,10 +171,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                         .HasColumnType("TIMESTAMP")
                         .HasDefaultValueSql("(UTC_TIMESTAMP)");
 
-                    b.Property<DateTime>("ModifiedUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP")
-                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
 
                     b.Property<string>("Password")
                         .IsRequired()
@@ -217,10 +209,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("ModifiedUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP")
-                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -263,15 +253,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                     b.Property<bool>("Execute")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<DateTime>("ModifiedUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP")
-                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("varchar(250)");
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
 
                     b.Property<bool>("Read")
                         .HasColumnType("tinyint(1)");
@@ -281,14 +264,14 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
 
                     b.Property<string>("ResourceType")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<bool>("Update")
                         .HasColumnType("tinyint(1)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AccountId", "Name")
+                    b.HasIndex("AccountId", "ResourceType", "ResourceId", "Create", "Read", "Update", "Delete", "Execute")
                         .IsUnique();
 
                     b.ToTable("Permissions", (string)null);
@@ -316,10 +299,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                     b.Property<bool>("IsSystemDefined")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<DateTime>("ModifiedUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP")
-                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -355,10 +336,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.Property<DateTime>("ModifiedUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP")
-                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
 
                     b.Property<string>("ProviderTypeCode")
                         .IsRequired()
@@ -412,10 +391,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                     b.Property<DateTime?>("LastSuccessfulLoginUtc")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime>("ModifiedUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP")
-                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
 
                     b.Property<int>("TotalFailedLogins")
                         .HasColumnType("int");
@@ -461,10 +438,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.Property<DateTime>("ModifiedUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP")
-                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
 
                     b.Property<string>("ProviderTypeCode")
                         .IsRequired()

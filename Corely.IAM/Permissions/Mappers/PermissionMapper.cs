@@ -9,10 +9,15 @@ internal static class PermissionMapper
     {
         return new Permission
         {
-            Name = request.PermissionName,
             AccountId = request.OwnerAccountId,
             ResourceType = request.ResourceType,
             ResourceId = request.ResourceId,
+            Create = request.Create,
+            Read = request.Read,
+            Update = request.Update,
+            Delete = request.Delete,
+            Execute = request.Execute,
+            Description = request.Description,
         };
     }
 
@@ -21,7 +26,6 @@ internal static class PermissionMapper
         return new PermissionEntity
         {
             Id = permission.Id,
-            Name = permission.Name,
             Description = permission.Description,
             AccountId = permission.AccountId,
             ResourceType = permission.ResourceType,
@@ -39,7 +43,6 @@ internal static class PermissionMapper
         return new Permission
         {
             Id = entity.Id,
-            Name = entity.Name,
             Description = entity.Description,
             AccountId = entity.AccountId,
             ResourceType = entity.ResourceType,

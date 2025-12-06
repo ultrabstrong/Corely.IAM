@@ -80,10 +80,10 @@ internal class Program
             );
 
             var registerPermissionRequest = new RegisterPermissionRequest(
-                "perm1",
                 registerAccountResult.CreatedAccountId,
                 "group",
-                registerGroupResult.CreatedGroupId
+                registerGroupResult.CreatedGroupId,
+                Read: true
             );
             var registerPermissionResult = await registrationService.RegisterPermissionAsync(
                 registerPermissionRequest

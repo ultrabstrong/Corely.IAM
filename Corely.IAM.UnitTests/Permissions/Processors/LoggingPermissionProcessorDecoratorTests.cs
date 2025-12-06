@@ -23,7 +23,7 @@ public class LoggingPermissionProcessorDecoratorTests
     [Fact]
     public async Task CreatePermissionAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new CreatePermissionRequest("testpermission", 1, "Resource", 1);
+        var request = new CreatePermissionRequest(1, "group", 1, Read: true);
         var expectedResult = new CreatePermissionResult(
             CreatePermissionResultCode.Success,
             string.Empty,

@@ -1,6 +1,6 @@
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Extensions;
 
@@ -33,7 +33,7 @@ internal static class LoggerExtensions
             if (logResult)
             {
                 logger.LogTrace(
-                    "[{Class}] {Method} completed in {ElapsedMs}ms with result {@Result}",
+                    "[{Class}] {Method} completed in {ElapsedMs} ms with result {@Result}",
                     className,
                     methodName,
                     stopwatch.ElapsedMilliseconds,
@@ -83,7 +83,7 @@ internal static class LoggerExtensions
             stopwatch.Stop();
 
             logger.LogTrace(
-                "[{Class}] {Method} completed in {ElapsedMs}ms",
+                "[{Class}] {Method} completed in {ElapsedMs} ms",
                 className,
                 methodName,
                 stopwatch.ElapsedMilliseconds

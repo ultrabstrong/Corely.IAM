@@ -106,6 +106,10 @@ public abstract class ServiceFactoryBase(
         ServiceCollection.Decorate<IRoleProcessor, RoleProcessorLoggingDecorator>();
 
         ServiceCollection.AddScoped<IPermissionProcessor, PermissionProcessor>();
+        ServiceCollection.Decorate<
+            IPermissionProcessor,
+            PermissionProcessorAuthorizationDecorator
+        >();
         ServiceCollection.Decorate<IPermissionProcessor, PermissionProcessorLoggingDecorator>();
     }
 

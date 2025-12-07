@@ -18,6 +18,7 @@ internal class PermissionEntity : IHasIdPk<int>, IHasCreatedUtc, IHasModifiedUtc
     public bool Update { get; set; }
     public bool Delete { get; set; }
     public bool Execute { get; set; }
+    public bool IsSystemDefined { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime? ModifiedUtc { get; set; }
 }

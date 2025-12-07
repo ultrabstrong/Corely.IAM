@@ -1,4 +1,5 @@
 ﻿using Corely.IAM.Accounts.Processors;
+using Corely.IAM.Auth.Providers;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Permissions.Processors;
@@ -7,6 +8,7 @@ using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Processors;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Processors;
+using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Corely.IAM.Validators.FluentValidators;
 using Corely.Security.Encryption;
@@ -76,6 +78,9 @@ public abstract class ServiceFactoryBase(
             Configuration.GetSection(PasswordValidationOptions.NAME)
         );
 
+        ServiceCollection.AddScoped<IUserContextProvider, UserContextProvider>();
+        ServiceCollection.AddScoped<IAuthorizationProvider, AuthorizationProvider>();
+
         ServiceCollection.AddScoped<IRegistrationService, RegistrationService>();
         ServiceCollection.AddScoped<IDeregistrationService, DeregistrationService>();
         ServiceCollection.AddScoped<ISignInService, SignInService>();
@@ -84,22 +89,24 @@ public abstract class ServiceFactoryBase(
         AddDataServices();
 
         ServiceCollection.AddScoped<IAccountProcessor, AccountProcessor>();
-        ServiceCollection.Decorate<IAccountProcessor, LoggingAccountProcessorDecorator>();
+        ServiceCollection.Decorate<IAccountProcessor, AccountProcessorLoggingDecorator>();
 
         ServiceCollection.AddScoped<IUserProcessor, UserProcessor>();
-        ServiceCollection.Decorate<IUserProcessor, LoggingUserProcessorDecorator>();
+        ServiceCollection.Decorate<IUserProcessor, UserProcessorLoggingDecorator>();
 
         ServiceCollection.AddScoped<IBasicAuthProcessor, BasicAuthProcessor>();
-        ServiceCollection.Decorate<IBasicAuthProcessor, LoggingBasicAuthProcessorDecorator>();
+        ServiceCollection.Decorate<IBasicAuthProcessor, BasicAuthProcessorLoggingDecorator>();
 
         ServiceCollection.AddScoped<IGroupProcessor, GroupProcessor>();
-        ServiceCollection.Decorate<IGroupProcessor, LoggingGroupProcessorDecorator>();
+        ServiceCollection.Decorate<IGroupProcessor, GroupProcessorAuthorizationDecorator>();
+        ServiceCollection.Decorate<IGroupProcessor, GroupProcessorLoggingDecorator>();
 
         ServiceCollection.AddScoped<IRoleProcessor, RoleProcessor>();
-        ServiceCollection.Decorate<IRoleProcessor, LoggingRoleProcessorDecorator>();
+        ServiceCollection.Decorate<IRoleProcessor, RoleProcessorAuthorizationDecorator>();
+        ServiceCollection.Decorate<IRoleProcessor, RoleProcessorLoggingDecorator>();
 
         ServiceCollection.AddScoped<IPermissionProcessor, PermissionProcessor>();
-        ServiceCollection.Decorate<IPermissionProcessor, LoggingPermissionProcessorDecorator>();
+        ServiceCollection.Decorate<IPermissionProcessor, PermissionProcessorLoggingDecorator>();
     }
 
     protected abstract void AddLogging(ILoggingBuilder builder);

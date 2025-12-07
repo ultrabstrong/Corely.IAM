@@ -4,17 +4,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Users.Processors;
 
-public class LoggingUserProcessorDecoratorTests
+public class UserProcessorLoggingDecoratorTests
 {
     private readonly Mock<IUserProcessor> _mockInnerProcessor;
-    private readonly Mock<ILogger<LoggingUserProcessorDecorator>> _mockLogger;
-    private readonly LoggingUserProcessorDecorator _decorator;
+    private readonly Mock<ILogger<UserProcessorLoggingDecorator>> _mockLogger;
+    private readonly UserProcessorLoggingDecorator _decorator;
 
-    public LoggingUserProcessorDecoratorTests()
+    public UserProcessorLoggingDecoratorTests()
     {
         _mockInnerProcessor = new Mock<IUserProcessor>();
-        _mockLogger = new Mock<ILogger<LoggingUserProcessorDecorator>>();
-        _decorator = new LoggingUserProcessorDecorator(
+        _mockLogger = new Mock<ILogger<UserProcessorLoggingDecorator>>();
+        _decorator = new UserProcessorLoggingDecorator(
             _mockInnerProcessor.Object,
             _mockLogger.Object
         );
@@ -147,13 +147,13 @@ public class LoggingUserProcessorDecoratorTests
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new LoggingUserProcessorDecorator(null!, _mockLogger.Object)
+            new UserProcessorLoggingDecorator(null!, _mockLogger.Object)
         );
 
     [Fact]
     public void Constructor_ThrowsOnNullLogger() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new LoggingUserProcessorDecorator(_mockInnerProcessor.Object, null!)
+            new UserProcessorLoggingDecorator(_mockInnerProcessor.Object, null!)
         );
 
     private void VerifyLoggedWithResult() =>

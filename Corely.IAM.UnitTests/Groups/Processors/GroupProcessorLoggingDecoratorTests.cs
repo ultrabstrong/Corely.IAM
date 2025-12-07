@@ -4,17 +4,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Groups.Processors;
 
-public class LoggingGroupProcessorDecoratorTests
+public class GroupProcessorLoggingDecoratorTests
 {
     private readonly Mock<IGroupProcessor> _mockInnerProcessor;
-    private readonly Mock<ILogger<LoggingGroupProcessorDecorator>> _mockLogger;
-    private readonly LoggingGroupProcessorDecorator _decorator;
+    private readonly Mock<ILogger<GroupProcessorLoggingDecorator>> _mockLogger;
+    private readonly GroupProcessorLoggingDecorator _decorator;
 
-    public LoggingGroupProcessorDecoratorTests()
+    public GroupProcessorLoggingDecoratorTests()
     {
         _mockInnerProcessor = new Mock<IGroupProcessor>();
-        _mockLogger = new Mock<ILogger<LoggingGroupProcessorDecorator>>();
-        _decorator = new LoggingGroupProcessorDecorator(
+        _mockLogger = new Mock<ILogger<GroupProcessorLoggingDecorator>>();
+        _decorator = new GroupProcessorLoggingDecorator(
             _mockInnerProcessor.Object,
             _mockLogger.Object
         );
@@ -79,13 +79,13 @@ public class LoggingGroupProcessorDecoratorTests
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new LoggingGroupProcessorDecorator(null!, _mockLogger.Object)
+            new GroupProcessorLoggingDecorator(null!, _mockLogger.Object)
         );
 
     [Fact]
     public void Constructor_ThrowsOnNullLogger() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new LoggingGroupProcessorDecorator(_mockInnerProcessor.Object, null!)
+            new GroupProcessorLoggingDecorator(_mockInnerProcessor.Object, null!)
         );
 
     private void VerifyLoggedWithResult() =>

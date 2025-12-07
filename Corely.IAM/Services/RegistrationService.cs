@@ -152,14 +152,15 @@ internal class RegistrationService : IRegistrationService
                 );
             }
 
-            await _roleProcessor.CreateDefaultSystemRolesAsync(createAccountResult.CreatedId);
-            var ownerRole = await _roleProcessor.GetRoleAsync(
-                RoleConstants.OWNER_ROLE_NAME,
+            var rolesResult = await _roleProcessor.CreateDefaultSystemRolesAsync(
+                createAccountResult.CreatedId
+            );
+            await _permissionProcessor.CreateDefaultSystemPermissionsAsync(
                 createAccountResult.CreatedId
             );
 
             var assignRoleResult = await _userProcessor.AssignRolesToUserAsync(
-                new([ownerRole!.Id], request.OwnerUserId)
+                new([rolesResult.OwnerRoleId], request.OwnerUserId, BypassAuthorization: true)
             );
             if (assignRoleResult.ResultCode != AssignRolesToUserResultCode.Success)
             {

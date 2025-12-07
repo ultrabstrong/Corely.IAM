@@ -5,14 +5,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.BasicAuths.Processors;
 
-internal class LoggingBasicAuthProcessorDecorator : IBasicAuthProcessor
+internal class BasicAuthProcessorLoggingDecorator : IBasicAuthProcessor
 {
     private readonly IBasicAuthProcessor _inner;
-    private readonly ILogger<LoggingBasicAuthProcessorDecorator> _logger;
+    private readonly ILogger<BasicAuthProcessorLoggingDecorator> _logger;
 
-    public LoggingBasicAuthProcessorDecorator(
+    public BasicAuthProcessorLoggingDecorator(
         IBasicAuthProcessor inner,
-        ILogger<LoggingBasicAuthProcessorDecorator> logger
+        ILogger<BasicAuthProcessorLoggingDecorator> logger
     )
     {
         _inner = inner.ThrowIfNull(nameof(inner));

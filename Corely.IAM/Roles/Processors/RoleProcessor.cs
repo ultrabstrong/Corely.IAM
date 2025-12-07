@@ -68,31 +68,32 @@ internal class RoleProcessor : IRoleProcessor
         return new CreateRoleResult(CreateRoleResultCode.Success, string.Empty, created.Id);
     }
 
-    public async Task CreateDefaultSystemRolesAsync(int ownerAccountId)
+    public async Task<CreateDefaultSystemRolesResult> CreateDefaultSystemRolesAsync(
+        int ownerAccountId
+    )
     {
-        RoleEntity[] roleEntities =
-        [
-            new()
-            {
-                AccountId = ownerAccountId,
-                Name = RoleConstants.OWNER_ROLE_NAME,
-                IsSystemDefined = true,
-            },
-            new()
-            {
-                AccountId = ownerAccountId,
-                Name = RoleConstants.ADMIN_ROLE_NAME,
-                IsSystemDefined = true,
-            },
-            new()
-            {
-                AccountId = ownerAccountId,
-                Name = RoleConstants.USER_ROLE_NAME,
-                IsSystemDefined = true,
-            },
-        ];
+        var ownerRole = new RoleEntity
+        {
+            AccountId = ownerAccountId,
+            Name = RoleConstants.OWNER_ROLE_NAME,
+            IsSystemDefined = true,
+        };
+        var adminRole = new RoleEntity
+        {
+            AccountId = ownerAccountId,
+            Name = RoleConstants.ADMIN_ROLE_NAME,
+            IsSystemDefined = true,
+        };
+        var userRole = new RoleEntity
+        {
+            AccountId = ownerAccountId,
+            Name = RoleConstants.USER_ROLE_NAME,
+            IsSystemDefined = true,
+        };
 
-        await _roleRepo.CreateAsync(roleEntities);
+        await _roleRepo.CreateAsync([ownerRole, adminRole, userRole]);
+
+        return new CreateDefaultSystemRolesResult(ownerRole.Id, adminRole.Id, userRole.Id);
     }
 
     public async Task<Role?> GetRoleAsync(int roleId)

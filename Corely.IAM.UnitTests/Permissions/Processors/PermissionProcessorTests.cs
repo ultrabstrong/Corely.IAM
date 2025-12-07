@@ -5,6 +5,8 @@ using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
+using Corely.IAM.Roles.Constants;
+using Corely.IAM.Roles.Entities;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -21,6 +23,7 @@ public class PermissionProcessorTests
     {
         _permissionProcessor = new PermissionProcessor(
             _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>(),
+            _serviceFactory.GetRequiredService<IRepo<RoleEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<ILogger<PermissionProcessor>>()
@@ -34,6 +37,33 @@ public class PermissionProcessorTests
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var created = await accountRepo.CreateAsync(account);
         return created.Id;
+    }
+
+    private async Task CreateDefaultRolesAsync(int accountId)
+    {
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        RoleEntity[] roles =
+        [
+            new()
+            {
+                AccountId = accountId,
+                Name = RoleConstants.OWNER_ROLE_NAME,
+                IsSystemDefined = true,
+            },
+            new()
+            {
+                AccountId = accountId,
+                Name = RoleConstants.ADMIN_ROLE_NAME,
+                IsSystemDefined = true,
+            },
+            new()
+            {
+                AccountId = accountId,
+                Name = RoleConstants.USER_ROLE_NAME,
+                IsSystemDefined = true,
+            },
+        ];
+        await roleRepo.CreateAsync(roles);
     }
 
     [Fact]
@@ -93,28 +123,83 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemPermissionsAsync_CreatesDefaultPermissions()
+    public async Task CreateDefaultSystemPermissionsAsync_CreatesThreePermissions()
     {
         var accountId = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(accountId);
 
         await _permissionProcessor.CreateDefaultSystemPermissionsAsync(accountId);
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var permissions = await permissionRepo.ListAsync(p => p.AccountId == accountId);
-        Assert.Equal(5, permissions.Count);
-        Assert.Contains(permissions, p => p.ResourceType == PermissionConstants.USER_RESOURCE_TYPE);
-        Assert.Contains(
+        Assert.Equal(3, permissions.Count);
+        Assert.All(
             permissions,
-            p => p.ResourceType == PermissionConstants.ACCOUNT_RESOURCE_TYPE
+            p => Assert.Equal(PermissionConstants.ALL_RESOURCE_TYPES, p.ResourceType)
         );
-        Assert.Contains(
-            permissions,
-            p => p.ResourceType == PermissionConstants.GROUP_RESOURCE_TYPE
+        Assert.All(permissions, p => Assert.True(p.IsSystemDefined));
+    }
+
+    [Fact]
+    public async Task CreateDefaultSystemPermissionsAsync_CreatesOwnerPermission_WithFullAccess()
+    {
+        var accountId = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(accountId);
+
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(accountId);
+
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var permissions = await permissionRepo.ListAsync(
+            p => p.AccountId == accountId,
+            include: q => q.Include(p => p.Roles)
         );
-        Assert.Contains(permissions, p => p.ResourceType == PermissionConstants.ROLE_RESOURCE_TYPE);
-        Assert.Contains(
-            permissions,
-            p => p.ResourceType == PermissionConstants.PERMISSION_RESOURCE_TYPE
+
+        var ownerPermission = permissions.Single(p =>
+            p.Create && p.Read && p.Update && p.Delete && p.Execute
         );
+        Assert.NotNull(ownerPermission);
+        Assert.Contains(ownerPermission.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+    }
+
+    [Fact]
+    public async Task CreateDefaultSystemPermissionsAsync_CreatesAdminPermission_WithoutDelete()
+    {
+        var accountId = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(accountId);
+
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(accountId);
+
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var permissions = await permissionRepo.ListAsync(
+            p => p.AccountId == accountId,
+            include: q => q.Include(p => p.Roles)
+        );
+
+        var adminPermission = permissions.Single(p =>
+            p.Create && p.Read && p.Update && !p.Delete && p.Execute
+        );
+        Assert.NotNull(adminPermission);
+        Assert.Contains(adminPermission.Roles!, r => r.Name == RoleConstants.ADMIN_ROLE_NAME);
+    }
+
+    [Fact]
+    public async Task CreateDefaultSystemPermissionsAsync_CreatesUserPermission_ReadOnly()
+    {
+        var accountId = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(accountId);
+
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(accountId);
+
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var permissions = await permissionRepo.ListAsync(
+            p => p.AccountId == accountId,
+            include: q => q.Include(p => p.Roles)
+        );
+
+        var userPermission = permissions.Single(p =>
+            !p.Create && p.Read && !p.Update && !p.Delete && !p.Execute
+        );
+        Assert.NotNull(userPermission);
+        Assert.Contains(userPermission.Roles!, r => r.Name == RoleConstants.USER_ROLE_NAME);
     }
 }

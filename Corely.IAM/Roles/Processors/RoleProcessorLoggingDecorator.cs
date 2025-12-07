@@ -5,14 +5,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Roles.Processors;
 
-internal class LoggingRoleProcessorDecorator : IRoleProcessor
+internal class RoleProcessorLoggingDecorator : IRoleProcessor
 {
     private readonly IRoleProcessor _inner;
-    private readonly ILogger<LoggingRoleProcessorDecorator> _logger;
+    private readonly ILogger<RoleProcessorLoggingDecorator> _logger;
 
-    public LoggingRoleProcessorDecorator(
+    public RoleProcessorLoggingDecorator(
         IRoleProcessor inner,
-        ILogger<LoggingRoleProcessorDecorator> logger
+        ILogger<RoleProcessorLoggingDecorator> logger
     )
     {
         _inner = inner.ThrowIfNull(nameof(inner));
@@ -27,11 +27,14 @@ internal class LoggingRoleProcessorDecorator : IRoleProcessor
             logResult: true
         );
 
-    public async Task CreateDefaultSystemRolesAsync(int ownerAccountId) =>
+    public async Task<CreateDefaultSystemRolesResult> CreateDefaultSystemRolesAsync(
+        int ownerAccountId
+    ) =>
         await _logger.ExecuteWithLogging(
             nameof(RoleProcessor),
             ownerAccountId,
-            () => _inner.CreateDefaultSystemRolesAsync(ownerAccountId)
+            () => _inner.CreateDefaultSystemRolesAsync(ownerAccountId),
+            logResult: true
         );
 
     public async Task<Role?> GetRoleAsync(int roleId) =>

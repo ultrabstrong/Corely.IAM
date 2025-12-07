@@ -2,6 +2,8 @@
 using Corely.IAM.ConsoleApp.SerilogCustomization;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -57,12 +59,15 @@ internal class Program
                 .Build();
 
             var registrationService = host.Services.GetRequiredService<IRegistrationService>();
+            var userContextProvider = host.Services.GetRequiredService<IUserContextProvider>();
 
+            // Register user (no auth required)
             var registerUserRequest = new RegisterUserRequest("user1", "email@x.y", "admin");
             var registerUserResult = await registrationService.RegisterUserAsync(
                 registerUserRequest
             );
 
+            // Register account (no auth required - creates default roles and permissions)
             var registerAccountRequest = new RegisterAccountRequest(
                 "acct1",
                 registerUserResult.CreatedUserId
@@ -71,6 +76,16 @@ internal class Program
                 registerAccountRequest
             );
 
+            // Set user context for subsequent authorized operations
+            // The user now has the Owner role with full permissions
+            userContextProvider.SetUserContext(
+                new UserContext(
+                    registerUserResult.CreatedUserId,
+                    registerAccountResult.CreatedAccountId
+                )
+            );
+
+            // Now authorized operations can proceed
             var registerGroupRequest = new RegisterGroupRequest(
                 "grp1",
                 registerAccountResult.CreatedAccountId

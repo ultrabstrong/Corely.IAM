@@ -5,14 +5,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Permissions.Processors;
 
-internal class LoggingPermissionProcessorDecorator : IPermissionProcessor
+internal class PermissionProcessorLoggingDecorator : IPermissionProcessor
 {
     private readonly IPermissionProcessor _inner;
-    private readonly ILogger<LoggingPermissionProcessorDecorator> _logger;
+    private readonly ILogger<PermissionProcessorLoggingDecorator> _logger;
 
-    public LoggingPermissionProcessorDecorator(
+    public PermissionProcessorLoggingDecorator(
         IPermissionProcessor inner,
-        ILogger<LoggingPermissionProcessorDecorator> logger
+        ILogger<PermissionProcessorLoggingDecorator> logger
     )
     {
         _inner = inner.ThrowIfNull(nameof(inner));

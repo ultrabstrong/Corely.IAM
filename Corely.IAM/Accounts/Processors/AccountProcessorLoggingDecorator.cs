@@ -5,14 +5,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Accounts.Processors;
 
-internal class LoggingAccountProcessorDecorator : IAccountProcessor
+internal class AccountProcessorLoggingDecorator : IAccountProcessor
 {
     private readonly IAccountProcessor _inner;
-    private readonly ILogger<LoggingAccountProcessorDecorator> _logger;
+    private readonly ILogger<AccountProcessorLoggingDecorator> _logger;
 
-    public LoggingAccountProcessorDecorator(
+    public AccountProcessorLoggingDecorator(
         IAccountProcessor inner,
-        ILogger<LoggingAccountProcessorDecorator> logger
+        ILogger<AccountProcessorLoggingDecorator> logger
     )
     {
         _inner = inner.ThrowIfNull(nameof(inner));

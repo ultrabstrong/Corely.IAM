@@ -1,9 +1,12 @@
 ﻿using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Roles.Constants;
+using Corely.IAM.Roles.Entities;
 using Corely.IAM.Validators;
 using Microsoft.Extensions.Logging;
 
@@ -12,18 +15,21 @@ namespace Corely.IAM.Permissions.Processors;
 internal class PermissionProcessor : IPermissionProcessor
 {
     private readonly IRepo<PermissionEntity> _permissionRepo;
+    private readonly IRepo<RoleEntity> _roleRepo;
     private readonly IReadonlyRepo<AccountEntity> _accountRepo;
     private readonly IValidationProvider _validationProvider;
     private readonly ILogger<PermissionProcessor> _logger;
 
     public PermissionProcessor(
         IRepo<PermissionEntity> permissionRepo,
+        IRepo<RoleEntity> roleRepo,
         IReadonlyRepo<AccountEntity> accountRepo,
         IValidationProvider validationProvider,
         ILogger<PermissionProcessor> logger
     )
     {
         _permissionRepo = permissionRepo.ThrowIfNull(nameof(permissionRepo));
+        _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
         _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
         _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
         _logger = logger.ThrowIfNull(nameof(logger));
@@ -84,67 +90,62 @@ internal class PermissionProcessor : IPermissionProcessor
 
     public async Task CreateDefaultSystemPermissionsAsync(int accountId)
     {
+        var ownerRole = await _roleRepo.GetAsync(r =>
+            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+        );
+        var adminRole = await _roleRepo.GetAsync(r =>
+            r.AccountId == accountId && r.Name == RoleConstants.ADMIN_ROLE_NAME
+        );
+        var userRole = await _roleRepo.GetAsync(r =>
+            r.AccountId == accountId && r.Name == RoleConstants.USER_ROLE_NAME
+        );
+
         PermissionEntity[] permissionEntities =
         [
+            // Owner: CRUDX on all resources
             new()
             {
                 AccountId = accountId,
-                ResourceType = "user",
+                ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
                 ResourceId = 0,
                 Create = true,
                 Read = true,
                 Update = true,
                 Delete = true,
                 Execute = true,
-                Description = "Admin User Access",
+                Description = "Owner - Full access to all resources",
+                IsSystemDefined = true,
+                Roles = ownerRole != null ? [ownerRole] : [],
             },
+            // Admin: CRUdX on all resources (no Delete)
             new()
             {
                 AccountId = accountId,
-                ResourceType = "account",
+                ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
                 ResourceId = 0,
                 Create = true,
                 Read = true,
                 Update = true,
-                Delete = true,
+                Delete = false,
                 Execute = true,
-                Description = "Admin Account Access",
+                Description = "Admin - Manage all resources (no delete)",
+                IsSystemDefined = true,
+                Roles = adminRole != null ? [adminRole] : [],
             },
+            // User: cRudx on all resources (Read only)
             new()
             {
                 AccountId = accountId,
-                ResourceType = "group",
+                ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
                 ResourceId = 0,
-                Create = true,
+                Create = false,
                 Read = true,
-                Update = true,
-                Delete = true,
-                Execute = true,
-                Description = "Admin Group Access",
-            },
-            new()
-            {
-                AccountId = accountId,
-                ResourceType = "role",
-                ResourceId = 0,
-                Create = true,
-                Read = true,
-                Update = true,
-                Delete = true,
-                Execute = true,
-                Description = "Admin Role Access",
-            },
-            new()
-            {
-                AccountId = accountId,
-                ResourceType = "permission",
-                ResourceId = 0,
-                Create = true,
-                Read = true,
-                Update = true,
-                Delete = true,
-                Execute = true,
-                Description = "Admin Permission Access",
+                Update = false,
+                Delete = false,
+                Execute = false,
+                Description = "User - Read-only access to all resources",
+                IsSystemDefined = true,
+                Roles = userRole != null ? [userRole] : [],
             },
         ];
 

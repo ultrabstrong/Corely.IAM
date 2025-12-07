@@ -4,17 +4,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Roles.Processors;
 
-public class LoggingRoleProcessorDecoratorTests
+public class RoleProcessorLoggingDecoratorTests
 {
     private readonly Mock<IRoleProcessor> _mockInnerProcessor;
-    private readonly Mock<ILogger<LoggingRoleProcessorDecorator>> _mockLogger;
-    private readonly LoggingRoleProcessorDecorator _decorator;
+    private readonly Mock<ILogger<RoleProcessorLoggingDecorator>> _mockLogger;
+    private readonly RoleProcessorLoggingDecorator _decorator;
 
-    public LoggingRoleProcessorDecoratorTests()
+    public RoleProcessorLoggingDecoratorTests()
     {
         _mockInnerProcessor = new Mock<IRoleProcessor>();
-        _mockLogger = new Mock<ILogger<LoggingRoleProcessorDecorator>>();
-        _decorator = new LoggingRoleProcessorDecorator(
+        _mockLogger = new Mock<ILogger<RoleProcessorLoggingDecorator>>();
+        _decorator = new RoleProcessorLoggingDecorator(
             _mockInnerProcessor.Object,
             _mockLogger.Object
         );
@@ -35,20 +35,22 @@ public class LoggingRoleProcessorDecoratorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemRolesAsync_DelegatesToInner()
+    public async Task CreateDefaultSystemRolesAsync_DelegatesToInnerAndLogsResult()
     {
         var ownerAccountId = 1;
+        var expectedResult = new CreateDefaultSystemRolesResult(1, 2, 3);
         _mockInnerProcessor
             .Setup(x => x.CreateDefaultSystemRolesAsync(ownerAccountId))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(expectedResult);
 
-        await _decorator.CreateDefaultSystemRolesAsync(ownerAccountId);
+        var result = await _decorator.CreateDefaultSystemRolesAsync(ownerAccountId);
 
+        Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(
             x => x.CreateDefaultSystemRolesAsync(ownerAccountId),
             Times.Once
         );
-        VerifyLogged();
+        VerifyLoggedWithResult();
     }
 
     [Fact]
@@ -106,13 +108,13 @@ public class LoggingRoleProcessorDecoratorTests
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new LoggingRoleProcessorDecorator(null!, _mockLogger.Object)
+            new RoleProcessorLoggingDecorator(null!, _mockLogger.Object)
         );
 
     [Fact]
     public void Constructor_ThrowsOnNullLogger() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new LoggingRoleProcessorDecorator(_mockInnerProcessor.Object, null!)
+            new RoleProcessorLoggingDecorator(_mockInnerProcessor.Object, null!)
         );
 
     private void VerifyLoggedWithResult() =>

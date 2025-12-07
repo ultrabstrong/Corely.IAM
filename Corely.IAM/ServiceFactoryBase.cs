@@ -89,6 +89,7 @@ public abstract class ServiceFactoryBase(
         AddDataServices();
 
         ServiceCollection.AddScoped<IAccountProcessor, AccountProcessor>();
+        ServiceCollection.Decorate<IAccountProcessor, AccountProcessorAuthorizationDecorator>();
         ServiceCollection.Decorate<IAccountProcessor, AccountProcessorLoggingDecorator>();
 
         ServiceCollection.AddScoped<IUserProcessor, UserProcessor>();

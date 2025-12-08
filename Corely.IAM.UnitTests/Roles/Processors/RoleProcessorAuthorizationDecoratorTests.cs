@@ -21,8 +21,6 @@ public class RoleProcessorAuthorizationDecoratorTests
         );
     }
 
-    #region CreateRoleAsync Tests
-
     [Fact]
     public async Task CreateRoleAsync_CallsAuthorizationProvider()
     {
@@ -63,10 +61,6 @@ public class RoleProcessorAuthorizationDecoratorTests
         );
     }
 
-    #endregion
-
-    #region CreateDefaultSystemRolesAsync Tests
-
     [Fact]
     public async Task CreateDefaultSystemRolesAsync_BypassesAuthorization()
     {
@@ -80,10 +74,6 @@ public class RoleProcessorAuthorizationDecoratorTests
         );
         _mockInnerProcessor.Verify(x => x.CreateDefaultSystemRolesAsync(accountId), Times.Once);
     }
-
-    #endregion
-
-    #region GetRoleAsync Tests
 
     [Fact]
     public async Task GetRoleAsyncById_CallsAuthorizationProviderWithResourceId()
@@ -140,10 +130,6 @@ public class RoleProcessorAuthorizationDecoratorTests
             Times.Once
         );
     }
-
-    #endregion
-
-    #region AssignPermissionsToRoleAsync Tests
 
     [Fact]
     public async Task AssignPermissionsToRoleAsync_CallsAuthorizationProvider()
@@ -218,9 +204,44 @@ public class RoleProcessorAuthorizationDecoratorTests
         _mockInnerProcessor.Verify(x => x.AssignPermissionsToRoleAsync(request), Times.Once);
     }
 
-    #endregion
+    [Fact]
+    public async Task DeleteRoleAsync_CallsAuthorizationProvider()
+    {
+        var roleId = 5;
+        var expectedResult = new DeleteRoleResult(DeleteRoleResultCode.Success, "");
+        _mockInnerProcessor.Setup(x => x.DeleteRoleAsync(roleId)).ReturnsAsync(expectedResult);
 
-    #region Constructor Tests
+        var result = await _decorator.DeleteRoleAsync(roleId);
+
+        Assert.Equal(expectedResult, result);
+        _mockAuthorizationProvider.Verify(
+            x =>
+                x.AuthorizeAsync(PermissionConstants.ROLE_RESOURCE_TYPE, AuthAction.Delete, roleId),
+            Times.Once
+        );
+        _mockInnerProcessor.Verify(x => x.DeleteRoleAsync(roleId), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteRoleAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    {
+        var roleId = 5;
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.AuthorizeAsync(PermissionConstants.ROLE_RESOURCE_TYPE, AuthAction.Delete, roleId)
+            )
+            .ThrowsAsync(
+                new AuthorizationException(
+                    PermissionConstants.ROLE_RESOURCE_TYPE,
+                    AuthAction.Delete.ToString(),
+                    roleId
+                )
+            );
+
+        await Assert.ThrowsAsync<AuthorizationException>(() => _decorator.DeleteRoleAsync(roleId));
+
+        _mockInnerProcessor.Verify(x => x.DeleteRoleAsync(It.IsAny<int>()), Times.Never);
+    }
 
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
@@ -233,6 +254,4 @@ public class RoleProcessorAuthorizationDecoratorTests
         Assert.Throws<ArgumentNullException>(() =>
             new RoleProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
         );
-
-    #endregion
 }

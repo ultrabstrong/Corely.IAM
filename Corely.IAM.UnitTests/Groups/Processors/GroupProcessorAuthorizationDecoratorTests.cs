@@ -21,8 +21,6 @@ public class GroupProcessorAuthorizationDecoratorTests
         );
     }
 
-    #region CreateGroupAsync Tests
-
     [Fact]
     public async Task CreateGroupAsync_CallsAuthorizationProvider()
     {
@@ -64,10 +62,6 @@ public class GroupProcessorAuthorizationDecoratorTests
             Times.Never
         );
     }
-
-    #endregion
-
-    #region AddUsersToGroupAsync Tests
 
     [Fact]
     public async Task AddUsersToGroupAsync_CallsAuthorizationProviderWithResourceId()
@@ -119,10 +113,6 @@ public class GroupProcessorAuthorizationDecoratorTests
         );
     }
 
-    #endregion
-
-    #region AssignRolesToGroupAsync Tests
-
     [Fact]
     public async Task AssignRolesToGroupAsync_CallsAuthorizationProviderWithResourceId()
     {
@@ -172,10 +162,6 @@ public class GroupProcessorAuthorizationDecoratorTests
         );
     }
 
-    #endregion
-
-    #region Constructor Tests
-
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
@@ -187,6 +173,4 @@ public class GroupProcessorAuthorizationDecoratorTests
         Assert.Throws<ArgumentNullException>(() =>
             new GroupProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
         );
-
-    #endregion
 }

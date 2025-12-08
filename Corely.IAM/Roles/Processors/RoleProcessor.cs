@@ -194,4 +194,22 @@ internal class RoleProcessor : IRoleProcessor
             invalidPermissionIds
         );
     }
+
+    public async Task<DeleteRoleResult> DeleteRoleAsync(int roleId)
+    {
+        var roleEntity = await _roleRepo.GetAsync(r => r.Id == roleId);
+        if (roleEntity == null)
+        {
+            _logger.LogWarning("Role with Id {RoleId} not found", roleId);
+            return new DeleteRoleResult(
+                DeleteRoleResultCode.RoleNotFoundError,
+                $"Role with Id {roleId} not found"
+            );
+        }
+
+        await _roleRepo.DeleteAsync(roleEntity);
+
+        _logger.LogInformation("Role with Id {RoleId} deleted", roleId);
+        return new DeleteRoleResult(DeleteRoleResultCode.Success, string.Empty);
+    }
 }

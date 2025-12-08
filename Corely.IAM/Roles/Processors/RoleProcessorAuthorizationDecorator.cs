@@ -58,4 +58,14 @@ internal class RoleProcessorAuthorizationDecorator(
             );
         return await _inner.AssignPermissionsToRoleAsync(request);
     }
+
+    public async Task<DeleteRoleResult> DeleteRoleAsync(int roleId)
+    {
+        await _authorizationProvider.AuthorizeAsync(
+            PermissionConstants.ROLE_RESOURCE_TYPE,
+            AuthAction.Delete,
+            roleId
+        );
+        return await _inner.DeleteRoleAsync(roleId);
+    }
 }

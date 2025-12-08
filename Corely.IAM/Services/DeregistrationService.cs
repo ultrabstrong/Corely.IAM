@@ -2,6 +2,8 @@
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Roles.Processors;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
@@ -10,14 +12,17 @@ internal class DeregistrationService : IDeregistrationService
 {
     private readonly ILogger<DeregistrationService> _logger;
     private readonly IPermissionProcessor _permissionProcessor;
+    private readonly IRoleProcessor _roleProcessor;
 
     public DeregistrationService(
         ILogger<DeregistrationService> logger,
-        IPermissionProcessor permissionProcessor
+        IPermissionProcessor permissionProcessor,
+        IRoleProcessor roleProcessor
     )
     {
         _logger = logger.ThrowIfNull(nameof(logger));
         _permissionProcessor = permissionProcessor.ThrowIfNull(nameof(permissionProcessor));
+        _roleProcessor = roleProcessor.ThrowIfNull(nameof(roleProcessor));
     }
 
     public async Task<DeregisterPermissionResult> DeregisterPermissionAsync(
@@ -43,6 +48,29 @@ internal class DeregistrationService : IDeregistrationService
 
         _logger.LogInformation("Permission {PermissionId} deregistered", request.PermissionId);
         return new DeregisterPermissionResult(DeregisterPermissionResultCode.Success, string.Empty);
+    }
+
+    public async Task<DeregisterRoleResult> DeregisterRoleAsync(DeregisterRoleRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation("Deregistering role {RoleId}", request.RoleId);
+
+        var result = await _roleProcessor.DeleteRoleAsync(request.RoleId);
+
+        if (result.ResultCode != DeleteRoleResultCode.Success)
+        {
+            _logger.LogInformation(
+                "Deregistering role failed for role id {RoleId}",
+                request.RoleId
+            );
+            return new DeregisterRoleResult(
+                (DeregisterRoleResultCode)result.ResultCode,
+                result.Message
+            );
+        }
+
+        _logger.LogInformation("Role {RoleId} deregistered", request.RoleId);
+        return new DeregisterRoleResult(DeregisterRoleResultCode.Success, string.Empty);
     }
 
     public Task<DeregisterUserResult> DegisterUserAsync(DeregisterUserRequest request)

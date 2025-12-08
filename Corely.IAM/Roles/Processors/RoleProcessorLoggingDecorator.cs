@@ -62,4 +62,12 @@ internal class RoleProcessorLoggingDecorator : IRoleProcessor
             () => _inner.AssignPermissionsToRoleAsync(request),
             logResult: true
         );
+
+    public async Task<DeleteRoleResult> DeleteRoleAsync(int roleId) =>
+        await _logger.ExecuteWithLogging(
+            nameof(RoleProcessor),
+            roleId,
+            () => _inner.DeleteRoleAsync(roleId),
+            logResult: true
+        );
 }

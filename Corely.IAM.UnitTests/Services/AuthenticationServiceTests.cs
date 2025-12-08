@@ -61,8 +61,6 @@ public class AuthenticationServiceTests
         return mock;
     }
 
-    #region SignInAsync Tests
-
     [Fact]
     public async Task SignInAsync_SucceedsAndUpdateSuccessfulLogin_WhenUserExistsAndPasswordIsValid()
     {
@@ -167,10 +165,6 @@ public class AuthenticationServiceTests
         Assert.IsType<ArgumentNullException>(ex);
     }
 
-    #endregion
-
-    #region ValidateAuthTokenAsync Tests
-
     [Fact]
     public async Task ValidateAuthTokenAsync_CallsUserProcessor()
     {
@@ -197,10 +191,6 @@ public class AuthenticationServiceTests
         Assert.IsType<ArgumentNullException>(ex);
     }
 
-    #endregion
-
-    #region SignOutAsync Tests
-
     [Fact]
     public async Task SignOutAsync_CallsUserProcessor()
     {
@@ -223,10 +213,6 @@ public class AuthenticationServiceTests
         Assert.IsType<ArgumentNullException>(ex);
     }
 
-    #endregion
-
-    #region SignOutAllAsync Tests
-
     [Fact]
     public async Task SignOutAllAsync_CallsUserProcessor()
     {
@@ -236,6 +222,4 @@ public class AuthenticationServiceTests
 
         _userProcessorMock.Verify(m => m.RevokeAllUserAuthTokensAsync(userId), Times.Once);
     }
-
-    #endregion
 }

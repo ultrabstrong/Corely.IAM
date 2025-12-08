@@ -152,6 +152,11 @@ internal class Program
             var deregisterPermissionResult = await deregistrationService.DeregisterPermissionAsync(
                 deregisterPermissionRequest
             );
+
+            var deregisterRoleRequest = new DeregisterRoleRequest(registerRoleResult.CreatedRoleId);
+            var deregisterRoleResult = await deregistrationService.DeregisterRoleAsync(
+                deregisterRoleRequest
+            );
         }
         catch (Exception ex)
         {

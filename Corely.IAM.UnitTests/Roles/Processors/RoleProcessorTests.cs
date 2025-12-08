@@ -370,4 +370,26 @@ public class RoleProcessorTests
         Assert.Equal(0, result.AddedPermissionCount);
         Assert.Equal(permissionIds, result.InvalidPermissionIds);
     }
+
+    [Fact]
+    public async Task DeleteRoleAsync_ReturnsSuccess_WhenRoleExists()
+    {
+        var (roleId, _) = await CreateRoleAsync();
+
+        var result = await _roleProcessor.DeleteRoleAsync(roleId);
+
+        Assert.Equal(DeleteRoleResultCode.Success, result.ResultCode);
+
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var roleEntity = await roleRepo.GetAsync(r => r.Id == roleId);
+        Assert.Null(roleEntity);
+    }
+
+    [Fact]
+    public async Task DeleteRoleAsync_ReturnsNotFound_WhenRoleDoesNotExist()
+    {
+        var result = await _roleProcessor.DeleteRoleAsync(_fixture.Create<int>());
+
+        Assert.Equal(DeleteRoleResultCode.RoleNotFoundError, result.ResultCode);
+    }
 }

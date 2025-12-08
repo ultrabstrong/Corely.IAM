@@ -20,8 +20,6 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
         );
     }
 
-    #region UpsertBasicAuthAsync Tests
-
     [Fact]
     public async Task UpsertBasicAuthAsync_ThrowsAuthorizationException_WhenNoUserContext()
     {
@@ -76,10 +74,6 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
         );
     }
 
-    #endregion
-
-    #region VerifyBasicAuthAsync Tests
-
     [Fact]
     public async Task VerifyBasicAuthAsync_ThrowsAuthorizationException_WhenNoUserContext()
     {
@@ -126,10 +120,6 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
         );
     }
 
-    #endregion
-
-    #region Constructor Tests
-
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
@@ -141,6 +131,4 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
         Assert.Throws<ArgumentNullException>(() =>
             new BasicAuthProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
         );
-
-    #endregion
 }

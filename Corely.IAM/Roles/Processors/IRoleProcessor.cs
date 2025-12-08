@@ -11,4 +11,5 @@ internal interface IRoleProcessor
     Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(
         AssignPermissionsToRoleRequest request
     );
+    Task<DeleteRoleResult> DeleteRoleAsync(int roleId);
 }

@@ -21,8 +21,6 @@ public class AccountProcessorAuthorizationDecoratorTests
         );
     }
 
-    #region CreateAccountAsync Tests
-
     [Fact]
     public async Task CreateAccountAsync_BypassesAuthorization()
     {
@@ -39,10 +37,6 @@ public class AccountProcessorAuthorizationDecoratorTests
         );
         _mockInnerProcessor.Verify(x => x.CreateAccountAsync(request), Times.Once);
     }
-
-    #endregion
-
-    #region GetAccountAsync Tests
 
     [Fact]
     public async Task GetAccountAsyncById_CallsAuthorizationProviderWithResourceId()
@@ -132,10 +126,6 @@ public class AccountProcessorAuthorizationDecoratorTests
         _mockInnerProcessor.Verify(x => x.GetAccountAsync(It.IsAny<string>()), Times.Never);
     }
 
-    #endregion
-
-    #region Constructor Tests
-
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
@@ -147,6 +137,4 @@ public class AccountProcessorAuthorizationDecoratorTests
         Assert.Throws<ArgumentNullException>(() =>
             new AccountProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
         );
-
-    #endregion
 }

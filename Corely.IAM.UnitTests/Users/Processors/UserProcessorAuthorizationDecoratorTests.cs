@@ -21,8 +21,6 @@ public class UserProcessorAuthorizationDecoratorTests
         );
     }
 
-    #region CreateUserAsync Tests
-
     [Fact]
     public async Task CreateUserAsync_BypassesAuthorization()
     {
@@ -39,10 +37,6 @@ public class UserProcessorAuthorizationDecoratorTests
         );
         _mockInnerProcessor.Verify(x => x.CreateUserAsync(request), Times.Once);
     }
-
-    #endregion
-
-    #region GetUserAsync Tests
 
     [Fact]
     public async Task GetUserAsyncById_CallsAuthorizationProviderWithResourceId()
@@ -97,10 +91,6 @@ public class UserProcessorAuthorizationDecoratorTests
         );
     }
 
-    #endregion
-
-    #region UpdateUserAsync Tests
-
     [Fact]
     public async Task UpdateUserAsync_CallsAuthorizationProviderWithResourceId()
     {
@@ -136,10 +126,6 @@ public class UserProcessorAuthorizationDecoratorTests
         _mockInnerProcessor.Verify(x => x.UpdateUserAsync(It.IsAny<User>()), Times.Never);
     }
 
-    #endregion
-
-    #region GetUserAuthTokenAsync Tests
-
     [Fact]
     public async Task GetUserAuthTokenAsync_CallsAuthorizationProviderWithResourceId()
     {
@@ -155,10 +141,6 @@ public class UserProcessorAuthorizationDecoratorTests
             Times.Once
         );
     }
-
-    #endregion
-
-    #region IsUserAuthTokenValidAsync Tests
 
     [Fact]
     public async Task IsUserAuthTokenValidAsync_CallsAuthorizationProviderWithResourceId()
@@ -177,10 +159,6 @@ public class UserProcessorAuthorizationDecoratorTests
             Times.Once
         );
     }
-
-    #endregion
-
-    #region RevokeUserAuthTokenAsync Tests
 
     [Fact]
     public async Task RevokeUserAuthTokenAsync_CallsAuthorizationProviderWithResourceId()
@@ -226,10 +204,6 @@ public class UserProcessorAuthorizationDecoratorTests
         );
     }
 
-    #endregion
-
-    #region RevokeAllUserAuthTokensAsync Tests
-
     [Fact]
     public async Task RevokeAllUserAuthTokensAsync_CallsAuthorizationProviderWithResourceId()
     {
@@ -271,10 +245,6 @@ public class UserProcessorAuthorizationDecoratorTests
         );
     }
 
-    #endregion
-
-    #region Constructor Tests
-
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
@@ -286,6 +256,4 @@ public class UserProcessorAuthorizationDecoratorTests
         Assert.Throws<ArgumentNullException>(() =>
             new UserProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
         );
-
-    #endregion
 }

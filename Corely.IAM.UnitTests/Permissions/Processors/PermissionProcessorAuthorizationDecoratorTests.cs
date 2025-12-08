@@ -21,8 +21,6 @@ public class PermissionProcessorAuthorizationDecoratorTests
         );
     }
 
-    #region CreatePermissionAsync Tests
-
     [Fact]
     public async Task CreatePermissionAsync_CallsAuthorizationProvider()
     {
@@ -76,10 +74,6 @@ public class PermissionProcessorAuthorizationDecoratorTests
         );
     }
 
-    #endregion
-
-    #region CreateDefaultSystemPermissionsAsync Tests
-
     [Fact]
     public async Task CreateDefaultSystemPermissionsAsync_BypassesAuthorization()
     {
@@ -97,9 +91,56 @@ public class PermissionProcessorAuthorizationDecoratorTests
         );
     }
 
-    #endregion
+    [Fact]
+    public async Task DeletePermissionAsync_CallsAuthorizationProvider()
+    {
+        var permissionId = 5;
+        var expectedResult = new DeletePermissionResult(DeletePermissionResultCode.Success, "");
+        _mockInnerProcessor
+            .Setup(x => x.DeletePermissionAsync(permissionId))
+            .ReturnsAsync(expectedResult);
 
-    #region Constructor Tests
+        var result = await _decorator.DeletePermissionAsync(permissionId);
+
+        Assert.Equal(expectedResult, result);
+        _mockAuthorizationProvider.Verify(
+            x =>
+                x.AuthorizeAsync(
+                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                    AuthAction.Delete,
+                    permissionId
+                ),
+            Times.Once
+        );
+        _mockInnerProcessor.Verify(x => x.DeletePermissionAsync(permissionId), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeletePermissionAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    {
+        var permissionId = 5;
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.AuthorizeAsync(
+                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                    AuthAction.Delete,
+                    permissionId
+                )
+            )
+            .ThrowsAsync(
+                new AuthorizationException(
+                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                    AuthAction.Delete.ToString(),
+                    permissionId
+                )
+            );
+
+        await Assert.ThrowsAsync<AuthorizationException>(() =>
+            _decorator.DeletePermissionAsync(permissionId)
+        );
+
+        _mockInnerProcessor.Verify(x => x.DeletePermissionAsync(It.IsAny<int>()), Times.Never);
+    }
 
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
@@ -112,6 +153,4 @@ public class PermissionProcessorAuthorizationDecoratorTests
         Assert.Throws<ArgumentNullException>(() =>
             new PermissionProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
         );
-
-    #endregion
 }

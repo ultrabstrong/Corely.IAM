@@ -67,6 +67,26 @@ internal class UserProcessorAuthorizationDecorator(
         return await _inner.IsUserAuthTokenValidAsync(userId, authToken);
     }
 
+    public async Task<bool> RevokeUserAuthTokenAsync(int userId, string jti)
+    {
+        await _authorizationProvider.AuthorizeAsync(
+            PermissionConstants.USER_RESOURCE_TYPE,
+            AuthAction.Update,
+            userId
+        );
+        return await _inner.RevokeUserAuthTokenAsync(userId, jti);
+    }
+
+    public async Task RevokeAllUserAuthTokensAsync(int userId)
+    {
+        await _authorizationProvider.AuthorizeAsync(
+            PermissionConstants.USER_RESOURCE_TYPE,
+            AuthAction.Update,
+            userId
+        );
+        await _inner.RevokeAllUserAuthTokensAsync(userId);
+    }
+
     public async Task<string?> GetAsymmetricSignatureVerificationKeyAsync(int userId)
     {
         await _authorizationProvider.AuthorizeAsync(

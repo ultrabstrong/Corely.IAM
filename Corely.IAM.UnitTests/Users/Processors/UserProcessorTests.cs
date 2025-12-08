@@ -3,6 +3,7 @@ using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Processors;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
@@ -11,6 +12,7 @@ using Corely.IAM.Validators;
 using Corely.Security.Encryption.Factories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.UnitTests.Users.Processors;
 
@@ -27,10 +29,12 @@ public class UserProcessorTests
     {
         _userProcessor = new UserProcessor(
             _serviceFactory.GetRequiredService<IRepo<UserEntity>>(),
+            _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<RoleEntity>>(),
             _serviceFactory.GetRequiredService<ISecurityProcessor>(),
             _serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
+            _serviceFactory.GetRequiredService<IOptions<SecurityOptions>>(),
             _serviceFactory.GetRequiredService<ILogger<UserProcessor>>()
         );
     }
@@ -155,11 +159,13 @@ public class UserProcessorTests
         var jwtToken = tokenHandler.ReadJwtToken(token);
 
         Assert.Equal(typeof(UserProcessor).FullName, jwtToken.Issuer);
+        Assert.Equal("Corely.IAM", jwtToken.Audiences.First());
         Assert.Contains(
             jwtToken.Claims,
-            c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == "user_id"
+            c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == result.CreatedId.ToString()
         );
         Assert.Contains(jwtToken.Claims, c => c.Type == JwtRegisteredClaimNames.Jti);
+        Assert.Contains(jwtToken.Claims, c => c.Type == JwtRegisteredClaimNames.Iat);
     }
 
     [Fact]

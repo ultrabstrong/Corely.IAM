@@ -25,4 +25,5 @@ internal class UserEntity : IHasIdPk<int>, IHasCreatedUtc, IHasModifiedUtc
     public virtual ICollection<RoleEntity>? Roles { get; set; }
     public virtual ICollection<UserSymmetricKeyEntity>? SymmetricKeys { get; init; }
     public virtual ICollection<UserAsymmetricKeyEntity>? AsymmetricKeys { get; init; }
+    public virtual ICollection<UserAuthTokenEntity>? AuthTokens { get; init; }
 }

@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.UnitTests.Services;
 
-public class SignInServiceTests
+public class AuthenticationServiceTests
 {
     private const int MAX_LOGIN_ATTEMPTS = 5;
 
@@ -19,11 +19,11 @@ public class SignInServiceTests
     private readonly Fixture _fixture = new();
     private readonly Mock<IUserProcessor> _userProcessorMock;
     private readonly Mock<IBasicAuthProcessor> _basicAuthProcessorMock;
-    private readonly SignInService _signInService;
+    private readonly AuthenticationService _authenticationService;
 
     private readonly User _user;
 
-    public SignInServiceTests()
+    public AuthenticationServiceTests()
     {
         _user = _fixture
             .Build<User>()
@@ -34,8 +34,8 @@ public class SignInServiceTests
         _userProcessorMock = GetMockUserProcessor();
         _basicAuthProcessorMock = GetMockBasicAuthProcessor();
 
-        _signInService = new SignInService(
-            _serviceFactory.GetRequiredService<ILogger<SignInService>>(),
+        _authenticationService = new AuthenticationService(
+            _serviceFactory.GetRequiredService<ILogger<AuthenticationService>>(),
             _userProcessorMock.Object,
             _basicAuthProcessorMock.Object,
             Options.Create(new SecurityOptions() { MaxLoginAttempts = MAX_LOGIN_ATTEMPTS })
@@ -61,6 +61,8 @@ public class SignInServiceTests
         return mock;
     }
 
+    #region SignInAsync Tests
+
     [Fact]
     public async Task SignInAsync_SucceedsAndUpdateSuccessfulLogin_WhenUserExistsAndPasswordIsValid()
     {
@@ -71,7 +73,7 @@ public class SignInServiceTests
         _user.FailedLoginsSinceLastSuccess = 0;
         _user.LastFailedLoginUtc = null;
 
-        var result = await _signInService.SignInAsync(request);
+        var result = await _authenticationService.SignInAsync(request);
 
         Assert.Equal(SignInResultCode.Success, result.ResultCode);
 
@@ -99,7 +101,7 @@ public class SignInServiceTests
 
         _userProcessorMock.Setup(m => m.GetUserAsync(request.Username)).ReturnsAsync((User)null!);
 
-        var result = await _signInService.SignInAsync(request);
+        var result = await _authenticationService.SignInAsync(request);
 
         Assert.Equal(SignInResultCode.UserNotFoundError, result.ResultCode);
         Assert.Equal("User not found", result.Message);
@@ -112,7 +114,7 @@ public class SignInServiceTests
         var request = new SignInRequest(_user.Username, _fixture.Create<string>());
         _user.FailedLoginsSinceLastSuccess = MAX_LOGIN_ATTEMPTS;
 
-        var result = await _signInService.SignInAsync(request);
+        var result = await _authenticationService.SignInAsync(request);
 
         Assert.Equal(SignInResultCode.UserLockedError, result.ResultCode);
         Assert.Equal("User is locked out", result.Message);
@@ -133,7 +135,7 @@ public class SignInServiceTests
             .Setup(m => m.VerifyBasicAuthAsync(It.IsAny<VerifyBasicAuthRequest>()))
             .ReturnsAsync(false);
 
-        var result = await _signInService.SignInAsync(request);
+        var result = await _authenticationService.SignInAsync(request);
 
         Assert.Equal(SignInResultCode.PasswordMismatchError, result.ResultCode);
         Assert.Equal("Invalid password", result.Message);
@@ -159,9 +161,81 @@ public class SignInServiceTests
     [Fact]
     public async Task SignInAsync_Throws_WithNullRequest()
     {
-        var ex = await Record.ExceptionAsync(() => _signInService.SignInAsync(null!));
+        var ex = await Record.ExceptionAsync(() => _authenticationService.SignInAsync(null!));
 
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
     }
+
+    #endregion
+
+    #region ValidateAuthTokenAsync Tests
+
+    [Fact]
+    public async Task ValidateAuthTokenAsync_CallsUserProcessor()
+    {
+        var userId = _fixture.Create<int>();
+        var authToken = _fixture.Create<string>();
+        _userProcessorMock
+            .Setup(m => m.IsUserAuthTokenValidAsync(userId, authToken))
+            .ReturnsAsync(true);
+
+        var result = await _authenticationService.ValidateAuthTokenAsync(userId, authToken);
+
+        Assert.True(result);
+        _userProcessorMock.Verify(m => m.IsUserAuthTokenValidAsync(userId, authToken), Times.Once);
+    }
+
+    [Fact]
+    public async Task ValidateAuthTokenAsync_Throws_WithNullAuthToken()
+    {
+        var ex = await Record.ExceptionAsync(() =>
+            _authenticationService.ValidateAuthTokenAsync(1, null!)
+        );
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    #endregion
+
+    #region SignOutAsync Tests
+
+    [Fact]
+    public async Task SignOutAsync_CallsUserProcessor()
+    {
+        var userId = _fixture.Create<int>();
+        var jti = _fixture.Create<string>();
+        _userProcessorMock.Setup(m => m.RevokeUserAuthTokenAsync(userId, jti)).ReturnsAsync(true);
+
+        var result = await _authenticationService.SignOutAsync(userId, jti);
+
+        Assert.True(result);
+        _userProcessorMock.Verify(m => m.RevokeUserAuthTokenAsync(userId, jti), Times.Once);
+    }
+
+    [Fact]
+    public async Task SignOutAsync_Throws_WithNullJti()
+    {
+        var ex = await Record.ExceptionAsync(() => _authenticationService.SignOutAsync(1, null!));
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    #endregion
+
+    #region SignOutAllAsync Tests
+
+    [Fact]
+    public async Task SignOutAllAsync_CallsUserProcessor()
+    {
+        var userId = _fixture.Create<int>();
+
+        await _authenticationService.SignOutAllAsync(userId);
+
+        _userProcessorMock.Verify(m => m.RevokeAllUserAuthTokensAsync(userId), Times.Once);
+    }
+
+    #endregion
 }

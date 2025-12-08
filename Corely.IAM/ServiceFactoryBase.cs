@@ -83,7 +83,7 @@ public abstract class ServiceFactoryBase(
 
         ServiceCollection.AddScoped<IRegistrationService, RegistrationService>();
         ServiceCollection.AddScoped<IDeregistrationService, DeregistrationService>();
-        ServiceCollection.AddScoped<ISignInService, SignInService>();
+        ServiceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
 
         ServiceCollection.AddLogging(AddLogging);
         AddDataServices();

@@ -105,6 +105,34 @@ public class UserProcessorLoggingDecoratorTests
     }
 
     [Fact]
+    public async Task RevokeUserAuthTokenAsync_DelegatesToInnerAndLogsResult()
+    {
+        var userId = 1;
+        var jti = "test-jti";
+        _mockInnerProcessor.Setup(x => x.RevokeUserAuthTokenAsync(userId, jti)).ReturnsAsync(true);
+
+        var result = await _decorator.RevokeUserAuthTokenAsync(userId, jti);
+
+        Assert.True(result);
+        _mockInnerProcessor.Verify(x => x.RevokeUserAuthTokenAsync(userId, jti), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public async Task RevokeAllUserAuthTokensAsync_DelegatesToInner()
+    {
+        var userId = 1;
+        _mockInnerProcessor
+            .Setup(x => x.RevokeAllUserAuthTokensAsync(userId))
+            .Returns(Task.CompletedTask);
+
+        await _decorator.RevokeAllUserAuthTokensAsync(userId);
+
+        _mockInnerProcessor.Verify(x => x.RevokeAllUserAuthTokensAsync(userId), Times.Once);
+        VerifyLogged();
+    }
+
+    [Fact]
     public async Task GetAsymmetricSignatureVerificationKeyAsync_DelegatesToInnerAndLogsResult()
     {
         var userId = 1;

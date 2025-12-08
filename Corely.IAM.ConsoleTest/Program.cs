@@ -1,4 +1,5 @@
-﻿using Corely.Common.Providers.Redaction;
+﻿using System.IdentityModel.Tokens.Jwt;
+using Corely.Common.Providers.Redaction;
 using Corely.IAM.ConsoleApp.SerilogCustomization;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
@@ -130,9 +131,19 @@ internal class Program
                     registerPermissionsWithRoleRequest
                 );
 
-            var signInService = host.Services.GetRequiredService<ISignInService>();
+            var authService = host.Services.GetRequiredService<IAuthenticationService>();
             var signInRequest = new SignInRequest("user1", "admin");
-            var signInResult = await signInService.SignInAsync(signInRequest);
+            var signInResult = await authService.SignInAsync(signInRequest);
+
+            var isValid = await authService.ValidateAuthTokenAsync(
+                registerUserResult.CreatedUserId,
+                signInResult.AuthToken!
+            );
+
+            var jti = new JwtSecurityTokenHandler().ReadJwtToken(signInResult.AuthToken).Id;
+            var signedOut = await authService.SignOutAsync(registerUserResult.CreatedUserId, jti);
+
+            await authService.SignOutAllAsync(registerUserResult.CreatedUserId);
         }
         catch (Exception ex)
         {

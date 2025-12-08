@@ -4,6 +4,7 @@ using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Processors;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Mappers;
@@ -12,6 +13,7 @@ using Corely.IAM.Validators;
 using Corely.Security.Encryption.Factories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Corely.IAM.Users.Processors;
@@ -19,28 +21,34 @@ namespace Corely.IAM.Users.Processors;
 internal class UserProcessor : IUserProcessor
 {
     private readonly IRepo<UserEntity> _userRepo;
+    private readonly IRepo<UserAuthTokenEntity> _authTokenRepo;
     private readonly IReadonlyRepo<RoleEntity> _roleRepo;
     private readonly ISecurityProcessor _securityProcessor;
     private readonly ISymmetricEncryptionProviderFactory _encryptionProviderFactory;
     private readonly IValidationProvider _validationProvider;
+    private readonly SecurityOptions _securityOptions;
     private readonly ILogger<UserProcessor> _logger;
 
     public UserProcessor(
         IRepo<UserEntity> userRepo,
+        IRepo<UserAuthTokenEntity> authTokenRepo,
         IReadonlyRepo<RoleEntity> roleRepo,
         ISecurityProcessor securityProcessor,
         ISymmetricEncryptionProviderFactory encryptionProviderFactory,
         IValidationProvider validationProvider,
+        IOptions<SecurityOptions> securityOptions,
         ILogger<UserProcessor> logger
     )
     {
         _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
+        _authTokenRepo = authTokenRepo.ThrowIfNull(nameof(authTokenRepo));
         _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
         _securityProcessor = securityProcessor.ThrowIfNull(nameof(securityProcessor));
         _encryptionProviderFactory = encryptionProviderFactory.ThrowIfNull(
             nameof(encryptionProviderFactory)
         );
         _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
+        _securityOptions = securityOptions.ThrowIfNull(nameof(securityOptions)).Value;
         _logger = logger.ThrowIfNull(nameof(logger));
     }
 
@@ -133,9 +141,26 @@ internal class UserProcessor : IUserProcessor
 
     public async Task<string?> GetUserAuthTokenAsync(int userId)
     {
-        var signatureKey = await GetUserAsymmetricKeyAsync(userId, KeyUsedFor.Signature);
+        var userEntity = await _userRepo.GetAsync(
+            u => u.Id == userId,
+            include: q => q.Include(u => u.AsymmetricKeys).Include(u => u.Accounts)
+        );
+
+        if (userEntity == null)
+        {
+            _logger.LogWarning("User with Id {UserId} not found", userId);
+            return null;
+        }
+
+        var signatureKey = userEntity.AsymmetricKeys?.FirstOrDefault(k =>
+            k.KeyUsedFor == KeyUsedFor.Signature
+        );
         if (signatureKey == null)
         {
+            _logger.LogWarning(
+                "User with Id {UserId} does not have an asymmetric signature key",
+                userId
+            );
             return null;
         }
 
@@ -146,16 +171,44 @@ internal class UserProcessor : IUserProcessor
             true
         );
 
+        var now = DateTime.UtcNow;
+        var expires = now.AddSeconds(_securityOptions.AuthTokenTtlSeconds);
+        var jti = Guid.NewGuid().ToString();
+        var accountIds = userEntity.Accounts?.Select(a => a.Id.ToString()) ?? [];
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new(JwtRegisteredClaimNames.Jti, jti),
+            new(
+                JwtRegisteredClaimNames.Iat,
+                new DateTimeOffset(now).ToUnixTimeSeconds().ToString(),
+                ClaimValueTypes.Integer64
+            ),
+        };
+
+        foreach (var accountId in accountIds)
+        {
+            claims.Add(new Claim("account_id", accountId));
+        }
+
         var token = new JwtSecurityToken(
             issuer: typeof(UserProcessor).FullName,
-            claims:
-            [
-                new Claim(JwtRegisteredClaimNames.Sub, "user_id"),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            ],
-            expires: DateTime.Now.Add(TimeSpan.FromSeconds(3600)),
+            audience: "Corely.IAM",
+            claims: claims,
+            expires: expires,
             signingCredentials: credentials
         );
+
+        // Track the token server-side
+        var authTokenEntity = new UserAuthTokenEntity
+        {
+            UserId = userId,
+            Jti = jti,
+            IssuedUtc = now,
+            ExpiresUtc = expires,
+        };
+        await _authTokenRepo.CreateAsync(authTokenEntity);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
@@ -170,11 +223,33 @@ internal class UserProcessor : IUserProcessor
             return false;
         }
 
-        var signatureKey = await GetUserAsymmetricKeyAsync(userId, KeyUsedFor.Signature);
-        if (signatureKey == null)
+        // Extract jti from token before signature validation
+        var jwtToken = tokenHandler.ReadJwtToken(authToken);
+        var jti = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
+        if (string.IsNullOrEmpty(jti))
         {
+            _logger.LogInformation("Auth token does not contain jti claim");
             return false;
         }
+
+        // Check server-side token tracking
+        var trackedToken = await _authTokenRepo.GetAsync(t =>
+            t.Jti == jti
+            && t.UserId == userId
+            && t.RevokedUtc == null
+            && t.ExpiresUtc > DateTime.UtcNow
+        );
+
+        if (trackedToken == null)
+        {
+            _logger.LogInformation("Auth token not found, revoked, or expired in server tracking");
+            return false;
+        }
+
+        // Validate signature
+        var signatureKey = await GetUserAsymmetricKeyAsync(userId, KeyUsedFor.Signature);
+        if (signatureKey == null)
+            return false;
 
         var credentials = _securityProcessor.GetAsymmetricSigningCredentials(
             signatureKey.ProviderTypeCode,
@@ -188,7 +263,8 @@ internal class UserProcessor : IUserProcessor
             IssuerSigningKey = credentials.Key,
             ValidateIssuer = true,
             ValidIssuer = typeof(UserProcessor).FullName,
-            ValidateAudience = false,
+            ValidateAudience = true,
+            ValidAudience = "Corely.IAM",
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero,
         };
@@ -202,6 +278,54 @@ internal class UserProcessor : IUserProcessor
         {
             _logger.LogInformation("Token validation failed: {Error}", ex.Message);
             return false;
+        }
+    }
+
+    public async Task<bool> RevokeUserAuthTokenAsync(int userId, string jti)
+    {
+        var trackedToken = await _authTokenRepo.GetAsync(t =>
+            t.Jti == jti
+            && t.UserId == userId
+            && t.RevokedUtc == null
+            && t.ExpiresUtc > DateTime.UtcNow
+        );
+
+        if (trackedToken == null)
+        {
+            _logger.LogInformation(
+                "Auth token with jti {Jti} not found, already revoked, or expired",
+                jti
+            );
+            return false;
+        }
+
+        trackedToken.RevokedUtc = DateTime.UtcNow;
+        await _authTokenRepo.UpdateAsync(trackedToken);
+
+        _logger.LogInformation("Auth token with jti {Jti} revoked for user {UserId}", jti, userId);
+        return true;
+    }
+
+    public async Task RevokeAllUserAuthTokensAsync(int userId)
+    {
+        var activeTokens = await _authTokenRepo.ListAsync(t =>
+            t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > DateTime.UtcNow
+        );
+
+        var now = DateTime.UtcNow;
+        foreach (var token in activeTokens)
+        {
+            token.RevokedUtc = now;
+            await _authTokenRepo.UpdateAsync(token);
+        }
+
+        if (activeTokens.Count > 0)
+        {
+            _logger.LogInformation(
+                "Revoked {Count} auth tokens for user {UserId}",
+                activeTokens.Count,
+                userId
+            );
         }
     }
 

@@ -25,6 +25,7 @@ internal class IamDbContext : DbContext
     public DbSet<AccountEntity> Accounts { get; set; } = null!;
     public DbSet<UserEntity> Users { get; set; } = null!;
     public DbSet<BasicAuthEntity> BasicAuths { get; set; } = null!;
+    public DbSet<UserAuthTokenEntity> UserAuthTokens { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

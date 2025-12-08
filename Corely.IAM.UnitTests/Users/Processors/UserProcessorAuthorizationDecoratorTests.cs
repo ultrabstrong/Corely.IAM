@@ -180,101 +180,95 @@ public class UserProcessorAuthorizationDecoratorTests
 
     #endregion
 
-    #region GetAsymmetricSignatureVerificationKeyAsync Tests
+    #region RevokeUserAuthTokenAsync Tests
 
     [Fact]
-    public async Task GetAsymmetricSignatureVerificationKeyAsync_CallsAuthorizationProviderWithResourceId()
+    public async Task RevokeUserAuthTokenAsync_CallsAuthorizationProviderWithResourceId()
     {
         var userId = 5;
-        var expectedKey = "test-key";
-        _mockInnerProcessor
-            .Setup(x => x.GetAsymmetricSignatureVerificationKeyAsync(userId))
-            .ReturnsAsync(expectedKey);
+        var jti = "test-jti";
+        _mockInnerProcessor.Setup(x => x.RevokeUserAuthTokenAsync(userId, jti)).ReturnsAsync(true);
 
-        var result = await _decorator.GetAsymmetricSignatureVerificationKeyAsync(userId);
+        var result = await _decorator.RevokeUserAuthTokenAsync(userId, jti);
 
-        Assert.Equal(expectedKey, result);
+        Assert.True(result);
         _mockAuthorizationProvider.Verify(
-            x => x.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Read, userId),
-            Times.Once
-        );
-    }
-
-    #endregion
-
-    #region AssignRolesToUserAsync Tests
-
-    [Fact]
-    public async Task AssignRolesToUserAsync_CallsAuthorizationProvider()
-    {
-        var request = new AssignRolesToUserRequest([1, 2], 5);
-        var expectedResult = new AssignRolesToUserResult(
-            AssignRolesToUserResultCode.Success,
-            "",
-            2,
-            []
-        );
-        _mockInnerProcessor
-            .Setup(x => x.AssignRolesToUserAsync(request))
-            .ReturnsAsync(expectedResult);
-
-        var result = await _decorator.AssignRolesToUserAsync(request);
-
-        Assert.Equal(expectedResult, result);
-        _mockAuthorizationProvider.Verify(
-            x => x.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Update, 5),
+            x =>
+                x.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Update, userId),
             Times.Once
         );
     }
 
     [Fact]
-    public async Task AssignRolesToUserAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    public async Task RevokeUserAuthTokenAsync_ThrowsAuthorizationException_WhenNotAuthorized()
     {
-        var request = new AssignRolesToUserRequest([1, 2], 5);
+        var userId = 5;
+        var jti = "test-jti";
         _mockAuthorizationProvider
             .Setup(x =>
-                x.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Update, 5)
+                x.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Update, userId)
             )
             .ThrowsAsync(
                 new AuthorizationException(
                     PermissionConstants.USER_RESOURCE_TYPE,
                     AuthAction.Update.ToString(),
-                    5
+                    userId
                 )
             );
 
         await Assert.ThrowsAsync<AuthorizationException>(() =>
-            _decorator.AssignRolesToUserAsync(request)
+            _decorator.RevokeUserAuthTokenAsync(userId, jti)
         );
 
         _mockInnerProcessor.Verify(
-            x => x.AssignRolesToUserAsync(It.IsAny<AssignRolesToUserRequest>()),
+            x => x.RevokeUserAuthTokenAsync(It.IsAny<int>(), It.IsAny<string>()),
             Times.Never
         );
     }
 
+    #endregion
+
+    #region RevokeAllUserAuthTokensAsync Tests
+
     [Fact]
-    public async Task AssignRolesToUserAsync_BypassesAuthorization_WhenFlagSet()
+    public async Task RevokeAllUserAuthTokensAsync_CallsAuthorizationProviderWithResourceId()
     {
-        var request = new AssignRolesToUserRequest([1, 2], 5, BypassAuthorization: true);
-        var expectedResult = new AssignRolesToUserResult(
-            AssignRolesToUserResultCode.Success,
-            "",
-            2,
-            []
-        );
-        _mockInnerProcessor
-            .Setup(x => x.AssignRolesToUserAsync(request))
-            .ReturnsAsync(expectedResult);
+        var userId = 5;
 
-        var result = await _decorator.AssignRolesToUserAsync(request);
+        await _decorator.RevokeAllUserAuthTokensAsync(userId);
 
-        Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.AuthorizeAsync(It.IsAny<string>(), It.IsAny<AuthAction>(), It.IsAny<int?>()),
+            x =>
+                x.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Update, userId),
+            Times.Once
+        );
+        _mockInnerProcessor.Verify(x => x.RevokeAllUserAuthTokensAsync(userId), Times.Once);
+    }
+
+    [Fact]
+    public async Task RevokeAllUserAuthTokensAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    {
+        var userId = 5;
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Update, userId)
+            )
+            .ThrowsAsync(
+                new AuthorizationException(
+                    PermissionConstants.USER_RESOURCE_TYPE,
+                    AuthAction.Update.ToString(),
+                    userId
+                )
+            );
+
+        await Assert.ThrowsAsync<AuthorizationException>(() =>
+            _decorator.RevokeAllUserAuthTokensAsync(userId)
+        );
+
+        _mockInnerProcessor.Verify(
+            x => x.RevokeAllUserAuthTokensAsync(It.IsAny<int>()),
             Times.Never
         );
-        _mockInnerProcessor.Verify(x => x.AssignRolesToUserAsync(request), Times.Once);
     }
 
     #endregion

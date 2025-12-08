@@ -59,16 +59,25 @@ internal class Program
                 )
                 .Build();
 
-            var registrationService = host.Services.GetRequiredService<IRegistrationService>();
             var userContextProvider = host.Services.GetRequiredService<IUserContextProvider>();
+            var registrationService = host.Services.GetRequiredService<IRegistrationService>();
+            var deregistrationService = host.Services.GetRequiredService<IDeregistrationService>();
+            var authService = host.Services.GetRequiredService<IAuthenticationService>();
 
-            // Register user (no auth required)
+            // ========= REGISTERING ==========
             var registerUserRequest = new RegisterUserRequest("user1", "email@x.y", "admin");
             var registerUserResult = await registrationService.RegisterUserAsync(
                 registerUserRequest
             );
 
-            // Register account (no auth required - creates default roles and permissions)
+            var deregisterUserRequest1 = new DeregisterUserRequest(
+                registerUserResult.CreatedUserId
+            );
+            var deregisterUserResult1 = await deregistrationService.DeregisterUserAsync(
+                deregisterUserRequest1
+            );
+            return;
+
             var registerAccountRequest = new RegisterAccountRequest(
                 "acct1",
                 registerUserResult.CreatedUserId
@@ -77,8 +86,6 @@ internal class Program
                 registerAccountRequest
             );
 
-            // Set user context for subsequent authorized operations
-            // The user now has the Owner role with full permissions
             userContextProvider.SetUserContext(
                 new UserContext(
                     registerUserResult.CreatedUserId,
@@ -86,7 +93,6 @@ internal class Program
                 )
             );
 
-            // Now authorized operations can proceed
             var registerGroupRequest = new RegisterGroupRequest(
                 "grp1",
                 registerAccountResult.CreatedAccountId
@@ -131,7 +137,7 @@ internal class Program
                     registerPermissionsWithRoleRequest
                 );
 
-            var authService = host.Services.GetRequiredService<IAuthenticationService>();
+            // ========= AUTHENTICATION ==========
             var signInRequest = new SignInRequest("user1", "admin");
             var signInResult = await authService.SignInAsync(signInRequest);
 
@@ -145,7 +151,7 @@ internal class Program
 
             await authService.SignOutAllAsync(registerUserResult.CreatedUserId);
 
-            var deregistrationService = host.Services.GetRequiredService<IDeregistrationService>();
+            // ========= DEREGISTERING ==========
             var deregisterPermissionRequest = new DeregisterPermissionRequest(
                 registerPermissionResult.CreatedPermissionId
             );
@@ -172,8 +178,6 @@ internal class Program
                 deregisterAccountRequest
             );
 
-            // Note: This will fail with UserIsSoleAccountOwnerError if user is sole account owner
-            // Delete the account first before deleting the user, or add another user to the account
             var deregisterUserRequest = new DeregisterUserRequest(registerUserResult.CreatedUserId);
             var deregisterUserResult = await deregistrationService.DeregisterUserAsync(
                 deregisterUserRequest

@@ -105,4 +105,22 @@ internal class AccountProcessor : IAccountProcessor
 
         return account;
     }
+
+    public async Task<DeleteAccountResult> DeleteAccountAsync(int accountId)
+    {
+        var accountEntity = await _accountRepo.GetAsync(a => a.Id == accountId);
+        if (accountEntity == null)
+        {
+            _logger.LogWarning("Account with Id {AccountId} not found", accountId);
+            return new DeleteAccountResult(
+                DeleteAccountResultCode.AccountNotFoundError,
+                $"Account with Id {accountId} not found"
+            );
+        }
+
+        await _accountRepo.DeleteAsync(accountEntity);
+
+        _logger.LogInformation("Account with Id {AccountId} deleted", accountId);
+        return new DeleteAccountResult(DeleteAccountResultCode.Success, string.Empty);
+    }
 }

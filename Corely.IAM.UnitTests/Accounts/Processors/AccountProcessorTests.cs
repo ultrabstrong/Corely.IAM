@@ -140,4 +140,27 @@ public class AccountProcessorTests
         Assert.NotNull(account);
         Assert.Equal(VALID_ACCOUNT_NAME, account.AccountName);
     }
+
+    [Fact]
+    public async Task DeleteAccountAsync_ReturnsSuccess_WhenAccountExists()
+    {
+        var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, await CreateUserAsync());
+        var createResult = await _accountProcessor.CreateAccountAsync(request);
+
+        var result = await _accountProcessor.DeleteAccountAsync(createResult.CreatedId);
+
+        Assert.Equal(DeleteAccountResultCode.Success, result.ResultCode);
+
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var accountEntity = await accountRepo.GetAsync(a => a.Id == createResult.CreatedId);
+        Assert.Null(accountEntity);
+    }
+
+    [Fact]
+    public async Task DeleteAccountAsync_ReturnsNotFound_WhenAccountDoesNotExist()
+    {
+        var result = await _accountProcessor.DeleteAccountAsync(_fixture.Create<int>());
+
+        Assert.Equal(DeleteAccountResultCode.AccountNotFoundError, result.ResultCode);
+    }
 }

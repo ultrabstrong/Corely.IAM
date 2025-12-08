@@ -36,4 +36,14 @@ internal class AccountProcessorAuthorizationDecorator(
         );
         return await _inner.GetAccountAsync(accountName);
     }
+
+    public async Task<DeleteAccountResult> DeleteAccountAsync(int accountId)
+    {
+        await _authorizationProvider.AuthorizeAsync(
+            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            AuthAction.Delete,
+            accountId
+        );
+        return await _inner.DeleteAccountAsync(accountId);
+    }
 }

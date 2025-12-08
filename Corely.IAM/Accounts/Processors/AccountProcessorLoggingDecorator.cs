@@ -42,4 +42,12 @@ internal class AccountProcessorLoggingDecorator : IAccountProcessor
             () => _inner.GetAccountAsync(accountName),
             logResult: true
         );
+
+    public async Task<DeleteAccountResult> DeleteAccountAsync(int accountId) =>
+        await _logger.ExecuteWithLogging(
+            nameof(AccountProcessor),
+            accountId,
+            () => _inner.DeleteAccountAsync(accountId),
+            logResult: true
+        );
 }

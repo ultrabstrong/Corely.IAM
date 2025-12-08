@@ -1,4 +1,6 @@
 ﻿using Corely.Common.Extensions;
+using Corely.IAM.Accounts.Models;
+using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
@@ -16,18 +18,21 @@ internal class DeregistrationService : IDeregistrationService
     private readonly IPermissionProcessor _permissionProcessor;
     private readonly IRoleProcessor _roleProcessor;
     private readonly IGroupProcessor _groupProcessor;
+    private readonly IAccountProcessor _accountProcessor;
 
     public DeregistrationService(
         ILogger<DeregistrationService> logger,
         IPermissionProcessor permissionProcessor,
         IRoleProcessor roleProcessor,
-        IGroupProcessor groupProcessor
+        IGroupProcessor groupProcessor,
+        IAccountProcessor accountProcessor
     )
     {
         _logger = logger.ThrowIfNull(nameof(logger));
         _permissionProcessor = permissionProcessor.ThrowIfNull(nameof(permissionProcessor));
         _roleProcessor = roleProcessor.ThrowIfNull(nameof(roleProcessor));
         _groupProcessor = groupProcessor.ThrowIfNull(nameof(groupProcessor));
+        _accountProcessor = accountProcessor.ThrowIfNull(nameof(accountProcessor));
     }
 
     public async Task<DeregisterPermissionResult> DeregisterPermissionAsync(
@@ -101,18 +106,35 @@ internal class DeregistrationService : IDeregistrationService
         return new DeregisterGroupResult(DeregisterGroupResultCode.Success, string.Empty);
     }
 
+    public async Task<DeregisterAccountResult> DeregisterAccountAsync(
+        DeregisterAccountRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation("Deregistering account {AccountId}", request.AccountId);
+
+        var result = await _accountProcessor.DeleteAccountAsync(request.AccountId);
+
+        if (result.ResultCode != DeleteAccountResultCode.Success)
+        {
+            _logger.LogInformation(
+                "Deregistering account failed for account id {AccountId}",
+                request.AccountId
+            );
+            return new DeregisterAccountResult(
+                (DeregisterAccountResultCode)result.ResultCode,
+                result.Message
+            );
+        }
+
+        _logger.LogInformation("Account {AccountId} deregistered", request.AccountId);
+        return new DeregisterAccountResult(DeregisterAccountResultCode.Success, string.Empty);
+    }
+
     public Task<DeregisterUserResult> DegisterUserAsync(DeregisterUserRequest request)
     {
         _logger.LogDebug(
             "Need to implement permissions so we can check if the user is the owner of any account"
-        );
-        throw new NotImplementedException();
-    }
-
-    public Task<DeregisterAccountResult> DegisterAccountAsync(DeregisterAccountRequest request)
-    {
-        _logger.LogDebug(
-            "Need to implement permissions so we can check if the user is the owner of this account"
         );
         throw new NotImplementedException();
     }

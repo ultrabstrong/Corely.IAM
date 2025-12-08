@@ -1,3 +1,9 @@
 ﻿namespace Corely.IAM.Models;
 
-public record DeregisterAccountResult(bool IsSuccess, string? Message);
+public record DeregisterAccountResult(DeregisterAccountResultCode ResultCode, string Message);
+
+public enum DeregisterAccountResultCode
+{
+    Success,
+    AccountNotFoundError,
+}

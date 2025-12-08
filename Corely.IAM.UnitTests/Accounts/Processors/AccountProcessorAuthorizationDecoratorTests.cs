@@ -127,6 +127,57 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
+    public async Task DeleteAccountAsync_CallsAuthorizationProvider()
+    {
+        var accountId = 5;
+        var expectedResult = new DeleteAccountResult(DeleteAccountResultCode.Success, "");
+        _mockInnerProcessor
+            .Setup(x => x.DeleteAccountAsync(accountId))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.DeleteAccountAsync(accountId);
+
+        Assert.Equal(expectedResult, result);
+        _mockAuthorizationProvider.Verify(
+            x =>
+                x.AuthorizeAsync(
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    AuthAction.Delete,
+                    accountId
+                ),
+            Times.Once
+        );
+        _mockInnerProcessor.Verify(x => x.DeleteAccountAsync(accountId), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAccountAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    {
+        var accountId = 5;
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.AuthorizeAsync(
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    AuthAction.Delete,
+                    accountId
+                )
+            )
+            .ThrowsAsync(
+                new AuthorizationException(
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    AuthAction.Delete.ToString(),
+                    accountId
+                )
+            );
+
+        await Assert.ThrowsAsync<AuthorizationException>(() =>
+            _decorator.DeleteAccountAsync(accountId)
+        );
+
+        _mockInnerProcessor.Verify(x => x.DeleteAccountAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
             new AccountProcessorAuthorizationDecorator(null!, _mockAuthorizationProvider.Object)

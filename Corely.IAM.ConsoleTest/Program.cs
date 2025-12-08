@@ -164,6 +164,13 @@ internal class Program
             var deregisterGroupResult = await deregistrationService.DeregisterGroupAsync(
                 deregisterGroupRequest
             );
+
+            var deregisterAccountRequest = new DeregisterAccountRequest(
+                registerAccountResult.CreatedAccountId
+            );
+            var deregisterAccountResult = await deregistrationService.DeregisterAccountAsync(
+                deregisterAccountRequest
+            );
         }
         catch (Exception ex)
         {

@@ -157,6 +157,13 @@ internal class Program
             var deregisterRoleResult = await deregistrationService.DeregisterRoleAsync(
                 deregisterRoleRequest
             );
+
+            var deregisterGroupRequest = new DeregisterGroupRequest(
+                registerGroupResult.CreatedGroupId
+            );
+            var deregisterGroupResult = await deregistrationService.DeregisterGroupAsync(
+                deregisterGroupRequest
+            );
         }
         catch (Exception ex)
         {

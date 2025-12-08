@@ -45,4 +45,14 @@ internal class GroupProcessorAuthorizationDecorator(
         );
         return await _inner.AssignRolesToGroupAsync(request);
     }
+
+    public async Task<DeleteGroupResult> DeleteGroupAsync(int groupId)
+    {
+        await _authorizationProvider.AuthorizeAsync(
+            PermissionConstants.GROUP_RESOURCE_TYPE,
+            AuthAction.Delete,
+            groupId
+        );
+        return await _inner.DeleteGroupAsync(groupId);
+    }
 }

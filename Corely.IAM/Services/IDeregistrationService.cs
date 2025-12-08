@@ -6,6 +6,7 @@ public interface IDeregistrationService
 {
     Task<DeregisterPermissionResult> DeregisterPermissionAsync(DeregisterPermissionRequest request);
     Task<DeregisterRoleResult> DeregisterRoleAsync(DeregisterRoleRequest request);
+    Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request);
     Task<DeregisterUserResult> DegisterUserAsync(DeregisterUserRequest request);
     Task<DeregisterAccountResult> DegisterAccountAsync(DeregisterAccountRequest request);
 }

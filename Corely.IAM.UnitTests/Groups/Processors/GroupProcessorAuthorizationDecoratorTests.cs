@@ -163,6 +163,55 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
+    public async Task DeleteGroupAsync_CallsAuthorizationProvider()
+    {
+        var groupId = 5;
+        var expectedResult = new DeleteGroupResult(DeleteGroupResultCode.Success, "");
+        _mockInnerProcessor.Setup(x => x.DeleteGroupAsync(groupId)).ReturnsAsync(expectedResult);
+
+        var result = await _decorator.DeleteGroupAsync(groupId);
+
+        Assert.Equal(expectedResult, result);
+        _mockAuthorizationProvider.Verify(
+            x =>
+                x.AuthorizeAsync(
+                    PermissionConstants.GROUP_RESOURCE_TYPE,
+                    AuthAction.Delete,
+                    groupId
+                ),
+            Times.Once
+        );
+        _mockInnerProcessor.Verify(x => x.DeleteGroupAsync(groupId), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteGroupAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    {
+        var groupId = 5;
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.AuthorizeAsync(
+                    PermissionConstants.GROUP_RESOURCE_TYPE,
+                    AuthAction.Delete,
+                    groupId
+                )
+            )
+            .ThrowsAsync(
+                new AuthorizationException(
+                    PermissionConstants.GROUP_RESOURCE_TYPE,
+                    AuthAction.Delete.ToString(),
+                    groupId
+                )
+            );
+
+        await Assert.ThrowsAsync<AuthorizationException>(() =>
+            _decorator.DeleteGroupAsync(groupId)
+        );
+
+        _mockInnerProcessor.Verify(x => x.DeleteGroupAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
             new GroupProcessorAuthorizationDecorator(null!, _mockAuthorizationProvider.Object)

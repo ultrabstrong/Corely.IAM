@@ -206,4 +206,22 @@ internal class GroupProcessor : IGroupProcessor
             invalidRoleIds
         );
     }
+
+    public async Task<DeleteGroupResult> DeleteGroupAsync(int groupId)
+    {
+        var groupEntity = await _groupRepo.GetAsync(g => g.Id == groupId);
+        if (groupEntity == null)
+        {
+            _logger.LogWarning("Group with Id {GroupId} not found", groupId);
+            return new DeleteGroupResult(
+                DeleteGroupResultCode.GroupNotFoundError,
+                $"Group with Id {groupId} not found"
+            );
+        }
+
+        await _groupRepo.DeleteAsync(groupEntity);
+
+        _logger.LogInformation("Group with Id {GroupId} deleted", groupId);
+        return new DeleteGroupResult(DeleteGroupResultCode.Success, string.Empty);
+    }
 }

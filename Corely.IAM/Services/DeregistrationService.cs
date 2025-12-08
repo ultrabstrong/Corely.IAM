@@ -1,4 +1,6 @@
 ﻿using Corely.Common.Extensions;
+using Corely.IAM.Groups.Models;
+using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
@@ -13,16 +15,19 @@ internal class DeregistrationService : IDeregistrationService
     private readonly ILogger<DeregistrationService> _logger;
     private readonly IPermissionProcessor _permissionProcessor;
     private readonly IRoleProcessor _roleProcessor;
+    private readonly IGroupProcessor _groupProcessor;
 
     public DeregistrationService(
         ILogger<DeregistrationService> logger,
         IPermissionProcessor permissionProcessor,
-        IRoleProcessor roleProcessor
+        IRoleProcessor roleProcessor,
+        IGroupProcessor groupProcessor
     )
     {
         _logger = logger.ThrowIfNull(nameof(logger));
         _permissionProcessor = permissionProcessor.ThrowIfNull(nameof(permissionProcessor));
         _roleProcessor = roleProcessor.ThrowIfNull(nameof(roleProcessor));
+        _groupProcessor = groupProcessor.ThrowIfNull(nameof(groupProcessor));
     }
 
     public async Task<DeregisterPermissionResult> DeregisterPermissionAsync(
@@ -71,6 +76,29 @@ internal class DeregistrationService : IDeregistrationService
 
         _logger.LogInformation("Role {RoleId} deregistered", request.RoleId);
         return new DeregisterRoleResult(DeregisterRoleResultCode.Success, string.Empty);
+    }
+
+    public async Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation("Deregistering group {GroupId}", request.GroupId);
+
+        var result = await _groupProcessor.DeleteGroupAsync(request.GroupId);
+
+        if (result.ResultCode != DeleteGroupResultCode.Success)
+        {
+            _logger.LogInformation(
+                "Deregistering group failed for group id {GroupId}",
+                request.GroupId
+            );
+            return new DeregisterGroupResult(
+                (DeregisterGroupResultCode)result.ResultCode,
+                result.Message
+            );
+        }
+
+        _logger.LogInformation("Group {GroupId} deregistered", request.GroupId);
+        return new DeregisterGroupResult(DeregisterGroupResultCode.Success, string.Empty);
     }
 
     public Task<DeregisterUserResult> DegisterUserAsync(DeregisterUserRequest request)

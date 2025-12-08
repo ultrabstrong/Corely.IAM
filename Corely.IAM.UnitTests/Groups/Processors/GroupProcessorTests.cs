@@ -482,4 +482,26 @@ public class GroupProcessorTests
         Assert.Equal(0, result.AddedRoleCount);
         Assert.Equal(roleIds, result.InvalidRoleIds);
     }
+
+    [Fact]
+    public async Task DeleteGroupAsync_ReturnsSuccess_WhenGroupExists()
+    {
+        var (groupId, _) = await CreateGroupAsync();
+
+        var result = await _groupProcessor.DeleteGroupAsync(groupId);
+
+        Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
+
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var groupEntity = await groupRepo.GetAsync(g => g.Id == groupId);
+        Assert.Null(groupEntity);
+    }
+
+    [Fact]
+    public async Task DeleteGroupAsync_ReturnsNotFound_WhenGroupDoesNotExist()
+    {
+        var result = await _groupProcessor.DeleteGroupAsync(_fixture.Create<int>());
+
+        Assert.Equal(DeleteGroupResultCode.GroupNotFoundError, result.ResultCode);
+    }
 }

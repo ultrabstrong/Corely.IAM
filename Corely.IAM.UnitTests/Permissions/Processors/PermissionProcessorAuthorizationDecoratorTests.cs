@@ -1,9 +1,9 @@
-using Corely.IAM.Auth.Constants;
-using Corely.IAM.Auth.Exceptions;
-using Corely.IAM.Auth.Providers;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
+using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Exceptions;
+using Corely.IAM.Security.Processors;
 
 namespace Corely.IAM.UnitTests.Permissions.Processors;
 

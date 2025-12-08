@@ -1,11 +1,11 @@
 using Corely.DataAccess.Interfaces.Repos;
-using Corely.IAM.Auth.Constants;
-using Corely.IAM.Auth.Exceptions;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
+using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Exceptions;
 using Corely.IAM.Users.Providers;
 
-namespace Corely.IAM.Auth.Providers;
+namespace Corely.IAM.Security.Processors;
 
 internal class AuthorizationProvider(
     IUserContextProvider userContextProvider,

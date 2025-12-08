@@ -1,6 +1,6 @@
 using Corely.Common.Extensions;
-using Corely.IAM.Auth.Exceptions;
 using Corely.IAM.BasicAuths.Models;
+using Corely.IAM.Security.Exceptions;
 using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.BasicAuths.Processors;

@@ -1,4 +1,4 @@
-namespace Corely.IAM.Auth.Exceptions;
+namespace Corely.IAM.Security.Exceptions;
 
 public class AuthorizationException : Exception
 {

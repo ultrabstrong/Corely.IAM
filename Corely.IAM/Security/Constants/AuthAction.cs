@@ -1,4 +1,4 @@
-namespace Corely.IAM.Auth.Constants;
+namespace Corely.IAM.Security.Constants;
 
 public enum AuthAction
 {

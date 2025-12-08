@@ -1,5 +1,4 @@
 ﻿using Corely.IAM.Accounts.Processors;
-using Corely.IAM.Auth.Providers;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Permissions.Processors;

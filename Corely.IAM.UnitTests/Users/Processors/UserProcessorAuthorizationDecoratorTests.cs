@@ -1,7 +1,7 @@
-using Corely.IAM.Auth.Constants;
-using Corely.IAM.Auth.Exceptions;
-using Corely.IAM.Auth.Providers;
 using Corely.IAM.Permissions.Constants;
+using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Exceptions;
+using Corely.IAM.Security.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 

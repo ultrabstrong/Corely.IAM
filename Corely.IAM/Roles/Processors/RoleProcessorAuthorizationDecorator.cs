@@ -1,8 +1,8 @@
 using Corely.Common.Extensions;
-using Corely.IAM.Auth.Constants;
-using Corely.IAM.Auth.Providers;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Processors;
 
 namespace Corely.IAM.Roles.Processors;
 

@@ -1,6 +1,6 @@
-using Corely.IAM.Auth.Exceptions;
+using Corely.IAM.Security.Exceptions;
 
-namespace Corely.IAM.UnitTests.Auth.Exceptions;
+namespace Corely.IAM.UnitTests.Security.Exceptions;
 
 public class AuthorizationExceptionTests
 {

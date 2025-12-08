@@ -1,13 +1,13 @@
 using Corely.DataAccess.Interfaces.Repos;
-using Corely.IAM.Auth.Constants;
-using Corely.IAM.Auth.Exceptions;
-using Corely.IAM.Auth.Providers;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
+using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Exceptions;
+using Corely.IAM.Security.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 
-namespace Corely.IAM.UnitTests.Auth.Providers;
+namespace Corely.IAM.UnitTests.Security.Processors;
 
 public class AuthorizationProviderTests
 {

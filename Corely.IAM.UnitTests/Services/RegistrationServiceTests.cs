@@ -15,6 +15,7 @@ using Corely.IAM.Roles.Processors;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
+using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Services;
@@ -30,6 +31,7 @@ public class RegistrationServiceTests
     private readonly Mock<IGroupProcessor> _groupProcessorMock;
     private readonly Mock<IRoleProcessor> _roleProcessorMock;
     private readonly Mock<IPermissionProcessor> _permissionProcessorMock;
+    private readonly Mock<IUserContextProvider> _userContextProviderMock = new();
     private readonly RegistrationService _registrationService;
 
     private CreateAccountResultCode _createAccountResultCode = CreateAccountResultCode.Success;
@@ -79,6 +81,7 @@ public class RegistrationServiceTests
             _groupProcessorMock.Object,
             _roleProcessorMock.Object,
             _permissionProcessorMock.Object,
+            _userContextProviderMock.Object,
             _unitOfWorkProviderMock.Object
         );
     }

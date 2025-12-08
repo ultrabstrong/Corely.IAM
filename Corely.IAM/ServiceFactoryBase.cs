@@ -97,6 +97,7 @@ public abstract class ServiceFactoryBase(
         ServiceCollection.Decorate<IUserProcessor, UserProcessorLoggingDecorator>();
 
         ServiceCollection.AddScoped<IBasicAuthProcessor, BasicAuthProcessor>();
+        ServiceCollection.Decorate<IBasicAuthProcessor, BasicAuthProcessorAuthorizationDecorator>();
         ServiceCollection.Decorate<IBasicAuthProcessor, BasicAuthProcessorLoggingDecorator>();
 
         ServiceCollection.AddScoped<IGroupProcessor, GroupProcessor>();

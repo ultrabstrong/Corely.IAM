@@ -9,11 +9,11 @@ using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
+using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
@@ -27,6 +27,7 @@ internal class RegistrationService : IRegistrationService
     private readonly IGroupProcessor _groupProcessor;
     private readonly IRoleProcessor _roleProcessor;
     private readonly IPermissionProcessor _permissionProcessor;
+    private readonly IUserContextProvider _userContextProvider;
     private readonly IUnitOfWorkProvider _uowProvider;
 
     public RegistrationService(
@@ -37,6 +38,7 @@ internal class RegistrationService : IRegistrationService
         IGroupProcessor groupProcessor,
         IRoleProcessor roleProcessor,
         IPermissionProcessor permissionProcessor,
+        IUserContextProvider userContextProvider,
         IUnitOfWorkProvider uowProvider
     )
     {
@@ -47,6 +49,7 @@ internal class RegistrationService : IRegistrationService
         _groupProcessor = groupProcessor.ThrowIfNull(nameof(groupProcessor));
         _roleProcessor = roleProcessor.ThrowIfNull(nameof(roleProcessor));
         _permissionProcessor = permissionProcessor.ThrowIfNull(nameof(permissionProcessor));
+        _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         _uowProvider = uowProvider.ThrowIfNull(nameof(uowProvider));
     }
 
@@ -76,6 +79,8 @@ internal class RegistrationService : IRegistrationService
                     -1
                 );
             }
+
+            _userContextProvider.SetUserContext(new UserContext(userResult.CreatedId, 0));
 
             var basicAuthResult = await _basicAuthProcessor.UpsertBasicAuthAsync(
                 new(userResult.CreatedId, request.Password)

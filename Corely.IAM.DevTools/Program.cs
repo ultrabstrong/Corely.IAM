@@ -3,6 +3,8 @@ using System.Reflection;
 using Corely.Common.Providers.Redaction;
 using Corely.IAM.DevTools.Commands;
 using Corely.IAM.DevTools.SerilogCustomization;
+using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +25,7 @@ internal class Program
             .Enrich.WithProperty("Application", "Corely.IAM.DevTools")
             .Enrich.WithProperty("CorrelationId", Guid.NewGuid())
             .Enrich.With(new SerilogRedactionEnricher([new PasswordRedactionProvider()]))
+            .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Information)
             .WriteTo.Seq("http://localhost:5341")
             .CreateLogger();
 
@@ -32,7 +35,8 @@ internal class Program
                 .ConfigureAppConfiguration(
                     (hostingContext, config) =>
                     {
-                        config.SetBasePath(Directory.GetCurrentDirectory());
+                        var exePath = AppContext.BaseDirectory;
+                        config.SetBasePath(exePath);
                         config.AddJsonFile(
                             "appsettings.json",
                             optional: false,
@@ -61,6 +65,14 @@ internal class Program
                 .Build();
 
             using var scope = host.Services.CreateScope();
+
+            var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+            var userContextProvider =
+                scope.ServiceProvider.GetRequiredService<IUserContextProvider>();
+            var userId = configuration.GetValue<int>("DevToolsUserContext:UserId");
+            var accountId = configuration.GetValue<int>("DevToolsUserContext:AccountId");
+            userContextProvider.SetUserContext(new UserContext(userId, accountId));
+
             var rootCommand = GetRootCommand(scope.ServiceProvider);
             await rootCommand.InvokeAsync(args);
         }
@@ -80,7 +92,7 @@ internal class Program
             .Where(type =>
                 !type.IsNested
                 && type.Namespace != null
-                && type.Namespace.StartsWith("Corely.DevTools.Commands")
+                && type.Namespace.StartsWith(typeof(CommandBase).Namespace!)
                 && type.IsSubclassOf(typeof(CommandBase))
             )
             .Select(type => serviceProvider.GetService(type) as CommandBase)

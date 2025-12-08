@@ -144,6 +144,14 @@ internal class Program
             var signedOut = await authService.SignOutAsync(registerUserResult.CreatedUserId, jti);
 
             await authService.SignOutAllAsync(registerUserResult.CreatedUserId);
+
+            var deregistrationService = host.Services.GetRequiredService<IDeregistrationService>();
+            var deregisterPermissionRequest = new DeregisterPermissionRequest(
+                registerPermissionResult.CreatedPermissionId
+            );
+            var deregisterPermissionResult = await deregistrationService.DeregisterPermissionAsync(
+                deregisterPermissionRequest
+            );
         }
         catch (Exception ex)
         {

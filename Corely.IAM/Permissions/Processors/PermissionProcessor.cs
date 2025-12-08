@@ -151,4 +151,22 @@ internal class PermissionProcessor : IPermissionProcessor
 
         await _permissionRepo.CreateAsync(permissionEntities);
     }
+
+    public async Task<DeletePermissionResult> DeletePermissionAsync(int permissionId)
+    {
+        var permissionEntity = await _permissionRepo.GetAsync(p => p.Id == permissionId);
+        if (permissionEntity == null)
+        {
+            _logger.LogWarning("Permission with Id {PermissionId} not found", permissionId);
+            return new DeletePermissionResult(
+                DeletePermissionResultCode.PermissionNotFoundError,
+                $"Permission with Id {permissionId} not found"
+            );
+        }
+
+        await _permissionRepo.DeleteAsync(permissionEntity);
+
+        _logger.LogInformation("Permission with Id {PermissionId} deleted", permissionId);
+        return new DeletePermissionResult(DeletePermissionResultCode.Success, string.Empty);
+    }
 }

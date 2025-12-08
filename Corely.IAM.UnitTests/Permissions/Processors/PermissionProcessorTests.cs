@@ -202,4 +202,33 @@ public class PermissionProcessorTests
         Assert.NotNull(userPermission);
         Assert.Contains(userPermission.Roles!, r => r.Name == RoleConstants.USER_ROLE_NAME);
     }
+
+    [Fact]
+    public async Task DeletePermissionAsync_ReturnsSuccess_WhenPermissionExists()
+    {
+        var accountId = await CreateAccountAsync();
+        var createRequest = new CreatePermissionRequest(
+            accountId,
+            PermissionConstants.GROUP_RESOURCE_TYPE,
+            0,
+            Read: true
+        );
+        var createResult = await _permissionProcessor.CreatePermissionAsync(createRequest);
+
+        var result = await _permissionProcessor.DeletePermissionAsync(createResult.CreatedId);
+
+        Assert.Equal(DeletePermissionResultCode.Success, result.ResultCode);
+
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var permissionEntity = await permissionRepo.GetAsync(p => p.Id == createResult.CreatedId);
+        Assert.Null(permissionEntity);
+    }
+
+    [Fact]
+    public async Task DeletePermissionAsync_ReturnsNotFound_WhenPermissionDoesNotExist()
+    {
+        var result = await _permissionProcessor.DeletePermissionAsync(_fixture.Create<int>());
+
+        Assert.Equal(DeletePermissionResultCode.PermissionNotFoundError, result.ResultCode);
+    }
 }

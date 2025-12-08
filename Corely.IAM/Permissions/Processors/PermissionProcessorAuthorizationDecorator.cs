@@ -26,4 +26,14 @@ internal class PermissionProcessorAuthorizationDecorator(
 
     public Task CreateDefaultSystemPermissionsAsync(int accountId) =>
         _inner.CreateDefaultSystemPermissionsAsync(accountId);
+
+    public async Task<DeletePermissionResult> DeletePermissionAsync(int permissionId)
+    {
+        await _authorizationProvider.AuthorizeAsync(
+            PermissionConstants.PERMISSION_RESOURCE_TYPE,
+            AuthAction.Delete,
+            permissionId
+        );
+        return await _inner.DeletePermissionAsync(permissionId);
+    }
 }

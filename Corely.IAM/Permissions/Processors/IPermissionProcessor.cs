@@ -6,4 +6,5 @@ internal interface IPermissionProcessor
 {
     Task<CreatePermissionResult> CreatePermissionAsync(CreatePermissionRequest request);
     Task CreateDefaultSystemPermissionsAsync(int accountId);
+    Task<DeletePermissionResult> DeletePermissionAsync(int permissionId);
 }

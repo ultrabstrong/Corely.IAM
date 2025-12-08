@@ -1,28 +1,30 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Validators;
 
-namespace Corely.IAM.DevTools.Commands.Registration;
+namespace Corely.IAM.DevTools.Commands.Deregistration;
 
-internal partial class Registration : CommandBase
+internal partial class Deregistration : CommandBase
 {
-    internal class RegisterRolesWithGroup : CommandBase
+    internal class DeregisterPermission : CommandBase
     {
-        [Argument("Filepath to register roles with group request json", true)]
+        [Argument("Filepath to deregister permission request json", true)]
         private string RequestJsonFile { get; init; } = null!;
 
         [Option("-c", "--create", Description = "Create sample json file at path")]
         private bool Create { get; init; }
 
-        private readonly IRegistrationService _registrationService;
+        private readonly IDeregistrationService _deregistrationService;
 
-        public RegisterRolesWithGroup(IRegistrationService registrationService)
-            : base("roles-with-group", "Register roles with group")
+        public DeregisterPermission(IDeregistrationService deregistrationService)
+            : base("permission", "Deregister a permission")
         {
-            _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
+            _deregistrationService = deregistrationService.ThrowIfNull(
+                nameof(deregistrationService)
+            );
         }
 
         protected override async Task ExecuteAsync()
@@ -31,18 +33,18 @@ internal partial class Registration : CommandBase
             {
                 SampleJsonFileHelper.CreateSampleJson(
                     RequestJsonFile,
-                    new RegisterRolesWithGroupRequest([1, 2], 3)
+                    new DeregisterPermissionRequest(1)
                 );
             }
             else
             {
-                await RegisterRolesWithGroupAsync();
+                await DeregisterPermissionAsync();
             }
         }
 
-        private async Task RegisterRolesWithGroupAsync()
+        private async Task DeregisterPermissionAsync()
         {
-            var request = SampleJsonFileHelper.ReadRequestJson<RegisterRolesWithGroupRequest>(
+            var request = SampleJsonFileHelper.ReadRequestJson<DeregisterPermissionRequest>(
                 RequestJsonFile
             );
             if (request == null)
@@ -50,10 +52,10 @@ internal partial class Registration : CommandBase
 
             try
             {
-                foreach (var registerRequest in request)
+                foreach (var deregisterRequest in request)
                 {
-                    var result = await _registrationService.RegisterRolesWithGroupAsync(
-                        registerRequest
+                    var result = await _deregistrationService.DeregisterPermissionAsync(
+                        deregisterRequest
                     );
                     Console.WriteLine(JsonSerializer.Serialize(result));
                 }

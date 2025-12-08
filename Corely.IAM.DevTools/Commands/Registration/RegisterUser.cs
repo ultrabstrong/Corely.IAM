@@ -30,7 +30,7 @@ internal partial class Registration : CommandBase
         {
             if (Create)
             {
-                CreateSampleJson(
+                SampleJsonFileHelper.CreateSampleJson(
                     RequestJsonFile,
                     new RegisterUserRequest("userName", "email", "password")
                 );
@@ -43,7 +43,9 @@ internal partial class Registration : CommandBase
 
         private async Task RegisterUserAsync()
         {
-            var request = ReadRequestJson<RegisterUserRequest>(RequestJsonFile);
+            var request = SampleJsonFileHelper.ReadRequestJson<RegisterUserRequest>(
+                RequestJsonFile
+            );
             if (request == null)
                 return;
 

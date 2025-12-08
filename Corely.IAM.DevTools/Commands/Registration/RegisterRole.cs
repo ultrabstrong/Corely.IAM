@@ -29,7 +29,10 @@ internal partial class Registration : CommandBase
         {
             if (Create)
             {
-                CreateSampleJson(RequestJsonFile, new RegisterRoleRequest("roleName", 1));
+                SampleJsonFileHelper.CreateSampleJson(
+                    RequestJsonFile,
+                    new RegisterRoleRequest("roleName", 1)
+                );
             }
             else
             {
@@ -39,9 +42,12 @@ internal partial class Registration : CommandBase
 
         private async Task RegisterRoleAsync()
         {
-            var request = ReadRequestJson<RegisterRoleRequest>(RequestJsonFile);
+            var request = SampleJsonFileHelper.ReadRequestJson<RegisterRoleRequest>(
+                RequestJsonFile
+            );
             if (request == null)
                 return;
+
             try
             {
                 foreach (var registerRequest in request)

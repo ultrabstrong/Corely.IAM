@@ -29,7 +29,10 @@ internal partial class Registration : CommandBase
         {
             if (Create)
             {
-                CreateSampleJson(RequestJsonFile, new RegisterUsersWithGroupRequest([1, 2], 3));
+                SampleJsonFileHelper.CreateSampleJson(
+                    RequestJsonFile,
+                    new RegisterUsersWithGroupRequest([1, 2], 3)
+                );
             }
             else
             {
@@ -39,9 +42,12 @@ internal partial class Registration : CommandBase
 
         private async Task RegisterUserWithGroupAsync()
         {
-            var request = ReadRequestJson<RegisterUsersWithGroupRequest>(RequestJsonFile);
+            var request = SampleJsonFileHelper.ReadRequestJson<RegisterUsersWithGroupRequest>(
+                RequestJsonFile
+            );
             if (request == null)
                 return;
+
             try
             {
                 foreach (var registerRequest in request)

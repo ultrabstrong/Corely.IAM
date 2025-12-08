@@ -8,6 +8,8 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Processors;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
@@ -19,13 +21,15 @@ internal class DeregistrationService : IDeregistrationService
     private readonly IRoleProcessor _roleProcessor;
     private readonly IGroupProcessor _groupProcessor;
     private readonly IAccountProcessor _accountProcessor;
+    private readonly IUserProcessor _userProcessor;
 
     public DeregistrationService(
         ILogger<DeregistrationService> logger,
         IPermissionProcessor permissionProcessor,
         IRoleProcessor roleProcessor,
         IGroupProcessor groupProcessor,
-        IAccountProcessor accountProcessor
+        IAccountProcessor accountProcessor,
+        IUserProcessor userProcessor
     )
     {
         _logger = logger.ThrowIfNull(nameof(logger));
@@ -33,6 +37,7 @@ internal class DeregistrationService : IDeregistrationService
         _roleProcessor = roleProcessor.ThrowIfNull(nameof(roleProcessor));
         _groupProcessor = groupProcessor.ThrowIfNull(nameof(groupProcessor));
         _accountProcessor = accountProcessor.ThrowIfNull(nameof(accountProcessor));
+        _userProcessor = userProcessor.ThrowIfNull(nameof(userProcessor));
     }
 
     public async Task<DeregisterPermissionResult> DeregisterPermissionAsync(
@@ -131,11 +136,26 @@ internal class DeregistrationService : IDeregistrationService
         return new DeregisterAccountResult(DeregisterAccountResultCode.Success, string.Empty);
     }
 
-    public Task<DeregisterUserResult> DegisterUserAsync(DeregisterUserRequest request)
+    public async Task<DeregisterUserResult> DeregisterUserAsync(DeregisterUserRequest request)
     {
-        _logger.LogDebug(
-            "Need to implement permissions so we can check if the user is the owner of any account"
-        );
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation("Deregistering user {UserId}", request.UserId);
+
+        var result = await _userProcessor.DeleteUserAsync(request.UserId);
+
+        if (result.ResultCode != DeleteUserResultCode.Success)
+        {
+            _logger.LogInformation(
+                "Deregistering user failed for user id {UserId}",
+                request.UserId
+            );
+            return new DeregisterUserResult(
+                (DeregisterUserResultCode)result.ResultCode,
+                result.Message
+            );
+        }
+
+        _logger.LogInformation("User {UserId} deregistered", request.UserId);
+        return new DeregisterUserResult(DeregisterUserResultCode.Success, string.Empty);
     }
 }

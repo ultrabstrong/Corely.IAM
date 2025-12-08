@@ -246,6 +246,45 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
+    public async Task DeleteUserAsync_CallsAuthorizationProvider()
+    {
+        var userId = 5;
+        var expectedResult = new DeleteUserResult(DeleteUserResultCode.Success, "");
+        _mockInnerProcessor.Setup(x => x.DeleteUserAsync(userId)).ReturnsAsync(expectedResult);
+
+        var result = await _decorator.DeleteUserAsync(userId);
+
+        Assert.Equal(expectedResult, result);
+        _mockAuthorizationProvider.Verify(
+            x =>
+                x.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Delete, userId),
+            Times.Once
+        );
+        _mockInnerProcessor.Verify(x => x.DeleteUserAsync(userId), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    {
+        var userId = 5;
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Delete, userId)
+            )
+            .ThrowsAsync(
+                new AuthorizationException(
+                    PermissionConstants.USER_RESOURCE_TYPE,
+                    AuthAction.Delete.ToString(),
+                    userId
+                )
+            );
+
+        await Assert.ThrowsAsync<AuthorizationException>(() => _decorator.DeleteUserAsync(userId));
+
+        _mockInnerProcessor.Verify(x => x.DeleteUserAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
             new UserProcessorAuthorizationDecorator(null!, _mockAuthorizationProvider.Object)

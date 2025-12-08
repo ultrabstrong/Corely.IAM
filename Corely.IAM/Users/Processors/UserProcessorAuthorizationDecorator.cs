@@ -109,4 +109,14 @@ internal class UserProcessorAuthorizationDecorator(
             );
         return await _inner.AssignRolesToUserAsync(request);
     }
+
+    public async Task<DeleteUserResult> DeleteUserAsync(int userId)
+    {
+        await _authorizationProvider.AuthorizeAsync(
+            PermissionConstants.USER_RESOURCE_TYPE,
+            AuthAction.Delete,
+            userId
+        );
+        return await _inner.DeleteUserAsync(userId);
+    }
 }

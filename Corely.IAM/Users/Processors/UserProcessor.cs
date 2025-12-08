@@ -441,4 +441,51 @@ internal class UserProcessor : IUserProcessor
             invalidRoleIds
         );
     }
+
+    public async Task<DeleteUserResult> DeleteUserAsync(int userId)
+    {
+        var userEntity = await _userRepo.GetAsync(
+            u => u.Id == userId,
+            include: q => q.Include(u => u.Accounts)
+        );
+
+        if (userEntity == null)
+        {
+            _logger.LogWarning("User with Id {UserId} not found", userId);
+            return new DeleteUserResult(
+                DeleteUserResultCode.UserNotFoundError,
+                $"User with Id {userId} not found"
+            );
+        }
+
+        // Check if user is sole owner of any account
+        if (userEntity.Accounts != null)
+        {
+            foreach (var account in userEntity.Accounts)
+            {
+                // Check if this account has only one user (the current user)
+                var accountUserCount = await _userRepo.CountAsync(u =>
+                    u.Accounts!.Any(a => a.Id == account.Id)
+                );
+
+                if (accountUserCount == 1)
+                {
+                    _logger.LogWarning(
+                        "User with Id {UserId} is the sole owner of account {AccountId} and cannot be deleted",
+                        userId,
+                        account.Id
+                    );
+                    return new DeleteUserResult(
+                        DeleteUserResultCode.UserIsSoleAccountOwnerError,
+                        $"User is the sole owner of account '{account.AccountName}' (Id: {account.Id}) and cannot be deleted"
+                    );
+                }
+            }
+        }
+
+        await _userRepo.DeleteAsync(userEntity);
+
+        _logger.LogInformation("User with Id {UserId} deleted", userId);
+        return new DeleteUserResult(DeleteUserResultCode.Success, string.Empty);
+    }
 }

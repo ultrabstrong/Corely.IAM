@@ -14,4 +14,5 @@ internal interface IUserProcessor
     Task RevokeAllUserAuthTokensAsync(int userId);
     Task<string?> GetAsymmetricSignatureVerificationKeyAsync(int userId);
     Task<AssignRolesToUserResult> AssignRolesToUserAsync(AssignRolesToUserRequest request);
+    Task<DeleteUserResult> DeleteUserAsync(int userId);
 }

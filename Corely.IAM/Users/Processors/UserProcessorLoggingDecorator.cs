@@ -98,4 +98,12 @@ internal class UserProcessorLoggingDecorator : IUserProcessor
             () => _inner.AssignRolesToUserAsync(request),
             logResult: true
         );
+
+    public async Task<DeleteUserResult> DeleteUserAsync(int userId) =>
+        await _logger.ExecuteWithLogging(
+            nameof(UserProcessor),
+            userId,
+            () => _inner.DeleteUserAsync(userId),
+            logResult: true
+        );
 }

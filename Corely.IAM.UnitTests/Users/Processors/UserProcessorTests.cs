@@ -469,4 +469,64 @@ public class UserProcessorTests
         Assert.Equal(0, result.AddedRoleCount);
         Assert.Equal(roleIds, result.InvalidRoleIds);
     }
+
+    [Fact]
+    public async Task DeleteUserAsync_ReturnsSuccess_WhenUserExistsAndNotSoleOwner()
+    {
+        // Create user without any accounts (not an owner of anything)
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var user = new UserEntity { Username = _fixture.Create<string>() };
+        var created = await userRepo.CreateAsync(user);
+
+        var result = await _userProcessor.DeleteUserAsync(created.Id);
+
+        Assert.Equal(DeleteUserResultCode.Success, result.ResultCode);
+
+        var deletedUser = await userRepo.GetAsync(u => u.Id == created.Id);
+        Assert.Null(deletedUser);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_ReturnsNotFound_WhenUserDoesNotExist()
+    {
+        var result = await _userProcessor.DeleteUserAsync(_fixture.Create<int>());
+
+        Assert.Equal(DeleteUserResultCode.UserNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_ReturnsSoleOwnerError_WhenUserIsSoleAccountOwner()
+    {
+        // Create user as sole owner of an account
+        var (userId, _) = await CreateUserAsync();
+
+        var result = await _userProcessor.DeleteUserAsync(userId);
+
+        Assert.Equal(DeleteUserResultCode.UserIsSoleAccountOwnerError, result.ResultCode);
+        Assert.Contains("sole owner", result.Message);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_ReturnsSuccess_WhenAccountHasMultipleUsers()
+    {
+        // Create account with two users
+        var accountId = _fixture.Create<int>();
+        var account = new AccountEntity { Id = accountId };
+
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var user1 = new UserEntity { Username = _fixture.Create<string>(), Accounts = [account] };
+        var user2 = new UserEntity
+        {
+            Username = _fixture.Create<string>(),
+            Accounts = [new AccountEntity { Id = accountId }],
+        };
+
+        var created1 = await userRepo.CreateAsync(user1);
+        await userRepo.CreateAsync(user2);
+
+        // Now user1 can be deleted because user2 is also on the account
+        var result = await _userProcessor.DeleteUserAsync(created1.Id);
+
+        Assert.Equal(DeleteUserResultCode.Success, result.ResultCode);
+    }
 }

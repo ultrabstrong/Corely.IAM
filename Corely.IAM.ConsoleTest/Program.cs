@@ -171,6 +171,13 @@ internal class Program
             var deregisterAccountResult = await deregistrationService.DeregisterAccountAsync(
                 deregisterAccountRequest
             );
+
+            // Note: This will fail with UserIsSoleAccountOwnerError if user is sole account owner
+            // Delete the account first before deleting the user, or add another user to the account
+            var deregisterUserRequest = new DeregisterUserRequest(registerUserResult.CreatedUserId);
+            var deregisterUserResult = await deregistrationService.DeregisterUserAsync(
+                deregisterUserRequest
+            );
         }
         catch (Exception ex)
         {

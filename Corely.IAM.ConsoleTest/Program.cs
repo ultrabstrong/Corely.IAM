@@ -70,14 +70,6 @@ internal class Program
                 registerUserRequest
             );
 
-            var deregisterUserRequest1 = new DeregisterUserRequest(
-                registerUserResult.CreatedUserId
-            );
-            var deregisterUserResult1 = await deregistrationService.DeregisterUserAsync(
-                deregisterUserRequest1
-            );
-            return;
-
             var registerAccountRequest = new RegisterAccountRequest(
                 "acct1",
                 registerUserResult.CreatedUserId

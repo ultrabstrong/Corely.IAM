@@ -31,9 +31,9 @@ public class FluentValidationProviderTests
         validatorMock
             .Setup(v => v.Validate(It.Is<string>(s => s == INVALID_STRING)))
             .Returns(
-                new FluentValidationResult(
-                    [new FluentValidationFailure("property", "error message")]
-                )
+                new FluentValidationResult([
+                    new FluentValidationFailure("property", "error message"),
+                ])
             );
 
         validatorMock

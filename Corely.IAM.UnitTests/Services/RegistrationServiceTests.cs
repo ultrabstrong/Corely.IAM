@@ -203,6 +203,12 @@ public class RegistrationServiceTests
         var result = await _registrationService.RegisterUserAsync(request);
 
         Assert.Equal(RegisterUserResultCode.Success, result.ResultCode);
+
+        _userContextProviderMock.Verify(
+            m => m.SetUserContext(It.Is<UserContext>(uc => uc.UserId == result.CreatedUserId)),
+            Times.Once
+        );
+
         _unitOfWorkProviderMock.Verify(
             m => m.CommitAsync(It.IsAny<CancellationToken>()),
             Times.Once

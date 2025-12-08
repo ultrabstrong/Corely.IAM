@@ -21,12 +21,12 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task UpsertBasicAuthAsync_ThrowsAuthorizationException_WhenNoUserContext()
+    public async Task UpsertBasicAuthAsync_ThrowsUserContextNotSetException_WhenNoUserContext()
     {
         var request = new UpsertBasicAuthRequest(5, "password");
         _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((UserContext?)null);
 
-        await Assert.ThrowsAsync<AuthorizationException>(() =>
+        await Assert.ThrowsAsync<UserContextNotSetException>(() =>
             _decorator.UpsertBasicAuthAsync(request)
         );
 
@@ -75,12 +75,12 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task VerifyBasicAuthAsync_ThrowsAuthorizationException_WhenNoUserContext()
+    public async Task VerifyBasicAuthAsync_ThrowsUserContextNotSetException_WhenNoUserContext()
     {
         var request = new VerifyBasicAuthRequest(5, "password");
         _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((UserContext?)null);
 
-        await Assert.ThrowsAsync<AuthorizationException>(() =>
+        await Assert.ThrowsAsync<UserContextNotSetException>(() =>
             _decorator.VerifyBasicAuthAsync(request)
         );
 

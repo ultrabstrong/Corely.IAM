@@ -30,8 +30,7 @@ internal class BasicAuthProcessorAuthorizationDecorator(
     private void AuthorizeForOwnUser(int requestUserId, string action)
     {
         var userContext =
-            _userContextProvider.GetUserContext()
-            ?? throw new AuthorizationException("basicauth", action, requestUserId);
+            _userContextProvider.GetUserContext() ?? throw new UserContextNotSetException();
 
         // Allow if user is operating on their own credentials
         if (userContext.UserId == requestUserId)

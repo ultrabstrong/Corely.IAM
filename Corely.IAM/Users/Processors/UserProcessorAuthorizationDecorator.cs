@@ -1,19 +1,25 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Exceptions;
 using Corely.IAM.Security.Processors;
 using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.Users.Processors;
 
 internal class UserProcessorAuthorizationDecorator(
     IUserProcessor inner,
-    IAuthorizationProvider authorizationProvider
+    IAuthorizationProvider authorizationProvider,
+    IUserContextProvider userContextProvider
 ) : IUserProcessor
 {
     private readonly IUserProcessor _inner = inner.ThrowIfNull(nameof(inner));
     private readonly IAuthorizationProvider _authorizationProvider =
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
+    );
 
     public Task<CreateUserResult> CreateUserAsync(CreateUserRequest request) =>
         _inner.CreateUserAsync(request);
@@ -112,11 +118,22 @@ internal class UserProcessorAuthorizationDecorator(
 
     public async Task<DeleteUserResult> DeleteUserAsync(int userId)
     {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.USER_RESOURCE_TYPE,
-            AuthAction.Delete,
-            userId
-        );
+        AuthorizeForOwnUser(userId);
         return await _inner.DeleteUserAsync(userId);
+    }
+
+    private void AuthorizeForOwnUser(int requestUserId)
+    {
+        var userContext =
+            _userContextProvider.GetUserContext() ?? throw new UserContextNotSetException();
+
+        if (userContext.UserId == requestUserId)
+            return;
+
+        throw new AuthorizationException(
+            PermissionConstants.USER_RESOURCE_TYPE,
+            AuthAction.Delete.ToString(),
+            requestUserId
+        );
     }
 }

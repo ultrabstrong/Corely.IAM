@@ -4,6 +4,7 @@ using Corely.IAM.Security.Exceptions;
 using Corely.IAM.Security.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
+using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.UnitTests.Users.Processors;
 
@@ -11,13 +12,15 @@ public class UserProcessorAuthorizationDecoratorTests
 {
     private readonly Mock<IUserProcessor> _mockInnerProcessor = new();
     private readonly Mock<IAuthorizationProvider> _mockAuthorizationProvider = new();
+    private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly UserProcessorAuthorizationDecorator _decorator;
 
     public UserProcessorAuthorizationDecoratorTests()
     {
         _decorator = new UserProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
-            _mockAuthorizationProvider.Object
+            _mockAuthorizationProvider.Object,
+            _mockUserContextProvider.Object
         );
     }
 
@@ -246,38 +249,37 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_CallsAuthorizationProvider()
+    public async Task DeleteUserAsync_ThrowsUserContextNotSetException_WhenNoUserContext()
+    {
+        var userId = 5;
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((UserContext?)null);
+
+        await Assert.ThrowsAsync<UserContextNotSetException>(() =>
+            _decorator.DeleteUserAsync(userId)
+        );
+
+        _mockInnerProcessor.Verify(x => x.DeleteUserAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_Succeeds_WhenUserDeletesOwnAccount()
     {
         var userId = 5;
         var expectedResult = new DeleteUserResult(DeleteUserResultCode.Success, "");
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new UserContext(userId, 1));
         _mockInnerProcessor.Setup(x => x.DeleteUserAsync(userId)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.DeleteUserAsync(userId);
 
         Assert.Equal(expectedResult, result);
-        _mockAuthorizationProvider.Verify(
-            x =>
-                x.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Delete, userId),
-            Times.Once
-        );
         _mockInnerProcessor.Verify(x => x.DeleteUserAsync(userId), Times.Once);
     }
 
     [Fact]
-    public async Task DeleteUserAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    public async Task DeleteUserAsync_ThrowsAuthorizationException_WhenUserDeletesOtherUser()
     {
         var userId = 5;
-        _mockAuthorizationProvider
-            .Setup(x =>
-                x.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Delete, userId)
-            )
-            .ThrowsAsync(
-                new AuthorizationException(
-                    PermissionConstants.USER_RESOURCE_TYPE,
-                    AuthAction.Delete.ToString(),
-                    userId
-                )
-            );
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new UserContext(99, 1));
 
         await Assert.ThrowsAsync<AuthorizationException>(() => _decorator.DeleteUserAsync(userId));
 
@@ -287,12 +289,30 @@ public class UserProcessorAuthorizationDecoratorTests
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new UserProcessorAuthorizationDecorator(null!, _mockAuthorizationProvider.Object)
+            new UserProcessorAuthorizationDecorator(
+                null!,
+                _mockAuthorizationProvider.Object,
+                _mockUserContextProvider.Object
+            )
         );
 
     [Fact]
     public void Constructor_ThrowsOnNullAuthorizationProvider() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new UserProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
+            new UserProcessorAuthorizationDecorator(
+                _mockInnerProcessor.Object,
+                null!,
+                _mockUserContextProvider.Object
+            )
+        );
+
+    [Fact]
+    public void Constructor_ThrowsOnNullUserContextProvider() =>
+        Assert.Throws<ArgumentNullException>(() =>
+            new UserProcessorAuthorizationDecorator(
+                _mockInnerProcessor.Object,
+                _mockAuthorizationProvider.Object,
+                null!
+            )
         );
 }

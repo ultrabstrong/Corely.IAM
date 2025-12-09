@@ -178,6 +178,51 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
+    public async Task AddUserToAccountAsync_CallsAuthorizationProvider()
+    {
+        var request = new AddUserToAccountRequest(1, 5);
+        var expectedResult = new AddUserToAccountResult(AddUserToAccountResultCode.Success, "");
+        _mockInnerProcessor
+            .Setup(x => x.AddUserToAccountAsync(request))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.AddUserToAccountAsync(request);
+
+        Assert.Equal(expectedResult, result);
+        _mockAuthorizationProvider.Verify(
+            x => x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Update, 5),
+            Times.Once
+        );
+        _mockInnerProcessor.Verify(x => x.AddUserToAccountAsync(request), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddUserToAccountAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    {
+        var request = new AddUserToAccountRequest(1, 5);
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Update, 5)
+            )
+            .ThrowsAsync(
+                new AuthorizationException(
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    AuthAction.Update.ToString(),
+                    5
+                )
+            );
+
+        await Assert.ThrowsAsync<AuthorizationException>(() =>
+            _decorator.AddUserToAccountAsync(request)
+        );
+
+        _mockInnerProcessor.Verify(
+            x => x.AddUserToAccountAsync(It.IsAny<AddUserToAccountRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
             new AccountProcessorAuthorizationDecorator(null!, _mockAuthorizationProvider.Object)

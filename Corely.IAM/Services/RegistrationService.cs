@@ -202,6 +202,45 @@ internal class RegistrationService : IRegistrationService
         }
     }
 
+    public async Task<RegisterUserWithAccountResult> RegisterUserWithAccountAsync(
+        RegisterUserWithAccountRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Registering user {UserId} with account {AccountId}",
+            request.UserId,
+            request.AccountId
+        );
+
+        var result = await _accountProcessor.AddUserToAccountAsync(
+            new(request.UserId, request.AccountId)
+        );
+
+        if (result.ResultCode != AddUserToAccountResultCode.Success)
+        {
+            _logger.LogInformation(
+                "Registering user {UserId} with account {AccountId} failed",
+                request.UserId,
+                request.AccountId
+            );
+            return new RegisterUserWithAccountResult(
+                (RegisterUserWithAccountResultCode)result.ResultCode,
+                result.Message
+            );
+        }
+
+        _logger.LogInformation(
+            "User {UserId} registered with account {AccountId}",
+            request.UserId,
+            request.AccountId
+        );
+        return new RegisterUserWithAccountResult(
+            RegisterUserWithAccountResultCode.Success,
+            string.Empty
+        );
+    }
+
     public async Task<RegisterGroupResult> RegisterGroupAsync(RegisterGroupRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));

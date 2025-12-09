@@ -42,6 +42,8 @@ public class RegistrationServiceTests
     private CreateRoleResultCode _createRoleResultCode = CreateRoleResultCode.Success;
     private CreatePermissionResultCode _createPermissionResultCode =
         CreatePermissionResultCode.Success;
+    private AddUserToAccountResultCode _addUserToAccountResultCode =
+        AddUserToAccountResultCode.Success;
 
     private AddUsersToGroupResult _addUsersToGroupResult = new(
         AddUsersToGroupResultCode.Success,
@@ -97,6 +99,11 @@ public class RegistrationServiceTests
                     string.Empty,
                     _fixture.Create<int>()
                 )
+            );
+
+        mock.Setup(m => m.AddUserToAccountAsync(It.IsAny<AddUserToAccountRequest>()))
+            .ReturnsAsync(() =>
+                new AddUserToAccountResult(_addUserToAccountResultCode, string.Empty)
             );
 
         return mock;
@@ -319,6 +326,72 @@ public class RegistrationServiceTests
     {
         var ex = await Record.ExceptionAsync(() =>
             _registrationService.RegisterAccountAsync(null!)
+        );
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    [Fact]
+    public async Task RegisterUserWithAccountAsync_Succeeds_WhenAllServicesSucceed()
+    {
+        var request = _fixture.Create<RegisterUserWithAccountRequest>();
+
+        var result = await _registrationService.RegisterUserWithAccountAsync(request);
+
+        Assert.Equal(RegisterUserWithAccountResultCode.Success, result.ResultCode);
+        _accountProcessorMock.Verify(
+            m =>
+                m.AddUserToAccountAsync(
+                    It.Is<AddUserToAccountRequest>(r =>
+                        r.UserId == request.UserId && r.AccountId == request.AccountId
+                    )
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task RegisterUserWithAccountAsync_Fails_WhenUserNotFound()
+    {
+        _addUserToAccountResultCode = AddUserToAccountResultCode.UserNotFoundError;
+        var request = _fixture.Create<RegisterUserWithAccountRequest>();
+
+        var result = await _registrationService.RegisterUserWithAccountAsync(request);
+
+        Assert.Equal(RegisterUserWithAccountResultCode.UserNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RegisterUserWithAccountAsync_Fails_WhenAccountNotFound()
+    {
+        _addUserToAccountResultCode = AddUserToAccountResultCode.AccountNotFoundError;
+        var request = _fixture.Create<RegisterUserWithAccountRequest>();
+
+        var result = await _registrationService.RegisterUserWithAccountAsync(request);
+
+        Assert.Equal(RegisterUserWithAccountResultCode.AccountNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RegisterUserWithAccountAsync_Fails_WhenUserAlreadyInAccount()
+    {
+        _addUserToAccountResultCode = AddUserToAccountResultCode.UserAlreadyInAccountError;
+        var request = _fixture.Create<RegisterUserWithAccountRequest>();
+
+        var result = await _registrationService.RegisterUserWithAccountAsync(request);
+
+        Assert.Equal(
+            RegisterUserWithAccountResultCode.UserAlreadyInAccountError,
+            result.ResultCode
+        );
+    }
+
+    [Fact]
+    public async Task RegisterUserWithAccountAsync_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() =>
+            _registrationService.RegisterUserWithAccountAsync(null!)
         );
 
         Assert.NotNull(ex);

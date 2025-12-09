@@ -163,4 +163,77 @@ public class AccountProcessorTests
 
         Assert.Equal(DeleteAccountResultCode.AccountNotFoundError, result.ResultCode);
     }
+
+    [Fact]
+    public async Task AddUserToAccountAsync_ReturnsSuccess_WhenUserAndAccountExist()
+    {
+        var ownerUserId = await CreateUserAsync();
+        var newUserId = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId);
+        var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
+
+        var request = new AddUserToAccountRequest(newUserId, createAccountResult.CreatedId);
+        var result = await _accountProcessor.AddUserToAccountAsync(request);
+
+        Assert.Equal(AddUserToAccountResultCode.Success, result.ResultCode);
+
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var accountEntity = await accountRepo.GetAsync(
+            a => a.Id == createAccountResult.CreatedId,
+            include: q => q.Include(a => a.Users)
+        );
+        Assert.NotNull(accountEntity?.Users);
+        Assert.Equal(2, accountEntity.Users.Count);
+        Assert.Contains(accountEntity.Users, u => u.Id == newUserId);
+    }
+
+    [Fact]
+    public async Task AddUserToAccountAsync_ReturnsUserNotFound_WhenUserDoesNotExist()
+    {
+        var ownerUserId = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId);
+        var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
+
+        var request = new AddUserToAccountRequest(
+            _fixture.Create<int>(),
+            createAccountResult.CreatedId
+        );
+        var result = await _accountProcessor.AddUserToAccountAsync(request);
+
+        Assert.Equal(AddUserToAccountResultCode.UserNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task AddUserToAccountAsync_ReturnsAccountNotFound_WhenAccountDoesNotExist()
+    {
+        var userId = await CreateUserAsync();
+
+        var request = new AddUserToAccountRequest(userId, _fixture.Create<int>());
+        var result = await _accountProcessor.AddUserToAccountAsync(request);
+
+        Assert.Equal(AddUserToAccountResultCode.AccountNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task AddUserToAccountAsync_ReturnsUserAlreadyInAccount_WhenUserAlreadyInAccount()
+    {
+        var ownerUserId = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId);
+        var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
+
+        // Try to add the owner user again
+        var request = new AddUserToAccountRequest(ownerUserId, createAccountResult.CreatedId);
+        var result = await _accountProcessor.AddUserToAccountAsync(request);
+
+        Assert.Equal(AddUserToAccountResultCode.UserAlreadyInAccountError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task AddUserToAccountAsync_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() => _accountProcessor.AddUserToAccountAsync(null!));
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
+    }
 }

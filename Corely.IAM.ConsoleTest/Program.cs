@@ -64,7 +64,6 @@ internal class Program
             var deregistrationService = host.Services.GetRequiredService<IDeregistrationService>();
             var authService = host.Services.GetRequiredService<IAuthenticationService>();
 
-            // ========= REGISTERING ==========
             var registerUserRequest = new RegisterUserRequest("user1", "email@x.y", "admin");
             var registerUserResult = await registrationService.RegisterUserAsync(
                 registerUserRequest
@@ -78,12 +77,26 @@ internal class Program
                 registerAccountRequest
             );
 
+            var registerUser2Request = new RegisterUserRequest("user2", "email2@x.y", "password2");
+            var registerUser2Result = await registrationService.RegisterUserAsync(
+                registerUser2Request
+            );
+
             userContextProvider.SetUserContext(
                 new UserContext(
                     registerUserResult.CreatedUserId,
                     registerAccountResult.CreatedAccountId
                 )
             );
+
+            var registerUserWithAccountRequest = new RegisterUserWithAccountRequest(
+                registerUser2Result.CreatedUserId,
+                registerAccountResult.CreatedAccountId
+            );
+            var registerUserWithAccountResult =
+                await registrationService.RegisterUserWithAccountAsync(
+                    registerUserWithAccountRequest
+                );
 
             var registerGroupRequest = new RegisterGroupRequest(
                 "grp1",

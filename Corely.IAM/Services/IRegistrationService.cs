@@ -6,6 +6,9 @@ public interface IRegistrationService
 {
     Task<RegisterUserResult> RegisterUserAsync(RegisterUserRequest request);
     Task<RegisterAccountResult> RegisterAccountAsync(RegisterAccountRequest request);
+    Task<RegisterUserWithAccountResult> RegisterUserWithAccountAsync(
+        RegisterUserWithAccountRequest request
+    );
     Task<RegisterGroupResult> RegisterGroupAsync(RegisterGroupRequest request);
     Task<RegisterRoleResult> RegisterRoleAsync(RegisterRoleRequest request);
     Task<RegisterPermissionResult> RegisterPermissionAsync(RegisterPermissionRequest request);

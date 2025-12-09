@@ -6,6 +6,7 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Security.Processors;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Validators;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Accounts.Processors;
@@ -122,5 +123,57 @@ internal class AccountProcessor : IAccountProcessor
 
         _logger.LogInformation("Account with Id {AccountId} deleted", accountId);
         return new DeleteAccountResult(DeleteAccountResultCode.Success, string.Empty);
+    }
+
+    public async Task<AddUserToAccountResult> AddUserToAccountAsync(AddUserToAccountRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var userEntity = await _userRepo.GetAsync(u => u.Id == request.UserId);
+        if (userEntity == null)
+        {
+            _logger.LogWarning("User with Id {UserId} not found", request.UserId);
+            return new AddUserToAccountResult(
+                AddUserToAccountResultCode.UserNotFoundError,
+                $"User with Id {request.UserId} not found"
+            );
+        }
+
+        var accountEntity = await _accountRepo.GetAsync(
+            a => a.Id == request.AccountId,
+            include: q => q.Include(a => a.Users)
+        );
+        if (accountEntity == null)
+        {
+            _logger.LogWarning("Account with Id {AccountId} not found", request.AccountId);
+            return new AddUserToAccountResult(
+                AddUserToAccountResultCode.AccountNotFoundError,
+                $"Account with Id {request.AccountId} not found"
+            );
+        }
+
+        if (accountEntity.Users?.Any(u => u.Id == request.UserId) == true)
+        {
+            _logger.LogWarning(
+                "User with Id {UserId} is already in account {AccountId}",
+                request.UserId,
+                request.AccountId
+            );
+            return new AddUserToAccountResult(
+                AddUserToAccountResultCode.UserAlreadyInAccountError,
+                $"User with Id {request.UserId} is already in account {request.AccountId}"
+            );
+        }
+
+        accountEntity.Users ??= [];
+        accountEntity.Users.Add(userEntity);
+        await _accountRepo.UpdateAsync(accountEntity);
+
+        _logger.LogInformation(
+            "User with Id {UserId} added to account {AccountId}",
+            request.UserId,
+            request.AccountId
+        );
+        return new AddUserToAccountResult(AddUserToAccountResultCode.Success, string.Empty);
     }
 }

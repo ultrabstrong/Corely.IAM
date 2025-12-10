@@ -598,8 +598,6 @@ public class GroupProcessorTests
         Assert.IsType<ArgumentNullException>(ex);
     }
 
-    #region RemoveUsersFromGroupAsync Ownership Tests
-
     private async Task<(
         int GroupId,
         int AccountId,
@@ -787,10 +785,6 @@ public class GroupProcessorTests
         Assert.Equal(1, result.RemovedUserCount);
     }
 
-    #endregion
-
-    #region DeleteGroupAsync Ownership Tests
-
     [Fact]
     public async Task DeleteGroupAsync_Succeeds_WhenGroupHasNoOwnerRole()
     {
@@ -898,6 +892,4 @@ public class GroupProcessorTests
 
         Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
     }
-
-    #endregion
 }

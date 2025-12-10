@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
@@ -458,27 +459,48 @@ internal class UserProcessor : IUserProcessor
             );
         }
 
-        // Check if user is sole owner of any account
         if (userEntity.Accounts != null)
         {
             foreach (var account in userEntity.Accounts)
             {
-                // Check if this account has only one user (the current user)
-                var accountUserCount = await _userRepo.CountAsync(u =>
-                    u.Accounts!.Any(a => a.Id == account.Id)
+                var userHasOwnerRole = await _roleRepo.AnyAsync(r =>
+                    r.AccountId == account.Id
+                    && r.Name == RoleConstants.OWNER_ROLE_NAME
+                    && (
+                        r.Users!.Any(u => u.Id == userId)
+                        || r.Groups!.Any(g => g.Users!.Any(u => u.Id == userId))
+                    )
                 );
 
-                if (accountUserCount == 1)
+                if (userHasOwnerRole)
                 {
-                    _logger.LogWarning(
-                        "User with Id {UserId} is the sole owner of account {AccountId} and cannot be deleted",
-                        userId,
-                        account.Id
+                    var otherOwnerExists = await _roleRepo.AnyAsync(r =>
+                        r.AccountId == account.Id
+                        && r.Name == RoleConstants.OWNER_ROLE_NAME
+                        && (
+                            r.Users!.Any(u =>
+                                u.Id != userId && u.Accounts!.Any(a => a.Id == account.Id)
+                            )
+                            || r.Groups!.Any(g =>
+                                g.Users!.Any(u =>
+                                    u.Id != userId && u.Accounts!.Any(a => a.Id == account.Id)
+                                )
+                            )
+                        )
                     );
-                    return new DeleteUserResult(
-                        DeleteUserResultCode.UserIsSoleAccountOwnerError,
-                        $"User is the sole owner of account '{account.AccountName}' (Id: {account.Id}) and cannot be deleted"
-                    );
+
+                    if (!otherOwnerExists)
+                    {
+                        _logger.LogWarning(
+                            "User with Id {UserId} is the sole owner of account {AccountId} and cannot be deleted",
+                            userId,
+                            account.Id
+                        );
+                        return new DeleteUserResult(
+                            DeleteUserResultCode.UserIsSoleAccountOwnerError,
+                            $"User is the sole owner of account '{account.AccountName}' (Id: {account.Id}) and cannot be deleted"
+                        );
+                    }
                 }
             }
         }

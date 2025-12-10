@@ -7,6 +7,7 @@ using Corely.IAM.Groups.Models;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Validators;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Groups.Processors;
@@ -134,6 +135,63 @@ internal class GroupProcessor : IGroupProcessor
             AddUsersToGroupResultCode.Success,
             string.Empty,
             userEntities.Count,
+            invalidUserIds
+        );
+    }
+
+    public async Task<RemoveUsersFromGroupResult> RemoveUsersFromGroupAsync(
+        RemoveUsersFromGroupRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var groupEntity = await _groupRepo.GetAsync(
+            g => g.Id == request.GroupId,
+            include: q => q.Include(g => g.Users)
+        );
+        if (groupEntity == null)
+        {
+            _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
+            return new RemoveUsersFromGroupResult(
+                RemoveUsersFromGroupResultCode.GroupNotFoundError,
+                $"Group with Id {request.GroupId} not found",
+                0,
+                request.UserIds
+            );
+        }
+
+        var usersToRemove =
+            groupEntity.Users?.Where(u => request.UserIds.Contains(u.Id)).ToList() ?? [];
+
+        foreach (var user in usersToRemove)
+        {
+            groupEntity.Users!.Remove(user);
+        }
+
+        if (usersToRemove.Count > 0)
+        {
+            await _groupRepo.UpdateAsync(groupEntity);
+        }
+
+        var invalidUserIds = request.UserIds.Except(usersToRemove.Select(u => u.Id)).ToList();
+        if (invalidUserIds.Count > 0)
+        {
+            _logger.LogInformation(
+                "Some user ids were not in group (not found or not a member) : {@InvalidUserIds}",
+                invalidUserIds
+            );
+            return new RemoveUsersFromGroupResult(
+                RemoveUsersFromGroupResultCode.PartialSuccess,
+                "Some user ids were not in group (not found or not a member)",
+                usersToRemove.Count,
+                invalidUserIds
+            );
+        }
+
+        return new RemoveUsersFromGroupResult(
+            RemoveUsersFromGroupResultCode.Success,
+            string.Empty,
+            usersToRemove.Count,
             invalidUserIds
         );
     }

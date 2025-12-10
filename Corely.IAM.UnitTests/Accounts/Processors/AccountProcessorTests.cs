@@ -3,6 +3,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.Groups.Entities;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Processors;
@@ -36,7 +37,13 @@ public class AccountProcessorTests
     private async Task<int> CreateUserAsync()
     {
         var userId = _fixture.Create<int>();
-        var user = new UserEntity { Id = userId };
+        var user = new UserEntity
+        {
+            Id = userId,
+            Accounts = [],
+            Groups = [],
+            Roles = [],
+        };
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var created = await userRepo.CreateAsync(user);
         return created.Id;
@@ -46,6 +53,9 @@ public class AccountProcessorTests
     {
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+
+        var account = await accountRepo.GetAsync(a => a.Id == accountId);
 
         var users = new List<UserEntity>();
         foreach (var userId in userIds)
@@ -53,6 +63,11 @@ public class AccountProcessorTests
             var user = await userRepo.GetAsync(u => u.Id == userId);
             if (user != null)
             {
+                user.Accounts ??= [];
+                if (!user.Accounts.Any(a => a.Id == accountId) && account != null)
+                {
+                    user.Accounts.Add(account);
+                }
                 users.Add(user);
             }
         }
@@ -63,6 +78,70 @@ public class AccountProcessorTests
             Name = RoleConstants.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = users,
+            Groups = [],
+        };
+
+        return await roleRepo.CreateAsync(ownerRole);
+    }
+
+    private async Task<RoleEntity> CreateOwnerRoleWithGroupAsync(
+        int accountId,
+        int[] directUserIds,
+        int[] groupUserIds
+    )
+    {
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+
+        var account = await accountRepo.GetAsync(a => a.Id == accountId);
+
+        var directUsers = new List<UserEntity>();
+        foreach (var userId in directUserIds)
+        {
+            var user = await userRepo.GetAsync(u => u.Id == userId);
+            if (user != null)
+            {
+                user.Accounts ??= [];
+                if (!user.Accounts.Any(a => a.Id == accountId) && account != null)
+                {
+                    user.Accounts.Add(account);
+                }
+                directUsers.Add(user);
+            }
+        }
+
+        var groupUsers = new List<UserEntity>();
+        foreach (var userId in groupUserIds)
+        {
+            var user = await userRepo.GetAsync(u => u.Id == userId);
+            if (user != null)
+            {
+                user.Accounts ??= [];
+                if (!user.Accounts.Any(a => a.Id == accountId) && account != null)
+                {
+                    user.Accounts.Add(account);
+                }
+                groupUsers.Add(user);
+            }
+        }
+
+        var group = new GroupEntity
+        {
+            AccountId = accountId,
+            Name = "OwnerGroup",
+            Users = groupUsers,
+        };
+        var createdGroup = await groupRepo.CreateAsync(group);
+
+        var ownerRole = new RoleEntity
+        {
+            AccountId = accountId,
+            Name = RoleConstants.OWNER_ROLE_NAME,
+            IsSystemDefined = true,
+            Users = directUsers,
+            Groups = [createdGroup],
         };
 
         return await roleRepo.CreateAsync(ownerRole);
@@ -376,6 +455,49 @@ public class AccountProcessorTests
         var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
 
         await CreateOwnerRoleAsync(createAccountResult.CreatedId, ownerUserId);
+
+        var request = new RemoveUserFromAccountRequest(ownerUserId, createAccountResult.CreatedId);
+        var result = await _accountProcessor.RemoveUserFromAccountAsync(request);
+
+        Assert.Equal(RemoveUserFromAccountResultCode.UserIsSoleOwnerError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RemoveUserFromAccountAsync_ReturnsSuccess_WhenOwnerRemovedButOtherOwnerExistsViaGroup()
+    {
+        var ownerUserId1 = await CreateUserAsync();
+        var ownerUserId2 = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId1);
+        var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
+
+        await _accountProcessor.AddUserToAccountAsync(
+            new AddUserToAccountRequest(ownerUserId2, createAccountResult.CreatedId)
+        );
+
+        await CreateOwnerRoleWithGroupAsync(
+            createAccountResult.CreatedId,
+            directUserIds: [ownerUserId1],
+            groupUserIds: [ownerUserId2]
+        );
+
+        var request = new RemoveUserFromAccountRequest(ownerUserId1, createAccountResult.CreatedId);
+        var result = await _accountProcessor.RemoveUserFromAccountAsync(request);
+
+        Assert.Equal(RemoveUserFromAccountResultCode.Success, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RemoveUserFromAccountAsync_ReturnsSoleOwnerError_WhenOwnerViaGroupIsOnlyOwner()
+    {
+        var ownerUserId = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId);
+        var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
+
+        await CreateOwnerRoleWithGroupAsync(
+            createAccountResult.CreatedId,
+            directUserIds: [],
+            groupUserIds: [ownerUserId]
+        );
 
         var request = new RemoveUserFromAccountRequest(ownerUserId, createAccountResult.CreatedId);
         var result = await _accountProcessor.RemoveUserFromAccountAsync(request);

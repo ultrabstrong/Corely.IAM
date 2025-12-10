@@ -224,17 +224,34 @@ internal class AccountProcessor : IAccountProcessor
             );
         }
 
-        var ownerRole = await _roleRepo.GetAsync(
-            r => r.AccountId == request.AccountId && r.Name == RoleConstants.OWNER_ROLE_NAME,
-            include: q => q.Include(r => r.Users)
+        var userHasOwnerRole = await _roleRepo.AnyAsync(r =>
+            r.AccountId == request.AccountId
+            && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && (
+                r.Users!.Any(u => u.Id == request.UserId)
+                || r.Groups!.Any(g => g.Users!.Any(u => u.Id == request.UserId))
+            )
         );
 
-        if (ownerRole?.Users?.Any(u => u.Id == request.UserId) == true)
+        if (userHasOwnerRole)
         {
-            var ownerCount = ownerRole.Users.Count(u =>
-                accountEntity.Users!.Any(au => au.Id == u.Id)
+            var otherOwnerExists = await _roleRepo.AnyAsync(r =>
+                r.AccountId == request.AccountId
+                && r.Name == RoleConstants.OWNER_ROLE_NAME
+                && (
+                    r.Users!.Any(u =>
+                        u.Id != request.UserId && u.Accounts!.Any(a => a.Id == request.AccountId)
+                    )
+                    || r.Groups!.Any(g =>
+                        g.Users!.Any(u =>
+                            u.Id != request.UserId
+                            && u.Accounts!.Any(a => a.Id == request.AccountId)
+                        )
+                    )
+                )
             );
-            if (ownerCount == 1)
+
+            if (!otherOwnerExists)
             {
                 _logger.LogWarning(
                     "User with Id {UserId} is the sole owner of account {AccountId} and cannot be removed",

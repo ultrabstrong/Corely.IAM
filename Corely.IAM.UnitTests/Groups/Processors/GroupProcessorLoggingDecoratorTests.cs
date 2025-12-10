@@ -56,6 +56,27 @@ public class GroupProcessorLoggingDecoratorTests
     }
 
     [Fact]
+    public async Task RemoveUsersFromGroupAsync_DelegatesToInnerAndLogsResult()
+    {
+        var request = new RemoveUsersFromGroupRequest([1, 2], 1);
+        var expectedResult = new RemoveUsersFromGroupResult(
+            RemoveUsersFromGroupResultCode.Success,
+            string.Empty,
+            2,
+            []
+        );
+        _mockInnerProcessor
+            .Setup(x => x.RemoveUsersFromGroupAsync(request))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.RemoveUsersFromGroupAsync(request);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerProcessor.Verify(x => x.RemoveUsersFromGroupAsync(request), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
     public async Task AssignRolesToGroupAsync_DelegatesToInnerAndLogsResult()
     {
         var request = new AssignRolesToGroupRequest([1, 2], 1);

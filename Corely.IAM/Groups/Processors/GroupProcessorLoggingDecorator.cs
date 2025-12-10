@@ -35,6 +35,16 @@ internal class GroupProcessorLoggingDecorator : IGroupProcessor
             logResult: true
         );
 
+    public async Task<RemoveUsersFromGroupResult> RemoveUsersFromGroupAsync(
+        RemoveUsersFromGroupRequest request
+    ) =>
+        await _logger.ExecuteWithLogging(
+            nameof(GroupProcessor),
+            request,
+            () => _inner.RemoveUsersFromGroupAsync(request),
+            logResult: true
+        );
+
     public async Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(
         AssignRolesToGroupRequest request
     ) =>

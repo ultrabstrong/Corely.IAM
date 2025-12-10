@@ -111,6 +111,56 @@ internal class DeregistrationService(
         return new DeregisterGroupResult(DeregisterGroupResultCode.Success, string.Empty);
     }
 
+    public async Task<DeregisterUsersFromGroupResult> DeregisterUsersFromGroupAsync(
+        DeregisterUsersFromGroupRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Deregistering user ids {@UserIds} from group id {GroupId}",
+            request.UserIds,
+            request.GroupId
+        );
+
+        var result = await _groupProcessor.RemoveUsersFromGroupAsync(
+            new(request.UserIds, request.GroupId)
+        );
+
+        if (result.ResultCode == RemoveUsersFromGroupResultCode.GroupNotFoundError)
+        {
+            _logger.LogInformation(
+                "Deregistering users from group failed for group id {GroupId}",
+                request.GroupId
+            );
+            return new DeregisterUsersFromGroupResult(
+                DeregisterUsersFromGroupResultCode.GroupNotFoundError,
+                result.Message ?? string.Empty,
+                0,
+                request.UserIds
+            );
+        }
+
+        using (
+            _logger.BeginScope(
+                new Dictionary<string, object> { ["@InvalidUserIds"] = result.InvalidUserIds }
+            )
+        )
+        {
+            _logger.LogInformation(
+                "Deregistered {RemovedUserCount} users from group id {GroupId}",
+                result.RemovedUserCount,
+                request.GroupId
+            );
+        }
+
+        return new DeregisterUsersFromGroupResult(
+            (DeregisterUsersFromGroupResultCode)result.ResultCode,
+            result.Message ?? string.Empty,
+            result.RemovedUserCount,
+            result.InvalidUserIds
+        );
+    }
+
     public async Task<DeregisterAccountResult> DeregisterAccountAsync(
         DeregisterAccountRequest request
     )

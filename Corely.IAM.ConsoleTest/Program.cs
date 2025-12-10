@@ -1,5 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using Corely.Common.Providers.Redaction;
+﻿using Corely.Common.Providers.Redaction;
 using Corely.IAM.ConsoleApp.SerilogCustomization;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
@@ -10,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Corely.IAM.ConsoleApp;
 

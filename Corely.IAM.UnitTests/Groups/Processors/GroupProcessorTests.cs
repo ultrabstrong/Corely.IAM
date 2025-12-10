@@ -85,6 +85,32 @@ public class GroupProcessorTests
         return (created.Id, accountId);
     }
 
+    private async Task<(int GroupId, int AccountId)> CreateGroupWithUsersAsync(params int[] userIds)
+    {
+        var accountId = await CreateAccountAsync();
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var users = new List<UserEntity>();
+        foreach (var userId in userIds)
+        {
+            var user = await userRepo.GetAsync(u => u.Id == userId);
+            if (user != null)
+            {
+                users.Add(user);
+            }
+        }
+
+        var group = new GroupEntity
+        {
+            Name = VALID_GROUP_NAME,
+            AccountId = accountId,
+            Account = new AccountEntity { Id = accountId },
+            Users = users,
+        };
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var created = await groupRepo.CreateAsync(group);
+        return (created.Id, accountId);
+    }
+
     [Fact]
     public async Task CreateGroupAsync_Fails_WhenAccountDoesNotExist()
     {
@@ -503,5 +529,70 @@ public class GroupProcessorTests
         var result = await _groupProcessor.DeleteGroupAsync(_fixture.Create<int>());
 
         Assert.Equal(DeleteGroupResultCode.GroupNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RemoveUsersFromGroupAsync_Fails_WhenGroupDoesNotExist()
+    {
+        var request = new RemoveUsersFromGroupRequest([1, 2], _fixture.Create<int>());
+
+        var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
+
+        Assert.Equal(RemoveUsersFromGroupResultCode.GroupNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RemoveUsersFromGroupAsync_Succeeds_WhenUsersRemoved()
+    {
+        var accountId = await CreateAccountAsync();
+        var userId = await CreateUserAsync(accountId);
+        var (groupId, _) = await CreateGroupWithUsersAsync(userId);
+
+        var request = new RemoveUsersFromGroupRequest([userId], groupId);
+        var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
+
+        Assert.Equal(RemoveUsersFromGroupResultCode.Success, result.ResultCode);
+        Assert.Equal(1, result.RemovedUserCount);
+        Assert.Empty(result.InvalidUserIds);
+    }
+
+    [Fact]
+    public async Task RemoveUsersFromGroupAsync_Succeeds_WhenNoUsersInGroup()
+    {
+        var (groupId, _) = await CreateGroupAsync();
+
+        var request = new RemoveUsersFromGroupRequest([9999], groupId);
+        var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
+
+        Assert.Equal(RemoveUsersFromGroupResultCode.PartialSuccess, result.ResultCode);
+        Assert.Equal(0, result.RemovedUserCount);
+        Assert.Contains(9999, result.InvalidUserIds);
+    }
+
+    [Fact]
+    public async Task RemoveUsersFromGroupAsync_PartiallySucceeds_WhenSomeUsersNotInGroup()
+    {
+        var accountId = await CreateAccountAsync();
+        var userId = await CreateUserAsync(accountId);
+        var (groupId, _) = await CreateGroupWithUsersAsync(userId);
+
+        var request = new RemoveUsersFromGroupRequest([userId, 9999], groupId);
+        var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
+
+        Assert.Equal(RemoveUsersFromGroupResultCode.PartialSuccess, result.ResultCode);
+        Assert.Equal(1, result.RemovedUserCount);
+        Assert.Contains(9999, result.InvalidUserIds);
+        Assert.DoesNotContain(userId, result.InvalidUserIds);
+    }
+
+    [Fact]
+    public async Task RemoveUsersFromGroupAsync_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() =>
+            _groupProcessor.RemoveUsersFromGroupAsync(null!)
+        );
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
     }
 }

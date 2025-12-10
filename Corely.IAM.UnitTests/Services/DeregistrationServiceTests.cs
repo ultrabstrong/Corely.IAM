@@ -1,5 +1,6 @@
 ﻿using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Processors;
@@ -32,6 +33,7 @@ public class DeregistrationServiceTests
         );
     }
 
+    // DeregisterUserFromAccount tests
     [Fact]
     public async Task DeregisterUserFromAccountAsync_ReturnsSuccess_WhenProcessorSucceeds()
     {
@@ -128,6 +130,85 @@ public class DeregistrationServiceTests
     public async Task DeregisterUserFromAccountAsync_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _service.DeregisterUserFromAccountAsync(null!));
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    // DeregisterUsersFromGroup tests
+    [Fact]
+    public async Task DeregisterUsersFromGroupAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    {
+        var request = new DeregisterUsersFromGroupRequest([1, 2], 5);
+        var processorResult = new RemoveUsersFromGroupResult(
+            RemoveUsersFromGroupResultCode.Success,
+            string.Empty,
+            2,
+            []
+        );
+        _mockGroupProcessor
+            .Setup(x => x.RemoveUsersFromGroupAsync(It.IsAny<RemoveUsersFromGroupRequest>()))
+            .ReturnsAsync(processorResult);
+
+        var result = await _service.DeregisterUsersFromGroupAsync(request);
+
+        Assert.Equal(DeregisterUsersFromGroupResultCode.Success, result.ResultCode);
+        Assert.Equal(2, result.RemovedUserCount);
+        _mockGroupProcessor.Verify(
+            x =>
+                x.RemoveUsersFromGroupAsync(
+                    It.Is<RemoveUsersFromGroupRequest>(r =>
+                        r.UserIds.SequenceEqual(new[] { 1, 2 }) && r.GroupId == 5
+                    )
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task DeregisterUsersFromGroupAsync_ReturnsPartialSuccess_WhenSomeUsersNotInGroup()
+    {
+        var request = new DeregisterUsersFromGroupRequest([1, 2, 3], 5);
+        var processorResult = new RemoveUsersFromGroupResult(
+            RemoveUsersFromGroupResultCode.PartialSuccess,
+            "Some users not in group",
+            2,
+            [3]
+        );
+        _mockGroupProcessor
+            .Setup(x => x.RemoveUsersFromGroupAsync(It.IsAny<RemoveUsersFromGroupRequest>()))
+            .ReturnsAsync(processorResult);
+
+        var result = await _service.DeregisterUsersFromGroupAsync(request);
+
+        Assert.Equal(DeregisterUsersFromGroupResultCode.PartialSuccess, result.ResultCode);
+        Assert.Equal(2, result.RemovedUserCount);
+        Assert.Contains(3, result.InvalidUserIds);
+    }
+
+    [Fact]
+    public async Task DeregisterUsersFromGroupAsync_ReturnsGroupNotFound_WhenGroupDoesNotExist()
+    {
+        var request = new DeregisterUsersFromGroupRequest([1, 2], 5);
+        var processorResult = new RemoveUsersFromGroupResult(
+            RemoveUsersFromGroupResultCode.GroupNotFoundError,
+            "Group not found",
+            0,
+            [1, 2]
+        );
+        _mockGroupProcessor
+            .Setup(x => x.RemoveUsersFromGroupAsync(It.IsAny<RemoveUsersFromGroupRequest>()))
+            .ReturnsAsync(processorResult);
+
+        var result = await _service.DeregisterUsersFromGroupAsync(request);
+
+        Assert.Equal(DeregisterUsersFromGroupResultCode.GroupNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task DeregisterUsersFromGroupAsync_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() => _service.DeregisterUsersFromGroupAsync(null!));
 
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);

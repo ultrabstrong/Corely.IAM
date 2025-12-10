@@ -223,6 +223,54 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
+    public async Task RemoveUserFromAccountAsync_CallsAuthorizationProvider()
+    {
+        var request = new RemoveUserFromAccountRequest(1, 5);
+        var expectedResult = new RemoveUserFromAccountResult(
+            RemoveUserFromAccountResultCode.Success,
+            ""
+        );
+        _mockInnerProcessor
+            .Setup(x => x.RemoveUserFromAccountAsync(request))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.RemoveUserFromAccountAsync(request);
+
+        Assert.Equal(expectedResult, result);
+        _mockAuthorizationProvider.Verify(
+            x => x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Update, 5),
+            Times.Once
+        );
+        _mockInnerProcessor.Verify(x => x.RemoveUserFromAccountAsync(request), Times.Once);
+    }
+
+    [Fact]
+    public async Task RemoveUserFromAccountAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    {
+        var request = new RemoveUserFromAccountRequest(1, 5);
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Update, 5)
+            )
+            .ThrowsAsync(
+                new AuthorizationException(
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    AuthAction.Update.ToString(),
+                    5
+                )
+            );
+
+        await Assert.ThrowsAsync<AuthorizationException>(() =>
+            _decorator.RemoveUserFromAccountAsync(request)
+        );
+
+        _mockInnerProcessor.Verify(
+            x => x.RemoveUserFromAccountAsync(It.IsAny<RemoveUserFromAccountRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
             new AccountProcessorAuthorizationDecorator(null!, _mockAuthorizationProvider.Object)

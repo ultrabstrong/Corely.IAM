@@ -14,31 +14,31 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
 
-internal class DeregistrationService : IDeregistrationService
+internal class DeregistrationService(
+    ILogger<DeregistrationService> logger,
+    IPermissionProcessor permissionProcessor,
+    IRoleProcessor roleProcessor,
+    IGroupProcessor groupProcessor,
+    IAccountProcessor accountProcessor,
+    IUserProcessor userProcessor
+) : IDeregistrationService
 {
-    private readonly ILogger<DeregistrationService> _logger;
-    private readonly IPermissionProcessor _permissionProcessor;
-    private readonly IRoleProcessor _roleProcessor;
-    private readonly IGroupProcessor _groupProcessor;
-    private readonly IAccountProcessor _accountProcessor;
-    private readonly IUserProcessor _userProcessor;
-
-    public DeregistrationService(
-        ILogger<DeregistrationService> logger,
-        IPermissionProcessor permissionProcessor,
-        IRoleProcessor roleProcessor,
-        IGroupProcessor groupProcessor,
-        IAccountProcessor accountProcessor,
-        IUserProcessor userProcessor
-    )
-    {
-        _logger = logger.ThrowIfNull(nameof(logger));
-        _permissionProcessor = permissionProcessor.ThrowIfNull(nameof(permissionProcessor));
-        _roleProcessor = roleProcessor.ThrowIfNull(nameof(roleProcessor));
-        _groupProcessor = groupProcessor.ThrowIfNull(nameof(groupProcessor));
-        _accountProcessor = accountProcessor.ThrowIfNull(nameof(accountProcessor));
-        _userProcessor = userProcessor.ThrowIfNull(nameof(userProcessor));
-    }
+    private readonly ILogger<DeregistrationService> _logger = logger.ThrowIfNull(nameof(logger));
+    private readonly IPermissionProcessor _permissionProcessor = permissionProcessor.ThrowIfNull(
+        nameof(permissionProcessor)
+    );
+    private readonly IRoleProcessor _roleProcessor = roleProcessor.ThrowIfNull(
+        nameof(roleProcessor)
+    );
+    private readonly IGroupProcessor _groupProcessor = groupProcessor.ThrowIfNull(
+        nameof(groupProcessor)
+    );
+    private readonly IAccountProcessor _accountProcessor = accountProcessor.ThrowIfNull(
+        nameof(accountProcessor)
+    );
+    private readonly IUserProcessor _userProcessor = userProcessor.ThrowIfNull(
+        nameof(userProcessor)
+    );
 
     public async Task<DeregisterPermissionResult> DeregisterPermissionAsync(
         DeregisterPermissionRequest request
@@ -157,5 +157,44 @@ internal class DeregistrationService : IDeregistrationService
 
         _logger.LogInformation("User {UserId} deregistered", request.UserId);
         return new DeregisterUserResult(DeregisterUserResultCode.Success, string.Empty);
+    }
+
+    public async Task<DeregisterUserFromAccountResult> DeregisterUserFromAccountAsync(
+        DeregisterUserFromAccountRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Deregistering user {UserId} from account {AccountId}",
+            request.UserId,
+            request.AccountId
+        );
+
+        var result = await _accountProcessor.RemoveUserFromAccountAsync(
+            new(request.UserId, request.AccountId)
+        );
+
+        if (result.ResultCode != RemoveUserFromAccountResultCode.Success)
+        {
+            _logger.LogInformation(
+                "Deregistering user {UserId} from account {AccountId} failed",
+                request.UserId,
+                request.AccountId
+            );
+            return new DeregisterUserFromAccountResult(
+                (DeregisterUserFromAccountResultCode)result.ResultCode,
+                result.Message
+            );
+        }
+
+        _logger.LogInformation(
+            "User {UserId} deregistered from account {AccountId}",
+            request.UserId,
+            request.AccountId
+        );
+        return new DeregisterUserFromAccountResult(
+            DeregisterUserFromAccountResultCode.Success,
+            string.Empty
+        );
     }
 }

@@ -8,5 +8,8 @@ public interface IDeregistrationService
     Task<DeregisterRoleResult> DeregisterRoleAsync(DeregisterRoleRequest request);
     Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request);
     Task<DeregisterUserResult> DeregisterUserAsync(DeregisterUserRequest request);
+    Task<DeregisterUserFromAccountResult> DeregisterUserFromAccountAsync(
+        DeregisterUserFromAccountRequest request
+    );
     Task<DeregisterAccountResult> DeregisterAccountAsync(DeregisterAccountRequest request);
 }

@@ -69,6 +69,25 @@ public class AccountProcessorLoggingDecoratorTests
     }
 
     [Fact]
+    public async Task RemoveUserFromAccountAsync_DelegatesToInnerAndLogsResult()
+    {
+        var request = new RemoveUserFromAccountRequest(1, 5);
+        var expectedResult = new RemoveUserFromAccountResult(
+            RemoveUserFromAccountResultCode.Success,
+            string.Empty
+        );
+        _mockInnerProcessor
+            .Setup(x => x.RemoveUserFromAccountAsync(request))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.RemoveUserFromAccountAsync(request);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerProcessor.Verify(x => x.RemoveUserFromAccountAsync(request), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
             new AccountProcessorLoggingDecorator(null!, _mockLogger.Object)

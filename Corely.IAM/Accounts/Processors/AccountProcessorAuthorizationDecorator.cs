@@ -56,4 +56,16 @@ internal class AccountProcessorAuthorizationDecorator(
         );
         return await _inner.AddUserToAccountAsync(request);
     }
+
+    public async Task<RemoveUserFromAccountResult> RemoveUserFromAccountAsync(
+        RemoveUserFromAccountRequest request
+    )
+    {
+        await _authorizationProvider.AuthorizeAsync(
+            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            AuthAction.Update,
+            request.AccountId
+        );
+        return await _inner.RemoveUserFromAccountAsync(request);
+    }
 }

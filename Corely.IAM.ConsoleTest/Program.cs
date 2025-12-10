@@ -157,6 +157,15 @@ internal class Program
             await authService.SignOutAllAsync(registerUserResult.CreatedUserId);
 
             // ========= DEREGISTERING ==========
+            var deregisterUserFromAccountRequest = new DeregisterUserFromAccountRequest(
+                registerUser2Result.CreatedUserId,
+                registerAccountResult.CreatedAccountId
+            );
+            var deregisterUserFromAccountResult =
+                await deregistrationService.DeregisterUserFromAccountAsync(
+                    deregisterUserFromAccountRequest
+                );
+
             var deregisterPermissionRequest = new DeregisterPermissionRequest(
                 registerPermissionResult.CreatedPermissionId
             );

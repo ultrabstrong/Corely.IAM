@@ -272,8 +272,6 @@ public class UserOwnershipProcessorTests
         Assert.False(result.UserHasOwnerRole);
     }
 
-    #region HasOwnershipOutsideGroupAsync Tests
-
     [Fact]
     public async Task HasOwnershipOutsideGroupAsync_ReturnsTrue_WhenUserHasDirectOwnership()
     {
@@ -479,5 +477,5 @@ public class UserOwnershipProcessorTests
         Assert.True(result);
     }
 
-    #endregion
+#endregion
 }

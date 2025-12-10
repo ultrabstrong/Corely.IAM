@@ -6,4 +6,5 @@ public enum DeleteGroupResultCode
 {
     Success,
     GroupNotFoundError,
+    GroupHasSoleOwnersError,
 }

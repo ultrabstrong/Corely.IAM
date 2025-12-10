@@ -2,3 +2,5 @@
 2. Use primary constructors when possible
 3. Keep code concise and avoid unnecessary verbosity
 4. Follow styles in existing codebase
+5. Use using statements instead of fully qualified class names
+6. Don't use region tags

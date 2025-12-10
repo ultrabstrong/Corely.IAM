@@ -788,4 +788,116 @@ public class GroupProcessorTests
     }
 
     #endregion
+
+    #region DeleteGroupAsync Ownership Tests
+
+    [Fact]
+    public async Task DeleteGroupAsync_Succeeds_WhenGroupHasNoOwnerRole()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 2,
+            assignOwnerRoleToGroup: false
+        );
+
+        var result = await _groupProcessor.DeleteGroupAsync(groupId);
+
+        Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task DeleteGroupAsync_Succeeds_WhenGroupHasOwnerRoleButNoUsers()
+    {
+        // Create a group with owner role but no users
+        var accountId = await CreateAccountAsync();
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+
+        var group = new GroupEntity
+        {
+            Id = _fixture.Create<int>(),
+            Name = VALID_GROUP_NAME,
+            AccountId = accountId,
+            Users = [],
+            Roles = [],
+        };
+        var createdGroup = await groupRepo.CreateAsync(group);
+
+        var ownerRole = new RoleEntity
+        {
+            Id = _fixture.Create<int>(),
+            AccountId = accountId,
+            Name = Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME,
+            IsSystemDefined = true,
+            Users = [],
+            Groups = [createdGroup],
+            Permissions = [],
+        };
+        await roleRepo.CreateAsync(ownerRole);
+        createdGroup.Roles = [ownerRole];
+        await groupRepo.UpdateAsync(createdGroup);
+
+        var result = await _groupProcessor.DeleteGroupAsync(createdGroup.Id);
+
+        Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task DeleteGroupAsync_Succeeds_WhenGroupHasOwnerRoleAndUserHasDirectOwnership()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 1
+        );
+
+        // Give the user direct owner role
+        await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
+
+        var result = await _groupProcessor.DeleteGroupAsync(groupId);
+
+        Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task DeleteGroupAsync_Fails_WhenGroupHasOwnerRoleAndNoUserHasOwnershipElsewhere()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 2
+        );
+
+        // Don't give any user ownership elsewhere
+
+        var result = await _groupProcessor.DeleteGroupAsync(groupId);
+
+        Assert.Equal(DeleteGroupResultCode.GroupHasSoleOwnersError, result.ResultCode);
+        Assert.Contains("owner role", result.Message);
+    }
+
+    [Fact]
+    public async Task DeleteGroupAsync_Fails_WhenSingleUserInOwnerGroupWithNoOtherOwnership()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 1
+        );
+
+        // Single user, only ownership via group - should fail
+        var result = await _groupProcessor.DeleteGroupAsync(groupId);
+
+        Assert.Equal(DeleteGroupResultCode.GroupHasSoleOwnersError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task DeleteGroupAsync_Succeeds_WhenMultipleUsersAndOneHasOwnershipElsewhere()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 3
+        );
+
+        // Give one user direct owner role
+        await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
+
+        var result = await _groupProcessor.DeleteGroupAsync(groupId);
+
+        Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
+    }
+
+    #endregion
 }

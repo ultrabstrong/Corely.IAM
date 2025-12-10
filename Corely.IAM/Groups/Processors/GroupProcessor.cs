@@ -319,7 +319,10 @@ internal class GroupProcessor : IGroupProcessor
 
     public async Task<DeleteGroupResult> DeleteGroupAsync(int groupId)
     {
-        var groupEntity = await _groupRepo.GetAsync(g => g.Id == groupId);
+        var groupEntity = await _groupRepo.GetAsync(
+            g => g.Id == groupId,
+            include: q => q.Include(g => g.Users).Include(g => g.Roles)
+        );
         if (groupEntity == null)
         {
             _logger.LogWarning("Group with Id {GroupId} not found", groupId);
@@ -327,6 +330,44 @@ internal class GroupProcessor : IGroupProcessor
                 DeleteGroupResultCode.GroupNotFoundError,
                 $"Group with Id {groupId} not found"
             );
+        }
+
+        // Ownership check logic (same as removing all users from the group):
+        // If group has owner role AND no user has ownership elsewhere -> block deletion
+        var groupHasOwnerRole =
+            groupEntity.Roles?.Any(r => r.Name == RoleConstants.OWNER_ROLE_NAME) ?? false;
+        var usersInGroup = groupEntity.Users?.ToList() ?? [];
+
+        if (groupHasOwnerRole && usersInGroup.Count > 0)
+        {
+            var anyUserHasOwnershipElsewhere = false;
+            foreach (var user in usersInGroup)
+            {
+                if (
+                    await _userOwnershipProcessor.HasOwnershipOutsideGroupAsync(
+                        user.Id,
+                        groupEntity.AccountId,
+                        groupId
+                    )
+                )
+                {
+                    anyUserHasOwnershipElsewhere = true;
+                    break;
+                }
+            }
+
+            if (!anyUserHasOwnershipElsewhere)
+            {
+                _logger.LogWarning(
+                    "Cannot delete group {GroupId} - it has the owner role and no user has ownership elsewhere",
+                    groupId
+                );
+                return new DeleteGroupResult(
+                    DeleteGroupResultCode.GroupHasSoleOwnersError,
+                    "Cannot delete a group with the owner role when no user has ownership elsewhere. "
+                        + "Add another owner first, or remove the owner role from this group."
+                );
+            }
         }
 
         await _groupRepo.DeleteAsync(groupEntity);

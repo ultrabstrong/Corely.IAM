@@ -4,8 +4,10 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Mappers;
 using Corely.IAM.Groups.Models;
+using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Users.Entities;
+using Corely.IAM.Users.Processors;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -18,6 +20,7 @@ internal class GroupProcessor : IGroupProcessor
     private readonly IReadonlyRepo<AccountEntity> _accountRepo;
     private readonly IReadonlyRepo<UserEntity> _userRepo;
     private readonly IReadonlyRepo<RoleEntity> _roleRepo;
+    private readonly IUserOwnershipProcessor _userOwnershipProcessor;
     private readonly IValidationProvider _validationProvider;
     private readonly ILogger<GroupProcessor> _logger;
 
@@ -26,6 +29,7 @@ internal class GroupProcessor : IGroupProcessor
         IReadonlyRepo<AccountEntity> accountRepo,
         IReadonlyRepo<UserEntity> userRepo,
         IReadonlyRepo<RoleEntity> roleRepo,
+        IUserOwnershipProcessor userOwnershipProcessor,
         IValidationProvider validationProvider,
         ILogger<GroupProcessor> logger
     )
@@ -34,6 +38,9 @@ internal class GroupProcessor : IGroupProcessor
         _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
         _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
         _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
+        _userOwnershipProcessor = userOwnershipProcessor.ThrowIfNull(
+            nameof(userOwnershipProcessor)
+        );
         _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
         _logger = logger.ThrowIfNull(nameof(logger));
     }
@@ -147,7 +154,7 @@ internal class GroupProcessor : IGroupProcessor
 
         var groupEntity = await _groupRepo.GetAsync(
             g => g.Id == request.GroupId,
-            include: q => q.Include(g => g.Users)
+            include: q => q.Include(g => g.Users).Include(g => g.Roles)
         );
         if (groupEntity == null)
         {
@@ -162,6 +169,51 @@ internal class GroupProcessor : IGroupProcessor
 
         var usersToRemove =
             groupEntity.Users?.Where(u => request.UserIds.Contains(u.Id)).ToList() ?? [];
+
+        var groupHasOwnerRole =
+            groupEntity.Roles?.Any(r => r.Name == RoleConstants.OWNER_ROLE_NAME) ?? false;
+        var totalUsersInGroup = groupEntity.Users?.Count ?? 0;
+        var usersRemainingAfterRemoval = totalUsersInGroup - usersToRemove.Count;
+
+        // Ownership check logic:
+        // Disallow this action if it results in account not having an owner
+        // 1. If group does not have owner role -> allow removal
+        // 2. If group has owner role AND some users remain -> allow removal (remaining users still have owner role)
+        // 3. If group has owner role AND all users being removed -> check if any user has ownership elsewhere
+        if (groupHasOwnerRole && usersRemainingAfterRemoval == 0 && usersToRemove.Count > 0)
+        {
+            var anyUserHasOwnershipElsewhere = false;
+            foreach (var user in usersToRemove)
+            {
+                if (
+                    await _userOwnershipProcessor.HasOwnershipOutsideGroupAsync(
+                        user.Id,
+                        groupEntity.AccountId,
+                        request.GroupId
+                    )
+                )
+                {
+                    anyUserHasOwnershipElsewhere = true;
+                    break;
+                }
+            }
+
+            if (!anyUserHasOwnershipElsewhere)
+            {
+                _logger.LogWarning(
+                    "Cannot remove all users from group {GroupId} - it has the owner role and no user has ownership elsewhere",
+                    request.GroupId
+                );
+                return new RemoveUsersFromGroupResult(
+                    RemoveUsersFromGroupResultCode.UserIsSoleOwnerError,
+                    "Cannot remove all users from a group with the owner role when no user has ownership elsewhere. "
+                        + "Add another owner first, or remove the owner role from this group.",
+                    0,
+                    [],
+                    usersToRemove.Select(u => u.Id).ToList()
+                );
+            }
+        }
 
         foreach (var user in usersToRemove)
         {

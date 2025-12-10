@@ -7,6 +7,7 @@ using Corely.IAM.Groups.Processors;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.UnitTests.ClassData;
 using Corely.IAM.Users.Entities;
+using Corely.IAM.Users.Processors;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -28,6 +29,7 @@ public class GroupProcessorTests
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<RoleEntity>>(),
+            _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<ILogger<GroupProcessor>>()
         );
@@ -595,4 +597,195 @@ public class GroupProcessorTests
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
     }
+
+    #region RemoveUsersFromGroupAsync Ownership Tests
+
+    private async Task<(
+        int GroupId,
+        int AccountId,
+        List<int> UserIds
+    )> CreateGroupWithOwnerRoleAndUsersAsync(int userCount, bool assignOwnerRoleToGroup = true)
+    {
+        var accountId = await CreateAccountAsync();
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+
+        var account = await accountRepo.GetAsync(a => a.Id == accountId);
+
+        // Create users in the account
+        var userIds = new List<int>();
+        var users = new List<UserEntity>();
+        for (int i = 0; i < userCount; i++)
+        {
+            var user = new UserEntity
+            {
+                Id = _fixture.Create<int>(),
+                Username = _fixture.Create<string>(),
+                Accounts = account != null ? [account] : [],
+                Groups = [],
+                Roles = [],
+            };
+            var createdUser = await userRepo.CreateAsync(user);
+            userIds.Add(createdUser.Id);
+            users.Add(createdUser);
+        }
+
+        // Create group with users
+        var group = new GroupEntity
+        {
+            Id = _fixture.Create<int>(),
+            Name = VALID_GROUP_NAME,
+            AccountId = accountId,
+            Users = users,
+            Roles = [],
+        };
+        var createdGroup = await groupRepo.CreateAsync(group);
+
+        // Create owner role and optionally assign to group
+        if (assignOwnerRoleToGroup)
+        {
+            var ownerRole = new RoleEntity
+            {
+                Id = _fixture.Create<int>(),
+                AccountId = accountId,
+                Name = Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME,
+                IsSystemDefined = true,
+                Users = [],
+                Groups = [createdGroup],
+                Permissions = [],
+            };
+            await roleRepo.CreateAsync(ownerRole);
+
+            // Update group with role reference
+            createdGroup.Roles = [ownerRole];
+            await groupRepo.UpdateAsync(createdGroup);
+        }
+
+        return (createdGroup.Id, accountId, userIds);
+    }
+
+    private async Task AssignDirectOwnerRoleToUserAsync(int userId, int accountId)
+    {
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+
+        var user = await userRepo.GetAsync(u => u.Id == userId);
+
+        var ownerRole = new RoleEntity
+        {
+            Id = _fixture.Create<int>(),
+            AccountId = accountId,
+            Name = Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME,
+            IsSystemDefined = true,
+            Users = [user!],
+            Groups = [],
+            Permissions = [],
+        };
+        await roleRepo.CreateAsync(ownerRole);
+    }
+
+    [Fact]
+    public async Task RemoveUsersFromGroupAsync_Succeeds_WhenGroupHasNoOwnerRole()
+    {
+        // Create group WITHOUT owner role
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 2,
+            assignOwnerRoleToGroup: false
+        );
+
+        var request = new RemoveUsersFromGroupRequest(userIds, groupId);
+        var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
+
+        Assert.Equal(RemoveUsersFromGroupResultCode.Success, result.ResultCode);
+        Assert.Equal(2, result.RemovedUserCount);
+    }
+
+    [Fact]
+    public async Task RemoveUsersFromGroupAsync_Succeeds_WhenGroupHasOwnerRoleAndSomeUsersRemain()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 3
+        );
+
+        // Remove only 2 of 3 users - one remains to hold the owner role
+        var request = new RemoveUsersFromGroupRequest([userIds[0], userIds[1]], groupId);
+        var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
+
+        Assert.Equal(RemoveUsersFromGroupResultCode.Success, result.ResultCode);
+        Assert.Equal(2, result.RemovedUserCount);
+    }
+
+    [Fact]
+    public async Task RemoveUsersFromGroupAsync_Succeeds_WhenAllUsersRemovedButOneHasDirectOwnership()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 2
+        );
+
+        // Give one user direct owner role (outside the group)
+        await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
+
+        // Remove all users - should succeed because userId[0] has direct ownership
+        var request = new RemoveUsersFromGroupRequest(userIds, groupId);
+        var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
+
+        Assert.Equal(RemoveUsersFromGroupResultCode.Success, result.ResultCode);
+        Assert.Equal(2, result.RemovedUserCount);
+    }
+
+    [Fact]
+    public async Task RemoveUsersFromGroupAsync_Fails_WhenAllUsersRemovedAndNoneHaveOwnershipElsewhere()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 2
+        );
+
+        // Don't give any user ownership elsewhere - all ownership is via this group
+
+        // Try to remove all users - should fail
+        var request = new RemoveUsersFromGroupRequest(userIds, groupId);
+        var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
+
+        Assert.Equal(RemoveUsersFromGroupResultCode.UserIsSoleOwnerError, result.ResultCode);
+        Assert.Equal(0, result.RemovedUserCount);
+        Assert.Equal(userIds.Count, result.SoleOwnerUserIds.Count);
+    }
+
+    [Fact]
+    public async Task RemoveUsersFromGroupAsync_Fails_WhenSingleUserRemovedFromOwnerGroupWithNoOtherOwnership()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 1
+        );
+
+        // Single user, only ownership via group - should fail
+        var request = new RemoveUsersFromGroupRequest(userIds, groupId);
+        var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
+
+        Assert.Equal(RemoveUsersFromGroupResultCode.UserIsSoleOwnerError, result.ResultCode);
+        Assert.Equal(0, result.RemovedUserCount);
+        Assert.Single(result.SoleOwnerUserIds);
+    }
+
+    [Fact]
+    public async Task RemoveUsersFromGroupAsync_Succeeds_WhenSingleUserRemovedFromOwnerGroupWithDirectOwnership()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 1
+        );
+
+        // Give the single user direct owner role
+        await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
+
+        // Remove the user - should succeed because they have direct ownership
+        var request = new RemoveUsersFromGroupRequest(userIds, groupId);
+        var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
+
+        Assert.Equal(RemoveUsersFromGroupResultCode.Success, result.ResultCode);
+        Assert.Equal(1, result.RemovedUserCount);
+    }
+
+    #endregion
 }

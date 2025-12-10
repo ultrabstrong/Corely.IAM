@@ -33,6 +33,7 @@ public class UserProcessorTests
             _serviceFactory.GetRequiredService<IRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<RoleEntity>>(),
+            _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             _serviceFactory.GetRequiredService<ISecurityProcessor>(),
             _serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
@@ -57,6 +58,7 @@ public class UserProcessorTests
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var user = new UserEntity
         {
+            Id = _fixture.Create<int>(),
             Username = _fixture.Create<string>(),
             Accounts = account != null ? [account] : [],
             Groups = [],
@@ -95,6 +97,7 @@ public class UserProcessorTests
             Groups = [],
             AccountId = accountId,
             Account = new AccountEntity { Id = accountId },
+            Permissions = [],
         };
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var created = await roleRepo.CreateAsync(role);
@@ -104,6 +107,9 @@ public class UserProcessorTests
     private async Task CreateOwnerRoleAsync(int accountId, params int[] userIds)
     {
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+
+        var account = await accountRepo.GetAsync(a => a.Id == accountId);
 
         var users = new List<UserEntity>();
         foreach (var userId in userIds)
@@ -111,17 +117,26 @@ public class UserProcessorTests
             var user = await userRepo.GetAsync(u => u.Id == userId);
             if (user != null)
             {
+                // Ensure user has this account in their accounts list
+                user.Accounts ??= [];
+                if (!user.Accounts.Any(a => a.Id == accountId) && account != null)
+                {
+                    user.Accounts.Add(account);
+                    await userRepo.UpdateAsync(user);
+                }
                 users.Add(user);
             }
         }
 
         var ownerRole = new RoleEntity
         {
+            Id = _fixture.Create<int>(),
             AccountId = accountId,
             Name = RoleConstants.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = users,
             Groups = [],
+            Permissions = [],
         };
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
@@ -136,6 +151,9 @@ public class UserProcessorTests
     {
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+
+        var account = await accountRepo.GetAsync(a => a.Id == accountId);
 
         var directUsers = new List<UserEntity>();
         foreach (var userId in directUserIds)
@@ -143,6 +161,13 @@ public class UserProcessorTests
             var user = await userRepo.GetAsync(u => u.Id == userId);
             if (user != null)
             {
+                // Ensure user has this account in their accounts list
+                user.Accounts ??= [];
+                if (!user.Accounts.Any(a => a.Id == accountId) && account != null)
+                {
+                    user.Accounts.Add(account);
+                    await userRepo.UpdateAsync(user);
+                }
                 directUsers.Add(user);
             }
         }
@@ -153,25 +178,36 @@ public class UserProcessorTests
             var user = await userRepo.GetAsync(u => u.Id == userId);
             if (user != null)
             {
+                // Ensure user has this account in their accounts list
+                user.Accounts ??= [];
+                if (!user.Accounts.Any(a => a.Id == accountId) && account != null)
+                {
+                    user.Accounts.Add(account);
+                    await userRepo.UpdateAsync(user);
+                }
                 groupUsers.Add(user);
             }
         }
 
         var group = new GroupEntity
         {
+            Id = _fixture.Create<int>(),
             AccountId = accountId,
             Name = "OwnerGroup",
             Users = groupUsers,
+            Roles = [],
         };
         var createdGroup = await groupRepo.CreateAsync(group);
 
         var ownerRole = new RoleEntity
         {
+            Id = _fixture.Create<int>(),
             AccountId = accountId,
             Name = RoleConstants.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = directUsers,
             Groups = [createdGroup],
+            Permissions = [],
         };
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
@@ -627,25 +663,16 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_ReturnsSuccess_WhenOtherOwnerExists()
+    public async Task DeleteUserAsync_ReturnsSuccess_WhenOtherOwnerExistsDirectly()
     {
-        // Note: This test requires proper EF Core relationship tracking.
-        // The in-memory mock doesn't properly track bi-directional relationships
-        // between User.Accounts and Role.Users, so we skip the complex setup.
-        // This scenario is tested via integration tests.
+        var accountId = await CreateAccountAsync();
+        var userId1 = await CreateUserInAccountAsync(accountId);
+        var userId2 = await CreateUserInAccountAsync(accountId);
 
-        // For unit testing, we verify the simpler case: user without owner role can be deleted
-        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var user = new UserEntity
-        {
-            Username = _fixture.Create<string>(),
-            Accounts = [],
-            Groups = [],
-            Roles = [],
-        };
-        var created = await userRepo.CreateAsync(user);
+        // Both users have owner role directly
+        await CreateOwnerRoleAsync(accountId, userId1, userId2);
 
-        var result = await _userProcessor.DeleteUserAsync(created.Id);
+        var result = await _userProcessor.DeleteUserAsync(userId1);
 
         Assert.Equal(DeleteUserResultCode.Success, result.ResultCode);
     }
@@ -653,22 +680,18 @@ public class UserProcessorTests
     [Fact]
     public async Task DeleteUserAsync_ReturnsSuccess_WhenOtherOwnerExistsViaGroup()
     {
-        // Note: This test requires proper EF Core relationship tracking.
-        // The in-memory mock doesn't properly track bi-directional relationships.
-        // This scenario is tested via integration tests.
+        var accountId = await CreateAccountAsync();
+        var userId1 = await CreateUserInAccountAsync(accountId);
+        var userId2 = await CreateUserInAccountAsync(accountId);
 
-        // For unit testing, we verify the simpler case: user without owner role can be deleted
-        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var user = new UserEntity
-        {
-            Username = _fixture.Create<string>(),
-            Accounts = [],
-            Groups = [],
-            Roles = [],
-        };
-        var created = await userRepo.CreateAsync(user);
+        // userId1 has direct owner role, userId2 has owner role via group
+        await CreateOwnerRoleWithGroupAsync(
+            accountId,
+            directUserIds: [userId1],
+            groupUserIds: [userId2]
+        );
 
-        var result = await _userProcessor.DeleteUserAsync(created.Id);
+        var result = await _userProcessor.DeleteUserAsync(userId1);
 
         Assert.Equal(DeleteUserResultCode.Success, result.ResultCode);
     }

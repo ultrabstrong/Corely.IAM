@@ -3,10 +3,9 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.Roles.Constants;
-using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Processors;
 using Corely.IAM.Users.Entities;
+using Corely.IAM.Users.Processors;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -17,7 +16,7 @@ internal class AccountProcessor : IAccountProcessor
 {
     private readonly IRepo<AccountEntity> _accountRepo;
     private readonly IReadonlyRepo<UserEntity> _userRepo;
-    private readonly IReadonlyRepo<RoleEntity> _roleRepo;
+    private readonly IUserOwnershipProcessor _userOwnershipProcessor;
     private readonly ISecurityProcessor _securityService;
     private readonly IValidationProvider _validationProvider;
     private readonly ILogger<AccountProcessor> _logger;
@@ -25,7 +24,7 @@ internal class AccountProcessor : IAccountProcessor
     public AccountProcessor(
         IRepo<AccountEntity> accountRepo,
         IReadonlyRepo<UserEntity> userRepo,
-        IReadonlyRepo<RoleEntity> roleRepo,
+        IUserOwnershipProcessor userOwnershipProcessor,
         ISecurityProcessor securityService,
         IValidationProvider validationProvider,
         ILogger<AccountProcessor> logger
@@ -33,7 +32,9 @@ internal class AccountProcessor : IAccountProcessor
     {
         _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
         _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
-        _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
+        _userOwnershipProcessor = userOwnershipProcessor.ThrowIfNull(
+            nameof(userOwnershipProcessor)
+        );
         _securityService = securityService.ThrowIfNull(nameof(securityService));
         _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
         _logger = logger.ThrowIfNull(nameof(logger));
@@ -224,45 +225,21 @@ internal class AccountProcessor : IAccountProcessor
             );
         }
 
-        var userHasOwnerRole = await _roleRepo.AnyAsync(r =>
-            r.AccountId == request.AccountId
-            && r.Name == RoleConstants.OWNER_ROLE_NAME
-            && (
-                r.Users!.Any(u => u.Id == request.UserId)
-                || r.Groups!.Any(g => g.Users!.Any(u => u.Id == request.UserId))
-            )
+        var soleOwnerResult = await _userOwnershipProcessor.IsSoleOwnerOfAccountAsync(
+            request.UserId,
+            request.AccountId
         );
-
-        if (userHasOwnerRole)
+        if (soleOwnerResult.IsSoleOwner)
         {
-            var otherOwnerExists = await _roleRepo.AnyAsync(r =>
-                r.AccountId == request.AccountId
-                && r.Name == RoleConstants.OWNER_ROLE_NAME
-                && (
-                    r.Users!.Any(u =>
-                        u.Id != request.UserId && u.Accounts!.Any(a => a.Id == request.AccountId)
-                    )
-                    || r.Groups!.Any(g =>
-                        g.Users!.Any(u =>
-                            u.Id != request.UserId
-                            && u.Accounts!.Any(a => a.Id == request.AccountId)
-                        )
-                    )
-                )
+            _logger.LogWarning(
+                "User with Id {UserId} is the sole owner of account {AccountId} and cannot be removed",
+                request.UserId,
+                request.AccountId
             );
-
-            if (!otherOwnerExists)
-            {
-                _logger.LogWarning(
-                    "User with Id {UserId} is the sole owner of account {AccountId} and cannot be removed",
-                    request.UserId,
-                    request.AccountId
-                );
-                return new RemoveUserFromAccountResult(
-                    RemoveUserFromAccountResultCode.UserIsSoleOwnerError,
-                    $"User is the sole owner of account '{accountEntity.AccountName}' (Id: {request.AccountId}) and cannot be removed"
-                );
-            }
+            return new RemoveUserFromAccountResult(
+                RemoveUserFromAccountResultCode.UserIsSoleOwnerError,
+                $"User is the sole owner of account '{accountEntity.AccountName}' (Id: {request.AccountId}) and cannot be removed"
+            );
         }
 
         var userToRemove = accountEntity.Users!.First(u => u.Id == request.UserId);

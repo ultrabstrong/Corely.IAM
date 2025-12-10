@@ -1,4 +1,5 @@
-﻿using Corely.Common.Providers.Redaction;
+﻿using System.IdentityModel.Tokens.Jwt;
+using Corely.Common.Providers.Redaction;
 using Corely.IAM.ConsoleApp.SerilogCustomization;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
@@ -9,7 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace Corely.IAM.ConsoleApp;
 
@@ -157,11 +157,33 @@ internal class Program
             await authService.SignOutAllAsync(registerUserResult.CreatedUserId);
 
             // ========= DEREGISTERING ==========
+
+            var deregisterUserRequest = new DeregisterUserRequest(registerUserResult.CreatedUserId);
+            var deregisterUserResult = await deregistrationService.DeregisterUserAsync(
+                deregisterUserRequest
+            );
+
             var deregisterUserFromAccountRequest = new DeregisterUserFromAccountRequest(
-                registerUser2Result.CreatedUserId,
+                registerUserResult.CreatedUserId,
                 registerAccountResult.CreatedAccountId
             );
             var deregisterUserFromAccountResult =
+                await deregistrationService.DeregisterUserFromAccountAsync(
+                    deregisterUserFromAccountRequest
+                );
+            deregisterUserFromAccountRequest = new DeregisterUserFromAccountRequest(
+                registerUser2Result.CreatedUserId,
+                registerAccountResult.CreatedAccountId
+            );
+            deregisterUserFromAccountResult =
+                await deregistrationService.DeregisterUserFromAccountAsync(
+                    deregisterUserFromAccountRequest
+                );
+            deregisterUserFromAccountRequest = new DeregisterUserFromAccountRequest(
+                registerUser2Result.CreatedUserId,
+                registerAccountResult.CreatedAccountId
+            );
+            deregisterUserFromAccountResult =
                 await deregistrationService.DeregisterUserFromAccountAsync(
                     deregisterUserFromAccountRequest
                 );
@@ -190,11 +212,6 @@ internal class Program
             );
             var deregisterAccountResult = await deregistrationService.DeregisterAccountAsync(
                 deregisterAccountRequest
-            );
-
-            var deregisterUserRequest = new DeregisterUserRequest(registerUserResult.CreatedUserId);
-            var deregisterUserResult = await deregistrationService.DeregisterUserAsync(
-                deregisterUserRequest
             );
         }
         catch (Exception ex)

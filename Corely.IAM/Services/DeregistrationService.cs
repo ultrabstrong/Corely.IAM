@@ -140,6 +140,21 @@ internal class DeregistrationService(
             );
         }
 
+        if (result.ResultCode == RemoveUsersFromGroupResultCode.UserIsSoleOwnerError)
+        {
+            _logger.LogInformation(
+                "Deregistering users from group failed - users are sole owners: {@SoleOwnerUserIds}",
+                result.SoleOwnerUserIds
+            );
+            return new DeregisterUsersFromGroupResult(
+                DeregisterUsersFromGroupResultCode.UserIsSoleOwnerError,
+                result.Message ?? string.Empty,
+                0,
+                result.InvalidUserIds,
+                result.SoleOwnerUserIds
+            );
+        }
+
         using (
             _logger.BeginScope(
                 new Dictionary<string, object> { ["@InvalidUserIds"] = result.InvalidUserIds }
@@ -157,7 +172,8 @@ internal class DeregistrationService(
             (DeregisterUsersFromGroupResultCode)result.ResultCode,
             result.Message ?? string.Empty,
             result.RemovedUserCount,
-            result.InvalidUserIds
+            result.InvalidUserIds,
+            result.SoleOwnerUserIds
         );
     }
 

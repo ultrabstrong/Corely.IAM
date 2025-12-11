@@ -40,29 +40,75 @@ internal class DeregistrationService(
         nameof(userProcessor)
     );
 
-    public async Task<DeregisterPermissionResult> DeregisterPermissionAsync(
-        DeregisterPermissionRequest request
-    )
+    public async Task<DeregisterUserResult> DeregisterUserAsync(DeregisterUserRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _logger.LogInformation("Deregistering permission {PermissionId}", request.PermissionId);
+        _logger.LogInformation("Deregistering user {UserId}", request.UserId);
 
-        var result = await _permissionProcessor.DeletePermissionAsync(request.PermissionId);
+        var result = await _userProcessor.DeleteUserAsync(request.UserId);
 
-        if (result.ResultCode != DeletePermissionResultCode.Success)
+        if (result.ResultCode != DeleteUserResultCode.Success)
         {
             _logger.LogInformation(
-                "Deregistering permission failed for permission id {PermissionId}",
-                request.PermissionId
+                "Deregistering user failed for user id {UserId}",
+                request.UserId
             );
-            return new DeregisterPermissionResult(
-                (DeregisterPermissionResultCode)result.ResultCode,
+            return new DeregisterUserResult(
+                (DeregisterUserResultCode)result.ResultCode,
                 result.Message
             );
         }
 
-        _logger.LogInformation("Permission {PermissionId} deregistered", request.PermissionId);
-        return new DeregisterPermissionResult(DeregisterPermissionResultCode.Success, string.Empty);
+        _logger.LogInformation("User {UserId} deregistered", request.UserId);
+        return new DeregisterUserResult(DeregisterUserResultCode.Success, string.Empty);
+    }
+
+    public async Task<DeregisterAccountResult> DeregisterAccountAsync(
+        DeregisterAccountRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation("Deregistering account {AccountId}", request.AccountId);
+
+        var result = await _accountProcessor.DeleteAccountAsync(request.AccountId);
+
+        if (result.ResultCode != DeleteAccountResultCode.Success)
+        {
+            _logger.LogInformation(
+                "Deregistering account failed for account id {AccountId}",
+                request.AccountId
+            );
+            return new DeregisterAccountResult(
+                (DeregisterAccountResultCode)result.ResultCode,
+                result.Message
+            );
+        }
+
+        _logger.LogInformation("Account {AccountId} deregistered", request.AccountId);
+        return new DeregisterAccountResult(DeregisterAccountResultCode.Success, string.Empty);
+    }
+
+    public async Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation("Deregistering group {GroupId}", request.GroupId);
+
+        var result = await _groupProcessor.DeleteGroupAsync(request.GroupId);
+
+        if (result.ResultCode != DeleteGroupResultCode.Success)
+        {
+            _logger.LogInformation(
+                "Deregistering group failed for group id {GroupId}",
+                request.GroupId
+            );
+            return new DeregisterGroupResult(
+                (DeregisterGroupResultCode)result.ResultCode,
+                result.Message
+            );
+        }
+
+        _logger.LogInformation("Group {GroupId} deregistered", request.GroupId);
+        return new DeregisterGroupResult(DeregisterGroupResultCode.Success, string.Empty);
     }
 
     public async Task<DeregisterRoleResult> DeregisterRoleAsync(DeregisterRoleRequest request)
@@ -88,27 +134,68 @@ internal class DeregistrationService(
         return new DeregisterRoleResult(DeregisterRoleResultCode.Success, string.Empty);
     }
 
-    public async Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request)
+    public async Task<DeregisterPermissionResult> DeregisterPermissionAsync(
+        DeregisterPermissionRequest request
+    )
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _logger.LogInformation("Deregistering group {GroupId}", request.GroupId);
+        _logger.LogInformation("Deregistering permission {PermissionId}", request.PermissionId);
 
-        var result = await _groupProcessor.DeleteGroupAsync(request.GroupId);
+        var result = await _permissionProcessor.DeletePermissionAsync(request.PermissionId);
 
-        if (result.ResultCode != DeleteGroupResultCode.Success)
+        if (result.ResultCode != DeletePermissionResultCode.Success)
         {
             _logger.LogInformation(
-                "Deregistering group failed for group id {GroupId}",
-                request.GroupId
+                "Deregistering permission failed for permission id {PermissionId}",
+                request.PermissionId
             );
-            return new DeregisterGroupResult(
-                (DeregisterGroupResultCode)result.ResultCode,
+            return new DeregisterPermissionResult(
+                (DeregisterPermissionResultCode)result.ResultCode,
                 result.Message
             );
         }
 
-        _logger.LogInformation("Group {GroupId} deregistered", request.GroupId);
-        return new DeregisterGroupResult(DeregisterGroupResultCode.Success, string.Empty);
+        _logger.LogInformation("Permission {PermissionId} deregistered", request.PermissionId);
+        return new DeregisterPermissionResult(DeregisterPermissionResultCode.Success, string.Empty);
+    }
+
+    public async Task<DeregisterUserFromAccountResult> DeregisterUserFromAccountAsync(
+        DeregisterUserFromAccountRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Deregistering user {UserId} from account {AccountId}",
+            request.UserId,
+            request.AccountId
+        );
+
+        var result = await _accountProcessor.RemoveUserFromAccountAsync(
+            new(request.UserId, request.AccountId)
+        );
+
+        if (result.ResultCode != RemoveUserFromAccountResultCode.Success)
+        {
+            _logger.LogInformation(
+                "Deregistering user {UserId} from account {AccountId} failed",
+                request.UserId,
+                request.AccountId
+            );
+            return new DeregisterUserFromAccountResult(
+                (DeregisterUserFromAccountResultCode)result.ResultCode,
+                result.Message
+            );
+        }
+
+        _logger.LogInformation(
+            "User {UserId} deregistered from account {AccountId}",
+            request.UserId,
+            request.AccountId
+        );
+        return new DeregisterUserFromAccountResult(
+            DeregisterUserFromAccountResultCode.Success,
+            string.Empty
+        );
     }
 
     public async Task<DeregisterUsersFromGroupResult> DeregisterUsersFromGroupAsync(
@@ -174,93 +261,6 @@ internal class DeregistrationService(
             result.RemovedUserCount,
             result.InvalidUserIds,
             result.SoleOwnerUserIds
-        );
-    }
-
-    public async Task<DeregisterAccountResult> DeregisterAccountAsync(
-        DeregisterAccountRequest request
-    )
-    {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _logger.LogInformation("Deregistering account {AccountId}", request.AccountId);
-
-        var result = await _accountProcessor.DeleteAccountAsync(request.AccountId);
-
-        if (result.ResultCode != DeleteAccountResultCode.Success)
-        {
-            _logger.LogInformation(
-                "Deregistering account failed for account id {AccountId}",
-                request.AccountId
-            );
-            return new DeregisterAccountResult(
-                (DeregisterAccountResultCode)result.ResultCode,
-                result.Message
-            );
-        }
-
-        _logger.LogInformation("Account {AccountId} deregistered", request.AccountId);
-        return new DeregisterAccountResult(DeregisterAccountResultCode.Success, string.Empty);
-    }
-
-    public async Task<DeregisterUserResult> DeregisterUserAsync(DeregisterUserRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _logger.LogInformation("Deregistering user {UserId}", request.UserId);
-
-        var result = await _userProcessor.DeleteUserAsync(request.UserId);
-
-        if (result.ResultCode != DeleteUserResultCode.Success)
-        {
-            _logger.LogInformation(
-                "Deregistering user failed for user id {UserId}",
-                request.UserId
-            );
-            return new DeregisterUserResult(
-                (DeregisterUserResultCode)result.ResultCode,
-                result.Message
-            );
-        }
-
-        _logger.LogInformation("User {UserId} deregistered", request.UserId);
-        return new DeregisterUserResult(DeregisterUserResultCode.Success, string.Empty);
-    }
-
-    public async Task<DeregisterUserFromAccountResult> DeregisterUserFromAccountAsync(
-        DeregisterUserFromAccountRequest request
-    )
-    {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _logger.LogInformation(
-            "Deregistering user {UserId} from account {AccountId}",
-            request.UserId,
-            request.AccountId
-        );
-
-        var result = await _accountProcessor.RemoveUserFromAccountAsync(
-            new(request.UserId, request.AccountId)
-        );
-
-        if (result.ResultCode != RemoveUserFromAccountResultCode.Success)
-        {
-            _logger.LogInformation(
-                "Deregistering user {UserId} from account {AccountId} failed",
-                request.UserId,
-                request.AccountId
-            );
-            return new DeregisterUserFromAccountResult(
-                (DeregisterUserFromAccountResultCode)result.ResultCode,
-                result.Message
-            );
-        }
-
-        _logger.LogInformation(
-            "User {UserId} deregistered from account {AccountId}",
-            request.UserId,
-            request.AccountId
-        );
-        return new DeregisterUserFromAccountResult(
-            DeregisterUserFromAccountResultCode.Success,
-            string.Empty
         );
     }
 }

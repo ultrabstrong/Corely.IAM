@@ -164,6 +164,18 @@ internal class PermissionProcessor : IPermissionProcessor
             );
         }
 
+        if (permissionEntity.IsSystemDefined)
+        {
+            _logger.LogWarning(
+                "Cannot delete system-defined permission with Id {PermissionId}",
+                permissionId
+            );
+            return new DeletePermissionResult(
+                DeletePermissionResultCode.SystemDefinedPermissionError,
+                $"Cannot delete system-defined permission. System-defined permissions are required for account ownership and access control."
+            );
+        }
+
         await _permissionRepo.DeleteAsync(permissionEntity);
 
         _logger.LogInformation("Permission with Id {PermissionId} deleted", permissionId);

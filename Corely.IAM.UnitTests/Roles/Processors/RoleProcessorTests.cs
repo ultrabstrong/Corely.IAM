@@ -392,4 +392,45 @@ public class RoleProcessorTests
 
         Assert.Equal(DeleteRoleResultCode.RoleNotFoundError, result.ResultCode);
     }
+
+    [Fact]
+    public async Task DeleteRoleAsync_ReturnsSystemDefinedRoleError_WhenRoleIsSystemDefined()
+    {
+        var accountId = await CreateAccountAsync();
+        await _roleProcessor.CreateDefaultSystemRolesAsync(accountId);
+
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var ownerRole = await roleRepo.GetAsync(r =>
+            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+        );
+
+        var result = await _roleProcessor.DeleteRoleAsync(ownerRole!.Id);
+
+        Assert.Equal(DeleteRoleResultCode.SystemDefinedRoleError, result.ResultCode);
+        Assert.Contains("system-defined", result.Message);
+
+        // Verify role still exists
+        var roleStillExists = await roleRepo.GetAsync(r => r.Id == ownerRole.Id);
+        Assert.NotNull(roleStillExists);
+    }
+
+    [Fact]
+    public async Task DeleteRoleAsync_ReturnsSystemDefinedRoleError_ForAllSystemDefinedRoles()
+    {
+        var accountId = await CreateAccountAsync();
+        await _roleProcessor.CreateDefaultSystemRolesAsync(accountId);
+
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var systemRoles = await roleRepo.ListAsync(r =>
+            r.AccountId == accountId && r.IsSystemDefined
+        );
+
+        Assert.Equal(3, systemRoles.Count);
+
+        foreach (var role in systemRoles)
+        {
+            var result = await _roleProcessor.DeleteRoleAsync(role.Id);
+            Assert.Equal(DeleteRoleResultCode.SystemDefinedRoleError, result.ResultCode);
+        }
+    }
 }

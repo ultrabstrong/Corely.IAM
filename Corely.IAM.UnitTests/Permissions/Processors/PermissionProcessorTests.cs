@@ -231,4 +231,50 @@ public class PermissionProcessorTests
 
         Assert.Equal(DeletePermissionResultCode.PermissionNotFoundError, result.ResultCode);
     }
+
+    [Fact]
+    public async Task DeletePermissionAsync_ReturnsSystemDefinedPermissionError_WhenPermissionIsSystemDefined()
+    {
+        var accountId = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(accountId);
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(accountId);
+
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var systemPermission = await permissionRepo.GetAsync(p =>
+            p.AccountId == accountId && p.IsSystemDefined
+        );
+
+        var result = await _permissionProcessor.DeletePermissionAsync(systemPermission!.Id);
+
+        Assert.Equal(DeletePermissionResultCode.SystemDefinedPermissionError, result.ResultCode);
+        Assert.Contains("system-defined", result.Message);
+
+        // Verify permission still exists
+        var permissionStillExists = await permissionRepo.GetAsync(p => p.Id == systemPermission.Id);
+        Assert.NotNull(permissionStillExists);
+    }
+
+    [Fact]
+    public async Task DeletePermissionAsync_ReturnsSystemDefinedPermissionError_ForAllSystemDefinedPermissions()
+    {
+        var accountId = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(accountId);
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(accountId);
+
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var systemPermissions = await permissionRepo.ListAsync(p =>
+            p.AccountId == accountId && p.IsSystemDefined
+        );
+
+        Assert.Equal(3, systemPermissions.Count);
+
+        foreach (var permission in systemPermissions)
+        {
+            var result = await _permissionProcessor.DeletePermissionAsync(permission.Id);
+            Assert.Equal(
+                DeletePermissionResultCode.SystemDefinedPermissionError,
+                result.ResultCode
+            );
+        }
+    }
 }

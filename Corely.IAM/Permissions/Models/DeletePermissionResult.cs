@@ -6,4 +6,5 @@ public enum DeletePermissionResultCode
 {
     Success,
     PermissionNotFoundError,
+    SystemDefinedPermissionError,
 }

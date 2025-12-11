@@ -207,6 +207,19 @@ internal class RoleProcessor : IRoleProcessor
             );
         }
 
+        if (roleEntity.IsSystemDefined)
+        {
+            _logger.LogWarning(
+                "Cannot delete system-defined role {RoleName} with Id {RoleId}",
+                roleEntity.Name,
+                roleId
+            );
+            return new DeleteRoleResult(
+                DeleteRoleResultCode.SystemDefinedRoleError,
+                $"Cannot delete system-defined role '{roleEntity.Name}'. System-defined roles are required for account ownership and access control."
+            );
+        }
+
         await _roleRepo.DeleteAsync(roleEntity);
 
         _logger.LogInformation("Role with Id {RoleId} deleted", roleId);

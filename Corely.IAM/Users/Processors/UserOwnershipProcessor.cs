@@ -26,25 +26,38 @@ internal class UserOwnershipProcessor : IUserOwnershipProcessor
         int accountId
     )
     {
-        // Check if user has the owner role (directly or via group)
-        var userHasOwnerRole = await _roleRepo.AnyAsync(r =>
+        // Check if user has the owner role directly
+        var hasDirectOwnership = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
             && r.Name == RoleConstants.OWNER_ROLE_NAME
-            && (
-                r.Users!.Any(u => u.Id == userId)
-                || r.Groups!.Any(g => g.Users!.Any(u => u.Id == userId))
-            )
+            && r.Users!.Any(u => u.Id == userId)
         );
+
+        // Check if user has the owner role via group
+        var hasGroupOwnership = await _roleRepo.AnyAsync(r =>
+            r.AccountId == accountId
+            && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && r.Groups!.Any(g => g.Users!.Any(u => u.Id == userId))
+        );
+
+        var userHasOwnerRole = hasDirectOwnership || hasGroupOwnership;
 
         if (!userHasOwnerRole)
         {
-            _logger.LogDebug(
+            _logger.LogTrace(
                 "User {UserId} does not have owner role for account {AccountId}",
                 userId,
                 accountId
             );
-            return new IsSoleOwnerOfAccountResult(IsSoleOwner: false, UserHasOwnerRole: false);
+            return new IsSoleOwnerOfAccountResult(
+                IsSoleOwner: false,
+                UserHasOwnerRole: false,
+                HasSingleOwnershipSource: true
+            );
         }
+
+        // User has ownership - determine if from single or multiple sources
+        var hasSingleOwnershipSource = !(hasDirectOwnership && hasGroupOwnership);
 
         // Check if another owner exists (directly or via group) who is also in the account
         var otherOwnerExists = await _roleRepo.AnyAsync(r =>
@@ -60,21 +73,30 @@ internal class UserOwnershipProcessor : IUserOwnershipProcessor
 
         if (otherOwnerExists)
         {
-            _logger.LogDebug(
+            _logger.LogTrace(
                 "User {UserId} is not sole owner of account {AccountId} - other owners exist",
                 userId,
                 accountId
             );
-            return new IsSoleOwnerOfAccountResult(IsSoleOwner: false, UserHasOwnerRole: true);
+            return new IsSoleOwnerOfAccountResult(
+                IsSoleOwner: false,
+                UserHasOwnerRole: true,
+                HasSingleOwnershipSource: hasSingleOwnershipSource
+            );
         }
 
-        _logger.LogDebug(
-            "User {UserId} is the sole owner of account {AccountId}",
+        _logger.LogTrace(
+            "User {UserId} is the sole owner of account {AccountId} (singleSource: {HasSingleOwnershipSource})",
             userId,
-            accountId
+            accountId,
+            hasSingleOwnershipSource
         );
 
-        return new IsSoleOwnerOfAccountResult(IsSoleOwner: true, UserHasOwnerRole: true);
+        return new IsSoleOwnerOfAccountResult(
+            IsSoleOwner: true,
+            UserHasOwnerRole: true,
+            HasSingleOwnershipSource: hasSingleOwnershipSource
+        );
     }
 
     public async Task<bool> HasOwnershipOutsideGroupAsync(
@@ -92,7 +114,7 @@ internal class UserOwnershipProcessor : IUserOwnershipProcessor
 
         if (hasDirectOwnership)
         {
-            _logger.LogDebug(
+            _logger.LogTrace(
                 "User {UserId} has direct owner role assignment for account {AccountId}",
                 userId,
                 accountId
@@ -109,7 +131,7 @@ internal class UserOwnershipProcessor : IUserOwnershipProcessor
 
         if (hasOwnershipViaOtherGroup)
         {
-            _logger.LogDebug(
+            _logger.LogTrace(
                 "User {UserId} has owner role via another group for account {AccountId} (excluding group {ExcludeGroupId})",
                 userId,
                 accountId,
@@ -118,7 +140,7 @@ internal class UserOwnershipProcessor : IUserOwnershipProcessor
             return true;
         }
 
-        _logger.LogDebug(
+        _logger.LogTrace(
             "User {UserId} has no owner role outside of group {ExcludeGroupId} for account {AccountId}",
             userId,
             excludeGroupId,
@@ -141,7 +163,7 @@ internal class UserOwnershipProcessor : IUserOwnershipProcessor
             }
         }
 
-        _logger.LogDebug(
+        _logger.LogTrace(
             "No users in {@UserIds} have owner role outside of group {ExcludeGroupId} for account {AccountId}",
             userIds,
             excludeGroupId,

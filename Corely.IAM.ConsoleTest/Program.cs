@@ -142,6 +142,15 @@ internal class Program
                     registerPermissionsWithRoleRequest
                 );
 
+            // Assign role to user2 for deregistration example
+            var registerRolesWithUserRequest = new RegisterRolesWithUserRequest(
+                [registerRoleResult.CreatedRoleId],
+                registerUser2Result.CreatedUserId
+            );
+            var registerRolesWithUserResult = await registrationService.RegisterRolesWithUserAsync(
+                registerRolesWithUserRequest
+            );
+
             // ========= AUTHENTICATION ==========
             var signInRequest = new SignInRequest("user1", "admin");
             var signInResult = await authService.SignInAsync(signInRequest);
@@ -158,6 +167,17 @@ internal class Program
 
             // ========= DEREGISTERING ==========
 
+            // Deregister roles from user example
+            var deregisterRolesFromUserRequest = new DeregisterRolesFromUserRequest(
+                [registerRoleResult.CreatedRoleId],
+                registerUser2Result.CreatedUserId
+            );
+            var deregisterRolesFromUserResult =
+                await deregistrationService.DeregisterRolesFromUserAsync(
+                    deregisterRolesFromUserRequest
+                );
+
+            // Deregister permissions from role example
             var deregisterPermissionsFromRoleRequest = new DeregisterPermissionsFromRoleRequest(
                 [registerPermissionResult.CreatedPermissionId],
                 registerRoleResult.CreatedRoleId

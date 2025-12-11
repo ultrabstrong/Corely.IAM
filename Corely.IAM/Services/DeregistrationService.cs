@@ -347,4 +347,88 @@ internal class DeregistrationService(
             result.SystemPermissionIds
         );
     }
+
+    public async Task<DeregisterRolesFromUserResult> DeregisterRolesFromUserAsync(
+        DeregisterRolesFromUserRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Deregistering role ids {@RoleIds} from user id {UserId}",
+            request.RoleIds,
+            request.UserId
+        );
+
+        var result = await _userProcessor.RemoveRolesFromUserAsync(
+            new(request.RoleIds, request.UserId)
+        );
+
+        if (result.ResultCode == RemoveRolesFromUserResultCode.UserNotFoundError)
+        {
+            _logger.LogInformation(
+                "Deregistering roles from user failed for user id {UserId}",
+                request.UserId
+            );
+            return new DeregisterRolesFromUserResult(
+                DeregisterRolesFromUserResultCode.UserNotFoundError,
+                result.Message ?? string.Empty,
+                0,
+                request.RoleIds
+            );
+        }
+
+        if (result.ResultCode == RemoveRolesFromUserResultCode.InvalidRoleIdsError)
+        {
+            _logger.LogInformation(
+                "Deregistering roles from user failed - all role ids invalid: {@InvalidRoleIds}",
+                result.InvalidRoleIds
+            );
+            return new DeregisterRolesFromUserResult(
+                DeregisterRolesFromUserResultCode.InvalidRoleIdsError,
+                result.Message ?? string.Empty,
+                0,
+                result.InvalidRoleIds
+            );
+        }
+
+        if (result.ResultCode == RemoveRolesFromUserResultCode.UserIsSoleOwnerError)
+        {
+            _logger.LogInformation(
+                "Deregistering roles from user failed - user is sole owner: {@BlockedOwnerRoleIds}",
+                result.BlockedOwnerRoleIds
+            );
+            return new DeregisterRolesFromUserResult(
+                DeregisterRolesFromUserResultCode.UserIsSoleOwnerError,
+                result.Message ?? string.Empty,
+                0,
+                result.InvalidRoleIds,
+                result.BlockedOwnerRoleIds
+            );
+        }
+
+        using (
+            _logger.BeginScope(
+                new Dictionary<string, object>
+                {
+                    ["@InvalidRoleIds"] = result.InvalidRoleIds,
+                    ["@BlockedOwnerRoleIds"] = result.BlockedOwnerRoleIds,
+                }
+            )
+        )
+        {
+            _logger.LogInformation(
+                "Deregistered {RemovedRoleCount} roles from user id {UserId}",
+                result.RemovedRoleCount,
+                request.UserId
+            );
+        }
+
+        return new DeregisterRolesFromUserResult(
+            (DeregisterRolesFromUserResultCode)result.ResultCode,
+            result.Message ?? string.Empty,
+            result.RemovedRoleCount,
+            result.InvalidRoleIds,
+            result.BlockedOwnerRoleIds
+        );
+    }
 }

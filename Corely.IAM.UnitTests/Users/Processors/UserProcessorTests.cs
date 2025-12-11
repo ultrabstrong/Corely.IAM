@@ -716,4 +716,168 @@ public class UserProcessorTests
 
         Assert.Equal(DeleteUserResultCode.Success, result.ResultCode);
     }
+
+    [Fact]
+    public async Task RemoveRolesFromUserAsync_Fails_WhenUserDoesNotExist()
+    {
+        var request = new RemoveRolesFromUserRequest([1, 2], _fixture.Create<int>());
+
+        var result = await _userProcessor.RemoveRolesFromUserAsync(request);
+
+        Assert.Equal(RemoveRolesFromUserResultCode.UserNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromUserAsync_Fails_WhenRolesNotAssignedToUser()
+    {
+        var (userId, _) = await CreateUserAsync();
+        var request = new RemoveRolesFromUserRequest([9999], userId);
+
+        var result = await _userProcessor.RemoveRolesFromUserAsync(request);
+
+        Assert.Equal(RemoveRolesFromUserResultCode.InvalidRoleIdsError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromUserAsync_Succeeds_WhenNonOwnerRoleRemoved()
+    {
+        var (userId, accountId) = await CreateUserAsync();
+        var roleId = await CreateRoleAsync(accountId, userId);
+
+        // Assign role to user
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var user = await userRepo.GetAsync(u => u.Id == userId);
+        var role = await roleRepo.GetAsync(r => r.Id == roleId);
+        user!.Roles = [role!];
+        await userRepo.UpdateAsync(user);
+
+        var request = new RemoveRolesFromUserRequest([roleId], userId);
+        var result = await _userProcessor.RemoveRolesFromUserAsync(request);
+
+        Assert.Equal(RemoveRolesFromUserResultCode.Success, result.ResultCode);
+        Assert.Equal(1, result.RemovedRoleCount);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromUserAsync_Succeeds_WhenOwnerRoleRemovedAndUserIsNotSoleOwner()
+    {
+        var accountId = await CreateAccountAsync();
+        var userId1 = await CreateUserInAccountAsync(accountId);
+        var userId2 = await CreateUserInAccountAsync(accountId);
+
+        // Both users have owner role
+        await CreateOwnerRoleAsync(accountId, userId1, userId2);
+
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var ownerRole = await roleRepo.GetAsync(r =>
+            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+        );
+
+        // Assign owner role to user1
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var user1 = await userRepo.GetAsync(u => u.Id == userId1);
+        user1!.Roles = [ownerRole!];
+        await userRepo.UpdateAsync(user1);
+
+        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], userId1);
+        var result = await _userProcessor.RemoveRolesFromUserAsync(request);
+
+        Assert.Equal(RemoveRolesFromUserResultCode.Success, result.ResultCode);
+        Assert.Equal(1, result.RemovedRoleCount);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromUserAsync_Succeeds_WhenOwnerRoleRemovedAndUserHasOwnershipViaGroup()
+    {
+        var accountId = await CreateAccountAsync();
+        var userId = await CreateUserInAccountAsync(accountId);
+
+        // User has owner role both directly and via group
+        await CreateOwnerRoleWithGroupAsync(
+            accountId,
+            directUserIds: [userId],
+            groupUserIds: [userId]
+        );
+
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var ownerRole = await roleRepo.GetAsync(r =>
+            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+        );
+
+        // Assign owner role to user
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var user = await userRepo.GetAsync(u => u.Id == userId);
+        user!.Roles = [ownerRole!];
+        await userRepo.UpdateAsync(user);
+
+        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], userId);
+        var result = await _userProcessor.RemoveRolesFromUserAsync(request);
+
+        // Should succeed because user still has ownership via group
+        Assert.Equal(RemoveRolesFromUserResultCode.Success, result.ResultCode);
+        Assert.Equal(1, result.RemovedRoleCount);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromUserAsync_Fails_WhenOwnerRoleRemovedAndUserIsSoleOwner()
+    {
+        var (userId, accountId) = await CreateUserAsync();
+        await CreateOwnerRoleAsync(accountId, userId);
+
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var ownerRole = await roleRepo.GetAsync(r =>
+            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+        );
+
+        // Assign owner role to user
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var user = await userRepo.GetAsync(u => u.Id == userId);
+        user!.Roles = [ownerRole!];
+        await userRepo.UpdateAsync(user);
+
+        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], userId);
+        var result = await _userProcessor.RemoveRolesFromUserAsync(request);
+
+        Assert.Equal(RemoveRolesFromUserResultCode.UserIsSoleOwnerError, result.ResultCode);
+        Assert.Equal(0, result.RemovedRoleCount);
+        Assert.Contains(ownerRole.Id, result.BlockedOwnerRoleIds);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromUserAsync_PartialSuccess_WhenMixedOwnerAndNonOwnerRoles()
+    {
+        var (userId, accountId) = await CreateUserAsync();
+        await CreateOwnerRoleAsync(accountId, userId);
+        var regularRoleId = await CreateRoleAsync(accountId, userId);
+
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var ownerRole = await roleRepo.GetAsync(r =>
+            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+        );
+        var regularRole = await roleRepo.GetAsync(r => r.Id == regularRoleId);
+
+        // Assign both roles to user
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var user = await userRepo.GetAsync(u => u.Id == userId);
+        user!.Roles = [ownerRole!, regularRole!];
+        await userRepo.UpdateAsync(user);
+
+        var request = new RemoveRolesFromUserRequest([ownerRole!.Id, regularRoleId], userId);
+        var result = await _userProcessor.RemoveRolesFromUserAsync(request);
+
+        // Should remove regular role but block owner role
+        Assert.Equal(RemoveRolesFromUserResultCode.PartialSuccess, result.ResultCode);
+        Assert.Equal(1, result.RemovedRoleCount);
+        Assert.Contains(ownerRole.Id, result.BlockedOwnerRoleIds);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromUserAsync_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() => _userProcessor.RemoveRolesFromUserAsync(null!));
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
+    }
 }

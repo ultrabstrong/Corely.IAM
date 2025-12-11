@@ -99,6 +99,16 @@ internal class UserProcessorLoggingDecorator : IUserProcessor
             logResult: true
         );
 
+    public async Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(
+        RemoveRolesFromUserRequest request
+    ) =>
+        await _logger.ExecuteWithLogging(
+            nameof(UserProcessor),
+            request,
+            () => _inner.RemoveRolesFromUserAsync(request),
+            logResult: true
+        );
+
     public async Task<DeleteUserResult> DeleteUserAsync(int userId) =>
         await _logger.ExecuteWithLogging(
             nameof(UserProcessor),

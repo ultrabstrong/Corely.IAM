@@ -116,6 +116,19 @@ internal class UserProcessorAuthorizationDecorator(
         return await _inner.AssignRolesToUserAsync(request);
     }
 
+    public async Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(
+        RemoveRolesFromUserRequest request
+    )
+    {
+        if (!request.BypassAuthorization)
+            await _authorizationProvider.AuthorizeAsync(
+                PermissionConstants.USER_RESOURCE_TYPE,
+                AuthAction.Update,
+                request.UserId
+            );
+        return await _inner.RemoveRolesFromUserAsync(request);
+    }
+
     public async Task<DeleteUserResult> DeleteUserAsync(int userId)
     {
         AuthorizeForOwnUser(userId);

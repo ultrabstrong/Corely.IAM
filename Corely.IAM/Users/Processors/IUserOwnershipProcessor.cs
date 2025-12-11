@@ -11,7 +11,8 @@ internal interface IUserOwnershipProcessor
     /// </summary>
     /// <param name="userId">The user ID to check</param>
     /// <param name="accountId">The account ID to check ownership for</param>
-    /// <returns>Result indicating whether the user is the sole owner</returns>
+    /// <returns>Result indicating whether the user is the sole owner, has the owner role,
+    /// and whether ownership comes from a single source (direct OR group) vs multiple sources (direct AND group)</returns>
     Task<IsSoleOwnerOfAccountResult> IsSoleOwnerOfAccountAsync(int userId, int accountId);
 
     /// <summary>

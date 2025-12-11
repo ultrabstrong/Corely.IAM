@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
@@ -444,6 +445,134 @@ internal class UserProcessor : IUserProcessor
             string.Empty,
             roleEntities.Count,
             invalidRoleIds
+        );
+    }
+
+    public async Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(
+        RemoveRolesFromUserRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var userEntity = await _userRepo.GetAsync(
+            u => u.Id == request.UserId,
+            include: q => q.Include(u => u.Roles).Include(u => u.Accounts)
+        );
+
+        if (userEntity == null)
+        {
+            _logger.LogWarning("User with Id {UserId} not found", request.UserId);
+            return new RemoveRolesFromUserResult(
+                RemoveRolesFromUserResultCode.UserNotFoundError,
+                $"User with Id {request.UserId} not found",
+                0,
+                request.RoleIds
+            );
+        }
+
+        var rolesToRemove =
+            userEntity.Roles?.Where(r => request.RoleIds.Contains(r.Id)).ToList() ?? [];
+
+        if (rolesToRemove.Count == 0)
+        {
+            _logger.LogInformation(
+                "All role ids are invalid (not found or not assigned to user) : {@InvalidRoleIds}",
+                request.RoleIds
+            );
+            return new RemoveRolesFromUserResult(
+                RemoveRolesFromUserResultCode.InvalidRoleIdsError,
+                "All role ids are invalid (not found or not assigned to user)",
+                0,
+                request.RoleIds
+            );
+        }
+
+        // Role removal rules:
+        // 1. If all roles are not the owner role -> proceed with removal
+        // 2. If any role is owner role and user IS NOT sole owner -> remove the role
+        // 3. If any role is owner role and user IS sole owner and user has multiple ownership sources -> remove the role
+        // 4. If any role is owner role and user IS sole owner and user has single ownership source -> block
+        var blockedOwnerRoleIds = new List<int>();
+        var ownerRoles = rolesToRemove.Where(r => r.Name == RoleConstants.OWNER_ROLE_NAME).ToList();
+
+        if (ownerRoles.Count > 0)
+        {
+            foreach (var ownerRole in ownerRoles)
+            {
+                var soleOwnerResult = await _userOwnershipProcessor.IsSoleOwnerOfAccountAsync(
+                    request.UserId,
+                    ownerRole.AccountId
+                );
+
+                // Block if: user is sole owner AND has only single ownership source (the direct role being removed)
+                if (soleOwnerResult.IsSoleOwner && soleOwnerResult.HasSingleOwnershipSource)
+                {
+                    blockedOwnerRoleIds.Add(ownerRole.Id);
+                    _logger.LogWarning(
+                        "Cannot remove owner role {RoleId} from user {UserId} - user is sole owner of account {AccountId} with no ownership elsewhere",
+                        ownerRole.Id,
+                        request.UserId,
+                        ownerRole.AccountId
+                    );
+                }
+            }
+
+            // If ALL roles being removed are blocked owner roles, return error
+            if (blockedOwnerRoleIds.Count == rolesToRemove.Count)
+            {
+                return new RemoveRolesFromUserResult(
+                    RemoveRolesFromUserResultCode.UserIsSoleOwnerError,
+                    "Cannot remove owner role(s) from user - user is the sole owner of the account(s) with no ownership elsewhere.",
+                    0,
+                    [],
+                    blockedOwnerRoleIds
+                );
+            }
+
+            // Filter out blocked roles
+            rolesToRemove = rolesToRemove.Where(r => !blockedOwnerRoleIds.Contains(r.Id)).ToList();
+        }
+
+        foreach (var role in rolesToRemove)
+        {
+            userEntity.Roles!.Remove(role);
+        }
+
+        if (rolesToRemove.Count > 0)
+        {
+            await _userRepo.UpdateAsync(userEntity);
+        }
+
+        // Calculate invalid IDs (requested but not actually removed, excluding blocked)
+        var invalidRoleIds = request
+            .RoleIds.Except(rolesToRemove.Select(r => r.Id))
+            .Except(blockedOwnerRoleIds)
+            .ToList();
+
+        // Return appropriate result
+        if (blockedOwnerRoleIds.Count > 0 || invalidRoleIds.Count > 0)
+        {
+            _logger.LogInformation(
+                "Some roles were not removed: invalid {@InvalidRoleIds}, blocked owner {@BlockedOwnerRoleIds}",
+                invalidRoleIds,
+                blockedOwnerRoleIds
+            );
+            return new RemoveRolesFromUserResult(
+                RemoveRolesFromUserResultCode.PartialSuccess,
+                blockedOwnerRoleIds.Count > 0
+                    ? "Some roles could not be removed (invalid or user is sole owner)"
+                    : "Some role ids are invalid (not found or not assigned to user)",
+                rolesToRemove.Count,
+                invalidRoleIds,
+                blockedOwnerRoleIds
+            );
+        }
+
+        return new RemoveRolesFromUserResult(
+            RemoveRolesFromUserResultCode.Success,
+            string.Empty,
+            rolesToRemove.Count,
+            []
         );
     }
 

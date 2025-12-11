@@ -5,19 +5,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Users.Processors;
 
-internal class UserProcessorLoggingDecorator : IUserProcessor
+internal class UserProcessorLoggingDecorator(
+    IUserProcessor inner,
+    ILogger<UserProcessorLoggingDecorator> logger
+) : IUserProcessor
 {
-    private readonly IUserProcessor _inner;
-    private readonly ILogger<UserProcessorLoggingDecorator> _logger;
-
-    public UserProcessorLoggingDecorator(
-        IUserProcessor inner,
-        ILogger<UserProcessorLoggingDecorator> logger
-    )
-    {
-        _inner = inner.ThrowIfNull(nameof(inner));
-        _logger = logger.ThrowIfNull(nameof(logger));
-    }
+    private readonly IUserProcessor _inner = inner.ThrowIfNull(nameof(inner));
+    private readonly ILogger<UserProcessorLoggingDecorator> _logger = logger.ThrowIfNull(
+        nameof(logger)
+    );
 
     public async Task<CreateUserResult> CreateUserAsync(CreateUserRequest request) =>
         await _logger.ExecuteWithLogging(

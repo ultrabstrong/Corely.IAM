@@ -19,44 +19,37 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Corely.IAM.Users.Processors;
 
-internal class UserProcessor : IUserProcessor
+internal class UserProcessor(
+    IRepo<UserEntity> userRepo,
+    IRepo<UserAuthTokenEntity> authTokenRepo,
+    IReadonlyRepo<RoleEntity> roleRepo,
+    IUserOwnershipProcessor userOwnershipProcessor,
+    ISecurityProcessor securityProcessor,
+    ISymmetricEncryptionProviderFactory encryptionProviderFactory,
+    IValidationProvider validationProvider,
+    IOptions<SecurityOptions> securityOptions,
+    ILogger<UserProcessor> logger
+) : IUserProcessor
 {
-    private readonly IRepo<UserEntity> _userRepo;
-    private readonly IRepo<UserAuthTokenEntity> _authTokenRepo;
-    private readonly IReadonlyRepo<RoleEntity> _roleRepo;
-    private readonly IUserOwnershipProcessor _userOwnershipProcessor;
-    private readonly ISecurityProcessor _securityProcessor;
-    private readonly ISymmetricEncryptionProviderFactory _encryptionProviderFactory;
-    private readonly IValidationProvider _validationProvider;
-    private readonly SecurityOptions _securityOptions;
-    private readonly ILogger<UserProcessor> _logger;
-
-    public UserProcessor(
-        IRepo<UserEntity> userRepo,
-        IRepo<UserAuthTokenEntity> authTokenRepo,
-        IReadonlyRepo<RoleEntity> roleRepo,
-        IUserOwnershipProcessor userOwnershipProcessor,
-        ISecurityProcessor securityProcessor,
-        ISymmetricEncryptionProviderFactory encryptionProviderFactory,
-        IValidationProvider validationProvider,
-        IOptions<SecurityOptions> securityOptions,
-        ILogger<UserProcessor> logger
-    )
-    {
-        _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
-        _authTokenRepo = authTokenRepo.ThrowIfNull(nameof(authTokenRepo));
-        _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
-        _userOwnershipProcessor = userOwnershipProcessor.ThrowIfNull(
-            nameof(userOwnershipProcessor)
-        );
-        _securityProcessor = securityProcessor.ThrowIfNull(nameof(securityProcessor));
-        _encryptionProviderFactory = encryptionProviderFactory.ThrowIfNull(
-            nameof(encryptionProviderFactory)
-        );
-        _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
-        _securityOptions = securityOptions.ThrowIfNull(nameof(securityOptions)).Value;
-        _logger = logger.ThrowIfNull(nameof(logger));
-    }
+    private readonly IRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
+    private readonly IRepo<UserAuthTokenEntity> _authTokenRepo = authTokenRepo.ThrowIfNull(
+        nameof(authTokenRepo)
+    );
+    private readonly IReadonlyRepo<RoleEntity> _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
+    private readonly IUserOwnershipProcessor _userOwnershipProcessor =
+        userOwnershipProcessor.ThrowIfNull(nameof(userOwnershipProcessor));
+    private readonly ISecurityProcessor _securityProcessor = securityProcessor.ThrowIfNull(
+        nameof(securityProcessor)
+    );
+    private readonly ISymmetricEncryptionProviderFactory _encryptionProviderFactory =
+        encryptionProviderFactory.ThrowIfNull(nameof(encryptionProviderFactory));
+    private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
+        nameof(validationProvider)
+    );
+    private readonly SecurityOptions _securityOptions = securityOptions
+        .ThrowIfNull(nameof(securityOptions))
+        .Value;
+    private readonly ILogger<UserProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<CreateUserResult> CreateUserAsync(CreateUserRequest request)
     {

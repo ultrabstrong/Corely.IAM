@@ -12,28 +12,25 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Permissions.Processors;
 
-internal class PermissionProcessor : IPermissionProcessor
+internal class PermissionProcessor(
+    IRepo<PermissionEntity> permissionRepo,
+    IRepo<RoleEntity> roleRepo,
+    IReadonlyRepo<AccountEntity> accountRepo,
+    IValidationProvider validationProvider,
+    ILogger<PermissionProcessor> logger
+) : IPermissionProcessor
 {
-    private readonly IRepo<PermissionEntity> _permissionRepo;
-    private readonly IRepo<RoleEntity> _roleRepo;
-    private readonly IReadonlyRepo<AccountEntity> _accountRepo;
-    private readonly IValidationProvider _validationProvider;
-    private readonly ILogger<PermissionProcessor> _logger;
-
-    public PermissionProcessor(
-        IRepo<PermissionEntity> permissionRepo,
-        IRepo<RoleEntity> roleRepo,
-        IReadonlyRepo<AccountEntity> accountRepo,
-        IValidationProvider validationProvider,
-        ILogger<PermissionProcessor> logger
-    )
-    {
-        _permissionRepo = permissionRepo.ThrowIfNull(nameof(permissionRepo));
-        _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
-        _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
-        _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
-        _logger = logger.ThrowIfNull(nameof(logger));
-    }
+    private readonly IRepo<PermissionEntity> _permissionRepo = permissionRepo.ThrowIfNull(
+        nameof(permissionRepo)
+    );
+    private readonly IRepo<RoleEntity> _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
+    private readonly IReadonlyRepo<AccountEntity> _accountRepo = accountRepo.ThrowIfNull(
+        nameof(accountRepo)
+    );
+    private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
+        nameof(validationProvider)
+    );
+    private readonly ILogger<PermissionProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<CreatePermissionResult> CreatePermissionAsync(CreatePermissionRequest request)
     {

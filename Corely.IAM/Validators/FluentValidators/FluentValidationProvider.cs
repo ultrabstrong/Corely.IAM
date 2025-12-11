@@ -3,19 +3,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Validators.FluentValidators;
 
-internal sealed class FluentValidationProvider : IValidationProvider
+internal sealed class FluentValidationProvider(
+    IFluentValidatorFactory fluentValidatorFactory,
+    ILogger<FluentValidationProvider> logger
+) : IValidationProvider
 {
-    private readonly IFluentValidatorFactory _fluentValidatorFactory;
-    private readonly ILogger<FluentValidationProvider> _logger;
-
-    public FluentValidationProvider(
-        IFluentValidatorFactory fluentValidatorFactory,
-        ILogger<FluentValidationProvider> logger
-    )
-    {
-        _fluentValidatorFactory = fluentValidatorFactory;
-        _logger = logger;
-    }
+    private readonly IFluentValidatorFactory _fluentValidatorFactory = fluentValidatorFactory;
+    private readonly ILogger<FluentValidationProvider> _logger = logger;
 
     public ValidationResult Validate<T>(T model)
     {

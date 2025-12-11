@@ -14,36 +14,28 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Groups.Processors;
 
-internal class GroupProcessor : IGroupProcessor
+internal class GroupProcessor(
+    IRepo<GroupEntity> groupRepo,
+    IReadonlyRepo<AccountEntity> accountRepo,
+    IReadonlyRepo<UserEntity> userRepo,
+    IReadonlyRepo<RoleEntity> roleRepo,
+    IUserOwnershipProcessor userOwnershipProcessor,
+    IValidationProvider validationProvider,
+    ILogger<GroupProcessor> logger
+) : IGroupProcessor
 {
-    private readonly IRepo<GroupEntity> _groupRepo;
-    private readonly IReadonlyRepo<AccountEntity> _accountRepo;
-    private readonly IReadonlyRepo<UserEntity> _userRepo;
-    private readonly IReadonlyRepo<RoleEntity> _roleRepo;
-    private readonly IUserOwnershipProcessor _userOwnershipProcessor;
-    private readonly IValidationProvider _validationProvider;
-    private readonly ILogger<GroupProcessor> _logger;
-
-    public GroupProcessor(
-        IRepo<GroupEntity> groupRepo,
-        IReadonlyRepo<AccountEntity> accountRepo,
-        IReadonlyRepo<UserEntity> userRepo,
-        IReadonlyRepo<RoleEntity> roleRepo,
-        IUserOwnershipProcessor userOwnershipProcessor,
-        IValidationProvider validationProvider,
-        ILogger<GroupProcessor> logger
-    )
-    {
-        _groupRepo = groupRepo.ThrowIfNull(nameof(groupRepo));
-        _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
-        _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
-        _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
-        _userOwnershipProcessor = userOwnershipProcessor.ThrowIfNull(
-            nameof(userOwnershipProcessor)
-        );
-        _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
-        _logger = logger.ThrowIfNull(nameof(logger));
-    }
+    private readonly IRepo<GroupEntity> _groupRepo = groupRepo.ThrowIfNull(nameof(groupRepo));
+    private readonly IReadonlyRepo<AccountEntity> _accountRepo = accountRepo.ThrowIfNull(
+        nameof(accountRepo)
+    );
+    private readonly IReadonlyRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
+    private readonly IReadonlyRepo<RoleEntity> _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
+    private readonly IUserOwnershipProcessor _userOwnershipProcessor =
+        userOwnershipProcessor.ThrowIfNull(nameof(userOwnershipProcessor));
+    private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
+        nameof(validationProvider)
+    );
+    private readonly ILogger<GroupProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<CreateGroupResult> CreateGroupAsync(CreateGroupRequest request)
     {

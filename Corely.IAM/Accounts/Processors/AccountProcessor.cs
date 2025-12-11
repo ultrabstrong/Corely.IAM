@@ -12,33 +12,28 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Accounts.Processors;
 
-internal class AccountProcessor : IAccountProcessor
+internal class AccountProcessor(
+    IRepo<AccountEntity> accountRepo,
+    IReadonlyRepo<UserEntity> userRepo,
+    IUserOwnershipProcessor userOwnershipProcessor,
+    ISecurityProcessor securityService,
+    IValidationProvider validationProvider,
+    ILogger<AccountProcessor> logger
+) : IAccountProcessor
 {
-    private readonly IRepo<AccountEntity> _accountRepo;
-    private readonly IReadonlyRepo<UserEntity> _userRepo;
-    private readonly IUserOwnershipProcessor _userOwnershipProcessor;
-    private readonly ISecurityProcessor _securityService;
-    private readonly IValidationProvider _validationProvider;
-    private readonly ILogger<AccountProcessor> _logger;
-
-    public AccountProcessor(
-        IRepo<AccountEntity> accountRepo,
-        IReadonlyRepo<UserEntity> userRepo,
-        IUserOwnershipProcessor userOwnershipProcessor,
-        ISecurityProcessor securityService,
-        IValidationProvider validationProvider,
-        ILogger<AccountProcessor> logger
-    )
-    {
-        _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
-        _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
-        _userOwnershipProcessor = userOwnershipProcessor.ThrowIfNull(
-            nameof(userOwnershipProcessor)
-        );
-        _securityService = securityService.ThrowIfNull(nameof(securityService));
-        _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
-        _logger = logger.ThrowIfNull(nameof(logger));
-    }
+    private readonly IRepo<AccountEntity> _accountRepo = accountRepo.ThrowIfNull(
+        nameof(accountRepo)
+    );
+    private readonly IReadonlyRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
+    private readonly IUserOwnershipProcessor _userOwnershipProcessor =
+        userOwnershipProcessor.ThrowIfNull(nameof(userOwnershipProcessor));
+    private readonly ISecurityProcessor _securityService = securityService.ThrowIfNull(
+        nameof(securityService)
+    );
+    private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
+        nameof(validationProvider)
+    );
+    private readonly ILogger<AccountProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<CreateAccountResult> CreateAccountAsync(CreateAccountRequest request)
     {

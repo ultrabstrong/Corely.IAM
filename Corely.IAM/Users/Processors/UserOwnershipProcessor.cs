@@ -7,19 +7,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Users.Processors;
 
-internal class UserOwnershipProcessor : IUserOwnershipProcessor
+internal class UserOwnershipProcessor(
+    IReadonlyRepo<RoleEntity> roleRepo,
+    ILogger<UserOwnershipProcessor> logger
+) : IUserOwnershipProcessor
 {
-    private readonly IReadonlyRepo<RoleEntity> _roleRepo;
-    private readonly ILogger<UserOwnershipProcessor> _logger;
-
-    public UserOwnershipProcessor(
-        IReadonlyRepo<RoleEntity> roleRepo,
-        ILogger<UserOwnershipProcessor> logger
-    )
-    {
-        _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
-        _logger = logger.ThrowIfNull(nameof(logger));
-    }
+    private readonly IReadonlyRepo<RoleEntity> _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
+    private readonly ILogger<UserOwnershipProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<IsSoleOwnerOfAccountResult> IsSoleOwnerOfAccountAsync(
         int userId,

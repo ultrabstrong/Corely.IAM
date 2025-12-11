@@ -6,20 +6,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Corely.IAM.DataAccess;
 
-internal class IamDbContext : DbContext
+internal class IamDbContext(IEFConfiguration efConfiguration) : DbContext
 {
-    private readonly IEFConfiguration _efConfiguration;
-
-    public IamDbContext(IEFConfiguration efConfiguration)
-        : base()
-    {
-        _efConfiguration = efConfiguration;
-    }
+    private readonly IEFConfiguration _efConfiguration = efConfiguration;
 
     public IamDbContext(DbContextOptions<IamDbContext> opts, IEFConfiguration efConfiguration)
-        : base(opts)
+        : this(efConfiguration)
     {
-        _efConfiguration = efConfiguration;
+        // Options are passed to the base class via OnConfiguring
     }
 
     public DbSet<AccountEntity> Accounts { get; set; } = null!;

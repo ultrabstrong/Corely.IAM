@@ -5,19 +5,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.BasicAuths.Processors;
 
-internal class BasicAuthProcessorLoggingDecorator : IBasicAuthProcessor
+internal class BasicAuthProcessorLoggingDecorator(
+    IBasicAuthProcessor inner,
+    ILogger<BasicAuthProcessorLoggingDecorator> logger
+) : IBasicAuthProcessor
 {
-    private readonly IBasicAuthProcessor _inner;
-    private readonly ILogger<BasicAuthProcessorLoggingDecorator> _logger;
-
-    public BasicAuthProcessorLoggingDecorator(
-        IBasicAuthProcessor inner,
-        ILogger<BasicAuthProcessorLoggingDecorator> logger
-    )
-    {
-        _inner = inner.ThrowIfNull(nameof(inner));
-        _logger = logger.ThrowIfNull(nameof(logger));
-    }
+    private readonly IBasicAuthProcessor _inner = inner.ThrowIfNull(nameof(inner));
+    private readonly ILogger<BasicAuthProcessorLoggingDecorator> _logger = logger.ThrowIfNull(
+        nameof(logger)
+    );
 
     public async Task<UpsertBasicAuthResult> UpsertBasicAuthAsync(UpsertBasicAuthRequest request) =>
         await _logger.ExecuteWithLogging(

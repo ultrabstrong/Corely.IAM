@@ -18,40 +18,43 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
 
-internal class RegistrationService : IRegistrationService
+internal class RegistrationService(
+    ILogger<RegistrationService> logger,
+    IAccountProcessor accountProcessor,
+    IUserProcessor userProcessor,
+    IBasicAuthProcessor basicAuthProcessor,
+    IGroupProcessor groupProcessor,
+    IRoleProcessor roleProcessor,
+    IPermissionProcessor permissionProcessor,
+    IUserContextProvider userContextProvider,
+    IUnitOfWorkProvider uowProvider
+) : IRegistrationService
 {
-    private readonly ILogger<RegistrationService> _logger;
-    private readonly IAccountProcessor _accountProcessor;
-    private readonly IUserProcessor _userProcessor;
-    private readonly IBasicAuthProcessor _basicAuthProcessor;
-    private readonly IGroupProcessor _groupProcessor;
-    private readonly IRoleProcessor _roleProcessor;
-    private readonly IPermissionProcessor _permissionProcessor;
-    private readonly IUserContextProvider _userContextProvider;
-    private readonly IUnitOfWorkProvider _uowProvider;
-
-    public RegistrationService(
-        ILogger<RegistrationService> logger,
-        IAccountProcessor accountProcessor,
-        IUserProcessor userProcessor,
-        IBasicAuthProcessor basicAuthProcessor,
-        IGroupProcessor groupProcessor,
-        IRoleProcessor roleProcessor,
-        IPermissionProcessor permissionProcessor,
-        IUserContextProvider userContextProvider,
-        IUnitOfWorkProvider uowProvider
-    )
-    {
-        _logger = logger.ThrowIfNull(nameof(logger));
-        _accountProcessor = accountProcessor.ThrowIfNull(nameof(accountProcessor));
-        _userProcessor = userProcessor.ThrowIfNull(nameof(userProcessor));
-        _basicAuthProcessor = basicAuthProcessor.ThrowIfNull(nameof(basicAuthProcessor));
-        _groupProcessor = groupProcessor.ThrowIfNull(nameof(groupProcessor));
-        _roleProcessor = roleProcessor.ThrowIfNull(nameof(roleProcessor));
-        _permissionProcessor = permissionProcessor.ThrowIfNull(nameof(permissionProcessor));
-        _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
-        _uowProvider = uowProvider.ThrowIfNull(nameof(uowProvider));
-    }
+    private readonly ILogger<RegistrationService> _logger = logger.ThrowIfNull(nameof(logger));
+    private readonly IAccountProcessor _accountProcessor = accountProcessor.ThrowIfNull(
+        nameof(accountProcessor)
+    );
+    private readonly IUserProcessor _userProcessor = userProcessor.ThrowIfNull(
+        nameof(userProcessor)
+    );
+    private readonly IBasicAuthProcessor _basicAuthProcessor = basicAuthProcessor.ThrowIfNull(
+        nameof(basicAuthProcessor)
+    );
+    private readonly IGroupProcessor _groupProcessor = groupProcessor.ThrowIfNull(
+        nameof(groupProcessor)
+    );
+    private readonly IRoleProcessor _roleProcessor = roleProcessor.ThrowIfNull(
+        nameof(roleProcessor)
+    );
+    private readonly IPermissionProcessor _permissionProcessor = permissionProcessor.ThrowIfNull(
+        nameof(permissionProcessor)
+    );
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
+    );
+    private readonly IUnitOfWorkProvider _uowProvider = uowProvider.ThrowIfNull(
+        nameof(uowProvider)
+    );
 
     public async Task<RegisterUserResult> RegisterUserAsync(RegisterUserRequest request)
     {

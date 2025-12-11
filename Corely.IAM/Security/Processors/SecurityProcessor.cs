@@ -8,36 +8,23 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Corely.IAM.Security.Processors;
 
-internal class SecurityProcessor : ISecurityProcessor
+internal class SecurityProcessor(
+    ISecurityConfigurationProvider securityConfigurationProvider,
+    ISymmetricEncryptionProviderFactory symmetricEncryptionProviderFactory,
+    IAsymmetricEncryptionProviderFactory asymmetricEncryptionProviderFactory,
+    IAsymmetricSignatureProviderFactory asymmetricSignatureProviderFactory
+) : ISecurityProcessor
 {
-    private readonly ISecurityConfigurationProvider _securityConfigurationProvider;
-    private readonly ISymmetricEncryptionProviderFactory _symmetricEncryptionProviderFactory;
-    private readonly IAsymmetricEncryptionProviderFactory _asymmetricEncryptionProviderFactory;
-    private readonly IAsymmetricSignatureProviderFactory _asymmetricSignatureProviderFactory;
-
-    public SecurityProcessor(
-        ISecurityConfigurationProvider securityConfigurationProvider,
-        ISymmetricEncryptionProviderFactory symmetricEncryptionProviderFactory,
-        IAsymmetricEncryptionProviderFactory asymmetricEncryptionProviderFactory,
-        IAsymmetricSignatureProviderFactory asymmetricSignatureProviderFactory
-    )
-    {
-        _securityConfigurationProvider = securityConfigurationProvider.ThrowIfNull(
-            nameof(securityConfigurationProvider)
-        );
-
-        _symmetricEncryptionProviderFactory = symmetricEncryptionProviderFactory.ThrowIfNull(
-            nameof(symmetricEncryptionProviderFactory)
-        );
-
-        _asymmetricEncryptionProviderFactory = asymmetricEncryptionProviderFactory.ThrowIfNull(
+    private readonly ISecurityConfigurationProvider _securityConfigurationProvider =
+        securityConfigurationProvider.ThrowIfNull(nameof(securityConfigurationProvider));
+    private readonly ISymmetricEncryptionProviderFactory _symmetricEncryptionProviderFactory =
+        symmetricEncryptionProviderFactory.ThrowIfNull(nameof(symmetricEncryptionProviderFactory));
+    private readonly IAsymmetricEncryptionProviderFactory _asymmetricEncryptionProviderFactory =
+        asymmetricEncryptionProviderFactory.ThrowIfNull(
             nameof(asymmetricEncryptionProviderFactory)
         );
-
-        _asymmetricSignatureProviderFactory = asymmetricSignatureProviderFactory.ThrowIfNull(
-            nameof(asymmetricSignatureProviderFactory)
-        );
-    }
+    private readonly IAsymmetricSignatureProviderFactory _asymmetricSignatureProviderFactory =
+        asymmetricSignatureProviderFactory.ThrowIfNull(nameof(asymmetricSignatureProviderFactory));
 
     public SymmetricKey GetSymmetricEncryptionKeyEncryptedWithSystemKey()
     {

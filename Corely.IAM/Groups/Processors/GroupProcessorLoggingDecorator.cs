@@ -5,19 +5,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Groups.Processors;
 
-internal class GroupProcessorLoggingDecorator : IGroupProcessor
+internal class GroupProcessorLoggingDecorator(
+    IGroupProcessor inner,
+    ILogger<GroupProcessorLoggingDecorator> logger
+) : IGroupProcessor
 {
-    private readonly IGroupProcessor _inner;
-    private readonly ILogger<GroupProcessorLoggingDecorator> _logger;
-
-    public GroupProcessorLoggingDecorator(
-        IGroupProcessor inner,
-        ILogger<GroupProcessorLoggingDecorator> logger
-    )
-    {
-        _inner = inner.ThrowIfNull(nameof(inner));
-        _logger = logger.ThrowIfNull(nameof(logger));
-    }
+    private readonly IGroupProcessor _inner = inner.ThrowIfNull(nameof(inner));
+    private readonly ILogger<GroupProcessorLoggingDecorator> _logger = logger.ThrowIfNull(
+        nameof(logger)
+    );
 
     public async Task<CreateGroupResult> CreateGroupAsync(CreateGroupRequest request) =>
         await _logger.ExecuteWithLogging(

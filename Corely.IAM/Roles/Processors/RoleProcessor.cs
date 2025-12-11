@@ -12,28 +12,25 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Roles.Processors;
 
-internal class RoleProcessor : IRoleProcessor
+internal class RoleProcessor(
+    IRepo<RoleEntity> roleRepo,
+    IReadonlyRepo<AccountEntity> accountRepo,
+    IReadonlyRepo<PermissionEntity> permissionRepo,
+    IValidationProvider validationProvider,
+    ILogger<RoleProcessor> logger
+) : IRoleProcessor
 {
-    private readonly IRepo<RoleEntity> _roleRepo;
-    private readonly IReadonlyRepo<AccountEntity> _accountRepo;
-    private readonly IReadonlyRepo<PermissionEntity> _permissionRepo;
-    private readonly IValidationProvider _validationProvider;
-    private readonly ILogger<RoleProcessor> _logger;
-
-    public RoleProcessor(
-        IRepo<RoleEntity> roleRepo,
-        IReadonlyRepo<AccountEntity> accountRepo,
-        IReadonlyRepo<PermissionEntity> permissionRepo,
-        IValidationProvider validationProvider,
-        ILogger<RoleProcessor> logger
-    )
-    {
-        _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
-        _accountRepo = accountRepo.ThrowIfNull(nameof(accountRepo));
-        _permissionRepo = permissionRepo.ThrowIfNull(nameof(permissionRepo));
-        _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
-        _logger = logger.ThrowIfNull(nameof(logger));
-    }
+    private readonly IRepo<RoleEntity> _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
+    private readonly IReadonlyRepo<AccountEntity> _accountRepo = accountRepo.ThrowIfNull(
+        nameof(accountRepo)
+    );
+    private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo.ThrowIfNull(
+        nameof(permissionRepo)
+    );
+    private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
+        nameof(validationProvider)
+    );
+    private readonly ILogger<RoleProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<CreateRoleResult> CreateRoleAsync(CreateRoleRequest createRoleRequest)
     {

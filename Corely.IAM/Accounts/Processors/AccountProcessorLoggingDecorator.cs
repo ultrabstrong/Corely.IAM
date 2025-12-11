@@ -5,19 +5,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Accounts.Processors;
 
-internal class AccountProcessorLoggingDecorator : IAccountProcessor
+internal class AccountProcessorLoggingDecorator(
+    IAccountProcessor inner,
+    ILogger<AccountProcessorLoggingDecorator> logger
+) : IAccountProcessor
 {
-    private readonly IAccountProcessor _inner;
-    private readonly ILogger<AccountProcessorLoggingDecorator> _logger;
-
-    public AccountProcessorLoggingDecorator(
-        IAccountProcessor inner,
-        ILogger<AccountProcessorLoggingDecorator> logger
-    )
-    {
-        _inner = inner.ThrowIfNull(nameof(inner));
-        _logger = logger.ThrowIfNull(nameof(logger));
-    }
+    private readonly IAccountProcessor _inner = inner.ThrowIfNull(nameof(inner));
+    private readonly ILogger<AccountProcessorLoggingDecorator> _logger = logger.ThrowIfNull(
+        nameof(logger)
+    );
 
     public async Task<CreateAccountResult> CreateAccountAsync(CreateAccountRequest request) =>
         await _logger.ExecuteWithLogging(

@@ -8,25 +8,23 @@ using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Services;
 
-internal class AuthenticationService : IAuthenticationService
+internal class AuthenticationService(
+    ILogger<AuthenticationService> logger,
+    IUserProcessor userProcessor,
+    IBasicAuthProcessor basicAuthProcessor,
+    IOptions<SecurityOptions> securityOptions
+) : IAuthenticationService
 {
-    private readonly ILogger<AuthenticationService> _logger;
-    private readonly IUserProcessor _userProcessor;
-    private readonly IBasicAuthProcessor _basicAuthProcessor;
-    private readonly SecurityOptions _securityOptions;
-
-    public AuthenticationService(
-        ILogger<AuthenticationService> logger,
-        IUserProcessor userProcessor,
-        IBasicAuthProcessor basicAuthProcessor,
-        IOptions<SecurityOptions> securityOptions
-    )
-    {
-        _logger = logger.ThrowIfNull(nameof(logger));
-        _userProcessor = userProcessor.ThrowIfNull(nameof(userProcessor));
-        _basicAuthProcessor = basicAuthProcessor.ThrowIfNull(nameof(basicAuthProcessor));
-        _securityOptions = securityOptions.ThrowIfNull(nameof(securityOptions)).Value;
-    }
+    private readonly ILogger<AuthenticationService> _logger = logger.ThrowIfNull(nameof(logger));
+    private readonly IUserProcessor _userProcessor = userProcessor.ThrowIfNull(
+        nameof(userProcessor)
+    );
+    private readonly IBasicAuthProcessor _basicAuthProcessor = basicAuthProcessor.ThrowIfNull(
+        nameof(basicAuthProcessor)
+    );
+    private readonly SecurityOptions _securityOptions = securityOptions
+        .ThrowIfNull(nameof(securityOptions))
+        .Value;
 
     public async Task<SignInResult> SignInAsync(SignInRequest request)
     {

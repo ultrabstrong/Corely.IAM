@@ -12,30 +12,26 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.BasicAuths.Processors;
 
-internal class BasicAuthProcessor : IBasicAuthProcessor
+internal class BasicAuthProcessor(
+    IRepo<BasicAuthEntity> basicAuthRepo,
+    IPasswordValidationProvider passwordValidationProvider,
+    IHashProviderFactory hashProviderFactory,
+    IValidationProvider validationProvider,
+    ILogger<BasicAuthProcessor> logger
+) : IBasicAuthProcessor
 {
-    private readonly IRepo<BasicAuthEntity> _basicAuthRepo;
-    private readonly IPasswordValidationProvider _passwordValidationProvider;
-    private readonly IHashProviderFactory _hashProviderFactory;
-    private readonly IValidationProvider _validationProvider;
-    private readonly ILogger<BasicAuthProcessor> _logger;
-
-    public BasicAuthProcessor(
-        IRepo<BasicAuthEntity> basicAuthRepo,
-        IPasswordValidationProvider passwordValidationProvider,
-        IHashProviderFactory hashProviderFactory,
-        IValidationProvider validationProvider,
-        ILogger<BasicAuthProcessor> logger
-    )
-    {
-        _basicAuthRepo = basicAuthRepo.ThrowIfNull(nameof(basicAuthRepo));
-        _passwordValidationProvider = passwordValidationProvider.ThrowIfNull(
-            nameof(passwordValidationProvider)
-        );
-        _hashProviderFactory = hashProviderFactory.ThrowIfNull(nameof(hashProviderFactory));
-        _validationProvider = validationProvider.ThrowIfNull(nameof(validationProvider));
-        _logger = logger.ThrowIfNull(nameof(logger));
-    }
+    private readonly IRepo<BasicAuthEntity> _basicAuthRepo = basicAuthRepo.ThrowIfNull(
+        nameof(basicAuthRepo)
+    );
+    private readonly IPasswordValidationProvider _passwordValidationProvider =
+        passwordValidationProvider.ThrowIfNull(nameof(passwordValidationProvider));
+    private readonly IHashProviderFactory _hashProviderFactory = hashProviderFactory.ThrowIfNull(
+        nameof(hashProviderFactory)
+    );
+    private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
+        nameof(validationProvider)
+    );
+    private readonly ILogger<BasicAuthProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<UpsertBasicAuthResult> UpsertBasicAuthAsync(UpsertBasicAuthRequest request)
     {

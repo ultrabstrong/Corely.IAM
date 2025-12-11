@@ -42,7 +42,11 @@ public class RoleProcessorTests
         return created.Id;
     }
 
-    private async Task<int> CreatePermissionAsync(int accountId, params int[] roleIds)
+    private async Task<int> CreatePermissionAsync(
+        int accountId,
+        bool isSystemDefined = false,
+        params int[] roleIds
+    )
     {
         var permissionId = _fixture.Create<int>();
         var permission = new PermissionEntity
@@ -51,6 +55,9 @@ public class RoleProcessorTests
             Roles = roleIds?.Select(r => new RoleEntity { Id = r })?.ToList() ?? [],
             AccountId = accountId,
             Account = new AccountEntity { Id = accountId },
+            IsSystemDefined = isSystemDefined,
+            ResourceType = "Test",
+            ResourceId = 0,
         };
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var created = await permissionRepo.CreateAsync(permission);
@@ -240,8 +247,16 @@ public class RoleProcessorTests
     public async Task AssignPermissionsToRoleAsync_PartiallySucceeds_WhenSomePermissionsExistForRole()
     {
         var (roleId, accountId) = await CreateRoleAsync();
-        var existingPermissionId = await CreatePermissionAsync(accountId, roleId);
-        var newPermissionId = await CreatePermissionAsync(accountId, roleId + 1);
+        var existingPermissionId = await CreatePermissionAsync(
+            accountId,
+            isSystemDefined: false,
+            roleId
+        );
+        var newPermissionId = await CreatePermissionAsync(
+            accountId,
+            isSystemDefined: false,
+            roleId + 1
+        );
         var request = new AssignPermissionsToRoleRequest(
             [existingPermissionId, newPermissionId],
             roleId
@@ -306,8 +321,8 @@ public class RoleProcessorTests
         var (roleId, accountId) = await CreateRoleAsync();
         var permissionIds = new List<int>
         {
-            await CreatePermissionAsync(accountId, roleId),
-            await CreatePermissionAsync(accountId, roleId),
+            await CreatePermissionAsync(accountId, isSystemDefined: false, roleId),
+            await CreatePermissionAsync(accountId, isSystemDefined: false, roleId),
         };
         var request = new AssignPermissionsToRoleRequest(permissionIds, roleId);
         await _roleProcessor.AssignPermissionsToRoleAsync(request);
@@ -432,5 +447,174 @@ public class RoleProcessorTests
             var result = await _roleProcessor.DeleteRoleAsync(role.Id);
             Assert.Equal(DeleteRoleResultCode.SystemDefinedRoleError, result.ResultCode);
         }
+    }
+
+    [Fact]
+    public async Task RemovePermissionsFromRoleAsync_Fails_WhenRoleDoesNotExist()
+    {
+        var request = new RemovePermissionsFromRoleRequest([1, 2], _fixture.Create<int>());
+
+        var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
+
+        Assert.Equal(RemovePermissionsFromRoleResultCode.RoleNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RemovePermissionsFromRoleAsync_Fails_WhenPermissionsNotAssignedToRole()
+    {
+        var (roleId, accountId) = await CreateRoleAsync();
+        var request = new RemovePermissionsFromRoleRequest([9999], roleId);
+
+        var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
+
+        Assert.Equal(
+            RemovePermissionsFromRoleResultCode.InvalidPermissionIdsError,
+            result.ResultCode
+        );
+    }
+
+    [Fact]
+    public async Task RemovePermissionsFromRoleAsync_Succeeds_WhenNonSystemRoleAndNonSystemPermission()
+    {
+        var (roleId, accountId) = await CreateRoleAsync();
+        var permissionId = await CreatePermissionAsync(accountId, isSystemDefined: false, roleId);
+
+        // Assign permission to role first
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var role = await roleRepo.GetAsync(r => r.Id == roleId);
+        var permission = await permissionRepo.GetAsync(p => p.Id == permissionId);
+        role!.Permissions = [permission!];
+        await roleRepo.UpdateAsync(role);
+
+        var request = new RemovePermissionsFromRoleRequest([permissionId], roleId);
+        var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
+
+        Assert.Equal(RemovePermissionsFromRoleResultCode.Success, result.ResultCode);
+        Assert.Equal(1, result.RemovedPermissionCount);
+    }
+
+    [Fact]
+    public async Task RemovePermissionsFromRoleAsync_Succeeds_WhenNonSystemRoleAndSystemPermission()
+    {
+        var (roleId, accountId) = await CreateRoleAsync();
+        var permissionId = await CreatePermissionAsync(accountId, isSystemDefined: true, roleId);
+
+        // Assign permission to role first
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var role = await roleRepo.GetAsync(r => r.Id == roleId);
+        var permission = await permissionRepo.GetAsync(p => p.Id == permissionId);
+        role!.Permissions = [permission!];
+        await roleRepo.UpdateAsync(role);
+
+        var request = new RemovePermissionsFromRoleRequest([permissionId], roleId);
+        var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
+
+        // Non-system role can remove ANY permission
+        Assert.Equal(RemovePermissionsFromRoleResultCode.Success, result.ResultCode);
+        Assert.Equal(1, result.RemovedPermissionCount);
+    }
+
+    [Fact]
+    public async Task RemovePermissionsFromRoleAsync_Succeeds_WhenSystemRoleAndNonSystemPermission()
+    {
+        var accountId = await CreateAccountAsync();
+        await _roleProcessor.CreateDefaultSystemRolesAsync(accountId);
+
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var systemRole = await roleRepo.GetAsync(r =>
+            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+        );
+
+        var permissionId = await CreatePermissionAsync(accountId, isSystemDefined: false);
+
+        // Assign non-system permission to system role
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var permission = await permissionRepo.GetAsync(p => p.Id == permissionId);
+        systemRole!.Permissions = [permission!];
+        await roleRepo.UpdateAsync(systemRole);
+
+        var request = new RemovePermissionsFromRoleRequest([permissionId], systemRole.Id);
+        var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
+
+        // System role CAN remove non-system permissions
+        Assert.Equal(RemovePermissionsFromRoleResultCode.Success, result.ResultCode);
+        Assert.Equal(1, result.RemovedPermissionCount);
+    }
+
+    [Fact]
+    public async Task RemovePermissionsFromRoleAsync_Fails_WhenSystemRoleAndSystemPermission()
+    {
+        var accountId = await CreateAccountAsync();
+        await _roleProcessor.CreateDefaultSystemRolesAsync(accountId);
+
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var systemRole = await roleRepo.GetAsync(r =>
+            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+        );
+
+        var permissionId = await CreatePermissionAsync(accountId, isSystemDefined: true);
+
+        // Assign system permission to system role
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var permission = await permissionRepo.GetAsync(p => p.Id == permissionId);
+        systemRole!.Permissions = [permission!];
+        await roleRepo.UpdateAsync(systemRole);
+
+        var request = new RemovePermissionsFromRoleRequest([permissionId], systemRole.Id);
+        var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
+
+        // System role CANNOT remove system permissions
+        Assert.Equal(
+            RemovePermissionsFromRoleResultCode.SystemPermissionRemovalError,
+            result.ResultCode
+        );
+        Assert.Equal(0, result.RemovedPermissionCount);
+        Assert.Contains(permissionId, result.SystemPermissionIds);
+    }
+
+    [Fact]
+    public async Task RemovePermissionsFromRoleAsync_PartialSuccess_WhenSystemRoleAndMixedPermissions()
+    {
+        var accountId = await CreateAccountAsync();
+        await _roleProcessor.CreateDefaultSystemRolesAsync(accountId);
+
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var systemRole = await roleRepo.GetAsync(r =>
+            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+        );
+
+        var nonSystemPermissionId = await CreatePermissionAsync(accountId, isSystemDefined: false);
+        var systemPermissionId = await CreatePermissionAsync(accountId, isSystemDefined: true);
+
+        // Assign both permissions to system role
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var nonSystemPermission = await permissionRepo.GetAsync(p => p.Id == nonSystemPermissionId);
+        var systemPermission = await permissionRepo.GetAsync(p => p.Id == systemPermissionId);
+        systemRole!.Permissions = [nonSystemPermission!, systemPermission!];
+        await roleRepo.UpdateAsync(systemRole);
+
+        var request = new RemovePermissionsFromRoleRequest(
+            [nonSystemPermissionId, systemPermissionId],
+            systemRole.Id
+        );
+        var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
+
+        // Should remove non-system but not system permission
+        Assert.Equal(RemovePermissionsFromRoleResultCode.PartialSuccess, result.ResultCode);
+        Assert.Equal(1, result.RemovedPermissionCount);
+        Assert.Contains(systemPermissionId, result.SystemPermissionIds);
+    }
+
+    [Fact]
+    public async Task RemovePermissionsFromRoleAsync_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() =>
+            _roleProcessor.RemovePermissionsFromRoleAsync(null!)
+        );
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
     }
 }

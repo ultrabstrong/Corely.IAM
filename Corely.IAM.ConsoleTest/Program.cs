@@ -158,6 +158,15 @@ internal class Program
 
             // ========= DEREGISTERING ==========
 
+            var deregisterPermissionsFromRoleRequest = new DeregisterPermissionsFromRoleRequest(
+                [registerPermissionResult.CreatedPermissionId],
+                registerRoleResult.CreatedRoleId
+            );
+            var deregisterPermissionsFromRoleResult =
+                await deregistrationService.DeregisterPermissionsFromRoleAsync(
+                    deregisterPermissionsFromRoleRequest
+                );
+
             var deregisterUserRequest = new DeregisterUserRequest(registerUserResult.CreatedUserId);
             var deregisterUserResult = await deregistrationService.DeregisterUserAsync(
                 deregisterUserRequest

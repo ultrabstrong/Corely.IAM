@@ -263,4 +263,88 @@ internal class DeregistrationService(
             result.SoleOwnerUserIds
         );
     }
+
+    public async Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(
+        DeregisterPermissionsFromRoleRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Deregistering permission ids {@PermissionIds} from role id {RoleId}",
+            request.PermissionIds,
+            request.RoleId
+        );
+
+        var result = await _roleProcessor.RemovePermissionsFromRoleAsync(
+            new(request.PermissionIds, request.RoleId)
+        );
+
+        if (result.ResultCode == RemovePermissionsFromRoleResultCode.RoleNotFoundError)
+        {
+            _logger.LogInformation(
+                "Deregistering permissions from role failed for role id {RoleId}",
+                request.RoleId
+            );
+            return new DeregisterPermissionsFromRoleResult(
+                DeregisterPermissionsFromRoleResultCode.RoleNotFoundError,
+                result.Message ?? string.Empty,
+                0,
+                request.PermissionIds
+            );
+        }
+
+        if (result.ResultCode == RemovePermissionsFromRoleResultCode.InvalidPermissionIdsError)
+        {
+            _logger.LogInformation(
+                "Deregistering permissions from role failed - all permission ids invalid: {@InvalidPermissionIds}",
+                result.InvalidPermissionIds
+            );
+            return new DeregisterPermissionsFromRoleResult(
+                DeregisterPermissionsFromRoleResultCode.InvalidPermissionIdsError,
+                result.Message ?? string.Empty,
+                0,
+                result.InvalidPermissionIds
+            );
+        }
+
+        if (result.ResultCode == RemovePermissionsFromRoleResultCode.SystemPermissionRemovalError)
+        {
+            _logger.LogInformation(
+                "Deregistering permissions from role failed - cannot remove system permissions from system role: {@SystemPermissionIds}",
+                result.SystemPermissionIds
+            );
+            return new DeregisterPermissionsFromRoleResult(
+                DeregisterPermissionsFromRoleResultCode.SystemPermissionRemovalError,
+                result.Message ?? string.Empty,
+                0,
+                result.InvalidPermissionIds,
+                result.SystemPermissionIds
+            );
+        }
+
+        using (
+            _logger.BeginScope(
+                new Dictionary<string, object>
+                {
+                    ["@InvalidPermissionIds"] = result.InvalidPermissionIds,
+                    ["@SystemPermissionIds"] = result.SystemPermissionIds,
+                }
+            )
+        )
+        {
+            _logger.LogInformation(
+                "Deregistered {RemovedPermissionCount} permissions from role id {RoleId}",
+                result.RemovedPermissionCount,
+                request.RoleId
+            );
+        }
+
+        return new DeregisterPermissionsFromRoleResult(
+            (DeregisterPermissionsFromRoleResultCode)result.ResultCode,
+            result.Message ?? string.Empty,
+            result.RemovedPermissionCount,
+            result.InvalidPermissionIds,
+            result.SystemPermissionIds
+        );
+    }
 }

@@ -7,6 +7,7 @@ using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Mappers;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Validators;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Roles.Processors;
@@ -192,6 +193,122 @@ internal class RoleProcessor : IRoleProcessor
             string.Empty,
             permissionEntities.Count,
             invalidPermissionIds
+        );
+    }
+
+    public async Task<RemovePermissionsFromRoleResult> RemovePermissionsFromRoleAsync(
+        RemovePermissionsFromRoleRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var roleEntity = await _roleRepo.GetAsync(
+            r => r.Id == request.RoleId,
+            include: q => q.Include(r => r.Permissions)
+        );
+        if (roleEntity == null)
+        {
+            _logger.LogWarning("Role with Id {RoleId} not found", request.RoleId);
+            return new RemovePermissionsFromRoleResult(
+                RemovePermissionsFromRoleResultCode.RoleNotFoundError,
+                $"Role with Id {request.RoleId} not found",
+                0,
+                request.PermissionIds
+            );
+        }
+
+        var permissionsToRemove =
+            roleEntity.Permissions?.Where(p => request.PermissionIds.Contains(p.Id)).ToList() ?? [];
+
+        if (permissionsToRemove.Count == 0)
+        {
+            _logger.LogInformation(
+                "All permission ids are invalid (not found or not assigned to role) : {@InvalidPermissionIds}",
+                request.PermissionIds
+            );
+            return new RemovePermissionsFromRoleResult(
+                RemovePermissionsFromRoleResultCode.InvalidPermissionIdsError,
+                "All permission ids are invalid (not found or not assigned to role)",
+                0,
+                request.PermissionIds
+            );
+        }
+
+        // Permission removal rules:
+        // 1. If role is not system-defined -> allow all permission removal
+        // 2. If role is system-defined -> allow non-system permission removal
+        // 3. If role is system-defined -> disallow system permission removal
+        var blockedSystemPermissionIds = new List<int>();
+
+        if (roleEntity.IsSystemDefined)
+        {
+            var systemPermissions = permissionsToRemove.Where(p => p.IsSystemDefined).ToList();
+            if (systemPermissions.Count > 0)
+            {
+                blockedSystemPermissionIds = systemPermissions.Select(p => p.Id).ToList();
+                _logger.LogWarning(
+                    "Cannot remove system-defined permissions {@SystemPermissionIds} from system-defined role {RoleId}",
+                    blockedSystemPermissionIds,
+                    request.RoleId
+                );
+
+                // If ALL permissions being removed are system permissions, return error
+                if (systemPermissions.Count == permissionsToRemove.Count)
+                {
+                    return new RemovePermissionsFromRoleResult(
+                        RemovePermissionsFromRoleResultCode.SystemPermissionRemovalError,
+                        "Cannot remove system-defined permissions from a system-defined role.",
+                        0,
+                        [],
+                        blockedSystemPermissionIds
+                    );
+                }
+
+                // Otherwise, remove non-system permissions only
+                permissionsToRemove = permissionsToRemove.Where(p => !p.IsSystemDefined).ToList();
+            }
+        }
+
+        foreach (var permission in permissionsToRemove)
+        {
+            roleEntity.Permissions!.Remove(permission);
+        }
+
+        if (permissionsToRemove.Count > 0)
+        {
+            await _roleRepo.UpdateAsync(roleEntity);
+        }
+
+        // Calculate invalid IDs (requested but not actually removed)
+        var invalidPermissionIds = request
+            .PermissionIds.Except(permissionsToRemove.Select(p => p.Id))
+            .Except(blockedSystemPermissionIds)
+            .ToList();
+
+        // Return appropriate result based on what happened
+        if (blockedSystemPermissionIds.Count > 0 || invalidPermissionIds.Count > 0)
+        {
+            _logger.LogInformation(
+                "Some permissions were not removed: invalid {@InvalidPermissionIds}, system-defined {@SystemPermissionIds}",
+                invalidPermissionIds,
+                blockedSystemPermissionIds
+            );
+            return new RemovePermissionsFromRoleResult(
+                RemovePermissionsFromRoleResultCode.PartialSuccess,
+                blockedSystemPermissionIds.Count > 0
+                    ? "Some permissions could not be removed (invalid or system-defined permissions on system role)"
+                    : "Some permission ids are invalid (not found or not assigned to role)",
+                permissionsToRemove.Count,
+                invalidPermissionIds,
+                blockedSystemPermissionIds
+            );
+        }
+
+        return new RemovePermissionsFromRoleResult(
+            RemovePermissionsFromRoleResultCode.Success,
+            string.Empty,
+            permissionsToRemove.Count,
+            []
         );
     }
 

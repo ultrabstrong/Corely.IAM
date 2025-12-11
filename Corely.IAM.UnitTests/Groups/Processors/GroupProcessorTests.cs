@@ -892,4 +892,200 @@ public class GroupProcessorTests
 
         Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
     }
+
+    [Fact]
+    public async Task RemoveRolesFromGroupAsync_Fails_WhenGroupDoesNotExist()
+    {
+        var request = new RemoveRolesFromGroupRequest([1, 2], _fixture.Create<int>());
+
+        var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
+
+        Assert.Equal(RemoveRolesFromGroupResultCode.GroupNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromGroupAsync_Fails_WhenRolesNotAssignedToGroup()
+    {
+        var (groupId, _) = await CreateGroupAsync();
+
+        var request = new RemoveRolesFromGroupRequest([9999], groupId);
+        var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
+
+        Assert.Equal(RemoveRolesFromGroupResultCode.InvalidRoleIdsError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromGroupAsync_Succeeds_WhenNonOwnerRoleRemoved()
+    {
+        var (groupId, accountId) = await CreateGroupAsync();
+        var roleId = await CreateRoleAsync(accountId, groupId);
+
+        // Assign role to group
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var group = await groupRepo.GetAsync(g => g.Id == groupId);
+        var role = await roleRepo.GetAsync(r => r.Id == roleId);
+        group!.Roles = [role!];
+        await groupRepo.UpdateAsync(group);
+
+        var request = new RemoveRolesFromGroupRequest([roleId], groupId);
+        var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
+
+        Assert.Equal(RemoveRolesFromGroupResultCode.Success, result.ResultCode);
+        Assert.Equal(1, result.RemovedRoleCount);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromGroupAsync_Succeeds_WhenOwnerRoleRemovedFromGroupWithNoUsers()
+    {
+        // Create group with owner role but no users
+        var accountId = await CreateAccountAsync();
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+
+        var group = new GroupEntity
+        {
+            Id = _fixture.Create<int>(),
+            Name = VALID_GROUP_NAME,
+            AccountId = accountId,
+            Users = [],
+            Roles = [],
+        };
+        var createdGroup = await groupRepo.CreateAsync(group);
+
+        var ownerRole = new RoleEntity
+        {
+            Id = _fixture.Create<int>(),
+            AccountId = accountId,
+            Name = Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME,
+            IsSystemDefined = true,
+            Users = [],
+            Groups = [createdGroup],
+            Permissions = [],
+        };
+        var createdRole = await roleRepo.CreateAsync(ownerRole);
+        createdGroup.Roles = [createdRole];
+        await groupRepo.UpdateAsync(createdGroup);
+
+        var request = new RemoveRolesFromGroupRequest([createdRole.Id], createdGroup.Id);
+        var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
+
+        Assert.Equal(RemoveRolesFromGroupResultCode.Success, result.ResultCode);
+        Assert.Equal(1, result.RemovedRoleCount);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromGroupAsync_Succeeds_WhenOwnerRoleRemovedAndUserHasDirectOwnership()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 1
+        );
+
+        // Give the user direct owner role
+        await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
+
+        // Get the owner role assigned to the group
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var group = await groupRepo.GetAsync(
+            g => g.Id == groupId,
+            include: q => q.Include(g => g.Roles)
+        );
+        var ownerRoleId = group!
+            .Roles!.First(r => r.Name == Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME)
+            .Id;
+
+        var request = new RemoveRolesFromGroupRequest([ownerRoleId], groupId);
+        var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
+
+        Assert.Equal(RemoveRolesFromGroupResultCode.Success, result.ResultCode);
+        Assert.Equal(1, result.RemovedRoleCount);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromGroupAsync_Fails_WhenOwnerRoleRemovedAndNoUserHasOwnershipElsewhere()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 2
+        );
+
+        // Don't give any user ownership elsewhere
+
+        // Get the owner role assigned to the group
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var group = await groupRepo.GetAsync(
+            g => g.Id == groupId,
+            include: q => q.Include(g => g.Roles)
+        );
+        var ownerRoleId = group!
+            .Roles!.First(r => r.Name == Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME)
+            .Id;
+
+        var request = new RemoveRolesFromGroupRequest([ownerRoleId], groupId);
+        var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
+
+        Assert.Equal(
+            RemoveRolesFromGroupResultCode.OwnerRoleRemovalBlockedError,
+            result.ResultCode
+        );
+        Assert.Equal(0, result.RemovedRoleCount);
+        Assert.Contains(ownerRoleId, result.BlockedOwnerRoleIds);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromGroupAsync_PartialSuccess_WhenMixedOwnerAndNonOwnerRoles()
+    {
+        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+            userCount: 1
+        );
+
+        // Don't give user ownership elsewhere - owner role removal should be blocked
+
+        // Create and assign a regular role to the group
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var group = await groupRepo.GetAsync(
+            g => g.Id == groupId,
+            include: q => q.Include(g => g.Roles).Include(g => g.Users)
+        );
+
+        var regularRole = new RoleEntity
+        {
+            Id = _fixture.Create<int>(),
+            AccountId = accountId,
+            Name = "RegularRole",
+            IsSystemDefined = false,
+            Users = [],
+            Groups = [group!],
+            Permissions = [],
+        };
+        var createdRegularRole = await roleRepo.CreateAsync(regularRole);
+        group!.Roles!.Add(createdRegularRole);
+        await groupRepo.UpdateAsync(group);
+
+        var ownerRoleId = group
+            .Roles.First(r => r.Name == Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME)
+            .Id;
+
+        var request = new RemoveRolesFromGroupRequest(
+            [ownerRoleId, createdRegularRole.Id],
+            groupId
+        );
+        var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
+
+        // Should remove regular role but block owner role
+        Assert.Equal(RemoveRolesFromGroupResultCode.PartialSuccess, result.ResultCode);
+        Assert.Equal(1, result.RemovedRoleCount);
+        Assert.Contains(ownerRoleId, result.BlockedOwnerRoleIds);
+    }
+
+    [Fact]
+    public async Task RemoveRolesFromGroupAsync_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() =>
+            _groupProcessor.RemoveRolesFromGroupAsync(null!)
+        );
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
+    }
 }

@@ -171,7 +171,9 @@ internal class GroupProcessor : IGroupProcessor
             groupEntity.Users?.Where(u => request.UserIds.Contains(u.Id)).ToList() ?? [];
 
         var groupHasOwnerRole =
-            groupEntity.Roles?.Any(r => r.Name == RoleConstants.OWNER_ROLE_NAME) ?? false;
+            groupEntity.Roles?.Any(r =>
+                r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined
+            ) ?? false;
         var totalUsersInGroup = groupEntity.Users?.Count ?? 0;
         var usersRemainingAfterRemoval = totalUsersInGroup - usersToRemove.Count;
 
@@ -308,6 +310,135 @@ internal class GroupProcessor : IGroupProcessor
         );
     }
 
+    public async Task<RemoveRolesFromGroupResult> RemoveRolesFromGroupAsync(
+        RemoveRolesFromGroupRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var groupEntity = await _groupRepo.GetAsync(
+            g => g.Id == request.GroupId,
+            include: q => q.Include(g => g.Roles).Include(g => g.Users)
+        );
+
+        if (groupEntity == null)
+        {
+            _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
+            return new RemoveRolesFromGroupResult(
+                RemoveRolesFromGroupResultCode.GroupNotFoundError,
+                $"Group with Id {request.GroupId} not found",
+                0,
+                request.RoleIds
+            );
+        }
+
+        var rolesToRemove =
+            groupEntity.Roles?.Where(r => request.RoleIds.Contains(r.Id)).ToList() ?? [];
+
+        if (rolesToRemove.Count == 0)
+        {
+            _logger.LogInformation(
+                "All role ids are invalid (not found or not assigned to group) : {@InvalidRoleIds}",
+                request.RoleIds
+            );
+            return new RemoveRolesFromGroupResult(
+                RemoveRolesFromGroupResultCode.InvalidRoleIdsError,
+                "All role ids are invalid (not found or not assigned to group)",
+                0,
+                request.RoleIds
+            );
+        }
+
+        // Role removal rules:
+        // 1. If owner role is not being removed -> allow removal
+        // 2. If owner role is being removed AND group has no users -> allow removal
+        // 3. If owner role is being removed AND at least one user has ownership elsewhere -> allow removal
+        // 4. If owner role is being removed AND no users have ownership elsewhere -> block
+        var blockedOwnerRoleIds = new List<int>();
+        var ownerRole = rolesToRemove.FirstOrDefault(r =>
+            r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined
+        );
+        var usersInGroup = groupEntity.Users?.ToList() ?? [];
+
+        if (ownerRole != null && usersInGroup.Count > 0)
+        {
+            var anyUserHasOwnershipElsewhere =
+                await _userOwnershipProcessor.AnyUserHasOwnershipOutsideGroupAsync(
+                    usersInGroup.Select(u => u.Id),
+                    groupEntity.AccountId,
+                    request.GroupId
+                );
+
+            if (!anyUserHasOwnershipElsewhere)
+            {
+                blockedOwnerRoleIds.Add(ownerRole.Id);
+                _logger.LogWarning(
+                    "Cannot remove owner role {RoleId} from group {GroupId} - no user has ownership elsewhere",
+                    ownerRole.Id,
+                    request.GroupId
+                );
+
+                // If only the owner role is being removed, return error
+                if (rolesToRemove.Count == 1)
+                {
+                    return new RemoveRolesFromGroupResult(
+                        RemoveRolesFromGroupResultCode.OwnerRoleRemovalBlockedError,
+                        "Cannot remove owner role from group - no user has ownership elsewhere. "
+                            + "Add another owner first, or remove users from this group.",
+                        0,
+                        [],
+                        blockedOwnerRoleIds
+                    );
+                }
+
+                // Filter out the blocked owner role
+                rolesToRemove = rolesToRemove.Where(r => r.Id != ownerRole.Id).ToList();
+            }
+        }
+
+        foreach (var role in rolesToRemove)
+        {
+            groupEntity.Roles!.Remove(role);
+        }
+
+        if (rolesToRemove.Count > 0)
+        {
+            await _groupRepo.UpdateAsync(groupEntity);
+        }
+
+        // Calculate invalid IDs (requested but not actually removed, excluding blocked)
+        var invalidRoleIds = request
+            .RoleIds.Except(rolesToRemove.Select(r => r.Id))
+            .Except(blockedOwnerRoleIds)
+            .ToList();
+
+        // Return appropriate result
+        if (blockedOwnerRoleIds.Count > 0 || invalidRoleIds.Count > 0)
+        {
+            _logger.LogInformation(
+                "Some roles were not removed: invalid {@InvalidRoleIds}, blocked owner {@BlockedOwnerRoleIds}",
+                invalidRoleIds,
+                blockedOwnerRoleIds
+            );
+            return new RemoveRolesFromGroupResult(
+                RemoveRolesFromGroupResultCode.PartialSuccess,
+                blockedOwnerRoleIds.Count > 0
+                    ? "Some roles could not be removed (invalid or owner role removal blocked)"
+                    : "Some role ids are invalid (not found or not assigned to group)",
+                rolesToRemove.Count,
+                invalidRoleIds,
+                blockedOwnerRoleIds
+            );
+        }
+
+        return new RemoveRolesFromGroupResult(
+            RemoveRolesFromGroupResultCode.Success,
+            string.Empty,
+            rolesToRemove.Count,
+            []
+        );
+    }
+
     public async Task<DeleteGroupResult> DeleteGroupAsync(int groupId)
     {
         var groupEntity = await _groupRepo.GetAsync(
@@ -326,7 +457,9 @@ internal class GroupProcessor : IGroupProcessor
         // Ownership check logic (same as removing all users from the group):
         // If group has owner role AND no user has ownership elsewhere -> block deletion
         var groupHasOwnerRole =
-            groupEntity.Roles?.Any(r => r.Name == RoleConstants.OWNER_ROLE_NAME) ?? false;
+            groupEntity.Roles?.Any(r =>
+                r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined
+            ) ?? false;
         var usersInGroup = groupEntity.Users?.ToList() ?? [];
 
         if (groupHasOwnerRole && usersInGroup.Count > 0)

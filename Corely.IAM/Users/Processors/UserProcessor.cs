@@ -493,7 +493,9 @@ internal class UserProcessor : IUserProcessor
         // 3. If any role is owner role and user IS sole owner and user has multiple ownership sources -> remove the role
         // 4. If any role is owner role and user IS sole owner and user has single ownership source -> block
         var blockedOwnerRoleIds = new List<int>();
-        var ownerRoles = rolesToRemove.Where(r => r.Name == RoleConstants.OWNER_ROLE_NAME).ToList();
+        var ownerRoles = rolesToRemove
+            .Where(r => r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined)
+            .ToList();
 
         if (ownerRoles.Count > 0)
         {

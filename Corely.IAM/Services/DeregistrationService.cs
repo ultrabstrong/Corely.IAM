@@ -348,6 +348,90 @@ internal class DeregistrationService(
         );
     }
 
+    public async Task<DeregisterRolesFromGroupResult> DeregisterRolesFromGroupAsync(
+        DeregisterRolesFromGroupRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Deregistering role ids {@RoleIds} from group id {GroupId}",
+            request.RoleIds,
+            request.GroupId
+        );
+
+        var result = await _groupProcessor.RemoveRolesFromGroupAsync(
+            new(request.RoleIds, request.GroupId)
+        );
+
+        if (result.ResultCode == RemoveRolesFromGroupResultCode.GroupNotFoundError)
+        {
+            _logger.LogInformation(
+                "Deregistering roles from group failed for group id {GroupId}",
+                request.GroupId
+            );
+            return new DeregisterRolesFromGroupResult(
+                DeregisterRolesFromGroupResultCode.GroupNotFoundError,
+                result.Message ?? string.Empty,
+                0,
+                request.RoleIds
+            );
+        }
+
+        if (result.ResultCode == RemoveRolesFromGroupResultCode.InvalidRoleIdsError)
+        {
+            _logger.LogInformation(
+                "Deregistering roles from group failed - all role ids invalid: {@InvalidRoleIds}",
+                result.InvalidRoleIds
+            );
+            return new DeregisterRolesFromGroupResult(
+                DeregisterRolesFromGroupResultCode.InvalidRoleIdsError,
+                result.Message ?? string.Empty,
+                0,
+                result.InvalidRoleIds
+            );
+        }
+
+        if (result.ResultCode == RemoveRolesFromGroupResultCode.OwnerRoleRemovalBlockedError)
+        {
+            _logger.LogInformation(
+                "Deregistering roles from group failed - owner role removal blocked: {@BlockedOwnerRoleIds}",
+                result.BlockedOwnerRoleIds
+            );
+            return new DeregisterRolesFromGroupResult(
+                DeregisterRolesFromGroupResultCode.OwnerRoleRemovalBlockedError,
+                result.Message ?? string.Empty,
+                0,
+                result.InvalidRoleIds,
+                result.BlockedOwnerRoleIds
+            );
+        }
+
+        using (
+            _logger.BeginScope(
+                new Dictionary<string, object>
+                {
+                    ["@InvalidRoleIds"] = result.InvalidRoleIds,
+                    ["@BlockedOwnerRoleIds"] = result.BlockedOwnerRoleIds,
+                }
+            )
+        )
+        {
+            _logger.LogInformation(
+                "Deregistered {RemovedRoleCount} roles from group id {GroupId}",
+                result.RemovedRoleCount,
+                request.GroupId
+            );
+        }
+
+        return new DeregisterRolesFromGroupResult(
+            (DeregisterRolesFromGroupResultCode)result.ResultCode,
+            result.Message ?? string.Empty,
+            result.RemovedRoleCount,
+            result.InvalidRoleIds,
+            result.BlockedOwnerRoleIds
+        );
+    }
+
     public async Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(
         DeregisterPermissionsFromRoleRequest request
     )

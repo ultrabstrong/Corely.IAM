@@ -58,6 +58,19 @@ internal class GroupProcessorAuthorizationDecorator(
         return await _inner.AssignRolesToGroupAsync(request);
     }
 
+    public async Task<RemoveRolesFromGroupResult> RemoveRolesFromGroupAsync(
+        RemoveRolesFromGroupRequest request
+    )
+    {
+        if (!request.BypassAuthorization)
+            await _authorizationProvider.AuthorizeAsync(
+                PermissionConstants.GROUP_RESOURCE_TYPE,
+                AuthAction.Update,
+                request.GroupId
+            );
+        return await _inner.RemoveRolesFromGroupAsync(request);
+    }
+
     public async Task<DeleteGroupResult> DeleteGroupAsync(int groupId)
     {
         await _authorizationProvider.AuthorizeAsync(

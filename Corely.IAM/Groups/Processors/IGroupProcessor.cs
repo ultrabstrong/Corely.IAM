@@ -8,5 +8,6 @@ internal interface IGroupProcessor
     Task<AddUsersToGroupResult> AddUsersToGroupAsync(AddUsersToGroupRequest request);
     Task<RemoveUsersFromGroupResult> RemoveUsersFromGroupAsync(RemoveUsersFromGroupRequest request);
     Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(AssignRolesToGroupRequest request);
+    Task<RemoveRolesFromGroupResult> RemoveRolesFromGroupAsync(RemoveRolesFromGroupRequest request);
     Task<DeleteGroupResult> DeleteGroupAsync(int groupId);
 }

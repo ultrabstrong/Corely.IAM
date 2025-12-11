@@ -30,6 +30,7 @@ internal class UserOwnershipProcessor : IUserOwnershipProcessor
         var hasDirectOwnership = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
             && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && r.IsSystemDefined
             && r.Users!.Any(u => u.Id == userId)
         );
 
@@ -37,6 +38,7 @@ internal class UserOwnershipProcessor : IUserOwnershipProcessor
         var hasGroupOwnership = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
             && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && r.IsSystemDefined
             && r.Groups!.Any(g => g.Users!.Any(u => u.Id == userId))
         );
 
@@ -63,6 +65,7 @@ internal class UserOwnershipProcessor : IUserOwnershipProcessor
         var otherOwnerExists = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
             && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && r.IsSystemDefined
             && (
                 r.Users!.Any(u => u.Id != userId && u.Accounts!.Any(a => a.Id == accountId))
                 || r.Groups!.Any(g =>
@@ -109,6 +112,7 @@ internal class UserOwnershipProcessor : IUserOwnershipProcessor
         var hasDirectOwnership = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
             && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && r.IsSystemDefined
             && r.Users!.Any(u => u.Id == userId)
         );
 
@@ -126,6 +130,7 @@ internal class UserOwnershipProcessor : IUserOwnershipProcessor
         var hasOwnershipViaOtherGroup = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
             && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && r.IsSystemDefined
             && r.Groups!.Any(g => g.Id != excludeGroupId && g.Users!.Any(u => u.Id == userId))
         );
 

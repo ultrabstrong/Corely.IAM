@@ -15,6 +15,9 @@ public interface IDeregistrationService
     Task<DeregisterUsersFromGroupResult> DeregisterUsersFromGroupAsync(
         DeregisterUsersFromGroupRequest request
     );
+    Task<DeregisterRolesFromGroupResult> DeregisterRolesFromGroupAsync(
+        DeregisterRolesFromGroupRequest request
+    );
     Task<DeregisterRolesFromUserResult> DeregisterRolesFromUserAsync(
         DeregisterRolesFromUserRequest request
     );

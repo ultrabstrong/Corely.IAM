@@ -151,6 +151,16 @@ internal class Program
                 registerRolesWithUserRequest
             );
 
+            // Assign role to group for deregistration example
+            var registerRolesWithGroupRequest = new RegisterRolesWithGroupRequest(
+                [registerRoleResult.CreatedRoleId],
+                registerGroupResult.CreatedGroupId
+            );
+            var registerRolesWithGroupResult =
+                await registrationService.RegisterRolesWithGroupAsync(
+                    registerRolesWithGroupRequest
+                );
+
             // ========= AUTHENTICATION ==========
             var signInRequest = new SignInRequest("user1", "admin");
             var signInResult = await authService.SignInAsync(signInRequest);
@@ -166,6 +176,16 @@ internal class Program
             await authService.SignOutAllAsync(registerUserResult.CreatedUserId);
 
             // ========= DEREGISTERING ==========
+
+            // Deregister roles from group example
+            var deregisterRolesFromGroupRequest = new DeregisterRolesFromGroupRequest(
+                [registerRoleResult.CreatedRoleId],
+                registerGroupResult.CreatedGroupId
+            );
+            var deregisterRolesFromGroupResult =
+                await deregistrationService.DeregisterRolesFromGroupAsync(
+                    deregisterRolesFromGroupRequest
+                );
 
             // Deregister roles from user example
             var deregisterRolesFromUserRequest = new DeregisterRolesFromUserRequest(

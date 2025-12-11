@@ -126,4 +126,27 @@ internal class UserOwnershipProcessor : IUserOwnershipProcessor
         );
         return false;
     }
+
+    public async Task<bool> AnyUserHasOwnershipOutsideGroupAsync(
+        IEnumerable<int> userIds,
+        int accountId,
+        int excludeGroupId
+    )
+    {
+        foreach (var userId in userIds)
+        {
+            if (await HasOwnershipOutsideGroupAsync(userId, accountId, excludeGroupId))
+            {
+                return true;
+            }
+        }
+
+        _logger.LogDebug(
+            "No users in {@UserIds} have owner role outside of group {ExcludeGroupId} for account {AccountId}",
+            userIds,
+            excludeGroupId,
+            accountId
+        );
+        return false;
+    }
 }

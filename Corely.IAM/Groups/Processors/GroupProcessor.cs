@@ -182,21 +182,12 @@ internal class GroupProcessor : IGroupProcessor
         // 3. If group has owner role AND all users being removed -> check if any user has ownership elsewhere
         if (groupHasOwnerRole && usersRemainingAfterRemoval == 0 && usersToRemove.Count > 0)
         {
-            var anyUserHasOwnershipElsewhere = false;
-            foreach (var user in usersToRemove)
-            {
-                if (
-                    await _userOwnershipProcessor.HasOwnershipOutsideGroupAsync(
-                        user.Id,
-                        groupEntity.AccountId,
-                        request.GroupId
-                    )
-                )
-                {
-                    anyUserHasOwnershipElsewhere = true;
-                    break;
-                }
-            }
+            var anyUserHasOwnershipElsewhere =
+                await _userOwnershipProcessor.AnyUserHasOwnershipOutsideGroupAsync(
+                    usersToRemove.Select(u => u.Id),
+                    groupEntity.AccountId,
+                    request.GroupId
+                );
 
             if (!anyUserHasOwnershipElsewhere)
             {
@@ -340,21 +331,12 @@ internal class GroupProcessor : IGroupProcessor
 
         if (groupHasOwnerRole && usersInGroup.Count > 0)
         {
-            var anyUserHasOwnershipElsewhere = false;
-            foreach (var user in usersInGroup)
-            {
-                if (
-                    await _userOwnershipProcessor.HasOwnershipOutsideGroupAsync(
-                        user.Id,
-                        groupEntity.AccountId,
-                        groupId
-                    )
-                )
-                {
-                    anyUserHasOwnershipElsewhere = true;
-                    break;
-                }
-            }
+            var anyUserHasOwnershipElsewhere =
+                await _userOwnershipProcessor.AnyUserHasOwnershipOutsideGroupAsync(
+                    usersInGroup.Select(u => u.Id),
+                    groupEntity.AccountId,
+                    groupId
+                );
 
             if (!anyUserHasOwnershipElsewhere)
             {

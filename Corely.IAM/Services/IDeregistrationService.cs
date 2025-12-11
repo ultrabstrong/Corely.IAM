@@ -15,10 +15,10 @@ public interface IDeregistrationService
     Task<DeregisterUsersFromGroupResult> DeregisterUsersFromGroupAsync(
         DeregisterUsersFromGroupRequest request
     );
-    Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(
-        DeregisterPermissionsFromRoleRequest request
-    );
     Task<DeregisterRolesFromUserResult> DeregisterRolesFromUserAsync(
         DeregisterRolesFromUserRequest request
+    );
+    Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(
+        DeregisterPermissionsFromRoleRequest request
     );
 }

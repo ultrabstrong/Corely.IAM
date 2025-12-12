@@ -77,12 +77,13 @@ public abstract class ServiceFactoryBase(
             Configuration.GetSection(PasswordValidationOptions.NAME)
         );
 
-        ServiceCollection.AddScoped<IUserContextProvider, UserContextProvider>();
+        ServiceCollection.AddScoped<IIamUserContextProvider, IamUserContextProvider>();
         ServiceCollection.AddScoped<IAuthorizationProvider, AuthorizationProvider>();
 
         ServiceCollection.AddScoped<IRegistrationService, RegistrationService>();
         ServiceCollection.AddScoped<IDeregistrationService, DeregistrationService>();
         ServiceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
+        ServiceCollection.AddScoped<IRetrievalService, RetrievalService>();
 
         ServiceCollection.AddLogging(AddLogging);
         AddDataServices();

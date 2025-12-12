@@ -69,6 +69,22 @@ public class AccountProcessorLoggingDecoratorTests
     }
 
     [Fact]
+    public async Task GetAccountsForUserAsync_DelegatesToInnerWithoutLoggingResult()
+    {
+        var userId = 1;
+        var expectedAccounts = new List<Account> { new() { AccountName = "testaccount" } };
+        _mockInnerProcessor
+            .Setup(x => x.GetAccountsForUserAsync(userId))
+            .ReturnsAsync(expectedAccounts);
+
+        var result = await _decorator.GetAccountsForUserAsync(userId);
+
+        Assert.Equal(expectedAccounts, result);
+        _mockInnerProcessor.Verify(x => x.GetAccountsForUserAsync(userId), Times.Once);
+        VerifyLoggedWithoutResult();
+    }
+
+    [Fact]
     public async Task RemoveUserFromAccountAsync_DelegatesToInnerAndLogsResult()
     {
         var request = new RemoveUserFromAccountRequest(1, 5);

@@ -68,10 +68,10 @@ internal class Program
 
             var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
             var userContextProvider =
-                scope.ServiceProvider.GetRequiredService<IUserContextProvider>();
+                scope.ServiceProvider.GetRequiredService<IIamUserContextProvider>();
             var userId = configuration.GetValue<int>("DevToolsUserContext:UserId");
             var accountId = configuration.GetValue<int>("DevToolsUserContext:AccountId");
-            userContextProvider.SetUserContext(new UserContext(userId, accountId));
+            userContextProvider.SetUserContext(new IamUserContext(userId, accountId));
 
             var rootCommand = GetRootCommand(scope.ServiceProvider);
             await rootCommand.InvokeAsync(args);

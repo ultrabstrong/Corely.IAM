@@ -7,11 +7,11 @@ namespace Corely.IAM.BasicAuths.Processors;
 
 internal class BasicAuthProcessorAuthorizationDecorator(
     IBasicAuthProcessor inner,
-    IUserContextProvider userContextProvider
+    IIamUserContextProvider userContextProvider
 ) : IBasicAuthProcessor
 {
     private readonly IBasicAuthProcessor _inner = inner.ThrowIfNull(nameof(inner));
-    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+    private readonly IIamUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
     );
 

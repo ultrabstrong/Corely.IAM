@@ -31,7 +31,7 @@ public class RegistrationServiceTests
     private readonly Mock<IGroupProcessor> _groupProcessorMock;
     private readonly Mock<IRoleProcessor> _roleProcessorMock;
     private readonly Mock<IPermissionProcessor> _permissionProcessorMock;
-    private readonly Mock<IUserContextProvider> _userContextProviderMock = new();
+    private readonly Mock<IIamUserContextProvider> _userContextProviderMock = new();
     private readonly RegistrationService _registrationService;
 
     private CreateAccountResultCode _createAccountResultCode = CreateAccountResultCode.Success;
@@ -212,7 +212,7 @@ public class RegistrationServiceTests
         Assert.Equal(RegisterUserResultCode.Success, result.ResultCode);
 
         _userContextProviderMock.Verify(
-            m => m.SetUserContext(It.Is<UserContext>(uc => uc.UserId == result.CreatedUserId)),
+            m => m.SetUserContext(It.Is<IamUserContext>(uc => uc.UserId == result.CreatedUserId)),
             Times.Once
         );
 

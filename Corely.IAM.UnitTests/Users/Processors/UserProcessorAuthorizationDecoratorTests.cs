@@ -12,7 +12,7 @@ public class UserProcessorAuthorizationDecoratorTests
 {
     private readonly Mock<IUserProcessor> _mockInnerProcessor = new();
     private readonly Mock<IAuthorizationProvider> _mockAuthorizationProvider = new();
-    private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
+    private readonly Mock<IIamUserContextProvider> _mockUserContextProvider = new();
     private readonly UserProcessorAuthorizationDecorator _decorator;
 
     public UserProcessorAuthorizationDecoratorTests()
@@ -252,7 +252,7 @@ public class UserProcessorAuthorizationDecoratorTests
     public async Task DeleteUserAsync_ThrowsUserContextNotSetException_WhenNoUserContext()
     {
         var userId = 5;
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((UserContext?)null);
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((IamUserContext?)null);
 
         await Assert.ThrowsAsync<UserContextNotSetException>(() =>
             _decorator.DeleteUserAsync(userId)
@@ -266,7 +266,9 @@ public class UserProcessorAuthorizationDecoratorTests
     {
         var userId = 5;
         var expectedResult = new DeleteUserResult(DeleteUserResultCode.Success, "");
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new UserContext(userId, 1));
+        _mockUserContextProvider
+            .Setup(x => x.GetUserContext())
+            .Returns(new IamUserContext(userId, 1));
         _mockInnerProcessor.Setup(x => x.DeleteUserAsync(userId)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.DeleteUserAsync(userId);
@@ -279,7 +281,7 @@ public class UserProcessorAuthorizationDecoratorTests
     public async Task DeleteUserAsync_ThrowsAuthorizationException_WhenUserDeletesOtherUser()
     {
         var userId = 5;
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new UserContext(99, 1));
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new IamUserContext(99, 1));
 
         await Assert.ThrowsAsync<AuthorizationException>(() => _decorator.DeleteUserAsync(userId));
 

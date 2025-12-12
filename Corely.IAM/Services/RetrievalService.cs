@@ -1,0 +1,33 @@
+using Corely.Common.Extensions;
+using Corely.IAM.Accounts.Processors;
+using Corely.IAM.Models;
+using Microsoft.Extensions.Logging;
+
+namespace Corely.IAM.Services;
+
+internal class RetrievalService(
+    ILogger<RetrievalService> logger,
+    IAccountProcessor accountProcessor
+) : IRetrievalService
+{
+    private readonly ILogger<RetrievalService> _logger = logger.ThrowIfNull(nameof(logger));
+    private readonly IAccountProcessor _accountProcessor = accountProcessor.ThrowIfNull(
+        nameof(accountProcessor)
+    );
+
+    public async Task<RetrieveAccountsResult> RetrieveAccountsAsync(RetrieveAccountsRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation("Retrieving accounts for user {UserId}", request.UserId);
+
+        var accounts = await _accountProcessor.GetAccountsForUserAsync(request.UserId);
+
+        _logger.LogInformation(
+            "Retrieved {AccountCount} accounts for user {UserId}",
+            accounts.Count,
+            request.UserId
+        );
+
+        return new RetrieveAccountsResult(accounts);
+    }
+}

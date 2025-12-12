@@ -59,7 +59,7 @@ internal class Program
                 )
                 .Build();
 
-            var userContextProvider = host.Services.GetRequiredService<IUserContextProvider>();
+            var userContextProvider = host.Services.GetRequiredService<IIamUserContextProvider>();
             var registrationService = host.Services.GetRequiredService<IRegistrationService>();
             var deregistrationService = host.Services.GetRequiredService<IDeregistrationService>();
             var authService = host.Services.GetRequiredService<IAuthenticationService>();
@@ -83,7 +83,7 @@ internal class Program
             );
 
             userContextProvider.SetUserContext(
-                new UserContext(
+                new IamUserContext(
                     registerUserResult.CreatedUserId,
                     registerAccountResult.CreatedAccountId
                 )

@@ -39,6 +39,14 @@ internal class AccountProcessorLoggingDecorator(
             logResult: true
         );
 
+    public async Task<List<Account>> GetAccountsForUserAsync(int userId) =>
+        await _logger.ExecuteWithLogging(
+            nameof(AccountProcessor),
+            userId,
+            () => _inner.GetAccountsForUserAsync(userId),
+            logResult: false
+        );
+
     public async Task<DeleteAccountResult> DeleteAccountAsync(int accountId) =>
         await _logger.ExecuteWithLogging(
             nameof(AccountProcessor),

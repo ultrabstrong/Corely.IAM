@@ -11,13 +11,13 @@ namespace Corely.IAM.Users.Processors;
 internal class UserProcessorAuthorizationDecorator(
     IUserProcessor inner,
     IAuthorizationProvider authorizationProvider,
-    IUserContextProvider userContextProvider
+    IIamUserContextProvider userContextProvider
 ) : IUserProcessor
 {
     private readonly IUserProcessor _inner = inner.ThrowIfNull(nameof(inner));
     private readonly IAuthorizationProvider _authorizationProvider =
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
-    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+    private readonly IIamUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
     );
 

@@ -9,7 +9,7 @@ namespace Corely.IAM.UnitTests.BasicAuths.Processors;
 public class BasicAuthProcessorAuthorizationDecoratorTests
 {
     private readonly Mock<IBasicAuthProcessor> _mockInnerProcessor = new();
-    private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
+    private readonly Mock<IIamUserContextProvider> _mockUserContextProvider = new();
     private readonly BasicAuthProcessorAuthorizationDecorator _decorator;
 
     public BasicAuthProcessorAuthorizationDecoratorTests()
@@ -24,7 +24,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     public async Task UpsertBasicAuthAsync_ThrowsUserContextNotSetException_WhenNoUserContext()
     {
         var request = new UpsertBasicAuthRequest(5, "password");
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((UserContext?)null);
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((IamUserContext?)null);
 
         await Assert.ThrowsAsync<UserContextNotSetException>(() =>
             _decorator.UpsertBasicAuthAsync(request)
@@ -47,7 +47,9 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
             1,
             Corely.IAM.Enums.UpsertType.Update
         );
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new UserContext(userId, 1));
+        _mockUserContextProvider
+            .Setup(x => x.GetUserContext())
+            .Returns(new IamUserContext(userId, 1));
         _mockInnerProcessor
             .Setup(x => x.UpsertBasicAuthAsync(request))
             .ReturnsAsync(expectedResult);
@@ -62,7 +64,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     public async Task UpsertBasicAuthAsync_ThrowsAuthorizationException_WhenUserOperatesOnOtherUser()
     {
         var request = new UpsertBasicAuthRequest(5, "password");
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new UserContext(99, 1)); // Different user
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new IamUserContext(99, 1)); // Different user
 
         await Assert.ThrowsAsync<AuthorizationException>(() =>
             _decorator.UpsertBasicAuthAsync(request)
@@ -78,7 +80,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     public async Task VerifyBasicAuthAsync_ThrowsUserContextNotSetException_WhenNoUserContext()
     {
         var request = new VerifyBasicAuthRequest(5, "password");
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((UserContext?)null);
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((IamUserContext?)null);
 
         await Assert.ThrowsAsync<UserContextNotSetException>(() =>
             _decorator.VerifyBasicAuthAsync(request)
@@ -95,7 +97,9 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     {
         var userId = 5;
         var request = new VerifyBasicAuthRequest(userId, "password");
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new UserContext(userId, 1));
+        _mockUserContextProvider
+            .Setup(x => x.GetUserContext())
+            .Returns(new IamUserContext(userId, 1));
         _mockInnerProcessor.Setup(x => x.VerifyBasicAuthAsync(request)).ReturnsAsync(true);
 
         var result = await _decorator.VerifyBasicAuthAsync(request);
@@ -108,7 +112,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     public async Task VerifyBasicAuthAsync_ThrowsAuthorizationException_WhenUserVerifiesOtherUser()
     {
         var request = new VerifyBasicAuthRequest(5, "password");
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new UserContext(99, 1)); // Different user
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new IamUserContext(99, 1)); // Different user
 
         await Assert.ThrowsAsync<AuthorizationException>(() =>
             _decorator.VerifyBasicAuthAsync(request)

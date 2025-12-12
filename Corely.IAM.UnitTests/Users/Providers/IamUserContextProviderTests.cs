@@ -3,9 +3,9 @@ using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.UnitTests.Users.Providers;
 
-public class UserContextProviderTests
+public class IamUserContextProviderTests
 {
-    private readonly UserContextProvider _provider = new();
+    private readonly IamUserContextProvider _provider = new();
 
     [Fact]
     public void GetUserContext_ReturnsNull_WhenNotSet()
@@ -18,7 +18,7 @@ public class UserContextProviderTests
     [Fact]
     public void GetUserContext_ReturnsContext_WhenSet()
     {
-        var context = new UserContext(1, 2);
+        var context = new IamUserContext(1, 2);
         _provider.SetUserContext(context);
 
         var result = _provider.GetUserContext();
@@ -31,8 +31,8 @@ public class UserContextProviderTests
     [Fact]
     public void SetUserContext_OverwritesPreviousContext()
     {
-        var context1 = new UserContext(1, 2);
-        var context2 = new UserContext(3, 4);
+        var context1 = new IamUserContext(1, 2);
+        var context2 = new IamUserContext(3, 4);
 
         _provider.SetUserContext(context1);
         _provider.SetUserContext(context2);

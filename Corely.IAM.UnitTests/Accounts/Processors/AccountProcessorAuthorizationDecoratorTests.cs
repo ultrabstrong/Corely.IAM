@@ -271,6 +271,50 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
+    public async Task GetAccountsForUserAsync_CallsAuthorizationProvider()
+    {
+        var userId = 5;
+        var expectedAccounts = new List<Account>
+        {
+            new() { Id = 1, AccountName = "Test" },
+        };
+        _mockInnerProcessor
+            .Setup(x => x.GetAccountsForUserAsync(userId))
+            .ReturnsAsync(expectedAccounts);
+
+        var result = await _decorator.GetAccountsForUserAsync(userId);
+
+        Assert.Equal(expectedAccounts, result);
+        _mockAuthorizationProvider.Verify(
+            x => x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Read, null),
+            Times.Once
+        );
+        _mockInnerProcessor.Verify(x => x.GetAccountsForUserAsync(userId), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAccountsForUserAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    {
+        var userId = 5;
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Read, null)
+            )
+            .ThrowsAsync(
+                new AuthorizationException(
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    AuthAction.Read.ToString()
+                )
+            );
+
+        await Assert.ThrowsAsync<AuthorizationException>(() =>
+            _decorator.GetAccountsForUserAsync(userId)
+        );
+
+        _mockInnerProcessor.Verify(x => x.GetAccountsForUserAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
             new AccountProcessorAuthorizationDecorator(null!, _mockAuthorizationProvider.Object)

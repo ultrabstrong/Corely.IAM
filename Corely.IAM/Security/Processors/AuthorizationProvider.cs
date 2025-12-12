@@ -8,11 +8,11 @@ using Corely.IAM.Users.Providers;
 namespace Corely.IAM.Security.Processors;
 
 internal class AuthorizationProvider(
-    IUserContextProvider userContextProvider,
+    IIamUserContextProvider userContextProvider,
     IReadonlyRepo<PermissionEntity> permissionRepo
 ) : IAuthorizationProvider
 {
-    private readonly IUserContextProvider _userContextProvider = userContextProvider;
+    private readonly IIamUserContextProvider _userContextProvider = userContextProvider;
     private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo;
     private IReadOnlyList<PermissionEntity>? _cachedPermissions;
 

@@ -181,15 +181,15 @@ public class AuthorizationProviderTests
     private AuthorizationProvider CreateProvider()
     {
         return new AuthorizationProvider(
-            _serviceFactory.GetRequiredService<IUserContextProvider>(),
+            _serviceFactory.GetRequiredService<IIamUserContextProvider>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>()
         );
     }
 
     private void SetUserContext(int userId, int accountId)
     {
-        var userContextProvider = _serviceFactory.GetRequiredService<IUserContextProvider>();
-        userContextProvider.SetUserContext(new UserContext(userId, accountId));
+        var userContextProvider = _serviceFactory.GetRequiredService<IIamUserContextProvider>();
+        userContextProvider.SetUserContext(new IamUserContext(userId, accountId));
     }
 
     private async Task SetupTestPermissionDataAsync(

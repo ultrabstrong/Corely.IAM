@@ -505,4 +505,48 @@ public class AccountProcessorTests
 
         Assert.Equal(RemoveUserFromAccountResultCode.UserIsSoleOwnerError, result.ResultCode);
     }
+
+    [Fact]
+    public async Task GetAccountsForUserAsync_ReturnsEmptyList_WhenUserHasNoAccounts()
+    {
+        var userId = await CreateUserAsync();
+
+        var accounts = await _accountProcessor.GetAccountsForUserAsync(userId);
+
+        Assert.Empty(accounts);
+    }
+
+    [Fact]
+    public async Task GetAccountsForUserAsync_ReturnsAccounts_WhenUserHasAccounts()
+    {
+        var userId = await CreateUserAsync();
+        var request1 = new CreateAccountRequest("account1", userId);
+        var request2 = new CreateAccountRequest("account2", userId);
+        await _accountProcessor.CreateAccountAsync(request1);
+        await _accountProcessor.CreateAccountAsync(request2);
+
+        var accounts = await _accountProcessor.GetAccountsForUserAsync(userId);
+
+        Assert.Equal(2, accounts.Count);
+        Assert.Contains(accounts, a => a.AccountName == "account1");
+        Assert.Contains(accounts, a => a.AccountName == "account2");
+    }
+
+    [Fact]
+    public async Task GetAccountsForUserAsync_ReturnsOnlyUserAccounts_WhenMultipleUsersExist()
+    {
+        var userId1 = await CreateUserAsync();
+        var userId2 = await CreateUserAsync();
+        await _accountProcessor.CreateAccountAsync(
+            new CreateAccountRequest("user1account", userId1)
+        );
+        await _accountProcessor.CreateAccountAsync(
+            new CreateAccountRequest("user2account", userId2)
+        );
+
+        var accounts = await _accountProcessor.GetAccountsForUserAsync(userId1);
+
+        Assert.Single(accounts);
+        Assert.Equal("user1account", accounts[0].AccountName);
+    }
 }

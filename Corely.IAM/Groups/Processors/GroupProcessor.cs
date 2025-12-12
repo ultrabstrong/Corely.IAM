@@ -195,7 +195,7 @@ internal class GroupProcessor(
                         + "Add another owner first, or remove the owner role from this group.",
                     0,
                     [],
-                    usersToRemove.Select(u => u.Id).ToList()
+                    [.. usersToRemove.Select(u => u.Id)]
                 );
             }
         }
@@ -384,7 +384,7 @@ internal class GroupProcessor(
                 }
 
                 // Filter out the blocked owner role
-                rolesToRemove = rolesToRemove.Where(r => r.Id != ownerRole.Id).ToList();
+                rolesToRemove = [.. rolesToRemove.Where(r => r.Id != ownerRole.Id)];
             }
         }
 

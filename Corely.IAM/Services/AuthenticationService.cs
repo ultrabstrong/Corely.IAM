@@ -2,6 +2,7 @@
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
+using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -39,7 +40,9 @@ internal class AuthenticationService(
             return new SignInResult(
                 SignInResultCode.UserNotFoundError,
                 "User not found",
-                string.Empty
+                string.Empty,
+                [],
+                null
             );
         }
 
@@ -49,7 +52,9 @@ internal class AuthenticationService(
             return new SignInResult(
                 SignInResultCode.UserLockedError,
                 "User is locked out",
-                string.Empty
+                string.Empty,
+                [],
+                null
             );
         }
 
@@ -72,7 +77,9 @@ internal class AuthenticationService(
             return new SignInResult(
                 SignInResultCode.PasswordMismatchError,
                 "Invalid password",
-                string.Empty
+                string.Empty,
+                [],
+                null
             );
         }
         user.TotalSuccessfulLogins++;
@@ -80,11 +87,19 @@ internal class AuthenticationService(
         user.LastSuccessfulLoginUtc = DateTime.UtcNow;
         await _userProcessor.UpdateUserAsync(user);
 
-        var authToken = await _userProcessor.GetUserAuthTokenAsync(user.Id);
+        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(user.Id, request.AccountId)
+        );
 
         _logger.LogDebug("User {Username} signed in", request.Username);
 
-        return new SignInResult(SignInResultCode.Success, string.Empty, authToken);
+        return new SignInResult(
+            SignInResultCode.Success,
+            string.Empty,
+            authTokenResult?.Token,
+            authTokenResult?.Accounts ?? [],
+            authTokenResult?.SignedInAccountId
+        );
     }
 
     public async Task<bool> ValidateAuthTokenAsync(int userId, string authToken)

@@ -4,3 +4,4 @@
 4. Follow styles in existing codebase
 5. Use using statements instead of fully qualified class names
 6. Don't use region tags
+7. Use simplified collection initializers

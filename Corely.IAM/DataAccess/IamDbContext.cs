@@ -10,7 +10,9 @@ internal class IamDbContext(IEFConfiguration efConfiguration) : DbContext
 {
     private readonly IEFConfiguration _efConfiguration = efConfiguration;
 
+#pragma warning disable IDE0060 // Remove unused parameter
     public IamDbContext(DbContextOptions<IamDbContext> opts, IEFConfiguration efConfiguration)
+#pragma warning restore IDE0060 // Remove unused parameter
         : this(efConfiguration)
     {
         // Options are passed to the base class via OnConfiguring

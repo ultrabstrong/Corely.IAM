@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Enums;
@@ -138,16 +139,18 @@ internal class UserProcessor(
         await _userRepo.UpdateAsync(userEntity);
     }
 
-    public async Task<string?> GetUserAuthTokenAsync(int userId)
+    public async Task<UserAuthTokenResult?> GetUserAuthTokenAsync(UserAuthTokenRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
         var userEntity = await _userRepo.GetAsync(
-            u => u.Id == userId,
+            u => u.Id == request.UserId,
             include: q => q.Include(u => u.AsymmetricKeys).Include(u => u.Accounts)
         );
 
         if (userEntity == null)
         {
-            _logger.LogWarning("User with Id {UserId} not found", userId);
+            _logger.LogWarning("User with Id {UserId} not found", request.UserId);
             return null;
         }
 
@@ -158,7 +161,7 @@ internal class UserProcessor(
         {
             _logger.LogWarning(
                 "User with Id {UserId} does not have an asymmetric signature key",
-                userId
+                request.UserId
             );
             return null;
         }
@@ -173,11 +176,25 @@ internal class UserProcessor(
         var now = DateTime.UtcNow;
         var expires = now.AddSeconds(_securityOptions.AuthTokenTtlSeconds);
         var jti = Guid.NewGuid().ToString();
-        var accountIds = userEntity.Accounts?.Select(a => a.Id.ToString()) ?? [];
+        var accounts = userEntity.Accounts?.Select(a => a.ToModel()).ToList() ?? [];
+
+        // Validate accountId if provided
+        int? signedInAccountId = null;
+        if (request.AccountId.HasValue)
+        {
+            if (accounts.Any(a => a.Id == request.AccountId.Value))
+                signedInAccountId = request.AccountId.Value;
+            else
+                _logger.LogInformation(
+                    "User with Id {UserId} does not have access to account {AccountId}",
+                    request.UserId,
+                    request.AccountId.Value
+                );
+        }
 
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new(JwtRegisteredClaimNames.Sub, request.UserId.ToString()),
             new(JwtRegisteredClaimNames.Jti, jti),
             new(
                 JwtRegisteredClaimNames.Iat,
@@ -186,9 +203,9 @@ internal class UserProcessor(
             ),
         };
 
-        foreach (var accountId in accountIds)
+        foreach (var account in accounts)
         {
-            claims.Add(new Claim("account_id", accountId));
+            claims.Add(new Claim("account_id", account.Id.ToString()));
         }
 
         var token = new JwtSecurityToken(
@@ -202,14 +219,15 @@ internal class UserProcessor(
         // Track the token server-side
         var authTokenEntity = new UserAuthTokenEntity
         {
-            UserId = userId,
+            UserId = request.UserId,
             Jti = jti,
             IssuedUtc = now,
             ExpiresUtc = expires,
         };
         await _authTokenRepo.CreateAsync(authTokenEntity);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+        return new UserAuthTokenResult(tokenString, accounts, signedInAccountId);
     }
 
     public async Task<bool> IsUserAuthTokenValidAsync(int userId, string authToken)
@@ -525,7 +543,7 @@ internal class UserProcessor(
             }
 
             // Filter out blocked roles
-            rolesToRemove = rolesToRemove.Where(r => !blockedOwnerRoleIds.Contains(r.Id)).ToList();
+            rolesToRemove = [.. rolesToRemove.Where(r => !blockedOwnerRoleIds.Contains(r.Id))];
         }
 
         foreach (var role in rolesToRemove)

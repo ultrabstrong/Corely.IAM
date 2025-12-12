@@ -78,13 +78,16 @@ public class UserProcessorLoggingDecoratorTests
     public async Task GetUserAuthTokenAsync_DelegatesToInnerWithoutLoggingResult()
     {
         var userId = 1;
-        var expectedToken = "test-token";
-        _mockInnerProcessor.Setup(x => x.GetUserAuthTokenAsync(userId)).ReturnsAsync(expectedToken);
+        var request = new UserAuthTokenRequest(userId);
+        var expectedResult = new UserAuthTokenResult("test-token", [], null);
+        _mockInnerProcessor
+            .Setup(x => x.GetUserAuthTokenAsync(request))
+            .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.GetUserAuthTokenAsync(userId);
+        var result = await _decorator.GetUserAuthTokenAsync(request);
 
-        Assert.Equal(expectedToken, result);
-        _mockInnerProcessor.Verify(x => x.GetUserAuthTokenAsync(userId), Times.Once);
+        Assert.Equal(expectedResult, result);
+        _mockInnerProcessor.Verify(x => x.GetUserAuthTokenAsync(request), Times.Once);
         VerifyLoggedWithoutResult();
     }
 

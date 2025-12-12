@@ -242,7 +242,7 @@ internal class RoleProcessor(
             var systemPermissions = permissionsToRemove.Where(p => p.IsSystemDefined).ToList();
             if (systemPermissions.Count > 0)
             {
-                blockedSystemPermissionIds = systemPermissions.Select(p => p.Id).ToList();
+                blockedSystemPermissionIds = [.. systemPermissions.Select(p => p.Id)];
                 _logger.LogWarning(
                     "Cannot remove system-defined permissions {@SystemPermissionIds} from system-defined role {RoleId}",
                     blockedSystemPermissionIds,
@@ -262,7 +262,7 @@ internal class RoleProcessor(
                 }
 
                 // Otherwise, remove non-system permissions only
-                permissionsToRemove = permissionsToRemove.Where(p => !p.IsSystemDefined).ToList();
+                permissionsToRemove = [.. permissionsToRemove.Where(p => !p.IsSystemDefined)];
             }
         }
 

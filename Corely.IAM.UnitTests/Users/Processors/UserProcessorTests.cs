@@ -302,12 +302,16 @@ public class UserProcessorTests
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         var result = await _userProcessor.CreateUserAsync(request);
 
-        var token = await _userProcessor.GetUserAuthTokenAsync(result.CreatedId);
+        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(result.CreatedId)
+        );
 
-        Assert.NotNull(token);
+        Assert.NotNull(authTokenResult);
+        Assert.NotNull(authTokenResult.Token);
+        Assert.NotNull(authTokenResult.Accounts);
 
         var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(token);
+        var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token);
 
         Assert.Equal(typeof(UserProcessor).FullName, jwtToken.Issuer);
         Assert.Equal("Corely.IAM", jwtToken.Audiences.First());
@@ -322,7 +326,9 @@ public class UserProcessorTests
     [Fact]
     public async Task GetUserAuthTokenAsync_ReturnsNull_WhenUserDNE()
     {
-        var token = await _userProcessor.GetUserAuthTokenAsync(_fixture.Create<int>());
+        var token = await _userProcessor.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(_fixture.Create<int>())
+        );
 
         Assert.Null(token);
     }
@@ -339,7 +345,9 @@ public class UserProcessorTests
         user?.AsymmetricKeys?.Clear();
         await userRepo.UpdateAsync(user!);
 
-        var token = await _userProcessor.GetUserAuthTokenAsync(result.CreatedId);
+        var token = await _userProcessor.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(result.CreatedId)
+        );
 
         Assert.Null(token);
     }
@@ -349,9 +357,14 @@ public class UserProcessorTests
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         var result = await _userProcessor.CreateUserAsync(request);
-        var token = await _userProcessor.GetUserAuthTokenAsync(result.CreatedId);
+        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(result.CreatedId)
+        );
 
-        var isValid = await _userProcessor.IsUserAuthTokenValidAsync(result.CreatedId, token!);
+        var isValid = await _userProcessor.IsUserAuthTokenValidAsync(
+            result.CreatedId,
+            authTokenResult!.Token
+        );
 
         Assert.True(isValid);
     }
@@ -361,11 +374,13 @@ public class UserProcessorTests
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         var result = await _userProcessor.CreateUserAsync(request);
-        var token = await _userProcessor.GetUserAuthTokenAsync(result.CreatedId);
+        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(result.CreatedId)
+        );
 
         var isValid = await _userProcessor.IsUserAuthTokenValidAsync(
             result.CreatedId,
-            token! + "invalid"
+            authTokenResult!.Token + "invalid"
         );
 
         Assert.False(isValid);
@@ -387,7 +402,9 @@ public class UserProcessorTests
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         var result = await _userProcessor.CreateUserAsync(request);
-        var token = await _userProcessor.GetUserAuthTokenAsync(result.CreatedId);
+        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(result.CreatedId)
+        );
 
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var user = await userRepo.GetAsync(u => u.Id == result.CreatedId);
@@ -395,7 +412,10 @@ public class UserProcessorTests
         user?.AsymmetricKeys?.Clear();
         await userRepo.UpdateAsync(user!);
 
-        var isValid = await _userProcessor.IsUserAuthTokenValidAsync(result.CreatedId, token!);
+        var isValid = await _userProcessor.IsUserAuthTokenValidAsync(
+            result.CreatedId,
+            authTokenResult!.Token
+        );
 
         Assert.False(isValid);
     }

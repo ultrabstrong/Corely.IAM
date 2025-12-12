@@ -53,14 +53,14 @@ internal class UserProcessorAuthorizationDecorator(
         await _inner.UpdateUserAsync(user);
     }
 
-    public async Task<string?> GetUserAuthTokenAsync(int userId)
+    public async Task<UserAuthTokenResult?> GetUserAuthTokenAsync(UserAuthTokenRequest request)
     {
         await _authorizationProvider.AuthorizeAsync(
             PermissionConstants.USER_RESOURCE_TYPE,
             AuthAction.Read,
-            userId
+            request.UserId
         );
-        return await _inner.GetUserAuthTokenAsync(userId);
+        return await _inner.GetUserAuthTokenAsync(request);
     }
 
     public async Task<bool> IsUserAuthTokenValidAsync(int userId, string authToken)

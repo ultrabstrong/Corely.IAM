@@ -133,12 +133,15 @@ public class UserProcessorAuthorizationDecoratorTests
     public async Task GetUserAuthTokenAsync_CallsAuthorizationProviderWithResourceId()
     {
         var userId = 5;
-        var expectedToken = "test-token";
-        _mockInnerProcessor.Setup(x => x.GetUserAuthTokenAsync(userId)).ReturnsAsync(expectedToken);
+        var request = new UserAuthTokenRequest(userId);
+        var expectedResult = new UserAuthTokenResult("test-token", [], null);
+        _mockInnerProcessor
+            .Setup(x => x.GetUserAuthTokenAsync(request))
+            .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.GetUserAuthTokenAsync(userId);
+        var result = await _decorator.GetUserAuthTokenAsync(request);
 
-        Assert.Equal(expectedToken, result);
+        Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
             x => x.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Read, userId),
             Times.Once

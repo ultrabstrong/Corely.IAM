@@ -46,11 +46,11 @@ internal class UserProcessorLoggingDecorator(
             () => _inner.UpdateUserAsync(user)
         );
 
-    public async Task<string?> GetUserAuthTokenAsync(int userId) =>
+    public async Task<UserAuthTokenResult?> GetUserAuthTokenAsync(UserAuthTokenRequest request) =>
         await _logger.ExecuteWithLogging(
             nameof(UserProcessor),
-            userId,
-            () => _inner.GetUserAuthTokenAsync(userId),
+            request,
+            () => _inner.GetUserAuthTokenAsync(request),
             logResult: false
         );
 

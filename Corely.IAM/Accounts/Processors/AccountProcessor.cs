@@ -113,7 +113,7 @@ internal class AccountProcessor(
         var accountEntities = await _accountRepo.ListAsync(a =>
             a.Users != null && a.Users.Any(u => u.Id == userId)
         );
-        return accountEntities.Select(a => a.ToModel()).ToList();
+        return [.. accountEntities.Select(a => a.ToModel())];
     }
 
     public async Task<DeleteAccountResult> DeleteAccountAsync(int accountId)

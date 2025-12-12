@@ -3,7 +3,8 @@ using System.Reflection;
 using Corely.Common.Providers.Redaction;
 using Corely.IAM.DevTools.Commands;
 using Corely.IAM.DevTools.SerilogCustomization;
-using Corely.IAM.Users.Models;
+using Corely.IAM.Models;
+using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,11 +68,27 @@ internal class Program
             using var scope = host.Services.CreateScope();
 
             var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+            var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
             var userContextProvider =
                 scope.ServiceProvider.GetRequiredService<IIamUserContextProvider>();
-            var userId = configuration.GetValue<int>("DevToolsUserContext:UserId");
-            var accountId = configuration.GetValue<int>("DevToolsUserContext:AccountId");
-            userContextProvider.SetUserContext(new IamUserContext(userId, accountId));
+
+            var username = configuration.GetValue<string>("DevToolsUserContext:Username");
+            var password = configuration.GetValue<string>("DevToolsUserContext:Password");
+            var accountId = configuration.GetValue<int?>("DevToolsUserContext:AccountId");
+
+            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+            {
+                var signInResult = await authService.SignInAsync(
+                    new SignInRequest(username, password, accountId)
+                );
+                if (
+                    signInResult.ResultCode == SignInResultCode.Success
+                    && signInResult.AuthToken != null
+                )
+                {
+                    await userContextProvider.SetUserContextAsync(signInResult.AuthToken);
+                }
+            }
 
             var rootCommand = GetRootCommand(scope.ServiceProvider);
             await rootCommand.InvokeAsync(args);

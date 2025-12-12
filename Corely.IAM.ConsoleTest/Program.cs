@@ -3,7 +3,6 @@ using Corely.Common.Providers.Redaction;
 using Corely.IAM.ConsoleApp.SerilogCustomization;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
-using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,7 +61,7 @@ internal class Program
             var userContextProvider = host.Services.GetRequiredService<IIamUserContextProvider>();
             var registrationService = host.Services.GetRequiredService<IRegistrationService>();
             var deregistrationService = host.Services.GetRequiredService<IDeregistrationService>();
-            var authService = host.Services.GetRequiredService<IAuthenticationService>();
+            var authenticationService = host.Services.GetRequiredService<IAuthenticationService>();
 
             var registerUserRequest = new RegisterUserRequest("user1", "email@x.y", "admin");
             var registerUserResult = await registrationService.RegisterUserAsync(
@@ -82,12 +81,22 @@ internal class Program
                 registerUser2Request
             );
 
-            userContextProvider.SetUserContext(
-                new IamUserContext(
-                    registerUserResult.CreatedUserId,
-                    registerAccountResult.CreatedAccountId
-                )
+            // Sign in to get a token and set user context
+            var signInForContextRequest = new SignInRequest(
+                "user1",
+                "admin",
+                registerAccountResult.CreatedAccountId
             );
+            var signInForContextResult = await authenticationService.SignInAsync(
+                signInForContextRequest
+            );
+            if (signInForContextResult.ResultCode != SignInResultCode.Success)
+            {
+                throw new Exception(
+                    $"Failed to sign in for user context setup: {signInForContextResult.ResultCode}"
+                );
+            }
+            await userContextProvider.SetUserContextAsync(signInForContextResult.AuthToken!);
 
             var registerUserWithAccountRequest = new RegisterUserWithAccountRequest(
                 registerUser2Result.CreatedUserId,
@@ -163,17 +172,20 @@ internal class Program
 
             // ========= AUTHENTICATION ==========
             var signInRequest = new SignInRequest("user1", "admin");
-            var signInResult = await authService.SignInAsync(signInRequest);
+            var signInResult = await authenticationService.SignInAsync(signInRequest);
 
-            var isValid = await authService.ValidateAuthTokenAsync(
+            var isValid = await authenticationService.ValidateAuthTokenAsync(
                 registerUserResult.CreatedUserId,
                 signInResult.AuthToken!
             );
 
             var jti = new JwtSecurityTokenHandler().ReadJwtToken(signInResult.AuthToken).Id;
-            var signedOut = await authService.SignOutAsync(registerUserResult.CreatedUserId, jti);
+            var signedOut = await authenticationService.SignOutAsync(
+                registerUserResult.CreatedUserId,
+                jti
+            );
 
-            await authService.SignOutAllAsync(registerUserResult.CreatedUserId);
+            await authenticationService.SignOutAllAsync(registerUserResult.CreatedUserId);
 
             // ========= DEREGISTERING ==========
 

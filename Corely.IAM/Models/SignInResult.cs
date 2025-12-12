@@ -8,6 +8,8 @@ public enum SignInResultCode
     UserNotFoundError,
     UserLockedError,
     PasswordMismatchError,
+    SignatureKeyNotFoundError,
+    AccountNotFoundError,
 }
 
 public record SignInResult(

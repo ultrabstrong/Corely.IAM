@@ -1,9 +1,9 @@
 ﻿using Corely.IAM.Security.Models;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Corely.IAM.Security.Processors;
+namespace Corely.IAM.Security.Providers;
 
-internal interface ISecurityProcessor
+internal interface ISecurityProvider
 {
     SymmetricKey GetSymmetricEncryptionKeyEncryptedWithSystemKey();
     AsymmetricKey GetAsymmetricEncryptionKeyEncryptedWithSystemKey();

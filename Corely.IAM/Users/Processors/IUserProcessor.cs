@@ -8,10 +8,6 @@ internal interface IUserProcessor
     Task<User?> GetUserAsync(int userId);
     Task<User?> GetUserAsync(string userName);
     Task UpdateUserAsync(User user);
-    Task<UserAuthTokenResult?> GetUserAuthTokenAsync(UserAuthTokenRequest request);
-    Task<bool> IsUserAuthTokenValidAsync(int userId, string authToken);
-    Task<bool> RevokeUserAuthTokenAsync(int userId, string jti);
-    Task RevokeAllUserAuthTokensAsync(int userId);
     Task<string?> GetAsymmetricSignatureVerificationKeyAsync(int userId);
     Task<AssignRolesToUserResult> AssignRolesToUserAsync(AssignRolesToUserRequest request);
     Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(RemoveRolesFromUserRequest request);

@@ -1,13 +1,8 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Corely.Common.Extensions;
+﻿using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
-using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
-using Corely.IAM.Security.Enums;
-using Corely.IAM.Security.Models;
-using Corely.IAM.Security.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Mappers;
 using Corely.IAM.Users.Models;
@@ -15,31 +10,24 @@ using Corely.IAM.Validators;
 using Corely.Security.Encryption.Factories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Corely.IAM.Users.Processors;
 
 internal class UserProcessor(
     IRepo<UserEntity> userRepo,
-    IRepo<UserAuthTokenEntity> authTokenRepo,
     IReadonlyRepo<RoleEntity> roleRepo,
     IUserOwnershipProcessor userOwnershipProcessor,
-    ISecurityProcessor securityProcessor,
+    ISecurityProvider securityProcessor,
     ISymmetricEncryptionProviderFactory encryptionProviderFactory,
     IValidationProvider validationProvider,
-    IOptions<SecurityOptions> securityOptions,
     ILogger<UserProcessor> logger
 ) : IUserProcessor
 {
     private readonly IRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
-    private readonly IRepo<UserAuthTokenEntity> _authTokenRepo = authTokenRepo.ThrowIfNull(
-        nameof(authTokenRepo)
-    );
     private readonly IReadonlyRepo<RoleEntity> _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
     private readonly IUserOwnershipProcessor _userOwnershipProcessor =
         userOwnershipProcessor.ThrowIfNull(nameof(userOwnershipProcessor));
-    private readonly ISecurityProcessor _securityProcessor = securityProcessor.ThrowIfNull(
+    private readonly ISecurityProvider _securityProcessor = securityProcessor.ThrowIfNull(
         nameof(securityProcessor)
     );
     private readonly ISymmetricEncryptionProviderFactory _encryptionProviderFactory =
@@ -47,9 +35,6 @@ internal class UserProcessor(
     private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
         nameof(validationProvider)
     );
-    private readonly SecurityOptions _securityOptions = securityOptions
-        .ThrowIfNull(nameof(securityOptions))
-        .Value;
     private readonly ILogger<UserProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<CreateUserResult> CreateUserAsync(CreateUserRequest request)
@@ -139,230 +124,7 @@ internal class UserProcessor(
         await _userRepo.UpdateAsync(userEntity);
     }
 
-    public async Task<UserAuthTokenResult?> GetUserAuthTokenAsync(UserAuthTokenRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
-
-        var userEntity = await _userRepo.GetAsync(
-            u => u.Id == request.UserId,
-            include: q => q.Include(u => u.AsymmetricKeys).Include(u => u.Accounts)
-        );
-
-        if (userEntity == null)
-        {
-            _logger.LogWarning("User with Id {UserId} not found", request.UserId);
-            return null;
-        }
-
-        var signatureKey = userEntity.AsymmetricKeys?.FirstOrDefault(k =>
-            k.KeyUsedFor == KeyUsedFor.Signature
-        );
-        if (signatureKey == null)
-        {
-            _logger.LogWarning(
-                "User with Id {UserId} does not have an asymmetric signature key",
-                request.UserId
-            );
-            return null;
-        }
-
-        var privateKey = _securityProcessor.DecryptWithSystemKey(signatureKey.EncryptedPrivateKey);
-        var credentials = _securityProcessor.GetAsymmetricSigningCredentials(
-            signatureKey.ProviderTypeCode,
-            privateKey,
-            true
-        );
-
-        var now = DateTime.UtcNow;
-        var expires = now.AddSeconds(_securityOptions.AuthTokenTtlSeconds);
-        var jti = Guid.NewGuid().ToString();
-        var accounts = userEntity.Accounts?.Select(a => a.ToModel()).ToList() ?? [];
-
-        // Validate accountId if provided
-        int? signedInAccountId = null;
-        if (request.AccountId.HasValue)
-        {
-            if (accounts.Any(a => a.Id == request.AccountId.Value))
-                signedInAccountId = request.AccountId.Value;
-            else
-                _logger.LogInformation(
-                    "User with Id {UserId} does not have access to account {AccountId}",
-                    request.UserId,
-                    request.AccountId.Value
-                );
-        }
-
-        var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, request.UserId.ToString()),
-            new(JwtRegisteredClaimNames.Jti, jti),
-            new(
-                JwtRegisteredClaimNames.Iat,
-                new DateTimeOffset(now).ToUnixTimeSeconds().ToString(),
-                ClaimValueTypes.Integer64
-            ),
-        };
-
-        foreach (var account in accounts)
-        {
-            claims.Add(new Claim("account_id", account.Id.ToString()));
-        }
-
-        if (signedInAccountId.HasValue)
-            claims.Add(new Claim("signed_in_account_id", signedInAccountId.Value.ToString()));
-
-        var token = new JwtSecurityToken(
-            issuer: typeof(UserProcessor).FullName,
-            audience: "Corely.IAM",
-            claims: claims,
-            expires: expires,
-            signingCredentials: credentials
-        );
-
-        // Track the token server-side
-        var authTokenEntity = new UserAuthTokenEntity
-        {
-            UserId = request.UserId,
-            Jti = jti,
-            IssuedUtc = now,
-            ExpiresUtc = expires,
-        };
-        await _authTokenRepo.CreateAsync(authTokenEntity);
-
-        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-        return new UserAuthTokenResult(tokenString, accounts, signedInAccountId);
-    }
-
-    public async Task<bool> IsUserAuthTokenValidAsync(int userId, string authToken)
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
-
-        if (!tokenHandler.CanReadToken(authToken))
-        {
-            _logger.LogInformation("Auth token is in invalid format");
-            return false;
-        }
-
-        // Extract jti from token before signature validation
-        var jwtToken = tokenHandler.ReadJwtToken(authToken);
-        var jti = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
-        if (string.IsNullOrEmpty(jti))
-        {
-            _logger.LogInformation("Auth token does not contain jti claim");
-            return false;
-        }
-
-        // Check server-side token tracking
-        var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.Jti == jti
-            && t.UserId == userId
-            && t.RevokedUtc == null
-            && t.ExpiresUtc > DateTime.UtcNow
-        );
-
-        if (trackedToken == null)
-        {
-            _logger.LogInformation("Auth token not found, revoked, or expired in server tracking");
-            return false;
-        }
-
-        // Validate signature
-        var signatureKey = await GetUserAsymmetricKeyAsync(userId, KeyUsedFor.Signature);
-        if (signatureKey == null)
-            return false;
-
-        var credentials = _securityProcessor.GetAsymmetricSigningCredentials(
-            signatureKey.ProviderTypeCode,
-            signatureKey.PublicKey,
-            false
-        );
-
-        var validationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = credentials.Key,
-            ValidateIssuer = true,
-            ValidIssuer = typeof(UserProcessor).FullName,
-            ValidateAudience = true,
-            ValidAudience = "Corely.IAM",
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero,
-        };
-
-        try
-        {
-            tokenHandler.ValidateToken(authToken, validationParameters, out _);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogInformation("Token validation failed: {Error}", ex.Message);
-            return false;
-        }
-    }
-
-    public async Task<bool> RevokeUserAuthTokenAsync(int userId, string jti)
-    {
-        var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.Jti == jti
-            && t.UserId == userId
-            && t.RevokedUtc == null
-            && t.ExpiresUtc > DateTime.UtcNow
-        );
-
-        if (trackedToken == null)
-        {
-            _logger.LogInformation(
-                "Auth token with jti {Jti} not found, already revoked, or expired",
-                jti
-            );
-            return false;
-        }
-
-        trackedToken.RevokedUtc = DateTime.UtcNow;
-        await _authTokenRepo.UpdateAsync(trackedToken);
-
-        _logger.LogInformation("Auth token with jti {Jti} revoked for user {UserId}", jti, userId);
-        return true;
-    }
-
-    public async Task RevokeAllUserAuthTokensAsync(int userId)
-    {
-        var activeTokens = await _authTokenRepo.ListAsync(t =>
-            t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > DateTime.UtcNow
-        );
-
-        var now = DateTime.UtcNow;
-        foreach (var token in activeTokens)
-        {
-            token.RevokedUtc = now;
-            await _authTokenRepo.UpdateAsync(token);
-        }
-
-        if (activeTokens.Count > 0)
-        {
-            _logger.LogInformation(
-                "Revoked {Count} auth tokens for user {UserId}",
-                activeTokens.Count,
-                userId
-            );
-        }
-    }
-
     public async Task<string?> GetAsymmetricSignatureVerificationKeyAsync(int userId)
-    {
-        var signatureKey = await GetUserAsymmetricKeyAsync(userId, KeyUsedFor.Signature);
-        if (signatureKey == null)
-        {
-            return null;
-        }
-        return signatureKey.PublicKey;
-    }
-
-    private async Task<UserAsymmetricKeyEntity?> GetUserAsymmetricKeyAsync(
-        int userId,
-        KeyUsedFor keyUse
-    )
     {
         var userEntity = await _userRepo.GetAsync(
             u => u.Id == userId,
@@ -375,7 +137,9 @@ internal class UserProcessor(
             return null;
         }
 
-        var signatureKey = userEntity.AsymmetricKeys?.FirstOrDefault(k => k.KeyUsedFor == keyUse);
+        var signatureKey = userEntity.AsymmetricKeys?.FirstOrDefault(k =>
+            k.KeyUsedFor == Security.Enums.KeyUsedFor.Signature
+        );
         if (signatureKey == null)
         {
             _logger.LogWarning(
@@ -385,7 +149,7 @@ internal class UserProcessor(
             return null;
         }
 
-        return signatureKey;
+        return signatureKey.PublicKey;
     }
 
     public async Task<AssignRolesToUserResult> AssignRolesToUserAsync(

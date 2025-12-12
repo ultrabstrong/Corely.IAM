@@ -3,7 +3,7 @@ using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Exceptions;
-using Corely.IAM.Security.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 
@@ -188,8 +188,10 @@ public class AuthorizationProviderTests
 
     private void SetUserContext(int userId, int accountId)
     {
-        var userContextProvider = _serviceFactory.GetRequiredService<IIamUserContextProvider>();
-        userContextProvider.SetUserContext(new IamUserContext(userId, accountId));
+        var userContextProvider = _serviceFactory.GetRequiredService<IamUserContextProvider>();
+        ((IIamUserContextSetter)userContextProvider).SetUserContext(
+            new IamUserContext(userId, accountId)
+        );
     }
 
     private async Task SetupTestPermissionDataAsync(

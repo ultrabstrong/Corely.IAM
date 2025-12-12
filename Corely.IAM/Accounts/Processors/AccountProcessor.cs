@@ -3,7 +3,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.Security.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Validators;
@@ -16,7 +16,7 @@ internal class AccountProcessor(
     IRepo<AccountEntity> accountRepo,
     IReadonlyRepo<UserEntity> userRepo,
     IUserOwnershipProcessor userOwnershipProcessor,
-    ISecurityProcessor securityService,
+    ISecurityProvider securityService,
     IValidationProvider validationProvider,
     ILogger<AccountProcessor> logger
 ) : IAccountProcessor
@@ -27,7 +27,7 @@ internal class AccountProcessor(
     private readonly IReadonlyRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
     private readonly IUserOwnershipProcessor _userOwnershipProcessor =
         userOwnershipProcessor.ThrowIfNull(nameof(userOwnershipProcessor));
-    private readonly ISecurityProcessor _securityService = securityService.ThrowIfNull(
+    private readonly ISecurityProvider _securityService = securityService.ThrowIfNull(
         nameof(securityService)
     );
     private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(

@@ -26,7 +26,7 @@ internal class RegistrationService(
     IGroupProcessor groupProcessor,
     IRoleProcessor roleProcessor,
     IPermissionProcessor permissionProcessor,
-    IIamUserContextProvider userContextProvider,
+    IIamUserContextSetter userContextSetter,
     IUnitOfWorkProvider uowProvider
 ) : IRegistrationService
 {
@@ -49,8 +49,8 @@ internal class RegistrationService(
     private readonly IPermissionProcessor _permissionProcessor = permissionProcessor.ThrowIfNull(
         nameof(permissionProcessor)
     );
-    private readonly IIamUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
-        nameof(userContextProvider)
+    private readonly IIamUserContextSetter _userContextSetter = userContextSetter.ThrowIfNull(
+        nameof(userContextSetter)
     );
     private readonly IUnitOfWorkProvider _uowProvider = uowProvider.ThrowIfNull(
         nameof(uowProvider)
@@ -83,7 +83,7 @@ internal class RegistrationService(
                 );
             }
 
-            _userContextProvider.SetUserContext(new IamUserContext(userResult.CreatedId, 0));
+            _userContextSetter.SetUserContext(new IamUserContext(userResult.CreatedId, null));
 
             var basicAuthResult = await _basicAuthProcessor.UpsertBasicAuthAsync(
                 new(userResult.CreatedId, request.Password)

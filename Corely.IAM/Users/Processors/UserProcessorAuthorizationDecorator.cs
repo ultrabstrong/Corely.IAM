@@ -2,7 +2,7 @@ using Corely.Common.Extensions;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Exceptions;
-using Corely.IAM.Security.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 
@@ -45,52 +45,8 @@ internal class UserProcessorAuthorizationDecorator(
 
     public async Task UpdateUserAsync(User user)
     {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.USER_RESOURCE_TYPE,
-            AuthAction.Update,
-            user.Id
-        );
+        AuthorizeForOwnUser(user.Id);
         await _inner.UpdateUserAsync(user);
-    }
-
-    public async Task<UserAuthTokenResult?> GetUserAuthTokenAsync(UserAuthTokenRequest request)
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.USER_RESOURCE_TYPE,
-            AuthAction.Read,
-            request.UserId
-        );
-        return await _inner.GetUserAuthTokenAsync(request);
-    }
-
-    public async Task<bool> IsUserAuthTokenValidAsync(int userId, string authToken)
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.USER_RESOURCE_TYPE,
-            AuthAction.Read,
-            userId
-        );
-        return await _inner.IsUserAuthTokenValidAsync(userId, authToken);
-    }
-
-    public async Task<bool> RevokeUserAuthTokenAsync(int userId, string jti)
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.USER_RESOURCE_TYPE,
-            AuthAction.Update,
-            userId
-        );
-        return await _inner.RevokeUserAuthTokenAsync(userId, jti);
-    }
-
-    public async Task RevokeAllUserAuthTokensAsync(int userId)
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.USER_RESOURCE_TYPE,
-            AuthAction.Update,
-            userId
-        );
-        await _inner.RevokeAllUserAuthTokensAsync(userId);
     }
 
     public async Task<string?> GetAsymmetricSignatureVerificationKeyAsync(int userId)

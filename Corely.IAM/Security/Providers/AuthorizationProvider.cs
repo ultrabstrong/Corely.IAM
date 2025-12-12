@@ -5,7 +5,7 @@ using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Exceptions;
 using Corely.IAM.Users.Providers;
 
-namespace Corely.IAM.Security.Processors;
+namespace Corely.IAM.Security.Providers;
 
 internal class AuthorizationProvider(
     IIamUserContextProvider userContextProvider,

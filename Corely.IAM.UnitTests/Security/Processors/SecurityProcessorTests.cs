@@ -1,6 +1,6 @@
 ﻿using Corely.IAM;
 using Corely.IAM.Security.Enums;
-using Corely.IAM.Security.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.UnitTests.ClassData;
 using Corely.Security.Encryption.Factories;
 using Corely.Security.Encryption.Providers;
@@ -15,7 +15,7 @@ public class SecurityProcessorTests
     private readonly ISymmetricEncryptionProvider _symmetricEncryptionProvider;
     private readonly IAsymmetricEncryptionProvider _asymmetricEncryptionProvider;
     private readonly IAsymmetricSignatureProvider _asymmetricSignatureProvider;
-    private readonly SecurityProcessor _securityProcessor;
+    private readonly SecurityProvider _securityProcessor;
 
     public SecurityProcessorTests()
     {

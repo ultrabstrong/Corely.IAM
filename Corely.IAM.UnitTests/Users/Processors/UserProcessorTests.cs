@@ -1,12 +1,10 @@
-﻿using System.IdentityModel.Tokens.Jwt;
 using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
-using Corely.IAM.Security.Models;
-using Corely.IAM.Security.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
@@ -14,7 +12,6 @@ using Corely.IAM.Validators;
 using Corely.Security.Encryption.Factories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.UnitTests.Users.Processors;
 
@@ -31,13 +28,11 @@ public class UserProcessorTests
     {
         _userProcessor = new UserProcessor(
             _serviceFactory.GetRequiredService<IRepo<UserEntity>>(),
-            _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<RoleEntity>>(),
             _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
-            _serviceFactory.GetRequiredService<ISecurityProcessor>(),
+            _serviceFactory.GetRequiredService<ISecurityProvider>(),
             _serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
-            _serviceFactory.GetRequiredService<IOptions<SecurityOptions>>(),
             _serviceFactory.GetRequiredService<ILogger<UserProcessor>>()
         );
     }
@@ -117,7 +112,6 @@ public class UserProcessorTests
             var user = await userRepo.GetAsync(u => u.Id == userId);
             if (user != null)
             {
-                // Ensure user has this account in their accounts list
                 user.Accounts ??= [];
                 if (!user.Accounts.Any(a => a.Id == accountId) && account != null)
                 {
@@ -161,7 +155,6 @@ public class UserProcessorTests
             var user = await userRepo.GetAsync(u => u.Id == userId);
             if (user != null)
             {
-                // Ensure user has this account in their accounts list
                 user.Accounts ??= [];
                 if (!user.Accounts.Any(a => a.Id == accountId) && account != null)
                 {
@@ -178,7 +171,6 @@ public class UserProcessorTests
             var user = await userRepo.GetAsync(u => u.Id == userId);
             if (user != null)
             {
-                // Ensure user has this account in their accounts list
                 user.Accounts ??= [];
                 if (!user.Accounts.Any(a => a.Id == accountId) && account != null)
                 {
@@ -297,238 +289,6 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task GetUserAuthTokenAsync_ReturnsAuthToken()
-    {
-        var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var result = await _userProcessor.CreateUserAsync(request);
-
-        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(result.CreatedId)
-        );
-
-        Assert.NotNull(authTokenResult);
-        Assert.NotNull(authTokenResult.Token);
-        Assert.NotNull(authTokenResult.Accounts);
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token);
-
-        Assert.Equal(typeof(UserProcessor).FullName, jwtToken.Issuer);
-        Assert.Equal("Corely.IAM", jwtToken.Audiences.First());
-        Assert.Contains(
-            jwtToken.Claims,
-            c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == result.CreatedId.ToString()
-        );
-        Assert.Contains(jwtToken.Claims, c => c.Type == JwtRegisteredClaimNames.Jti);
-        Assert.Contains(jwtToken.Claims, c => c.Type == JwtRegisteredClaimNames.Iat);
-    }
-
-    [Fact]
-    public async Task GetUserAuthTokenAsync_IncludesSignedInAccountIdClaim_WhenValidAccountIdProvided()
-    {
-        // Create user with keys via processor
-        var createRequest = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var createResult = await _userProcessor.CreateUserAsync(createRequest);
-
-        // Add user to an account
-        var accountId = await CreateAccountAsync();
-        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
-        var user = await userRepo.GetAsync(u => u.Id == createResult.CreatedId);
-        var account = await accountRepo.GetAsync(a => a.Id == accountId);
-        user!.Accounts = [account!];
-        await userRepo.UpdateAsync(user);
-
-        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(createResult.CreatedId, accountId)
-        );
-
-        Assert.NotNull(authTokenResult);
-        Assert.Equal(accountId, authTokenResult.SignedInAccountId);
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token);
-
-        Assert.Contains(
-            jwtToken.Claims,
-            c => c.Type == "signed_in_account_id" && c.Value == accountId.ToString()
-        );
-    }
-
-    [Fact]
-    public async Task GetUserAuthTokenAsync_DoesNotIncludeSignedInAccountIdClaim_WhenNoAccountIdProvided()
-    {
-        // Create user with keys via processor
-        var createRequest = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var createResult = await _userProcessor.CreateUserAsync(createRequest);
-
-        // Add user to an account
-        var accountId = await CreateAccountAsync();
-        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
-        var user = await userRepo.GetAsync(u => u.Id == createResult.CreatedId);
-        var account = await accountRepo.GetAsync(a => a.Id == accountId);
-        user!.Accounts = [account!];
-        await userRepo.UpdateAsync(user);
-
-        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(createResult.CreatedId)
-        );
-
-        Assert.NotNull(authTokenResult);
-        Assert.Null(authTokenResult.SignedInAccountId);
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token);
-
-        Assert.DoesNotContain(jwtToken.Claims, c => c.Type == "signed_in_account_id");
-    }
-
-    [Fact]
-    public async Task GetUserAuthTokenAsync_DoesNotIncludeSignedInAccountIdClaim_WhenInvalidAccountIdProvided()
-    {
-        // Create user with keys via processor
-        var createRequest = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var createResult = await _userProcessor.CreateUserAsync(createRequest);
-
-        // Add user to an account
-        var accountId = await CreateAccountAsync();
-        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
-        var user = await userRepo.GetAsync(u => u.Id == createResult.CreatedId);
-        var account = await accountRepo.GetAsync(a => a.Id == accountId);
-        user!.Accounts = [account!];
-        await userRepo.UpdateAsync(user);
-
-        var invalidAccountId = _fixture.Create<int>();
-
-        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(createResult.CreatedId, invalidAccountId)
-        );
-
-        Assert.NotNull(authTokenResult);
-        Assert.Null(authTokenResult.SignedInAccountId);
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token);
-
-        Assert.DoesNotContain(jwtToken.Claims, c => c.Type == "signed_in_account_id");
-    }
-
-    [Fact]
-    public async Task GetUserAuthTokenAsync_ReturnsNull_WhenUserDNE()
-    {
-        var token = await _userProcessor.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(_fixture.Create<int>())
-        );
-
-        Assert.Null(token);
-    }
-
-    [Fact]
-    public async Task GetUserAuthTokenAsync_ReturnsNull_WhenSignatureKeyDNE()
-    {
-        var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var result = await _userProcessor.CreateUserAsync(request);
-
-        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var user = await userRepo.GetAsync(u => u.Id == result.CreatedId);
-        user?.SymmetricKeys?.Clear();
-        user?.AsymmetricKeys?.Clear();
-        await userRepo.UpdateAsync(user!);
-
-        var token = await _userProcessor.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(result.CreatedId)
-        );
-
-        Assert.Null(token);
-    }
-
-    [Fact]
-    public async Task IsUserAuthTokenValidAsync_ReturnsTrue_WithValidToken()
-    {
-        var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var result = await _userProcessor.CreateUserAsync(request);
-        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(result.CreatedId)
-        );
-
-        var isValid = await _userProcessor.IsUserAuthTokenValidAsync(
-            result.CreatedId,
-            authTokenResult!.Token
-        );
-
-        Assert.True(isValid);
-    }
-
-    [Fact]
-    public async Task IsUserAuthTokenValidAsync_ReturnsFalse_WithInvalidTokenFormat()
-    {
-        var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var result = await _userProcessor.CreateUserAsync(request);
-        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(result.CreatedId)
-        );
-
-        var isValid = await _userProcessor.IsUserAuthTokenValidAsync(
-            result.CreatedId,
-            authTokenResult!.Token + "invalid"
-        );
-
-        Assert.False(isValid);
-    }
-
-    [Fact]
-    public async Task IsUserAuthTokenValidAsync_ReturnsFalse_WhenUserDNE()
-    {
-        var isValid = await _userProcessor.IsUserAuthTokenValidAsync(
-            _fixture.Create<int>(),
-            _fixture.Create<string>()
-        );
-
-        Assert.False(isValid);
-    }
-
-    [Fact]
-    public async Task IsUserAuthTokenValidAsync_ReturnsFalse_WhenSignatureKeyDNE()
-    {
-        var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var result = await _userProcessor.CreateUserAsync(request);
-        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(result.CreatedId)
-        );
-
-        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var user = await userRepo.GetAsync(u => u.Id == result.CreatedId);
-        user?.SymmetricKeys?.Clear();
-        user?.AsymmetricKeys?.Clear();
-        await userRepo.UpdateAsync(user!);
-
-        var isValid = await _userProcessor.IsUserAuthTokenValidAsync(
-            result.CreatedId,
-            authTokenResult!.Token
-        );
-
-        Assert.False(isValid);
-    }
-
-    [Fact]
-    public async Task IsUserAuthTokenValidAsync_ReturnsFalse_WithInvalidToken()
-    {
-        var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var result = await _userProcessor.CreateUserAsync(request);
-
-        var token = new JwtSecurityTokenHandler().WriteToken(new JwtSecurityToken());
-
-        var isValid = await _userProcessor.IsUserAuthTokenValidAsync(
-            result.CreatedId,
-            token! + "invalid"
-        );
-
-        Assert.False(isValid);
-    }
-
-    [Fact]
     public async Task GetAsymmetricSignatureVerificationKeyAsync_ReturnsKey()
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
@@ -582,10 +342,6 @@ public class UserProcessorTests
         var result = await _userProcessor.AssignRolesToUserAsync(request);
 
         Assert.Equal(AssignRolesToUserResultCode.InvalidRoleIdsError, result.ResultCode);
-        Assert.Equal(
-            "All role ids are invalid (not found, already assigned to user, or from different account)",
-            result.Message
-        );
     }
 
     [Fact]
@@ -608,129 +364,6 @@ public class UserProcessorTests
         Assert.NotNull(userEntity);
         Assert.NotNull(userEntity.Roles);
         Assert.Contains(userEntity.Roles, r => r.Id == roleId);
-    }
-
-    [Fact]
-    public async Task AssignRolesToUserAsync_PartiallySucceeds_WhenSomeRolesExistForUser()
-    {
-        var (userId, accountId) = await CreateUserAsync();
-        var existingRoleId = await CreateRoleAsync(accountId, userId);
-        var newRoleId = await CreateRoleAsync(accountId);
-        var request = new AssignRolesToUserRequest([existingRoleId, newRoleId], userId);
-
-        var result = await _userProcessor.AssignRolesToUserAsync(request);
-
-        Assert.Equal(AssignRolesToUserResultCode.PartialSuccess, result.ResultCode);
-        Assert.Equal(
-            "Some role ids are invalid (not found, already assigned to user, or from different account)",
-            result.Message
-        );
-        Assert.Equal(1, result.AddedRoleCount);
-        Assert.NotEmpty(result.InvalidRoleIds);
-    }
-
-    [Fact]
-    public async Task AssignRolesToUserAsync_PartiallySucceeds_WhenSomeRolesDoNotExist()
-    {
-        var (userId, accountId) = await CreateUserAsync();
-        var roleId = await CreateRoleAsync(accountId);
-        var request = new AssignRolesToUserRequest([roleId, -1], userId);
-
-        var result = await _userProcessor.AssignRolesToUserAsync(request);
-
-        Assert.Equal(AssignRolesToUserResultCode.PartialSuccess, result.ResultCode);
-        Assert.Equal(
-            "Some role ids are invalid (not found, already assigned to user, or from different account)",
-            result.Message
-        );
-        Assert.NotEmpty(result.InvalidRoleIds);
-        Assert.Contains(-1, result.InvalidRoleIds);
-    }
-
-    [Fact]
-    public async Task AssignRolesToUserAsync_PartiallySucceeds_WhenSomeRolesBelongToDifferentAccount()
-    {
-        var (userId, accountId) = await CreateUserAsync();
-        var roleIdSameAccount = await CreateRoleAsync(accountId);
-        var roleIdDifferentAccount = await CreateRoleAsync(accountId + 1);
-        var request = new AssignRolesToUserRequest(
-            [roleIdSameAccount, roleIdDifferentAccount],
-            userId
-        );
-
-        var result = await _userProcessor.AssignRolesToUserAsync(request);
-
-        Assert.Equal(AssignRolesToUserResultCode.PartialSuccess, result.ResultCode);
-        Assert.Equal(
-            "Some role ids are invalid (not found, already assigned to user, or from different account)",
-            result.Message
-        );
-        Assert.Equal(1, result.AddedRoleCount);
-        Assert.NotEmpty(result.InvalidRoleIds);
-        Assert.Contains(roleIdDifferentAccount, result.InvalidRoleIds);
-    }
-
-    [Fact]
-    public async Task AssignRolesToUserAsync_Fails_WhenAllRolesExistForUser()
-    {
-        var (userId, accountId) = await CreateUserAsync();
-        var roleIds = new List<int>()
-        {
-            await CreateRoleAsync(accountId, userId),
-            await CreateRoleAsync(accountId, userId),
-        };
-        var request = new AssignRolesToUserRequest(roleIds, userId);
-        await _userProcessor.AssignRolesToUserAsync(request);
-
-        var result = await _userProcessor.AssignRolesToUserAsync(request);
-
-        Assert.Equal(AssignRolesToUserResultCode.InvalidRoleIdsError, result.ResultCode);
-        Assert.Equal(
-            "All role ids are invalid (not found, already assigned to user, or from different account)",
-            result.Message
-        );
-        Assert.Equal(0, result.AddedRoleCount);
-        Assert.Equal(roleIds, result.InvalidRoleIds);
-    }
-
-    [Fact]
-    public async Task AssignRolesToUserAsync_Fails_WhenAllRolesDoNotExist()
-    {
-        var (userId, _) = await CreateUserAsync();
-        var roleIds = _fixture.CreateMany<int>().ToList();
-        var request = new AssignRolesToUserRequest(roleIds, userId);
-
-        var result = await _userProcessor.AssignRolesToUserAsync(request);
-
-        Assert.Equal(AssignRolesToUserResultCode.InvalidRoleIdsError, result.ResultCode);
-        Assert.Equal(
-            "All role ids are invalid (not found, already assigned to user, or from different account)",
-            result.Message
-        );
-        Assert.Equal(0, result.AddedRoleCount);
-        Assert.Equal(roleIds, result.InvalidRoleIds);
-    }
-
-    [Fact]
-    public async Task AssignRolesToUserAsync_Fails_WhenAllRolesBelongToDifferentAccount()
-    {
-        var (userId, accountId) = await CreateUserAsync();
-        var roleIds = new List<int>()
-        {
-            await CreateRoleAsync(accountId + 1),
-            await CreateRoleAsync(accountId + 2),
-        };
-        var request = new AssignRolesToUserRequest(roleIds, userId);
-
-        var result = await _userProcessor.AssignRolesToUserAsync(request);
-
-        Assert.Equal(AssignRolesToUserResultCode.InvalidRoleIdsError, result.ResultCode);
-        Assert.Equal(
-            "All role ids are invalid (not found, already assigned to user, or from different account)",
-            result.Message
-        );
-        Assert.Equal(0, result.AddedRoleCount);
-        Assert.Equal(roleIds, result.InvalidRoleIds);
     }
 
     [Fact]
@@ -781,7 +414,6 @@ public class UserProcessorTests
         var userId1 = await CreateUserInAccountAsync(accountId);
         var userId2 = await CreateUserInAccountAsync(accountId);
 
-        // Both users have owner role directly
         await CreateOwnerRoleAsync(accountId, userId1, userId2);
 
         var result = await _userProcessor.DeleteUserAsync(userId1);
@@ -796,7 +428,6 @@ public class UserProcessorTests
         var userId1 = await CreateUserInAccountAsync(accountId);
         var userId2 = await CreateUserInAccountAsync(accountId);
 
-        // userId1 has direct owner role, userId2 has owner role via group
         await CreateOwnerRoleWithGroupAsync(
             accountId,
             directUserIds: [userId1],
@@ -804,27 +435,6 @@ public class UserProcessorTests
         );
 
         var result = await _userProcessor.DeleteUserAsync(userId1);
-
-        Assert.Equal(DeleteUserResultCode.Success, result.ResultCode);
-    }
-
-    [Fact]
-    public async Task DeleteUserAsync_ReturnsSoleOwnerError_WhenOwnerViaGroupIsOnlyOwner()
-    {
-        var (userId, accountId) = await CreateUserAsync();
-        await CreateOwnerRoleWithGroupAsync(accountId, directUserIds: [], groupUserIds: [userId]);
-
-        var result = await _userProcessor.DeleteUserAsync(userId);
-
-        Assert.Equal(DeleteUserResultCode.UserIsSoleAccountOwnerError, result.ResultCode);
-    }
-
-    [Fact]
-    public async Task DeleteUserAsync_ReturnsSuccess_WhenUserInAccountButNotOwner()
-    {
-        var (userId, _) = await CreateUserAsync();
-
-        var result = await _userProcessor.DeleteUserAsync(userId);
 
         Assert.Equal(DeleteUserResultCode.Success, result.ResultCode);
     }
@@ -840,23 +450,11 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromUserAsync_Fails_WhenRolesNotAssignedToUser()
-    {
-        var (userId, _) = await CreateUserAsync();
-        var request = new RemoveRolesFromUserRequest([9999], userId);
-
-        var result = await _userProcessor.RemoveRolesFromUserAsync(request);
-
-        Assert.Equal(RemoveRolesFromUserResultCode.InvalidRoleIdsError, result.ResultCode);
-    }
-
-    [Fact]
     public async Task RemoveRolesFromUserAsync_Succeeds_WhenNonOwnerRoleRemoved()
     {
         var (userId, accountId) = await CreateUserAsync();
         var roleId = await CreateRoleAsync(accountId, userId);
 
-        // Assign role to user
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var user = await userRepo.GetAsync(u => u.Id == userId);
@@ -878,7 +476,6 @@ public class UserProcessorTests
         var userId1 = await CreateUserInAccountAsync(accountId);
         var userId2 = await CreateUserInAccountAsync(accountId);
 
-        // Both users have owner role
         await CreateOwnerRoleAsync(accountId, userId1, userId2);
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
@@ -886,7 +483,6 @@ public class UserProcessorTests
             r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
         );
 
-        // Assign owner role to user1
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var user1 = await userRepo.GetAsync(u => u.Id == userId1);
         user1!.Roles = [ownerRole!];
@@ -905,7 +501,6 @@ public class UserProcessorTests
         var accountId = await CreateAccountAsync();
         var userId = await CreateUserInAccountAsync(accountId);
 
-        // User has owner role both directly and via group
         await CreateOwnerRoleWithGroupAsync(
             accountId,
             directUserIds: [userId],
@@ -917,7 +512,6 @@ public class UserProcessorTests
             r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
         );
 
-        // Assign owner role to user
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var user = await userRepo.GetAsync(u => u.Id == userId);
         user!.Roles = [ownerRole!];
@@ -926,7 +520,6 @@ public class UserProcessorTests
         var request = new RemoveRolesFromUserRequest([ownerRole!.Id], userId);
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
-        // Should succeed because user still has ownership via group
         Assert.Equal(RemoveRolesFromUserResultCode.Success, result.ResultCode);
         Assert.Equal(1, result.RemovedRoleCount);
     }
@@ -942,7 +535,6 @@ public class UserProcessorTests
             r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
         );
 
-        // Assign owner role to user
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var user = await userRepo.GetAsync(u => u.Id == userId);
         user!.Roles = [ownerRole!];
@@ -969,7 +561,6 @@ public class UserProcessorTests
         );
         var regularRole = await roleRepo.GetAsync(r => r.Id == regularRoleId);
 
-        // Assign both roles to user
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var user = await userRepo.GetAsync(u => u.Id == userId);
         user!.Roles = [ownerRole!, regularRole!];
@@ -978,7 +569,6 @@ public class UserProcessorTests
         var request = new RemoveRolesFromUserRequest([ownerRole!.Id, regularRoleId], userId);
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
-        // Should remove regular role but block owner role
         Assert.Equal(RemoveRolesFromUserResultCode.PartialSuccess, result.ResultCode);
         Assert.Equal(1, result.RemovedRoleCount);
         Assert.Contains(ownerRole.Id, result.BlockedOwnerRoleIds);

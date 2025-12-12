@@ -7,7 +7,7 @@ using Corely.IAM.Groups.Processors;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Models;
-using Corely.IAM.Security.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Validators;
@@ -61,7 +61,7 @@ public abstract class ServiceFactoryGenericTests
             [typeof(IPermissionProcessor)],
             [typeof(IRegistrationService)],
             [typeof(IDeregistrationService)],
-            [typeof(ISecurityProcessor)],
+            [typeof(ISecurityProvider)],
             // Repos are registered as generics. Only need to test each one once.
             [typeof(IReadonlyRepo<AccountEntity>)],
             [typeof(IRepo<AccountEntity>)],

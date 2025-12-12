@@ -1,5 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.BasicAuths.Models;
+using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Exceptions;
 using Corely.IAM.Users.Providers;
 
@@ -17,26 +18,25 @@ internal class BasicAuthProcessorAuthorizationDecorator(
 
     public async Task<UpsertBasicAuthResult> UpsertBasicAuthAsync(UpsertBasicAuthRequest request)
     {
-        AuthorizeForOwnUser(request.UserId, "Update");
+        AuthorizeForOwnUser(request.UserId, AuthAction.Update);
         return await _inner.UpsertBasicAuthAsync(request);
     }
 
-    public async Task<bool> VerifyBasicAuthAsync(VerifyBasicAuthRequest request)
+    public Task<bool> VerifyBasicAuthAsync(VerifyBasicAuthRequest request)
     {
-        AuthorizeForOwnUser(request.UserId, "Read");
-        return await _inner.VerifyBasicAuthAsync(request);
+        // No authorization required - this is the authentication mechanism itself.
+        // Users must be able to verify credentials before they have an authenticated context.
+        return _inner.VerifyBasicAuthAsync(request);
     }
 
-    private void AuthorizeForOwnUser(int requestUserId, string action)
+    private void AuthorizeForOwnUser(int requestUserId, AuthAction action)
     {
         var userContext =
             _userContextProvider.GetUserContext() ?? throw new UserContextNotSetException();
 
-        // Allow if user is operating on their own credentials
         if (userContext.UserId == requestUserId)
             return;
 
-        // TODO: Future enhancement - allow admins to manage other users' passwords
-        throw new AuthorizationException("basicauth", action, requestUserId);
+        throw new AuthorizationException("basicauth", action.ToString(), requestUserId);
     }
 }

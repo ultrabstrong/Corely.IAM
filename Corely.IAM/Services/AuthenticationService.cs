@@ -1,9 +1,11 @@
 ﻿using Corely.Common.Extensions;
+using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Providers;
+using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
-using Corely.IAM.Users.Processors;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -11,15 +13,16 @@ namespace Corely.IAM.Services;
 
 internal class AuthenticationService(
     ILogger<AuthenticationService> logger,
-    IUserProcessor userProcessor,
+    IRepo<UserEntity> userRepo,
+    IAuthenticationProvider authenticationProvider,
     IBasicAuthProcessor basicAuthProcessor,
     IOptions<SecurityOptions> securityOptions
 ) : IAuthenticationService
 {
     private readonly ILogger<AuthenticationService> _logger = logger.ThrowIfNull(nameof(logger));
-    private readonly IUserProcessor _userProcessor = userProcessor.ThrowIfNull(
-        nameof(userProcessor)
-    );
+    private readonly IRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
+    private readonly IAuthenticationProvider _authenticationProvider =
+        authenticationProvider.ThrowIfNull(nameof(authenticationProvider));
     private readonly IBasicAuthProcessor _basicAuthProcessor = basicAuthProcessor.ThrowIfNull(
         nameof(basicAuthProcessor)
     );
@@ -33,41 +36,41 @@ internal class AuthenticationService(
 
         _logger.LogDebug("Signing in user {Username}", request.Username);
 
-        var user = await _userProcessor.GetUserAsync(request.Username);
-        if (user == null)
+        var userEntity = await _userRepo.GetAsync(u => u.Username == request.Username);
+        if (userEntity == null)
         {
             _logger.LogDebug("User {Username} not found", request.Username);
             return new SignInResult(
                 SignInResultCode.UserNotFoundError,
                 "User not found",
-                string.Empty,
+                null,
                 [],
                 null
             );
         }
 
-        if (user.FailedLoginsSinceLastSuccess >= _securityOptions.MaxLoginAttempts)
+        if (userEntity.FailedLoginsSinceLastSuccess >= _securityOptions.MaxLoginAttempts)
         {
             _logger.LogDebug("User {Username} is locked out", request.Username);
             return new SignInResult(
                 SignInResultCode.UserLockedError,
                 "User is locked out",
-                string.Empty,
+                null,
                 [],
                 null
             );
         }
 
         var isValidPassword = await _basicAuthProcessor.VerifyBasicAuthAsync(
-            new(user.Id, request.Password)
+            new(userEntity.Id, request.Password)
         );
         if (!isValidPassword)
         {
-            user.FailedLoginsSinceLastSuccess++;
-            user.TotalFailedLogins++;
-            user.LastFailedLoginUtc = DateTime.UtcNow;
+            userEntity.FailedLoginsSinceLastSuccess++;
+            userEntity.TotalFailedLogins++;
+            userEntity.LastFailedLoginUtc = DateTime.UtcNow;
 
-            await _userProcessor.UpdateUserAsync(user);
+            await _userRepo.UpdateAsync(userEntity);
 
             _logger.LogDebug(
                 "User {Username} failed to sign in (invalid password)",
@@ -77,28 +80,63 @@ internal class AuthenticationService(
             return new SignInResult(
                 SignInResultCode.PasswordMismatchError,
                 "Invalid password",
-                string.Empty,
+                null,
                 [],
                 null
             );
         }
-        user.TotalSuccessfulLogins++;
-        user.FailedLoginsSinceLastSuccess = 0;
-        user.LastSuccessfulLoginUtc = DateTime.UtcNow;
-        await _userProcessor.UpdateUserAsync(user);
 
-        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(user.Id, request.AccountId)
+        userEntity.TotalSuccessfulLogins++;
+        userEntity.FailedLoginsSinceLastSuccess = 0;
+        userEntity.LastSuccessfulLoginUtc = DateTime.UtcNow;
+        await _userRepo.UpdateAsync(userEntity);
+
+        var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(userEntity.Id, request.AccountId)
         );
+
+        if (authTokenResult.ResultCode != UserAuthTokenResultCode.Success)
+        {
+            var (signInResultCode, message) = authTokenResult.ResultCode switch
+            {
+                UserAuthTokenResultCode.UserNotFound => (
+                    SignInResultCode.UserNotFoundError,
+                    "User not found"
+                ),
+                UserAuthTokenResultCode.SignatureKeyNotFound => (
+                    SignInResultCode.SignatureKeyNotFoundError,
+                    "User signature key not found"
+                ),
+                UserAuthTokenResultCode.AccountNotFound => (
+                    SignInResultCode.AccountNotFoundError,
+                    $"Account {request.AccountId} not found for user"
+                ),
+                _ => (SignInResultCode.UserNotFoundError, "Unknown error creating auth token"),
+            };
+
+            _logger.LogWarning(
+                "Failed to create auth token for user {Username}: {ResultCode}",
+                request.Username,
+                authTokenResult.ResultCode
+            );
+
+            return new SignInResult(
+                signInResultCode,
+                message,
+                null,
+                authTokenResult.Accounts,
+                null
+            );
+        }
 
         _logger.LogDebug("User {Username} signed in", request.Username);
 
         return new SignInResult(
             SignInResultCode.Success,
-            string.Empty,
-            authTokenResult?.Token,
-            authTokenResult?.Accounts ?? [],
-            authTokenResult?.SignedInAccountId
+            null,
+            authTokenResult.Token,
+            authTokenResult.Accounts,
+            authTokenResult.SignedInAccountId
         );
     }
 
@@ -106,19 +144,21 @@ internal class AuthenticationService(
     {
         ArgumentNullException.ThrowIfNull(authToken, nameof(authToken));
         _logger.LogDebug("Validating auth token for user {UserId}", userId);
-        return await _userProcessor.IsUserAuthTokenValidAsync(userId, authToken);
+        var result = await _authenticationProvider.ValidateUserAuthTokenAsync(authToken);
+        return result.ResultCode == UserAuthTokenValidationResultCode.Success
+            && result.UserId == userId;
     }
 
     public async Task<bool> SignOutAsync(int userId, string jti)
     {
         ArgumentNullException.ThrowIfNull(jti, nameof(jti));
         _logger.LogDebug("Signing out user {UserId} with jti {Jti}", userId, jti);
-        return await _userProcessor.RevokeUserAuthTokenAsync(userId, jti);
+        return await _authenticationProvider.RevokeUserAuthTokenAsync(userId, jti);
     }
 
     public async Task SignOutAllAsync(int userId)
     {
         _logger.LogDebug("Signing out all sessions for user {UserId}", userId);
-        await _userProcessor.RevokeAllUserAuthTokensAsync(userId);
+        await _authenticationProvider.RevokeAllUserAuthTokensAsync(userId);
     }
 }

@@ -3,7 +3,7 @@ using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Exceptions;
-using Corely.IAM.Security.Processors;
+using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.UnitTests.Accounts.Processors;
 

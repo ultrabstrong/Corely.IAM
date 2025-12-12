@@ -2,4 +2,17 @@ using Corely.IAM.Accounts.Models;
 
 namespace Corely.IAM.Users.Models;
 
-internal record UserAuthTokenResult(string Token, List<Account> Accounts, int? SignedInAccountId);
+public enum UserAuthTokenResultCode
+{
+    Success,
+    UserNotFound,
+    SignatureKeyNotFound,
+    AccountNotFound,
+}
+
+public record UserAuthTokenResult(
+    UserAuthTokenResultCode ResultCode,
+    string? Token,
+    List<Account> Accounts,
+    int? SignedInAccountId
+);

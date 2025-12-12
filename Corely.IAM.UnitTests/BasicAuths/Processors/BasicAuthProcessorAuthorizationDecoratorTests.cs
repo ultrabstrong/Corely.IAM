@@ -77,51 +77,34 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task VerifyBasicAuthAsync_ThrowsUserContextNotSetException_WhenNoUserContext()
+    public async Task VerifyBasicAuthAsync_BypassesAuthorization_AndDelegatesToInner()
     {
+        // VerifyBasicAuthAsync should not require authorization because it's the
+        // authentication mechanism itself - users must be able to verify credentials
+        // before they have an authenticated context.
         var request = new VerifyBasicAuthRequest(5, "password");
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((IamUserContext?)null);
-
-        await Assert.ThrowsAsync<UserContextNotSetException>(() =>
-            _decorator.VerifyBasicAuthAsync(request)
-        );
-
-        _mockInnerProcessor.Verify(
-            x => x.VerifyBasicAuthAsync(It.IsAny<VerifyBasicAuthRequest>()),
-            Times.Never
-        );
-    }
-
-    [Fact]
-    public async Task VerifyBasicAuthAsync_Succeeds_WhenUserVerifiesOwnCredentials()
-    {
-        var userId = 5;
-        var request = new VerifyBasicAuthRequest(userId, "password");
-        _mockUserContextProvider
-            .Setup(x => x.GetUserContext())
-            .Returns(new IamUserContext(userId, 1));
         _mockInnerProcessor.Setup(x => x.VerifyBasicAuthAsync(request)).ReturnsAsync(true);
 
         var result = await _decorator.VerifyBasicAuthAsync(request);
 
         Assert.True(result);
         _mockInnerProcessor.Verify(x => x.VerifyBasicAuthAsync(request), Times.Once);
+        // Verify no user context was checked
+        _mockUserContextProvider.Verify(x => x.GetUserContext(), Times.Never);
     }
 
     [Fact]
-    public async Task VerifyBasicAuthAsync_ThrowsAuthorizationException_WhenUserVerifiesOtherUser()
+    public async Task VerifyBasicAuthAsync_WorksWithoutUserContext()
     {
+        // Explicitly verify that VerifyBasicAuthAsync works even when no user context is set
         var request = new VerifyBasicAuthRequest(5, "password");
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new IamUserContext(99, 1)); // Different user
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((IamUserContext?)null);
+        _mockInnerProcessor.Setup(x => x.VerifyBasicAuthAsync(request)).ReturnsAsync(true);
 
-        await Assert.ThrowsAsync<AuthorizationException>(() =>
-            _decorator.VerifyBasicAuthAsync(request)
-        );
+        var result = await _decorator.VerifyBasicAuthAsync(request);
 
-        _mockInnerProcessor.Verify(
-            x => x.VerifyBasicAuthAsync(It.IsAny<VerifyBasicAuthRequest>()),
-            Times.Never
-        );
+        Assert.True(result);
+        _mockInnerProcessor.Verify(x => x.VerifyBasicAuthAsync(request), Times.Once);
     }
 
     [Fact]

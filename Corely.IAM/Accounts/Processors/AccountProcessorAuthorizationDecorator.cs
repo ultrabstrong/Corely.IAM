@@ -2,7 +2,7 @@ using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
-using Corely.IAM.Security.Processors;
+using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.Accounts.Processors;
 

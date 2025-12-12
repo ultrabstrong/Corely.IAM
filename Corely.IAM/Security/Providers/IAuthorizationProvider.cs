@@ -1,6 +1,6 @@
 using Corely.IAM.Security.Constants;
 
-namespace Corely.IAM.Security.Processors;
+namespace Corely.IAM.Security.Providers;
 
 public interface IAuthorizationProvider
 {

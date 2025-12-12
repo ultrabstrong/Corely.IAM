@@ -4,7 +4,7 @@ using Corely.IAM.Groups.Processors;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Models;
-using Corely.IAM.Security.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
@@ -66,7 +66,7 @@ public abstract class ServiceFactoryBase(
             _ => new HashProviderFactory(HashConstants.SALTED_SHA256_CODE)
         );
 
-        ServiceCollection.AddSingleton<ISecurityProcessor, SecurityProcessor>();
+        ServiceCollection.AddSingleton<ISecurityProvider, SecurityProvider>();
         ServiceCollection.AddScoped<IPasswordValidationProvider, PasswordValidationProvider>();
 
         ServiceCollection.AddScoped(serviceProvider => GetSecurityConfigurationProvider());
@@ -77,7 +77,14 @@ public abstract class ServiceFactoryBase(
             Configuration.GetSection(PasswordValidationOptions.NAME)
         );
 
-        ServiceCollection.AddScoped<IIamUserContextProvider, IamUserContextProvider>();
+        ServiceCollection.AddScoped<IAuthenticationProvider, AuthenticationProvider>();
+        ServiceCollection.AddScoped<IamUserContextProvider>();
+        ServiceCollection.AddScoped<IIamUserContextProvider>(sp =>
+            sp.GetRequiredService<IamUserContextProvider>()
+        );
+        ServiceCollection.AddScoped<IIamUserContextSetter>(sp =>
+            sp.GetRequiredService<IamUserContextProvider>()
+        );
         ServiceCollection.AddScoped<IAuthorizationProvider, AuthorizationProvider>();
 
         ServiceCollection.AddScoped<IRegistrationService, RegistrationService>();

@@ -46,37 +46,6 @@ internal class UserProcessorLoggingDecorator(
             () => _inner.UpdateUserAsync(user)
         );
 
-    public async Task<UserAuthTokenResult?> GetUserAuthTokenAsync(UserAuthTokenRequest request) =>
-        await _logger.ExecuteWithLogging(
-            nameof(UserProcessor),
-            request,
-            () => _inner.GetUserAuthTokenAsync(request),
-            logResult: false
-        );
-
-    public async Task<bool> IsUserAuthTokenValidAsync(int userId, string authToken) =>
-        await _logger.ExecuteWithLogging(
-            nameof(UserProcessor),
-            new { userId, authToken },
-            () => _inner.IsUserAuthTokenValidAsync(userId, authToken),
-            logResult: true
-        );
-
-    public async Task<bool> RevokeUserAuthTokenAsync(int userId, string jti) =>
-        await _logger.ExecuteWithLogging(
-            nameof(UserProcessor),
-            new { userId, jti },
-            () => _inner.RevokeUserAuthTokenAsync(userId, jti),
-            logResult: true
-        );
-
-    public async Task RevokeAllUserAuthTokensAsync(int userId) =>
-        await _logger.ExecuteWithLogging(
-            nameof(UserProcessor),
-            userId,
-            () => _inner.RevokeAllUserAuthTokensAsync(userId)
-        );
-
     public async Task<string?> GetAsymmetricSignatureVerificationKeyAsync(int userId) =>
         await _logger.ExecuteWithLogging(
             nameof(UserProcessor),

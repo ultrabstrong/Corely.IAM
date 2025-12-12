@@ -271,10 +271,10 @@ internal class AuthenticationProvider(
         );
     }
 
-    public async Task<bool> RevokeUserAuthTokenAsync(int userId, string jti)
+    public async Task<bool> RevokeUserAuthTokenAsync(int userId, string tokenId)
     {
         var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.Jti == jti
+            t.Jti == tokenId
             && t.UserId == userId
             && t.RevokedUtc == null
             && t.ExpiresUtc > DateTime.UtcNow
@@ -283,8 +283,8 @@ internal class AuthenticationProvider(
         if (trackedToken == null)
         {
             _logger.LogInformation(
-                "Auth token with jti {Jti} not found, already revoked, or expired",
-                jti
+                "Auth token {TokenId} not found, already revoked, or expired",
+                tokenId
             );
             return false;
         }
@@ -292,7 +292,7 @@ internal class AuthenticationProvider(
         trackedToken.RevokedUtc = DateTime.UtcNow;
         await _authTokenRepo.UpdateAsync(trackedToken);
 
-        _logger.LogInformation("Auth token with jti {Jti} revoked for user {UserId}", jti, userId);
+        _logger.LogInformation("Auth token {TokenId} revoked for user {UserId}", tokenId, userId);
         return true;
     }
 

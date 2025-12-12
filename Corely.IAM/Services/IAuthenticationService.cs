@@ -5,7 +5,6 @@ namespace Corely.IAM.Services;
 public interface IAuthenticationService
 {
     Task<SignInResult> SignInAsync(SignInRequest request);
-    Task<bool> ValidateAuthTokenAsync(int userId, string authToken);
-    Task<bool> SignOutAsync(int userId, string jti);
+    Task<bool> SignOutAsync(int userId, string tokenId);
     Task SignOutAllAsync(int userId);
 }

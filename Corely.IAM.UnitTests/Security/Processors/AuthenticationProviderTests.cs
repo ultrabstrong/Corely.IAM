@@ -328,9 +328,9 @@ public class AuthenticationProviderTests
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token!);
-        var jti = jwtToken.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+        var tokenId = jwtToken.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
 
-        await _authenticationProvider.RevokeUserAuthTokenAsync(userId, jti);
+        await _authenticationProvider.RevokeUserAuthTokenAsync(userId, tokenId);
 
         var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(
             authTokenResult.Token!
@@ -353,9 +353,9 @@ public class AuthenticationProviderTests
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token!);
-        var jti = jwtToken.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+        var tokenId = jwtToken.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
 
-        var result = await _authenticationProvider.RevokeUserAuthTokenAsync(userId, jti);
+        var result = await _authenticationProvider.RevokeUserAuthTokenAsync(userId, tokenId);
 
         Assert.True(result);
     }
@@ -365,7 +365,7 @@ public class AuthenticationProviderTests
     {
         var result = await _authenticationProvider.RevokeUserAuthTokenAsync(
             9999,
-            "non-existent-jti"
+            "non-existent-token-id"
         );
 
         Assert.False(result);

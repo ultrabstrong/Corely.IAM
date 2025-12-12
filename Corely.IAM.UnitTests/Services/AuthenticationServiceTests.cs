@@ -208,97 +208,25 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task ValidateAuthTokenAsync_ReturnsTrue_WhenTokenIsValidAndUserIdMatches()
-    {
-        var userId = _fixture.Create<int>();
-        var authToken = _fixture.Create<string>();
-        var validationResult = new UserAuthTokenValidationResult(
-            UserAuthTokenValidationResultCode.Success,
-            userId,
-            null
-        );
-        _authenticationProviderMock
-            .Setup(m => m.ValidateUserAuthTokenAsync(authToken))
-            .ReturnsAsync(validationResult);
-
-        var result = await _authenticationService.ValidateAuthTokenAsync(userId, authToken);
-
-        Assert.True(result);
-        _authenticationProviderMock.Verify(
-            m => m.ValidateUserAuthTokenAsync(authToken),
-            Times.Once
-        );
-    }
-
-    [Fact]
-    public async Task ValidateAuthTokenAsync_ReturnsFalse_WhenTokenIsInvalid()
-    {
-        var userId = _fixture.Create<int>();
-        var authToken = _fixture.Create<string>();
-        var validationResult = new UserAuthTokenValidationResult(
-            UserAuthTokenValidationResultCode.TokenValidationFailed,
-            null,
-            null
-        );
-        _authenticationProviderMock
-            .Setup(m => m.ValidateUserAuthTokenAsync(authToken))
-            .ReturnsAsync(validationResult);
-
-        var result = await _authenticationService.ValidateAuthTokenAsync(userId, authToken);
-
-        Assert.False(result);
-    }
-
-    [Fact]
-    public async Task ValidateAuthTokenAsync_ReturnsFalse_WhenUserIdDoesNotMatch()
-    {
-        var userId = _fixture.Create<int>();
-        var authToken = _fixture.Create<string>();
-        var validationResult = new UserAuthTokenValidationResult(
-            UserAuthTokenValidationResultCode.Success,
-            userId + 1,
-            null
-        );
-        _authenticationProviderMock
-            .Setup(m => m.ValidateUserAuthTokenAsync(authToken))
-            .ReturnsAsync(validationResult);
-
-        var result = await _authenticationService.ValidateAuthTokenAsync(userId, authToken);
-
-        Assert.False(result);
-    }
-
-    [Fact]
-    public async Task ValidateAuthTokenAsync_Throws_WithNullAuthToken()
-    {
-        var ex = await Record.ExceptionAsync(() =>
-            _authenticationService.ValidateAuthTokenAsync(1, null!)
-        );
-
-        Assert.NotNull(ex);
-        Assert.IsType<ArgumentNullException>(ex);
-    }
-
-    [Fact]
     public async Task SignOutAsync_CallsAuthenticationProvider()
     {
         var userId = _fixture.Create<int>();
-        var jti = _fixture.Create<string>();
+        var tokenId = _fixture.Create<string>();
         _authenticationProviderMock
-            .Setup(m => m.RevokeUserAuthTokenAsync(userId, jti))
+            .Setup(m => m.RevokeUserAuthTokenAsync(userId, tokenId))
             .ReturnsAsync(true);
 
-        var result = await _authenticationService.SignOutAsync(userId, jti);
+        var result = await _authenticationService.SignOutAsync(userId, tokenId);
 
         Assert.True(result);
         _authenticationProviderMock.Verify(
-            m => m.RevokeUserAuthTokenAsync(userId, jti),
+            m => m.RevokeUserAuthTokenAsync(userId, tokenId),
             Times.Once
         );
     }
 
     [Fact]
-    public async Task SignOutAsync_Throws_WithNullJti()
+    public async Task SignOutAsync_Throws_WithNullTokenId()
     {
         var ex = await Record.ExceptionAsync(() => _authenticationService.SignOutAsync(1, null!));
 

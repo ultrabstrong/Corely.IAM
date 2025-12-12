@@ -140,20 +140,11 @@ internal class AuthenticationService(
         );
     }
 
-    public async Task<bool> ValidateAuthTokenAsync(int userId, string authToken)
+    public async Task<bool> SignOutAsync(int userId, string tokenId)
     {
-        ArgumentNullException.ThrowIfNull(authToken, nameof(authToken));
-        _logger.LogDebug("Validating auth token for user {UserId}", userId);
-        var result = await _authenticationProvider.ValidateUserAuthTokenAsync(authToken);
-        return result.ResultCode == UserAuthTokenValidationResultCode.Success
-            && result.UserId == userId;
-    }
-
-    public async Task<bool> SignOutAsync(int userId, string jti)
-    {
-        ArgumentNullException.ThrowIfNull(jti, nameof(jti));
-        _logger.LogDebug("Signing out user {UserId} with jti {Jti}", userId, jti);
-        return await _authenticationProvider.RevokeUserAuthTokenAsync(userId, jti);
+        ArgumentNullException.ThrowIfNull(tokenId, nameof(tokenId));
+        _logger.LogDebug("Signing out user {UserId} with token {TokenId}", userId, tokenId);
+        return await _authenticationProvider.RevokeUserAuthTokenAsync(userId, tokenId);
     }
 
     public async Task SignOutAllAsync(int userId)

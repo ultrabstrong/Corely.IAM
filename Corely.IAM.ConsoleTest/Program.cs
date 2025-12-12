@@ -174,15 +174,10 @@ internal class Program
             var signInRequest = new SignInRequest("user1", "admin");
             var signInResult = await authenticationService.SignInAsync(signInRequest);
 
-            var isValid = await authenticationService.ValidateAuthTokenAsync(
-                registerUserResult.CreatedUserId,
-                signInResult.AuthToken!
-            );
-
-            var jti = new JwtSecurityTokenHandler().ReadJwtToken(signInResult.AuthToken).Id;
+            var tokenId = new JwtSecurityTokenHandler().ReadJwtToken(signInResult.AuthToken).Id;
             var signedOut = await authenticationService.SignOutAsync(
                 registerUserResult.CreatedUserId,
-                jti
+                tokenId
             );
 
             await authenticationService.SignOutAllAsync(registerUserResult.CreatedUserId);

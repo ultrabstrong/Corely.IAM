@@ -324,6 +324,98 @@ public class UserProcessorTests
     }
 
     [Fact]
+    public async Task GetUserAuthTokenAsync_IncludesSignedInAccountIdClaim_WhenValidAccountIdProvided()
+    {
+        // Create user with keys via processor
+        var createRequest = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
+        var createResult = await _userProcessor.CreateUserAsync(createRequest);
+
+        // Add user to an account
+        var accountId = await CreateAccountAsync();
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var user = await userRepo.GetAsync(u => u.Id == createResult.CreatedId);
+        var account = await accountRepo.GetAsync(a => a.Id == accountId);
+        user!.Accounts = [account!];
+        await userRepo.UpdateAsync(user);
+
+        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(createResult.CreatedId, accountId)
+        );
+
+        Assert.NotNull(authTokenResult);
+        Assert.Equal(accountId, authTokenResult.SignedInAccountId);
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token);
+
+        Assert.Contains(
+            jwtToken.Claims,
+            c => c.Type == "signed_in_account_id" && c.Value == accountId.ToString()
+        );
+    }
+
+    [Fact]
+    public async Task GetUserAuthTokenAsync_DoesNotIncludeSignedInAccountIdClaim_WhenNoAccountIdProvided()
+    {
+        // Create user with keys via processor
+        var createRequest = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
+        var createResult = await _userProcessor.CreateUserAsync(createRequest);
+
+        // Add user to an account
+        var accountId = await CreateAccountAsync();
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var user = await userRepo.GetAsync(u => u.Id == createResult.CreatedId);
+        var account = await accountRepo.GetAsync(a => a.Id == accountId);
+        user!.Accounts = [account!];
+        await userRepo.UpdateAsync(user);
+
+        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(createResult.CreatedId)
+        );
+
+        Assert.NotNull(authTokenResult);
+        Assert.Null(authTokenResult.SignedInAccountId);
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token);
+
+        Assert.DoesNotContain(jwtToken.Claims, c => c.Type == "signed_in_account_id");
+    }
+
+    [Fact]
+    public async Task GetUserAuthTokenAsync_DoesNotIncludeSignedInAccountIdClaim_WhenInvalidAccountIdProvided()
+    {
+        // Create user with keys via processor
+        var createRequest = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
+        var createResult = await _userProcessor.CreateUserAsync(createRequest);
+
+        // Add user to an account
+        var accountId = await CreateAccountAsync();
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var user = await userRepo.GetAsync(u => u.Id == createResult.CreatedId);
+        var account = await accountRepo.GetAsync(a => a.Id == accountId);
+        user!.Accounts = [account!];
+        await userRepo.UpdateAsync(user);
+
+        var invalidAccountId = _fixture.Create<int>();
+
+        var authTokenResult = await _userProcessor.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(createResult.CreatedId, invalidAccountId)
+        );
+
+        Assert.NotNull(authTokenResult);
+        Assert.Null(authTokenResult.SignedInAccountId);
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token);
+
+        Assert.DoesNotContain(jwtToken.Claims, c => c.Type == "signed_in_account_id");
+    }
+
+    [Fact]
     public async Task GetUserAuthTokenAsync_ReturnsNull_WhenUserDNE()
     {
         var token = await _userProcessor.GetUserAuthTokenAsync(

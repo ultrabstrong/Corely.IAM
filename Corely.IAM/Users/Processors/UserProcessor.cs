@@ -208,6 +208,9 @@ internal class UserProcessor(
             claims.Add(new Claim("account_id", account.Id.ToString()));
         }
 
+        if (signedInAccountId.HasValue)
+            claims.Add(new Claim("signed_in_account_id", signedInAccountId.Value.ToString()));
+
         var token = new JwtSecurityToken(
             issuer: typeof(UserProcessor).FullName,
             audience: "Corely.IAM",

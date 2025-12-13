@@ -6,4 +6,6 @@ public enum DeregisterGroupResultCode
 {
     Success,
     GroupNotFoundError,
+    GroupHasSoleOwnersError,
+    UnauthorizedError,
 }

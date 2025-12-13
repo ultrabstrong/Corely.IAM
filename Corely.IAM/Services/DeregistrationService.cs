@@ -1,14 +1,19 @@
 ﻿using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Groups.Models;
+using Corely.IAM.Groups.Models.Extensions;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Permissions.Models.Extensions;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Roles.Models.Extensions;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Models.Extensions;
 using Corely.IAM.Users.Processors;
 using Microsoft.Extensions.Logging;
 
@@ -54,7 +59,7 @@ internal class DeregistrationService(
                 request.UserId
             );
             return new DeregisterUserResult(
-                (DeregisterUserResultCode)result.ResultCode,
+                result.ResultCode.ToDeregisterUserResultCode(),
                 result.Message
             );
         }
@@ -79,7 +84,7 @@ internal class DeregistrationService(
                 request.AccountId
             );
             return new DeregisterAccountResult(
-                (DeregisterAccountResultCode)result.ResultCode,
+                result.ResultCode.ToDeregisterAccountResultCode(),
                 result.Message
             );
         }
@@ -102,7 +107,7 @@ internal class DeregistrationService(
                 request.GroupId
             );
             return new DeregisterGroupResult(
-                (DeregisterGroupResultCode)result.ResultCode,
+                result.ResultCode.ToDeregisterGroupResultCode(),
                 result.Message
             );
         }
@@ -125,7 +130,7 @@ internal class DeregistrationService(
                 request.RoleId
             );
             return new DeregisterRoleResult(
-                (DeregisterRoleResultCode)result.ResultCode,
+                result.ResultCode.ToDeregisterRoleResultCode(),
                 result.Message
             );
         }
@@ -150,7 +155,7 @@ internal class DeregistrationService(
                 request.PermissionId
             );
             return new DeregisterPermissionResult(
-                (DeregisterPermissionResultCode)result.ResultCode,
+                result.ResultCode.ToDeregisterPermissionResultCode(),
                 result.Message
             );
         }
@@ -182,7 +187,7 @@ internal class DeregistrationService(
                 request.AccountId
             );
             return new DeregisterUserFromAccountResult(
-                (DeregisterUserFromAccountResultCode)result.ResultCode,
+                result.ResultCode.ToDeregisterUserFromAccountResultCode(),
                 result.Message
             );
         }
@@ -256,7 +261,7 @@ internal class DeregistrationService(
         }
 
         return new DeregisterUsersFromGroupResult(
-            (DeregisterUsersFromGroupResultCode)result.ResultCode,
+            result.ResultCode.ToDeregisterUsersFromGroupResultCode(),
             result.Message ?? string.Empty,
             result.RemovedUserCount,
             result.InvalidUserIds,
@@ -340,7 +345,7 @@ internal class DeregistrationService(
         }
 
         return new DeregisterRolesFromGroupResult(
-            (DeregisterRolesFromGroupResultCode)result.ResultCode,
+            result.ResultCode.ToDeregisterRolesFromGroupResultCode(),
             result.Message ?? string.Empty,
             result.RemovedRoleCount,
             result.InvalidRoleIds,
@@ -424,7 +429,7 @@ internal class DeregistrationService(
         }
 
         return new DeregisterRolesFromUserResult(
-            (DeregisterRolesFromUserResultCode)result.ResultCode,
+            result.ResultCode.ToDeregisterRolesFromUserResultCode(),
             result.Message ?? string.Empty,
             result.RemovedRoleCount,
             result.InvalidRoleIds,
@@ -508,7 +513,7 @@ internal class DeregistrationService(
         }
 
         return new DeregisterPermissionsFromRoleResult(
-            (DeregisterPermissionsFromRoleResultCode)result.ResultCode,
+            result.ResultCode.ToDeregisterPermissionsFromRoleResultCode(),
             result.Message ?? string.Empty,
             result.RemovedPermissionCount,
             result.InvalidPermissionIds,

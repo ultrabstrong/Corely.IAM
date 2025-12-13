@@ -7,4 +7,5 @@ public enum DeleteRoleResultCode
     Success,
     RoleNotFoundError,
     SystemDefinedRoleError,
+    UnauthorizedError,
 }

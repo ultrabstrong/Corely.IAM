@@ -17,4 +17,5 @@ public enum DeregisterUsersFromGroupResultCode
     PartialSuccess,
     GroupNotFoundError,
     UserIsSoleOwnerError,
+    UnauthorizedError,
 }

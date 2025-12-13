@@ -7,6 +7,7 @@ public enum RemoveRolesFromGroupResultCode
     InvalidRoleIdsError,
     GroupNotFoundError,
     OwnerRoleRemovalBlockedError,
+    UnauthorizedError,
 }
 
 public record RemoveRolesFromGroupResult(

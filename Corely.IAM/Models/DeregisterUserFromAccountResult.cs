@@ -12,4 +12,5 @@ public enum DeregisterUserFromAccountResultCode
     AccountNotFoundError,
     UserNotInAccountError,
     UserIsSoleOwnerError,
+    UnauthorizedError,
 }

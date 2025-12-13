@@ -1,5 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Models;
 using Microsoft.Extensions.Logging;
@@ -27,7 +28,7 @@ internal class RetrievalService(
         {
             _logger.LogInformation("Retrieving accounts failed for user {UserId}", request.UserId);
             return new RetrieveAccountsResult(
-                (RetrieveAccountsResultCode)result.ResultCode,
+                result.ResultCode.ToRetrieveAccountsResultCode(),
                 result.Message,
                 []
             );

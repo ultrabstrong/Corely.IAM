@@ -7,6 +7,7 @@ public enum RemovePermissionsFromRoleResultCode
     InvalidPermissionIdsError,
     RoleNotFoundError,
     SystemPermissionRemovalError,
+    UnauthorizedError,
 }
 
 public record RemovePermissionsFromRoleResult(

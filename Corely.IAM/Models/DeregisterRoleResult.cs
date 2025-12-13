@@ -6,4 +6,6 @@ public enum DeregisterRoleResultCode
 {
     Success,
     RoleNotFoundError,
+    SystemDefinedRoleError,
+    UnauthorizedError,
 }

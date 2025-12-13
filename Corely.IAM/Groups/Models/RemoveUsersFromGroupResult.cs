@@ -17,4 +17,5 @@ public enum RemoveUsersFromGroupResultCode
     PartialSuccess,
     GroupNotFoundError,
     UserIsSoleOwnerError,
+    UnauthorizedError,
 }

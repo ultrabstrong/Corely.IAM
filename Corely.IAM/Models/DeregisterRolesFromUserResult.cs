@@ -18,4 +18,5 @@ public enum DeregisterRolesFromUserResultCode
     InvalidRoleIdsError,
     UserNotFoundError,
     UserIsSoleOwnerError,
+    UnauthorizedError,
 }

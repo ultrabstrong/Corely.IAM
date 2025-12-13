@@ -1,6 +1,7 @@
 ﻿using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.UnitOfWork;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
@@ -323,7 +324,7 @@ internal class RegistrationService(
                 request.AccountId
             );
             return new RegisterUserWithAccountResult(
-                (RegisterUserWithAccountResultCode)result.ResultCode,
+                result.ResultCode.ToRegisterUserWithAccountResultCode(),
                 result.Message
             );
         }

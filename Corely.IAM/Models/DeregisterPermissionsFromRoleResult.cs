@@ -18,4 +18,5 @@ public enum DeregisterPermissionsFromRoleResultCode
     InvalidPermissionIdsError,
     RoleNotFoundError,
     SystemPermissionRemovalError,
+    UnauthorizedError,
 }

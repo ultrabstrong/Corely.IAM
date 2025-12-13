@@ -7,6 +7,7 @@ public enum RemoveRolesFromUserResultCode
     InvalidRoleIdsError,
     UserNotFoundError,
     UserIsSoleOwnerError,
+    UnauthorizedError,
 }
 
 public record RemoveRolesFromUserResult(

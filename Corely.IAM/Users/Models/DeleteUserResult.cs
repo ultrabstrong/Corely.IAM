@@ -7,4 +7,5 @@ public enum DeleteUserResultCode
     Success,
     UserNotFoundError,
     UserIsSoleAccountOwnerError,
+    UnauthorizedError,
 }

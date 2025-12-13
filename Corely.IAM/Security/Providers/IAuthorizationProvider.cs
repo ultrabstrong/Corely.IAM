@@ -6,4 +6,5 @@ internal interface IAuthorizationProvider
 {
     Task<bool> IsAuthorizedAsync(AuthAction action, string resourceType, int? resourceId = null);
     bool IsAuthorizedForOwnUser(int requestUserId);
+    Task<bool> HasAccountContextAsync();
 }

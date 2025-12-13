@@ -1,4 +1,5 @@
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Security.Constants;
@@ -216,11 +217,98 @@ public class AuthorizationProviderTests
         );
     }
 
+    [Fact]
+    public void IsAuthorizedForOwnUser_ReturnsTrue_WhenUserMatchesContext()
+    {
+        var provider = CreateProvider();
+        SetUserContext(5, 1);
+
+        var result = provider.IsAuthorizedForOwnUser(5);
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void IsAuthorizedForOwnUser_ReturnsFalse_WhenNoUserContext()
+    {
+        var provider = CreateProvider();
+        // Don't set user context
+
+        var result = provider.IsAuthorizedForOwnUser(5);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void IsAuthorizedForOwnUser_ReturnsFalse_WhenUserDoesNotMatchContext()
+    {
+        var provider = CreateProvider();
+        SetUserContext(99, 1);
+
+        var result = provider.IsAuthorizedForOwnUser(5);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task HasAccountContextAsync_ReturnsTrue_WhenUserHasAccessToAccount()
+    {
+        var provider = CreateProvider();
+        await SetupUserWithAccountAsync(userId: 1, accountId: 1);
+        SetUserContext(1, 1);
+
+        var result = await provider.HasAccountContextAsync();
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task HasAccountContextAsync_ReturnsFalse_WhenNoUserContext()
+    {
+        var provider = CreateProvider();
+        // Don't set user context
+
+        var result = await provider.HasAccountContextAsync();
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task HasAccountContextAsync_ReturnsFalse_WhenUserDoesNotHaveAccessToAccount()
+    {
+        var provider = CreateProvider();
+        await SetupUserWithAccountAsync(userId: 1, accountId: 1);
+        SetUserContext(1, 99); // User context has account 99, but user only has access to account 1
+
+        var result = await provider.HasAccountContextAsync();
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task HasAccountContextAsync_CachesAccountIds()
+    {
+        var provider = CreateProvider();
+        await SetupUserWithAccountAsync(userId: 1, accountId: 1);
+        await SetupUserWithAccountAsync(userId: 1, accountId: 2);
+        SetUserContext(1, 1);
+
+        // First call should cache
+        Assert.True(await provider.HasAccountContextAsync());
+
+        // Change context to different account the user has access to
+        SetUserContext(1, 2);
+
+        // Should still return true because account 2 was cached
+        Assert.True(await provider.HasAccountContextAsync());
+    }
+
     private AuthorizationProvider CreateProvider()
     {
         return new AuthorizationProvider(
             _serviceFactory.GetRequiredService<IIamUserContextProvider>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>(),
+            _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<ILogger<AuthorizationProvider>>()
         );
     }
@@ -233,6 +321,56 @@ public class AuthorizationProviderTests
         );
     }
 
+    private async Task SetupUserWithAccountAsync(int userId, int accountId)
+    {
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<IAM.Users.Entities.UserEntity>>();
+
+        // Get or create user first
+        var existingUser = await userRepo.GetAsync(u => u.Id == userId);
+        if (existingUser == null)
+        {
+            existingUser = new IAM.Users.Entities.UserEntity
+            {
+                Id = userId,
+                Username = $"testuser{userId}",
+                Email = $"test{userId}@test.com",
+                Accounts = [],
+            };
+            await userRepo.CreateAsync(existingUser);
+        }
+
+        // Get or create account with user in the Users collection
+        var existingAccount = await accountRepo.GetAsync(a => a.Id == accountId);
+        if (existingAccount == null)
+        {
+            existingAccount = new AccountEntity
+            {
+                Id = accountId,
+                AccountName = $"TestAccount{accountId}",
+                Users = [existingUser],
+            };
+            await accountRepo.CreateAsync(existingAccount);
+        }
+        else
+        {
+            existingAccount.Users ??= [];
+            if (!existingAccount.Users.Any(u => u.Id == userId))
+            {
+                existingAccount.Users.Add(existingUser);
+                await accountRepo.UpdateAsync(existingAccount);
+            }
+        }
+
+        // Also update user's Accounts collection for bidirectional relationship
+        existingUser.Accounts ??= [];
+        if (!existingUser.Accounts.Any(a => a.Id == accountId))
+        {
+            existingUser.Accounts.Add(existingAccount);
+            await userRepo.UpdateAsync(existingUser);
+        }
+    }
+
     private async Task SetupTestPermissionDataAsync(
         string resourceType,
         int resourceId,
@@ -243,18 +381,12 @@ public class AuthorizationProviderTests
         bool execute = false
     )
     {
-        var accountRepo = _serviceFactory.GetRequiredService<
-            IRepo<IAM.Accounts.Entities.AccountEntity>
-        >();
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var userRepo = _serviceFactory.GetRequiredService<IRepo<IAM.Users.Entities.UserEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<IAM.Roles.Entities.RoleEntity>>();
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
 
-        var account = new IAM.Accounts.Entities.AccountEntity
-        {
-            Id = 1,
-            AccountName = "TestAccount",
-        };
+        var account = new AccountEntity { Id = 1, AccountName = "TestAccount" };
         await accountRepo.CreateAsync(account);
 
         var user = new IAM.Users.Entities.UserEntity

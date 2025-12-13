@@ -1,7 +1,9 @@
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Security.Constants;
+using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
 
@@ -10,13 +12,16 @@ namespace Corely.IAM.Security.Providers;
 internal class AuthorizationProvider(
     IIamUserContextProvider userContextProvider,
     IReadonlyRepo<PermissionEntity> permissionRepo,
+    IReadonlyRepo<AccountEntity> accountRepo,
     ILogger<AuthorizationProvider> logger
 ) : IAuthorizationProvider
 {
     private readonly IIamUserContextProvider _userContextProvider = userContextProvider;
     private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo;
+    private readonly IReadonlyRepo<AccountEntity> _accountRepo = accountRepo;
     private readonly ILogger<AuthorizationProvider> _logger = logger;
     private IReadOnlyList<PermissionEntity>? _cachedPermissions;
+    private IReadOnlyList<int>? _cachedAccountIds;
 
     public async Task<bool> IsAuthorizedAsync(
         AuthAction action,
@@ -24,17 +29,13 @@ internal class AuthorizationProvider(
         int? resourceId = null
     )
     {
-        var userContext = _userContextProvider.GetUserContext();
-        if (userContext == null)
-        {
-            _logger.LogInformation(
-                "Authorization denied: No user context set for {Action} on {ResourceType}{ResourceId}",
-                action,
-                resourceType,
-                resourceId.HasValue ? $" {resourceId}" : string.Empty
-            );
+        if (
+            !TryGetUserContext(
+                out var userContext,
+                $"{action} on {resourceType}{(resourceId.HasValue ? $" {resourceId}" : string.Empty)}"
+            )
+        )
             return false;
-        }
 
         var permissions = await GetPermissionsAsync();
 
@@ -63,19 +64,58 @@ internal class AuthorizationProvider(
 
     public bool IsAuthorizedForOwnUser(int requestUserId)
     {
-        var userContext = _userContextProvider.GetUserContext();
-        var isAuthorized = userContext?.UserId == requestUserId;
+        if (!TryGetUserContext(out var userContext, $"act on user {requestUserId}"))
+            return false;
+
+        var isAuthorized = userContext.UserId == requestUserId;
 
         if (!isAuthorized)
         {
             _logger.LogInformation(
                 "Authorization denied: User {UserId} is not authorized to act on user {RequestUserId}",
-                userContext?.UserId.ToString() ?? "null",
+                userContext.UserId,
                 requestUserId
             );
         }
 
         return isAuthorized;
+    }
+
+    public async Task<bool> HasAccountContextAsync()
+    {
+        if (!TryGetUserContext(out var userContext, "check account context"))
+            return false;
+
+        var accountIds = await GetAccountIdsAsync();
+        var hasAccountContext = accountIds.Any(id => id == userContext.AccountId);
+
+        if (!hasAccountContext)
+        {
+            _logger.LogInformation(
+                "Authorization denied: User {UserId} does not have access to account {AccountId}",
+                userContext.UserId,
+                userContext.AccountId
+            );
+        }
+
+        return hasAccountContext;
+    }
+
+    private bool TryGetUserContext(out IamUserContext userContext, string operation)
+    {
+        var context = _userContextProvider.GetUserContext();
+        if (context == null)
+        {
+            _logger.LogInformation(
+                "Authorization denied: No user context set for {Operation}",
+                operation
+            );
+            userContext = null!;
+            return false;
+        }
+
+        userContext = context;
+        return true;
     }
 
     private async Task<IReadOnlyList<PermissionEntity>> GetPermissionsAsync()
@@ -94,6 +134,22 @@ internal class AuthorizationProvider(
         );
 
         return _cachedPermissions;
+    }
+
+    private async Task<IReadOnlyList<int>> GetAccountIdsAsync()
+    {
+        if (_cachedAccountIds != null)
+            return _cachedAccountIds;
+
+        var userContext = _userContextProvider.GetUserContext()!;
+
+        var accounts = await _accountRepo.ListAsync(a =>
+            a.Users!.Any(u => u.Id == userContext.UserId)
+        );
+
+        _cachedAccountIds = accounts.Select(a => a.Id).ToList();
+
+        return _cachedAccountIds;
     }
 
     private static bool HasAction(PermissionEntity permission, AuthAction action) =>

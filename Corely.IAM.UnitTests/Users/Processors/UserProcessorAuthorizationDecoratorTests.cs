@@ -3,7 +3,6 @@ using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
-using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.UnitTests.Users.Processors;
 
@@ -11,15 +10,13 @@ public class UserProcessorAuthorizationDecoratorTests
 {
     private readonly Mock<IUserProcessor> _mockInnerProcessor = new();
     private readonly Mock<IAuthorizationProvider> _mockAuthorizationProvider = new();
-    private readonly Mock<IIamUserContextProvider> _mockUserContextProvider = new();
     private readonly UserProcessorAuthorizationDecorator _decorator;
 
     public UserProcessorAuthorizationDecoratorTests()
     {
         _decorator = new UserProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
-            _mockAuthorizationProvider.Object,
-            _mockUserContextProvider.Object
+            _mockAuthorizationProvider.Object
         );
     }
 
@@ -130,9 +127,7 @@ public class UserProcessorAuthorizationDecoratorTests
         var userId = 5;
         var user = new User { Id = userId, Username = "testuser" };
         var expectedResult = new UpdateUserResult(UpdateUserResultCode.Success, string.Empty);
-        _mockUserContextProvider
-            .Setup(x => x.GetUserContext())
-            .Returns(new IamUserContext(userId, 1));
+        _mockAuthorizationProvider.Setup(x => x.IsAuthorizedForOwnUser(userId)).Returns(true);
         _mockInnerProcessor.Setup(x => x.UpdateUserAsync(user)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.UpdateUserAsync(user);
@@ -142,22 +137,10 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task UpdateUserAsync_ReturnsUnauthorized_WhenNoUserContext()
+    public async Task UpdateUserAsync_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
     {
         var user = new User { Id = 5, Username = "testuser" };
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((IamUserContext?)null);
-
-        var result = await _decorator.UpdateUserAsync(user);
-
-        Assert.Equal(UpdateUserResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerProcessor.Verify(x => x.UpdateUserAsync(It.IsAny<User>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task UpdateUserAsync_ReturnsUnauthorized_WhenUserUpdatesOtherUser()
-    {
-        var user = new User { Id = 5, Username = "testuser" };
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new IamUserContext(99, 1));
+        _mockAuthorizationProvider.Setup(x => x.IsAuthorizedForOwnUser(user.Id)).Returns(false);
 
         var result = await _decorator.UpdateUserAsync(user);
 
@@ -218,10 +201,10 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_ReturnsUnauthorized_WhenNoUserContext()
+    public async Task DeleteUserAsync_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
     {
         var userId = 5;
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((IamUserContext?)null);
+        _mockAuthorizationProvider.Setup(x => x.IsAuthorizedForOwnUser(userId)).Returns(false);
 
         var result = await _decorator.DeleteUserAsync(userId);
 
@@ -234,9 +217,7 @@ public class UserProcessorAuthorizationDecoratorTests
     {
         var userId = 5;
         var expectedResult = new DeleteUserResult(DeleteUserResultCode.Success, "");
-        _mockUserContextProvider
-            .Setup(x => x.GetUserContext())
-            .Returns(new IamUserContext(userId, 1));
+        _mockAuthorizationProvider.Setup(x => x.IsAuthorizedForOwnUser(userId)).Returns(true);
         _mockInnerProcessor.Setup(x => x.DeleteUserAsync(userId)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.DeleteUserAsync(userId);
@@ -246,44 +227,14 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_ReturnsUnauthorized_WhenUserDeletesOtherUser()
-    {
-        var userId = 5;
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new IamUserContext(99, 1));
-
-        var result = await _decorator.DeleteUserAsync(userId);
-
-        Assert.Equal(DeleteUserResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerProcessor.Verify(x => x.DeleteUserAsync(It.IsAny<int>()), Times.Never);
-    }
-
-    [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new UserProcessorAuthorizationDecorator(
-                null!,
-                _mockAuthorizationProvider.Object,
-                _mockUserContextProvider.Object
-            )
+            new UserProcessorAuthorizationDecorator(null!, _mockAuthorizationProvider.Object)
         );
 
     [Fact]
     public void Constructor_ThrowsOnNullAuthorizationProvider() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new UserProcessorAuthorizationDecorator(
-                _mockInnerProcessor.Object,
-                null!,
-                _mockUserContextProvider.Object
-            )
-        );
-
-    [Fact]
-    public void Constructor_ThrowsOnNullUserContextProvider() =>
-        Assert.Throws<ArgumentNullException>(() =>
-            new UserProcessorAuthorizationDecorator(
-                _mockInnerProcessor.Object,
-                _mockAuthorizationProvider.Object,
-                null!
-            )
+            new UserProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
         );
 }

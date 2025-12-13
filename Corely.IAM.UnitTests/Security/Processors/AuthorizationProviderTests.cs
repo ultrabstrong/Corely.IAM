@@ -5,6 +5,7 @@ using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
+using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Security.Processors;
 
@@ -219,7 +220,8 @@ public class AuthorizationProviderTests
     {
         return new AuthorizationProvider(
             _serviceFactory.GetRequiredService<IIamUserContextProvider>(),
-            _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>()
+            _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>(),
+            _serviceFactory.GetRequiredService<ILogger<AuthorizationProvider>>()
         );
     }
 

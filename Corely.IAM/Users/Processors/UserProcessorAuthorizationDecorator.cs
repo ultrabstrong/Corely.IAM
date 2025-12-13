@@ -3,22 +3,17 @@ using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
-using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.Users.Processors;
 
 internal class UserProcessorAuthorizationDecorator(
     IUserProcessor inner,
-    IAuthorizationProvider authorizationProvider,
-    IIamUserContextProvider userContextProvider
+    IAuthorizationProvider authorizationProvider
 ) : IUserProcessor
 {
     private readonly IUserProcessor _inner = inner.ThrowIfNull(nameof(inner));
     private readonly IAuthorizationProvider _authorizationProvider =
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
-    private readonly IIamUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
-        nameof(userContextProvider)
-    );
 
     public Task<CreateUserResult> CreateUserAsync(CreateUserRequest request) =>
         _inner.CreateUserAsync(request);
@@ -49,7 +44,7 @@ internal class UserProcessorAuthorizationDecorator(
             );
 
     public async Task<UpdateUserResult> UpdateUserAsync(User user) =>
-        IsAuthorizedForOwnUser(user.Id)
+        _authorizationProvider.IsAuthorizedForOwnUser(user.Id)
             ? await _inner.UpdateUserAsync(user)
             : new UpdateUserResult(
                 UpdateUserResultCode.UnauthorizedError,
@@ -106,16 +101,10 @@ internal class UserProcessorAuthorizationDecorator(
             );
 
     public async Task<DeleteUserResult> DeleteUserAsync(int userId) =>
-        IsAuthorizedForOwnUser(userId)
+        _authorizationProvider.IsAuthorizedForOwnUser(userId)
             ? await _inner.DeleteUserAsync(userId)
             : new DeleteUserResult(
                 DeleteUserResultCode.UnauthorizedError,
                 $"Unauthorized to delete user {userId}"
             );
-
-    private bool IsAuthorizedForOwnUser(int requestUserId)
-    {
-        var userContext = _userContextProvider.GetUserContext();
-        return userContext?.UserId == requestUserId;
-    }
 }

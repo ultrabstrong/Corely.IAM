@@ -1,29 +1,31 @@
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.Users.Models;
-using Corely.IAM.Users.Providers;
+using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.UnitTests.BasicAuths.Processors;
 
 public class BasicAuthProcessorAuthorizationDecoratorTests
 {
     private readonly Mock<IBasicAuthProcessor> _mockInnerProcessor = new();
-    private readonly Mock<IIamUserContextProvider> _mockUserContextProvider = new();
+    private readonly Mock<IAuthorizationProvider> _mockAuthorizationProvider = new();
     private readonly BasicAuthProcessorAuthorizationDecorator _decorator;
 
     public BasicAuthProcessorAuthorizationDecoratorTests()
     {
         _decorator = new BasicAuthProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
-            _mockUserContextProvider.Object
+            _mockAuthorizationProvider.Object
         );
     }
 
     [Fact]
-    public async Task UpsertBasicAuthAsync_ReturnsUnauthorized_WhenNoUserContext()
+    public async Task UpsertBasicAuthAsync_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
     {
         var request = new UpsertBasicAuthRequest(5, "password");
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((IamUserContext?)null);
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId))
+            .Returns(false);
 
         var result = await _decorator.UpsertBasicAuthAsync(request);
 
@@ -45,9 +47,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
             1,
             Corely.IAM.Enums.UpsertType.Update
         );
-        _mockUserContextProvider
-            .Setup(x => x.GetUserContext())
-            .Returns(new IamUserContext(userId, 1));
+        _mockAuthorizationProvider.Setup(x => x.IsAuthorizedForOwnUser(userId)).Returns(true);
         _mockInnerProcessor
             .Setup(x => x.UpsertBasicAuthAsync(request))
             .ReturnsAsync(expectedResult);
@@ -56,21 +56,6 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.UpsertBasicAuthAsync(request), Times.Once);
-    }
-
-    [Fact]
-    public async Task UpsertBasicAuthAsync_ReturnsUnauthorized_WhenUserOperatesOnOtherUser()
-    {
-        var request = new UpsertBasicAuthRequest(5, "password");
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new IamUserContext(99, 1));
-
-        var result = await _decorator.UpsertBasicAuthAsync(request);
-
-        Assert.Equal(UpsertBasicAuthResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerProcessor.Verify(
-            x => x.UpsertBasicAuthAsync(It.IsAny<UpsertBasicAuthRequest>()),
-            Times.Never
-        );
     }
 
     [Fact]
@@ -90,37 +75,25 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.VerifyBasicAuthAsync(request), Times.Once);
-        _mockUserContextProvider.Verify(x => x.GetUserContext(), Times.Never);
-    }
-
-    [Fact]
-    public async Task VerifyBasicAuthAsync_WorksWithoutUserContext()
-    {
-        var request = new VerifyBasicAuthRequest(5, "password");
-        var expectedResult = new VerifyBasicAuthResult(
-            VerifyBasicAuthResultCode.Success,
-            string.Empty,
-            true
+        // Should not call any authorization methods
+        _mockAuthorizationProvider.Verify(
+            x => x.IsAuthorizedForOwnUser(It.IsAny<int>()),
+            Times.Never
         );
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((IamUserContext?)null);
-        _mockInnerProcessor
-            .Setup(x => x.VerifyBasicAuthAsync(request))
-            .ReturnsAsync(expectedResult);
-
-        var result = await _decorator.VerifyBasicAuthAsync(request);
-
-        Assert.Equal(expectedResult, result);
-        _mockInnerProcessor.Verify(x => x.VerifyBasicAuthAsync(request), Times.Once);
+        _mockAuthorizationProvider.Verify(
+            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int?>()),
+            Times.Never
+        );
     }
 
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new BasicAuthProcessorAuthorizationDecorator(null!, _mockUserContextProvider.Object)
+            new BasicAuthProcessorAuthorizationDecorator(null!, _mockAuthorizationProvider.Object)
         );
 
     [Fact]
-    public void Constructor_ThrowsOnNullUserContextProvider() =>
+    public void Constructor_ThrowsOnNullAuthorizationProvider() =>
         Assert.Throws<ArgumentNullException>(() =>
             new BasicAuthProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
         );

@@ -15,6 +15,7 @@ using Corely.IAM.Roles.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Models.Extensions;
 using Corely.IAM.Users.Processors;
+using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
@@ -25,7 +26,8 @@ internal class DeregistrationService(
     IRoleProcessor roleProcessor,
     IGroupProcessor groupProcessor,
     IAccountProcessor accountProcessor,
-    IUserProcessor userProcessor
+    IUserProcessor userProcessor,
+    IIamUserContextProvider userContextProvider
 ) : IDeregistrationService
 {
     private readonly ILogger<DeregistrationService> _logger = logger.ThrowIfNull(nameof(logger));
@@ -43,6 +45,9 @@ internal class DeregistrationService(
     );
     private readonly IUserProcessor _userProcessor = userProcessor.ThrowIfNull(
         nameof(userProcessor)
+    );
+    private readonly IIamUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
     );
 
     public async Task<DeregisterUserResult> DeregisterUserAsync(DeregisterUserRequest request)
@@ -169,14 +174,15 @@ internal class DeregistrationService(
     )
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
+        var accountId = _userContextProvider.GetUserContext()!.AccountId!.Value;
         _logger.LogInformation(
             "Deregistering user {UserId} from account {AccountId}",
             request.UserId,
-            request.AccountId
+            accountId
         );
 
         var result = await _accountProcessor.RemoveUserFromAccountAsync(
-            new(request.UserId, request.AccountId)
+            new(request.UserId, accountId)
         );
 
         if (result.ResultCode != RemoveUserFromAccountResultCode.Success)
@@ -184,7 +190,7 @@ internal class DeregistrationService(
             _logger.LogInformation(
                 "Deregistering user {UserId} from account {AccountId} failed",
                 request.UserId,
-                request.AccountId
+                accountId
             );
             return new DeregisterUserFromAccountResult(
                 result.ResultCode.ToDeregisterUserFromAccountResultCode(),
@@ -195,7 +201,7 @@ internal class DeregistrationService(
         _logger.LogInformation(
             "User {UserId} deregistered from account {AccountId}",
             request.UserId,
-            request.AccountId
+            accountId
         );
         return new DeregisterUserFromAccountResult(
             DeregisterUserFromAccountResultCode.Success,

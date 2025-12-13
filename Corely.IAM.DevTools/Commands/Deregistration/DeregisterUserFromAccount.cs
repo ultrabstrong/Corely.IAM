@@ -33,7 +33,7 @@ internal partial class Deregistration : CommandBase
             {
                 SampleJsonFileHelper.CreateSampleJson(
                     RequestJsonFile,
-                    new DeregisterUserFromAccountRequest(1, 1)
+                    new DeregisterUserFromAccountRequest(1)
                 );
             }
             else

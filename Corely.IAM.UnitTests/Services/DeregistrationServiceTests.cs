@@ -6,7 +6,9 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
+using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Services;
@@ -19,17 +21,22 @@ public class DeregistrationServiceTests
     private readonly Mock<IGroupProcessor> _mockGroupProcessor = new();
     private readonly Mock<IAccountProcessor> _mockAccountProcessor = new();
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
+    private readonly Mock<IIamUserContextProvider> _mockUserContextProvider = new();
     private readonly DeregistrationService _service;
 
     public DeregistrationServiceTests()
     {
+        // Setup user context provider to return a valid context with account ID
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new IamUserContext(1, 5));
+
         _service = new DeregistrationService(
             _mockLogger.Object,
             _mockPermissionProcessor.Object,
             _mockRoleProcessor.Object,
             _mockGroupProcessor.Object,
             _mockAccountProcessor.Object,
-            _mockUserProcessor.Object
+            _mockUserProcessor.Object,
+            _mockUserContextProvider.Object
         );
     }
 
@@ -37,7 +44,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterUserFromAccountAsync_ReturnsSuccess_WhenProcessorSucceeds()
     {
-        var request = new DeregisterUserFromAccountRequest(1, 5);
+        var request = new DeregisterUserFromAccountRequest(1);
         var processorResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.Success,
             string.Empty
@@ -61,7 +68,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterUserFromAccountAsync_ReturnsUserNotFound_WhenUserDoesNotExist()
     {
-        var request = new DeregisterUserFromAccountRequest(1, 5);
+        var request = new DeregisterUserFromAccountRequest(1);
         var processorResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.UserNotFoundError,
             "User not found"
@@ -78,7 +85,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterUserFromAccountAsync_ReturnsAccountNotFound_WhenAccountDoesNotExist()
     {
-        var request = new DeregisterUserFromAccountRequest(1, 5);
+        var request = new DeregisterUserFromAccountRequest(1);
         var processorResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.AccountNotFoundError,
             "Account not found"
@@ -95,7 +102,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterUserFromAccountAsync_ReturnsUserNotInAccount_WhenUserNotInAccount()
     {
-        var request = new DeregisterUserFromAccountRequest(1, 5);
+        var request = new DeregisterUserFromAccountRequest(1);
         var processorResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.UserNotInAccountError,
             "User not in account"
@@ -112,7 +119,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterUserFromAccountAsync_ReturnsSoleOwnerError_WhenUserIsSoleOwner()
     {
-        var request = new DeregisterUserFromAccountRequest(1, 5);
+        var request = new DeregisterUserFromAccountRequest(1);
         var processorResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.UserIsSoleOwnerError,
             "User is sole owner"

@@ -212,24 +212,21 @@ internal class Program
             );
 
             var deregisterUserFromAccountRequest = new DeregisterUserFromAccountRequest(
-                registerUserResult.CreatedUserId,
-                registerAccountResult.CreatedAccountId
+                registerUserResult.CreatedUserId
             );
             var deregisterUserFromAccountResult =
                 await deregistrationService.DeregisterUserFromAccountAsync(
                     deregisterUserFromAccountRequest
                 );
             deregisterUserFromAccountRequest = new DeregisterUserFromAccountRequest(
-                registerUser2Result.CreatedUserId,
-                registerAccountResult.CreatedAccountId
+                registerUser2Result.CreatedUserId
             );
             deregisterUserFromAccountResult =
                 await deregistrationService.DeregisterUserFromAccountAsync(
                     deregisterUserFromAccountRequest
                 );
             deregisterUserFromAccountRequest = new DeregisterUserFromAccountRequest(
-                registerUser2Result.CreatedUserId,
-                registerAccountResult.CreatedAccountId
+                registerUser2Result.CreatedUserId
             );
             deregisterUserFromAccountResult =
                 await deregistrationService.DeregisterUserFromAccountAsync(

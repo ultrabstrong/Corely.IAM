@@ -9,6 +9,7 @@ namespace Corely.IAM.Users.Entities;
 internal class UserEntity : IHasIdPk<int>, IHasCreatedUtc, IHasModifiedUtc
 {
     public int Id { get; set; }
+    public Guid PublicId { get; set; }
     public string Username { get; set; } = null!;
     public string Email { get; set; } = null!;
     public bool Disabled { get; set; }

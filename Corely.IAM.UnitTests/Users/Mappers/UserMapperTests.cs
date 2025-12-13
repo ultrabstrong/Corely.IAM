@@ -32,6 +32,7 @@ public class UserMapperTests
 
         // Assert
         Assert.Equal(0, result.Id);
+        Assert.Equal(Guid.Empty, result.PublicId);
         Assert.False(result.Disabled);
         Assert.Equal(0, result.TotalSuccessfulLogins);
         Assert.Null(result.LastSuccessfulLoginUtc);
@@ -61,9 +62,11 @@ public class UserMapperTests
     public void ToEntity_ShouldMapAllProperties()
     {
         // Arrange
+        var publicId = Guid.NewGuid();
         var user = new User
         {
             Id = 42,
+            PublicId = publicId,
             Username = "testuser",
             Email = "test@example.com",
             Disabled = true,
@@ -82,6 +85,7 @@ public class UserMapperTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(42, result.Id);
+        Assert.Equal(publicId, result.PublicId);
         Assert.Equal("testuser", result.Username);
         Assert.Equal("test@example.com", result.Email);
         Assert.True(result.Disabled);
@@ -119,9 +123,11 @@ public class UserMapperTests
     public void ToModel_ShouldMapAllProperties()
     {
         // Arrange
+        var publicId = Guid.NewGuid();
         var entity = new UserEntity
         {
             Id = 42,
+            PublicId = publicId,
             Username = "testuser",
             Email = "test@example.com",
             Disabled = true,
@@ -140,6 +146,7 @@ public class UserMapperTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(42, result.Id);
+        Assert.Equal(publicId, result.PublicId);
         Assert.Equal("testuser", result.Username);
         Assert.Equal("test@example.com", result.Email);
         Assert.True(result.Disabled);
@@ -156,9 +163,11 @@ public class UserMapperTests
     public void ToModel_ToEntity_RoundTrip_ShouldPreserveData()
     {
         // Arrange
+        var publicId = Guid.NewGuid();
         var originalUser = new User
         {
             Id = 99,
+            PublicId = publicId,
             Username = "roundtripuser",
             Email = "roundtrip@test.com",
             Disabled = false,
@@ -177,6 +186,7 @@ public class UserMapperTests
 
         // Assert
         Assert.Equal(originalUser.Id, resultUser.Id);
+        Assert.Equal(originalUser.PublicId, resultUser.PublicId);
         Assert.Equal(originalUser.Username, resultUser.Username);
         Assert.Equal(originalUser.Email, resultUser.Email);
         Assert.Equal(originalUser.Disabled, resultUser.Disabled);

@@ -12,11 +12,21 @@ internal static class AccountMapper
 
     public static AccountEntity ToEntity(this Account account)
     {
-        return new AccountEntity { Id = account.Id, AccountName = account.AccountName };
+        return new AccountEntity
+        {
+            Id = account.Id,
+            PublicId = account.PublicId,
+            AccountName = account.AccountName,
+        };
     }
 
     public static Account ToModel(this AccountEntity entity)
     {
-        return new Account { Id = entity.Id, AccountName = entity.AccountName };
+        return new Account
+        {
+            Id = entity.Id,
+            PublicId = entity.PublicId,
+            AccountName = entity.AccountName,
+        };
     }
 }

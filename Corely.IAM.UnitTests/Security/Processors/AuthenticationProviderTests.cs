@@ -64,6 +64,36 @@ public class AuthenticationProviderTests
         return created.Id;
     }
 
+    private async Task<(int UserId, Guid UserPublicId)> CreateUserWithPublicIdAsync()
+    {
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var securityProcessor = _serviceFactory.GetRequiredService<ISecurityProvider>();
+
+        var signatureKey = securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey();
+
+        var user = new UserEntity
+        {
+            Username = VALID_USERNAME,
+            Email = VALID_EMAIL,
+            SymmetricKeys = [],
+            AsymmetricKeys =
+            [
+                new UserAsymmetricKeyEntity
+                {
+                    KeyUsedFor = KeyUsedFor.Signature,
+                    ProviderTypeCode = signatureKey.ProviderTypeCode,
+                    PublicKey = signatureKey.PublicKey,
+                    EncryptedPrivateKey = signatureKey.PrivateKey.Secret,
+                },
+            ],
+            Accounts = [],
+            Groups = [],
+            Roles = [],
+        };
+        var created = await userRepo.CreateAsync(user);
+        return (created.Id, created.PublicId);
+    }
+
     private async Task<int> CreateUserWithAccountAsync(int accountId)
     {
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
@@ -96,12 +126,12 @@ public class AuthenticationProviderTests
         return created.Id;
     }
 
-    private async Task<int> CreateAccountAsync()
+    private async Task<(int AccountId, Guid AccountPublicId)> CreateAccountAsync()
     {
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var account = new AccountEntity { AccountName = _fixture.Create<string>() };
         var created = await accountRepo.CreateAsync(account);
-        return created.Id;
+        return (created.Id, created.PublicId);
     }
 
     private async Task<int> CreateUserWithoutSignatureKeyAsync()
@@ -125,7 +155,7 @@ public class AuthenticationProviderTests
     [Fact]
     public async Task GetUserAuthTokenAsync_ReturnsSuccess()
     {
-        var userId = await CreateUserAsync();
+        var (userId, userPublicId) = await CreateUserWithPublicIdAsync();
 
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
             new UserAuthTokenRequest(userId)
@@ -140,9 +170,10 @@ public class AuthenticationProviderTests
 
         Assert.Equal(typeof(AuthenticationProvider).FullName, jwtToken.Issuer);
         Assert.Equal(UserConstants.JWT_AUDIENCE, jwtToken.Audiences.First());
+        // JWT now contains public ID (GUID) instead of internal ID
         Assert.Contains(
             jwtToken.Claims,
-            c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == userId.ToString()
+            c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == userPublicId.ToString()
         );
         Assert.Contains(jwtToken.Claims, c => c.Type == JwtRegisteredClaimNames.Jti);
         Assert.Contains(jwtToken.Claims, c => c.Type == JwtRegisteredClaimNames.Iat);
@@ -176,10 +207,10 @@ public class AuthenticationProviderTests
     public async Task GetUserAuthTokenAsync_ReturnsAccountNotFound_WhenAccountNotBelongsToUser()
     {
         var userId = await CreateUserAsync();
-        var accountId = await CreateAccountAsync();
+        var (_, accountPublicId) = await CreateAccountAsync();
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId, accountId)
+            new UserAuthTokenRequest(userId, accountPublicId)
         );
 
         Assert.Equal(UserAuthTokenResultCode.AccountNotFound, result.ResultCode);
@@ -190,11 +221,11 @@ public class AuthenticationProviderTests
     [Fact]
     public async Task GetUserAuthTokenAsync_ReturnsSuccess_WithValidAccount()
     {
-        var accountId = await CreateAccountAsync();
+        var (accountId, accountPublicId) = await CreateAccountAsync();
         var userId = await CreateUserWithAccountAsync(accountId);
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId, accountId)
+            new UserAuthTokenRequest(userId, accountPublicId)
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, result.ResultCode);
@@ -273,10 +304,35 @@ public class AuthenticationProviderTests
     }
 
     [Fact]
+    public async Task ValidateUserAuthTokenAsync_ReturnsMissingUserIdClaim_WhenSubClaimNotGuid()
+    {
+        // Sub claim is an integer, not a GUID - should fail
+        var token = new JwtSecurityToken(
+            claims:
+            [
+                new Claim(JwtRegisteredClaimNames.Sub, "123"),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            ],
+            expires: DateTime.UtcNow.AddHours(1)
+        );
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+        var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            tokenString
+        );
+
+        Assert.Equal(
+            UserAuthTokenValidationResultCode.MissingUserIdClaim,
+            validationResult.ResultCode
+        );
+        Assert.Null(validationResult.UserId);
+    }
+
+    [Fact]
     public async Task ValidateUserAuthTokenAsync_ReturnsTokenValidationFailed_WhenNoJtiClaim()
     {
         var token = new JwtSecurityToken(
-            claims: [new Claim(JwtRegisteredClaimNames.Sub, "123")],
+            claims: [new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString())],
             expires: DateTime.UtcNow.AddHours(1)
         );
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
@@ -295,12 +351,12 @@ public class AuthenticationProviderTests
     [Fact]
     public async Task ValidateUserAuthTokenAsync_ReturnsTokenValidationFailed_WhenTokenNotTracked()
     {
-        var userId = await CreateUserAsync();
+        var (_, userPublicId) = await CreateUserWithPublicIdAsync();
 
         var token = new JwtSecurityToken(
             claims:
             [
-                new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, userPublicId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             ],
             expires: DateTime.UtcNow.AddHours(1)

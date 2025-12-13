@@ -4,7 +4,8 @@ namespace Corely.IAM.Users.Models;
 
 public class User
 {
-    public int Id { get; set; }
+    internal int Id { get; set; }
+    public Guid PublicId { get; set; }
     public string Username { get; set; } = null!;
     public string Email { get; set; } = null!;
     public bool Disabled { get; set; }

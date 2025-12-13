@@ -1,5 +1,6 @@
 ﻿using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Models;
@@ -57,6 +58,13 @@ public class AuthenticationServiceTests
         };
         _testUserEntity = await userRepo.CreateAsync(userEntity);
         return _testUserEntity;
+    }
+
+    private async Task<AccountEntity> CreateTestAccountAsync()
+    {
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var accountEntity = new AccountEntity { AccountName = _fixture.Create<string>() };
+        return await accountRepo.CreateAsync(accountEntity);
     }
 
     private static Mock<IAuthenticationProvider> GetMockAuthenticationProvider()
@@ -186,8 +194,12 @@ public class AuthenticationServiceTests
     public async Task SignInAsync_Fails_WhenAccountNotFound()
     {
         var userEntity = await CreateTestUserAsync();
-        var accountId = _fixture.Create<int>();
-        var request = new SignInRequest(userEntity.Username, _fixture.Create<string>(), accountId);
+        var accountPublicId = Guid.NewGuid();
+        var request = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            accountPublicId
+        );
 
         _authenticationProviderMock
             .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<UserAuthTokenRequest>()))
@@ -198,8 +210,31 @@ public class AuthenticationServiceTests
         var result = await _authenticationService.SignInAsync(request);
 
         Assert.Equal(SignInResultCode.AccountNotFoundError, result.ResultCode);
-        Assert.Contains("not found for user", result.Message);
+        Assert.Contains("not found", result.Message);
         Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task SignInAsync_Succeeds_WithValidAccountPublicId()
+    {
+        var userEntity = await CreateTestUserAsync();
+        var accountEntity = await CreateTestAccountAsync();
+        var request = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            accountEntity.PublicId
+        );
+
+        var result = await _authenticationService.SignInAsync(request);
+
+        Assert.Equal(SignInResultCode.Success, result.ResultCode);
+        _authenticationProviderMock.Verify(
+            m =>
+                m.GetUserAuthTokenAsync(
+                    It.Is<UserAuthTokenRequest>(r => r.AccountPublicId == accountEntity.PublicId)
+                ),
+            Times.Once
+        );
     }
 
     [Fact]

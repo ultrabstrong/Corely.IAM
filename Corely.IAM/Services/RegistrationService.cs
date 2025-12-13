@@ -161,7 +161,7 @@ internal class RegistrationService(
                 return new RegisterAccountResult(
                     RegisterAccountResultCode.AccountCreationError,
                     createAccountResult.Message,
-                    -1
+                    Guid.Empty
                 );
             }
 
@@ -184,7 +184,7 @@ internal class RegistrationService(
                 return new RegisterAccountResult(
                     RegisterAccountResultCode.SystemRoleAssignmentError,
                     assignRoleResult.Message,
-                    -1
+                    Guid.Empty
                 );
             }
 
@@ -193,12 +193,12 @@ internal class RegistrationService(
             _logger.LogInformation(
                 "Account {AccountName} registered with Id {AccountId}",
                 request.AccountName,
-                createAccountResult.CreatedId
+                createAccountResult.CreatedPublicId
             );
             return new RegisterAccountResult(
                 RegisterAccountResultCode.Success,
                 string.Empty,
-                createAccountResult.CreatedId
+                createAccountResult.CreatedPublicId
             );
         }
         finally

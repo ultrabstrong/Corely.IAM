@@ -16,8 +16,13 @@ internal class DeregistrationServiceAuthorizationDecorator(
     public Task<DeregisterUserResult> DeregisterUserAsync(DeregisterUserRequest request) =>
         _inner.DeregisterUserAsync(request);
 
-    public Task<DeregisterAccountResult> DeregisterAccountAsync(DeregisterAccountRequest request) =>
-        _inner.DeregisterAccountAsync(request);
+    public async Task<DeregisterAccountResult> DeregisterAccountAsync() =>
+        await _authorizationProvider.HasAccountContextAsync()
+            ? await _inner.DeregisterAccountAsync()
+            : new DeregisterAccountResult(
+                DeregisterAccountResultCode.UnauthorizedError,
+                "Unauthorized to delete account"
+            );
 
     public Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request) =>
         _inner.DeregisterGroupAsync(request);

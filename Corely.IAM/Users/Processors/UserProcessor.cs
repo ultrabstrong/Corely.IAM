@@ -86,6 +86,7 @@ internal class UserProcessor(
         ];
 
         var userEntity = user.ToEntity(_encryptionProviderFactory); // user is validated
+        userEntity.PublicId = Guid.NewGuid();
         var created = await _userRepo.CreateAsync(userEntity);
 
         return new CreateUserResult(CreateUserResultCode.Success, string.Empty, created.Id);

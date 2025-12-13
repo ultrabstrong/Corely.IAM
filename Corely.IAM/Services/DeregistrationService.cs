@@ -73,20 +73,18 @@ internal class DeregistrationService(
         return new DeregisterUserResult(DeregisterUserResultCode.Success, string.Empty);
     }
 
-    public async Task<DeregisterAccountResult> DeregisterAccountAsync(
-        DeregisterAccountRequest request
-    )
+    public async Task<DeregisterAccountResult> DeregisterAccountAsync()
     {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _logger.LogInformation("Deregistering account {AccountId}", request.AccountId);
+        var accountId = _userContextProvider.GetUserContext()!.AccountId!.Value;
+        _logger.LogInformation("Deregistering account {AccountId}", accountId);
 
-        var result = await _accountProcessor.DeleteAccountAsync(request.AccountId);
+        var result = await _accountProcessor.DeleteAccountAsync(accountId);
 
         if (result.ResultCode != DeleteAccountResultCode.Success)
         {
             _logger.LogInformation(
                 "Deregistering account failed for account id {AccountId}",
-                request.AccountId
+                accountId
             );
             return new DeregisterAccountResult(
                 result.ResultCode.ToDeregisterAccountResultCode(),
@@ -94,7 +92,7 @@ internal class DeregistrationService(
             );
         }
 
-        _logger.LogInformation("Account {AccountId} deregistered", request.AccountId);
+        _logger.LogInformation("Account {AccountId} deregistered", accountId);
         return new DeregisterAccountResult(DeregisterAccountResultCode.Success, string.Empty);
     }
 

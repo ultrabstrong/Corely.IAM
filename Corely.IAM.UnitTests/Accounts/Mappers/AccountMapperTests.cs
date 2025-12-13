@@ -31,6 +31,7 @@ public class AccountMapperTests
 
         // Assert
         Assert.Equal(0, result.Id);
+        Assert.Equal(Guid.Empty, result.PublicId);
     }
 
     [Theory]
@@ -53,7 +54,13 @@ public class AccountMapperTests
     public void ToEntity_ShouldMapAllProperties()
     {
         // Arrange
-        var account = new Account { Id = 42, AccountName = "TestAccount" };
+        var publicId = Guid.NewGuid();
+        var account = new Account
+        {
+            Id = 42,
+            PublicId = publicId,
+            AccountName = "TestAccount",
+        };
 
         // Act
         var result = account.ToEntity();
@@ -61,6 +68,7 @@ public class AccountMapperTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(42, result.Id);
+        Assert.Equal(publicId, result.PublicId);
         Assert.Equal("TestAccount", result.AccountName);
     }
 
@@ -84,9 +92,11 @@ public class AccountMapperTests
     public void ToModel_ShouldMapAllProperties()
     {
         // Arrange
+        var publicId = Guid.NewGuid();
         var entity = new AccountEntity
         {
             Id = 42,
+            PublicId = publicId,
             AccountName = "TestAccount",
             CreatedUtc = DateTime.UtcNow,
             ModifiedUtc = DateTime.UtcNow,
@@ -98,6 +108,7 @@ public class AccountMapperTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(42, result.Id);
+        Assert.Equal(publicId, result.PublicId);
         Assert.Equal("TestAccount", result.AccountName);
     }
 
@@ -105,7 +116,13 @@ public class AccountMapperTests
     public void ToModel_ToEntity_RoundTrip_ShouldPreserveData()
     {
         // Arrange
-        var originalAccount = new Account { Id = 99, AccountName = "RoundTripAccount" };
+        var publicId = Guid.NewGuid();
+        var originalAccount = new Account
+        {
+            Id = 99,
+            PublicId = publicId,
+            AccountName = "RoundTripAccount",
+        };
 
         // Act
         var entity = originalAccount.ToEntity();
@@ -113,6 +130,7 @@ public class AccountMapperTests
 
         // Assert
         Assert.Equal(originalAccount.Id, resultAccount.Id);
+        Assert.Equal(originalAccount.PublicId, resultAccount.PublicId);
         Assert.Equal(originalAccount.AccountName, resultAccount.AccountName);
     }
 
@@ -123,13 +141,20 @@ public class AccountMapperTests
     public void ToEntity_ShouldMapVariousInputs(int id, string accountName)
     {
         // Arrange
-        var account = new Account { Id = id, AccountName = accountName };
+        var publicId = Guid.NewGuid();
+        var account = new Account
+        {
+            Id = id,
+            PublicId = publicId,
+            AccountName = accountName,
+        };
 
         // Act
         var result = account.ToEntity();
 
         // Assert
         Assert.Equal(id, result.Id);
+        Assert.Equal(publicId, result.PublicId);
         Assert.Equal(accountName, result.AccountName);
     }
 
@@ -140,13 +165,20 @@ public class AccountMapperTests
     public void ToModel_ShouldMapVariousInputs(int id, string accountName)
     {
         // Arrange
-        var entity = new AccountEntity { Id = id, AccountName = accountName };
+        var publicId = Guid.NewGuid();
+        var entity = new AccountEntity
+        {
+            Id = id,
+            PublicId = publicId,
+            AccountName = accountName,
+        };
 
         // Act
         var result = entity.ToModel();
 
         // Assert
         Assert.Equal(id, result.Id);
+        Assert.Equal(publicId, result.PublicId);
         Assert.Equal(accountName, result.AccountName);
     }
 }

@@ -13,6 +13,10 @@ internal sealed class UserEntityConfiguration : EntityConfigurationBase<UserEnti
 
     protected override void ConfigureInternal(EntityTypeBuilder<UserEntity> builder)
     {
+        builder.Property(e => e.PublicId).IsRequired();
+
+        builder.HasIndex(e => e.PublicId).IsUnique();
+
         builder.Property(e => e.Disabled).IsRequired();
 
         builder

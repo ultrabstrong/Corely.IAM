@@ -37,24 +37,6 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeregisterAccountAsync_DelegatesToInner()
-    {
-        var request = new DeregisterAccountRequest(1);
-        var expectedResult = new DeregisterAccountResult(
-            DeregisterAccountResultCode.Success,
-            string.Empty
-        );
-        _mockInnerService
-            .Setup(x => x.DeregisterAccountAsync(request))
-            .ReturnsAsync(expectedResult);
-
-        var result = await _decorator.DeregisterAccountAsync(request);
-
-        Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.DeregisterAccountAsync(request), Times.Once);
-    }
-
-    [Fact]
     public async Task DeregisterGroupAsync_DelegatesToInner()
     {
         var request = new DeregisterGroupRequest(1);
@@ -182,6 +164,37 @@ public class DeregistrationServiceAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.DeregisterPermissionsFromRoleAsync(request), Times.Once);
+    }
+
+    #endregion
+
+    #region DeregisterAccountAsync
+
+    [Fact]
+    public async Task DeregisterAccountAsync_Succeeds_WhenHasAccountContext()
+    {
+        var expectedResult = new DeregisterAccountResult(
+            DeregisterAccountResultCode.Success,
+            string.Empty
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(true);
+        _mockInnerService.Setup(x => x.DeregisterAccountAsync()).ReturnsAsync(expectedResult);
+
+        var result = await _decorator.DeregisterAccountAsync();
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.DeregisterAccountAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeregisterAccountAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    {
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(false);
+
+        var result = await _decorator.DeregisterAccountAsync();
+
+        Assert.Equal(DeregisterAccountResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(x => x.DeregisterAccountAsync(), Times.Never);
     }
 
     #endregion

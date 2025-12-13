@@ -12,6 +12,10 @@ internal sealed class AccountEntityConfiguration : EntityConfigurationBase<Accou
 
     protected override void ConfigureInternal(EntityTypeBuilder<AccountEntity> builder)
     {
+        builder.Property(e => e.PublicId).IsRequired();
+
+        builder.HasIndex(e => e.PublicId).IsUnique();
+
         builder
             .Property(e => e.AccountName)
             .IsRequired()

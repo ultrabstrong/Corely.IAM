@@ -1,3 +1,3 @@
 ﻿namespace Corely.IAM.Models;
 
-public record SignInRequest(string Username, string Password, int? AccountId = null);
+public record SignInRequest(string Username, string Password, Guid? AccountPublicId = null);

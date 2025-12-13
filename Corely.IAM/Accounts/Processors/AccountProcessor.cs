@@ -51,7 +51,8 @@ internal class AccountProcessor(
             return new CreateAccountResult(
                 CreateAccountResultCode.AccountExistsError,
                 $"Account {request.AccountName} already exists",
-                -1
+                -1,
+                Guid.Empty
             );
         }
 
@@ -62,7 +63,8 @@ internal class AccountProcessor(
             return new CreateAccountResult(
                 CreateAccountResultCode.UserOwnerNotFoundError,
                 $"User with Id {request.OwnerUserId} not found",
-                -1
+                -1,
+                Guid.Empty
             );
         }
 
@@ -77,10 +79,16 @@ internal class AccountProcessor(
         ];
 
         var accountEntity = account.ToEntity();
+        accountEntity.PublicId = Guid.NewGuid();
         accountEntity.Users = [userEntity];
         var created = await _accountRepo.CreateAsync(accountEntity);
 
-        return new CreateAccountResult(CreateAccountResultCode.Success, string.Empty, created.Id);
+        return new CreateAccountResult(
+            CreateAccountResultCode.Success,
+            string.Empty,
+            created.Id,
+            created.PublicId
+        );
     }
 
     public async Task<GetAccountResult> GetAccountAsync(int accountId)

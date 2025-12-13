@@ -93,7 +93,7 @@ internal class AuthenticationService(
         await _userRepo.UpdateAsync(userEntity);
 
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id, request.AccountId)
+            new UserAuthTokenRequest(userEntity.Id, request.AccountPublicId)
         );
 
         if (authTokenResult.ResultCode != UserAuthTokenResultCode.Success)
@@ -110,7 +110,7 @@ internal class AuthenticationService(
                 ),
                 UserAuthTokenResultCode.AccountNotFound => (
                     SignInResultCode.AccountNotFoundError,
-                    $"Account {request.AccountId} not found for user"
+                    $"Account {request.AccountPublicId} not found for user"
                 ),
                 _ => (SignInResultCode.UserNotFoundError, "Unknown error creating auth token"),
             };

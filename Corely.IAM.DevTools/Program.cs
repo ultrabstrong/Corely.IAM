@@ -74,12 +74,22 @@ internal class Program
 
             var username = configuration.GetValue<string>("DevToolsUserContext:Username");
             var password = configuration.GetValue<string>("DevToolsUserContext:Password");
-            var accountId = configuration.GetValue<int?>("DevToolsUserContext:AccountId");
+            var accountPublicIdString = configuration.GetValue<string>(
+                "DevToolsUserContext:AccountPublicId"
+            );
+            Guid? accountPublicId = null;
+            if (
+                !string.IsNullOrEmpty(accountPublicIdString)
+                && Guid.TryParse(accountPublicIdString, out var parsedGuid)
+            )
+            {
+                accountPublicId = parsedGuid;
+            }
 
             if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
             {
                 var signInResult = await authService.SignInAsync(
-                    new SignInRequest(username, password, accountId)
+                    new SignInRequest(username, password, accountPublicId)
                 );
                 if (
                     signInResult.ResultCode == SignInResultCode.Success

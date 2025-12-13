@@ -49,7 +49,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
         var expectedResult = new RegisterAccountResult(
             RegisterAccountResultCode.Success,
             string.Empty,
-            1
+            Guid.NewGuid()
         );
         _mockInnerService.Setup(x => x.RegisterAccountAsync(request)).ReturnsAsync(expectedResult);
 

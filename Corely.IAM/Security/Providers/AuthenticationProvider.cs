@@ -70,16 +70,19 @@ internal class AuthenticationProvider(
         var accounts = userEntity.Accounts?.Select(a => a.ToModel()).ToList() ?? [];
 
         int? signedInAccountId = null;
-        if (request.AccountId.HasValue)
+        if (request.AccountPublicId.HasValue)
         {
-            if (accounts.Any(a => a.Id == request.AccountId.Value))
-                signedInAccountId = request.AccountId.Value;
+            var matchingAccount = accounts.FirstOrDefault(a =>
+                a.PublicId == request.AccountPublicId.Value
+            );
+            if (matchingAccount != null)
+                signedInAccountId = matchingAccount.Id;
             else
             {
                 _logger.LogWarning(
-                    "User with Id {UserId} does not have access to account {AccountId}",
+                    "User with Id {UserId} does not have access to account {AccountPublicId}",
                     request.UserId,
-                    request.AccountId.Value
+                    request.AccountPublicId.Value
                 );
                 return new UserAuthTokenResult(
                     UserAuthTokenResultCode.AccountNotFound,
@@ -103,7 +106,7 @@ internal class AuthenticationProvider(
 
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, request.UserId.ToString()),
+            new(JwtRegisteredClaimNames.Sub, userEntity.PublicId.ToString()),
             new(JwtRegisteredClaimNames.Jti, jti),
             new(
                 JwtRegisteredClaimNames.Iat,
@@ -114,14 +117,14 @@ internal class AuthenticationProvider(
 
         foreach (var account in accounts)
         {
-            claims.Add(new Claim(UserConstants.ACCOUNT_ID_CLAIM, account.Id.ToString()));
+            claims.Add(new Claim(UserConstants.ACCOUNT_ID_CLAIM, account.PublicId.ToString()));
         }
 
-        if (signedInAccountId.HasValue)
+        if (request.AccountPublicId.HasValue)
             claims.Add(
                 new Claim(
                     UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM,
-                    signedInAccountId.Value.ToString()
+                    request.AccountPublicId.Value.ToString()
                 )
             );
 
@@ -172,15 +175,31 @@ internal class AuthenticationProvider(
         var subClaim = jwtToken
             .Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)
             ?.Value;
-        if (string.IsNullOrEmpty(subClaim) || !int.TryParse(subClaim, out var userId))
+        if (string.IsNullOrEmpty(subClaim) || !Guid.TryParse(subClaim, out var userPublicId))
         {
-            _logger.LogInformation("Auth token does not contain valid sub (userId) claim");
+            _logger.LogInformation("Auth token does not contain valid sub (userPublicId) claim");
             return new UserAuthTokenValidationResult(
                 UserAuthTokenValidationResultCode.MissingUserIdClaim,
                 null,
                 null
             );
         }
+
+        var userEntity = await _userRepo.GetAsync(
+            u => u.PublicId == userPublicId,
+            include: q => q.Include(u => u.AsymmetricKeys).Include(u => u.Accounts)
+        );
+        if (userEntity == null)
+        {
+            _logger.LogInformation("User with PublicId {UserPublicId} not found", userPublicId);
+            return new UserAuthTokenValidationResult(
+                UserAuthTokenValidationResultCode.TokenValidationFailed,
+                null,
+                null
+            );
+        }
+
+        var userId = userEntity.Id;
 
         var jti = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
         if (string.IsNullOrEmpty(jti))
@@ -210,9 +229,16 @@ internal class AuthenticationProvider(
             );
         }
 
-        var signatureKey = await GetUserAsymmetricKeyAsync(userId, KeyUsedFor.Signature);
+        var signatureKey = userEntity.AsymmetricKeys?.FirstOrDefault(k =>
+            k.KeyUsedFor == KeyUsedFor.Signature
+        );
         if (signatureKey == null)
         {
+            _logger.LogWarning(
+                "User with Id {UserId} does not have an asymmetric key for {KeyUse}",
+                userId,
+                KeyUsedFor.Signature
+            );
             return new UserAuthTokenValidationResult(
                 UserAuthTokenValidationResultCode.TokenValidationFailed,
                 null,
@@ -258,10 +284,23 @@ internal class AuthenticationProvider(
             ?.Value;
         if (
             !string.IsNullOrEmpty(signedInAccountIdClaim)
-            && int.TryParse(signedInAccountIdClaim, out var accountId)
+            && Guid.TryParse(signedInAccountIdClaim, out var accountPublicId)
         )
         {
-            signedInAccountId = accountId;
+            var matchingAccount = userEntity.Accounts?.FirstOrDefault(a =>
+                a.PublicId == accountPublicId
+            );
+            if (matchingAccount != null)
+            {
+                signedInAccountId = matchingAccount.Id;
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Account with PublicId {AccountPublicId} not found in user's accounts during token validation",
+                    accountPublicId
+                );
+            }
         }
 
         return new UserAuthTokenValidationResult(
@@ -317,35 +356,5 @@ internal class AuthenticationProvider(
                 userId
             );
         }
-    }
-
-    private async Task<UserAsymmetricKeyEntity?> GetUserAsymmetricKeyAsync(
-        int userId,
-        KeyUsedFor keyUse
-    )
-    {
-        var userEntity = await _userRepo.GetAsync(
-            u => u.Id == userId,
-            include: q => q.Include(u => u.AsymmetricKeys)
-        );
-
-        if (userEntity == null)
-        {
-            _logger.LogWarning("User with Id {UserId} not found", userId);
-            return null;
-        }
-
-        var key = userEntity.AsymmetricKeys?.FirstOrDefault(k => k.KeyUsedFor == keyUse);
-        if (key == null)
-        {
-            _logger.LogWarning(
-                "User with Id {UserId} does not have an asymmetric key for {KeyUse}",
-                userId,
-                keyUse
-            );
-            return null;
-        }
-
-        return key;
     }
 }

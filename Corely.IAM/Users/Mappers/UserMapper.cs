@@ -17,6 +17,7 @@ internal static class UserMapper
         return new UserEntity
         {
             Id = user.Id,
+            PublicId = user.PublicId,
             Username = user.Username,
             Email = user.Email,
             Disabled = user.Disabled,
@@ -38,6 +39,7 @@ internal static class UserMapper
         return new UserEntity
         {
             Id = user.Id,
+            PublicId = user.PublicId,
             Username = user.Username,
             Email = user.Email,
             Disabled = user.Disabled,
@@ -62,6 +64,7 @@ internal static class UserMapper
         return new User
         {
             Id = entity.Id,
+            PublicId = entity.PublicId,
             Username = entity.Username,
             Email = entity.Email,
             Disabled = entity.Disabled,
@@ -83,6 +86,7 @@ internal static class UserMapper
         return new User
         {
             Id = entity.Id,
+            PublicId = entity.PublicId,
             Username = entity.Username,
             Email = entity.Email,
             Disabled = entity.Disabled,

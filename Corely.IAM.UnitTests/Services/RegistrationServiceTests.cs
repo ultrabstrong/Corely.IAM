@@ -102,7 +102,8 @@ public class RegistrationServiceTests
                 new CreateAccountResult(
                     _createAccountResultCode,
                     string.Empty,
-                    _fixture.Create<int>()
+                    _fixture.Create<int>(),
+                    Guid.NewGuid()
                 )
             );
 

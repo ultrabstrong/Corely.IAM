@@ -10,5 +10,5 @@ public enum RegisterAccountResultCode
 public record RegisterAccountResult(
     RegisterAccountResultCode ResultCode,
     string? Message,
-    int CreatedAccountId
+    Guid CreatedAccountId
 );

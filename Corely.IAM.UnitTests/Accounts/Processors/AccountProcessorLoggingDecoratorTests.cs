@@ -27,7 +27,8 @@ public class AccountProcessorLoggingDecoratorTests
         var expectedResult = new CreateAccountResult(
             CreateAccountResultCode.Success,
             string.Empty,
-            1
+            1,
+            Guid.NewGuid()
         );
         _mockInnerProcessor.Setup(x => x.CreateAccountAsync(request)).ReturnsAsync(expectedResult);
 

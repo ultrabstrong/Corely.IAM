@@ -166,10 +166,10 @@ internal class Program
             var signInRequest = new SignInRequest("user1", "admin");
             var signInResult = await authenticationService.SignInAsync(signInRequest);
 
-            var tokenId = new JwtSecurityTokenHandler().ReadJwtToken(signInResult.AuthToken).Id;
+            var token = new JwtSecurityTokenHandler().ReadJwtToken(signInResult.AuthToken!);
             var signedOut = await authenticationService.SignOutAsync(
                 registerUserResult.CreatedUserId,
-                tokenId
+                token.Id
             );
 
             await authenticationService.SignOutAllAsync(registerUserResult.CreatedUserId);
@@ -252,12 +252,7 @@ internal class Program
                 deregisterGroupRequest
             );
 
-            var deregisterAccountRequest = new DeregisterAccountRequest(
-                registerAccountResult.CreatedAccountId
-            );
-            var deregisterAccountResult = await deregistrationService.DeregisterAccountAsync(
-                deregisterAccountRequest
-            );
+            var deregisterAccountResult = await deregistrationService.DeregisterAccountAsync();
         }
         catch (Exception ex)
         {

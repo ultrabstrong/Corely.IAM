@@ -1,7 +1,6 @@
 ﻿namespace Corely.IAM.Models;
 
 public record RegisterPermissionRequest(
-    int OwnerAccountId,
     string ResourceType,
     int ResourceId,
     bool Create = false,

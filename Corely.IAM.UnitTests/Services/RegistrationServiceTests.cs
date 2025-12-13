@@ -32,6 +32,7 @@ public class RegistrationServiceTests
     private readonly Mock<IRoleProcessor> _roleProcessorMock;
     private readonly Mock<IPermissionProcessor> _permissionProcessorMock;
     private readonly Mock<IIamUserContextSetter> _userContextSetterMock = new();
+    private readonly Mock<IIamUserContextProvider> _userContextProviderMock = new();
     private readonly RegistrationService _registrationService;
 
     private CreateAccountResultCode _createAccountResultCode = CreateAccountResultCode.Success;
@@ -75,6 +76,9 @@ public class RegistrationServiceTests
         _roleProcessorMock = GetMockRoleProcessor();
         _permissionProcessorMock = GetMockPermissionProcessor();
 
+        // Setup user context provider to return a valid context with account ID
+        _userContextProviderMock.Setup(x => x.GetUserContext()).Returns(new IamUserContext(1, 1));
+
         _registrationService = new RegistrationService(
             _serviceFactory.GetRequiredService<ILogger<RegistrationService>>(),
             _accountProcessorMock.Object,
@@ -84,6 +88,7 @@ public class RegistrationServiceTests
             _roleProcessorMock.Object,
             _permissionProcessorMock.Object,
             _userContextSetterMock.Object,
+            _userContextProviderMock.Object,
             _unitOfWorkProviderMock.Object
         );
     }
@@ -345,9 +350,7 @@ public class RegistrationServiceTests
         _accountProcessorMock.Verify(
             m =>
                 m.AddUserToAccountAsync(
-                    It.Is<AddUserToAccountRequest>(r =>
-                        r.UserId == request.UserId && r.AccountId == request.AccountId
-                    )
+                    It.Is<AddUserToAccountRequest>(r => r.UserId == request.UserId)
                 ),
             Times.Once
         );

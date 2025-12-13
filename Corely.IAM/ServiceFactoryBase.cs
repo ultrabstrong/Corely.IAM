@@ -88,6 +88,10 @@ public abstract class ServiceFactoryBase(
         ServiceCollection.AddScoped<IAuthorizationProvider, AuthorizationProvider>();
 
         ServiceCollection.AddScoped<IRegistrationService, RegistrationService>();
+        ServiceCollection.Decorate<
+            IRegistrationService,
+            RegistrationServiceAuthorizationDecorator
+        >();
         ServiceCollection.AddScoped<IDeregistrationService, DeregistrationService>();
         ServiceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
         ServiceCollection.AddScoped<IRetrievalService, RetrievalService>();

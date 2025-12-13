@@ -31,7 +31,7 @@ internal partial class Registration : CommandBase
             {
                 SampleJsonFileHelper.CreateSampleJson(
                     RequestJsonFile,
-                    new RegisterUserWithAccountRequest(1, 1)
+                    new RegisterUserWithAccountRequest(1)
                 );
             }
             else

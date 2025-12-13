@@ -31,7 +31,7 @@ internal partial class Registration : CommandBase
             {
                 SampleJsonFileHelper.CreateSampleJson(
                     RequestJsonFile,
-                    new RegisterGroupRequest("groupName", 1)
+                    new RegisterGroupRequest("groupName")
                 );
             }
             else

@@ -99,24 +99,19 @@ internal class Program
             await userContextProvider.SetUserContextAsync(signInForContextResult.AuthToken!);
 
             var registerUserWithAccountRequest = new RegisterUserWithAccountRequest(
-                registerUser2Result.CreatedUserId,
-                registerAccountResult.CreatedAccountId
+                registerUser2Result.CreatedUserId
             );
             var registerUserWithAccountResult =
                 await registrationService.RegisterUserWithAccountAsync(
                     registerUserWithAccountRequest
                 );
 
-            var registerGroupRequest = new RegisterGroupRequest(
-                "grp1",
-                registerAccountResult.CreatedAccountId
-            );
+            var registerGroupRequest = new RegisterGroupRequest("grp1");
             var registerGroupResult = await registrationService.RegisterGroupAsync(
                 registerGroupRequest
             );
 
             var registerPermissionRequest = new RegisterPermissionRequest(
-                registerAccountResult.CreatedAccountId,
                 "group",
                 registerGroupResult.CreatedGroupId,
                 Read: true
@@ -134,10 +129,7 @@ internal class Program
                     registerUsersWithGroupRequest
                 );
 
-            var registerRoleRequest = new RegisterRoleRequest(
-                "role1",
-                registerAccountResult.CreatedAccountId
-            );
+            var registerRoleRequest = new RegisterRoleRequest("role1");
             var registerRoleResult = await registrationService.RegisterRoleAsync(
                 registerRoleRequest
             );

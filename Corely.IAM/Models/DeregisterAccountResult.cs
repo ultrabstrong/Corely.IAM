@@ -6,4 +6,5 @@ public enum DeregisterAccountResultCode
 {
     Success,
     AccountNotFoundError,
+    UnauthorizedError,
 }

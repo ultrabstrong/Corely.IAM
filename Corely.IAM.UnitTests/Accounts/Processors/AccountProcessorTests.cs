@@ -213,29 +213,32 @@ public class AccountProcessorTests
     [Fact]
     public async Task GetAccountByAccountIdAsync_ReturnsNull_WhenAccountDNE()
     {
-        var account = await _accountProcessor.GetAccountAsync(_fixture.Create<int>());
+        var result = await _accountProcessor.GetAccountAsync(_fixture.Create<int>());
 
-        Assert.Null(account);
+        Assert.Equal(GetAccountResultCode.AccountNotFoundError, result.ResultCode);
+        Assert.Null(result.Account);
     }
 
     [Fact]
     public async Task GetAccountByAccountIdAsync_ReturnsAccount_WhenAccountExists()
     {
         var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, await CreateUserAsync());
-        var result = await _accountProcessor.CreateAccountAsync(request);
+        var createResult = await _accountProcessor.CreateAccountAsync(request);
 
-        var account = await _accountProcessor.GetAccountAsync(result.CreatedId);
+        var result = await _accountProcessor.GetAccountAsync(createResult.CreatedId);
 
-        Assert.NotNull(account);
-        Assert.Equal(VALID_ACCOUNT_NAME, account.AccountName);
+        Assert.Equal(GetAccountResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.Account);
+        Assert.Equal(VALID_ACCOUNT_NAME, result.Account.AccountName);
     }
 
     [Fact]
     public async Task GetAccountByAccountNameAsync_ReturnsNull_WhenAccountDNE()
     {
-        var account = await _accountProcessor.GetAccountAsync(_fixture.Create<string>());
+        var result = await _accountProcessor.GetAccountAsync(_fixture.Create<string>());
 
-        Assert.Null(account);
+        Assert.Equal(GetAccountResultCode.AccountNotFoundError, result.ResultCode);
+        Assert.Null(result.Account);
     }
 
     [Fact]
@@ -244,10 +247,11 @@ public class AccountProcessorTests
         var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, await CreateUserAsync());
         await _accountProcessor.CreateAccountAsync(request);
 
-        var account = await _accountProcessor.GetAccountAsync(VALID_ACCOUNT_NAME);
+        var result = await _accountProcessor.GetAccountAsync(VALID_ACCOUNT_NAME);
 
-        Assert.NotNull(account);
-        Assert.Equal(VALID_ACCOUNT_NAME, account.AccountName);
+        Assert.Equal(GetAccountResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.Account);
+        Assert.Equal(VALID_ACCOUNT_NAME, result.Account.AccountName);
     }
 
     [Fact]
@@ -511,9 +515,10 @@ public class AccountProcessorTests
     {
         var userId = await CreateUserAsync();
 
-        var accounts = await _accountProcessor.GetAccountsForUserAsync(userId);
+        var result = await _accountProcessor.ListAccountsForUserAsync(userId);
 
-        Assert.Empty(accounts);
+        Assert.Equal(ListAccountsForUserResultCode.Success, result.ResultCode);
+        Assert.Empty(result.Accounts);
     }
 
     [Fact]
@@ -525,11 +530,12 @@ public class AccountProcessorTests
         await _accountProcessor.CreateAccountAsync(request1);
         await _accountProcessor.CreateAccountAsync(request2);
 
-        var accounts = await _accountProcessor.GetAccountsForUserAsync(userId);
+        var result = await _accountProcessor.ListAccountsForUserAsync(userId);
 
-        Assert.Equal(2, accounts.Count);
-        Assert.Contains(accounts, a => a.AccountName == "account1");
-        Assert.Contains(accounts, a => a.AccountName == "account2");
+        Assert.Equal(ListAccountsForUserResultCode.Success, result.ResultCode);
+        Assert.Equal(2, result.Accounts.Count);
+        Assert.Contains(result.Accounts, a => a.AccountName == "account1");
+        Assert.Contains(result.Accounts, a => a.AccountName == "account2");
     }
 
     [Fact]
@@ -544,9 +550,10 @@ public class AccountProcessorTests
             new CreateAccountRequest("user2account", userId2)
         );
 
-        var accounts = await _accountProcessor.GetAccountsForUserAsync(userId1);
+        var result = await _accountProcessor.ListAccountsForUserAsync(userId1);
 
-        Assert.Single(accounts);
-        Assert.Equal("user1account", accounts[0].AccountName);
+        Assert.Equal(ListAccountsForUserResultCode.Success, result.ResultCode);
+        Assert.Single(result.Accounts);
+        Assert.Equal("user1account", result.Accounts[0].AccountName);
     }
 }

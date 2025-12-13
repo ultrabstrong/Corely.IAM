@@ -12,4 +12,5 @@ public enum RemoveUserFromAccountResultCode
     AccountNotFoundError,
     UserNotInAccountError,
     UserIsSoleOwnerError,
+    UnauthorizedError,
 }

@@ -37,6 +37,28 @@ internal class AuthorizationProvider(
             throw new AuthorizationException(resourceType, action.ToString(), resourceId);
     }
 
+    public async Task<bool> IsAuthorizedAsync(
+        AuthAction action,
+        string resourceType,
+        int? resourceId = null
+    )
+    {
+        var userContext = _userContextProvider.GetUserContext();
+        if (userContext == null)
+            return false;
+
+        var permissions = await GetPermissionsAsync();
+
+        return permissions.Any(p =>
+            (
+                p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
+                || p.ResourceType == resourceType
+            )
+            && (p.ResourceId == 0 || p.ResourceId == resourceId)
+            && HasAction(p, action)
+        );
+    }
+
     private async Task<IReadOnlyList<PermissionEntity>> GetPermissionsAsync()
     {
         if (_cachedPermissions != null)

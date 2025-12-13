@@ -14,7 +14,11 @@ public class RetrievalServiceTests
     private readonly Mock<IAccountProcessor> _accountProcessorMock;
     private readonly RetrievalService _retrievalService;
 
-    private List<Account> _accountsForUser = [];
+    private ListAccountsForUserResult _listAccountsForUserResult = new(
+        ListAccountsForUserResultCode.Success,
+        string.Empty,
+        []
+    );
 
     public RetrievalServiceTests()
     {
@@ -30,8 +34,8 @@ public class RetrievalServiceTests
     {
         var mock = new Mock<IAccountProcessor>();
 
-        mock.Setup(m => m.GetAccountsForUserAsync(It.IsAny<int>()))
-            .ReturnsAsync(() => _accountsForUser);
+        mock.Setup(m => m.ListAccountsForUserAsync(It.IsAny<int>()))
+            .ReturnsAsync(() => _listAccountsForUserResult);
 
         return mock;
     }
@@ -40,32 +44,58 @@ public class RetrievalServiceTests
     public async Task RetrieveAccountsAsync_ReturnsAccounts_WhenUserHasAccounts()
     {
         var userId = _fixture.Create<int>();
-        _accountsForUser =
-        [
-            new Account { Id = 1, AccountName = "Account1" },
-            new Account { Id = 2, AccountName = "Account2" },
-        ];
+        _listAccountsForUserResult = new ListAccountsForUserResult(
+            ListAccountsForUserResultCode.Success,
+            string.Empty,
+            [
+                new Account { Id = 1, AccountName = "Account1" },
+                new Account { Id = 2, AccountName = "Account2" },
+            ]
+        );
         var request = new RetrieveAccountsRequest(userId);
 
         var result = await _retrievalService.RetrieveAccountsAsync(request);
 
+        Assert.Equal(RetrieveAccountsResultCode.Success, result.ResultCode);
         Assert.Equal(2, result.Accounts.Count);
         Assert.Contains(result.Accounts, a => a.AccountName == "Account1");
         Assert.Contains(result.Accounts, a => a.AccountName == "Account2");
-        _accountProcessorMock.Verify(m => m.GetAccountsForUserAsync(userId), Times.Once);
+        _accountProcessorMock.Verify(m => m.ListAccountsForUserAsync(userId), Times.Once);
     }
 
     [Fact]
     public async Task RetrieveAccountsAsync_ReturnsEmptyList_WhenUserHasNoAccounts()
     {
         var userId = _fixture.Create<int>();
-        _accountsForUser = [];
+        _listAccountsForUserResult = new ListAccountsForUserResult(
+            ListAccountsForUserResultCode.Success,
+            string.Empty,
+            []
+        );
         var request = new RetrieveAccountsRequest(userId);
 
         var result = await _retrievalService.RetrieveAccountsAsync(request);
 
+        Assert.Equal(RetrieveAccountsResultCode.Success, result.ResultCode);
         Assert.Empty(result.Accounts);
-        _accountProcessorMock.Verify(m => m.GetAccountsForUserAsync(userId), Times.Once);
+        _accountProcessorMock.Verify(m => m.ListAccountsForUserAsync(userId), Times.Once);
+    }
+
+    [Fact]
+    public async Task RetrieveAccountsAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    {
+        var userId = _fixture.Create<int>();
+        _listAccountsForUserResult = new ListAccountsForUserResult(
+            ListAccountsForUserResultCode.UnauthorizedError,
+            "Unauthorized",
+            []
+        );
+        var request = new RetrieveAccountsRequest(userId);
+
+        var result = await _retrievalService.RetrieveAccountsAsync(request);
+
+        Assert.Equal(RetrieveAccountsResultCode.UnauthorizedError, result.ResultCode);
+        Assert.Empty(result.Accounts);
     }
 
     [Fact]

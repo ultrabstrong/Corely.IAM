@@ -39,49 +39,59 @@ public class AccountProcessorLoggingDecoratorTests
     }
 
     [Fact]
-    public async Task GetAccountAsyncById_DelegatesToInnerWithoutLoggingResult()
+    public async Task GetAccountAsyncById_DelegatesToInnerAndLogsResult()
     {
         var accountId = 1;
-        var expectedAccount = new Account { AccountName = "testaccount" };
-        _mockInnerProcessor.Setup(x => x.GetAccountAsync(accountId)).ReturnsAsync(expectedAccount);
+        var expectedResult = new GetAccountResult(
+            GetAccountResultCode.Success,
+            string.Empty,
+            new Account { AccountName = "testaccount" }
+        );
+        _mockInnerProcessor.Setup(x => x.GetAccountAsync(accountId)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetAccountAsync(accountId);
 
-        Assert.Equal(expectedAccount, result);
+        Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.GetAccountAsync(accountId), Times.Once);
-        VerifyLoggedWithoutResult();
+        VerifyLoggedWithResult();
     }
 
     [Fact]
     public async Task GetAccountAsyncByName_DelegatesToInnerAndLogsResult()
     {
         var accountName = "testaccount";
-        var expectedAccount = new Account { AccountName = accountName };
-        _mockInnerProcessor
-            .Setup(x => x.GetAccountAsync(accountName))
-            .ReturnsAsync(expectedAccount);
+        var expectedResult = new GetAccountResult(
+            GetAccountResultCode.Success,
+            string.Empty,
+            new Account { AccountName = accountName }
+        );
+        _mockInnerProcessor.Setup(x => x.GetAccountAsync(accountName)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetAccountAsync(accountName);
 
-        Assert.Equal(expectedAccount, result);
+        Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.GetAccountAsync(accountName), Times.Once);
         VerifyLoggedWithResult();
     }
 
     [Fact]
-    public async Task GetAccountsForUserAsync_DelegatesToInnerWithoutLoggingResult()
+    public async Task ListAccountsForUserAsync_DelegatesToInnerAndLogsResult()
     {
         var userId = 1;
-        var expectedAccounts = new List<Account> { new() { AccountName = "testaccount" } };
+        var expectedResult = new ListAccountsForUserResult(
+            ListAccountsForUserResultCode.Success,
+            string.Empty,
+            [new Account { AccountName = "testaccount" }]
+        );
         _mockInnerProcessor
-            .Setup(x => x.GetAccountsForUserAsync(userId))
-            .ReturnsAsync(expectedAccounts);
+            .Setup(x => x.ListAccountsForUserAsync(userId))
+            .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.GetAccountsForUserAsync(userId);
+        var result = await _decorator.ListAccountsForUserAsync(userId);
 
-        Assert.Equal(expectedAccounts, result);
-        _mockInnerProcessor.Verify(x => x.GetAccountsForUserAsync(userId), Times.Once);
-        VerifyLoggedWithoutResult();
+        Assert.Equal(expectedResult, result);
+        _mockInnerProcessor.Verify(x => x.ListAccountsForUserAsync(userId), Times.Once);
+        VerifyLoggedWithResult();
     }
 
     [Fact]

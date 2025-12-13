@@ -83,7 +83,7 @@ internal class AccountProcessor(
         return new CreateAccountResult(CreateAccountResultCode.Success, string.Empty, created.Id);
     }
 
-    public async Task<Account?> GetAccountAsync(int accountId)
+    public async Task<GetAccountResult> GetAccountAsync(int accountId)
     {
         var accountEntity = await _accountRepo.GetAsync(a => a.Id == accountId);
         var account = accountEntity?.ToModel();
@@ -91,11 +91,16 @@ internal class AccountProcessor(
         if (account == null)
         {
             _logger.LogInformation("Account with Id {AccountId} not found", accountId);
+            return new GetAccountResult(
+                GetAccountResultCode.AccountNotFoundError,
+                $"Account with Id {accountId} not found",
+                null
+            );
         }
-        return account;
+        return new GetAccountResult(GetAccountResultCode.Success, string.Empty, account);
     }
 
-    public async Task<Account?> GetAccountAsync(string accountName)
+    public async Task<GetAccountResult> GetAccountAsync(string accountName)
     {
         var accountEntity = await _accountRepo.GetAsync(a => a.AccountName == accountName);
         var account = accountEntity?.ToModel();
@@ -103,17 +108,27 @@ internal class AccountProcessor(
         if (account == null)
         {
             _logger.LogInformation("Account with name {AccountName} not found", accountName);
+            return new GetAccountResult(
+                GetAccountResultCode.AccountNotFoundError,
+                $"Account with name {accountName} not found",
+                null
+            );
         }
 
-        return account;
+        return new GetAccountResult(GetAccountResultCode.Success, string.Empty, account);
     }
 
-    public async Task<List<Account>> GetAccountsForUserAsync(int userId)
+    public async Task<ListAccountsForUserResult> ListAccountsForUserAsync(int userId)
     {
         var accountEntities = await _accountRepo.ListAsync(a =>
             a.Users != null && a.Users.Any(u => u.Id == userId)
         );
-        return [.. accountEntities.Select(a => a.ToModel())];
+        var accounts = accountEntities.Select(a => a.ToModel()).ToList();
+        return new ListAccountsForUserResult(
+            ListAccountsForUserResultCode.Success,
+            string.Empty,
+            accounts
+        );
     }
 
     public async Task<DeleteAccountResult> DeleteAccountAsync(int accountId)

@@ -2,7 +2,6 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
-using Corely.IAM.Security.Exceptions;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.UnitTests.Accounts.Processors;
@@ -32,7 +31,7 @@ public class AccountProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.AuthorizeAsync(It.IsAny<string>(), It.IsAny<AuthAction>(), It.IsAny<int?>()),
+            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int?>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(x => x.CreateAccountAsync(request), Times.Once);
@@ -42,17 +41,30 @@ public class AccountProcessorAuthorizationDecoratorTests
     public async Task GetAccountAsyncById_CallsAuthorizationProviderWithResourceId()
     {
         var accountId = 5;
-        var expectedAccount = new Account { Id = accountId, AccountName = "TestAccount" };
-        _mockInnerProcessor.Setup(x => x.GetAccountAsync(accountId)).ReturnsAsync(expectedAccount);
+        var expectedResult = new GetAccountResult(
+            GetAccountResultCode.Success,
+            string.Empty,
+            new Account { Id = accountId, AccountName = "TestAccount" }
+        );
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Read,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    accountId
+                )
+            )
+            .ReturnsAsync(true);
+        _mockInnerProcessor.Setup(x => x.GetAccountAsync(accountId)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetAccountAsync(accountId);
 
-        Assert.Equal(expectedAccount, result);
+        Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
             x =>
-                x.AuthorizeAsync(
-                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                x.IsAuthorizedAsync(
                     AuthAction.Read,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
                     accountId
                 ),
             Times.Once
@@ -60,29 +72,23 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetAccountAsyncById_ThrowsAuthorizationException_WhenNotAuthorized()
+    public async Task GetAccountAsyncById_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var accountId = 5;
         _mockAuthorizationProvider
             .Setup(x =>
-                x.AuthorizeAsync(
-                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                x.IsAuthorizedAsync(
                     AuthAction.Read,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
                     accountId
                 )
             )
-            .ThrowsAsync(
-                new AuthorizationException(
-                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
-                    AuthAction.Read.ToString(),
-                    accountId
-                )
-            );
+            .ReturnsAsync(false);
 
-        await Assert.ThrowsAsync<AuthorizationException>(() =>
-            _decorator.GetAccountAsync(accountId)
-        );
+        var result = await _decorator.GetAccountAsync(accountId);
 
+        Assert.Equal(GetAccountResultCode.UnauthorizedError, result.ResultCode);
+        Assert.Null(result.Account);
         _mockInnerProcessor.Verify(x => x.GetAccountAsync(It.IsAny<int>()), Times.Never);
     }
 
@@ -90,39 +96,54 @@ public class AccountProcessorAuthorizationDecoratorTests
     public async Task GetAccountAsyncByName_CallsAuthorizationProvider()
     {
         var accountName = "TestAccount";
-        var expectedAccount = new Account { Id = 1, AccountName = accountName };
-        _mockInnerProcessor
-            .Setup(x => x.GetAccountAsync(accountName))
-            .ReturnsAsync(expectedAccount);
+        var expectedResult = new GetAccountResult(
+            GetAccountResultCode.Success,
+            string.Empty,
+            new Account { Id = 1, AccountName = accountName }
+        );
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Read,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    null
+                )
+            )
+            .ReturnsAsync(true);
+        _mockInnerProcessor.Setup(x => x.GetAccountAsync(accountName)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetAccountAsync(accountName);
 
-        Assert.Equal(expectedAccount, result);
+        Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Read, null),
+            x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Read,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    null
+                ),
             Times.Once
         );
     }
 
     [Fact]
-    public async Task GetAccountAsyncByName_ThrowsAuthorizationException_WhenNotAuthorized()
+    public async Task GetAccountAsyncByName_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var accountName = "TestAccount";
         _mockAuthorizationProvider
             .Setup(x =>
-                x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Read, null)
-            )
-            .ThrowsAsync(
-                new AuthorizationException(
+                x.IsAuthorizedAsync(
+                    AuthAction.Read,
                     PermissionConstants.ACCOUNT_RESOURCE_TYPE,
-                    AuthAction.Read.ToString()
+                    null
                 )
-            );
+            )
+            .ReturnsAsync(false);
 
-        await Assert.ThrowsAsync<AuthorizationException>(() =>
-            _decorator.GetAccountAsync(accountName)
-        );
+        var result = await _decorator.GetAccountAsync(accountName);
 
+        Assert.Equal(GetAccountResultCode.UnauthorizedError, result.ResultCode);
+        Assert.Null(result.Account);
         _mockInnerProcessor.Verify(x => x.GetAccountAsync(It.IsAny<string>()), Times.Never);
     }
 
@@ -131,6 +152,15 @@ public class AccountProcessorAuthorizationDecoratorTests
     {
         var accountId = 5;
         var expectedResult = new DeleteAccountResult(DeleteAccountResultCode.Success, "");
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Delete,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    accountId
+                )
+            )
+            .ReturnsAsync(true);
         _mockInnerProcessor
             .Setup(x => x.DeleteAccountAsync(accountId))
             .ReturnsAsync(expectedResult);
@@ -140,9 +170,9 @@ public class AccountProcessorAuthorizationDecoratorTests
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
             x =>
-                x.AuthorizeAsync(
-                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                x.IsAuthorizedAsync(
                     AuthAction.Delete,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
                     accountId
                 ),
             Times.Once
@@ -151,29 +181,22 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteAccountAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    public async Task DeleteAccountAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var accountId = 5;
         _mockAuthorizationProvider
             .Setup(x =>
-                x.AuthorizeAsync(
-                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                x.IsAuthorizedAsync(
                     AuthAction.Delete,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
                     accountId
                 )
             )
-            .ThrowsAsync(
-                new AuthorizationException(
-                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
-                    AuthAction.Delete.ToString(),
-                    accountId
-                )
-            );
+            .ReturnsAsync(false);
 
-        await Assert.ThrowsAsync<AuthorizationException>(() =>
-            _decorator.DeleteAccountAsync(accountId)
-        );
+        var result = await _decorator.DeleteAccountAsync(accountId);
 
+        Assert.Equal(DeleteAccountResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerProcessor.Verify(x => x.DeleteAccountAsync(It.IsAny<int>()), Times.Never);
     }
 
@@ -182,6 +205,11 @@ public class AccountProcessorAuthorizationDecoratorTests
     {
         var request = new AddUserToAccountRequest(1, 5);
         var expectedResult = new AddUserToAccountResult(AddUserToAccountResultCode.Success, "");
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE, 5)
+            )
+            .ReturnsAsync(true);
         _mockInnerProcessor
             .Setup(x => x.AddUserToAccountAsync(request))
             .ReturnsAsync(expectedResult);
@@ -190,32 +218,30 @@ public class AccountProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Update, 5),
+            x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    5
+                ),
             Times.Once
         );
         _mockInnerProcessor.Verify(x => x.AddUserToAccountAsync(request), Times.Once);
     }
 
     [Fact]
-    public async Task AddUserToAccountAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    public async Task AddUserToAccountAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new AddUserToAccountRequest(1, 5);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Update, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE, 5)
             )
-            .ThrowsAsync(
-                new AuthorizationException(
-                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
-                    AuthAction.Update.ToString(),
-                    5
-                )
-            );
+            .ReturnsAsync(false);
 
-        await Assert.ThrowsAsync<AuthorizationException>(() =>
-            _decorator.AddUserToAccountAsync(request)
-        );
+        var result = await _decorator.AddUserToAccountAsync(request);
 
+        Assert.Equal(AddUserToAccountResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerProcessor.Verify(
             x => x.AddUserToAccountAsync(It.IsAny<AddUserToAccountRequest>()),
             Times.Never
@@ -230,6 +256,11 @@ public class AccountProcessorAuthorizationDecoratorTests
             RemoveUserFromAccountResultCode.Success,
             ""
         );
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE, 5)
+            )
+            .ReturnsAsync(true);
         _mockInnerProcessor
             .Setup(x => x.RemoveUserFromAccountAsync(request))
             .ReturnsAsync(expectedResult);
@@ -238,32 +269,30 @@ public class AccountProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Update, 5),
+            x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    5
+                ),
             Times.Once
         );
         _mockInnerProcessor.Verify(x => x.RemoveUserFromAccountAsync(request), Times.Once);
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    public async Task RemoveUserFromAccountAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new RemoveUserFromAccountRequest(1, 5);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Update, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE, 5)
             )
-            .ThrowsAsync(
-                new AuthorizationException(
-                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
-                    AuthAction.Update.ToString(),
-                    5
-                )
-            );
+            .ReturnsAsync(false);
 
-        await Assert.ThrowsAsync<AuthorizationException>(() =>
-            _decorator.RemoveUserFromAccountAsync(request)
-        );
+        var result = await _decorator.RemoveUserFromAccountAsync(request);
 
+        Assert.Equal(RemoveUserFromAccountResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerProcessor.Verify(
             x => x.RemoveUserFromAccountAsync(It.IsAny<RemoveUserFromAccountRequest>()),
             Times.Never
@@ -271,47 +300,61 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetAccountsForUserAsync_CallsAuthorizationProvider()
+    public async Task ListAccountsForUserAsync_CallsAuthorizationProvider()
     {
         var userId = 5;
-        var expectedAccounts = new List<Account>
-        {
-            new() { Id = 1, AccountName = "Test" },
-        };
+        var expectedResult = new ListAccountsForUserResult(
+            ListAccountsForUserResultCode.Success,
+            string.Empty,
+            [new Account { Id = 1, AccountName = "Test" }]
+        );
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Read,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    null
+                )
+            )
+            .ReturnsAsync(true);
         _mockInnerProcessor
-            .Setup(x => x.GetAccountsForUserAsync(userId))
-            .ReturnsAsync(expectedAccounts);
+            .Setup(x => x.ListAccountsForUserAsync(userId))
+            .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.GetAccountsForUserAsync(userId);
+        var result = await _decorator.ListAccountsForUserAsync(userId);
 
-        Assert.Equal(expectedAccounts, result);
+        Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Read, null),
+            x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Read,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    null
+                ),
             Times.Once
         );
-        _mockInnerProcessor.Verify(x => x.GetAccountsForUserAsync(userId), Times.Once);
+        _mockInnerProcessor.Verify(x => x.ListAccountsForUserAsync(userId), Times.Once);
     }
 
     [Fact]
-    public async Task GetAccountsForUserAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    public async Task ListAccountsForUserAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var userId = 5;
         _mockAuthorizationProvider
             .Setup(x =>
-                x.AuthorizeAsync(PermissionConstants.ACCOUNT_RESOURCE_TYPE, AuthAction.Read, null)
-            )
-            .ThrowsAsync(
-                new AuthorizationException(
+                x.IsAuthorizedAsync(
+                    AuthAction.Read,
                     PermissionConstants.ACCOUNT_RESOURCE_TYPE,
-                    AuthAction.Read.ToString()
+                    null
                 )
-            );
+            )
+            .ReturnsAsync(false);
 
-        await Assert.ThrowsAsync<AuthorizationException>(() =>
-            _decorator.GetAccountsForUserAsync(userId)
-        );
+        var result = await _decorator.ListAccountsForUserAsync(userId);
 
-        _mockInnerProcessor.Verify(x => x.GetAccountsForUserAsync(It.IsAny<int>()), Times.Never);
+        Assert.Equal(ListAccountsForUserResultCode.UnauthorizedError, result.ResultCode);
+        Assert.Empty(result.Accounts);
+        _mockInnerProcessor.Verify(x => x.ListAccountsForUserAsync(It.IsAny<int>()), Times.Never);
     }
 
     [Fact]

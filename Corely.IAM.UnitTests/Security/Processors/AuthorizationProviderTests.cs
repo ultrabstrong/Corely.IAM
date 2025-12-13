@@ -2,7 +2,6 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Security.Constants;
-using Corely.IAM.Security.Exceptions;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -14,7 +13,7 @@ public class AuthorizationProviderTests
     private readonly ServiceFactory _serviceFactory = new();
 
     [Fact]
-    public async Task AuthorizeAsync_Succeeds_WhenUserHasPermission()
+    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasPermission()
     {
         var provider = CreateProvider();
         SetUserContext(1, 1);
@@ -24,12 +23,16 @@ public class AuthorizationProviderTests
             create: true
         );
 
-        // Should not throw
-        await provider.AuthorizeAsync(PermissionConstants.GROUP_RESOURCE_TYPE, AuthAction.Create);
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Create,
+            PermissionConstants.GROUP_RESOURCE_TYPE
+        );
+
+        Assert.True(result);
     }
 
     [Fact]
-    public async Task AuthorizeAsync_Succeeds_WhenUserHasPermissionForSpecificResource()
+    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasPermissionForSpecificResource()
     {
         var provider = CreateProvider();
         SetUserContext(1, 1);
@@ -39,15 +42,17 @@ public class AuthorizationProviderTests
             update: true
         );
 
-        await provider.AuthorizeAsync(
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+        var result = await provider.IsAuthorizedAsync(
             AuthAction.Update,
+            PermissionConstants.GROUP_RESOURCE_TYPE,
             5
         );
+
+        Assert.True(result);
     }
 
     [Fact]
-    public async Task AuthorizeAsync_Succeeds_WhenUserHasWildcardPermission()
+    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasWildcardPermission()
     {
         var provider = CreateProvider();
         SetUserContext(1, 1);
@@ -57,41 +62,46 @@ public class AuthorizationProviderTests
             read: true
         );
 
-        // Should succeed for any specific resource ID
-        await provider.AuthorizeAsync(PermissionConstants.GROUP_RESOURCE_TYPE, AuthAction.Read, 99);
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.GROUP_RESOURCE_TYPE,
+            99
+        );
+
+        Assert.True(result);
     }
 
     [Fact]
-    public async Task AuthorizeAsync_ThrowsAuthorizationException_WhenNoUserContext()
+    public async Task IsAuthorizedAsync_ReturnsFalse_WhenNoUserContext()
     {
         var provider = CreateProvider();
         // Don't set user context
 
-        var exception = await Assert.ThrowsAsync<AuthorizationException>(() =>
-            provider.AuthorizeAsync(PermissionConstants.GROUP_RESOURCE_TYPE, AuthAction.Create)
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Create,
+            PermissionConstants.GROUP_RESOURCE_TYPE
         );
 
-        Assert.Equal(PermissionConstants.GROUP_RESOURCE_TYPE, exception.ResourceType);
-        Assert.Equal(AuthAction.Create.ToString(), exception.RequiredAction);
+        Assert.False(result);
     }
 
     [Fact]
-    public async Task AuthorizeAsync_ThrowsAuthorizationException_WhenNoPermissions()
+    public async Task IsAuthorizedAsync_ReturnsFalse_WhenNoPermissions()
     {
         var provider = CreateProvider();
         SetUserContext(1, 1);
         // Don't setup any permissions
 
-        var exception = await Assert.ThrowsAsync<AuthorizationException>(() =>
-            provider.AuthorizeAsync(PermissionConstants.GROUP_RESOURCE_TYPE, AuthAction.Create)
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Create,
+            PermissionConstants.GROUP_RESOURCE_TYPE
         );
 
-        Assert.Equal(PermissionConstants.GROUP_RESOURCE_TYPE, exception.ResourceType);
-        Assert.Equal(AuthAction.Create.ToString(), exception.RequiredAction);
+        Assert.False(result);
     }
 
     [Fact]
-    public async Task AuthorizeAsync_ThrowsAuthorizationException_WhenWrongAction()
+    public async Task IsAuthorizedAsync_ReturnsFalse_WhenWrongAction()
     {
         var provider = CreateProvider();
         SetUserContext(1, 1);
@@ -101,15 +111,16 @@ public class AuthorizationProviderTests
             read: true // Only has Read
         );
 
-        var exception = await Assert.ThrowsAsync<AuthorizationException>(() =>
-            provider.AuthorizeAsync(PermissionConstants.GROUP_RESOURCE_TYPE, AuthAction.Create) // Needs Create
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Create,
+            PermissionConstants.GROUP_RESOURCE_TYPE
         );
 
-        Assert.Equal(AuthAction.Create.ToString(), exception.RequiredAction);
+        Assert.False(result);
     }
 
     [Fact]
-    public async Task AuthorizeAsync_ThrowsAuthorizationException_WhenWrongResourceType()
+    public async Task IsAuthorizedAsync_ReturnsFalse_WhenWrongResourceType()
     {
         var provider = CreateProvider();
         SetUserContext(1, 1);
@@ -119,15 +130,16 @@ public class AuthorizationProviderTests
             create: true
         );
 
-        var exception = await Assert.ThrowsAsync<AuthorizationException>(() =>
-            provider.AuthorizeAsync(PermissionConstants.GROUP_RESOURCE_TYPE, AuthAction.Create) // Needs group permission
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Create,
+            PermissionConstants.GROUP_RESOURCE_TYPE
         );
 
-        Assert.Equal(PermissionConstants.GROUP_RESOURCE_TYPE, exception.ResourceType);
+        Assert.False(result);
     }
 
     [Fact]
-    public async Task AuthorizeAsync_ThrowsAuthorizationException_WhenWrongResourceId()
+    public async Task IsAuthorizedAsync_ReturnsFalse_WhenWrongResourceId()
     {
         var provider = CreateProvider();
         SetUserContext(1, 1);
@@ -137,15 +149,17 @@ public class AuthorizationProviderTests
             update: true
         );
 
-        var exception = await Assert.ThrowsAsync<AuthorizationException>(() =>
-            provider.AuthorizeAsync(PermissionConstants.GROUP_RESOURCE_TYPE, AuthAction.Update, 99) // Needs resource 99
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Update,
+            PermissionConstants.GROUP_RESOURCE_TYPE,
+            99
         );
 
-        Assert.Equal(99, exception.ResourceId);
+        Assert.False(result);
     }
 
     [Fact]
-    public async Task AuthorizeAsync_Succeeds_WhenUserHasWildcardResourceTypePermission()
+    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasWildcardResourceTypePermission()
     {
         var provider = CreateProvider();
         SetUserContext(1, 1);
@@ -155,14 +169,28 @@ public class AuthorizationProviderTests
             create: true
         );
 
-        // Should succeed for any resource type
-        await provider.AuthorizeAsync(PermissionConstants.GROUP_RESOURCE_TYPE, AuthAction.Create);
-        await provider.AuthorizeAsync(PermissionConstants.ROLE_RESOURCE_TYPE, AuthAction.Create);
-        await provider.AuthorizeAsync(PermissionConstants.USER_RESOURCE_TYPE, AuthAction.Create);
+        Assert.True(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+        Assert.True(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.ROLE_RESOURCE_TYPE
+            )
+        );
+        Assert.True(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.USER_RESOURCE_TYPE
+            )
+        );
     }
 
     [Fact]
-    public async Task AuthorizeAsync_CachesPermissions()
+    public async Task IsAuthorizedAsync_CachesPermissions()
     {
         var provider = CreateProvider();
         SetUserContext(1, 1);
@@ -173,9 +201,18 @@ public class AuthorizationProviderTests
             read: true
         );
 
-        // Multiple calls should work (using cached permissions)
-        await provider.AuthorizeAsync(PermissionConstants.GROUP_RESOURCE_TYPE, AuthAction.Create);
-        await provider.AuthorizeAsync(PermissionConstants.GROUP_RESOURCE_TYPE, AuthAction.Read);
+        Assert.True(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+        Assert.True(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
     }
 
     private AuthorizationProvider CreateProvider()

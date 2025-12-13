@@ -6,6 +6,7 @@ public enum AssignRolesToUserResultCode
     PartialSuccess,
     InvalidRoleIdsError,
     UserNotFoundError,
+    UnauthorizedError,
 }
 
 internal record AssignRolesToUserResult(

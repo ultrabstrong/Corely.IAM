@@ -23,7 +23,7 @@ internal class BasicAuthProcessorLoggingDecorator(
             logResult: true
         );
 
-    public async Task<bool> VerifyBasicAuthAsync(VerifyBasicAuthRequest request) =>
+    public async Task<VerifyBasicAuthResult> VerifyBasicAuthAsync(VerifyBasicAuthRequest request) =>
         await _logger.ExecuteWithLogging(
             nameof(BasicAuthProcessor),
             request,

@@ -94,20 +94,24 @@ internal class RoleProcessor(
         return new CreateDefaultSystemRolesResult(ownerRole.Id, adminRole.Id, userRole.Id);
     }
 
-    public async Task<Role?> GetRoleAsync(int roleId)
+    public async Task<GetRoleResult> GetRoleAsync(int roleId)
     {
         var roleEntity = await _roleRepo.GetAsync(r => r.Id == roleId);
 
         if (roleEntity == null)
         {
             _logger.LogInformation("Role with Id {RoleId} not found", roleId);
-            return null;
+            return new GetRoleResult(
+                GetRoleResultCode.RoleNotFoundError,
+                $"Role with Id {roleId} not found",
+                null
+            );
         }
 
-        return roleEntity.ToModel();
+        return new GetRoleResult(GetRoleResultCode.Success, string.Empty, roleEntity.ToModel());
     }
 
-    public async Task<Role?> GetRoleAsync(string roleName, int ownerAccountId)
+    public async Task<GetRoleResult> GetRoleAsync(string roleName, int ownerAccountId)
     {
         var roleEntity = await _roleRepo.GetAsync(r =>
             r.Name == roleName && r.AccountId == ownerAccountId
@@ -116,10 +120,14 @@ internal class RoleProcessor(
         if (roleEntity == null)
         {
             _logger.LogInformation("Role with name {RoleName} not found", roleName);
-            return null;
+            return new GetRoleResult(
+                GetRoleResultCode.RoleNotFoundError,
+                $"Role with name {roleName} not found",
+                null
+            );
         }
 
-        return roleEntity.ToModel();
+        return new GetRoleResult(GetRoleResultCode.Success, string.Empty, roleEntity.ToModel());
     }
 
     public async Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(

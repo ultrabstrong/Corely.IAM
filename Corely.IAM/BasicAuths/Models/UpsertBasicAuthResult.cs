@@ -6,6 +6,7 @@ public enum UpsertBasicAuthResultCode
 {
     Success,
     Failure,
+    UnauthorizedError,
 }
 
 internal record UpsertBasicAuthResult(

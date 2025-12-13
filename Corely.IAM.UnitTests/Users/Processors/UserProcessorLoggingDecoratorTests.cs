@@ -35,57 +35,71 @@ public class UserProcessorLoggingDecoratorTests
     }
 
     [Fact]
-    public async Task GetUserAsyncById_DelegatesToInnerWithoutLoggingResult()
+    public async Task GetUserAsyncById_DelegatesToInnerAndLogsResult()
     {
         var userId = 1;
-        var expectedUser = new User { Username = "testuser" };
-        _mockInnerProcessor.Setup(x => x.GetUserAsync(userId)).ReturnsAsync(expectedUser);
+        var expectedResult = new GetUserResult(
+            GetUserResultCode.Success,
+            string.Empty,
+            new User { Username = "testuser" }
+        );
+        _mockInnerProcessor.Setup(x => x.GetUserAsync(userId)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetUserAsync(userId);
 
-        Assert.Equal(expectedUser, result);
+        Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.GetUserAsync(userId), Times.Once);
-        VerifyLoggedWithoutResult();
+        VerifyLoggedWithResult();
     }
 
     [Fact]
-    public async Task GetUserAsyncByName_DelegatesToInnerWithoutLoggingResult()
+    public async Task GetUserAsyncByName_DelegatesToInnerAndLogsResult()
     {
         var userName = "testuser";
-        var expectedUser = new User { Username = userName };
-        _mockInnerProcessor.Setup(x => x.GetUserAsync(userName)).ReturnsAsync(expectedUser);
+        var expectedResult = new GetUserResult(
+            GetUserResultCode.Success,
+            string.Empty,
+            new User { Username = userName }
+        );
+        _mockInnerProcessor.Setup(x => x.GetUserAsync(userName)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetUserAsync(userName);
 
-        Assert.Equal(expectedUser, result);
+        Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.GetUserAsync(userName), Times.Once);
-        VerifyLoggedWithoutResult();
+        VerifyLoggedWithResult();
     }
 
     [Fact]
-    public async Task UpdateUserAsync_DelegatesToInner()
+    public async Task UpdateUserAsync_DelegatesToInnerAndLogsResult()
     {
         var user = new User { Username = "testuser" };
-        _mockInnerProcessor.Setup(x => x.UpdateUserAsync(user)).Returns(Task.CompletedTask);
+        var expectedResult = new UpdateUserResult(UpdateUserResultCode.Success, string.Empty);
+        _mockInnerProcessor.Setup(x => x.UpdateUserAsync(user)).ReturnsAsync(expectedResult);
 
-        await _decorator.UpdateUserAsync(user);
+        var result = await _decorator.UpdateUserAsync(user);
 
+        Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.UpdateUserAsync(user), Times.Once);
-        VerifyLogged();
+        VerifyLoggedWithResult();
     }
 
     [Fact]
     public async Task GetAsymmetricSignatureVerificationKeyAsync_DelegatesToInnerAndLogsResult()
     {
         var userId = 1;
-        var expectedKey = "test-key";
+        var expectedResult = new GetAsymmetricKeyResult(
+            GetAsymmetricKeyResultCode.Success,
+            string.Empty,
+            "test-key"
+        );
         _mockInnerProcessor
             .Setup(x => x.GetAsymmetricSignatureVerificationKeyAsync(userId))
-            .ReturnsAsync(expectedKey);
+            .ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetAsymmetricSignatureVerificationKeyAsync(userId);
 
-        Assert.Equal(expectedKey, result);
+        Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(
             x => x.GetAsymmetricSignatureVerificationKeyAsync(userId),
             Times.Once
@@ -168,36 +182,6 @@ public class UserProcessorLoggingDecoratorTests
                     LogLevel.Trace,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("with result")),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.Once
-        );
-
-    private void VerifyLoggedWithoutResult() =>
-        _mockLogger.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Trace,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (v, t) =>
-                            v.ToString()!.Contains("completed")
-                            && !v.ToString()!.Contains("with result")
-                    ),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.Once
-        );
-
-    private void VerifyLogged() =>
-        _mockLogger.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Trace,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("completed")),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),

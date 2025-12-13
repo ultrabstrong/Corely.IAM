@@ -237,28 +237,30 @@ public class UserProcessorTests
     [Fact]
     public async Task GetUserByUseridAsync_ReturnsNull_WhenUserNotFound()
     {
-        var user = await _userProcessor.GetUserAsync(_fixture.Create<int>());
-        Assert.Null(user);
+        var result = await _userProcessor.GetUserAsync(_fixture.Create<int>());
+        Assert.Equal(GetUserResultCode.UserNotFoundError, result.ResultCode);
+        Assert.Null(result.User);
     }
 
     [Fact]
     public async Task GetUserByUseridAsync_ReturnsUser_WhenUserExists()
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var result = await _userProcessor.CreateUserAsync(request);
+        var createResult = await _userProcessor.CreateUserAsync(request);
 
-        var user = await _userProcessor.GetUserAsync(result.CreatedId);
+        var result = await _userProcessor.GetUserAsync(createResult.CreatedId);
 
-        Assert.NotNull(user);
-        Assert.Equal(request.Username, user.Username);
-        Assert.Equal(request.Email, user.Email);
+        Assert.NotNull(result.User);
+        Assert.Equal(request.Username, result.User.Username);
+        Assert.Equal(request.Email, result.User.Email);
     }
 
     [Fact]
     public async Task GetUserByUsernameAsync_ReturnsNull_WhenUserNotFound()
     {
-        var user = await _userProcessor.GetUserAsync(_fixture.Create<string>());
-        Assert.Null(user);
+        var result = await _userProcessor.GetUserAsync(_fixture.Create<string>());
+        Assert.Equal(GetUserResultCode.UserNotFoundError, result.ResultCode);
+        Assert.Null(result.User);
     }
 
     [Fact]
@@ -267,11 +269,11 @@ public class UserProcessorTests
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         await _userProcessor.CreateUserAsync(request);
 
-        var user = await _userProcessor.GetUserAsync(request.Username);
+        var result = await _userProcessor.GetUserAsync(request.Username);
 
-        Assert.NotNull(user);
-        Assert.Equal(request.Username, user.Username);
-        Assert.Equal(request.Email, user.Email);
+        Assert.NotNull(result.User);
+        Assert.Equal(request.Username, result.User.Username);
+        Assert.Equal(request.Email, result.User.Email);
     }
 
     [Fact]
@@ -279,13 +281,14 @@ public class UserProcessorTests
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         await _userProcessor.CreateUserAsync(request);
-        var user = await _userProcessor.GetUserAsync(request.Username);
-        user!.Disabled = false;
+        var getResult = await _userProcessor.GetUserAsync(request.Username);
+        var user = getResult.User!;
+        user.Disabled = false;
 
         await _userProcessor.UpdateUserAsync(user);
-        var updatedUser = await _userProcessor.GetUserAsync(request.Username);
+        var updatedResult = await _userProcessor.GetUserAsync(request.Username);
 
-        Assert.False(updatedUser!.Disabled);
+        Assert.False(updatedResult.User!.Disabled);
     }
 
     [Fact]
@@ -294,35 +297,42 @@ public class UserProcessorTests
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         var result = await _userProcessor.CreateUserAsync(request);
 
-        var key = await _userProcessor.GetAsymmetricSignatureVerificationKeyAsync(result.CreatedId);
+        var keyResult = await _userProcessor.GetAsymmetricSignatureVerificationKeyAsync(
+            result.CreatedId
+        );
 
-        Assert.NotNull(key);
+        Assert.Equal(GetAsymmetricKeyResultCode.Success, keyResult.ResultCode);
+        Assert.NotNull(keyResult.PublicKey);
     }
 
     [Fact]
-    public async Task GetAsymmetricSignatureVerificationKeyAsync_ReturnsNull_WhenUserDNE()
+    public async Task GetAsymmetricSignatureVerificationKeyAsync_ReturnsUserNotFound_WhenUserDNE()
     {
-        var key = await _userProcessor.GetAsymmetricSignatureVerificationKeyAsync(
+        var result = await _userProcessor.GetAsymmetricSignatureVerificationKeyAsync(
             _fixture.Create<int>()
         );
 
-        Assert.Null(key);
+        Assert.Equal(GetAsymmetricKeyResultCode.UserNotFoundError, result.ResultCode);
+        Assert.Null(result.PublicKey);
     }
 
     [Fact]
-    public async Task GetAsymmetricSignatureVerificationKeyAsync_ReturnsNull_WhenSignatureKeyDNE()
+    public async Task GetAsymmetricSignatureVerificationKeyAsync_ReturnsKeyNotFound_WhenSignatureKeyDNE()
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        var result = await _userProcessor.CreateUserAsync(request);
+        var createResult = await _userProcessor.CreateUserAsync(request);
 
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var user = await userRepo.GetAsync(u => u.Id == result.CreatedId);
+        var user = await userRepo.GetAsync(u => u.Id == createResult.CreatedId);
         user?.AsymmetricKeys?.Clear();
         await userRepo.UpdateAsync(user!);
 
-        var key = await _userProcessor.GetAsymmetricSignatureVerificationKeyAsync(result.CreatedId);
+        var result = await _userProcessor.GetAsymmetricSignatureVerificationKeyAsync(
+            createResult.CreatedId
+        );
 
-        Assert.Null(key);
+        Assert.Equal(GetAsymmetricKeyResultCode.KeyNotFoundError, result.ResultCode);
+        Assert.Null(result.PublicKey);
     }
 
     [Fact]

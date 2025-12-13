@@ -6,6 +6,7 @@ public enum AssignRolesToGroupResultCode
     PartialSuccess,
     InvalidRoleIdsError,
     GroupNotFoundError,
+    UnauthorizedError,
 }
 
 internal record AssignRolesToGroupResult(

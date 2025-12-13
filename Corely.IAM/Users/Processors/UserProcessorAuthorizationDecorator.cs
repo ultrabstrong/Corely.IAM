@@ -1,7 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
-using Corely.IAM.Security.Exceptions;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -24,85 +23,99 @@ internal class UserProcessorAuthorizationDecorator(
     public Task<CreateUserResult> CreateUserAsync(CreateUserRequest request) =>
         _inner.CreateUserAsync(request);
 
-    public async Task<User?> GetUserAsync(int userId)
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.USER_RESOURCE_TYPE,
+    public async Task<GetUserResult> GetUserAsync(int userId) =>
+        await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
+            PermissionConstants.USER_RESOURCE_TYPE,
             userId
-        );
-        return await _inner.GetUserAsync(userId);
-    }
+        )
+            ? await _inner.GetUserAsync(userId)
+            : new GetUserResult(
+                GetUserResultCode.UnauthorizedError,
+                $"Unauthorized to read user {userId}",
+                null
+            );
 
-    public async Task<User?> GetUserAsync(string userName)
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.USER_RESOURCE_TYPE,
-            AuthAction.Read
-        );
-        return await _inner.GetUserAsync(userName);
-    }
-
-    public async Task UpdateUserAsync(User user)
-    {
-        AuthorizeForOwnUser(user.Id);
-        await _inner.UpdateUserAsync(user);
-    }
-
-    public async Task<string?> GetAsymmetricSignatureVerificationKeyAsync(int userId)
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.USER_RESOURCE_TYPE,
+    public async Task<GetUserResult> GetUserAsync(string userName) =>
+        await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
+            PermissionConstants.USER_RESOURCE_TYPE
+        )
+            ? await _inner.GetUserAsync(userName)
+            : new GetUserResult(
+                GetUserResultCode.UnauthorizedError,
+                $"Unauthorized to read user {userName}",
+                null
+            );
+
+    public async Task<UpdateUserResult> UpdateUserAsync(User user) =>
+        IsAuthorizedForOwnUser(user.Id)
+            ? await _inner.UpdateUserAsync(user)
+            : new UpdateUserResult(
+                UpdateUserResultCode.UnauthorizedError,
+                $"Unauthorized to update user {user.Id}"
+            );
+
+    public async Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(
+        int userId
+    ) =>
+        await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.USER_RESOURCE_TYPE,
             userId
-        );
-        return await _inner.GetAsymmetricSignatureVerificationKeyAsync(userId);
-    }
+        )
+            ? await _inner.GetAsymmetricSignatureVerificationKeyAsync(userId)
+            : new GetAsymmetricKeyResult(
+                GetAsymmetricKeyResultCode.UnauthorizedError,
+                $"Unauthorized to read user {userId}",
+                null
+            );
 
     public async Task<AssignRolesToUserResult> AssignRolesToUserAsync(
         AssignRolesToUserRequest request
-    )
-    {
-        if (!request.BypassAuthorization)
-            await _authorizationProvider.AuthorizeAsync(
-                PermissionConstants.USER_RESOURCE_TYPE,
-                AuthAction.Update,
-                request.UserId
+    ) =>
+        request.BypassAuthorization
+        || await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
+            PermissionConstants.USER_RESOURCE_TYPE,
+            request.UserId
+        )
+            ? await _inner.AssignRolesToUserAsync(request)
+            : new AssignRolesToUserResult(
+                AssignRolesToUserResultCode.UnauthorizedError,
+                $"Unauthorized to update user {request.UserId}",
+                0,
+                []
             );
-        return await _inner.AssignRolesToUserAsync(request);
-    }
 
     public async Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(
         RemoveRolesFromUserRequest request
-    )
-    {
-        if (!request.BypassAuthorization)
-            await _authorizationProvider.AuthorizeAsync(
-                PermissionConstants.USER_RESOURCE_TYPE,
-                AuthAction.Update,
-                request.UserId
-            );
-        return await _inner.RemoveRolesFromUserAsync(request);
-    }
-
-    public async Task<DeleteUserResult> DeleteUserAsync(int userId)
-    {
-        AuthorizeForOwnUser(userId);
-        return await _inner.DeleteUserAsync(userId);
-    }
-
-    private void AuthorizeForOwnUser(int requestUserId)
-    {
-        var userContext =
-            _userContextProvider.GetUserContext() ?? throw new UserContextNotSetException();
-
-        if (userContext.UserId == requestUserId)
-            return;
-
-        throw new AuthorizationException(
+    ) =>
+        request.BypassAuthorization
+        || await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
             PermissionConstants.USER_RESOURCE_TYPE,
-            AuthAction.Delete.ToString(),
-            requestUserId
-        );
+            request.UserId
+        )
+            ? await _inner.RemoveRolesFromUserAsync(request)
+            : new RemoveRolesFromUserResult(
+                RemoveRolesFromUserResultCode.UnauthorizedError,
+                $"Unauthorized to update user {request.UserId}",
+                0,
+                []
+            );
+
+    public async Task<DeleteUserResult> DeleteUserAsync(int userId) =>
+        IsAuthorizedForOwnUser(userId)
+            ? await _inner.DeleteUserAsync(userId)
+            : new DeleteUserResult(
+                DeleteUserResultCode.UnauthorizedError,
+                $"Unauthorized to delete user {userId}"
+            );
+
+    private bool IsAuthorizedForOwnUser(int requestUserId)
+    {
+        var userContext = _userContextProvider.GetUserContext();
+        return userContext?.UserId == requestUserId;
     }
 }

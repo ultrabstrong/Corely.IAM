@@ -80,7 +80,7 @@ internal class BasicAuthProcessor(
         );
     }
 
-    public async Task<bool> VerifyBasicAuthAsync(VerifyBasicAuthRequest request)
+    public async Task<VerifyBasicAuthResult> VerifyBasicAuthAsync(VerifyBasicAuthRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
@@ -90,8 +90,14 @@ internal class BasicAuthProcessor(
         if (basicAuth == null)
         {
             _logger.LogInformation("No basic auth found for UserId {UserId}", request.UserId);
+            return new VerifyBasicAuthResult(
+                VerifyBasicAuthResultCode.UserNotFoundError,
+                $"No basic auth found for UserId {request.UserId}",
+                false
+            );
         }
 
-        return basicAuth?.Password.Verify(request.Password) ?? false;
+        var isValid = basicAuth.Password.Verify(request.Password);
+        return new VerifyBasicAuthResult(VerifyBasicAuthResultCode.Success, string.Empty, isValid);
     }
 }

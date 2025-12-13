@@ -15,69 +15,90 @@ internal class GroupProcessorAuthorizationDecorator(
     private readonly IAuthorizationProvider _authorizationProvider =
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
-    public async Task<CreateGroupResult> CreateGroupAsync(CreateGroupRequest request)
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.GROUP_RESOURCE_TYPE,
-            AuthAction.Create
-        );
-        return await _inner.CreateGroupAsync(request);
-    }
+    public async Task<CreateGroupResult> CreateGroupAsync(CreateGroupRequest request) =>
+        await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Create,
+            PermissionConstants.GROUP_RESOURCE_TYPE
+        )
+            ? await _inner.CreateGroupAsync(request)
+            : new CreateGroupResult(
+                CreateGroupResultCode.UnauthorizedError,
+                "Unauthorized to create group",
+                -1
+            );
 
-    public async Task<AddUsersToGroupResult> AddUsersToGroupAsync(AddUsersToGroupRequest request)
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+    public async Task<AddUsersToGroupResult> AddUsersToGroupAsync(AddUsersToGroupRequest request) =>
+        await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
+            PermissionConstants.GROUP_RESOURCE_TYPE,
             request.GroupId
-        );
-        return await _inner.AddUsersToGroupAsync(request);
-    }
+        )
+            ? await _inner.AddUsersToGroupAsync(request)
+            : new AddUsersToGroupResult(
+                AddUsersToGroupResultCode.UnauthorizedError,
+                $"Unauthorized to update group {request.GroupId}",
+                0,
+                []
+            );
 
     public async Task<RemoveUsersFromGroupResult> RemoveUsersFromGroupAsync(
         RemoveUsersFromGroupRequest request
-    )
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+    ) =>
+        await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
+            PermissionConstants.GROUP_RESOURCE_TYPE,
             request.GroupId
-        );
-        return await _inner.RemoveUsersFromGroupAsync(request);
-    }
+        )
+            ? await _inner.RemoveUsersFromGroupAsync(request)
+            : new RemoveUsersFromGroupResult(
+                RemoveUsersFromGroupResultCode.UnauthorizedError,
+                $"Unauthorized to update group {request.GroupId}",
+                0,
+                []
+            );
 
     public async Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(
         AssignRolesToGroupRequest request
-    )
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+    ) =>
+        await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
+            PermissionConstants.GROUP_RESOURCE_TYPE,
             request.GroupId
-        );
-        return await _inner.AssignRolesToGroupAsync(request);
-    }
+        )
+            ? await _inner.AssignRolesToGroupAsync(request)
+            : new AssignRolesToGroupResult(
+                AssignRolesToGroupResultCode.UnauthorizedError,
+                $"Unauthorized to update group {request.GroupId}",
+                0,
+                []
+            );
 
     public async Task<RemoveRolesFromGroupResult> RemoveRolesFromGroupAsync(
         RemoveRolesFromGroupRequest request
-    )
-    {
-        if (!request.BypassAuthorization)
-            await _authorizationProvider.AuthorizeAsync(
-                PermissionConstants.GROUP_RESOURCE_TYPE,
-                AuthAction.Update,
-                request.GroupId
-            );
-        return await _inner.RemoveRolesFromGroupAsync(request);
-    }
-
-    public async Task<DeleteGroupResult> DeleteGroupAsync(int groupId)
-    {
-        await _authorizationProvider.AuthorizeAsync(
+    ) =>
+        request.BypassAuthorization
+        || await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
             PermissionConstants.GROUP_RESOURCE_TYPE,
+            request.GroupId
+        )
+            ? await _inner.RemoveRolesFromGroupAsync(request)
+            : new RemoveRolesFromGroupResult(
+                RemoveRolesFromGroupResultCode.UnauthorizedError,
+                $"Unauthorized to update group {request.GroupId}",
+                0,
+                []
+            );
+
+    public async Task<DeleteGroupResult> DeleteGroupAsync(int groupId) =>
+        await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
+            PermissionConstants.GROUP_RESOURCE_TYPE,
             groupId
-        );
-        return await _inner.DeleteGroupAsync(groupId);
-    }
+        )
+            ? await _inner.DeleteGroupAsync(groupId)
+            : new DeleteGroupResult(
+                DeleteGroupResultCode.UnauthorizedError,
+                $"Unauthorized to delete group {groupId}"
+            );
 }

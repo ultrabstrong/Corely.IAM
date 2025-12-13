@@ -178,7 +178,9 @@ public class RegistrationServiceTests
             );
 
         mock.Setup(m => m.GetRoleAsync(It.IsAny<string>(), It.IsAny<int>()))
-            .ReturnsAsync(() => _fixture.Create<Role>());
+            .ReturnsAsync(() =>
+                new GetRoleResult(GetRoleResultCode.Success, string.Empty, _fixture.Create<Role>())
+            );
 
         mock.Setup(m => m.AssignPermissionsToRoleAsync(It.IsAny<AssignPermissionsToRoleRequest>()))
             .ReturnsAsync(() => _assignPermissionsToRoleResult);

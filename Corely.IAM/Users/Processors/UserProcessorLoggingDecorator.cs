@@ -23,30 +23,33 @@ internal class UserProcessorLoggingDecorator(
             logResult: true
         );
 
-    public async Task<User?> GetUserAsync(int userId) =>
+    public async Task<GetUserResult> GetUserAsync(int userId) =>
         await _logger.ExecuteWithLogging(
             nameof(UserProcessor),
             userId,
             () => _inner.GetUserAsync(userId),
-            logResult: false
+            logResult: true
         );
 
-    public async Task<User?> GetUserAsync(string userName) =>
+    public async Task<GetUserResult> GetUserAsync(string userName) =>
         await _logger.ExecuteWithLogging(
             nameof(UserProcessor),
             userName,
             () => _inner.GetUserAsync(userName),
-            logResult: false
+            logResult: true
         );
 
-    public async Task UpdateUserAsync(User user) =>
+    public async Task<UpdateUserResult> UpdateUserAsync(User user) =>
         await _logger.ExecuteWithLogging(
             nameof(UserProcessor),
             user,
-            () => _inner.UpdateUserAsync(user)
+            () => _inner.UpdateUserAsync(user),
+            logResult: true
         );
 
-    public async Task<string?> GetAsymmetricSignatureVerificationKeyAsync(int userId) =>
+    public async Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(
+        int userId
+    ) =>
         await _logger.ExecuteWithLogging(
             nameof(UserProcessor),
             userId,

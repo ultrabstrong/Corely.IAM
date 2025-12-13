@@ -91,40 +91,49 @@ internal class UserProcessor(
         return new CreateUserResult(CreateUserResultCode.Success, string.Empty, created.Id);
     }
 
-    public async Task<User?> GetUserAsync(int userId)
+    public async Task<GetUserResult> GetUserAsync(int userId)
     {
         var userEntity = await _userRepo.GetAsync(u => u.Id == userId);
 
         if (userEntity == null)
         {
             _logger.LogInformation("User with Id {UserId} not found", userId);
-            return null;
+            return new GetUserResult(
+                GetUserResultCode.UserNotFoundError,
+                $"User with Id {userId} not found",
+                null
+            );
         }
 
-        return userEntity.ToModel();
+        return new GetUserResult(GetUserResultCode.Success, string.Empty, userEntity.ToModel());
     }
 
-    public async Task<User?> GetUserAsync(string userName)
+    public async Task<GetUserResult> GetUserAsync(string userName)
     {
         var userEntity = await _userRepo.GetAsync(u => u.Username == userName);
 
         if (userEntity == null)
         {
             _logger.LogInformation("User with Username {Username} not found", userName);
-            return null;
+            return new GetUserResult(
+                GetUserResultCode.UserNotFoundError,
+                $"User with Username {userName} not found",
+                null
+            );
         }
 
-        return userEntity.ToModel();
+        return new GetUserResult(GetUserResultCode.Success, string.Empty, userEntity.ToModel());
     }
 
-    public async Task UpdateUserAsync(User user)
+    public async Task<UpdateUserResult> UpdateUserAsync(User user)
     {
         _validationProvider.ThrowIfInvalid(user);
         var userEntity = user.ToEntity();
         await _userRepo.UpdateAsync(userEntity);
+        return new UpdateUserResult(UpdateUserResultCode.Success, string.Empty);
     }
 
-    public async Task<string?> GetAsymmetricSignatureVerificationKeyAsync(int userId)
+    public async Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(int userId)
     {
         var userEntity = await _userRepo.GetAsync(
             u => u.Id == userId,
@@ -134,7 +143,11 @@ internal class UserProcessor(
         if (userEntity == null)
         {
             _logger.LogWarning("User with Id {UserId} not found", userId);
-            return null;
+            return new GetAsymmetricKeyResult(
+                GetAsymmetricKeyResultCode.UserNotFoundError,
+                $"User with Id {userId} not found",
+                null
+            );
         }
 
         var signatureKey = userEntity.AsymmetricKeys?.FirstOrDefault(k =>
@@ -146,10 +159,18 @@ internal class UserProcessor(
                 "User with Id {UserId} does not have an asymmetric signature key",
                 userId
             );
-            return null;
+            return new GetAsymmetricKeyResult(
+                GetAsymmetricKeyResultCode.KeyNotFoundError,
+                $"User with Id {userId} does not have an asymmetric signature key",
+                null
+            );
         }
 
-        return signatureKey.PublicKey;
+        return new GetAsymmetricKeyResult(
+            GetAsymmetricKeyResultCode.Success,
+            string.Empty,
+            signatureKey.PublicKey
+        );
     }
 
     public async Task<AssignRolesToUserResult> AssignRolesToUserAsync(

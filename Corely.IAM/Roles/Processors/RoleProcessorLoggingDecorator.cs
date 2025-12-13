@@ -33,20 +33,20 @@ internal class RoleProcessorLoggingDecorator(
             logResult: true
         );
 
-    public async Task<Role?> GetRoleAsync(int roleId) =>
+    public async Task<GetRoleResult> GetRoleAsync(int roleId) =>
         await _logger.ExecuteWithLogging(
             nameof(RoleProcessor),
             roleId,
             () => _inner.GetRoleAsync(roleId),
-            logResult: false
+            logResult: true
         );
 
-    public async Task<Role?> GetRoleAsync(string roleName, int ownerAccountId) =>
+    public async Task<GetRoleResult> GetRoleAsync(string roleName, int ownerAccountId) =>
         await _logger.ExecuteWithLogging(
             nameof(RoleProcessor),
             new { roleName, ownerAccountId },
             () => _inner.GetRoleAsync(roleName, ownerAccountId),
-            logResult: false
+            logResult: true
         );
 
     public async Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(

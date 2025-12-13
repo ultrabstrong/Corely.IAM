@@ -78,7 +78,7 @@ public class BasicAuthProcessorTests
     }
 
     [Fact]
-    public async Task VerifyBasicAuthAsync_ReturnsTrue_WhenBasicAuthExists()
+    public async Task VerifyBasicAuthAsync_ReturnsValidTrue_WhenBasicAuthExists()
     {
         var request = new UpsertBasicAuthRequest(1, VALID_PASSWORD);
         await _basicAuthProcessor.UpsertBasicAuthAsync(request);
@@ -86,11 +86,12 @@ public class BasicAuthProcessorTests
         var verifyRequest = new VerifyBasicAuthRequest(1, VALID_PASSWORD);
         var result = await _basicAuthProcessor.VerifyBasicAuthAsync(verifyRequest);
 
-        Assert.True(result);
+        Assert.Equal(VerifyBasicAuthResultCode.Success, result.ResultCode);
+        Assert.True(result.IsValid);
     }
 
     [Fact]
-    public async Task VerifyBasicAuthAsync_ReturnsFalse_WhenPasswordIsIncorrect()
+    public async Task VerifyBasicAuthAsync_ReturnsValidFalse_WhenPasswordIsIncorrect()
     {
         var request = new UpsertBasicAuthRequest(1, VALID_PASSWORD);
         await _basicAuthProcessor.UpsertBasicAuthAsync(request);
@@ -98,17 +99,19 @@ public class BasicAuthProcessorTests
         var verifyRequest = new VerifyBasicAuthRequest(1, "password");
         var result = await _basicAuthProcessor.VerifyBasicAuthAsync(verifyRequest);
 
-        Assert.False(result);
+        Assert.Equal(VerifyBasicAuthResultCode.Success, result.ResultCode);
+        Assert.False(result.IsValid);
     }
 
     [Fact]
-    public async Task VerifyBasicAuthAsync_ReturnsFalse_WhenBasicAuthDoesNotExist()
+    public async Task VerifyBasicAuthAsync_ReturnsUserNotFoundError_WhenBasicAuthDoesNotExist()
     {
         var request = new VerifyBasicAuthRequest(1, VALID_PASSWORD);
 
         var result = await _basicAuthProcessor.VerifyBasicAuthAsync(request);
 
-        Assert.False(result);
+        Assert.Equal(VerifyBasicAuthResultCode.UserNotFoundError, result.ResultCode);
+        Assert.False(result.IsValid);
     }
 
     [Fact]

@@ -1,7 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.BasicAuths.Models;
-using Corely.IAM.Security.Constants;
-using Corely.IAM.Security.Exceptions;
+using Corely.IAM.Enums;
 using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.BasicAuths.Processors;
@@ -16,27 +15,26 @@ internal class BasicAuthProcessorAuthorizationDecorator(
         nameof(userContextProvider)
     );
 
-    public async Task<UpsertBasicAuthResult> UpsertBasicAuthAsync(UpsertBasicAuthRequest request)
-    {
-        AuthorizeForOwnUser(request.UserId, AuthAction.Update);
-        return await _inner.UpsertBasicAuthAsync(request);
-    }
+    public async Task<UpsertBasicAuthResult> UpsertBasicAuthAsync(UpsertBasicAuthRequest request) =>
+        IsAuthorizedForOwnUser(request.UserId)
+            ? await _inner.UpsertBasicAuthAsync(request)
+            : new UpsertBasicAuthResult(
+                UpsertBasicAuthResultCode.UnauthorizedError,
+                $"Unauthorized to update basic auth for user {request.UserId}",
+                -1,
+                default
+            );
 
-    public Task<bool> VerifyBasicAuthAsync(VerifyBasicAuthRequest request)
+    public Task<VerifyBasicAuthResult> VerifyBasicAuthAsync(VerifyBasicAuthRequest request)
     {
         // No authorization required - this is the authentication mechanism itself.
         // Users must be able to verify credentials before they have an authenticated context.
         return _inner.VerifyBasicAuthAsync(request);
     }
 
-    private void AuthorizeForOwnUser(int requestUserId, AuthAction action)
+    private bool IsAuthorizedForOwnUser(int requestUserId)
     {
-        var userContext =
-            _userContextProvider.GetUserContext() ?? throw new UserContextNotSetException();
-
-        if (userContext.UserId == requestUserId)
-            return;
-
-        throw new AuthorizationException("basicauth", action.ToString(), requestUserId);
+        var userContext = _userContextProvider.GetUserContext();
+        return userContext?.UserId == requestUserId;
     }
 }

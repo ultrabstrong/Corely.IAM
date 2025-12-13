@@ -158,8 +158,9 @@ public class RoleProcessorTests
     [Fact]
     public async Task GetRoleByRoleIdAsync_ReturnsNull_WhenRoleNotFound()
     {
-        var role = await _roleProcessor.GetRoleAsync(-1);
-        Assert.Null(role);
+        var result = await _roleProcessor.GetRoleAsync(-1);
+        Assert.Equal(GetRoleResultCode.RoleNotFoundError, result.ResultCode);
+        Assert.Null(result.Role);
     }
 
     [Fact]
@@ -167,19 +168,20 @@ public class RoleProcessorTests
     {
         var accountId = await CreateAccountAsync();
         var request = new CreateRoleRequest(VALID_ROLE_NAME, accountId);
-        var result = await _roleProcessor.CreateRoleAsync(request);
+        var createResult = await _roleProcessor.CreateRoleAsync(request);
 
-        var role = await _roleProcessor.GetRoleAsync(result.CreatedId);
+        var result = await _roleProcessor.GetRoleAsync(createResult.CreatedId);
 
-        Assert.NotNull(role);
-        Assert.Equal(VALID_ROLE_NAME, role!.Name);
+        Assert.NotNull(result.Role);
+        Assert.Equal(VALID_ROLE_NAME, result.Role!.Name);
     }
 
     [Fact]
     public async Task GetRoleByRoleNameAsync_ReturnsNull_WhenRoleNotFound()
     {
-        var role = await _roleProcessor.GetRoleAsync("nonexistent", -1);
-        Assert.Null(role);
+        var result = await _roleProcessor.GetRoleAsync("nonexistent", -1);
+        Assert.Equal(GetRoleResultCode.RoleNotFoundError, result.ResultCode);
+        Assert.Null(result.Role);
     }
 
     [Fact]
@@ -189,10 +191,10 @@ public class RoleProcessorTests
         var request = new CreateRoleRequest(VALID_ROLE_NAME, accountId);
         await _roleProcessor.CreateRoleAsync(request);
 
-        var role = await _roleProcessor.GetRoleAsync(VALID_ROLE_NAME, accountId);
+        var result = await _roleProcessor.GetRoleAsync(VALID_ROLE_NAME, accountId);
 
-        Assert.NotNull(role);
-        Assert.Equal(VALID_ROLE_NAME, role!.Name);
+        Assert.NotNull(result.Role);
+        Assert.Equal(VALID_ROLE_NAME, result.Role!.Name);
     }
 
     [Fact]

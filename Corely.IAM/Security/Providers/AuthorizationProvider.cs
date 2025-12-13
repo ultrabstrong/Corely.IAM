@@ -2,7 +2,6 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Security.Constants;
-using Corely.IAM.Security.Exceptions;
 using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.Security.Providers;
@@ -15,27 +14,6 @@ internal class AuthorizationProvider(
     private readonly IIamUserContextProvider _userContextProvider = userContextProvider;
     private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo;
     private IReadOnlyList<PermissionEntity>? _cachedPermissions;
-
-    public async Task AuthorizeAsync(string resourceType, AuthAction action, int? resourceId = null)
-    {
-        var userContext =
-            _userContextProvider.GetUserContext()
-            ?? throw new AuthorizationException(resourceType, action.ToString(), resourceId);
-
-        var permissions = await GetPermissionsAsync();
-
-        var hasPermission = permissions.Any(p =>
-            (
-                p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
-                || p.ResourceType == resourceType
-            )
-            && (p.ResourceId == 0 || p.ResourceId == resourceId)
-            && HasAction(p, action)
-        );
-
-        if (!hasPermission)
-            throw new AuthorizationException(resourceType, action.ToString(), resourceId);
-    }
 
     public async Task<bool> IsAuthorizedAsync(
         AuthAction action,

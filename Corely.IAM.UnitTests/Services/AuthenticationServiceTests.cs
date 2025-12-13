@@ -76,7 +76,9 @@ public class AuthenticationServiceTests
         var mock = new Mock<IBasicAuthProcessor>();
 
         mock.Setup(m => m.VerifyBasicAuthAsync(It.IsAny<VerifyBasicAuthRequest>()))
-            .ReturnsAsync(true);
+            .ReturnsAsync(
+                new VerifyBasicAuthResult(VerifyBasicAuthResultCode.Success, string.Empty, true)
+            );
 
         return mock;
     }
@@ -137,7 +139,9 @@ public class AuthenticationServiceTests
 
         _basicAuthProcessorMock
             .Setup(m => m.VerifyBasicAuthAsync(It.IsAny<VerifyBasicAuthRequest>()))
-            .ReturnsAsync(false);
+            .ReturnsAsync(
+                new VerifyBasicAuthResult(VerifyBasicAuthResultCode.Success, string.Empty, false)
+            );
 
         var result = await _authenticationService.SignInAsync(request);
 

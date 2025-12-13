@@ -2,7 +2,6 @@ using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Security.Constants;
-using Corely.IAM.Security.Exceptions;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.UnitTests.Permissions.Processors;
@@ -26,6 +25,15 @@ public class PermissionProcessorAuthorizationDecoratorTests
     {
         var request = new CreatePermissionRequest(1, "group", 0, Read: true);
         var expectedResult = new CreatePermissionResult(CreatePermissionResultCode.Success, "", 1);
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Create,
+                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                    null
+                )
+            )
+            .ReturnsAsync(true);
         _mockInnerProcessor
             .Setup(x => x.CreatePermissionAsync(request))
             .ReturnsAsync(expectedResult);
@@ -35,9 +43,9 @@ public class PermissionProcessorAuthorizationDecoratorTests
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
             x =>
-                x.AuthorizeAsync(
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                x.IsAuthorizedAsync(
                     AuthAction.Create,
+                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
                     null
                 ),
             Times.Once
@@ -46,28 +54,22 @@ public class PermissionProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreatePermissionAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    public async Task CreatePermissionAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new CreatePermissionRequest(1, "group", 0, Read: true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.AuthorizeAsync(
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                x.IsAuthorizedAsync(
                     AuthAction.Create,
+                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
                     null
                 )
             )
-            .ThrowsAsync(
-                new AuthorizationException(
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
-                    AuthAction.Create.ToString()
-                )
-            );
+            .ReturnsAsync(false);
 
-        await Assert.ThrowsAsync<AuthorizationException>(() =>
-            _decorator.CreatePermissionAsync(request)
-        );
+        var result = await _decorator.CreatePermissionAsync(request);
 
+        Assert.Equal(CreatePermissionResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerProcessor.Verify(
             x => x.CreatePermissionAsync(It.IsAny<CreatePermissionRequest>()),
             Times.Never
@@ -82,7 +84,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
         await _decorator.CreateDefaultSystemPermissionsAsync(accountId);
 
         _mockAuthorizationProvider.Verify(
-            x => x.AuthorizeAsync(It.IsAny<string>(), It.IsAny<AuthAction>(), It.IsAny<int?>()),
+            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int?>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(
@@ -96,6 +98,15 @@ public class PermissionProcessorAuthorizationDecoratorTests
     {
         var permissionId = 5;
         var expectedResult = new DeletePermissionResult(DeletePermissionResultCode.Success, "");
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Delete,
+                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                    permissionId
+                )
+            )
+            .ReturnsAsync(true);
         _mockInnerProcessor
             .Setup(x => x.DeletePermissionAsync(permissionId))
             .ReturnsAsync(expectedResult);
@@ -105,9 +116,9 @@ public class PermissionProcessorAuthorizationDecoratorTests
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
             x =>
-                x.AuthorizeAsync(
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                x.IsAuthorizedAsync(
                     AuthAction.Delete,
+                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
                     permissionId
                 ),
             Times.Once
@@ -116,29 +127,22 @@ public class PermissionProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeletePermissionAsync_ThrowsAuthorizationException_WhenNotAuthorized()
+    public async Task DeletePermissionAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var permissionId = 5;
         _mockAuthorizationProvider
             .Setup(x =>
-                x.AuthorizeAsync(
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                x.IsAuthorizedAsync(
                     AuthAction.Delete,
+                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
                     permissionId
                 )
             )
-            .ThrowsAsync(
-                new AuthorizationException(
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
-                    AuthAction.Delete.ToString(),
-                    permissionId
-                )
-            );
+            .ReturnsAsync(false);
 
-        await Assert.ThrowsAsync<AuthorizationException>(() =>
-            _decorator.DeletePermissionAsync(permissionId)
-        );
+        var result = await _decorator.DeletePermissionAsync(permissionId);
 
+        Assert.Equal(DeletePermissionResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerProcessor.Verify(x => x.DeletePermissionAsync(It.IsAny<int>()), Times.Never);
     }
 

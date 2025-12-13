@@ -6,6 +6,7 @@ public enum AddUsersToGroupResultCode
     PartialSuccess,
     InvalidUserIdsError,
     GroupNotFoundError,
+    UnauthorizedError,
 }
 
 internal record AddUsersToGroupResult(

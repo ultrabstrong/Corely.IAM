@@ -15,25 +15,32 @@ internal class PermissionProcessorAuthorizationDecorator(
     private readonly IAuthorizationProvider _authorizationProvider =
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
-    public async Task<CreatePermissionResult> CreatePermissionAsync(CreatePermissionRequest request)
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.PERMISSION_RESOURCE_TYPE,
-            AuthAction.Create
-        );
-        return await _inner.CreatePermissionAsync(request);
-    }
+    public async Task<CreatePermissionResult> CreatePermissionAsync(
+        CreatePermissionRequest request
+    ) =>
+        await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Create,
+            PermissionConstants.PERMISSION_RESOURCE_TYPE
+        )
+            ? await _inner.CreatePermissionAsync(request)
+            : new CreatePermissionResult(
+                CreatePermissionResultCode.UnauthorizedError,
+                "Unauthorized to create permission",
+                -1
+            );
 
     public Task CreateDefaultSystemPermissionsAsync(int accountId) =>
         _inner.CreateDefaultSystemPermissionsAsync(accountId);
 
-    public async Task<DeletePermissionResult> DeletePermissionAsync(int permissionId)
-    {
-        await _authorizationProvider.AuthorizeAsync(
-            PermissionConstants.PERMISSION_RESOURCE_TYPE,
+    public async Task<DeletePermissionResult> DeletePermissionAsync(int permissionId) =>
+        await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
+            PermissionConstants.PERMISSION_RESOURCE_TYPE,
             permissionId
-        );
-        return await _inner.DeletePermissionAsync(permissionId);
-    }
+        )
+            ? await _inner.DeletePermissionAsync(permissionId)
+            : new DeletePermissionResult(
+                DeletePermissionResultCode.UnauthorizedError,
+                $"Unauthorized to delete permission {permissionId}"
+            );
 }

@@ -1,5 +1,6 @@
 ﻿using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
@@ -61,10 +62,10 @@ internal class AuthenticationService(
             );
         }
 
-        var isValidPassword = await _basicAuthProcessor.VerifyBasicAuthAsync(
+        var verifyResult = await _basicAuthProcessor.VerifyBasicAuthAsync(
             new(userEntity.Id, request.Password)
         );
-        if (!isValidPassword)
+        if (verifyResult.ResultCode != VerifyBasicAuthResultCode.Success || !verifyResult.IsValid)
         {
             userEntity.FailedLoginsSinceLastSuccess++;
             userEntity.TotalFailedLogins++;

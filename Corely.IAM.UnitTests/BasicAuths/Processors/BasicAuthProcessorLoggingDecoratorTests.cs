@@ -45,11 +45,18 @@ public class BasicAuthProcessorLoggingDecoratorTests
     public async Task VerifyBasicAuthAsync_DelegatesToInnerAndLogsResult()
     {
         var request = new VerifyBasicAuthRequest(1, "password");
-        _mockInnerProcessor.Setup(x => x.VerifyBasicAuthAsync(request)).ReturnsAsync(true);
+        var expectedResult = new VerifyBasicAuthResult(
+            VerifyBasicAuthResultCode.Success,
+            string.Empty,
+            true
+        );
+        _mockInnerProcessor
+            .Setup(x => x.VerifyBasicAuthAsync(request))
+            .ReturnsAsync(expectedResult);
 
         var result = await _decorator.VerifyBasicAuthAsync(request);
 
-        Assert.True(result);
+        Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.VerifyBasicAuthAsync(request), Times.Once);
         VerifyLoggedWithResult();
     }

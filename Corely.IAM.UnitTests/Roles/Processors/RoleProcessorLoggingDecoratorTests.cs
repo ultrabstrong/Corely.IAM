@@ -54,34 +54,42 @@ public class RoleProcessorLoggingDecoratorTests
     }
 
     [Fact]
-    public async Task GetRoleAsyncById_DelegatesToInnerWithoutLoggingResult()
+    public async Task GetRoleAsyncById_DelegatesToInnerAndLogsResult()
     {
         var roleId = 1;
-        var expectedRole = new Role { Name = "testrole" };
-        _mockInnerProcessor.Setup(x => x.GetRoleAsync(roleId)).ReturnsAsync(expectedRole);
+        var expectedResult = new GetRoleResult(
+            GetRoleResultCode.Success,
+            string.Empty,
+            new Role { Name = "testrole" }
+        );
+        _mockInnerProcessor.Setup(x => x.GetRoleAsync(roleId)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetRoleAsync(roleId);
 
-        Assert.Equal(expectedRole, result);
+        Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.GetRoleAsync(roleId), Times.Once);
-        VerifyLoggedWithoutResult();
+        VerifyLoggedWithResult();
     }
 
     [Fact]
-    public async Task GetRoleAsyncByNameAndAccount_DelegatesToInnerWithoutLoggingResult()
+    public async Task GetRoleAsyncByNameAndAccount_DelegatesToInnerAndLogsResult()
     {
         var roleName = "testrole";
         var ownerAccountId = 1;
-        var expectedRole = new Role { Name = roleName };
+        var expectedResult = new GetRoleResult(
+            GetRoleResultCode.Success,
+            string.Empty,
+            new Role { Name = roleName }
+        );
         _mockInnerProcessor
             .Setup(x => x.GetRoleAsync(roleName, ownerAccountId))
-            .ReturnsAsync(expectedRole);
+            .ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetRoleAsync(roleName, ownerAccountId);
 
-        Assert.Equal(expectedRole, result);
+        Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.GetRoleAsync(roleName, ownerAccountId), Times.Once);
-        VerifyLoggedWithoutResult();
+        VerifyLoggedWithResult();
     }
 
     [Fact]

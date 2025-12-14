@@ -58,44 +58,6 @@ public class AccountProcessorLoggingDecoratorTests
     }
 
     [Fact]
-    public async Task GetAccountAsyncByName_DelegatesToInnerAndLogsResult()
-    {
-        var accountName = "testaccount";
-        var expectedResult = new GetAccountResult(
-            GetAccountResultCode.Success,
-            string.Empty,
-            new Account { AccountName = accountName }
-        );
-        _mockInnerProcessor.Setup(x => x.GetAccountAsync(accountName)).ReturnsAsync(expectedResult);
-
-        var result = await _decorator.GetAccountAsync(accountName);
-
-        Assert.Equal(expectedResult, result);
-        _mockInnerProcessor.Verify(x => x.GetAccountAsync(accountName), Times.Once);
-        VerifyLoggedWithResult();
-    }
-
-    [Fact]
-    public async Task ListAccountsForUserAsync_DelegatesToInnerAndLogsResult()
-    {
-        var userId = 1;
-        var expectedResult = new ListAccountsForUserResult(
-            ListAccountsForUserResultCode.Success,
-            string.Empty,
-            [new Account { AccountName = "testaccount" }]
-        );
-        _mockInnerProcessor
-            .Setup(x => x.ListAccountsForUserAsync(userId))
-            .ReturnsAsync(expectedResult);
-
-        var result = await _decorator.ListAccountsForUserAsync(userId);
-
-        Assert.Equal(expectedResult, result);
-        _mockInnerProcessor.Verify(x => x.ListAccountsForUserAsync(userId), Times.Once);
-        VerifyLoggedWithResult();
-    }
-
-    [Fact]
     public async Task RemoveUserFromAccountAsync_DelegatesToInnerAndLogsResult()
     {
         var request = new RemoveUserFromAccountRequest(1, 5);

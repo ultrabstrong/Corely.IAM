@@ -82,11 +82,12 @@ internal class UserOwnershipProcessor(
             );
         }
 
-        _logger.LogTrace(
-            "User {UserId} is the sole owner of account {AccountId} (singleSource: {HasSingleOwnershipSource})",
+        _logger.LogInformation(
+            "User {UserId} is the sole owner of account {AccountId}. HasOwnershipAssignedDirectly: {HasOwnershipAssignedDirectly}, HasOwnershipAssignedByGroup: {HasOwnershipAssignedByGroup}",
             userId,
             accountId,
-            hasSingleOwnershipSource
+            hasDirectOwnership,
+            hasGroupOwnership
         );
 
         return new IsSoleOwnerOfAccountResult(

@@ -88,6 +88,15 @@ internal class AuthorizationProvider(
         if (!TryGetUserContext(out var userContext, "check account context"))
             return false;
 
+        if (userContext.AccountId == null)
+        {
+            _logger.LogInformation(
+                "Authorization denied: User {UserId} is not signed in to an account",
+                userContext.UserId
+            );
+            return false;
+        }
+
         var accountIds = await GetAccountIdsAsync();
         var hasAccountContext = accountIds.Any(id => id == userContext.AccountId);
 

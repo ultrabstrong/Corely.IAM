@@ -31,30 +31,6 @@ internal class AccountProcessorAuthorizationDecorator(
                 null
             );
 
-    public async Task<GetAccountResult> GetAccountAsync(string accountName) =>
-        await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE
-        )
-            ? await _inner.GetAccountAsync(accountName)
-            : new GetAccountResult(
-                GetAccountResultCode.UnauthorizedError,
-                $"Unauthorized to read account {accountName}",
-                null
-            );
-
-    public async Task<ListAccountsForUserResult> ListAccountsForUserAsync(int userId) =>
-        await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE
-        )
-            ? await _inner.ListAccountsForUserAsync(userId)
-            : new ListAccountsForUserResult(
-                ListAccountsForUserResultCode.UnauthorizedError,
-                $"Unauthorized to list accounts for user {userId}",
-                []
-            );
-
     public async Task<DeleteAccountResult> DeleteAccountAsync(int accountId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,

@@ -256,37 +256,16 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task GetUserByUsernameAsync_ReturnsNull_WhenUserNotFound()
-    {
-        var result = await _userProcessor.GetUserAsync(_fixture.Create<string>());
-        Assert.Equal(GetUserResultCode.UserNotFoundError, result.ResultCode);
-        Assert.Null(result.User);
-    }
-
-    [Fact]
-    public async Task GetUserByUsernameAsync_ReturnsUser_WhenUserExists()
-    {
-        var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        await _userProcessor.CreateUserAsync(request);
-
-        var result = await _userProcessor.GetUserAsync(request.Username);
-
-        Assert.NotNull(result.User);
-        Assert.Equal(request.Username, result.User.Username);
-        Assert.Equal(request.Email, result.User.Email);
-    }
-
-    [Fact]
     public async Task UpdateUserAsync_UpdatesUser()
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
-        await _userProcessor.CreateUserAsync(request);
-        var getResult = await _userProcessor.GetUserAsync(request.Username);
+        var createUserResult = await _userProcessor.CreateUserAsync(request);
+        var getResult = await _userProcessor.GetUserAsync(createUserResult.CreatedId);
         var user = getResult.User!;
         user.Disabled = false;
 
         await _userProcessor.UpdateUserAsync(user);
-        var updatedResult = await _userProcessor.GetUserAsync(request.Username);
+        var updatedResult = await _userProcessor.GetUserAsync(createUserResult.CreatedId);
 
         Assert.False(updatedResult.User!.Disabled);
     }

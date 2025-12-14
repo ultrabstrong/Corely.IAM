@@ -39,16 +39,6 @@ internal class RoleProcessor(
         var role = createRoleRequest.ToRole();
         _validationProvider.ThrowIfInvalid(role);
 
-        if (await _roleRepo.AnyAsync(r => r.AccountId == role.AccountId && r.Name == role.Name))
-        {
-            _logger.LogWarning("Role with name {RoleName} already exists", role.Name);
-            return new CreateRoleResult(
-                CreateRoleResultCode.RoleExistsError,
-                $"Role with name {role.Name} already exists",
-                -1
-            );
-        }
-
         var accountEntity = await _accountRepo.GetAsync(a => a.Id == role.AccountId);
         if (accountEntity == null)
         {
@@ -56,6 +46,16 @@ internal class RoleProcessor(
             return new CreateRoleResult(
                 CreateRoleResultCode.AccountNotFoundError,
                 $"Account with Id {role.AccountId} not found",
+                -1
+            );
+        }
+
+        if (await _roleRepo.AnyAsync(r => r.AccountId == role.AccountId && r.Name == role.Name))
+        {
+            _logger.LogInformation("Role with name {RoleName} already exists", role.Name);
+            return new CreateRoleResult(
+                CreateRoleResultCode.RoleExistsError,
+                $"Role with name {role.Name} already exists",
                 -1
             );
         }
@@ -139,7 +139,7 @@ internal class RoleProcessor(
         var roleEntity = await _roleRepo.GetAsync(r => r.Id == request.RoleId);
         if (roleEntity == null)
         {
-            _logger.LogWarning("Role with Id {RoleId} not found", request.RoleId);
+            _logger.LogInformation("Role with Id {RoleId} not found", request.RoleId);
             return new AssignPermissionsToRoleResult(
                 AssignPermissionsToRoleResultCode.RoleNotFoundError,
                 $"Role with Id {request.RoleId} not found",
@@ -213,7 +213,7 @@ internal class RoleProcessor(
         );
         if (roleEntity == null)
         {
-            _logger.LogWarning("Role with Id {RoleId} not found", request.RoleId);
+            _logger.LogInformation("Role with Id {RoleId} not found", request.RoleId);
             return new RemovePermissionsFromRoleResult(
                 RemovePermissionsFromRoleResultCode.RoleNotFoundError,
                 $"Role with Id {request.RoleId} not found",
@@ -251,7 +251,7 @@ internal class RoleProcessor(
             if (systemPermissions.Count > 0)
             {
                 blockedSystemPermissionIds = [.. systemPermissions.Select(p => p.Id)];
-                _logger.LogWarning(
+                _logger.LogInformation(
                     "Cannot remove system-defined permissions {@SystemPermissionIds} from system-defined role {RoleId}",
                     blockedSystemPermissionIds,
                     request.RoleId
@@ -322,7 +322,7 @@ internal class RoleProcessor(
         var roleEntity = await _roleRepo.GetAsync(r => r.Id == roleId);
         if (roleEntity == null)
         {
-            _logger.LogWarning("Role with Id {RoleId} not found", roleId);
+            _logger.LogInformation("Role with Id {RoleId} not found", roleId);
             return new DeleteRoleResult(
                 DeleteRoleResultCode.RoleNotFoundError,
                 $"Role with Id {roleId} not found"
@@ -331,7 +331,7 @@ internal class RoleProcessor(
 
         if (roleEntity.IsSystemDefined)
         {
-            _logger.LogWarning(
+            _logger.LogInformation(
                 "Cannot delete system-defined role {RoleName} with Id {RoleId}",
                 roleEntity.Name,
                 roleId

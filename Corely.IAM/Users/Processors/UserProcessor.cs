@@ -54,12 +54,12 @@ internal class UserProcessor(
             bool emailExists = existingUser.Email == request.Email;
 
             if (usernameExists)
-                _logger.LogWarning(
+                _logger.LogInformation(
                     "User already exists with Username {ExistingUsername}",
                     existingUser.Username
                 );
             if (emailExists)
-                _logger.LogWarning(
+                _logger.LogInformation(
                     "User already exists with Email {ExistingEmail}",
                     existingUser.Email
                 );
@@ -108,23 +108,6 @@ internal class UserProcessor(
             return new GetUserResult(
                 GetUserResultCode.UserNotFoundError,
                 $"User with Id {userId} not found",
-                null
-            );
-        }
-
-        return new GetUserResult(GetUserResultCode.Success, string.Empty, userEntity.ToModel());
-    }
-
-    public async Task<GetUserResult> GetUserAsync(string userName)
-    {
-        var userEntity = await _userRepo.GetAsync(u => u.Username == userName);
-
-        if (userEntity == null)
-        {
-            _logger.LogInformation("User with Username {Username} not found", userName);
-            return new GetUserResult(
-                GetUserResultCode.UserNotFoundError,
-                $"User with Username {userName} not found",
                 null
             );
         }
@@ -410,7 +393,7 @@ internal class UserProcessor(
                 );
                 if (soleOwnerResult.IsSoleOwner)
                 {
-                    _logger.LogWarning(
+                    _logger.LogInformation(
                         "User with Id {UserId} is the sole owner of account {AccountId} and cannot be deleted",
                         userId,
                         account.Id

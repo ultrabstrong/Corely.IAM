@@ -58,24 +58,6 @@ public class UserProcessorLoggingDecoratorTests
     }
 
     [Fact]
-    public async Task GetUserAsyncByName_DelegatesToInnerAndLogsResult()
-    {
-        var userName = "testuser";
-        var expectedResult = new GetUserResult(
-            GetUserResultCode.Success,
-            string.Empty,
-            new User { Username = userName }
-        );
-        _mockInnerProcessor.Setup(x => x.GetUserAsync(userName)).ReturnsAsync(expectedResult);
-
-        var result = await _decorator.GetUserAsync(userName);
-
-        Assert.Equal(expectedResult, result);
-        _mockInnerProcessor.Verify(x => x.GetUserAsync(userName), Times.Once);
-        VerifyLoggedWithResult();
-    }
-
-    [Fact]
     public async Task UpdateUserAsync_DelegatesToInnerAndLogsResult()
     {
         var user = new User { Username = "testuser" };

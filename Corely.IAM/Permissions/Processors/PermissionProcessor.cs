@@ -39,6 +39,17 @@ internal class PermissionProcessor(
         var permission = request.ToPermission();
         _validationProvider.ThrowIfInvalid(permission);
 
+        var accountEntity = await _accountRepo.GetAsync(a => a.Id == permission.AccountId);
+        if (accountEntity == null)
+        {
+            _logger.LogWarning("Account with Id {AccountId} not found", permission.AccountId);
+            return new CreatePermissionResult(
+                CreatePermissionResultCode.AccountNotFoundError,
+                $"Account with Id {permission.AccountId} not found",
+                -1
+            );
+        }
+
         if (
             await _permissionRepo.AnyAsync(p =>
                 p.AccountId == permission.AccountId
@@ -52,7 +63,7 @@ internal class PermissionProcessor(
             )
         )
         {
-            _logger.LogWarning(
+            _logger.LogInformation(
                 "Permission already exists for {ResourceType} - {ResourceId}",
                 permission.ResourceType,
                 permission.ResourceId
@@ -60,17 +71,6 @@ internal class PermissionProcessor(
             return new CreatePermissionResult(
                 CreatePermissionResultCode.PermissionExistsError,
                 $"Permission already exists for {permission.ResourceType} - {permission.ResourceId}",
-                -1
-            );
-        }
-
-        var accountEntity = await _accountRepo.GetAsync(a => a.Id == permission.AccountId);
-        if (accountEntity == null)
-        {
-            _logger.LogWarning("Account with Id {AccountId} not found", permission.AccountId);
-            return new CreatePermissionResult(
-                CreatePermissionResultCode.AccountNotFoundError,
-                $"Account with Id {permission.AccountId} not found",
                 -1
             );
         }
@@ -154,7 +154,7 @@ internal class PermissionProcessor(
         var permissionEntity = await _permissionRepo.GetAsync(p => p.Id == permissionId);
         if (permissionEntity == null)
         {
-            _logger.LogWarning("Permission with Id {PermissionId} not found", permissionId);
+            _logger.LogInformation("Permission with Id {PermissionId} not found", permissionId);
             return new DeletePermissionResult(
                 DeletePermissionResultCode.PermissionNotFoundError,
                 $"Permission with Id {permissionId} not found"
@@ -163,7 +163,7 @@ internal class PermissionProcessor(
 
         if (permissionEntity.IsSystemDefined)
         {
-            _logger.LogWarning(
+            _logger.LogInformation(
                 "Cannot delete system-defined permission with Id {PermissionId}",
                 permissionId
             );

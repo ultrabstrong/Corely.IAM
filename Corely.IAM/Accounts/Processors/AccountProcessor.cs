@@ -42,20 +42,6 @@ internal class AccountProcessor(
         var account = request.ToAccount();
         _validationProvider.ThrowIfInvalid(account);
 
-        var existingAccount = await _accountRepo.GetAsync(a =>
-            a.AccountName == request.AccountName
-        );
-        if (existingAccount != null)
-        {
-            _logger.LogWarning("Account {Account} already exists", request.AccountName);
-            return new CreateAccountResult(
-                CreateAccountResultCode.AccountExistsError,
-                $"Account {request.AccountName} already exists",
-                -1,
-                Guid.Empty
-            );
-        }
-
         var userEntity = await _userRepo.GetAsync(u => u.Id == request.OwnerUserId);
         if (userEntity == null)
         {
@@ -63,6 +49,20 @@ internal class AccountProcessor(
             return new CreateAccountResult(
                 CreateAccountResultCode.UserOwnerNotFoundError,
                 $"User with Id {request.OwnerUserId} not found",
+                -1,
+                Guid.Empty
+            );
+        }
+
+        var existingAccount = await _accountRepo.GetAsync(a =>
+            a.AccountName == request.AccountName
+        );
+        if (existingAccount != null)
+        {
+            _logger.LogInformation("Account {Account} already exists", request.AccountName);
+            return new CreateAccountResult(
+                CreateAccountResultCode.AccountExistsError,
+                $"Account {request.AccountName} already exists",
                 -1,
                 Guid.Empty
             );
@@ -108,24 +108,6 @@ internal class AccountProcessor(
         return new GetAccountResult(GetAccountResultCode.Success, string.Empty, account);
     }
 
-    public async Task<GetAccountResult> GetAccountAsync(string accountName)
-    {
-        var accountEntity = await _accountRepo.GetAsync(a => a.AccountName == accountName);
-        var account = accountEntity?.ToModel();
-
-        if (account == null)
-        {
-            _logger.LogInformation("Account with name {AccountName} not found", accountName);
-            return new GetAccountResult(
-                GetAccountResultCode.AccountNotFoundError,
-                $"Account with name {accountName} not found",
-                null
-            );
-        }
-
-        return new GetAccountResult(GetAccountResultCode.Success, string.Empty, account);
-    }
-
     public async Task<ListAccountsForUserResult> ListAccountsForUserAsync(int userId)
     {
         var accountEntities = await _accountRepo.ListAsync(a =>
@@ -161,16 +143,6 @@ internal class AccountProcessor(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var userEntity = await _userRepo.GetAsync(u => u.Id == request.UserId);
-        if (userEntity == null)
-        {
-            _logger.LogWarning("User with Id {UserId} not found", request.UserId);
-            return new AddUserToAccountResult(
-                AddUserToAccountResultCode.UserNotFoundError,
-                $"User with Id {request.UserId} not found"
-            );
-        }
-
         var accountEntity = await _accountRepo.GetAsync(
             a => a.Id == request.AccountId,
             include: q => q.Include(a => a.Users)
@@ -184,9 +156,19 @@ internal class AccountProcessor(
             );
         }
 
+        var userEntity = await _userRepo.GetAsync(u => u.Id == request.UserId);
+        if (userEntity == null)
+        {
+            _logger.LogInformation("User with Id {UserId} not found", request.UserId);
+            return new AddUserToAccountResult(
+                AddUserToAccountResultCode.UserNotFoundError,
+                $"User with Id {request.UserId} not found"
+            );
+        }
+
         if (accountEntity.Users?.Any(u => u.Id == request.UserId) == true)
         {
-            _logger.LogWarning(
+            _logger.LogInformation(
                 "User with Id {UserId} is already in account {AccountId}",
                 request.UserId,
                 request.AccountId
@@ -215,16 +197,6 @@ internal class AccountProcessor(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var userEntity = await _userRepo.GetAsync(u => u.Id == request.UserId);
-        if (userEntity == null)
-        {
-            _logger.LogWarning("User with Id {UserId} not found", request.UserId);
-            return new RemoveUserFromAccountResult(
-                RemoveUserFromAccountResultCode.UserNotFoundError,
-                $"User with Id {request.UserId} not found"
-            );
-        }
-
         var accountEntity = await _accountRepo.GetAsync(
             a => a.Id == request.AccountId,
             include: q => q.Include(a => a.Users)
@@ -235,6 +207,16 @@ internal class AccountProcessor(
             return new RemoveUserFromAccountResult(
                 RemoveUserFromAccountResultCode.AccountNotFoundError,
                 $"Account with Id {request.AccountId} not found"
+            );
+        }
+
+        var userEntity = await _userRepo.GetAsync(u => u.Id == request.UserId);
+        if (userEntity == null)
+        {
+            _logger.LogInformation("User with Id {UserId} not found", request.UserId);
+            return new RemoveUserFromAccountResult(
+                RemoveUserFromAccountResultCode.UserNotFoundError,
+                $"User with Id {request.UserId} not found"
             );
         }
 
@@ -257,7 +239,7 @@ internal class AccountProcessor(
         );
         if (soleOwnerResult.IsSoleOwner)
         {
-            _logger.LogWarning(
+            _logger.LogInformation(
                 "User with Id {UserId} is the sole owner of account {AccountId} and cannot be removed",
                 request.UserId,
                 request.AccountId

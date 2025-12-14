@@ -85,48 +85,6 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetUserAsyncByName_CallsAuthorizationProvider()
-    {
-        var userName = "testuser";
-        var expectedResult = new GetUserResult(
-            GetUserResultCode.Success,
-            string.Empty,
-            new User { Id = 1, Username = userName }
-        );
-        _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, null)
-            )
-            .ReturnsAsync(true);
-        _mockInnerProcessor.Setup(x => x.GetUserAsync(userName)).ReturnsAsync(expectedResult);
-
-        var result = await _decorator.GetUserAsync(userName);
-
-        Assert.Equal(expectedResult, result);
-        _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, null),
-            Times.Once
-        );
-    }
-
-    [Fact]
-    public async Task GetUserAsyncByName_ReturnsUnauthorized_WhenNotAuthorized()
-    {
-        var userName = "testuser";
-        _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, null)
-            )
-            .ReturnsAsync(false);
-
-        var result = await _decorator.GetUserAsync(userName);
-
-        Assert.Equal(GetUserResultCode.UnauthorizedError, result.ResultCode);
-        Assert.Null(result.User);
-        _mockInnerProcessor.Verify(x => x.GetUserAsync(It.IsAny<string>()), Times.Never);
-    }
-
-    [Fact]
     public async Task UpdateUserAsync_Succeeds_WhenUserUpdatesOwnAccount()
     {
         var userId = 5;

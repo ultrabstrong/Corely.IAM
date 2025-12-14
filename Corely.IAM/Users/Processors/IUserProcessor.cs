@@ -6,7 +6,6 @@ internal interface IUserProcessor
 {
     Task<CreateUserResult> CreateUserAsync(CreateUserRequest request);
     Task<GetUserResult> GetUserAsync(int userId);
-    Task<GetUserResult> GetUserAsync(string userName);
     Task<UpdateUserResult> UpdateUserAsync(User user);
     Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(int userId);
     Task<AssignRolesToUserResult> AssignRolesToUserAsync(AssignRolesToUserRequest request);

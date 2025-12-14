@@ -143,7 +143,7 @@ internal class Program
 
             // ========= AUTHENTICATION ==========
             var signInResult = await authenticationService.SignInAsync(
-                new SignInRequest("user1", "admin")
+                new SignInRequest("user1", "admin", registerAccountResult.CreatedAccountId)
             );
 
             // SignInAsync does this, but later when all you have is the auth token use this
@@ -220,6 +220,12 @@ internal class Program
 
             // deregister user when user is not sole owner succeeds
             deregisterUserResult = await deregistrationService.DeregisterUserAsync();
+
+            // sign in as user 2 and deregister user 2
+            signInResult = await authenticationService.SignInAsync(
+                new SignInRequest("user2", "password2")
+            );
+            await deregistrationService.DeregisterUserAsync();
         }
         catch (Exception ex)
         {

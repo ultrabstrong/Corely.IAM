@@ -295,6 +295,18 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
+    public async Task HasAccountContextAsync_ReturnsFalse_WhenUserNotSignedIntoAccount()
+    {
+        var provider = CreateProvider();
+        await SetupUserWithAccountAsync(userId: 1, accountId: 1);
+        SetUserContext(1, null); // No account in context
+
+        var result = await provider.HasAccountContextAsync();
+
+        Assert.False(result);
+    }
+
+    [Fact]
     public async Task HasAccountContextAsync_ReturnsFalse_WhenUserDoesNotHaveAccessToAccount()
     {
         var provider = CreateProvider();
@@ -334,7 +346,7 @@ public class AuthorizationProviderTests
         );
     }
 
-    private void SetUserContext(int userId, int accountId)
+    private void SetUserContext(int userId, int? accountId)
     {
         var userContextProvider = _serviceFactory.GetRequiredService<UserContextProvider>();
         ((IUserContextSetter)userContextProvider).SetUserContext(

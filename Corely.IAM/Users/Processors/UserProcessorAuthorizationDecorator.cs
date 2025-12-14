@@ -31,18 +31,6 @@ internal class UserProcessorAuthorizationDecorator(
                 null
             );
 
-    public async Task<GetUserResult> GetUserAsync(string userName) =>
-        await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE
-        )
-            ? await _inner.GetUserAsync(userName)
-            : new GetUserResult(
-                GetUserResultCode.UnauthorizedError,
-                $"Unauthorized to read user {userName}",
-                null
-            );
-
     public async Task<UpdateUserResult> UpdateUserAsync(User user) =>
         _authorizationProvider.IsAuthorizedForOwnUser(user.Id)
             ? await _inner.UpdateUserAsync(user)

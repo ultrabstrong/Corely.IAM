@@ -31,14 +31,6 @@ internal class UserProcessorLoggingDecorator(
             logResult: true
         );
 
-    public async Task<GetUserResult> GetUserAsync(string userName) =>
-        await _logger.ExecuteWithLogging(
-            nameof(UserProcessor),
-            userName,
-            () => _inner.GetUserAsync(userName),
-            logResult: true
-        );
-
     public async Task<UpdateUserResult> UpdateUserAsync(User user) =>
         await _logger.ExecuteWithLogging(
             nameof(UserProcessor),

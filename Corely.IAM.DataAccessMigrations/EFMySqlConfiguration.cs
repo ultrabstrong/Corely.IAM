@@ -1,6 +1,6 @@
-﻿using Corely.DataAccess.EntityFramework.Configurations;
+﻿using System.Reflection;
+using Corely.DataAccess.EntityFramework.Configurations;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 
 namespace Corely.IAM.DataAccessMigrations;
 

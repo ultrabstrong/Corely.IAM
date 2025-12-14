@@ -1,5 +1,4 @@
-﻿using Corely.DataAccess;
-using Corely.DataAccess.EntityFramework.Configurations;
+﻿using Corely.DataAccess.EntityFramework.Configurations;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Corely.IAM.Accounts.Entities;
@@ -7,8 +6,8 @@ namespace Corely.IAM.Accounts.Entities;
 internal class AccountAsymmetricKeyEntityConfiguration
     : EntityConfigurationBase<AccountAsymmetricKeyEntity, int>
 {
-    public AccountAsymmetricKeyEntityConfiguration(IDbTypes dbTypes)
-        : base(dbTypes) { }
+    public AccountAsymmetricKeyEntityConfiguration(IEFDbTypes efDbTypes)
+        : base(efDbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<AccountAsymmetricKeyEntity> builder)
     {

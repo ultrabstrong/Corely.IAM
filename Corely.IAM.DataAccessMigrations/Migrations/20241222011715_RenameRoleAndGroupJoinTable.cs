@@ -7,8 +7,6 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
     /// <inheritdoc />
     public partial class RenameRoleAndGroupJoinTable : Migration
     {
-        private static readonly string[] columns = new[] { "RolesId", "UsersId" };
-
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -84,7 +82,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
             migrationBuilder.AddPrimaryKey(
                 name: "PK_UserRoles",
                 table: "UserRoles",
-                columns: columns);
+                columns: new[] { "RolesId", "UsersId" }
+            );
 
             migrationBuilder.AddPrimaryKey(
                 name: "PK_UserGroups",
@@ -152,7 +151,6 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 onDelete: ReferentialAction.Cascade
             );
         }
-        private static readonly string[] columns = new[] { "RolesId", "UsersId" };
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -214,7 +212,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
             migrationBuilder.AddPrimaryKey(
                 name: "PK_UserEntityRoleEntity",
                 table: "UserEntityRoleEntity",
-                columns: columns);
+                columns: new[] { "RolesId", "UsersId" }
+            );
 
             migrationBuilder.AddPrimaryKey(
                 name: "PK_GroupEntityUserEntity",

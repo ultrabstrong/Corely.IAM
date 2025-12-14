@@ -193,7 +193,7 @@ internal class RegistrationService(
             _logger.LogInformation(
                 "Account {AccountName} registered with Id {AccountId}",
                 request.AccountName,
-                createAccountResult.CreatedId
+                createAccountResult.CreatedPublicId
             );
             return new RegisterAccountResult(
                 RegisterAccountResultCode.Success,

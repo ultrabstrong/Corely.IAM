@@ -7,8 +7,6 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
     /// <inheritdoc />
     public partial class RoleGroupUniqueIndexAndAddFieldsToRole : Migration
     {
-        private static readonly string[] columns = new[] { "AccountId", "Name" };
-
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -67,14 +65,14 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Roles_AccountId_Name",
                 table: "Roles",
-                columns: columns,
+                columns: new[] { "AccountId", "Name" },
                 unique: true
             );
 
             migrationBuilder.CreateIndex(
                 name: "IX_Groups_AccountId_Name",
                 table: "Groups",
-                columns: columns,
+                columns: new[] { "AccountId", "Name" },
                 unique: true
             );
 

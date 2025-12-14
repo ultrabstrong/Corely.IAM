@@ -1,5 +1,4 @@
-﻿using Corely.DataAccess;
-using Corely.DataAccess.EntityFramework.Configurations;
+﻿using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.Users.Constants;
 using Microsoft.EntityFrameworkCore;
@@ -9,8 +8,8 @@ namespace Corely.IAM.Users.Entities;
 
 internal sealed class UserEntityConfiguration : EntityConfigurationBase<UserEntity, int>
 {
-    public UserEntityConfiguration(IDbTypes dbTypes)
-        : base(dbTypes) { }
+    public UserEntityConfiguration(IEFDbTypes efDbTypes)
+        : base(efDbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<UserEntity> builder)
     {

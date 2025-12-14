@@ -1,5 +1,4 @@
-﻿using Corely.DataAccess;
-using Corely.DataAccess.EntityFramework.Configurations;
+﻿using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.Security.Constants;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,8 +7,8 @@ namespace Corely.IAM.Users.Entities;
 internal class UserSymmetricKeyEntityConfiguration
     : EntityConfigurationBase<UserSymmetricKeyEntity, int>
 {
-    public UserSymmetricKeyEntityConfiguration(IDbTypes dbTypes)
-        : base(dbTypes) { }
+    public UserSymmetricKeyEntityConfiguration(IEFDbTypes efDbTypes)
+        : base(efDbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<UserSymmetricKeyEntity> builder)
     {

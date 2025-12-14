@@ -1,5 +1,4 @@
-﻿using Corely.DataAccess;
-using Corely.DataAccess.EntityFramework.Configurations;
+﻿using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.Groups.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -8,8 +7,8 @@ namespace Corely.IAM.Groups.Entities;
 
 internal sealed class GroupEntityConfiguration : EntityConfigurationBase<GroupEntity, int>
 {
-    public GroupEntityConfiguration(IDbTypes dbTypes)
-        : base(dbTypes) { }
+    public GroupEntityConfiguration(IEFDbTypes efDbTypes)
+        : base(efDbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<GroupEntity> builder)
     {

@@ -9,18 +9,6 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
     /// <inheritdoc />
     public partial class AddPermissions : Migration
     {
-        private static readonly string[] columns = new[]
-                {
-                    "AccountId",
-                    "ResourceType",
-                    "ResourceId",
-                    "Create",
-                    "Read",
-                    "Update",
-                    "Delete",
-                    "Execute",
-                };
-
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -236,7 +224,17 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Permissions_AccountId_ResourceType_ResourceId_Create_Read_Up~",
                 table: "Permissions",
-                columns: columns,
+                columns: new[]
+                {
+                    "AccountId",
+                    "ResourceType",
+                    "ResourceId",
+                    "Create",
+                    "Read",
+                    "Update",
+                    "Delete",
+                    "Execute",
+                },
                 unique: true
             );
 

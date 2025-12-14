@@ -92,11 +92,13 @@ public abstract class ServiceFactoryBase(
             IRegistrationService,
             RegistrationServiceAuthorizationDecorator
         >();
+        ServiceCollection.Decorate<IRegistrationService, RegistrationServiceLoggingDecorator>();
         ServiceCollection.AddScoped<IDeregistrationService, DeregistrationService>();
         ServiceCollection.Decorate<
             IDeregistrationService,
             DeregistrationServiceAuthorizationDecorator
         >();
+        ServiceCollection.Decorate<IDeregistrationService, DeregistrationServiceLoggingDecorator>();
         ServiceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
 
         ServiceCollection.AddLogging(AddLogging);

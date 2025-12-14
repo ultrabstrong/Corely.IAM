@@ -118,15 +118,6 @@ internal class RegistrationService(
                 userResult.CreatedId
             );
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(
-                ex,
-                "Exception occurred while registering user {Username}",
-                request.Username
-            );
-            throw;
-        }
         finally
         {
             if (!uowSucceeded)

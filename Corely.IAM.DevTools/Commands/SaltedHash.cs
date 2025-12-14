@@ -16,8 +16,7 @@ internal class SaltedHash : CommandBase
             "shash",
             "Salted hash operations",
             "Default: List hash types if no argument or option is provided"
-        )
-    { }
+        ) { }
 
     protected override void Execute()
     {

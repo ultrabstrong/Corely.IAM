@@ -45,8 +45,7 @@ internal class SymmetricSignature : CommandBase
             "sym-sign",
             "Symmetric signature operations",
             "Use at least one flag to perform an operation"
-        )
-    { }
+        ) { }
 
     protected override void Execute()
     {

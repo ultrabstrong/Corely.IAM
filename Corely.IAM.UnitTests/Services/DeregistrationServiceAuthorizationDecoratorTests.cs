@@ -21,22 +21,6 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     #region Passthrough Methods (No Authorization)
 
     [Fact]
-    public async Task DeregisterUserAsync_DelegatesToInner()
-    {
-        var request = new DeregisterUserRequest(1);
-        var expectedResult = new DeregisterUserResult(
-            DeregisterUserResultCode.Success,
-            string.Empty
-        );
-        _mockInnerService.Setup(x => x.DeregisterUserAsync(request)).ReturnsAsync(expectedResult);
-
-        var result = await _decorator.DeregisterUserAsync(request);
-
-        Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.DeregisterUserAsync(request), Times.Once);
-    }
-
-    [Fact]
     public async Task DeregisterGroupAsync_DelegatesToInner()
     {
         var request = new DeregisterGroupRequest(1);
@@ -164,6 +148,37 @@ public class DeregistrationServiceAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.DeregisterPermissionsFromRoleAsync(request), Times.Once);
+    }
+
+    #endregion
+
+    #region DeregisterUserAsync
+
+    [Fact]
+    public async Task DeregisterUserAsync_Succeeds_WhenHasUserContext()
+    {
+        var expectedResult = new DeregisterUserResult(
+            DeregisterUserResultCode.Success,
+            string.Empty
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockInnerService.Setup(x => x.DeregisterUserAsync()).ReturnsAsync(expectedResult);
+
+        var result = await _decorator.DeregisterUserAsync();
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.DeregisterUserAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeregisterUserAsync_ReturnsUnauthorized_WhenNoUserContext()
+    {
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+
+        var result = await _decorator.DeregisterUserAsync();
+
+        Assert.Equal(DeregisterUserResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(x => x.DeregisterUserAsync(), Times.Never);
     }
 
     #endregion

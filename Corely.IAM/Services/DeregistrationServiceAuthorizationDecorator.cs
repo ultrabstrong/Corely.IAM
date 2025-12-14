@@ -13,8 +13,15 @@ internal class DeregistrationServiceAuthorizationDecorator(
     private readonly IAuthorizationProvider _authorizationProvider =
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
-    public Task<DeregisterUserResult> DeregisterUserAsync(DeregisterUserRequest request) =>
-        _inner.DeregisterUserAsync(request);
+    public Task<DeregisterUserResult> DeregisterUserAsync() =>
+        _authorizationProvider.HasUserContext()
+            ? _inner.DeregisterUserAsync()
+            : Task.FromResult(
+                new DeregisterUserResult(
+                    DeregisterUserResultCode.UnauthorizedError,
+                    "Unauthorized to delete user"
+                )
+            );
 
     public async Task<DeregisterAccountResult> DeregisterAccountAsync() =>
         await _authorizationProvider.HasAccountContextAsync()

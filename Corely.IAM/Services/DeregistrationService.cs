@@ -27,7 +27,8 @@ internal class DeregistrationService(
     IGroupProcessor groupProcessor,
     IAccountProcessor accountProcessor,
     IUserProcessor userProcessor,
-    IUserContextProvider userContextProvider
+    IUserContextProvider userContextProvider,
+    IUserContextSetter userContextSetter
 ) : IDeregistrationService
 {
     private readonly ILogger<DeregistrationService> _logger = logger.ThrowIfNull(nameof(logger));
@@ -49,27 +50,29 @@ internal class DeregistrationService(
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
     );
+    private readonly IUserContextSetter _userContextSetter = userContextSetter.ThrowIfNull(
+        nameof(userContextSetter)
+    );
 
-    public async Task<DeregisterUserResult> DeregisterUserAsync(DeregisterUserRequest request)
+    public async Task<DeregisterUserResult> DeregisterUserAsync()
     {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _logger.LogInformation("Deregistering user {UserId}", request.UserId);
+        var userId = _userContextProvider.GetUserContext()!.UserId;
+        _logger.LogInformation("Deregistering user {UserId}", userId);
 
-        var result = await _userProcessor.DeleteUserAsync(request.UserId);
+        var result = await _userProcessor.DeleteUserAsync(userId);
 
         if (result.ResultCode != DeleteUserResultCode.Success)
         {
-            _logger.LogInformation(
-                "Deregistering user failed for user id {UserId}",
-                request.UserId
-            );
+            _logger.LogInformation("Deregistering user failed for user id {UserId}", userId);
             return new DeregisterUserResult(
                 result.ResultCode.ToDeregisterUserResultCode(),
                 result.Message
             );
         }
 
-        _logger.LogInformation("User {UserId} deregistered", request.UserId);
+        _userContextSetter.ClearUserContext(userId);
+
+        _logger.LogInformation("User {UserId} deregistered", userId);
         return new DeregisterUserResult(DeregisterUserResultCode.Success, string.Empty);
     }
 
@@ -90,6 +93,12 @@ internal class DeregistrationService(
                 result.ResultCode.ToDeregisterAccountResultCode(),
                 result.Message
             );
+        }
+
+        var context = _userContextProvider.GetUserContext();
+        if (context != null && context.AccountId == accountId)
+        {
+            _userContextSetter.SetUserContext(context with { AccountId = null });
         }
 
         _logger.LogInformation("Account {AccountId} deregistered", accountId);

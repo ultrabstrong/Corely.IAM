@@ -68,8 +68,6 @@ internal class Program
                 registerUserRequest
             );
 
-            await authenticationService.SignOutAllAsync(registerUserResult.CreatedUserId);
-
             var registerAccountRequest = new RegisterAccountRequest("acct1");
             var registerAccountResult = await registrationService.RegisterAccountAsync(
                 registerAccountRequest
@@ -169,12 +167,15 @@ internal class Program
             await userContextProvider.SetUserContextAsync(signInResult.AuthToken!);
 
             var token = new JwtSecurityTokenHandler().ReadJwtToken(signInResult.AuthToken!);
+
+            // Uncomment to see all deregister fail
+            /*
             var signedOut = await authenticationService.SignOutAsync(
                 registerUserResult.CreatedUserId,
                 token.Id
             );
-
             await authenticationService.SignOutAllAsync(registerUserResult.CreatedUserId);
+            */
 
             // ========= DEREGISTERING ==========
 
@@ -208,10 +209,7 @@ internal class Program
                     deregisterPermissionsFromRoleRequest
                 );
 
-            var deregisterUserRequest = new DeregisterUserRequest(registerUserResult.CreatedUserId);
-            var deregisterUserResult = await deregistrationService.DeregisterUserAsync(
-                deregisterUserRequest
-            );
+            var deregisterUserResult = await deregistrationService.DeregisterUserAsync();
 
             var deregisterUserFromAccountRequest = new DeregisterUserFromAccountRequest(
                 registerUserResult.CreatedUserId

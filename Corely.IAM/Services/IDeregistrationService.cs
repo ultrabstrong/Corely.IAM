@@ -4,7 +4,7 @@ namespace Corely.IAM.Services;
 
 public interface IDeregistrationService
 {
-    Task<DeregisterUserResult> DeregisterUserAsync(DeregisterUserRequest request);
+    Task<DeregisterUserResult> DeregisterUserAsync();
     Task<DeregisterAccountResult> DeregisterAccountAsync();
     Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request);
     Task<DeregisterRoleResult> DeregisterRoleAsync(DeregisterRoleRequest request);

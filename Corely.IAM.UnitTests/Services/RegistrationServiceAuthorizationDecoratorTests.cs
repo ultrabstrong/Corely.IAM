@@ -45,7 +45,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task RegisterAccountAsync_DelegatesToInner()
     {
-        var request = new RegisterAccountRequest("TestAccount", 1);
+        var request = new RegisterAccountRequest("TestAccount");
         var expectedResult = new RegisterAccountResult(
             RegisterAccountResultCode.Success,
             string.Empty,

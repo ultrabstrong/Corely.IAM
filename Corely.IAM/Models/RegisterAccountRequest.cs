@@ -1,3 +1,3 @@
 ﻿namespace Corely.IAM.Models;
 
-public record RegisterAccountRequest(string AccountName, int OwnerUserId);
+public record RegisterAccountRequest(string AccountName);

@@ -68,10 +68,7 @@ internal class Program
                 registerUserRequest
             );
 
-            var registerAccountRequest = new RegisterAccountRequest(
-                "acct1",
-                registerUserResult.CreatedUserId
-            );
+            var registerAccountRequest = new RegisterAccountRequest("acct1");
             var registerAccountResult = await registrationService.RegisterAccountAsync(
                 registerAccountRequest
             );

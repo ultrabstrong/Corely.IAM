@@ -149,8 +149,9 @@ internal class RegistrationService(
         {
             await _uowProvider.BeginAsync();
 
+            var ownerUserId = _userContextProvider.GetUserContext()!.UserId;
             var createAccountResult = await _accountProcessor.CreateAccountAsync(
-                new(request.AccountName, request.OwnerUserId)
+                new(request.AccountName, ownerUserId)
             );
             if (createAccountResult.ResultCode != CreateAccountResultCode.Success)
             {
@@ -173,7 +174,7 @@ internal class RegistrationService(
             );
 
             var assignRoleResult = await _userProcessor.AssignRolesToUserAsync(
-                new([rolesResult.OwnerRoleId], request.OwnerUserId, BypassAuthorization: true)
+                new([rolesResult.OwnerRoleId], ownerUserId, BypassAuthorization: true)
             );
             if (assignRoleResult.ResultCode != AssignRolesToUserResultCode.Success)
             {

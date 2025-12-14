@@ -209,4 +209,38 @@ internal abstract class CommandBase : Command
         Console.WriteLine(string.Join(Environment.NewLine, messages));
         Console.ResetColor();
     }
+
+    protected static async Task<string?> LoadAuthTokenFromFileAsync(string authFilePath)
+    {
+        try
+        {
+            if (!File.Exists(authFilePath))
+            {
+                Error($"Auth token file not found: {authFilePath}");
+                return null;
+            }
+
+            var fileContent = await File.ReadAllTextAsync(authFilePath);
+            if (string.IsNullOrWhiteSpace(fileContent))
+            {
+                Error($"Auth token file is empty: {authFilePath}");
+                return null;
+            }
+
+            // The file should contain a JSON object with an AuthToken property
+            var jsonDoc = System.Text.Json.JsonDocument.Parse(fileContent);
+            if (jsonDoc.RootElement.TryGetProperty("AuthToken", out var authTokenElement))
+            {
+                return authTokenElement.GetString();
+            }
+
+            Error($"Auth token file does not contain 'AuthToken' property: {authFilePath}");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Error($"Failed to load auth token from file: {ex.Message}");
+            return null;
+        }
+    }
 }

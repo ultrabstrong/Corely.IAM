@@ -1,4 +1,5 @@
-﻿using Corely.DataAccess.EntityFramework.Configurations;
+﻿using Corely.DataAccess;
+using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.Accounts.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -7,8 +8,8 @@ namespace Corely.IAM.Accounts.Entities;
 
 internal sealed class AccountEntityConfiguration : EntityConfigurationBase<AccountEntity, int>
 {
-    public AccountEntityConfiguration(IEFDbTypes efDbTypes)
-        : base(efDbTypes) { }
+    public AccountEntityConfiguration(IDbTypes dbTypes)
+        : base(dbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<AccountEntity> builder)
     {

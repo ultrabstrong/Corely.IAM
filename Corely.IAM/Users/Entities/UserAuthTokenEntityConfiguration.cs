@@ -1,3 +1,4 @@
+using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -7,8 +8,8 @@ namespace Corely.IAM.Users.Entities;
 internal sealed class UserAuthTokenEntityConfiguration
     : EntityConfigurationBase<UserAuthTokenEntity, int>
 {
-    public UserAuthTokenEntityConfiguration(IEFDbTypes efDbTypes)
-        : base(efDbTypes) { }
+    public UserAuthTokenEntityConfiguration(IDbTypes dbTypes)
+        : base(dbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<UserAuthTokenEntity> builder)
     {

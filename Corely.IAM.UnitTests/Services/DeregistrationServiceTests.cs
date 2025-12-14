@@ -23,6 +23,7 @@ public class DeregistrationServiceTests
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
     private readonly Mock<IIamUserContextProvider> _mockUserContextProvider = new();
     private readonly DeregistrationService _service;
+    private static readonly int[] second = new[] { 1, 2 };
 
     public DeregistrationServiceTests()
     {
@@ -165,7 +166,7 @@ public class DeregistrationServiceTests
             x =>
                 x.RemoveUsersFromGroupAsync(
                     It.Is<RemoveUsersFromGroupRequest>(r =>
-                        r.UserIds.SequenceEqual(new[] { 1, 2 }) && r.GroupId == 5
+                        r.UserIds.SequenceEqual(second) && r.GroupId == 5
                     )
                 ),
             Times.Once

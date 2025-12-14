@@ -7,6 +7,8 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
     /// <inheritdoc />
     public partial class RenameAccountUsersJoinTable : Migration
     {
+        private static readonly string[] columns = new[] { "AccountsId", "UsersId" };
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -36,8 +38,7 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
             migrationBuilder.AddPrimaryKey(
                 name: "PK_UserAccounts",
                 table: "UserAccounts",
-                columns: new[] { "AccountsId", "UsersId" }
-            );
+                columns: columns);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_UserAccounts_Accounts_AccountsId",
@@ -57,6 +58,7 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
                 onDelete: ReferentialAction.Cascade
             );
         }
+        private static readonly string[] columns = new[] { "AccountsId", "UsersId" };
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -84,8 +86,7 @@ namespace Corely.IAM.DataAccessMigrations.Migrations
             migrationBuilder.AddPrimaryKey(
                 name: "PK_AccountEntityUserEntity",
                 table: "AccountEntityUserEntity",
-                columns: new[] { "AccountsId", "UsersId" }
-            );
+                columns: columns);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_AccountEntityUserEntity_Accounts_AccountsId",

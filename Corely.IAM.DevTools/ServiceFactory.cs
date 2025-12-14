@@ -1,13 +1,12 @@
-﻿using System.Reflection;
-using Corely.DataAccess.EntityFramework;
+﻿using Corely.DataAccess.EntityFramework;
 using Corely.DataAccess.EntityFramework.Configurations;
-using Corely.IAM;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using System.Reflection;
 
 namespace Corely.IAM.DevTools;
 

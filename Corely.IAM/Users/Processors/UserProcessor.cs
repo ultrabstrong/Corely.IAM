@@ -74,7 +74,8 @@ internal class UserProcessor(
             return new CreateUserResult(
                 CreateUserResultCode.UserExistsError,
                 $"{usernameExistsMessage} {emailExistsMessage}".Trim(),
-                -1
+                -1,
+                Guid.Empty
             );
         }
 
@@ -89,7 +90,12 @@ internal class UserProcessor(
         userEntity.PublicId = Guid.NewGuid();
         var created = await _userRepo.CreateAsync(userEntity);
 
-        return new CreateUserResult(CreateUserResultCode.Success, string.Empty, created.Id);
+        return new CreateUserResult(
+            CreateUserResultCode.Success,
+            string.Empty,
+            created.Id,
+            created.PublicId
+        );
     }
 
     public async Task<GetUserResult> GetUserAsync(int userId)

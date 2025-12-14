@@ -31,7 +31,6 @@ public class RegistrationServiceAuthorizationDecoratorTests
         var expectedResult = new RegisterUserResult(
             RegisterUserResultCode.Success,
             string.Empty,
-            1,
             1
         );
         _mockInnerService.Setup(x => x.RegisterUserAsync(request)).ReturnsAsync(expectedResult);
@@ -40,23 +39,6 @@ public class RegistrationServiceAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.RegisterUserAsync(request), Times.Once);
-    }
-
-    [Fact]
-    public async Task RegisterAccountAsync_DelegatesToInner()
-    {
-        var request = new RegisterAccountRequest("TestAccount");
-        var expectedResult = new RegisterAccountResult(
-            RegisterAccountResultCode.Success,
-            string.Empty,
-            Guid.NewGuid()
-        );
-        _mockInnerService.Setup(x => x.RegisterAccountAsync(request)).ReturnsAsync(expectedResult);
-
-        var result = await _decorator.RegisterAccountAsync(request);
-
-        Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.RegisterAccountAsync(request), Times.Once);
     }
 
     [Fact]
@@ -137,6 +119,43 @@ public class RegistrationServiceAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.RegisterPermissionsWithRoleAsync(request), Times.Once);
+    }
+
+    #endregion
+
+    #region RegisterAccountAsync
+
+    [Fact]
+    public async Task RegisterAccountAsync_Succeeds_WhenHasAccountContext()
+    {
+        var request = new RegisterAccountRequest("TestAccount");
+        var expectedResult = new RegisterAccountResult(
+            RegisterAccountResultCode.Success,
+            string.Empty,
+            Guid.Empty
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockInnerService.Setup(x => x.RegisterAccountAsync(request)).ReturnsAsync(expectedResult);
+
+        var result = await _decorator.RegisterAccountAsync(request);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.RegisterAccountAsync(request), Times.Once);
+    }
+
+    [Fact]
+    public async Task RegisterAccountAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    {
+        var request = new RegisterAccountRequest("TestAccount");
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+
+        var result = await _decorator.RegisterAccountAsync(request);
+
+        Assert.Equal(RegisterAccountResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(
+            x => x.RegisterAccountAsync(It.IsAny<RegisterAccountRequest>()),
+            Times.Never
+        );
     }
 
     #endregion

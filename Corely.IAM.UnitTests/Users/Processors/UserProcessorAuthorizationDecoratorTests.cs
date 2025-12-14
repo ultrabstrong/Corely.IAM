@@ -24,7 +24,12 @@ public class UserProcessorAuthorizationDecoratorTests
     public async Task CreateUserAsync_BypassesAuthorization()
     {
         var request = new CreateUserRequest("testuser", "test@test.com");
-        var expectedResult = new CreateUserResult(CreateUserResultCode.Success, "", 1);
+        var expectedResult = new CreateUserResult(
+            CreateUserResultCode.Success,
+            "",
+            1,
+            Guid.NewGuid()
+        );
         _mockInnerProcessor.Setup(x => x.CreateUserAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.CreateUserAsync(request);

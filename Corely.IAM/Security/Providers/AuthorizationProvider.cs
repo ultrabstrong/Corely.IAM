@@ -81,6 +81,8 @@ internal class AuthorizationProvider(
         return isAuthorized;
     }
 
+    public bool HasUserContext() => _userContextProvider.GetUserContext() != null;
+
     public async Task<bool> HasAccountContextAsync()
     {
         if (!TryGetUserContext(out var userContext, "check account context"))
@@ -147,7 +149,7 @@ internal class AuthorizationProvider(
             a.Users!.Any(u => u.Id == userContext.UserId)
         );
 
-        _cachedAccountIds = accounts.Select(a => a.Id).ToList();
+        _cachedAccountIds = [.. accounts.Select(a => a.Id)];
 
         return _cachedAccountIds;
     }

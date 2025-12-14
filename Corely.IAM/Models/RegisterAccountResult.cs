@@ -5,6 +5,7 @@ public enum RegisterAccountResultCode
     Success,
     AccountCreationError,
     SystemRoleAssignmentError,
+    UnauthorizedError,
 }
 
 public record RegisterAccountResult(

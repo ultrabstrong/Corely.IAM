@@ -19,8 +19,14 @@ internal class RegistrationServiceAuthorizationDecorator(
     public Task<RegisterUserResult> RegisterUserAsync(RegisterUserRequest request) =>
         _inner.RegisterUserAsync(request);
 
-    public Task<RegisterAccountResult> RegisterAccountAsync(RegisterAccountRequest request) =>
-        _inner.RegisterAccountAsync(request);
+    public async Task<RegisterAccountResult> RegisterAccountAsync(RegisterAccountRequest request) =>
+        _authorizationProvider.HasUserContext()
+            ? await _inner.RegisterAccountAsync(request)
+            : new RegisterAccountResult(
+                RegisterAccountResultCode.UnauthorizedError,
+                "Unauthorized to create account",
+                Guid.Empty
+            );
 
     public async Task<RegisterGroupResult> RegisterGroupAsync(RegisterGroupRequest request) =>
         await _authorizationProvider.HasAccountContextAsync()

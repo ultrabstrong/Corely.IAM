@@ -24,7 +24,12 @@ public class UserProcessorLoggingDecoratorTests
     public async Task CreateUserAsync_DelegatesToInnerAndLogsResult()
     {
         var request = new CreateUserRequest("testuser", "test@example.com");
-        var expectedResult = new CreateUserResult(CreateUserResultCode.Success, string.Empty, 1);
+        var expectedResult = new CreateUserResult(
+            CreateUserResultCode.Success,
+            string.Empty,
+            1,
+            Guid.NewGuid()
+        );
         _mockInnerProcessor.Setup(x => x.CreateUserAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.CreateUserAsync(request);

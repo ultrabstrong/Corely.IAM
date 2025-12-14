@@ -121,7 +121,12 @@ public class RegistrationServiceTests
 
         mock.Setup(m => m.CreateUserAsync(It.IsAny<CreateUserRequest>()))
             .ReturnsAsync(() =>
-                new CreateUserResult(_createUserResultCode, string.Empty, _fixture.Create<int>())
+                new CreateUserResult(
+                    _createUserResultCode,
+                    string.Empty,
+                    _fixture.Create<int>(),
+                    _fixture.Create<Guid>()
+                )
             );
 
         mock.Setup(m => m.AssignRolesToUserAsync(It.IsAny<AssignRolesToUserRequest>()))
@@ -220,7 +225,7 @@ public class RegistrationServiceTests
         Assert.Equal(RegisterUserResultCode.Success, result.ResultCode);
 
         _userContextSetterMock.Verify(
-            m => m.SetUserContext(It.Is<UserContext>(uc => uc.UserId == result.CreatedUserId)),
+            m => m.SetUserContext(It.Is<UserContext>(uc => uc.UserId > 0 && uc.AccountId == null)),
             Times.Once
         );
 
@@ -280,6 +285,7 @@ public class RegistrationServiceTests
 
         var result = await _registrationService.RegisterAccountAsync(request);
 
+        var userContext = _userContextProviderMock.Object.GetUserContext();
         Assert.Equal(RegisterAccountResultCode.Success, result.ResultCode);
         _roleProcessorMock.Verify(
             m => m.CreateDefaultSystemRolesAsync(It.IsAny<int>()),
@@ -287,6 +293,15 @@ public class RegistrationServiceTests
         );
         _userProcessorMock.Verify(
             m => m.AssignRolesToUserAsync(It.IsAny<AssignRolesToUserRequest>()),
+            Times.Once
+        );
+        _userContextSetterMock.Verify(
+            m =>
+                m.SetUserContext(
+                    It.Is<UserContext>(uc =>
+                        uc.UserId == userContext!.UserId && uc.AccountId != null
+                    )
+                ),
             Times.Once
         );
         _unitOfWorkProviderMock.Verify(

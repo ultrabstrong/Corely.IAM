@@ -63,14 +63,16 @@ internal class Program
             var deregistrationService = host.Services.GetRequiredService<IDeregistrationService>();
             var authenticationService = host.Services.GetRequiredService<IAuthenticationService>();
 
-            var registerAccountRequest = new RegisterAccountRequest("acct1");
-            var registerAccountResult = await registrationService.RegisterAccountAsync(
-                registerAccountRequest
-            );
-
             var registerUserRequest = new RegisterUserRequest("user1", "email@x.y", "admin");
             var registerUserResult = await registrationService.RegisterUserAsync(
                 registerUserRequest
+            );
+
+            await authenticationService.SignOutAllAsync(registerUserResult.CreatedUserId);
+
+            var registerAccountRequest = new RegisterAccountRequest("acct1");
+            var registerAccountResult = await registrationService.RegisterAccountAsync(
+                registerAccountRequest
             );
 
             var registerUser2Request = new RegisterUserRequest("user2", "email2@x.y", "password2");
@@ -93,6 +95,8 @@ internal class Program
                     $"Failed to sign in for user context setup: {signInForContextResult.ResultCode}"
                 );
             }
+
+            // simulate owner adding other user to account
             var registerUserWithAccountRequest = new RegisterUserWithAccountRequest(
                 registerUser2Result.CreatedUserId
             );

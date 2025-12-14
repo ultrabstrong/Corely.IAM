@@ -251,6 +251,27 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
+    public void HasUserContext_ReturnsTrue_WhenUserContextExists()
+    {
+        var provider = CreateProvider();
+        SetUserContext(1, 1);
+
+        var result = provider.HasUserContext();
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void HasUserContext_ReturnsFalse_WhenNoUserContext()
+    {
+        var provider = CreateProvider();
+
+        var result = provider.HasUserContext();
+
+        Assert.False(result);
+    }
+
+    [Fact]
     public async Task HasAccountContextAsync_ReturnsTrue_WhenUserHasAccessToAccount()
     {
         var provider = CreateProvider();

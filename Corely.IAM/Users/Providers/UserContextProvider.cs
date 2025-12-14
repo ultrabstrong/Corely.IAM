@@ -4,15 +4,15 @@ using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Users.Providers;
 
-internal class IamUserContextProvider(IAuthenticationProvider authenticationProvider)
-    : IIamUserContextProvider,
-        IIamUserContextSetter
+internal class UserContextProvider(IAuthenticationProvider authenticationProvider)
+    : IUserContextProvider,
+        IUserContextSetter
 {
     private readonly IAuthenticationProvider _authenticationProvider =
         authenticationProvider.ThrowIfNull(nameof(authenticationProvider));
-    private IamUserContext? _userContext;
+    private UserContext? _userContext;
 
-    public IamUserContext? GetUserContext() => _userContext;
+    public UserContext? GetUserContext() => _userContext;
 
     public async Task<UserAuthTokenValidationResultCode> SetUserContextAsync(string authToken)
     {
@@ -28,12 +28,15 @@ internal class IamUserContextProvider(IAuthenticationProvider authenticationProv
             return validationResult.ResultCode;
         }
 
-        _userContext = new IamUserContext(
+        _userContext = new UserContext(
             validationResult.UserId.Value,
             validationResult.SignedInAccountId
         );
         return UserAuthTokenValidationResultCode.Success;
     }
 
-    public void SetUserContext(IamUserContext context) => _userContext = context;
+    public void SetUserContext(UserContext context) => _userContext = context;
+
+    public void ClearUserContext(int userId) =>
+        _userContext = _userContext?.UserId == userId ? null : _userContext;
 }

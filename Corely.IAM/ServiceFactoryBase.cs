@@ -78,12 +78,12 @@ public abstract class ServiceFactoryBase(
         );
 
         ServiceCollection.AddScoped<IAuthenticationProvider, AuthenticationProvider>();
-        ServiceCollection.AddScoped<IamUserContextProvider>();
-        ServiceCollection.AddScoped<IIamUserContextProvider>(sp =>
-            sp.GetRequiredService<IamUserContextProvider>()
+        ServiceCollection.AddScoped<UserContextProvider>();
+        ServiceCollection.AddScoped<IUserContextProvider>(sp =>
+            sp.GetRequiredService<UserContextProvider>()
         );
-        ServiceCollection.AddScoped<IIamUserContextSetter>(sp =>
-            sp.GetRequiredService<IamUserContextProvider>()
+        ServiceCollection.AddScoped<IUserContextSetter>(sp =>
+            sp.GetRequiredService<UserContextProvider>()
         );
         ServiceCollection.AddScoped<IAuthorizationProvider, AuthorizationProvider>();
 

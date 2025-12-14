@@ -4,14 +4,14 @@ using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.UnitTests.Users.Providers;
 
-public class IamUserContextProviderTests
+public class UserContextProviderTests
 {
     private readonly Mock<IAuthenticationProvider> _mockAuthenticationProvider = new();
-    private readonly IamUserContextProvider _provider;
+    private readonly UserContextProvider _provider;
 
-    public IamUserContextProviderTests()
+    public UserContextProviderTests()
     {
-        _provider = new IamUserContextProvider(_mockAuthenticationProvider.Object);
+        _provider = new UserContextProvider(_mockAuthenticationProvider.Object);
     }
 
     [Fact]
@@ -25,8 +25,8 @@ public class IamUserContextProviderTests
     [Fact]
     public void GetUserContext_ReturnsContext_WhenSetViaInternalSetter()
     {
-        var context = new IamUserContext(1, 2);
-        ((IIamUserContextSetter)_provider).SetUserContext(context);
+        var context = new UserContext(1, 2);
+        ((IUserContextSetter)_provider).SetUserContext(context);
 
         var result = _provider.GetUserContext();
 
@@ -38,8 +38,8 @@ public class IamUserContextProviderTests
     [Fact]
     public void SetUserContext_OverwritesPreviousContext()
     {
-        var context1 = new IamUserContext(1, 2);
-        var context2 = new IamUserContext(3, 4);
+        var context1 = new UserContext(1, 2);
+        var context2 = new UserContext(3, 4);
 
         var setter = _provider;
         setter.SetUserContext(context1);
@@ -135,5 +135,30 @@ public class IamUserContextProviderTests
 
         Assert.Equal(expectedResultCode, result);
         Assert.Null(_provider.GetUserContext());
+    }
+
+    [Fact]
+    public void ClearUserContext_RemovesContext_WhenUserIdMatches()
+    {
+        var context = new UserContext(1, 2);
+        _provider.SetUserContext(context);
+
+        _provider.ClearUserContext(1);
+
+        Assert.Null(_provider.GetUserContext());
+    }
+
+    [Fact]
+    public void ClearUserContext_DoesNotRemoveContext_WhenUserIdDoesNotMatch()
+    {
+        var context = new UserContext(1, 2);
+        _provider.SetUserContext(context);
+
+        _provider.ClearUserContext(2);
+
+        var result = _provider.GetUserContext();
+        Assert.NotNull(result);
+        Assert.Equal(1, result.UserId);
+        Assert.Equal(2, result.AccountId);
     }
 }

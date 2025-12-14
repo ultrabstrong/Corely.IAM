@@ -21,13 +21,13 @@ public class DeregistrationServiceTests
     private readonly Mock<IGroupProcessor> _mockGroupProcessor = new();
     private readonly Mock<IAccountProcessor> _mockAccountProcessor = new();
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
-    private readonly Mock<IIamUserContextProvider> _mockUserContextProvider = new();
+    private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly DeregistrationService _service;
 
     public DeregistrationServiceTests()
     {
         // Setup user context provider to return a valid context with account ID
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new IamUserContext(1, 5));
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new UserContext(1, 5));
 
         _service = new DeregistrationService(
             _mockLogger.Object,

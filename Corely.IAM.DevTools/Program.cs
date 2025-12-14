@@ -70,7 +70,7 @@ internal class Program
             var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
             var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
             var userContextProvider =
-                scope.ServiceProvider.GetRequiredService<IIamUserContextProvider>();
+                scope.ServiceProvider.GetRequiredService<IUserContextProvider>();
 
             var username = configuration.GetValue<string>("DevToolsUserContext:Username");
             var password = configuration.GetValue<string>("DevToolsUserContext:Password");

@@ -10,13 +10,13 @@ using Microsoft.Extensions.Logging;
 namespace Corely.IAM.Security.Providers;
 
 internal class AuthorizationProvider(
-    IIamUserContextProvider userContextProvider,
+    IUserContextProvider userContextProvider,
     IReadonlyRepo<PermissionEntity> permissionRepo,
     IReadonlyRepo<AccountEntity> accountRepo,
     ILogger<AuthorizationProvider> logger
 ) : IAuthorizationProvider
 {
-    private readonly IIamUserContextProvider _userContextProvider = userContextProvider;
+    private readonly IUserContextProvider _userContextProvider = userContextProvider;
     private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo;
     private readonly IReadonlyRepo<AccountEntity> _accountRepo = accountRepo;
     private readonly ILogger<AuthorizationProvider> _logger = logger;
@@ -101,7 +101,7 @@ internal class AuthorizationProvider(
         return hasAccountContext;
     }
 
-    private bool TryGetUserContext(out IamUserContext userContext, string operation)
+    private bool TryGetUserContext(out UserContext userContext, string operation)
     {
         var context = _userContextProvider.GetUserContext();
         if (context == null)

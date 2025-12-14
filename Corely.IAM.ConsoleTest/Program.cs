@@ -58,7 +58,7 @@ internal class Program
                 )
                 .Build();
 
-            var userContextProvider = host.Services.GetRequiredService<IIamUserContextProvider>();
+            var userContextProvider = host.Services.GetRequiredService<IUserContextProvider>();
             var registrationService = host.Services.GetRequiredService<IRegistrationService>();
             var deregistrationService = host.Services.GetRequiredService<IDeregistrationService>();
             var authenticationService = host.Services.GetRequiredService<IAuthenticationService>();

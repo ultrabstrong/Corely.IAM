@@ -306,7 +306,7 @@ public class AuthorizationProviderTests
     private AuthorizationProvider CreateProvider()
     {
         return new AuthorizationProvider(
-            _serviceFactory.GetRequiredService<IIamUserContextProvider>(),
+            _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<ILogger<AuthorizationProvider>>()
@@ -315,9 +315,9 @@ public class AuthorizationProviderTests
 
     private void SetUserContext(int userId, int accountId)
     {
-        var userContextProvider = _serviceFactory.GetRequiredService<IamUserContextProvider>();
-        ((IIamUserContextSetter)userContextProvider).SetUserContext(
-            new IamUserContext(userId, accountId)
+        var userContextProvider = _serviceFactory.GetRequiredService<UserContextProvider>();
+        ((IUserContextSetter)userContextProvider).SetUserContext(
+            new UserContext(userId, accountId)
         );
     }
 

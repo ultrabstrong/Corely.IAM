@@ -27,7 +27,7 @@ internal class DeregistrationService(
     IGroupProcessor groupProcessor,
     IAccountProcessor accountProcessor,
     IUserProcessor userProcessor,
-    IIamUserContextProvider userContextProvider
+    IUserContextProvider userContextProvider
 ) : IDeregistrationService
 {
     private readonly ILogger<DeregistrationService> _logger = logger.ThrowIfNull(nameof(logger));
@@ -46,7 +46,7 @@ internal class DeregistrationService(
     private readonly IUserProcessor _userProcessor = userProcessor.ThrowIfNull(
         nameof(userProcessor)
     );
-    private readonly IIamUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
     );
 

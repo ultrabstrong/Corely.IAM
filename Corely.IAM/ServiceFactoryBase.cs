@@ -100,6 +100,7 @@ public abstract class ServiceFactoryBase(
         >();
         ServiceCollection.Decorate<IDeregistrationService, DeregistrationServiceLoggingDecorator>();
         ServiceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
+        ServiceCollection.Decorate<IAuthenticationService, AuthenticationServiceLoggingDecorator>();
 
         ServiceCollection.AddLogging(AddLogging);
         AddDataServices();

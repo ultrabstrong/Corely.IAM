@@ -17,8 +17,12 @@ internal partial class Authentication : CommandBase
         [Option("-c", "--create", Description = "Create sample json file at path")]
         private bool Create { get; init; }
 
-        [Option("-o", "--output", Description = "Optional filepath to output the auth token")]
-        private string? OutputTokenFile { get; init; }
+        [Option(
+            "-o",
+            "--output",
+            Description = "Optional filepath to output the sign in result json"
+        )]
+        private string? OutputResultFile { get; init; }
 
         private readonly IAuthenticationService _authenticationService;
 
@@ -56,15 +60,15 @@ internal partial class Authentication : CommandBase
                 foreach (var request in requests)
                 {
                     var result = await _authenticationService.SignInAsync(request);
-                    Console.WriteLine(JsonSerializer.Serialize(result));
+                    var resultJson = JsonSerializer.Serialize(result);
+                    Console.WriteLine(resultJson);
 
                     if (
-                        !string.IsNullOrEmpty(OutputTokenFile)
+                        !string.IsNullOrEmpty(OutputResultFile)
                         && result.ResultCode == SignInResultCode.Success
-                        && !string.IsNullOrEmpty(result.AuthToken)
                     )
                     {
-                        await WriteTokenToFileAsync(result.AuthToken);
+                        await WriteResultToFileAsync(resultJson);
                     }
                 }
             }
@@ -74,23 +78,23 @@ internal partial class Authentication : CommandBase
             }
         }
 
-        private async Task WriteTokenToFileAsync(string authToken)
+        private async Task WriteResultToFileAsync(string resultJson)
         {
             try
             {
-                var file = new FileInfo(OutputTokenFile!);
+                var file = new FileInfo(OutputResultFile!);
                 if (!Directory.Exists(file.DirectoryName))
                 {
                     Warn($"Directory not found: {file.DirectoryName}");
                     return;
                 }
 
-                await File.WriteAllTextAsync(OutputTokenFile!, authToken);
-                Success($"Auth token written to: {OutputTokenFile}");
+                await File.WriteAllTextAsync(OutputResultFile!, resultJson);
+                Success($"Sign in result written to: {OutputResultFile}");
             }
             catch (Exception ex)
             {
-                Error($"Failed to write auth token to file: {ex.Message}");
+                Error($"Failed to write sign in result to file: {ex.Message}");
             }
         }
     }

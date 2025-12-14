@@ -16,6 +16,7 @@ public record SignInResult(
     SignInResultCode ResultCode,
     string? Message,
     string? AuthToken,
+    string? AuthTokenId,
     List<Account> Accounts,
     int? SignedInAccountId
 );

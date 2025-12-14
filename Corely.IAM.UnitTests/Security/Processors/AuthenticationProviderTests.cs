@@ -230,6 +230,7 @@ public class AuthenticationProviderTests
 
         Assert.Equal(UserAuthTokenResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Token);
+        Assert.NotNull(result.TokenId);
         Assert.Equal(accountId, result.SignedInAccountId);
         Assert.Contains(result.Accounts, a => a.Id == accountId);
     }

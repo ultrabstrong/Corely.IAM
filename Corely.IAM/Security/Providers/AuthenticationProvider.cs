@@ -47,7 +47,13 @@ internal class AuthenticationProvider(
         if (userEntity == null)
         {
             _logger.LogWarning("User with Id {UserId} not found", request.UserId);
-            return new UserAuthTokenResult(UserAuthTokenResultCode.UserNotFound, null, [], null);
+            return new UserAuthTokenResult(
+                UserAuthTokenResultCode.UserNotFound,
+                null,
+                null,
+                [],
+                null
+            );
         }
 
         var signatureKey = userEntity.AsymmetricKeys?.FirstOrDefault(k =>
@@ -61,6 +67,7 @@ internal class AuthenticationProvider(
             );
             return new UserAuthTokenResult(
                 UserAuthTokenResultCode.SignatureKeyNotFound,
+                null,
                 null,
                 [],
                 null
@@ -86,6 +93,7 @@ internal class AuthenticationProvider(
                 );
                 return new UserAuthTokenResult(
                     UserAuthTokenResultCode.AccountNotFound,
+                    null,
                     null,
                     accounts,
                     null
@@ -149,6 +157,7 @@ internal class AuthenticationProvider(
         return new UserAuthTokenResult(
             UserAuthTokenResultCode.Success,
             tokenString,
+            jti,
             accounts,
             signedInAccountId
         );

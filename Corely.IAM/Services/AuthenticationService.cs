@@ -50,6 +50,7 @@ internal class AuthenticationService(
                 SignInResultCode.UserNotFoundError,
                 "User not found",
                 null,
+                null,
                 [],
                 null
             );
@@ -61,6 +62,7 @@ internal class AuthenticationService(
             return new SignInResult(
                 SignInResultCode.UserLockedError,
                 "User is locked out",
+                null,
                 null,
                 [],
                 null
@@ -86,6 +88,7 @@ internal class AuthenticationService(
             return new SignInResult(
                 SignInResultCode.PasswordMismatchError,
                 "Invalid password",
+                null,
                 null,
                 [],
                 null
@@ -126,13 +129,7 @@ internal class AuthenticationService(
                 authTokenResult.ResultCode
             );
 
-            return new SignInResult(
-                signInResultCode,
-                message,
-                null,
-                authTokenResult.Accounts,
-                null
-            );
+            return new SignInResult(signInResultCode, message, null, null, [], null);
         }
 
         _userContextSetter.SetUserContext(
@@ -145,6 +142,7 @@ internal class AuthenticationService(
             SignInResultCode.Success,
             null,
             authTokenResult.Token,
+            authTokenResult.TokenId,
             authTokenResult.Accounts,
             authTokenResult.SignedInAccountId
         );

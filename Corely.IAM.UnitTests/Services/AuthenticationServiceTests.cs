@@ -77,7 +77,13 @@ public class AuthenticationServiceTests
 
         mock.Setup(m => m.GetUserAuthTokenAsync(It.IsAny<UserAuthTokenRequest>()))
             .ReturnsAsync(
-                new UserAuthTokenResult(UserAuthTokenResultCode.Success, "test-token", [], null)
+                new UserAuthTokenResult(
+                    UserAuthTokenResultCode.Success,
+                    "test-token",
+                    "test-token-id",
+                    [],
+                    null
+                )
             );
 
         return mock;
@@ -188,6 +194,7 @@ public class AuthenticationServiceTests
                 new UserAuthTokenResult(
                     UserAuthTokenResultCode.SignatureKeyNotFound,
                     null,
+                    null,
                     [],
                     null
                 )
@@ -214,7 +221,13 @@ public class AuthenticationServiceTests
         _authenticationProviderMock
             .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<UserAuthTokenRequest>()))
             .ReturnsAsync(
-                new UserAuthTokenResult(UserAuthTokenResultCode.AccountNotFound, null, [], null)
+                new UserAuthTokenResult(
+                    UserAuthTokenResultCode.AccountNotFound,
+                    null,
+                    null,
+                    [],
+                    null
+                )
             );
 
         var result = await _authenticationService.SignInAsync(request);

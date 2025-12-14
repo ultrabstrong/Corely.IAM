@@ -24,7 +24,14 @@ public class AuthenticationServiceLoggingDecoratorTests
     public async Task SignInAsync_DelegatesToInnerAndLogsResult()
     {
         var request = new SignInRequest("testuser", "password123", null);
-        var expectedResult = new SignInResult(SignInResultCode.Success, null, "token123", [], 1);
+        var expectedResult = new SignInResult(
+            SignInResultCode.Success,
+            null,
+            null,
+            "token123",
+            [],
+            1
+        );
         _mockInnerService.Setup(x => x.SignInAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.SignInAsync(request);

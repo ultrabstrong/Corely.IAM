@@ -63,14 +63,14 @@ internal class Program
             var deregistrationService = host.Services.GetRequiredService<IDeregistrationService>();
             var authenticationService = host.Services.GetRequiredService<IAuthenticationService>();
 
-            var registerUserRequest = new RegisterUserRequest("user1", "email@x.y", "admin");
-            var registerUserResult = await registrationService.RegisterUserAsync(
-                registerUserRequest
-            );
-
             var registerAccountRequest = new RegisterAccountRequest("acct1");
             var registerAccountResult = await registrationService.RegisterAccountAsync(
                 registerAccountRequest
+            );
+
+            var registerUserRequest = new RegisterUserRequest("user1", "email@x.y", "admin");
+            var registerUserResult = await registrationService.RegisterUserAsync(
+                registerUserRequest
             );
 
             var registerUser2Request = new RegisterUserRequest("user2", "email2@x.y", "password2");
@@ -93,8 +93,6 @@ internal class Program
                     $"Failed to sign in for user context setup: {signInForContextResult.ResultCode}"
                 );
             }
-            await userContextProvider.SetUserContextAsync(signInForContextResult.AuthToken!);
-
             var registerUserWithAccountRequest = new RegisterUserWithAccountRequest(
                 registerUser2Result.CreatedUserId
             );
@@ -162,6 +160,9 @@ internal class Program
             // ========= AUTHENTICATION ==========
             var signInRequest = new SignInRequest("user1", "admin");
             var signInResult = await authenticationService.SignInAsync(signInRequest);
+
+            // SignInAsync does this, but later when all you have is the auth token use this
+            await userContextProvider.SetUserContextAsync(signInResult.AuthToken!);
 
             var token = new JwtSecurityTokenHandler().ReadJwtToken(signInResult.AuthToken!);
             var signedOut = await authenticationService.SignOutAsync(

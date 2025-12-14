@@ -7,6 +7,7 @@ using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -16,6 +17,7 @@ internal class AuthenticationService(
     ILogger<AuthenticationService> logger,
     IRepo<UserEntity> userRepo,
     IAuthenticationProvider authenticationProvider,
+    IUserContextSetter userContextSetter,
     IBasicAuthProcessor basicAuthProcessor,
     IOptions<SecurityOptions> securityOptions
 ) : IAuthenticationService
@@ -24,6 +26,9 @@ internal class AuthenticationService(
     private readonly IRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
     private readonly IAuthenticationProvider _authenticationProvider =
         authenticationProvider.ThrowIfNull(nameof(authenticationProvider));
+    private readonly IUserContextSetter _userContextSetter = userContextSetter.ThrowIfNull(
+        nameof(userContextSetter)
+    );
     private readonly IBasicAuthProcessor _basicAuthProcessor = basicAuthProcessor.ThrowIfNull(
         nameof(basicAuthProcessor)
     );
@@ -130,6 +135,10 @@ internal class AuthenticationService(
             );
         }
 
+        _userContextSetter.SetUserContext(
+            new UserContext(userEntity.Id, authTokenResult.SignedInAccountId)
+        );
+
         _logger.LogDebug("User {Username} signed in", request.Username);
 
         return new SignInResult(
@@ -145,12 +154,27 @@ internal class AuthenticationService(
     {
         ArgumentNullException.ThrowIfNull(tokenId, nameof(tokenId));
         _logger.LogDebug("Signing out user {UserId} with token {TokenId}", userId, tokenId);
-        return await _authenticationProvider.RevokeUserAuthTokenAsync(userId, tokenId);
+
+        var result = await _authenticationProvider.RevokeUserAuthTokenAsync(userId, tokenId);
+        _userContextSetter.ClearUserContext(userId);
+
+        _logger.LogDebug(
+            "User {UserId} signed out with token {TokenId}: {Result}",
+            userId,
+            tokenId,
+            result
+        );
+
+        return result;
     }
 
     public async Task SignOutAllAsync(int userId)
     {
         _logger.LogDebug("Signing out all sessions for user {UserId}", userId);
+
         await _authenticationProvider.RevokeAllUserAuthTokensAsync(userId);
+        _userContextSetter.ClearUserContext(userId);
+
+        _logger.LogDebug("All sessions signed out for user {UserId}", userId);
     }
 }

@@ -9,6 +9,7 @@ using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -21,6 +22,7 @@ public class AuthenticationServiceTests
     private readonly ServiceFactory _serviceFactory = new();
     private readonly Fixture _fixture = new();
     private readonly Mock<IAuthenticationProvider> _authenticationProviderMock;
+    private readonly Mock<IUserContextSetter> _userContextSetterMock;
     private readonly Mock<IBasicAuthProcessor> _basicAuthProcessorMock;
     private readonly AuthenticationService _authenticationService;
 
@@ -29,12 +31,14 @@ public class AuthenticationServiceTests
     public AuthenticationServiceTests()
     {
         _authenticationProviderMock = GetMockAuthenticationProvider();
+        _userContextSetterMock = GetMockUserContextSetter();
         _basicAuthProcessorMock = GetMockBasicAuthProcessor();
 
         _authenticationService = new AuthenticationService(
             _serviceFactory.GetRequiredService<ILogger<AuthenticationService>>(),
             _serviceFactory.GetRequiredService<IRepo<UserEntity>>(),
             _authenticationProviderMock.Object,
+            _userContextSetterMock.Object,
             _basicAuthProcessorMock.Object,
             Options.Create(new SecurityOptions() { MaxLoginAttempts = MAX_LOGIN_ATTEMPTS })
         );
@@ -76,6 +80,12 @@ public class AuthenticationServiceTests
                 new UserAuthTokenResult(UserAuthTokenResultCode.Success, "test-token", [], null)
             );
 
+        return mock;
+    }
+
+    private static Mock<IUserContextSetter> GetMockUserContextSetter()
+    {
+        var mock = new Mock<IUserContextSetter>();
         return mock;
     }
 
@@ -262,6 +272,7 @@ public class AuthenticationServiceTests
             m => m.RevokeUserAuthTokenAsync(userId, tokenId),
             Times.Once
         );
+        _userContextSetterMock.Verify(m => m.ClearUserContext(userId), Times.Once);
     }
 
     [Fact]
@@ -281,5 +292,6 @@ public class AuthenticationServiceTests
         await _authenticationService.SignOutAllAsync(userId);
 
         _authenticationProviderMock.Verify(m => m.RevokeAllUserAuthTokensAsync(userId), Times.Once);
+        _userContextSetterMock.Verify(m => m.ClearUserContext(userId), Times.Once);
     }
 }

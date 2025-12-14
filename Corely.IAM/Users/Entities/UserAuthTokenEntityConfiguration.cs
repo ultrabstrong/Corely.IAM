@@ -15,9 +15,9 @@ internal sealed class UserAuthTokenEntityConfiguration
     {
         builder.Property(e => e.UserId).IsRequired();
 
-        builder.Property(e => e.Jti).HasMaxLength(36).IsRequired(); // GUID length
+        builder.Property(e => e.PublicId).HasMaxLength(36).IsRequired(); // GUID length
 
-        builder.HasIndex(e => e.Jti).IsUnique();
+        builder.HasIndex(e => e.PublicId).IsUnique();
 
         builder.Property(e => e.IssuedUtc).IsRequired();
 

@@ -147,7 +147,7 @@ internal class AuthenticationProvider(
         var authTokenEntity = new UserAuthTokenEntity
         {
             UserId = request.UserId,
-            Jti = jti,
+            PublicId = jti,
             IssuedUtc = now,
             ExpiresUtc = expires,
         };
@@ -222,7 +222,7 @@ internal class AuthenticationProvider(
         }
 
         var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.Jti == jti
+            t.PublicId == jti
             && t.UserId == userId
             && t.RevokedUtc == null
             && t.ExpiresUtc > DateTime.UtcNow
@@ -322,7 +322,7 @@ internal class AuthenticationProvider(
     public async Task<bool> RevokeUserAuthTokenAsync(int userId, string tokenId)
     {
         var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.Jti == tokenId
+            t.PublicId == tokenId
             && t.UserId == userId
             && t.RevokedUtc == null
             && t.ExpiresUtc > DateTime.UtcNow

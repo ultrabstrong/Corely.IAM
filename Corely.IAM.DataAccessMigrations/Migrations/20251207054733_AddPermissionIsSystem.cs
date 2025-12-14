@@ -2,27 +2,26 @@
 
 #nullable disable
 
-namespace Corely.IAM.DataAccessMigrations.Migrations
+namespace Corely.IAM.DataAccessMigrations.Migrations;
+
+/// <inheritdoc />
+public partial class AddPermissionIsSystem : Migration
 {
     /// <inheritdoc />
-    public partial class AddPermissionIsSystem : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AddColumn<bool>(
-                name: "IsSystemDefined",
-                table: "Permissions",
-                type: "tinyint(1)",
-                nullable: false,
-                defaultValue: false
-            );
-        }
+        migrationBuilder.AddColumn<bool>(
+            name: "IsSystemDefined",
+            table: "Permissions",
+            type: "tinyint(1)",
+            nullable: false,
+            defaultValue: false
+        );
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropColumn(name: "IsSystemDefined", table: "Permissions");
-        }
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropColumn(name: "IsSystemDefined", table: "Permissions");
     }
 }

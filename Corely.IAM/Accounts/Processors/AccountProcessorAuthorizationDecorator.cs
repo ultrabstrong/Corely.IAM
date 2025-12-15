@@ -60,7 +60,8 @@ internal class AccountProcessorAuthorizationDecorator(
     public async Task<RemoveUserFromAccountResult> RemoveUserFromAccountAsync(
         RemoveUserFromAccountRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.IsAuthorizedForOwnUser(request.UserId) // users can de-register themselves
+        || await _authorizationProvider.IsAuthorizedAsync( // users with update access to account can de-register other users
             AuthAction.Update,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
             request.AccountId

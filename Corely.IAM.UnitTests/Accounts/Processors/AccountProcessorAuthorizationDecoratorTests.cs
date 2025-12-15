@@ -199,13 +199,45 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_CallsAuthorizationProvider()
+    public async Task RemoveUserFromAccountAsync_Succeeds_WhenUserIsRemovingThemselves()
     {
         var request = new RemoveUserFromAccountRequest(1, 5);
         var expectedResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.Success,
             ""
         );
+        // User is authorized for their own user
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId))
+            .Returns(true);
+        _mockInnerProcessor
+            .Setup(x => x.RemoveUserFromAccountAsync(request))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.RemoveUserFromAccountAsync(request);
+
+        Assert.Equal(expectedResult, result);
+        // Should not check account update authorization when user is removing themselves
+        _mockAuthorizationProvider.Verify(
+            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int?>()),
+            Times.Never
+        );
+        _mockInnerProcessor.Verify(x => x.RemoveUserFromAccountAsync(request), Times.Once);
+    }
+
+    [Fact]
+    public async Task RemoveUserFromAccountAsync_Succeeds_WhenUserHasAccountUpdatePermission()
+    {
+        var request = new RemoveUserFromAccountRequest(1, 5);
+        var expectedResult = new RemoveUserFromAccountResult(
+            RemoveUserFromAccountResultCode.Success,
+            ""
+        );
+        // User is NOT removing themselves
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId))
+            .Returns(false);
+        // But user has update permission on the account
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE, 5)
@@ -231,9 +263,14 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task RemoveUserFromAccountAsync_ReturnsUnauthorized_WhenNotOwnUserAndNoAccountPermission()
     {
         var request = new RemoveUserFromAccountRequest(1, 5);
+        // User is NOT removing themselves
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId))
+            .Returns(false);
+        // And user does NOT have update permission on the account
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE, 5)

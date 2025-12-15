@@ -336,6 +336,119 @@ public class AuthorizationProviderTests
         Assert.True(await provider.HasAccountContextAsync());
     }
 
+    [Fact]
+    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasPermissionForOneOfMultipleResourceIds()
+    {
+        var provider = CreateProvider();
+        SetUserContext(1, 1);
+        await SetupTestPermissionDataAsync(
+            resourceType: PermissionConstants.USER_RESOURCE_TYPE,
+            resourceId: 5, // Only has permission for resource 5
+            read: true
+        );
+
+        // Request access to resources 5, 10, 15 - user only has permission for 5
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.USER_RESOURCE_TYPE,
+            5,
+            10,
+            15
+        );
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task IsAuthorizedAsync_ReturnsFalse_WhenUserHasNoPermissionForAnyOfMultipleResourceIds()
+    {
+        var provider = CreateProvider();
+        SetUserContext(1, 1);
+        await SetupTestPermissionDataAsync(
+            resourceType: PermissionConstants.USER_RESOURCE_TYPE,
+            resourceId: 5, // Only has permission for resource 5
+            read: true
+        );
+
+        // Request access to resources 10, 15, 20 - user has no permission for any
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.USER_RESOURCE_TYPE,
+            10,
+            15,
+            20
+        );
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasWildcardPermissionForMultipleResourceIds()
+    {
+        var provider = CreateProvider();
+        SetUserContext(1, 1);
+        await SetupTestPermissionDataAsync(
+            resourceType: PermissionConstants.USER_RESOURCE_TYPE,
+            resourceId: 0, // Wildcard - applies to all resources
+            read: true
+        );
+
+        // Request access to multiple resources - wildcard should cover all
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.USER_RESOURCE_TYPE,
+            5,
+            10,
+            15,
+            20,
+            25
+        );
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task IsAuthorizedAsync_ReturnsTrue_WithEmptyResourceIds_WhenUserHasGeneralPermission()
+    {
+        var provider = CreateProvider();
+        SetUserContext(1, 1);
+        await SetupTestPermissionDataAsync(
+            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceId: 0,
+            create: true
+        );
+
+        // No resource IDs passed (empty array) - should check general permission
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Create,
+            PermissionConstants.GROUP_RESOURCE_TYPE
+        );
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task IsAuthorizedAsync_ReturnsFalse_WithMultipleResourceIds_WhenWrongAction()
+    {
+        var provider = CreateProvider();
+        SetUserContext(1, 1);
+        await SetupTestPermissionDataAsync(
+            resourceType: PermissionConstants.USER_RESOURCE_TYPE,
+            resourceId: 5,
+            read: true // Only has Read
+        );
+
+        // Request Update action for resource 5 - user only has Read
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Update,
+            PermissionConstants.USER_RESOURCE_TYPE,
+            5,
+            10
+        );
+
+        Assert.False(result);
+    }
+
     private AuthorizationProvider CreateProvider()
     {
         return new AuthorizationProvider(

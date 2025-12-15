@@ -41,6 +41,9 @@ The idea is for consumers of the library to be able to plug in their own telemet
 There could be more than one telemetry registered at the consumer level using the decorator pattern.
 Need to figure where / what kinds of telemetry make sense, and if different kinds of telemetry events / handlers are needed
 
+### Add IAuditing
+When authorization passes and an action is performed, audit who did the action and save it to an audits database
+
 ### Add support for managing other users
 An account owner has abilities to manage other user's access to the accounts, but not the actual users.
 It could be beneficial for an account owner to have access to create and manage users as well.

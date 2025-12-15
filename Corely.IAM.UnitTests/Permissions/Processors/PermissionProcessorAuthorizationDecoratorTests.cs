@@ -27,11 +27,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
         var expectedResult = new CreatePermissionResult(CreatePermissionResultCode.Success, "", 1);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Create,
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
-                    null
-                )
+                x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.PERMISSION_RESOURCE_TYPE)
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
@@ -45,8 +41,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
             x =>
                 x.IsAuthorizedAsync(
                     AuthAction.Create,
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
-                    null
+                    PermissionConstants.PERMISSION_RESOURCE_TYPE
                 ),
             Times.Once
         );
@@ -59,11 +54,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
         var request = new CreatePermissionRequest(1, "group", 0, Read: true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Create,
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
-                    null
-                )
+                x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.PERMISSION_RESOURCE_TYPE)
             )
             .ReturnsAsync(false);
 
@@ -84,7 +75,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
         await _decorator.CreateDefaultSystemPermissionsAsync(accountId);
 
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int?>()),
+            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int[]>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(

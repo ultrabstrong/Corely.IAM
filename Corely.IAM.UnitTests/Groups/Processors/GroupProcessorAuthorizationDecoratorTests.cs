@@ -27,11 +27,7 @@ public class GroupProcessorAuthorizationDecoratorTests
         var expectedResult = new CreateGroupResult(CreateGroupResultCode.Success, "", 1);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Create,
-                    PermissionConstants.GROUP_RESOURCE_TYPE,
-                    null
-                )
+                x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.GROUP_RESOURCE_TYPE)
             )
             .ReturnsAsync(true);
         _mockInnerProcessor.Setup(x => x.CreateGroupAsync(request)).ReturnsAsync(expectedResult);
@@ -40,12 +36,7 @@ public class GroupProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Create,
-                    PermissionConstants.GROUP_RESOURCE_TYPE,
-                    null
-                ),
+            x => x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.GROUP_RESOURCE_TYPE),
             Times.Once
         );
         _mockInnerProcessor.Verify(x => x.CreateGroupAsync(request), Times.Once);
@@ -57,11 +48,7 @@ public class GroupProcessorAuthorizationDecoratorTests
         var request = new CreateGroupRequest("TestGroup", 1);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Create,
-                    PermissionConstants.GROUP_RESOURCE_TYPE,
-                    null
-                )
+                x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.GROUP_RESOURCE_TYPE)
             )
             .ReturnsAsync(false);
 

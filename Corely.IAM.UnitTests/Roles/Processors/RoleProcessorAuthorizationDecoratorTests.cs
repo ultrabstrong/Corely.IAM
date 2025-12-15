@@ -27,7 +27,7 @@ public class RoleProcessorAuthorizationDecoratorTests
         var expectedResult = new CreateRoleResult(CreateRoleResultCode.Success, "", 1);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.ROLE_RESOURCE_TYPE, null)
+                x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.ROLE_RESOURCE_TYPE)
             )
             .ReturnsAsync(true);
         _mockInnerProcessor.Setup(x => x.CreateRoleAsync(request)).ReturnsAsync(expectedResult);
@@ -36,12 +36,7 @@ public class RoleProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Create,
-                    PermissionConstants.ROLE_RESOURCE_TYPE,
-                    null
-                ),
+            x => x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.ROLE_RESOURCE_TYPE),
             Times.Once
         );
         _mockInnerProcessor.Verify(x => x.CreateRoleAsync(request), Times.Once);
@@ -53,7 +48,7 @@ public class RoleProcessorAuthorizationDecoratorTests
         var request = new CreateRoleRequest("TestRole", 1);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.ROLE_RESOURCE_TYPE, null)
+                x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.ROLE_RESOURCE_TYPE)
             )
             .ReturnsAsync(false);
 
@@ -74,7 +69,7 @@ public class RoleProcessorAuthorizationDecoratorTests
         await _decorator.CreateDefaultSystemRolesAsync(accountId);
 
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int?>()),
+            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int[]>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(x => x.CreateDefaultSystemRolesAsync(accountId), Times.Once);
@@ -139,7 +134,7 @@ public class RoleProcessorAuthorizationDecoratorTests
         );
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, null)
+                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE)
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
@@ -150,7 +145,7 @@ public class RoleProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, null),
+            x => x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE),
             Times.Once
         );
     }
@@ -162,7 +157,7 @@ public class RoleProcessorAuthorizationDecoratorTests
         var accountId = 1;
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, null)
+                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE)
             )
             .ReturnsAsync(false);
 
@@ -241,7 +236,7 @@ public class RoleProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int?>()),
+            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int[]>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(x => x.AssignPermissionsToRoleAsync(request), Times.Once);

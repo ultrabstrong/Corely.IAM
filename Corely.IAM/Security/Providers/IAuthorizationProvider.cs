@@ -4,7 +4,7 @@ namespace Corely.IAM.Security.Providers;
 
 internal interface IAuthorizationProvider
 {
-    Task<bool> IsAuthorizedAsync(AuthAction action, string resourceType, int? resourceId = null);
+    Task<bool> IsAuthorizedAsync(AuthAction action, string resourceType, params int[] resourceIds);
     bool IsAuthorizedForOwnUser(int requestUserId);
     bool HasUserContext();
     Task<bool> HasAccountContextAsync();

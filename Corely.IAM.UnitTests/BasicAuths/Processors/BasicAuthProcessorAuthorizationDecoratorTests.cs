@@ -81,7 +81,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
             Times.Never
         );
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int?>()),
+            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int[]>()),
             Times.Never
         );
     }

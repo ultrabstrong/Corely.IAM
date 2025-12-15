@@ -26,13 +26,15 @@ internal class AuthorizationProvider(
     public async Task<bool> IsAuthorizedAsync(
         AuthAction action,
         string resourceType,
-        int? resourceId = null
+        params int[] resourceIds
     )
     {
+        var resourceIdDisplay =
+            resourceIds.Length > 0 ? $" [{string.Join(", ", resourceIds)}]" : string.Empty;
         if (
             !TryGetUserContext(
                 out var userContext,
-                $"{action} on {resourceType}{(resourceId.HasValue ? $" {resourceId}" : string.Empty)}"
+                $"{action} on {resourceType}{resourceIdDisplay}"
             )
         )
             return false;
@@ -44,18 +46,18 @@ internal class AuthorizationProvider(
                 p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
                 || p.ResourceType == resourceType
             )
-            && (p.ResourceId == 0 || p.ResourceId == resourceId)
+            && (p.ResourceId == 0 || resourceIds.Length == 0 || resourceIds.Contains(p.ResourceId))
             && HasAction(p, action)
         );
 
         if (!hasPermission)
         {
             _logger.LogInformation(
-                "Authorization denied: User {UserId} lacks {Action} permission for {ResourceType}{ResourceId}",
+                "Authorization denied: User {UserId} lacks {Action} permission for {ResourceType}{ResourceIds}",
                 userContext.UserId,
                 action,
                 resourceType,
-                resourceId.HasValue ? $" {resourceId}" : string.Empty
+                resourceIdDisplay
             );
         }
 

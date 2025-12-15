@@ -36,7 +36,7 @@ public class AccountProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int?>()),
+            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int[]>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(x => x.CreateAccountAsync(request), Times.Once);
@@ -219,7 +219,7 @@ public class AccountProcessorAuthorizationDecoratorTests
         Assert.Equal(expectedResult, result);
         // Should not check account update authorization when user is removing themselves
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int?>()),
+            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int[]>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(x => x.RemoveUserFromAccountAsync(request), Times.Once);

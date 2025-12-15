@@ -3,6 +3,7 @@ using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 
 namespace Corely.IAM.DevTools.Commands.Deregistration;
@@ -14,17 +15,25 @@ internal partial class Deregistration : CommandBase
         [Argument("Filepath to deregister permissions from role request json", true)]
         private string RequestJsonFile { get; init; } = null!;
 
+        [Argument("Filepath to auth token json", true)]
+        private string AuthTokenFile { get; init; } = null!;
+
         [Option("-c", "--create", Description = "Create sample json file at path")]
         private bool Create { get; init; }
 
         private readonly IDeregistrationService _deregistrationService;
+        private readonly IUserContextProvider _userContextProvider;
 
-        public DeregisterPermissionsFromRole(IDeregistrationService deregistrationService)
+        public DeregisterPermissionsFromRole(
+            IDeregistrationService deregistrationService,
+            IUserContextProvider userContextProvider
+        )
             : base("permissions-from-role", "Deregister permissions from a role")
         {
             _deregistrationService = deregistrationService.ThrowIfNull(
                 nameof(deregistrationService)
             );
+            _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
         protected override async Task ExecuteAsync()
@@ -44,6 +53,9 @@ internal partial class Deregistration : CommandBase
 
         private async Task DeregisterPermissionsFromRoleAsync()
         {
+            if (!await SetUserContextFromAuthTokenFileAsync(AuthTokenFile, _userContextProvider))
+                return;
+
             var request =
                 SampleJsonFileHelper.ReadRequestJson<DeregisterPermissionsFromRoleRequest>(
                     RequestJsonFile

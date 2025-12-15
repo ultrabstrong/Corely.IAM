@@ -3,6 +3,8 @@ using System.CommandLine.Binding;
 using System.CommandLine.NamingConventionBinder;
 using System.Reflection;
 using Corely.IAM.DevTools.Attributes;
+using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.DevTools.Commands;
 
@@ -208,5 +210,56 @@ internal abstract class CommandBase : Command
         Console.ForegroundColor = color;
         Console.WriteLine(string.Join(Environment.NewLine, messages));
         Console.ResetColor();
+    }
+
+    protected static async Task<bool> SetUserContextFromAuthTokenFileAsync(
+        string authFilePath,
+        IUserContextProvider userContextProvider
+    )
+    {
+        try
+        {
+            if (!File.Exists(authFilePath))
+            {
+                Error($"Auth token file not found: {authFilePath}");
+                return false;
+            }
+
+            var fileContent = await File.ReadAllTextAsync(authFilePath);
+            if (string.IsNullOrWhiteSpace(fileContent))
+            {
+                Error($"Auth token file is empty: {authFilePath}");
+                return false;
+            }
+
+            // The file should contain a JSON object with an AuthToken property
+            var jsonDoc = System.Text.Json.JsonDocument.Parse(fileContent);
+            if (!jsonDoc.RootElement.TryGetProperty("AuthToken", out var authTokenElement))
+            {
+                Error($"Auth token file does not contain 'AuthToken' property: {authFilePath}");
+                return false;
+            }
+
+            var authToken = authTokenElement.GetString();
+            if (string.IsNullOrEmpty(authToken))
+            {
+                Error($"Auth token is empty in file: {authFilePath}");
+                return false;
+            }
+
+            var setContextResult = await userContextProvider.SetUserContextAsync(authToken);
+            if (setContextResult != UserAuthTokenValidationResultCode.Success)
+            {
+                Error($"Failed to set user context: {setContextResult}");
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Error($"Failed to load auth token from file: {ex.Message}");
+            return false;
+        }
     }
 }

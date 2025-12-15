@@ -1,2 +1,3 @@
 # Corely
-A collection of core, reusable coding components
+WIP - Plug and play IAM with granular permission management for .NET applications.
+

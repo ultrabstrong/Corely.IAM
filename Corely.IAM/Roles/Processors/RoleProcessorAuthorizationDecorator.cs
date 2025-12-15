@@ -59,15 +59,22 @@ internal class RoleProcessorAuthorizationDecorator(
         AssignPermissionsToRoleRequest request
     ) =>
         request.BypassAuthorization
-        || await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Update,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
-            request.RoleId
+        || (
+            await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Update,
+                PermissionConstants.ROLE_RESOURCE_TYPE,
+                request.RoleId
+            )
+            && await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                [.. request.PermissionIds]
+            )
         )
             ? await _inner.AssignPermissionsToRoleAsync(request)
             : new AssignPermissionsToRoleResult(
                 AssignPermissionsToRoleResultCode.UnauthorizedError,
-                $"Unauthorized to update role {request.RoleId}",
+                $"Unauthorized to update role {request.RoleId} or read permissions",
                 0,
                 []
             );
@@ -76,15 +83,22 @@ internal class RoleProcessorAuthorizationDecorator(
         RemovePermissionsFromRoleRequest request
     ) =>
         request.BypassAuthorization
-        || await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Update,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
-            request.RoleId
+        || (
+            await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Update,
+                PermissionConstants.ROLE_RESOURCE_TYPE,
+                request.RoleId
+            )
+            && await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                [.. request.PermissionIds]
+            )
         )
             ? await _inner.RemovePermissionsFromRoleAsync(request)
             : new RemovePermissionsFromRoleResult(
                 RemovePermissionsFromRoleResultCode.UnauthorizedError,
-                $"Unauthorized to update role {request.RoleId}",
+                $"Unauthorized to update role {request.RoleId} or read permissions",
                 0,
                 []
             );

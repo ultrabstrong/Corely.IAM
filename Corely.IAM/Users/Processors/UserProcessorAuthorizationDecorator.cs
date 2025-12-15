@@ -58,15 +58,22 @@ internal class UserProcessorAuthorizationDecorator(
         AssignRolesToUserRequest request
     ) =>
         request.BypassAuthorization
-        || await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Update,
-            PermissionConstants.USER_RESOURCE_TYPE,
-            request.UserId
+        || (
+            await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Update,
+                PermissionConstants.USER_RESOURCE_TYPE,
+                request.UserId
+            )
+            && await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.ROLE_RESOURCE_TYPE,
+                [.. request.RoleIds]
+            )
         )
             ? await _inner.AssignRolesToUserAsync(request)
             : new AssignRolesToUserResult(
                 AssignRolesToUserResultCode.UnauthorizedError,
-                $"Unauthorized to update user {request.UserId}",
+                $"Unauthorized to update user {request.UserId} or read roles",
                 0,
                 []
             );
@@ -75,15 +82,22 @@ internal class UserProcessorAuthorizationDecorator(
         RemoveRolesFromUserRequest request
     ) =>
         request.BypassAuthorization
-        || await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Update,
-            PermissionConstants.USER_RESOURCE_TYPE,
-            request.UserId
+        || (
+            await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Update,
+                PermissionConstants.USER_RESOURCE_TYPE,
+                request.UserId
+            )
+            && await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.ROLE_RESOURCE_TYPE,
+                [.. request.RoleIds]
+            )
         )
             ? await _inner.RemoveRolesFromUserAsync(request)
             : new RemoveRolesFromUserResult(
                 RemoveRolesFromUserResultCode.UnauthorizedError,
-                $"Unauthorized to update user {request.UserId}",
+                $"Unauthorized to update user {request.UserId} or read roles",
                 0,
                 []
             );

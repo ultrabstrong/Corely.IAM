@@ -33,10 +33,15 @@ internal class GroupProcessorAuthorizationDecorator(
             PermissionConstants.GROUP_RESOURCE_TYPE,
             request.GroupId
         )
+        && await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.USER_RESOURCE_TYPE,
+            [.. request.UserIds]
+        )
             ? await _inner.AddUsersToGroupAsync(request)
             : new AddUsersToGroupResult(
                 AddUsersToGroupResultCode.UnauthorizedError,
-                $"Unauthorized to update group {request.GroupId}",
+                $"Unauthorized to update group {request.GroupId} or read users",
                 0,
                 []
             );
@@ -49,10 +54,15 @@ internal class GroupProcessorAuthorizationDecorator(
             PermissionConstants.GROUP_RESOURCE_TYPE,
             request.GroupId
         )
+        && await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.USER_RESOURCE_TYPE,
+            [.. request.UserIds]
+        )
             ? await _inner.RemoveUsersFromGroupAsync(request)
             : new RemoveUsersFromGroupResult(
                 RemoveUsersFromGroupResultCode.UnauthorizedError,
-                $"Unauthorized to update group {request.GroupId}",
+                $"Unauthorized to update group {request.GroupId} or read users",
                 0,
                 []
             );
@@ -65,10 +75,15 @@ internal class GroupProcessorAuthorizationDecorator(
             PermissionConstants.GROUP_RESOURCE_TYPE,
             request.GroupId
         )
+        && await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.ROLE_RESOURCE_TYPE,
+            [.. request.RoleIds]
+        )
             ? await _inner.AssignRolesToGroupAsync(request)
             : new AssignRolesToGroupResult(
                 AssignRolesToGroupResultCode.UnauthorizedError,
-                $"Unauthorized to update group {request.GroupId}",
+                $"Unauthorized to update group {request.GroupId} or read roles",
                 0,
                 []
             );
@@ -77,15 +92,22 @@ internal class GroupProcessorAuthorizationDecorator(
         RemoveRolesFromGroupRequest request
     ) =>
         request.BypassAuthorization
-        || await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Update,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
-            request.GroupId
+        || (
+            await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Update,
+                PermissionConstants.GROUP_RESOURCE_TYPE,
+                request.GroupId
+            )
+            && await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.ROLE_RESOURCE_TYPE,
+                [.. request.RoleIds]
+            )
         )
             ? await _inner.RemoveRolesFromGroupAsync(request)
             : new RemoveRolesFromGroupResult(
                 RemoveRolesFromGroupResultCode.UnauthorizedError,
-                $"Unauthorized to update group {request.GroupId}",
+                $"Unauthorized to update group {request.GroupId} or read roles",
                 0,
                 []
             );

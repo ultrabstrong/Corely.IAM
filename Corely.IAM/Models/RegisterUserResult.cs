@@ -10,5 +10,6 @@ public enum RegisterUserResultCode
 public record RegisterUserResult(
     RegisterUserResultCode ResultCode,
     string? Message,
-    int CreatedUserId
+    int CreatedUserId,
+    Guid PublicCreatedUserId
 );

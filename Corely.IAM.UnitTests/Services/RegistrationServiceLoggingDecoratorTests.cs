@@ -31,7 +31,8 @@ public class RegistrationServiceLoggingDecoratorTests
         var expectedResult = new RegisterUserResult(
             RegisterUserResultCode.Success,
             string.Empty,
-            1
+            1,
+            Guid.NewGuid()
         );
         _mockInnerService.Setup(x => x.RegisterUserAsync(request)).ReturnsAsync(expectedResult);
 

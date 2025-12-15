@@ -83,7 +83,8 @@ internal class RegistrationService(
                 return new RegisterUserResult(
                     RegisterUserResultCode.UserCreationError,
                     userResult.Message,
-                    -1
+                    -1,
+                    Guid.Empty
                 );
             }
 
@@ -101,7 +102,8 @@ internal class RegistrationService(
                 return new RegisterUserResult(
                     RegisterUserResultCode.BasicAuthCreationError,
                     basicAuthResult.Message,
-                    -1
+                    -1,
+                    Guid.Empty
                 );
             }
 
@@ -115,7 +117,8 @@ internal class RegistrationService(
             return new RegisterUserResult(
                 RegisterUserResultCode.Success,
                 string.Empty,
-                userResult.CreatedId
+                userResult.CreatedId,
+                userResult.CreatedPublicId
             );
         }
         finally

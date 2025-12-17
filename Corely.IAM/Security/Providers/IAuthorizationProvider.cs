@@ -2,7 +2,7 @@ using Corely.IAM.Security.Constants;
 
 namespace Corely.IAM.Security.Providers;
 
-internal interface IAuthorizationProvider
+public interface IAuthorizationProvider
 {
     Task<bool> IsAuthorizedAsync(AuthAction action, string resourceType, params int[] resourceIds);
     bool IsAuthorizedForOwnUser(int requestUserId);

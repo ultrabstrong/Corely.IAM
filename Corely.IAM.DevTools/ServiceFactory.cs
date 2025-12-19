@@ -1,5 +1,4 @@
 ﻿using Corely.DataAccess.EntityFramework.Configurations;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -25,13 +24,15 @@ internal static class ServiceFactory
                 ?? throw new Exception($"SystemSymmetricEncryptionKey not found in configuration")
         );
 
-        services.AddScoped<IEFConfiguration>(sp => new MySqlEFConfiguration(
-            configuration.GetConnectionString("DataRepoConnection")
-                ?? throw new Exception($"DataRepoConnection string not found in configuration"),
-            sp.GetRequiredService<ILoggerFactory>()
-        ));
-
-        services.AddIAMServicesWithEF(configuration, securityConfigurationProvider);
+        services.AddIAMServicesWithEF(
+            configuration,
+            securityConfigurationProvider,
+            sp => new MySqlEFConfiguration(
+                configuration.GetConnectionString("DataRepoConnection")
+                    ?? throw new Exception($"DataRepoConnection string not found in configuration"),
+                sp.GetRequiredService<ILoggerFactory>()
+            )
+        );
 
         return services;
     }

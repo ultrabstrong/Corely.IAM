@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Processors;
@@ -22,6 +23,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Xunit;
 
 namespace Corely.IAM.UnitTests;
@@ -30,11 +32,13 @@ public class ServiceRegistrationExtensionsTests
 {
     private readonly IConfiguration _configuration;
     private readonly ISecurityConfigurationProvider _securityConfigurationProvider;
+    private readonly Func<IServiceProvider, IEFConfiguration> _efConfigurationFactory;
 
     public ServiceRegistrationExtensionsTests()
     {
         _configuration = new ConfigurationManager();
         _securityConfigurationProvider = new SecurityConfigurationProvider();
+        _efConfigurationFactory = _ => Mock.Of<IEFConfiguration>();
     }
 
     private static IServiceCollection CreateServiceCollection()
@@ -47,6 +51,8 @@ public class ServiceRegistrationExtensionsTests
         });
         return services;
     }
+
+    #region AddIAMServicesWithMockDb Tests
 
     [Fact]
     public void AddIAMServicesWithMockDb_ReturnsServiceCollection()
@@ -65,16 +71,42 @@ public class ServiceRegistrationExtensionsTests
     }
 
     [Fact]
-    public void AddIAMServicesWithEF_ReturnsServiceCollection()
+    public void AddIAMServicesWithMockDb_WithNullServiceCollection_ThrowsArgumentNullException()
+    {
+        // Arrange
+        IServiceCollection services = null!;
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() =>
+            services.AddIAMServicesWithMockDb(_configuration, _securityConfigurationProvider)
+        );
+        Assert.Equal("serviceCollection", exception.ParamName);
+    }
+
+    [Fact]
+    public void AddIAMServicesWithMockDb_WithNullConfiguration_ThrowsArgumentNullException()
     {
         // Arrange
         var services = CreateServiceCollection();
 
-        // Act
-        var result = services.AddIAMServicesWithEF(_configuration, _securityConfigurationProvider);
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() =>
+            services.AddIAMServicesWithMockDb(null!, _securityConfigurationProvider)
+        );
+        Assert.Equal("configuration", exception.ParamName);
+    }
 
-        // Assert
-        Assert.Same(services, result);
+    [Fact]
+    public void AddIAMServicesWithMockDb_WithNullSecurityConfigurationProvider_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var services = CreateServiceCollection();
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() =>
+            services.AddIAMServicesWithMockDb(_configuration, null!)
+        );
+        Assert.Equal("securityConfigurationProvider", exception.ParamName);
     }
 
     [Theory]
@@ -108,44 +140,6 @@ public class ServiceRegistrationExtensionsTests
 
         // Act
         services.AddIAMServicesWithMockDb(_configuration, _securityConfigurationProvider);
-        var serviceProvider = services.BuildServiceProvider();
-
-        // Assert
-        var service = serviceProvider.GetService(serviceType);
-        Assert.NotNull(service);
-    }
-
-    [Theory]
-    [InlineData(typeof(IValidationProvider))]
-    [InlineData(typeof(IFluentValidatorFactory))]
-    [InlineData(typeof(ISymmetricEncryptionProviderFactory))]
-    [InlineData(typeof(IAsymmetricEncryptionProviderFactory))]
-    [InlineData(typeof(IAsymmetricSignatureProviderFactory))]
-    [InlineData(typeof(IHashProviderFactory))]
-    [InlineData(typeof(ISecurityProvider))]
-    [InlineData(typeof(IPasswordValidationProvider))]
-    [InlineData(typeof(ISecurityConfigurationProvider))]
-    [InlineData(typeof(IAuthenticationProvider))]
-    [InlineData(typeof(IUserContextProvider))]
-    [InlineData(typeof(IUserContextSetter))]
-    [InlineData(typeof(IAuthorizationProvider))]
-    [InlineData(typeof(IRegistrationService))]
-    [InlineData(typeof(IDeregistrationService))]
-    [InlineData(typeof(IAuthenticationService))]
-    [InlineData(typeof(IUserOwnershipProcessor))]
-    [InlineData(typeof(IAccountProcessor))]
-    [InlineData(typeof(IUserProcessor))]
-    [InlineData(typeof(IBasicAuthProcessor))]
-    [InlineData(typeof(IGroupProcessor))]
-    [InlineData(typeof(IRoleProcessor))]
-    [InlineData(typeof(IPermissionProcessor))]
-    public void AddIAMServicesWithEF_RegistersService(Type serviceType)
-    {
-        // Arrange
-        var services = CreateServiceCollection();
-
-        // Act
-        services.AddIAMServicesWithEF(_configuration, _securityConfigurationProvider);
         var serviceProvider = services.BuildServiceProvider();
 
         // Assert
@@ -245,6 +239,148 @@ public class ServiceRegistrationExtensionsTests
         Assert.Null(exception);
     }
 
+    #endregion
+
+    #region AddIAMServicesWithEF Tests
+
+    [Fact]
+    public void AddIAMServicesWithEF_ReturnsServiceCollection()
+    {
+        // Arrange
+        var services = CreateServiceCollection();
+
+        // Act
+        var result = services.AddIAMServicesWithEF(
+            _configuration,
+            _securityConfigurationProvider,
+            _efConfigurationFactory
+        );
+
+        // Assert
+        Assert.Same(services, result);
+    }
+
+    [Fact]
+    public void AddIAMServicesWithEF_WithNullServiceCollection_ThrowsArgumentNullException()
+    {
+        // Arrange
+        IServiceCollection services = null!;
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() =>
+            services.AddIAMServicesWithEF(
+                _configuration,
+                _securityConfigurationProvider,
+                _efConfigurationFactory
+            )
+        );
+        Assert.Equal("serviceCollection", exception.ParamName);
+    }
+
+    [Fact]
+    public void AddIAMServicesWithEF_WithNullConfiguration_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var services = CreateServiceCollection();
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() =>
+            services.AddIAMServicesWithEF(
+                null!,
+                _securityConfigurationProvider,
+                _efConfigurationFactory
+            )
+        );
+        Assert.Equal("configuration", exception.ParamName);
+    }
+
+    [Fact]
+    public void AddIAMServicesWithEF_WithNullSecurityConfigurationProvider_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var services = CreateServiceCollection();
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() =>
+            services.AddIAMServicesWithEF(_configuration, null!, _efConfigurationFactory)
+        );
+        Assert.Equal("securityConfigurationProvider", exception.ParamName);
+    }
+
+    [Fact]
+    public void AddIAMServicesWithEF_WithNullEfConfigurationFactory_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var services = CreateServiceCollection();
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentNullException>(() =>
+            services.AddIAMServicesWithEF(_configuration, _securityConfigurationProvider, null!)
+        );
+        Assert.Equal("efConfigurationFactory", exception.ParamName);
+    }
+
+    [Theory]
+    [InlineData(typeof(IValidationProvider))]
+    [InlineData(typeof(IFluentValidatorFactory))]
+    [InlineData(typeof(ISymmetricEncryptionProviderFactory))]
+    [InlineData(typeof(IAsymmetricEncryptionProviderFactory))]
+    [InlineData(typeof(IAsymmetricSignatureProviderFactory))]
+    [InlineData(typeof(IHashProviderFactory))]
+    [InlineData(typeof(ISecurityProvider))]
+    [InlineData(typeof(IPasswordValidationProvider))]
+    [InlineData(typeof(ISecurityConfigurationProvider))]
+    [InlineData(typeof(IAuthenticationProvider))]
+    [InlineData(typeof(IUserContextProvider))]
+    [InlineData(typeof(IUserContextSetter))]
+    [InlineData(typeof(IAuthorizationProvider))]
+    [InlineData(typeof(IRegistrationService))]
+    [InlineData(typeof(IDeregistrationService))]
+    [InlineData(typeof(IAuthenticationService))]
+    [InlineData(typeof(IUserOwnershipProcessor))]
+    [InlineData(typeof(IAccountProcessor))]
+    [InlineData(typeof(IUserProcessor))]
+    [InlineData(typeof(IBasicAuthProcessor))]
+    [InlineData(typeof(IGroupProcessor))]
+    [InlineData(typeof(IRoleProcessor))]
+    [InlineData(typeof(IPermissionProcessor))]
+    public void AddIAMServicesWithEF_RegistersService(Type serviceType)
+    {
+        // Arrange
+        var services = CreateServiceCollection();
+
+        // Act
+        services.AddIAMServicesWithEF(
+            _configuration,
+            _securityConfigurationProvider,
+            _efConfigurationFactory
+        );
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Assert
+        var service = serviceProvider.GetService(serviceType);
+        Assert.NotNull(service);
+    }
+
+    [Fact]
+    public void AddIAMServicesWithEF_RegistersIEFConfiguration()
+    {
+        // Arrange
+        var services = CreateServiceCollection();
+
+        // Act
+        services.AddIAMServicesWithEF(
+            _configuration,
+            _securityConfigurationProvider,
+            _efConfigurationFactory
+        );
+        var serviceProvider = services.BuildServiceProvider();
+
+        // Assert
+        var efConfiguration = serviceProvider.GetService<IEFConfiguration>();
+        Assert.NotNull(efConfiguration);
+    }
+
     [Fact]
     public void AddIAMServicesWithEF_CanBuildServiceProvider()
     {
@@ -252,10 +388,16 @@ public class ServiceRegistrationExtensionsTests
         var services = CreateServiceCollection();
 
         // Act
-        services.AddIAMServicesWithEF(_configuration, _securityConfigurationProvider);
+        services.AddIAMServicesWithEF(
+            _configuration,
+            _securityConfigurationProvider,
+            _efConfigurationFactory
+        );
         var exception = Record.Exception(() => services.BuildServiceProvider());
 
         // Assert
         Assert.Null(exception);
     }
+
+    #endregion
 }

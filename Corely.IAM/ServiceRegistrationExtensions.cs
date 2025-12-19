@@ -1,4 +1,5 @@
-﻿using Corely.DataAccess.Extensions;
+﻿using Corely.DataAccess.EntityFramework.Configurations;
+using Corely.DataAccess.Extensions;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.DataAccess;
@@ -31,9 +32,16 @@ public static class ServiceRegistrationExtensions
     public static IServiceCollection AddIAMServicesWithEF(
         this IServiceCollection serviceCollection,
         IConfiguration configuration,
-        ISecurityConfigurationProvider securityConfigurationProvider
+        ISecurityConfigurationProvider securityConfigurationProvider,
+        Func<IServiceProvider, IEFConfiguration> efConfigurationFactory
     )
     {
+        ArgumentNullException.ThrowIfNull(serviceCollection);
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(securityConfigurationProvider);
+        ArgumentNullException.ThrowIfNull(efConfigurationFactory);
+
+        serviceCollection.AddScoped(efConfigurationFactory);
         serviceCollection.AddDbContext<IamDbContext>();
         serviceCollection.RegisterEntityFrameworkReposAndUoW();
         serviceCollection.AddIAMServices(configuration, securityConfigurationProvider);
@@ -46,6 +54,10 @@ public static class ServiceRegistrationExtensions
         ISecurityConfigurationProvider securityConfigurationProvider
     )
     {
+        ArgumentNullException.ThrowIfNull(serviceCollection);
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(securityConfigurationProvider);
+
         serviceCollection.RegisterMockReposAndUoW();
         serviceCollection.AddIAMServices(configuration, securityConfigurationProvider);
         return serviceCollection;

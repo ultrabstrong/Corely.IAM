@@ -1,6 +1,6 @@
 ﻿using Corely.Security.KeyStore;
 
-namespace Corely.IAM;
+namespace Corely.IAM.Security.Providers;
 
 public interface ISecurityConfigurationProvider
 {

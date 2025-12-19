@@ -1,4 +1,5 @@
-﻿using Corely.Security.Keys;
+﻿using Corely.IAM.Security.Providers;
+using Corely.Security.Keys;
 using Corely.Security.KeyStore;
 
 namespace Corely.IAM.UnitTests;

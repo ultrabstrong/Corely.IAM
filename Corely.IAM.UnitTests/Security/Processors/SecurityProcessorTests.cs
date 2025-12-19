@@ -1,5 +1,4 @@
-﻿using Corely.IAM;
-using Corely.IAM.Security.Enums;
+﻿using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.UnitTests.ClassData;
 using Corely.Security.Encryption.Factories;

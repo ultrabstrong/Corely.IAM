@@ -5,22 +5,29 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Corely.IAM.UnitTests;
 
-public class ServiceFactory : MockDbServiceFactory
+public class ServiceFactory
 {
     private readonly IServiceProvider _serviceProvider;
 
     public ServiceFactory()
-        : base(new ServiceCollection(), new ConfigurationManager())
     {
-        AddIAMServices();
-        _serviceProvider = ServiceCollection.BuildServiceProvider();
+        var services = new ServiceCollection();
+
+        services.AddLogging(builder =>
+        {
+            builder.ClearProviders();
+            builder.AddProvider(NullLoggerProvider.Instance);
+        });
+
+        var securityConfigurationProvider = new SecurityConfigurationProvider();
+
+        services.AddIAMServicesWithMockDb(
+            new ConfigurationManager(),
+            new SecurityConfigurationProvider()
+        );
+
+        _serviceProvider = services.BuildServiceProvider();
     }
-
-    protected override ISecurityConfigurationProvider GetSecurityConfigurationProvider() =>
-        new SecurityConfigurationProvider();
-
-    protected override void AddLogging(ILoggingBuilder builder) =>
-        builder.AddProvider(NullLoggerProvider.Instance);
 
     public T GetRequiredService<T>()
         where T : notnull => _serviceProvider.GetRequiredService<T>();

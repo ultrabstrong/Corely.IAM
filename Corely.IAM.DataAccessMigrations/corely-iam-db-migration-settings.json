@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "DataRepoConnection": "Server=localhost;Port=3306;Database=MaxStrongReporting;Uid=root;Pwd=admin;"
+  }
+}

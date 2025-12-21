@@ -4,7 +4,7 @@ namespace Corely.IAM.DataAccessMigrations;
 
 internal static class ConfigurationProvider
 {
-    private const string SETTINGS_FILE_NAME = "migrationsettings.json";
+    private const string SETTINGS_FILE_NAME = "corely-iam-db-migration-settings.json";
 
     private static readonly IConfigurationRoot _configuration;
 
@@ -17,9 +17,21 @@ internal static class ConfigurationProvider
         _configuration = builder.Build();
     }
 
+    public static string? TryGetConnectionString()
+    {
+        return _configuration.GetConnectionString("DataRepoConnection");
+    }
+
     public static string GetConnectionString()
     {
-        return _configuration.GetConnectionString("DataRepoConnection")
-            ?? throw new Exception($"DataRepoConnection string not found in {SETTINGS_FILE_NAME}");
+        return TryGetConnectionString()
+            ?? throw new InvalidOperationException(
+                $"DataRepoConnection string not found in {SETTINGS_FILE_NAME}. "
+                    + $"Run 'config init' to create a settings file or 'config path' to see the expected location."
+            );
     }
+
+    public static bool HasConnectionString => TryGetConnectionString() != null;
+
+    public static string SettingsFileName => SETTINGS_FILE_NAME;
 }

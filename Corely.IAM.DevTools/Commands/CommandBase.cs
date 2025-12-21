@@ -170,12 +170,22 @@ internal abstract class CommandBase : Command
 
     protected static void Success(string message)
     {
-        Console.WriteLine(message, ConsoleColor.Green);
+        WriteColored(message, ConsoleColor.Green);
     }
 
     protected static void Success(IEnumerable<string> messages)
     {
         WriteColored(messages, ConsoleColor.Green);
+    }
+
+    protected static void Info(string message)
+    {
+        Console.WriteLine(message);
+    }
+
+    protected static void Info(IEnumerable<string> messages)
+    {
+        Console.WriteLine(string.Join(Environment.NewLine, messages));
     }
 
     protected static void Warn(string message)
@@ -190,7 +200,7 @@ internal abstract class CommandBase : Command
 
     protected static void Error(string message)
     {
-        Console.WriteLine(message, ConsoleColor.Red);
+        WriteColored(message, ConsoleColor.Red);
     }
 
     protected static void Error(IEnumerable<string> messages)
@@ -210,6 +220,36 @@ internal abstract class CommandBase : Command
         Console.ForegroundColor = color;
         Console.WriteLine(string.Join(Environment.NewLine, messages));
         Console.ResetColor();
+    }
+
+    protected static bool ValidateSettings()
+    {
+        var result = ConfigurationValidator.ValidateSettingsFile();
+        if (!result.IsValid)
+        {
+            Error(result.ErrorMessage!);
+            if (!string.IsNullOrEmpty(result.Guidance))
+            {
+                Info(result.Guidance);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    protected static bool ValidateFullConfiguration()
+    {
+        var result = ConfigurationValidator.ValidateFullConfiguration();
+        if (!result.IsValid)
+        {
+            Error(result.ErrorMessage!);
+            if (!string.IsNullOrEmpty(result.Guidance))
+            {
+                Info(result.Guidance);
+            }
+            return false;
+        }
+        return true;
     }
 
     protected static async Task<bool> SetUserContextFromAuthTokenFileAsync(

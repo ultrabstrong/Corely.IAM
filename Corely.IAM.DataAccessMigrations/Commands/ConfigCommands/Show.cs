@@ -5,10 +5,7 @@ internal class Show()
 {
     protected override Task ExecuteAsync()
     {
-        var settingsPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            ConfigurationProvider.SettingsFileName
-        );
+        var settingsPath = ConfigurationProvider.SettingsFilePath;
 
         Info($"Settings file location: {settingsPath}");
         Info("");

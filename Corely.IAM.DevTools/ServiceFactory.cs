@@ -1,5 +1,4 @@
-﻿using Corely.DataAccess.EntityFramework.Configurations;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -19,20 +18,24 @@ internal static class ServiceFactory
             builder.AddSerilog(logger: Log.Logger, dispose: false);
         });
 
-        var securityConfigurationProvider = new SecurityConfigurationProvider(
-            configuration["SystemSymmetricEncryptionKey"]
-                ?? throw new Exception($"SystemSymmetricEncryptionKey not found in configuration")
-        );
+        // Only register IAM services if configuration is available
+        // This allows config commands to work without a settings file
+        var encryptionKey = configuration["SystemSymmetricEncryptionKey"];
+        var connectionString = configuration.GetConnectionString("DataRepoConnection");
 
-        services.AddIAMServicesWithEF(
-            configuration,
-            securityConfigurationProvider,
-            sp => new MySqlEFConfiguration(
-                configuration.GetConnectionString("DataRepoConnection")
-                    ?? throw new Exception($"DataRepoConnection string not found in configuration"),
-                sp.GetRequiredService<ILoggerFactory>()
-            )
-        );
+        if (!string.IsNullOrEmpty(encryptionKey) && !string.IsNullOrEmpty(connectionString))
+        {
+            var securityConfigurationProvider = new SecurityConfigurationProvider(encryptionKey);
+
+            services.AddIAMServicesWithEF(
+                configuration,
+                securityConfigurationProvider,
+                sp => new MySqlEFConfiguration(
+                    connectionString,
+                    sp.GetRequiredService<ILoggerFactory>()
+                )
+            );
+        }
 
         return services;
     }

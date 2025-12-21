@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 
-namespace Corely.IAM.DataAccessMigrations;
+namespace Corely.IAM.DevTools;
 
 internal static class ConfigurationProvider
 {
-    public const string SETTINGS_FILE_NAME = "corely-iam-db-migration-settings.json";
+    public const string SETTINGS_FILE_NAME = "corely-iam-devtool-settings.json";
 
     private static readonly IConfigurationRoot _configuration;
 
@@ -17,6 +17,8 @@ internal static class ConfigurationProvider
         _configuration = builder.Build();
     }
 
+    public static IConfiguration Configuration => _configuration;
+
     public static string? TryGetConnectionString()
     {
         return _configuration.GetConnectionString("DataRepoConnection");
@@ -27,11 +29,28 @@ internal static class ConfigurationProvider
         return TryGetConnectionString()
             ?? throw new InvalidOperationException(
                 $"DataRepoConnection string not found in {SETTINGS_FILE_NAME}. "
-                    + $"Run 'config init' to create a settings file or 'config path' to see the expected location."
+                    + "Run 'config init' to create a settings file or 'config path' to see the expected location."
+            );
+    }
+
+    public static string? TryGetSystemSymmetricEncryptionKey()
+    {
+        return _configuration["SystemSymmetricEncryptionKey"];
+    }
+
+    public static string GetSystemSymmetricEncryptionKey()
+    {
+        return TryGetSystemSymmetricEncryptionKey()
+            ?? throw new InvalidOperationException(
+                $"SystemSymmetricEncryptionKey not found in {SETTINGS_FILE_NAME}. "
+                    + "Run 'config show' to view current settings."
             );
     }
 
     public static bool HasConnectionString => TryGetConnectionString() != null;
+
+    public static bool HasSystemSymmetricEncryptionKey =>
+        !string.IsNullOrEmpty(TryGetSystemSymmetricEncryptionKey());
 
     public static string SettingsFilePath =>
         Path.Combine(AppContext.BaseDirectory, SETTINGS_FILE_NAME);

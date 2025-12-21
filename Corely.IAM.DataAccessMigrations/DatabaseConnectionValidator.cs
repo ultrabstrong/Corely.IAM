@@ -1,5 +1,4 @@
 using Corely.IAM.DataAccess;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.DataAccessMigrations;
@@ -14,10 +13,7 @@ internal static class DatabaseConnectionValidator
 
     public static ValidationResult ValidateSettingsFile()
     {
-        var settingsPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            ConfigurationProvider.SettingsFileName
-        );
+        var settingsPath = ConfigurationProvider.SettingsFilePath;
 
         if (!File.Exists(settingsPath))
         {
@@ -32,7 +28,7 @@ internal static class DatabaseConnectionValidator
         {
             return new ValidationResult(
                 false,
-                $"Connection string 'DataRepoConnection' not found in {ConfigurationProvider.SettingsFileName}",
+                $"Connection string 'DataRepoConnection' not found in {ConfigurationProvider.SETTINGS_FILE_NAME}",
                 "Run 'config show' to view the current settings file contents and ensure it contains a valid connection string."
             );
         }

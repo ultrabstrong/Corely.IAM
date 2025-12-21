@@ -36,11 +36,10 @@ internal class Program
                 .ConfigureAppConfiguration(
                     (hostingContext, config) =>
                     {
-                        var exePath = AppContext.BaseDirectory;
-                        config.SetBasePath(exePath);
+                        config.SetBasePath(AppContext.BaseDirectory);
                         config.AddJsonFile(
-                            "appsettings.json",
-                            optional: false,
+                            ConfigurationProvider.SETTINGS_FILE_NAME,
+                            optional: true,
                             reloadOnChange: true
                         );
                     }
@@ -68,9 +67,8 @@ internal class Program
             using var scope = host.Services.CreateScope();
 
             var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-            var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
-            var userContextProvider =
-                scope.ServiceProvider.GetRequiredService<IUserContextProvider>();
+            var authService = scope.ServiceProvider.GetService<IAuthenticationService>();
+            var userContextProvider = scope.ServiceProvider.GetService<IUserContextProvider>();
 
             var username = configuration.GetValue<string>("DevToolsUserContext:Username");
             var password = configuration.GetValue<string>("DevToolsUserContext:Password");
@@ -86,7 +84,12 @@ internal class Program
                 accountPublicId = parsedGuid;
             }
 
-            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+            if (
+                authService != null
+                && userContextProvider != null
+                && !string.IsNullOrEmpty(username)
+                && !string.IsNullOrEmpty(password)
+            )
             {
                 var signInResult = await authService.SignInAsync(
                     new SignInRequest(username, password, accountPublicId)
@@ -122,7 +125,7 @@ internal class Program
                 && type.Namespace.StartsWith(typeof(CommandBase).Namespace!)
                 && type.IsSubclassOf(typeof(CommandBase))
             )
-            .Select(type => serviceProvider.GetService(type) as CommandBase)
+            .Select(type => TryGetService(serviceProvider, type) as CommandBase)
             .Where(instance => instance != null)
             .ToList();
 
@@ -145,7 +148,7 @@ internal class Program
             .GetType()
             .GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)
             .Where(type => type.IsSubclassOf(typeof(CommandBase)))
-            .Select(type => serviceProvider.GetService(type) as CommandBase)
+            .Select(type => TryGetService(serviceProvider, type) as CommandBase)
             .Where(instance => instance != null)
             .ToList();
 
@@ -153,6 +156,20 @@ internal class Program
         {
             AddSubCommands(serviceProvider, subCommand!);
             command.AddCommand(subCommand!);
+        }
+    }
+
+    static object? TryGetService(IServiceProvider serviceProvider, Type type)
+    {
+        try
+        {
+            return serviceProvider.GetService(type);
+        }
+        catch
+        {
+            // Service couldn't be resolved (missing dependencies)
+            // This is expected when IAM services aren't configured
+            return null;
         }
     }
 }

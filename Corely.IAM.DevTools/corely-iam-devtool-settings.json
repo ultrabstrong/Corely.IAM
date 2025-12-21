@@ -1,0 +1,17 @@
+{
+  "ConnectionStrings": {
+    "DataRepoConnection": "Server=localhost;Port=3306;Database=MaxStrongReporting;Uid=root;Pwd=admin;"
+  },
+  "SystemSymmetricEncryptionKey": "xZoYnypljZSkbaf/+oa47LKGRd3EdKnVy6siXjOOVEk=",
+  "PasswordValidationOptions": {
+    "MinimumLength": 1,
+    "RequireUppercase": false,
+    "RequireLowercase": false,
+    "RequireDigit": false,
+    "RequireNonAlphanumeric": false
+  },
+  "DevToolsUserContext": {
+    "UserId": 20,
+    "AccountId": 19
+  }
+}

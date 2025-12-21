@@ -4,10 +4,7 @@ internal class ShowPath() : CommandBase("path", "Display the expected settings f
 {
     protected override Task ExecuteAsync()
     {
-        var settingsPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            ConfigurationProvider.SettingsFileName
-        );
+        var settingsPath = ConfigurationProvider.SettingsFilePath;
         var exists = File.Exists(settingsPath);
 
         Info($"Settings file path: {settingsPath}");

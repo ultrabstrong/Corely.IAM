@@ -12,10 +12,7 @@ internal class Init() : CommandBase("init", "Create a new settings file")
 
     protected override Task ExecuteAsync()
     {
-        var settingsPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            ConfigurationProvider.SettingsFileName
-        );
+        var settingsPath = ConfigurationProvider.SettingsFilePath;
 
         if (File.Exists(settingsPath) && !Force)
         {

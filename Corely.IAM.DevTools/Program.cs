@@ -3,9 +3,6 @@ using System.Reflection;
 using Corely.Common.Providers.Redaction;
 using Corely.IAM.DevTools.Commands;
 using Corely.IAM.DevTools.SerilogCustomization;
-using Corely.IAM.Models;
-using Corely.IAM.Services;
-using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -65,43 +62,6 @@ internal class Program
                 .Build();
 
             using var scope = host.Services.CreateScope();
-
-            var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-            var authService = scope.ServiceProvider.GetService<IAuthenticationService>();
-            var userContextProvider = scope.ServiceProvider.GetService<IUserContextProvider>();
-
-            var username = configuration.GetValue<string>("DevToolsUserContext:Username");
-            var password = configuration.GetValue<string>("DevToolsUserContext:Password");
-            var accountPublicIdString = configuration.GetValue<string>(
-                "DevToolsUserContext:AccountPublicId"
-            );
-            Guid? accountPublicId = null;
-            if (
-                !string.IsNullOrEmpty(accountPublicIdString)
-                && Guid.TryParse(accountPublicIdString, out var parsedGuid)
-            )
-            {
-                accountPublicId = parsedGuid;
-            }
-
-            if (
-                authService != null
-                && userContextProvider != null
-                && !string.IsNullOrEmpty(username)
-                && !string.IsNullOrEmpty(password)
-            )
-            {
-                var signInResult = await authService.SignInAsync(
-                    new SignInRequest(username, password, accountPublicId)
-                );
-                if (
-                    signInResult.ResultCode == SignInResultCode.Success
-                    && signInResult.AuthToken != null
-                )
-                {
-                    await userContextProvider.SetUserContextAsync(signInResult.AuthToken);
-                }
-            }
 
             var rootCommand = GetRootCommand(scope.ServiceProvider);
             await rootCommand.InvokeAsync(args);

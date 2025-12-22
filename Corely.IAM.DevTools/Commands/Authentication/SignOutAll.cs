@@ -2,6 +2,7 @@ using System.Text.Json;
 using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 
 namespace Corely.IAM.DevTools.Commands.Authentication;
@@ -14,13 +15,18 @@ internal partial class Authentication : CommandBase
         private int UserId { get; init; }
 
         private readonly IAuthenticationService _authenticationService;
+        private readonly IUserContextProvider _userContextProvider;
 
-        public SignOutAll(IAuthenticationService authenticationService)
+        public SignOutAll(
+            IAuthenticationService authenticationService,
+            IUserContextProvider userContextProvider
+        )
             : base("signout-all", "Sign out a user from all sessions by revoking all auth tokens")
         {
             _authenticationService = authenticationService.ThrowIfNull(
                 nameof(authenticationService)
             );
+            _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
         protected override async Task ExecuteAsync()
@@ -31,6 +37,12 @@ internal partial class Authentication : CommandBase
                 var output = new { UserId, Success = true };
                 Console.WriteLine(JsonSerializer.Serialize(output));
                 Success($"All sessions for user {UserId} signed out successfully");
+
+                var currentContext = _userContextProvider.GetUserContext();
+                if (currentContext?.UserId == UserId)
+                {
+                    ClearAuthTokenFile();
+                }
             }
             catch (ValidationException ex)
             {

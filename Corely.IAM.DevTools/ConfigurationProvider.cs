@@ -5,6 +5,7 @@ namespace Corely.IAM.DevTools;
 internal static class ConfigurationProvider
 {
     public const string SETTINGS_FILE_NAME = "corely-iam-devtool-settings.json";
+    public const string AUTH_TOKEN_FILE_NAME = "corely-iam-auth-token.json";
 
     private static readonly IConfigurationRoot _configuration;
 
@@ -54,4 +55,9 @@ internal static class ConfigurationProvider
 
     public static string SettingsFilePath =>
         Path.Combine(AppContext.BaseDirectory, SETTINGS_FILE_NAME);
+
+    public static string AuthTokenFilePath =>
+        Path.Combine(AppContext.BaseDirectory, AUTH_TOKEN_FILE_NAME);
+
+    public static bool HasAuthToken => File.Exists(AuthTokenFilePath);
 }

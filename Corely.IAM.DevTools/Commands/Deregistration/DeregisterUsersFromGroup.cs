@@ -15,9 +15,6 @@ internal partial class Deregistration : CommandBase
         [Argument("Filepath to deregister users from group request json", true)]
         private string RequestJsonFile { get; init; } = null!;
 
-        [Argument("Filepath to auth token json", true)]
-        private string AuthTokenFile { get; init; } = null!;
-
         [Option("-c", "--create", Description = "Create sample json file at path")]
         private bool Create { get; init; }
 
@@ -40,25 +37,29 @@ internal partial class Deregistration : CommandBase
         {
             if (Create)
             {
-                SampleJsonFileHelper.CreateSampleJson(
+                SampleJsonFileHelper.CreateSampleMultipleRequestJson(
                     RequestJsonFile,
                     new DeregisterUsersFromGroupRequest([1, 2, 3], 1)
                 );
             }
             else
             {
+                if (!FileExists(RequestJsonFile))
+                    return;
+
                 await DeregisterUsersFromGroupAsync();
             }
         }
 
         private async Task DeregisterUsersFromGroupAsync()
         {
-            if (!await SetUserContextFromAuthTokenFileAsync(AuthTokenFile, _userContextProvider))
+            if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            var request = SampleJsonFileHelper.ReadRequestJson<DeregisterUsersFromGroupRequest>(
-                RequestJsonFile
-            );
+            var request =
+                SampleJsonFileHelper.ReadMultipleRequestJson<DeregisterUsersFromGroupRequest>(
+                    RequestJsonFile
+                );
             if (request == null)
                 return;
 

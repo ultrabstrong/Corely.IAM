@@ -15,9 +15,6 @@ internal partial class Registration : CommandBase
         [Argument("Filepath to register role request json", true)]
         private string RequestJsonFile { get; init; } = null!;
 
-        [Argument("Filepath to auth token json", true)]
-        private string AuthTokenFile { get; init; } = null!;
-
         [Option("-c", "--create", Description = "Create sample json file at path")]
         private bool Create { get; init; }
 
@@ -38,23 +35,26 @@ internal partial class Registration : CommandBase
         {
             if (Create)
             {
-                SampleJsonFileHelper.CreateSampleJson(
+                SampleJsonFileHelper.CreateSampleMultipleRequestJson(
                     RequestJsonFile,
                     new RegisterRoleRequest("roleName")
                 );
             }
             else
             {
+                if (!FileExists(RequestJsonFile))
+                    return;
+
                 await RegisterRoleAsync();
             }
         }
 
         private async Task RegisterRoleAsync()
         {
-            if (!await SetUserContextFromAuthTokenFileAsync(AuthTokenFile, _userContextProvider))
+            if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            var request = SampleJsonFileHelper.ReadRequestJson<RegisterRoleRequest>(
+            var request = SampleJsonFileHelper.ReadMultipleRequestJson<RegisterRoleRequest>(
                 RequestJsonFile
             );
             if (request == null)

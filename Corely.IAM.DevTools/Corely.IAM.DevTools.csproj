@@ -50,7 +50,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Corely.IAM\Corely.IAM.csproj" />
   </ItemGroup>
-  <ItemGroup>
+
+  <!-- Only copy settings file during Debug builds for local development -->
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
     <None Update="corely-iam-devtool-settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

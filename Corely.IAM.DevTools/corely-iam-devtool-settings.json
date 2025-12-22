@@ -9,9 +9,5 @@
     "RequireLowercase": false,
     "RequireDigit": false,
     "RequireNonAlphanumeric": false
-  },
-  "DevToolsUserContext": {
-    "UserId": 20,
-    "AccountId": 19
   }
 }

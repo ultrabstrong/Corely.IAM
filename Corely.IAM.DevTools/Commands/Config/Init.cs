@@ -42,11 +42,6 @@ internal partial class Config
     ""RequireLowercase"": true,
     ""RequireDigit"": true,
     ""RequireNonAlphanumeric"": true
-  }},
-  ""DevToolsUserContext"": {{
-    ""Username"": """",
-    ""Password"": """",
-    ""AccountPublicId"": """"
   }}
 }}";
 
@@ -56,6 +51,7 @@ internal partial class Config
             if (string.IsNullOrEmpty(ConnectionString))
             {
                 Warn("Remember to update the configuration values in the settings file.");
+                Warn("Run 'config system-key --generate' to create an encryption key.");
             }
         }
     }

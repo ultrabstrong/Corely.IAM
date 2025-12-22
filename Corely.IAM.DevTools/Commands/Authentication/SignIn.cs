@@ -17,13 +17,6 @@ internal partial class Authentication : CommandBase
         [Option("-c", "--create", Description = "Create sample json file at path")]
         private bool Create { get; init; }
 
-        [Option(
-            "-o",
-            "--output",
-            Description = "Optional filepath to output the sign in result json"
-        )]
-        private string? OutputResultFile { get; init; }
-
         private readonly IAuthenticationService _authenticationService;
 
         public SignIn(IAuthenticationService authenticationService)
@@ -38,38 +31,40 @@ internal partial class Authentication : CommandBase
         {
             if (Create)
             {
-                SampleJsonFileHelper.CreateSampleJson(
+                SampleJsonFileHelper.CreateSampleSingleRequestJson(
                     RequestJsonFile,
-                    new SignInRequest("userName", "password", Guid.Empty)
+                    new SignInRequest("userName", "password")
                 );
             }
             else
             {
+                if (!FileExists(RequestJsonFile))
+                    return;
+
                 await SignInAsync();
             }
         }
 
         private async Task SignInAsync()
         {
-            var requests = SampleJsonFileHelper.ReadRequestJson<SignInRequest>(RequestJsonFile);
-            if (requests == null)
+            var request = SampleJsonFileHelper.ReadSingleRequestJson<SignInRequest>(
+                RequestJsonFile
+            );
+            if (request == null)
                 return;
 
             try
             {
-                foreach (var request in requests)
-                {
-                    var result = await _authenticationService.SignInAsync(request);
-                    var resultJson = JsonSerializer.Serialize(result);
-                    Console.WriteLine(resultJson);
+                var result = await _authenticationService.SignInAsync(request);
 
-                    if (
-                        !string.IsNullOrEmpty(OutputResultFile)
-                        && result.ResultCode == SignInResultCode.Success
-                    )
-                    {
-                        await WriteResultToFileAsync(resultJson);
-                    }
+                if (result.ResultCode == SignInResultCode.Success)
+                {
+                    await WriteAuthTokenToFileAsync(result);
+                    Success("Sign in successful. Auth token saved.");
+                }
+                else
+                {
+                    Warn($"Sign in failed: {result.ResultCode}");
                 }
             }
             catch (ValidationException ex)
@@ -78,23 +73,18 @@ internal partial class Authentication : CommandBase
             }
         }
 
-        private async Task WriteResultToFileAsync(string resultJson)
+        private static async Task WriteAuthTokenToFileAsync(SignInResult result)
         {
             try
             {
-                var file = new FileInfo(OutputResultFile!);
-                if (!Directory.Exists(file.DirectoryName))
-                {
-                    Warn($"Directory not found: {file.DirectoryName}");
-                    return;
-                }
-
-                await File.WriteAllTextAsync(OutputResultFile!, resultJson);
-                Success($"Sign in result written to: {OutputResultFile}");
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                var resultJson = JsonSerializer.Serialize(result, options);
+                await File.WriteAllTextAsync(ConfigurationProvider.AuthTokenFilePath, resultJson);
+                Info($"Auth token saved to: {ConfigurationProvider.AuthTokenFilePath}");
             }
             catch (Exception ex)
             {
-                Error($"Failed to write sign in result to file: {ex.Message}");
+                Error($"Failed to save auth token: {ex.Message}");
             }
         }
     }

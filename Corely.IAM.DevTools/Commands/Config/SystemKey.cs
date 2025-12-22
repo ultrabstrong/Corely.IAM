@@ -49,7 +49,7 @@ internal partial class Config
             }
         }
 
-        private void ShowCurrentKey()
+        private static void ShowCurrentKey()
         {
             var key = ConfigurationProvider.TryGetSystemSymmetricEncryptionKey();
 

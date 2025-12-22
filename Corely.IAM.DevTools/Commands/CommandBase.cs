@@ -2,6 +2,7 @@
 using System.CommandLine.Binding;
 using System.CommandLine.NamingConventionBinder;
 using System.Reflection;
+using System.Text.Json;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -252,16 +253,45 @@ internal abstract class CommandBase : Command
         return true;
     }
 
+    protected static void ClearAuthTokenFile()
+    {
+        try
+        {
+            var authFilePath = ConfigurationProvider.AuthTokenFilePath;
+            if (File.Exists(authFilePath))
+            {
+                File.Delete(authFilePath);
+                Info("Auth token cleared.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Warn($"Failed to clear auth token file: {ex.Message}");
+        }
+    }
+
+    protected static bool FileExists(string filePath)
+    {
+        if (File.Exists(filePath))
+            return true;
+
+        Error($"File not found: {filePath}");
+        Info("Use --create to create a sample request file.");
+        return false;
+    }
+
     protected static async Task<bool> SetUserContextFromAuthTokenFileAsync(
-        string authFilePath,
         IUserContextProvider userContextProvider
     )
     {
+        var authFilePath = ConfigurationProvider.AuthTokenFilePath;
+
         try
         {
             if (!File.Exists(authFilePath))
             {
                 Error($"Auth token file not found: {authFilePath}");
+                Info("Run 'auth signin <request.json>' to sign in first.");
                 return false;
             }
 
@@ -272,8 +302,7 @@ internal abstract class CommandBase : Command
                 return false;
             }
 
-            // The file should contain a JSON object with an AuthToken property
-            var jsonDoc = System.Text.Json.JsonDocument.Parse(fileContent);
+            var jsonDoc = JsonDocument.Parse(fileContent);
             if (!jsonDoc.RootElement.TryGetProperty("AuthToken", out var authTokenElement))
             {
                 Error($"Auth token file does not contain 'AuthToken' property: {authFilePath}");
@@ -291,6 +320,9 @@ internal abstract class CommandBase : Command
             if (setContextResult != UserAuthTokenValidationResultCode.Success)
             {
                 Error($"Failed to set user context: {setContextResult}");
+                Info(
+                    "Your auth token may have expired. Run 'auth signin <request.json>' to sign in again."
+                );
                 return false;
             }
 

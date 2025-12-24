@@ -1,3 +1,5 @@
+using Corely.IAM.Accounts.Models;
+
 namespace Corely.IAM.Users.Models;
 
 public enum UserAuthTokenValidationResultCode
@@ -11,5 +13,6 @@ public enum UserAuthTokenValidationResultCode
 public record UserAuthTokenValidationResult(
     UserAuthTokenValidationResultCode ResultCode,
     int? UserId,
-    int? SignedInAccountId
+    int? SignedInAccountId,
+    List<Account> Accounts
 );

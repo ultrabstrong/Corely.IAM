@@ -30,7 +30,9 @@ public class DeregistrationServiceTests
     public DeregistrationServiceTests()
     {
         // Setup user context provider to return a valid context with account ID
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(new UserContext(1, 5));
+        _mockUserContextProvider
+            .Setup(x => x.GetUserContext())
+            .Returns(new UserContext(1, 5, [new Account() { Id = 4 }, new Account() { Id = 5 }]));
 
         _service = new DeregistrationService(
             _mockLogger.Object,
@@ -148,7 +150,15 @@ public class DeregistrationServiceTests
 
         Assert.Equal(DeregisterAccountResultCode.Success, result.ResultCode);
         _mockUserContextSetter.Verify(
-            x => x.SetUserContext(It.Is<UserContext>(c => c.UserId == 1 && c.AccountId == null)),
+            x =>
+                x.SetUserContext(
+                    It.Is<UserContext>(c =>
+                        c.UserId == 1
+                        && c.AccountId == null
+                        && c.Accounts.Count == 1
+                        && c.Accounts[0].Id == 4
+                    )
+                ),
             Times.Once
         );
     }

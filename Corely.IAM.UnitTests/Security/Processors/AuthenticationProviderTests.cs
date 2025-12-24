@@ -25,6 +25,16 @@ public class AuthenticationProviderTests
 
     public AuthenticationProviderTests()
     {
+        _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
+        _fixture.Customize<AccountEntity>(c =>
+            c.Without(a => a.SymmetricKeys)
+                .Without(a => a.AsymmetricKeys)
+                .Without(a => a.Users)
+                .Without(a => a.Groups)
+                .Without(a => a.Roles)
+                .Without(a => a.Permissions)
+        );
+
         _authenticationProvider = new AuthenticationProvider(
             _serviceFactory.GetRequiredService<IRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>(),
@@ -34,7 +44,7 @@ public class AuthenticationProviderTests
         );
     }
 
-    private async Task<int> CreateUserAsync()
+    private async Task<UserEntity> CreateUserAsync()
     {
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var securityProcessor = _serviceFactory.GetRequiredService<ISecurityProvider>();
@@ -56,74 +66,12 @@ public class AuthenticationProviderTests
                     EncryptedPrivateKey = signatureKey.PrivateKey.Secret,
                 },
             ],
-            Accounts = [],
+            Accounts = [.. _fixture.CreateMany<AccountEntity>()],
             Groups = [],
             Roles = [],
         };
         var created = await userRepo.CreateAsync(user);
-        return created.Id;
-    }
-
-    private async Task<(int UserId, Guid UserPublicId)> CreateUserWithPublicIdAsync()
-    {
-        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var securityProcessor = _serviceFactory.GetRequiredService<ISecurityProvider>();
-
-        var signatureKey = securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey();
-
-        var user = new UserEntity
-        {
-            Username = VALID_USERNAME,
-            Email = VALID_EMAIL,
-            SymmetricKeys = [],
-            AsymmetricKeys =
-            [
-                new UserAsymmetricKeyEntity
-                {
-                    KeyUsedFor = KeyUsedFor.Signature,
-                    ProviderTypeCode = signatureKey.ProviderTypeCode,
-                    PublicKey = signatureKey.PublicKey,
-                    EncryptedPrivateKey = signatureKey.PrivateKey.Secret,
-                },
-            ],
-            Accounts = [],
-            Groups = [],
-            Roles = [],
-        };
-        var created = await userRepo.CreateAsync(user);
-        return (created.Id, created.PublicId);
-    }
-
-    private async Task<int> CreateUserWithAccountAsync(int accountId)
-    {
-        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
-        var securityProcessor = _serviceFactory.GetRequiredService<ISecurityProvider>();
-
-        var account = await accountRepo.GetAsync(a => a.Id == accountId);
-        var signatureKey = securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey();
-
-        var user = new UserEntity
-        {
-            Username = _fixture.Create<string>(),
-            Email = _fixture.Create<string>() + "@test.com",
-            SymmetricKeys = [],
-            AsymmetricKeys =
-            [
-                new UserAsymmetricKeyEntity
-                {
-                    KeyUsedFor = KeyUsedFor.Signature,
-                    ProviderTypeCode = signatureKey.ProviderTypeCode,
-                    PublicKey = signatureKey.PublicKey,
-                    EncryptedPrivateKey = signatureKey.PrivateKey.Secret,
-                },
-            ],
-            Accounts = account != null ? [account] : [],
-            Groups = [],
-            Roles = [],
-        };
-        var created = await userRepo.CreateAsync(user);
-        return created.Id;
+        return created;
     }
 
     private async Task<(int AccountId, Guid AccountPublicId)> CreateAccountAsync()
@@ -134,31 +82,13 @@ public class AuthenticationProviderTests
         return (created.Id, created.PublicId);
     }
 
-    private async Task<int> CreateUserWithoutSignatureKeyAsync()
-    {
-        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-
-        var user = new UserEntity
-        {
-            Username = _fixture.Create<string>(),
-            Email = _fixture.Create<string>() + "@test.com",
-            SymmetricKeys = [],
-            AsymmetricKeys = [],
-            Accounts = [],
-            Groups = [],
-            Roles = [],
-        };
-        var created = await userRepo.CreateAsync(user);
-        return created.Id;
-    }
-
     [Fact]
     public async Task GetUserAuthTokenAsync_ReturnsSuccess()
     {
-        var (userId, userPublicId) = await CreateUserWithPublicIdAsync();
+        var userEntity = await CreateUserAsync();
 
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId)
+            new UserAuthTokenRequest(userEntity.Id)
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, authTokenResult.ResultCode);
@@ -173,7 +103,7 @@ public class AuthenticationProviderTests
         // JWT now contains public ID (GUID) instead of internal ID
         Assert.Contains(
             jwtToken.Claims,
-            c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == userPublicId.ToString()
+            c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == userEntity.PublicId.ToString()
         );
         Assert.Contains(jwtToken.Claims, c => c.Type == JwtRegisteredClaimNames.Jti);
         Assert.Contains(jwtToken.Claims, c => c.Type == JwtRegisteredClaimNames.Iat);
@@ -193,10 +123,12 @@ public class AuthenticationProviderTests
     [Fact]
     public async Task GetUserAuthTokenAsync_ReturnsSignatureKeyNotFound_WhenNoSignatureKey()
     {
-        var userId = await CreateUserWithoutSignatureKeyAsync();
+        var userEntity = await CreateUserAsync();
+        userEntity.SymmetricKeys!.Clear();
+        userEntity.AsymmetricKeys!.Clear();
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId)
+            new UserAuthTokenRequest(userEntity.Id)
         );
 
         Assert.Equal(UserAuthTokenResultCode.SignatureKeyNotFound, result.ResultCode);
@@ -206,26 +138,33 @@ public class AuthenticationProviderTests
     [Fact]
     public async Task GetUserAuthTokenAsync_ReturnsAccountNotFound_WhenAccountNotBelongsToUser()
     {
-        var userId = await CreateUserAsync();
+        var userEntity = await CreateUserAsync();
         var (_, accountPublicId) = await CreateAccountAsync();
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId, accountPublicId)
+            new UserAuthTokenRequest(userEntity.Id, accountPublicId)
         );
 
         Assert.Equal(UserAuthTokenResultCode.AccountNotFound, result.ResultCode);
         Assert.Null(result.Token);
-        Assert.Empty(result.Accounts);
     }
 
     [Fact]
     public async Task GetUserAuthTokenAsync_ReturnsSuccess_WithValidAccount()
     {
         var (accountId, accountPublicId) = await CreateAccountAsync();
-        var userId = await CreateUserWithAccountAsync(accountId);
+        var userEntity = await CreateUserAsync();
+        userEntity.Accounts!.Add(
+            new AccountEntity
+            {
+                Id = accountId,
+                PublicId = accountPublicId,
+                AccountName = _fixture.Create<string>(),
+            }
+        );
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId, accountPublicId)
+            new UserAuthTokenRequest(userEntity.Id, accountPublicId)
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, result.ResultCode);
@@ -238,9 +177,9 @@ public class AuthenticationProviderTests
     [Fact]
     public async Task ValidateUserAuthTokenAsync_ReturnsSuccess_WithValidToken()
     {
-        var userId = await CreateUserAsync();
+        var userEntity = await CreateUserAsync();
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId)
+            new UserAuthTokenRequest(userEntity.Id)
         );
 
         var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(
@@ -248,7 +187,16 @@ public class AuthenticationProviderTests
         );
 
         Assert.Equal(UserAuthTokenValidationResultCode.Success, validationResult.ResultCode);
-        Assert.Equal(userId, validationResult.UserId);
+        Assert.Equal(userEntity.Id, validationResult.UserId);
+        Assert.Null(validationResult.SignedInAccountId);
+        Assert.Equal(
+            userEntity.Accounts!.Select(a => a.Id).OrderBy(id => id),
+            validationResult.Accounts.Select(a => a.Id).OrderBy(id => id)
+        );
+        Assert.Equal(
+            authTokenResult.Accounts!.Select(a => a.Id).OrderBy(id => id),
+            validationResult.Accounts.Select(a => a.Id).OrderBy(id => id)
+        );
     }
 
     [Fact]
@@ -263,14 +211,16 @@ public class AuthenticationProviderTests
             validationResult.ResultCode
         );
         Assert.Null(validationResult.UserId);
+        Assert.Null(validationResult.SignedInAccountId);
+        Assert.Empty(validationResult.Accounts);
     }
 
     [Fact]
     public async Task ValidateUserAuthTokenAsync_ReturnsTokenValidationFailed_WhenSignatureInvalid()
     {
-        var userId = await CreateUserAsync();
+        var userEntity = await CreateUserAsync();
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId)
+            new UserAuthTokenRequest(userEntity.Id)
         );
 
         var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(
@@ -282,6 +232,8 @@ public class AuthenticationProviderTests
             validationResult.ResultCode
         );
         Assert.Null(validationResult.UserId);
+        Assert.Null(validationResult.SignedInAccountId);
+        Assert.Empty(validationResult.Accounts);
     }
 
     [Fact]
@@ -302,6 +254,8 @@ public class AuthenticationProviderTests
             validationResult.ResultCode
         );
         Assert.Null(validationResult.UserId);
+        Assert.Null(validationResult.SignedInAccountId);
+        Assert.Empty(validationResult.Accounts);
     }
 
     [Fact]
@@ -327,6 +281,8 @@ public class AuthenticationProviderTests
             validationResult.ResultCode
         );
         Assert.Null(validationResult.UserId);
+        Assert.Null(validationResult.SignedInAccountId);
+        Assert.Empty(validationResult.Accounts);
     }
 
     [Fact]
@@ -347,17 +303,19 @@ public class AuthenticationProviderTests
             validationResult.ResultCode
         );
         Assert.Null(validationResult.UserId);
+        Assert.Null(validationResult.SignedInAccountId);
+        Assert.Empty(validationResult.Accounts);
     }
 
     [Fact]
     public async Task ValidateUserAuthTokenAsync_ReturnsTokenValidationFailed_WhenTokenNotTracked()
     {
-        var (_, userPublicId) = await CreateUserWithPublicIdAsync();
+        var userEntity = await CreateUserAsync();
 
         var token = new JwtSecurityToken(
             claims:
             [
-                new Claim(JwtRegisteredClaimNames.Sub, userPublicId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, userEntity.PublicId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             ],
             expires: DateTime.UtcNow.AddHours(1)
@@ -373,21 +331,23 @@ public class AuthenticationProviderTests
             validationResult.ResultCode
         );
         Assert.Null(validationResult.UserId);
+        Assert.Null(validationResult.SignedInAccountId);
+        Assert.Empty(validationResult.Accounts);
     }
 
     [Fact]
     public async Task ValidateUserAuthTokenAsync_ReturnsTokenValidationFailed_WhenTokenRevoked()
     {
-        var userId = await CreateUserAsync();
+        var userEntity = await CreateUserAsync();
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId)
+            new UserAuthTokenRequest(userEntity.Id)
         );
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token!);
         var tokenId = jwtToken.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
 
-        await _authenticationProvider.RevokeUserAuthTokenAsync(userId, tokenId);
+        await _authenticationProvider.RevokeUserAuthTokenAsync(userEntity.Id, tokenId);
 
         var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(
             authTokenResult.Token!
@@ -398,21 +358,23 @@ public class AuthenticationProviderTests
             validationResult.ResultCode
         );
         Assert.Null(validationResult.UserId);
+        Assert.Null(validationResult.SignedInAccountId);
+        Assert.Empty(validationResult.Accounts);
     }
 
     [Fact]
     public async Task RevokeUserAuthTokenAsync_ReturnsTrue_WhenTokenRevoked()
     {
-        var userId = await CreateUserAsync();
+        var userEntity = await CreateUserAsync();
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId)
+            new UserAuthTokenRequest(userEntity.Id)
         );
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token!);
         var tokenId = jwtToken.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
 
-        var result = await _authenticationProvider.RevokeUserAuthTokenAsync(userId, tokenId);
+        var result = await _authenticationProvider.RevokeUserAuthTokenAsync(userEntity.Id, tokenId);
 
         Assert.True(result);
     }
@@ -431,16 +393,16 @@ public class AuthenticationProviderTests
     [Fact]
     public async Task RevokeAllUserAuthTokensAsync_RevokesAllTokens()
     {
-        var userId = await CreateUserAsync();
+        var userEntity = await CreateUserAsync();
 
         var token1 = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId)
+            new UserAuthTokenRequest(userEntity.Id)
         );
         var token2 = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId)
+            new UserAuthTokenRequest(userEntity.Id)
         );
 
-        await _authenticationProvider.RevokeAllUserAuthTokensAsync(userId);
+        await _authenticationProvider.RevokeAllUserAuthTokensAsync(userEntity.Id);
 
         var validation1 = await _authenticationProvider.ValidateUserAuthTokenAsync(token1.Token!);
         var validation2 = await _authenticationProvider.ValidateUserAuthTokenAsync(token2.Token!);

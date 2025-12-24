@@ -88,7 +88,7 @@ internal class RegistrationService(
                 );
             }
 
-            _userContextSetter.SetUserContext(new UserContext(userResult.CreatedId, null));
+            _userContextSetter.SetUserContext(new UserContext(userResult.CreatedId, null, []));
 
             var basicAuthResult = await _basicAuthProcessor.UpsertBasicAuthAsync(
                 new(userResult.CreatedId, request.Password)
@@ -184,7 +184,18 @@ internal class RegistrationService(
             uowSucceeded = true;
 
             _userContextSetter.SetUserContext(
-                new UserContext(ownerUserId, createAccountResult.CreatedId)
+                new UserContext(
+                    ownerUserId,
+                    createAccountResult.CreatedId,
+                    [
+                        new Account()
+                        {
+                            Id = createAccountResult.CreatedId,
+                            PublicId = createAccountResult.CreatedPublicId,
+                            AccountName = request.AccountName,
+                        },
+                    ]
+                )
             );
 
             _logger.LogInformation(

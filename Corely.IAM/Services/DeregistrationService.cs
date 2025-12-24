@@ -98,6 +98,7 @@ internal class DeregistrationService(
         var context = _userContextProvider.GetUserContext();
         if (context != null && context.AccountId == accountId)
         {
+            context.Accounts.RemoveAll(a => a.Id == accountId);
             _userContextSetter.SetUserContext(context with { AccountId = null });
         }
 

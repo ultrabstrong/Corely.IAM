@@ -175,7 +175,8 @@ internal class AuthenticationProvider(
             return new UserAuthTokenValidationResult(
                 UserAuthTokenValidationResultCode.InvalidTokenFormat,
                 null,
-                null
+                null,
+                []
             );
         }
 
@@ -190,7 +191,8 @@ internal class AuthenticationProvider(
             return new UserAuthTokenValidationResult(
                 UserAuthTokenValidationResultCode.MissingUserIdClaim,
                 null,
-                null
+                null,
+                []
             );
         }
 
@@ -204,7 +206,8 @@ internal class AuthenticationProvider(
             return new UserAuthTokenValidationResult(
                 UserAuthTokenValidationResultCode.TokenValidationFailed,
                 null,
-                null
+                null,
+                []
             );
         }
 
@@ -217,7 +220,8 @@ internal class AuthenticationProvider(
             return new UserAuthTokenValidationResult(
                 UserAuthTokenValidationResultCode.TokenValidationFailed,
                 null,
-                null
+                null,
+                []
             );
         }
 
@@ -234,7 +238,8 @@ internal class AuthenticationProvider(
             return new UserAuthTokenValidationResult(
                 UserAuthTokenValidationResultCode.TokenValidationFailed,
                 null,
-                null
+                null,
+                []
             );
         }
 
@@ -251,7 +256,8 @@ internal class AuthenticationProvider(
             return new UserAuthTokenValidationResult(
                 UserAuthTokenValidationResultCode.TokenValidationFailed,
                 null,
-                null
+                null,
+                []
             );
         }
 
@@ -283,7 +289,8 @@ internal class AuthenticationProvider(
             return new UserAuthTokenValidationResult(
                 UserAuthTokenValidationResultCode.TokenValidationFailed,
                 null,
-                null
+                null,
+                []
             );
         }
 
@@ -315,7 +322,8 @@ internal class AuthenticationProvider(
         return new UserAuthTokenValidationResult(
             UserAuthTokenValidationResultCode.Success,
             userId,
-            signedInAccountId
+            signedInAccountId,
+            userEntity.Accounts?.Select(a => a.ToModel())?.ToList() ?? []
         );
     }
 

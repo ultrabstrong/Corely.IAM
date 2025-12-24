@@ -30,7 +30,8 @@ internal class UserContextProvider(IAuthenticationProvider authenticationProvide
 
         _userContext = new UserContext(
             validationResult.UserId.Value,
-            validationResult.SignedInAccountId
+            validationResult.SignedInAccountId,
+            validationResult.Accounts
         );
         return UserAuthTokenValidationResultCode.Success;
     }

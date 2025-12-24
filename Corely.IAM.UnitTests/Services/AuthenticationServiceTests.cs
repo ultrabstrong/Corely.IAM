@@ -1,6 +1,7 @@
 ﻿using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Models;
@@ -30,6 +31,11 @@ public class AuthenticationServiceTests
 
     public AuthenticationServiceTests()
     {
+        _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
+        _fixture.Customize<Account>(c =>
+            c.Without(a => a.SymmetricKeys).Without(a => a.AsymmetricKeys)
+        );
+
         _authenticationProviderMock = GetMockAuthenticationProvider();
         _userContextSetterMock = GetMockUserContextSetter();
         _basicAuthProcessorMock = GetMockBasicAuthProcessor();
@@ -71,7 +77,7 @@ public class AuthenticationServiceTests
         return await accountRepo.CreateAsync(accountEntity);
     }
 
-    private static Mock<IAuthenticationProvider> GetMockAuthenticationProvider()
+    private Mock<IAuthenticationProvider> GetMockAuthenticationProvider()
     {
         var mock = new Mock<IAuthenticationProvider>();
 
@@ -81,7 +87,7 @@ public class AuthenticationServiceTests
                     UserAuthTokenResultCode.Success,
                     "test-token",
                     "test-token-id",
-                    [],
+                    [.. _fixture.CreateMany<Account>()],
                     null
                 )
             );
@@ -117,6 +123,15 @@ public class AuthenticationServiceTests
 
         Assert.Equal(SignInResultCode.Success, result.ResultCode);
 
+        var authResult = await _authenticationProviderMock.Object.GetUserAuthTokenAsync(
+            It.IsAny<UserAuthTokenRequest>()
+        );
+
+        Assert.Equal(
+            authResult.Accounts.Select(a => a.Id).OrderBy(i => i),
+            result.Accounts.Select(a => a.Id).OrderBy(i => i)
+        );
+
         // Verify the user was updated in the repo
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var updatedUser = await userRepo.GetAsync(u => u.Id == userEntity.Id);
@@ -136,6 +151,7 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.UserNotFoundError, result.ResultCode);
         Assert.Equal("User not found", result.Message);
         Assert.Null(result.AuthToken);
+        Assert.Empty(result.Accounts);
     }
 
     [Fact]
@@ -153,6 +169,7 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.UserLockedError, result.ResultCode);
         Assert.Equal("User is locked out", result.Message);
         Assert.Null(result.AuthToken);
+        Assert.Empty(result.Accounts);
     }
 
     [Fact]
@@ -172,6 +189,7 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.PasswordMismatchError, result.ResultCode);
         Assert.Equal("Invalid password", result.Message);
         Assert.Null(result.AuthToken);
+        Assert.Empty(result.Accounts);
 
         // Verify the user was updated with failed login info
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
@@ -205,6 +223,7 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.SignatureKeyNotFoundError, result.ResultCode);
         Assert.Equal("User signature key not found", result.Message);
         Assert.Null(result.AuthToken);
+        Assert.Empty(result.Accounts);
     }
 
     [Fact]
@@ -235,6 +254,7 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.AccountNotFoundError, result.ResultCode);
         Assert.Contains("not found", result.Message);
         Assert.Null(result.AuthToken);
+        Assert.Empty(result.Accounts);
     }
 
     [Fact]

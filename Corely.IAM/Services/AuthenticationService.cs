@@ -133,7 +133,11 @@ internal class AuthenticationService(
         }
 
         _userContextSetter.SetUserContext(
-            new UserContext(userEntity.Id, authTokenResult.SignedInAccountId)
+            new UserContext(
+                userEntity.Id,
+                authTokenResult.SignedInAccountId,
+                authTokenResult.Accounts
+            )
         );
 
         _logger.LogDebug("User {Username} signed in", request.Username);

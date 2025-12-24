@@ -77,7 +77,7 @@ public class RegistrationServiceTests
         _permissionProcessorMock = GetMockPermissionProcessor();
 
         // Setup user context provider to return a valid context with account ID
-        _userContextProviderMock.Setup(x => x.GetUserContext()).Returns(new UserContext(1, 1));
+        _userContextProviderMock.Setup(x => x.GetUserContext()).Returns(new UserContext(1, 1, []));
 
         _registrationService = new RegistrationService(
             _serviceFactory.GetRequiredService<ILogger<RegistrationService>>(),
@@ -225,7 +225,12 @@ public class RegistrationServiceTests
         Assert.Equal(RegisterUserResultCode.Success, result.ResultCode);
 
         _userContextSetterMock.Verify(
-            m => m.SetUserContext(It.Is<UserContext>(uc => uc.UserId > 0 && uc.AccountId == null)),
+            m =>
+                m.SetUserContext(
+                    It.Is<UserContext>(uc =>
+                        uc.UserId > 0 && uc.AccountId == null && uc.Accounts.Count == 0
+                    )
+                ),
             Times.Once
         );
 
@@ -299,7 +304,9 @@ public class RegistrationServiceTests
             m =>
                 m.SetUserContext(
                     It.Is<UserContext>(uc =>
-                        uc.UserId == userContext!.UserId && uc.AccountId != null
+                        uc.UserId == userContext!.UserId
+                        && uc.AccountId != null
+                        && uc.Accounts.Count == 1
                     )
                 ),
             Times.Once

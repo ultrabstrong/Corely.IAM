@@ -402,3 +402,5 @@ FodyWeavers.xsd
 *nuget*.cmd
 appsettings.json
 migrationsettings.json
+corely-iam-db-migration-settings.json
+corely-iam-devtool-settings.json

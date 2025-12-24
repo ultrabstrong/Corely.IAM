@@ -103,7 +103,7 @@ public static class ServiceRegistrationExtensions
         serviceCollection.AddSingleton<ISecurityProvider, SecurityProvider>();
         serviceCollection.AddScoped<IPasswordValidationProvider, PasswordValidationProvider>();
 
-        serviceCollection.AddScoped(_ => securityConfigurationProvider);
+        serviceCollection.AddSingleton(_ => securityConfigurationProvider);
         serviceCollection.Configure<SecurityOptions>(
             configuration.GetSection(SecurityOptions.NAME)
         );

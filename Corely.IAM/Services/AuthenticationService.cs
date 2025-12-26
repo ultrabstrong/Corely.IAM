@@ -136,10 +136,11 @@ internal class AuthenticationService(
 
         if (result.ResultCode == SignInResultCode.Success)
         {
+            var context = _userContextProvider.GetUserContext();
             _logger.LogDebug(
                 "User {UserId} switched to account {AccountId}",
                 validationResult.User.Id,
-                result.SignedInAccountId
+                context?.CurrentAccount?.Id
             );
         }
 
@@ -229,22 +230,20 @@ internal class AuthenticationService(
             return CreateFailedSignInResult(signInResultCode, message);
         }
 
-        _userContextSetter.SetUserContext(
-            new UserContext(
-                authTokenResult.User!,
-                authTokenResult.CurrentAccount,
-                deviceId,
-                authTokenResult.AvailableAccounts
-            )
+        var userContext = new UserContext(
+            authTokenResult.User!,
+            authTokenResult.CurrentAccount,
+            deviceId,
+            authTokenResult.AvailableAccounts
         );
+
+        _userContextSetter.SetUserContext(userContext);
 
         return new SignInResult(
             SignInResultCode.Success,
             null,
             authTokenResult.Token,
-            authTokenResult.TokenId,
-            authTokenResult.AvailableAccounts,
-            authTokenResult.CurrentAccount?.Id
+            authTokenResult.TokenId
         );
     }
 
@@ -272,5 +271,5 @@ internal class AuthenticationService(
     private static SignInResult CreateFailedSignInResult(
         SignInResultCode resultCode,
         string message
-    ) => new(resultCode, message, null, null, [], null);
+    ) => new(resultCode, message, null, null);
 }

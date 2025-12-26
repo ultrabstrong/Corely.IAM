@@ -29,10 +29,8 @@ public class AuthenticationServiceLoggingDecoratorTests
         var expectedResult = new SignInResult(
             SignInResultCode.Success,
             null,
-            null,
-            "token123",
-            [],
-            1
+            "auth-token",
+            "token123"
         );
         _mockInnerService.Setup(x => x.SignInAsync(request)).ReturnsAsync(expectedResult);
 
@@ -51,9 +49,7 @@ public class AuthenticationServiceLoggingDecoratorTests
             SignInResultCode.Success,
             null,
             "new-token",
-            "token123",
-            [],
-            1
+            "token123"
         );
         _mockInnerService.Setup(x => x.SwitchAccountAsync(request)).ReturnsAsync(expectedResult);
 

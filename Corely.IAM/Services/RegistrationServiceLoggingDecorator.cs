@@ -16,7 +16,7 @@ internal class RegistrationServiceLoggingDecorator(
     );
 
     public async Task<RegisterUserResult> RegisterUserAsync(RegisterUserRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterUserAsync(request),
@@ -24,7 +24,7 @@ internal class RegistrationServiceLoggingDecorator(
         );
 
     public async Task<RegisterAccountResult> RegisterAccountAsync(RegisterAccountRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterAccountAsync(request),
@@ -32,7 +32,7 @@ internal class RegistrationServiceLoggingDecorator(
         );
 
     public async Task<RegisterGroupResult> RegisterGroupAsync(RegisterGroupRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterGroupAsync(request),
@@ -40,7 +40,7 @@ internal class RegistrationServiceLoggingDecorator(
         );
 
     public async Task<RegisterRoleResult> RegisterRoleAsync(RegisterRoleRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterRoleAsync(request),
@@ -50,7 +50,7 @@ internal class RegistrationServiceLoggingDecorator(
     public async Task<RegisterPermissionResult> RegisterPermissionAsync(
         RegisterPermissionRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterPermissionAsync(request),
@@ -60,7 +60,7 @@ internal class RegistrationServiceLoggingDecorator(
     public async Task<RegisterUserWithAccountResult> RegisterUserWithAccountAsync(
         RegisterUserWithAccountRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterUserWithAccountAsync(request),
@@ -70,7 +70,7 @@ internal class RegistrationServiceLoggingDecorator(
     public async Task<RegisterUsersWithGroupResult> RegisterUsersWithGroupAsync(
         RegisterUsersWithGroupRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterUsersWithGroupAsync(request),
@@ -80,7 +80,7 @@ internal class RegistrationServiceLoggingDecorator(
     public async Task<RegisterRolesWithGroupResult> RegisterRolesWithGroupAsync(
         RegisterRolesWithGroupRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterRolesWithGroupAsync(request),
@@ -90,7 +90,7 @@ internal class RegistrationServiceLoggingDecorator(
     public async Task<RegisterRolesWithUserResult> RegisterRolesWithUserAsync(
         RegisterRolesWithUserRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterRolesWithUserAsync(request),
@@ -100,7 +100,7 @@ internal class RegistrationServiceLoggingDecorator(
     public async Task<RegisterPermissionsWithRoleResult> RegisterPermissionsWithRoleAsync(
         RegisterPermissionsWithRoleRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterPermissionsWithRoleAsync(request),

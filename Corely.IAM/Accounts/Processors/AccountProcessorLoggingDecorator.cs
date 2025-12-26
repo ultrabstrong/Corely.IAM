@@ -16,7 +16,7 @@ internal class AccountProcessorLoggingDecorator(
     );
 
     public async Task<CreateAccountResult> CreateAccountAsync(CreateAccountRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(AccountProcessor),
             request,
             () => _inner.CreateAccountAsync(request),
@@ -24,7 +24,7 @@ internal class AccountProcessorLoggingDecorator(
         );
 
     public async Task<GetAccountResult> GetAccountAsync(int accountId) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(AccountProcessor),
             accountId,
             () => _inner.GetAccountAsync(accountId),
@@ -32,7 +32,7 @@ internal class AccountProcessorLoggingDecorator(
         );
 
     public async Task<DeleteAccountResult> DeleteAccountAsync(int accountId) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(AccountProcessor),
             accountId,
             () => _inner.DeleteAccountAsync(accountId),
@@ -42,7 +42,7 @@ internal class AccountProcessorLoggingDecorator(
     public async Task<AddUserToAccountResult> AddUserToAccountAsync(
         AddUserToAccountRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(AccountProcessor),
             request,
             () => _inner.AddUserToAccountAsync(request),
@@ -52,7 +52,7 @@ internal class AccountProcessorLoggingDecorator(
     public async Task<RemoveUserFromAccountResult> RemoveUserFromAccountAsync(
         RemoveUserFromAccountRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(AccountProcessor),
             request,
             () => _inner.RemoveUserFromAccountAsync(request),

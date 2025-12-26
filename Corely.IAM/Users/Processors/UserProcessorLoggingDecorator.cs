@@ -16,7 +16,7 @@ internal class UserProcessorLoggingDecorator(
     );
 
     public async Task<CreateUserResult> CreateUserAsync(CreateUserRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),
             request,
             () => _inner.CreateUserAsync(request),
@@ -24,7 +24,7 @@ internal class UserProcessorLoggingDecorator(
         );
 
     public async Task<GetUserResult> GetUserAsync(int userId) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),
             userId,
             () => _inner.GetUserAsync(userId),
@@ -32,7 +32,7 @@ internal class UserProcessorLoggingDecorator(
         );
 
     public async Task<UpdateUserResult> UpdateUserAsync(User user) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),
             user,
             () => _inner.UpdateUserAsync(user),
@@ -42,7 +42,7 @@ internal class UserProcessorLoggingDecorator(
     public async Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(
         int userId
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),
             userId,
             () => _inner.GetAsymmetricSignatureVerificationKeyAsync(userId),
@@ -52,7 +52,7 @@ internal class UserProcessorLoggingDecorator(
     public async Task<AssignRolesToUserResult> AssignRolesToUserAsync(
         AssignRolesToUserRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),
             request,
             () => _inner.AssignRolesToUserAsync(request),
@@ -62,7 +62,7 @@ internal class UserProcessorLoggingDecorator(
     public async Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(
         RemoveRolesFromUserRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),
             request,
             () => _inner.RemoveRolesFromUserAsync(request),
@@ -70,7 +70,7 @@ internal class UserProcessorLoggingDecorator(
         );
 
     public async Task<DeleteUserResult> DeleteUserAsync(int userId) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),
             userId,
             () => _inner.DeleteUserAsync(userId),

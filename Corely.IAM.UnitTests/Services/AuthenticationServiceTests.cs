@@ -151,15 +151,10 @@ public class AuthenticationServiceTests
         var result = await _authenticationService.SignInAsync(request);
 
         Assert.Equal(SignInResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.AuthToken);
 
-        var authResult = await _authenticationProviderMock.Object.GetUserAuthTokenAsync(
-            It.IsAny<GetUserAuthTokenRequest>()
-        );
-
-        Assert.Equal(
-            authResult.AvailableAccounts.Select(a => a.Id).OrderBy(i => i),
-            result.Accounts.Select(a => a.Id).OrderBy(i => i)
-        );
+        // Verify context was set
+        _userContextSetterMock.Verify(m => m.SetUserContext(It.IsAny<UserContext>()), Times.Once);
 
         // Verify the user was updated in the repo
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
@@ -184,7 +179,6 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.UserNotFoundError, result.ResultCode);
         Assert.Equal("User not found", result.Message);
         Assert.Null(result.AuthToken);
-        Assert.Empty(result.Accounts);
     }
 
     [Fact]
@@ -206,7 +200,6 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.UserLockedError, result.ResultCode);
         Assert.Equal("User is locked out", result.Message);
         Assert.Null(result.AuthToken);
-        Assert.Empty(result.Accounts);
     }
 
     [Fact]
@@ -230,7 +223,6 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.PasswordMismatchError, result.ResultCode);
         Assert.Equal("Invalid password", result.Message);
         Assert.Null(result.AuthToken);
-        Assert.Empty(result.Accounts);
 
         // Verify the user was updated with failed login info
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
@@ -269,7 +261,6 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.SignatureKeyNotFoundError, result.ResultCode);
         Assert.Equal("User signature key not found", result.Message);
         Assert.Null(result.AuthToken);
-        Assert.Empty(result.Accounts);
     }
 
     [Fact]
@@ -302,7 +293,6 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.AccountNotFoundError, result.ResultCode);
         Assert.Contains("not found", result.Message);
         Assert.Null(result.AuthToken);
-        Assert.Empty(result.Accounts);
     }
 
     [Fact]

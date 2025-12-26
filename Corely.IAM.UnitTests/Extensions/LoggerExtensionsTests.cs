@@ -13,14 +13,14 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLogging_LogsEntryAndExit()
+    public async Task ExecuteWithLoggingAsync_LogsEntryAndExit()
     {
         // Arrange
         var request = "test-request";
         var result = "test-result";
 
         // Act
-        var actualResult = await _mockLogger.Object.ExecuteWithLogging(
+        var actualResult = await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             request,
             () => Task.FromResult(result),
@@ -62,14 +62,14 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLogging_LogsResult_WhenLogResultIsTrue()
+    public async Task ExecuteWithLoggingAsync_LogsResult_WhenLogResultIsTrue()
     {
         // Arrange
         var request = "test-request";
         var result = "test-result";
 
         // Act
-        var actualResult = await _mockLogger.Object.ExecuteWithLogging(
+        var actualResult = await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             request,
             () => Task.FromResult(result),
@@ -94,14 +94,14 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLogging_DoesNotLogResult_WhenLogResultIsFalse()
+    public async Task ExecuteWithLoggingAsync_DoesNotLogResult_WhenLogResultIsFalse()
     {
         // Arrange
         var request = "test-request";
         var result = "test-result";
 
         // Act
-        await _mockLogger.Object.ExecuteWithLogging(
+        await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             request,
             () => Task.FromResult(result),
@@ -127,7 +127,7 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLogging_LogsException_WhenOperationThrows()
+    public async Task ExecuteWithLoggingAsync_LogsException_WhenOperationThrows()
     {
         // Arrange
         var request = "test-request";
@@ -135,7 +135,7 @@ public class LoggerExtensionsTests
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _mockLogger.Object.ExecuteWithLogging(
+            _mockLogger.Object.ExecuteWithLoggingAsync(
                 "TestClass",
                 request,
                 () => Task.FromException<string>(expectedException)
@@ -159,11 +159,11 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLogging_ThrowsArgumentNullException_WhenRequestIsNull()
+    public async Task ExecuteWithLoggingAsync_ThrowsArgumentNullException_WhenRequestIsNull()
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _mockLogger.Object.ExecuteWithLogging<string?, string>(
+            _mockLogger.Object.ExecuteWithLoggingAsync<string?, string>(
                 "TestClass",
                 null,
                 () => Task.FromResult("result")
@@ -172,14 +172,14 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLogging_IncludesElapsedTime()
+    public async Task ExecuteWithLoggingAsync_IncludesElapsedTime()
     {
         // Arrange
         var request = "test-request";
         var result = "test-result";
 
         // Act
-        await _mockLogger.Object.ExecuteWithLogging(
+        await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             request,
             async () =>
@@ -205,7 +205,7 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLogging_UsesCallerMemberName()
+    public async Task ExecuteWithLoggingAsync_UsesCallerMemberName()
     {
         // Arrange
         var request = "test-request";
@@ -238,7 +238,7 @@ public class LoggerExtensionsTests
         var operationExecuted = false;
 
         // Act
-        await _mockLogger.Object.ExecuteWithLogging(
+        await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             request,
             () =>
@@ -287,7 +287,7 @@ public class LoggerExtensionsTests
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _mockLogger.Object.ExecuteWithLogging(
+            _mockLogger.Object.ExecuteWithLoggingAsync(
                 "TestClass",
                 request,
                 () => Task.FromException(expectedException)
@@ -315,7 +315,7 @@ public class LoggerExtensionsTests
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _mockLogger.Object.ExecuteWithLogging<string?>(
+            _mockLogger.Object.ExecuteWithLoggingAsync<string?>(
                 "TestClass",
                 null,
                 () => Task.CompletedTask
@@ -330,7 +330,7 @@ public class LoggerExtensionsTests
         var result = "test-result";
 
         // Act
-        var actualResult = await _mockLogger.Object.ExecuteWithLogging(
+        var actualResult = await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             () => Task.FromResult(result),
             logResult: false
@@ -381,7 +381,7 @@ public class LoggerExtensionsTests
         var result = "test-result";
 
         // Act
-        var actualResult = await _mockLogger.Object.ExecuteWithLogging(
+        var actualResult = await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             () => Task.FromResult(result),
             logResult: true
@@ -411,7 +411,7 @@ public class LoggerExtensionsTests
         var result = "test-result";
 
         // Act
-        await _mockLogger.Object.ExecuteWithLogging(
+        await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             () => Task.FromResult(result),
             logResult: false
@@ -443,7 +443,7 @@ public class LoggerExtensionsTests
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _mockLogger.Object.ExecuteWithLogging(
+            _mockLogger.Object.ExecuteWithLoggingAsync(
                 "TestClass",
                 () => Task.FromException<string>(expectedException)
             )
@@ -472,7 +472,7 @@ public class LoggerExtensionsTests
         var result = "test-result";
 
         // Act
-        await _mockLogger.Object.ExecuteWithLogging(
+        await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             async () =>
             {
@@ -503,7 +503,7 @@ public class LoggerExtensionsTests
         var operationExecuted = false;
 
         // Act
-        await _mockLogger.Object.ExecuteWithLogging(
+        await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             () =>
             {
@@ -554,7 +554,7 @@ public class LoggerExtensionsTests
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _mockLogger.Object.ExecuteWithLogging(
+            _mockLogger.Object.ExecuteWithLoggingAsync(
                 "TestClass",
                 () => Task.FromException(expectedException)
             )
@@ -580,7 +580,7 @@ public class LoggerExtensionsTests
     public async Task ExecuteWithLoggingVoidNoRequest_IncludesElapsedTime()
     {
         // Act
-        await _mockLogger.Object.ExecuteWithLogging(
+        await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             async () =>
             {
@@ -604,7 +604,7 @@ public class LoggerExtensionsTests
 
     private async Task<string> ExecuteWithLoggingWrapper(string request, string result)
     {
-        return await _mockLogger.Object.ExecuteWithLogging(
+        return await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             request,
             () => Task.FromResult(result)

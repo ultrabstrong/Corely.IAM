@@ -16,7 +16,7 @@ internal class GroupProcessorLoggingDecorator(
     );
 
     public async Task<CreateGroupResult> CreateGroupAsync(CreateGroupRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),
             request,
             () => _inner.CreateGroupAsync(request),
@@ -24,7 +24,7 @@ internal class GroupProcessorLoggingDecorator(
         );
 
     public async Task<AddUsersToGroupResult> AddUsersToGroupAsync(AddUsersToGroupRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),
             request,
             () => _inner.AddUsersToGroupAsync(request),
@@ -34,7 +34,7 @@ internal class GroupProcessorLoggingDecorator(
     public async Task<RemoveUsersFromGroupResult> RemoveUsersFromGroupAsync(
         RemoveUsersFromGroupRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),
             request,
             () => _inner.RemoveUsersFromGroupAsync(request),
@@ -44,7 +44,7 @@ internal class GroupProcessorLoggingDecorator(
     public async Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(
         AssignRolesToGroupRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),
             request,
             () => _inner.AssignRolesToGroupAsync(request),
@@ -54,7 +54,7 @@ internal class GroupProcessorLoggingDecorator(
     public async Task<RemoveRolesFromGroupResult> RemoveRolesFromGroupAsync(
         RemoveRolesFromGroupRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),
             request,
             () => _inner.RemoveRolesFromGroupAsync(request),
@@ -62,7 +62,7 @@ internal class GroupProcessorLoggingDecorator(
         );
 
     public async Task<DeleteGroupResult> DeleteGroupAsync(int groupId) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),
             groupId,
             () => _inner.DeleteGroupAsync(groupId),

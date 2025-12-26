@@ -1,4 +1,4 @@
-﻿using Corely.IAM.Accounts.Models;
+﻿using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Models;
 
@@ -17,7 +17,5 @@ public record SignInResult(
     SignInResultCode ResultCode,
     string? Message,
     string? AuthToken,
-    string? AuthTokenId,
-    List<Account> Accounts,
-    int? SignedInAccountId
+    string? AuthTokenId
 );

@@ -16,21 +16,21 @@ internal class DeregistrationServiceLoggingDecorator(
     );
 
     public async Task<DeregisterUserResult> DeregisterUserAsync() =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(DeregistrationService),
             () => _inner.DeregisterUserAsync(),
             logResult: true
         );
 
     public async Task<DeregisterAccountResult> DeregisterAccountAsync() =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(DeregistrationService),
             () => _inner.DeregisterAccountAsync(),
             logResult: true
         );
 
     public async Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(DeregistrationService),
             request,
             () => _inner.DeregisterGroupAsync(request),
@@ -38,7 +38,7 @@ internal class DeregistrationServiceLoggingDecorator(
         );
 
     public async Task<DeregisterRoleResult> DeregisterRoleAsync(DeregisterRoleRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(DeregistrationService),
             request,
             () => _inner.DeregisterRoleAsync(request),
@@ -48,7 +48,7 @@ internal class DeregistrationServiceLoggingDecorator(
     public async Task<DeregisterPermissionResult> DeregisterPermissionAsync(
         DeregisterPermissionRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(DeregistrationService),
             request,
             () => _inner.DeregisterPermissionAsync(request),
@@ -58,7 +58,7 @@ internal class DeregistrationServiceLoggingDecorator(
     public async Task<DeregisterUserFromAccountResult> DeregisterUserFromAccountAsync(
         DeregisterUserFromAccountRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(DeregistrationService),
             request,
             () => _inner.DeregisterUserFromAccountAsync(request),
@@ -68,7 +68,7 @@ internal class DeregistrationServiceLoggingDecorator(
     public async Task<DeregisterUsersFromGroupResult> DeregisterUsersFromGroupAsync(
         DeregisterUsersFromGroupRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(DeregistrationService),
             request,
             () => _inner.DeregisterUsersFromGroupAsync(request),
@@ -78,7 +78,7 @@ internal class DeregistrationServiceLoggingDecorator(
     public async Task<DeregisterRolesFromGroupResult> DeregisterRolesFromGroupAsync(
         DeregisterRolesFromGroupRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(DeregistrationService),
             request,
             () => _inner.DeregisterRolesFromGroupAsync(request),
@@ -88,7 +88,7 @@ internal class DeregistrationServiceLoggingDecorator(
     public async Task<DeregisterRolesFromUserResult> DeregisterRolesFromUserAsync(
         DeregisterRolesFromUserRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(DeregistrationService),
             request,
             () => _inner.DeregisterRolesFromUserAsync(request),
@@ -98,7 +98,7 @@ internal class DeregistrationServiceLoggingDecorator(
     public async Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(
         DeregisterPermissionsFromRoleRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(DeregistrationService),
             request,
             () => _inner.DeregisterPermissionsFromRoleAsync(request),

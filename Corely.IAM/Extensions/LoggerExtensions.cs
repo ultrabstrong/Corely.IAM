@@ -6,7 +6,7 @@ namespace Corely.IAM.Extensions;
 
 internal static class LoggerExtensions
 {
-    public static async Task<TResult> ExecuteWithLogging<TRequest, TResult>(
+    public static async Task<TResult> ExecuteWithLoggingAsync<TRequest, TResult>(
         this ILogger logger,
         string className,
         TRequest request,
@@ -59,7 +59,7 @@ internal static class LoggerExtensions
         }
     }
 
-    public static async Task<TResult> ExecuteWithLogging<TResult>(
+    public static async Task<TResult> ExecuteWithLoggingAsync<TResult>(
         this ILogger logger,
         string className,
         Func<Task<TResult>> operation,
@@ -104,7 +104,7 @@ internal static class LoggerExtensions
         }
     }
 
-    public static async Task ExecuteWithLogging<TRequest>(
+    public static async Task ExecuteWithLoggingAsync<TRequest>(
         this ILogger logger,
         string className,
         TRequest request,
@@ -141,7 +141,7 @@ internal static class LoggerExtensions
         }
     }
 
-    public static async Task ExecuteWithLogging(
+    public static async Task ExecuteWithLoggingAsync(
         this ILogger logger,
         string className,
         Func<Task> operation,

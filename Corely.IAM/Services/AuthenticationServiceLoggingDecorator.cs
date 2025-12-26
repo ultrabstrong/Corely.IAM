@@ -16,7 +16,7 @@ internal class AuthenticationServiceLoggingDecorator(
     );
 
     public async Task<SignInResult> SignInAsync(SignInRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),
             request,
             () => _inner.SignInAsync(request),
@@ -24,7 +24,7 @@ internal class AuthenticationServiceLoggingDecorator(
         );
 
     public async Task<SignInResult> SwitchAccountAsync(SwitchAccountRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),
             request,
             () => _inner.SwitchAccountAsync(request),
@@ -32,7 +32,7 @@ internal class AuthenticationServiceLoggingDecorator(
         );
 
     public async Task<bool> SignOutAsync(SignOutRequest request) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),
             request,
             () => _inner.SignOutAsync(request),
@@ -40,5 +40,8 @@ internal class AuthenticationServiceLoggingDecorator(
         );
 
     public async Task SignOutAllAsync() =>
-        await _logger.ExecuteWithLogging(nameof(AuthenticationService), _inner.SignOutAllAsync);
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(AuthenticationService),
+            _inner.SignOutAllAsync
+        );
 }

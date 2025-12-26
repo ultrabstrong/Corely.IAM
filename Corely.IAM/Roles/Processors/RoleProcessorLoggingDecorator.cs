@@ -16,7 +16,7 @@ internal class RoleProcessorLoggingDecorator(
     );
 
     public async Task<CreateRoleResult> CreateRoleAsync(CreateRoleRequest createRoleRequest) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
             createRoleRequest,
             () => _inner.CreateRoleAsync(createRoleRequest),
@@ -26,7 +26,7 @@ internal class RoleProcessorLoggingDecorator(
     public async Task<CreateDefaultSystemRolesResult> CreateDefaultSystemRolesAsync(
         int ownerAccountId
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
             ownerAccountId,
             () => _inner.CreateDefaultSystemRolesAsync(ownerAccountId),
@@ -34,7 +34,7 @@ internal class RoleProcessorLoggingDecorator(
         );
 
     public async Task<GetRoleResult> GetRoleAsync(int roleId) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
             roleId,
             () => _inner.GetRoleAsync(roleId),
@@ -42,7 +42,7 @@ internal class RoleProcessorLoggingDecorator(
         );
 
     public async Task<GetRoleResult> GetRoleAsync(string roleName, int ownerAccountId) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
             new { roleName, ownerAccountId },
             () => _inner.GetRoleAsync(roleName, ownerAccountId),
@@ -52,7 +52,7 @@ internal class RoleProcessorLoggingDecorator(
     public async Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(
         AssignPermissionsToRoleRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
             request,
             () => _inner.AssignPermissionsToRoleAsync(request),
@@ -62,7 +62,7 @@ internal class RoleProcessorLoggingDecorator(
     public async Task<RemovePermissionsFromRoleResult> RemovePermissionsFromRoleAsync(
         RemovePermissionsFromRoleRequest request
     ) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
             request,
             () => _inner.RemovePermissionsFromRoleAsync(request),
@@ -70,7 +70,7 @@ internal class RoleProcessorLoggingDecorator(
         );
 
     public async Task<DeleteRoleResult> DeleteRoleAsync(int roleId) =>
-        await _logger.ExecuteWithLogging(
+        await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
             roleId,
             () => _inner.DeleteRoleAsync(roleId),

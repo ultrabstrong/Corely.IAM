@@ -19,6 +19,7 @@ namespace Corely.IAM.UnitTests.Services;
 public class AuthenticationServiceTests
 {
     private const int MAX_LOGIN_ATTEMPTS = 5;
+    private const string TEST_DEVICE_ID = "test-device";
 
     private readonly ServiceFactory _serviceFactory = new();
     private readonly Fixture _fixture = new();
@@ -82,7 +83,7 @@ public class AuthenticationServiceTests
     {
         var mock = new Mock<IAuthenticationProvider>();
 
-        mock.Setup(m => m.GetUserAuthTokenAsync(It.IsAny<UserAuthTokenRequest>()))
+        mock.Setup(m => m.GetUserAuthTokenAsync(It.IsAny<GetUserAuthTokenRequest>()))
             .ReturnsAsync(
                 new UserAuthTokenResult(
                     UserAuthTokenResultCode.Success,
@@ -128,14 +129,18 @@ public class AuthenticationServiceTests
     public async Task SignInAsync_SucceedsAndUpdateSuccessfulLogin_WhenUserExistsAndPasswordIsValid()
     {
         var userEntity = await CreateTestUserAsync();
-        var request = new SignInRequest(userEntity.Username, _fixture.Create<string>());
+        var request = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
 
         var result = await _authenticationService.SignInAsync(request);
 
         Assert.Equal(SignInResultCode.Success, result.ResultCode);
 
         var authResult = await _authenticationProviderMock.Object.GetUserAuthTokenAsync(
-            It.IsAny<UserAuthTokenRequest>()
+            It.IsAny<GetUserAuthTokenRequest>()
         );
 
         Assert.Equal(
@@ -155,7 +160,11 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task SignInAsync_Fails_WhenUserDoesNotExist()
     {
-        var request = new SignInRequest(_fixture.Create<string>(), _fixture.Create<string>());
+        var request = new SignInRequest(
+            _fixture.Create<string>(),
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
 
         var result = await _authenticationService.SignInAsync(request);
 
@@ -173,7 +182,11 @@ public class AuthenticationServiceTests
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         await userRepo.UpdateAsync(userEntity);
 
-        var request = new SignInRequest(userEntity.Username, _fixture.Create<string>());
+        var request = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
 
         var result = await _authenticationService.SignInAsync(request);
 
@@ -187,7 +200,11 @@ public class AuthenticationServiceTests
     public async Task SignInAsync_FailsAndUpdatedFailedLogins_WhenPasswordIsInvalid()
     {
         var userEntity = await CreateTestUserAsync();
-        var request = new SignInRequest(userEntity.Username, _fixture.Create<string>());
+        var request = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
 
         _basicAuthProcessorMock
             .Setup(m => m.VerifyBasicAuthAsync(It.IsAny<VerifyBasicAuthRequest>()))
@@ -215,10 +232,14 @@ public class AuthenticationServiceTests
     public async Task SignInAsync_Fails_WhenSignatureKeyNotFound()
     {
         var userEntity = await CreateTestUserAsync();
-        var request = new SignInRequest(userEntity.Username, _fixture.Create<string>());
+        var request = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
 
         _authenticationProviderMock
-            .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<UserAuthTokenRequest>()))
+            .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<GetUserAuthTokenRequest>()))
             .ReturnsAsync(
                 new UserAuthTokenResult(
                     UserAuthTokenResultCode.SignatureKeyNotFound,
@@ -245,11 +266,12 @@ public class AuthenticationServiceTests
         var request = new SignInRequest(
             userEntity.Username,
             _fixture.Create<string>(),
+            TEST_DEVICE_ID,
             accountPublicId
         );
 
         _authenticationProviderMock
-            .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<UserAuthTokenRequest>()))
+            .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<GetUserAuthTokenRequest>()))
             .ReturnsAsync(
                 new UserAuthTokenResult(
                     UserAuthTokenResultCode.AccountNotFound,
@@ -276,6 +298,7 @@ public class AuthenticationServiceTests
         var request = new SignInRequest(
             userEntity.Username,
             _fixture.Create<string>(),
+            TEST_DEVICE_ID,
             accountEntity.PublicId
         );
 
@@ -285,7 +308,7 @@ public class AuthenticationServiceTests
         _authenticationProviderMock.Verify(
             m =>
                 m.GetUserAuthTokenAsync(
-                    It.Is<UserAuthTokenRequest>(r => r.AccountPublicId == accountEntity.PublicId)
+                    It.Is<GetUserAuthTokenRequest>(r => r.AccountPublicId == accountEntity.PublicId)
                 ),
             Times.Once
         );
@@ -304,7 +327,7 @@ public class AuthenticationServiceTests
     public async Task SwitchAccountAsync_Succeeds_WithValidTokenAndAccount()
     {
         var accountPublicId = Guid.NewGuid();
-        var request = new SwitchAccountRequest("valid-token", accountPublicId);
+        var request = new SwitchAccountRequest("valid-token", TEST_DEVICE_ID, accountPublicId);
 
         var result = await _authenticationService.SwitchAccountAsync(request);
 
@@ -317,7 +340,7 @@ public class AuthenticationServiceTests
         _authenticationProviderMock.Verify(
             m =>
                 m.GetUserAuthTokenAsync(
-                    It.Is<UserAuthTokenRequest>(r => r.AccountPublicId == accountPublicId)
+                    It.Is<GetUserAuthTokenRequest>(r => r.AccountPublicId == accountPublicId)
                 ),
             Times.Once
         );
@@ -327,7 +350,7 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task SwitchAccountAsync_Fails_WhenTokenValidationFails()
     {
-        var request = new SwitchAccountRequest("invalid-token", Guid.NewGuid());
+        var request = new SwitchAccountRequest("invalid-token", TEST_DEVICE_ID, Guid.NewGuid());
 
         _authenticationProviderMock
             .Setup(m => m.ValidateUserAuthTokenAsync(It.IsAny<string>()))
@@ -350,7 +373,11 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task SwitchAccountAsync_Fails_WhenTokenMissingUserId()
     {
-        var request = new SwitchAccountRequest("token-without-userid", Guid.NewGuid());
+        var request = new SwitchAccountRequest(
+            "token-without-userid",
+            TEST_DEVICE_ID,
+            Guid.NewGuid()
+        );
 
         _authenticationProviderMock
             .Setup(m => m.ValidateUserAuthTokenAsync(It.IsAny<string>()))
@@ -374,10 +401,10 @@ public class AuthenticationServiceTests
     public async Task SwitchAccountAsync_Fails_WhenAccountNotFound()
     {
         var accountPublicId = Guid.NewGuid();
-        var request = new SwitchAccountRequest("valid-token", accountPublicId);
+        var request = new SwitchAccountRequest("valid-token", TEST_DEVICE_ID, accountPublicId);
 
         _authenticationProviderMock
-            .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<UserAuthTokenRequest>()))
+            .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<GetUserAuthTokenRequest>()))
             .ReturnsAsync(
                 new UserAuthTokenResult(
                     UserAuthTokenResultCode.AccountNotFound,
@@ -398,10 +425,10 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task SwitchAccountAsync_Fails_WhenSignatureKeyNotFound()
     {
-        var request = new SwitchAccountRequest("valid-token", Guid.NewGuid());
+        var request = new SwitchAccountRequest("valid-token", TEST_DEVICE_ID, Guid.NewGuid());
 
         _authenticationProviderMock
-            .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<UserAuthTokenRequest>()))
+            .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<GetUserAuthTokenRequest>()))
             .ReturnsAsync(
                 new UserAuthTokenResult(
                     UserAuthTokenResultCode.SignatureKeyNotFound,
@@ -434,24 +461,46 @@ public class AuthenticationServiceTests
     {
         var userId = _fixture.Create<int>();
         var tokenId = _fixture.Create<string>();
+        var deviceId = TEST_DEVICE_ID;
+        int? accountId = null;
+        var signOutRequest = new SignOutRequest(userId, tokenId, deviceId, accountId);
+        var revokeRequest = new RevokeUserAuthTokenRequest(userId, tokenId, deviceId, accountId);
+
         _authenticationProviderMock
-            .Setup(m => m.RevokeUserAuthTokenAsync(userId, tokenId))
+            .Setup(m =>
+                m.RevokeUserAuthTokenAsync(
+                    It.Is<RevokeUserAuthTokenRequest>(r =>
+                        r.UserId == userId
+                        && r.TokenId == tokenId
+                        && r.DeviceId == deviceId
+                        && r.AccountId == accountId
+                    )
+                )
+            )
             .ReturnsAsync(true);
 
-        var result = await _authenticationService.SignOutAsync(userId, tokenId);
+        var result = await _authenticationService.SignOutAsync(signOutRequest);
 
         Assert.True(result);
         _authenticationProviderMock.Verify(
-            m => m.RevokeUserAuthTokenAsync(userId, tokenId),
+            m =>
+                m.RevokeUserAuthTokenAsync(
+                    It.Is<RevokeUserAuthTokenRequest>(r =>
+                        r.UserId == userId
+                        && r.TokenId == tokenId
+                        && r.DeviceId == deviceId
+                        && r.AccountId == accountId
+                    )
+                ),
             Times.Once
         );
         _userContextSetterMock.Verify(m => m.ClearUserContext(userId), Times.Once);
     }
 
     [Fact]
-    public async Task SignOutAsync_Throws_WithNullTokenId()
+    public async Task SignOutAsync_Throws_WithNullRequest()
     {
-        var ex = await Record.ExceptionAsync(() => _authenticationService.SignOutAsync(1, null!));
+        var ex = await Record.ExceptionAsync(() => _authenticationService.SignOutAsync(null!));
 
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);

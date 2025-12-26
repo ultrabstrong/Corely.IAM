@@ -6,6 +6,6 @@ public interface IAuthenticationService
 {
     Task<SignInResult> SignInAsync(SignInRequest request);
     Task<SignInResult> SwitchAccountAsync(SwitchAccountRequest request);
-    Task<bool> SignOutAsync(int userId, string tokenId);
+    Task<bool> SignOutAsync(SignOutRequest request);
     Task SignOutAllAsync(int userId);
 }

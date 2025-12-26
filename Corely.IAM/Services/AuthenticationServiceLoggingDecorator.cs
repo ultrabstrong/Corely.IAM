@@ -31,11 +31,11 @@ internal class AuthenticationServiceLoggingDecorator(
             logResult: true
         );
 
-    public async Task<bool> SignOutAsync(int userId, string tokenId) =>
+    public async Task<bool> SignOutAsync(SignOutRequest request) =>
         await _logger.ExecuteWithLogging(
             nameof(AuthenticationService),
-            new { userId, tokenId },
-            () => _inner.SignOutAsync(userId, tokenId),
+            request,
+            () => _inner.SignOutAsync(request),
             logResult: true
         );
 

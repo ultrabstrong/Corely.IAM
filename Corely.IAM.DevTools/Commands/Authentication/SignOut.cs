@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
+using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
@@ -16,6 +17,12 @@ internal partial class Authentication : CommandBase
 
         [Argument("Token ID to revoke")]
         private string TokenId { get; init; } = null!;
+
+        [Argument("Device ID")]
+        private string DeviceId { get; init; } = null!;
+
+        [Argument("Account ID (optional)", false)]
+        private int? AccountId { get; init; }
 
         private readonly IAuthenticationService _authenticationService;
         private readonly IUserContextProvider _userContextProvider;
@@ -36,11 +43,14 @@ internal partial class Authentication : CommandBase
         {
             try
             {
-                var result = await _authenticationService.SignOutAsync(UserId, TokenId);
+                var request = new SignOutRequest(UserId, TokenId, DeviceId, AccountId);
+                var result = await _authenticationService.SignOutAsync(request);
                 var output = new
                 {
                     UserId,
                     TokenId,
+                    DeviceId,
+                    AccountId,
                     Success = result,
                 };
                 Console.WriteLine(JsonSerializer.Serialize(output));

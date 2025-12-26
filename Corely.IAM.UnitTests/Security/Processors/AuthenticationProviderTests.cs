@@ -18,6 +18,7 @@ public class AuthenticationProviderTests
 {
     private const string VALID_USERNAME = "username";
     private const string VALID_EMAIL = "email@x.y";
+    private const string TEST_DEVICE_ID = "test-device";
 
     private readonly Fixture _fixture = new();
     private readonly ServiceFactory _serviceFactory = new();
@@ -94,7 +95,7 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync();
 
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, authTokenResult.ResultCode);
@@ -118,7 +119,7 @@ public class AuthenticationProviderTests
     public async Task GetUserAuthTokenAsync_ReturnsUserNotFound_WhenUserDNE()
     {
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(9999)
+            new GetUserAuthTokenRequest(9999, TEST_DEVICE_ID)
         );
 
         Assert.Equal(UserAuthTokenResultCode.UserNotFound, result.ResultCode);
@@ -133,7 +134,7 @@ public class AuthenticationProviderTests
         userEntity.AsymmetricKeys!.Clear();
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
         );
 
         Assert.Equal(UserAuthTokenResultCode.SignatureKeyNotFound, result.ResultCode);
@@ -147,7 +148,7 @@ public class AuthenticationProviderTests
         var account = await CreateAccountAsync();
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.PublicId)
         );
 
         Assert.Equal(UserAuthTokenResultCode.AccountNotFound, result.ResultCode);
@@ -161,7 +162,7 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync([account]);
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.PublicId)
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, result.ResultCode);
@@ -178,7 +179,7 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync([account]);
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.PublicId)
         );
 
         var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
@@ -194,7 +195,7 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync();
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
         );
 
         var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
@@ -211,11 +212,11 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync([account]);
 
         var firstToken = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.PublicId)
         );
 
         var secondToken = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.PublicId)
         );
 
         var firstValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
@@ -238,11 +239,11 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync();
 
         var firstToken = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
         );
 
         var secondToken = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
         );
 
         var firstValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
@@ -267,14 +268,14 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync([account1, account2]);
 
         var tokenForAccount1 = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id, account1.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account1.PublicId)
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, tokenForAccount1.ResultCode);
         Assert.Equal(account1.Id, tokenForAccount1.SignedInAccountId);
 
         var tokenForAccount2 = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id, account2.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account2.PublicId)
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, tokenForAccount2.ResultCode);
@@ -315,11 +316,11 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync([account]);
 
         var tokenWithoutAccount = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
         );
 
         var tokenWithAccount = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.PublicId)
         );
 
         var validationWithoutAccount = await _authenticationProvider.ValidateUserAuthTokenAsync(
@@ -337,11 +338,83 @@ public class AuthenticationProviderTests
     }
 
     [Fact]
+    public async Task GetUserAuthTokenAsync_SetsDeviceIdOnTokenEntity()
+    {
+        var userEntity = await CreateUserAsync();
+        var deviceId = "test-device-123";
+
+        var result = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, deviceId)
+        );
+
+        var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
+        var tokenEntity = await authTokenRepo.GetAsync(t => t.PublicId == result.TokenId);
+
+        Assert.NotNull(tokenEntity);
+        Assert.Equal(deviceId, tokenEntity.DeviceId);
+    }
+
+    [Fact]
+    public async Task GetUserAuthTokenAsync_RevokesExistingTokenForSameUserAccountAndDevice()
+    {
+        var account = await CreateAccountAsync();
+        var userEntity = await CreateUserAsync([account]);
+        var deviceId = "test-device-456";
+
+        var firstToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, deviceId, account.PublicId)
+        );
+
+        var secondToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, deviceId, account.PublicId)
+        );
+
+        var firstValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            firstToken.Token!
+        );
+        var secondValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            secondToken.Token!
+        );
+
+        Assert.Equal(
+            UserAuthTokenValidationResultCode.TokenValidationFailed,
+            firstValidation.ResultCode
+        );
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, secondValidation.ResultCode);
+    }
+
+    [Fact]
+    public async Task GetUserAuthTokenAsync_DoesNotRevokeTokenForDifferentDevice()
+    {
+        var userEntity = await CreateUserAsync();
+        var device1 = "device-1";
+        var device2 = "device-2";
+
+        var tokenForDevice1 = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, device1)
+        );
+
+        var tokenForDevice2 = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, device2)
+        );
+
+        var validation1 = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            tokenForDevice1.Token!
+        );
+        var validation2 = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            tokenForDevice2.Token!
+        );
+
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, validation1.ResultCode);
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, validation2.ResultCode);
+    }
+
+    [Fact]
     public async Task ValidateUserAuthTokenAsync_ReturnsSuccess_WithValidToken()
     {
         var userEntity = await CreateUserAsync();
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
         );
 
         var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(
@@ -382,7 +455,7 @@ public class AuthenticationProviderTests
     {
         var userEntity = await CreateUserAsync();
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
         );
 
         var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(
@@ -423,7 +496,6 @@ public class AuthenticationProviderTests
     [Fact]
     public async Task ValidateUserAuthTokenAsync_ReturnsMissingUserIdClaim_WhenSubClaimNotGuid()
     {
-        // Sub claim is an integer, not a GUID - should fail
         var token = new JwtSecurityToken(
             claims:
             [
@@ -502,14 +574,15 @@ public class AuthenticationProviderTests
     {
         var userEntity = await CreateUserAsync();
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
         );
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token!);
         var tokenId = jwtToken.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
 
-        await _authenticationProvider.RevokeUserAuthTokenAsync(userEntity.Id, tokenId);
+        var revokeRequest = new RevokeUserAuthTokenRequest(userEntity.Id, tokenId, TEST_DEVICE_ID);
+        await _authenticationProvider.RevokeUserAuthTokenAsync(revokeRequest);
 
         var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(
             authTokenResult.Token!
@@ -529,14 +602,15 @@ public class AuthenticationProviderTests
     {
         var userEntity = await CreateUserAsync();
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
         );
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token!);
         var tokenId = jwtToken.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
 
-        var result = await _authenticationProvider.RevokeUserAuthTokenAsync(userEntity.Id, tokenId);
+        var revokeRequest = new RevokeUserAuthTokenRequest(userEntity.Id, tokenId, TEST_DEVICE_ID);
+        var result = await _authenticationProvider.RevokeUserAuthTokenAsync(revokeRequest);
 
         Assert.True(result);
     }
@@ -544,10 +618,12 @@ public class AuthenticationProviderTests
     [Fact]
     public async Task RevokeUserAuthTokenAsync_ReturnsFalse_WhenTokenNotFound()
     {
-        var result = await _authenticationProvider.RevokeUserAuthTokenAsync(
+        var revokeRequest = new RevokeUserAuthTokenRequest(
             9999,
-            "non-existent-token-id"
+            "non-existent-token-id",
+            TEST_DEVICE_ID
         );
+        var result = await _authenticationProvider.RevokeUserAuthTokenAsync(revokeRequest);
 
         Assert.False(result);
     }
@@ -558,10 +634,10 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync();
 
         var token1 = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id)
+            new GetUserAuthTokenRequest(userEntity.Id, "device-1")
         );
         var token2 = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id)
+            new GetUserAuthTokenRequest(userEntity.Id, "device-2")
         );
 
         await _authenticationProvider.RevokeAllUserAuthTokensAsync(userEntity.Id);

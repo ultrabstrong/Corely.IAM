@@ -89,6 +89,7 @@ internal class AuthenticationService(
         var result = await GenerateAuthTokenAndSetContextAsync(
             userEntity.Id,
             request.AccountPublicId,
+            request.DeviceId,
             "sign in"
         );
 
@@ -134,6 +135,7 @@ internal class AuthenticationService(
         var result = await GenerateAuthTokenAndSetContextAsync(
             validationResult.UserId.Value,
             request.AccountPublicId,
+            request.DeviceId,
             "account switch"
         );
 
@@ -149,18 +151,30 @@ internal class AuthenticationService(
         return result;
     }
 
-    public async Task<bool> SignOutAsync(int userId, string tokenId)
+    public async Task<bool> SignOutAsync(SignOutRequest request)
     {
-        ArgumentNullException.ThrowIfNull(tokenId, nameof(tokenId));
-        _logger.LogDebug("Signing out user {UserId} with token {TokenId}", userId, tokenId);
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogDebug(
+            "Signing out user {UserId} with token {TokenId}, account {AccountId}, device {DeviceId}",
+            request.UserId,
+            request.TokenId,
+            request.AccountId?.ToString() ?? "null",
+            request.DeviceId
+        );
 
-        var result = await _authenticationProvider.RevokeUserAuthTokenAsync(userId, tokenId);
-        _userContextSetter.ClearUserContext(userId);
+        var revokeRequest = new RevokeUserAuthTokenRequest(
+            request.UserId,
+            request.TokenId,
+            request.DeviceId,
+            request.AccountId
+        );
+        var result = await _authenticationProvider.RevokeUserAuthTokenAsync(revokeRequest);
+        _userContextSetter.ClearUserContext(request.UserId);
 
         _logger.LogDebug(
             "User {UserId} signed out with token {TokenId}: {Result}",
-            userId,
-            tokenId,
+            request.UserId,
+            request.TokenId,
             result
         );
 
@@ -180,11 +194,12 @@ internal class AuthenticationService(
     private async Task<SignInResult> GenerateAuthTokenAndSetContextAsync(
         int userId,
         Guid? accountPublicId,
+        string deviceId,
         string operationName
     )
     {
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userId, accountPublicId)
+            new GetUserAuthTokenRequest(userId, deviceId, accountPublicId)
         );
 
         if (authTokenResult.ResultCode != UserAuthTokenResultCode.Success)

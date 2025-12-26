@@ -8,6 +8,7 @@ internal class UserAuthTokenEntity : IHasIdPk<int>, IHasCreatedUtc
     public string PublicId { get; set; } = null!;
     public int UserId { get; set; }
     public int? AccountId { get; set; }
+    public string DeviceId { get; set; } = null!;
     public DateTime IssuedUtc { get; set; }
     public DateTime ExpiresUtc { get; set; }
     public DateTime? RevokedUtc { get; set; }

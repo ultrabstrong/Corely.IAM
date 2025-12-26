@@ -37,7 +37,7 @@ internal class AuthenticationProvider(
     private readonly ILogger<AuthenticationProvider> _logger = logger.ThrowIfNull(nameof(logger));
     private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
 
-    public async Task<UserAuthTokenResult> GetUserAuthTokenAsync(UserAuthTokenRequest request)
+    public async Task<UserAuthTokenResult> GetUserAuthTokenAsync(GetUserAuthTokenRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
@@ -146,12 +146,17 @@ internal class AuthenticationProvider(
             signingCredentials: credentials
         );
 
-        await RevokeExistingTokensForUserAccountAsync(request.UserId, signedInAccountId);
+        await RevokeExistingTokensForUserAccountDeviceAsync(
+            request.UserId,
+            signedInAccountId,
+            request.DeviceId
+        );
 
         var authTokenEntity = new UserAuthTokenEntity
         {
             UserId = request.UserId,
             AccountId = signedInAccountId,
+            DeviceId = request.DeviceId,
             PublicId = jti,
             IssuedUtc = now,
             ExpiresUtc = expires,
@@ -168,12 +173,17 @@ internal class AuthenticationProvider(
         );
     }
 
-    private async Task RevokeExistingTokensForUserAccountAsync(int userId, int? accountId)
+    private async Task RevokeExistingTokensForUserAccountDeviceAsync(
+        int userId,
+        int? accountId,
+        string deviceId
+    )
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var activeTokens = await _authTokenRepo.ListAsync(t =>
             t.UserId == userId
             && t.AccountId == accountId
+            && t.DeviceId == deviceId
             && t.RevokedUtc == null
             && t.ExpiresUtc > now
         );
@@ -188,10 +198,11 @@ internal class AuthenticationProvider(
         }
 
         _logger.LogDebug(
-            "Revoked {Count} existing token(s) for user {UserId} and account {AccountId}",
+            "Revoked {Count} existing token(s) for user {UserId}, account {AccountId}, and device {DeviceId}",
             activeTokens.Count,
             userId,
-            accountId?.ToString() ?? "null"
+            accountId?.ToString() ?? "null",
+            deviceId
         );
     }
 
@@ -357,12 +368,16 @@ internal class AuthenticationProvider(
         );
     }
 
-    public async Task<bool> RevokeUserAuthTokenAsync(int userId, string tokenId)
+    public async Task<bool> RevokeUserAuthTokenAsync(RevokeUserAuthTokenRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.PublicId == tokenId
-            && t.UserId == userId
+            t.PublicId == request.TokenId
+            && t.UserId == request.UserId
+            && t.AccountId == request.AccountId
+            && t.DeviceId == request.DeviceId
             && t.RevokedUtc == null
             && t.ExpiresUtc > now
         );
@@ -370,8 +385,11 @@ internal class AuthenticationProvider(
         if (trackedToken == null)
         {
             _logger.LogInformation(
-                "Auth token {TokenId} not found, already revoked, or expired",
-                tokenId
+                "Auth token {TokenId} not found, already revoked, or expired for user {UserId}, account {AccountId}, device {DeviceId}",
+                request.TokenId,
+                request.UserId,
+                request.AccountId?.ToString() ?? "null",
+                request.DeviceId
             );
             return false;
         }
@@ -379,7 +397,13 @@ internal class AuthenticationProvider(
         trackedToken.RevokedUtc = now;
         await _authTokenRepo.UpdateAsync(trackedToken);
 
-        _logger.LogInformation("Auth token {TokenId} revoked for user {UserId}", tokenId, userId);
+        _logger.LogInformation(
+            "Auth token {TokenId} revoked for user {UserId}, account {AccountId}, device {DeviceId}",
+            request.TokenId,
+            request.UserId,
+            request.AccountId?.ToString() ?? "null",
+            request.DeviceId
+        );
         return true;
     }
 

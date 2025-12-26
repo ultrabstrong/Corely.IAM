@@ -6,6 +6,8 @@ namespace Corely.IAM.UnitTests.Services;
 
 public class AuthenticationServiceLoggingDecoratorTests
 {
+    private const string TEST_DEVICE_ID = "test-device";
+
     private readonly Mock<IAuthenticationService> _mockInnerService;
     private readonly Mock<ILogger<AuthenticationServiceLoggingDecorator>> _mockLogger;
     private readonly AuthenticationServiceLoggingDecorator _decorator;
@@ -23,7 +25,7 @@ public class AuthenticationServiceLoggingDecoratorTests
     [Fact]
     public async Task SignInAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new SignInRequest("testuser", "password123", null);
+        var request = new SignInRequest("testuser", "password123", TEST_DEVICE_ID);
         var expectedResult = new SignInResult(
             SignInResultCode.Success,
             null,
@@ -44,7 +46,7 @@ public class AuthenticationServiceLoggingDecoratorTests
     [Fact]
     public async Task SwitchAccountAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new SwitchAccountRequest("auth-token", Guid.NewGuid());
+        var request = new SwitchAccountRequest("auth-token", TEST_DEVICE_ID, Guid.NewGuid());
         var expectedResult = new SignInResult(
             SignInResultCode.Success,
             null,
@@ -65,15 +67,14 @@ public class AuthenticationServiceLoggingDecoratorTests
     [Fact]
     public async Task SignOutAsync_DelegatesToInnerAndLogsResult()
     {
-        var userId = 1;
-        var tokenId = "token123";
+        var request = new SignOutRequest(1, "token123", TEST_DEVICE_ID);
         var expectedResult = true;
-        _mockInnerService.Setup(x => x.SignOutAsync(userId, tokenId)).ReturnsAsync(expectedResult);
+        _mockInnerService.Setup(x => x.SignOutAsync(request)).ReturnsAsync(expectedResult);
 
-        var result = await _decorator.SignOutAsync(userId, tokenId);
+        var result = await _decorator.SignOutAsync(request);
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.SignOutAsync(userId, tokenId), Times.Once);
+        _mockInnerService.Verify(x => x.SignOutAsync(request), Times.Once);
         VerifyLoggedWithResult();
     }
 

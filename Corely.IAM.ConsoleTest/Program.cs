@@ -14,6 +14,8 @@ namespace Corely.IAM.ConsoleApp;
 
 internal class Program
 {
+    private const string TEST_DEVICE_ID = "console-test-device";
+
 #pragma warning disable IDE0052 // Remove unread private members
     private static readonly string desktop = Environment.GetFolderPath(
         Environment.SpecialFolder.Desktop
@@ -77,7 +79,7 @@ internal class Program
 
             // Sign in without account to get token
             var signInResult = await authenticationService.SignInAsync(
-                new SignInRequest("user1", "admin")
+                new SignInRequest("user1", "admin", TEST_DEVICE_ID)
             );
             if (signInResult.ResultCode != SignInResultCode.Success)
             {
@@ -88,6 +90,7 @@ internal class Program
             var switchAccountResult = await authenticationService.SwitchAccountAsync(
                 new SwitchAccountRequest(
                     signInResult.AuthToken!,
+                    TEST_DEVICE_ID,
                     registerAccountResult.CreatedAccountId
                 )
             );
@@ -156,13 +159,14 @@ internal class Program
             // ========= AUTHENTICATION ==========
             // Sign in without account first
             signInResult = await authenticationService.SignInAsync(
-                new SignInRequest("user1", "admin")
+                new SignInRequest("user1", "admin", TEST_DEVICE_ID)
             );
 
             // Then switch to the specific account
             switchAccountResult = await authenticationService.SwitchAccountAsync(
                 new SwitchAccountRequest(
                     signInResult.AuthToken!,
+                    TEST_DEVICE_ID,
                     registerAccountResult.CreatedAccountId
                 )
             );
@@ -174,12 +178,13 @@ internal class Program
 
             // Uncomment to see all deregister fail
             /*
-            var signedOut = await authenticationService.SignOutAsync(
-                registerUserResult.CreatedUserId,
-                token.Id
-            );
+                 var signedOut = await authenticationService.SignOutAsync(
+                  registerUserResult.CreatedUserId,
+                token.Id,
+            TEST_DEVICE_ID
+          );
             await authenticationService.SignOutAllAsync(registerUserResult.CreatedUserId);
-            */
+        */
 
             // ========= DEREGISTERING ==========
 
@@ -244,7 +249,7 @@ internal class Program
 
             // sign in as user 2 and deregister user 2
             signInResult = await authenticationService.SignInAsync(
-                new SignInRequest("user2", "password2")
+                new SignInRequest("user2", "password2", TEST_DEVICE_ID)
             );
             await deregistrationService.DeregisterUserAsync();
         }

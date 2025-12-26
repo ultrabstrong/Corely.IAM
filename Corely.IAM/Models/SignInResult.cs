@@ -10,6 +10,7 @@ public enum SignInResultCode
     PasswordMismatchError,
     SignatureKeyNotFoundError,
     AccountNotFoundError,
+    InvalidAuthTokenError,
 }
 
 public record SignInResult(

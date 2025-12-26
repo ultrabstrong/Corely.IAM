@@ -42,6 +42,27 @@ public class AuthenticationServiceLoggingDecoratorTests
     }
 
     [Fact]
+    public async Task SwitchAccountAsync_DelegatesToInnerAndLogsResult()
+    {
+        var request = new SwitchAccountRequest("auth-token", Guid.NewGuid());
+        var expectedResult = new SignInResult(
+            SignInResultCode.Success,
+            null,
+            "new-token",
+            "token123",
+            [],
+            1
+        );
+        _mockInnerService.Setup(x => x.SwitchAccountAsync(request)).ReturnsAsync(expectedResult);
+
+        var result = await _decorator.SwitchAccountAsync(request);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.SwitchAccountAsync(request), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
     public async Task SignOutAsync_DelegatesToInnerAndLogsResult()
     {
         var userId = 1;

@@ -23,6 +23,14 @@ internal class AuthenticationServiceLoggingDecorator(
             logResult: true
         );
 
+    public async Task<SignInResult> SwitchAccountAsync(SwitchAccountRequest request) =>
+        await _logger.ExecuteWithLogging(
+            nameof(AuthenticationService),
+            request,
+            () => _inner.SwitchAccountAsync(request),
+            logResult: true
+        );
+
     public async Task<bool> SignOutAsync(int userId, string tokenId) =>
         await _logger.ExecuteWithLogging(
             nameof(AuthenticationService),

@@ -92,6 +92,16 @@ public class AuthenticationServiceTests
                 )
             );
 
+        mock.Setup(m => m.ValidateUserAuthTokenAsync(It.IsAny<string>()))
+            .ReturnsAsync(
+                new UserAuthTokenValidationResult(
+                    UserAuthTokenValidationResultCode.Success,
+                    1,
+                    null,
+                    []
+                )
+            );
+
         return mock;
     }
 
@@ -284,6 +294,135 @@ public class AuthenticationServiceTests
     public async Task SignInAsync_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _authenticationService.SignInAsync(null!));
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    [Fact]
+    public async Task SwitchAccountAsync_Succeeds_WithValidTokenAndAccount()
+    {
+        var accountPublicId = Guid.NewGuid();
+        var request = new SwitchAccountRequest("valid-token", accountPublicId);
+
+        var result = await _authenticationService.SwitchAccountAsync(request);
+
+        Assert.Equal(SignInResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.AuthToken);
+        _authenticationProviderMock.Verify(
+            m => m.ValidateUserAuthTokenAsync("valid-token"),
+            Times.Once
+        );
+        _authenticationProviderMock.Verify(
+            m =>
+                m.GetUserAuthTokenAsync(
+                    It.Is<UserAuthTokenRequest>(r => r.AccountPublicId == accountPublicId)
+                ),
+            Times.Once
+        );
+        _userContextSetterMock.Verify(m => m.SetUserContext(It.IsAny<UserContext>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SwitchAccountAsync_Fails_WhenTokenValidationFails()
+    {
+        var request = new SwitchAccountRequest("invalid-token", Guid.NewGuid());
+
+        _authenticationProviderMock
+            .Setup(m => m.ValidateUserAuthTokenAsync(It.IsAny<string>()))
+            .ReturnsAsync(
+                new UserAuthTokenValidationResult(
+                    UserAuthTokenValidationResultCode.TokenValidationFailed,
+                    null,
+                    null,
+                    []
+                )
+            );
+
+        var result = await _authenticationService.SwitchAccountAsync(request);
+
+        Assert.Equal(SignInResultCode.InvalidAuthTokenError, result.ResultCode);
+        Assert.Contains("validation failed", result.Message);
+        Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task SwitchAccountAsync_Fails_WhenTokenMissingUserId()
+    {
+        var request = new SwitchAccountRequest("token-without-userid", Guid.NewGuid());
+
+        _authenticationProviderMock
+            .Setup(m => m.ValidateUserAuthTokenAsync(It.IsAny<string>()))
+            .ReturnsAsync(
+                new UserAuthTokenValidationResult(
+                    UserAuthTokenValidationResultCode.Success,
+                    null,
+                    null,
+                    []
+                )
+            );
+
+        var result = await _authenticationService.SwitchAccountAsync(request);
+
+        Assert.Equal(SignInResultCode.InvalidAuthTokenError, result.ResultCode);
+        Assert.Contains("user ID", result.Message);
+        Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task SwitchAccountAsync_Fails_WhenAccountNotFound()
+    {
+        var accountPublicId = Guid.NewGuid();
+        var request = new SwitchAccountRequest("valid-token", accountPublicId);
+
+        _authenticationProviderMock
+            .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<UserAuthTokenRequest>()))
+            .ReturnsAsync(
+                new UserAuthTokenResult(
+                    UserAuthTokenResultCode.AccountNotFound,
+                    null,
+                    null,
+                    [],
+                    null
+                )
+            );
+
+        var result = await _authenticationService.SwitchAccountAsync(request);
+
+        Assert.Equal(SignInResultCode.AccountNotFoundError, result.ResultCode);
+        Assert.Contains("not found", result.Message);
+        Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task SwitchAccountAsync_Fails_WhenSignatureKeyNotFound()
+    {
+        var request = new SwitchAccountRequest("valid-token", Guid.NewGuid());
+
+        _authenticationProviderMock
+            .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<UserAuthTokenRequest>()))
+            .ReturnsAsync(
+                new UserAuthTokenResult(
+                    UserAuthTokenResultCode.SignatureKeyNotFound,
+                    null,
+                    null,
+                    [],
+                    null
+                )
+            );
+
+        var result = await _authenticationService.SwitchAccountAsync(request);
+
+        Assert.Equal(SignInResultCode.SignatureKeyNotFoundError, result.ResultCode);
+        Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task SwitchAccountAsync_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() =>
+            _authenticationService.SwitchAccountAsync(null!)
+        );
 
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);

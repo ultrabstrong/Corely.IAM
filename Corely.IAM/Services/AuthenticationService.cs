@@ -152,6 +152,100 @@ internal class AuthenticationService(
         );
     }
 
+    public async Task<SignInResult> SwitchAccountAsync(SwitchAccountRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        _logger.LogDebug("Switching to account {AccountPublicId}", request.AccountPublicId);
+
+        var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            request.AuthToken
+        );
+
+        if (validationResult.ResultCode != UserAuthTokenValidationResultCode.Success)
+        {
+            _logger.LogDebug(
+                "Auth token validation failed: {ResultCode}",
+                validationResult.ResultCode
+            );
+            return new SignInResult(
+                SignInResultCode.InvalidAuthTokenError,
+                $"Auth token validation failed: {validationResult.ResultCode}",
+                null,
+                null,
+                [],
+                null
+            );
+        }
+
+        if (!validationResult.UserId.HasValue)
+        {
+            _logger.LogDebug("Auth token does not contain user ID");
+            return new SignInResult(
+                SignInResultCode.InvalidAuthTokenError,
+                "Auth token does not contain user ID",
+                null,
+                null,
+                [],
+                null
+            );
+        }
+
+        var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(validationResult.UserId.Value, request.AccountPublicId)
+        );
+
+        if (authTokenResult.ResultCode != UserAuthTokenResultCode.Success)
+        {
+            var (signInResultCode, message) = authTokenResult.ResultCode switch
+            {
+                UserAuthTokenResultCode.UserNotFound => (
+                    SignInResultCode.UserNotFoundError,
+                    "User not found"
+                ),
+                UserAuthTokenResultCode.SignatureKeyNotFound => (
+                    SignInResultCode.SignatureKeyNotFoundError,
+                    "User signature key not found"
+                ),
+                UserAuthTokenResultCode.AccountNotFound => (
+                    SignInResultCode.AccountNotFoundError,
+                    $"Account {request.AccountPublicId} not found for user"
+                ),
+                _ => (SignInResultCode.UserNotFoundError, "Unknown error creating auth token"),
+            };
+
+            _logger.LogWarning(
+                "Failed to create auth token for account switch: {ResultCode}",
+                authTokenResult.ResultCode
+            );
+
+            return new SignInResult(signInResultCode, message, null, null, [], null);
+        }
+
+        _userContextSetter.SetUserContext(
+            new UserContext(
+                validationResult.UserId.Value,
+                authTokenResult.SignedInAccountId,
+                authTokenResult.Accounts
+            )
+        );
+
+        _logger.LogDebug(
+            "User {UserId} switched to account {AccountId}",
+            validationResult.UserId.Value,
+            authTokenResult.SignedInAccountId
+        );
+
+        return new SignInResult(
+            SignInResultCode.Success,
+            null,
+            authTokenResult.Token,
+            authTokenResult.TokenId,
+            authTokenResult.Accounts,
+            authTokenResult.SignedInAccountId
+        );
+    }
+
     public async Task<bool> SignOutAsync(int userId, string tokenId)
     {
         ArgumentNullException.ThrowIfNull(tokenId, nameof(tokenId));

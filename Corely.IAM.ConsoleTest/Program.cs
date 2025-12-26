@@ -75,14 +75,26 @@ internal class Program
                 new RegisterUserRequest("user2", "email2@x.y", "password2")
             );
 
-            // Sign in to get a token and set user context
-            var signInForContextResult = await authenticationService.SignInAsync(
-                new SignInRequest("user1", "admin", registerAccountResult.CreatedAccountId)
+            // Sign in without account to get token
+            var signInResult = await authenticationService.SignInAsync(
+                new SignInRequest("user1", "admin")
             );
-            if (signInForContextResult.ResultCode != SignInResultCode.Success)
+            if (signInResult.ResultCode != SignInResultCode.Success)
+            {
+                throw new Exception($"Failed to sign in: {signInResult.ResultCode}");
+            }
+
+            // Switch to the specific account using the token
+            var switchAccountResult = await authenticationService.SwitchAccountAsync(
+                new SwitchAccountRequest(
+                    signInResult.AuthToken!,
+                    registerAccountResult.CreatedAccountId
+                )
+            );
+            if (switchAccountResult.ResultCode != SignInResultCode.Success)
             {
                 throw new Exception(
-                    $"Failed to sign in for user context setup: {signInForContextResult.ResultCode}"
+                    $"Failed to switch to account: {switchAccountResult.ResultCode}"
                 );
             }
 
@@ -142,14 +154,23 @@ internal class Program
                 );
 
             // ========= AUTHENTICATION ==========
-            var signInResult = await authenticationService.SignInAsync(
-                new SignInRequest("user1", "admin", registerAccountResult.CreatedAccountId)
+            // Sign in without account first
+            signInResult = await authenticationService.SignInAsync(
+                new SignInRequest("user1", "admin")
             );
 
-            // SignInAsync does this, but later when all you have is the auth token use this
-            await userContextProvider.SetUserContextAsync(signInResult.AuthToken!);
+            // Then switch to the specific account
+            switchAccountResult = await authenticationService.SwitchAccountAsync(
+                new SwitchAccountRequest(
+                    signInResult.AuthToken!,
+                    registerAccountResult.CreatedAccountId
+                )
+            );
 
-            var token = new JwtSecurityTokenHandler().ReadJwtToken(signInResult.AuthToken!);
+            // SwitchAccountAsync sets context, but later when all you have is the auth token use this
+            await userContextProvider.SetUserContextAsync(switchAccountResult.AuthToken!);
+
+            var token = new JwtSecurityTokenHandler().ReadJwtToken(switchAccountResult.AuthToken!);
 
             // Uncomment to see all deregister fail
             /*

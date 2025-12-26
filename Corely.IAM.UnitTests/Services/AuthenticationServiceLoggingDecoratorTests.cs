@@ -46,7 +46,7 @@ public class AuthenticationServiceLoggingDecoratorTests
     [Fact]
     public async Task SwitchAccountAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new SwitchAccountRequest("auth-token", TEST_DEVICE_ID, Guid.NewGuid());
+        var request = new SwitchAccountRequest("auth-token", Guid.NewGuid());
         var expectedResult = new SignInResult(
             SignInResultCode.Success,
             null,
@@ -67,7 +67,7 @@ public class AuthenticationServiceLoggingDecoratorTests
     [Fact]
     public async Task SignOutAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new SignOutRequest(1, "token123", TEST_DEVICE_ID);
+        var request = new SignOutRequest("token123");
         var expectedResult = true;
         _mockInnerService.Setup(x => x.SignOutAsync(request)).ReturnsAsync(expectedResult);
 

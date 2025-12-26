@@ -33,7 +33,7 @@ internal partial class Authentication : CommandBase
             {
                 SampleJsonFileHelper.CreateSampleSingleRequestJson(
                     RequestJsonFile,
-                    new SignInRequest("userName", "password", "device-id")
+                    new SignInRequest("userName", "password", "devtools-device-id")
                 );
             }
             else

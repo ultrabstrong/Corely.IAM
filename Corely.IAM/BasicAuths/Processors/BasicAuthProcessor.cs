@@ -61,7 +61,7 @@ internal class BasicAuthProcessor(
             );
         }
 
-        var basicAuthEntity = basicAuth.ToEntity(_hashProviderFactory);
+        var basicAuthEntity = basicAuth.ToEntity();
 
         _logger.LogDebug("Creating basic auth for UserId {UserId}", request.UserId);
         var created = await _basicAuthRepo.CreateAsync(basicAuthEntity);
@@ -101,7 +101,7 @@ internal class BasicAuthProcessor(
             );
         }
 
-        var basicAuthEntity = basicAuth.ToEntity(_hashProviderFactory);
+        var basicAuthEntity = basicAuth.ToEntity();
 
         _logger.LogDebug("Updating basic auth for UserId {UserId}", request.UserId);
         await _basicAuthRepo.UpdateAsync(basicAuthEntity);

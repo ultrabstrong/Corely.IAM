@@ -12,17 +12,8 @@ internal partial class Authentication : CommandBase
 {
     internal class SignOut : CommandBase
     {
-        [Argument("User ID to sign out")]
-        private int UserId { get; init; }
-
         [Argument("Token ID to revoke")]
         private string TokenId { get; init; } = null!;
-
-        [Argument("Device ID")]
-        private string DeviceId { get; init; } = null!;
-
-        [Argument("Account ID (optional)", false)]
-        private int? AccountId { get; init; }
 
         private readonly IAuthenticationService _authenticationService;
         private readonly IUserContextProvider _userContextProvider;
@@ -43,31 +34,28 @@ internal partial class Authentication : CommandBase
         {
             try
             {
-                var request = new SignOutRequest(UserId, TokenId, DeviceId, AccountId);
+                var request = new SignOutRequest(TokenId);
                 var result = await _authenticationService.SignOutAsync(request);
+
+                var context = _userContextProvider.GetUserContext();
                 var output = new
                 {
-                    UserId,
+                    context?.UserId,
                     TokenId,
-                    DeviceId,
-                    AccountId,
+                    context?.DeviceId,
+                    context?.AccountId,
                     Success = result,
                 };
                 Console.WriteLine(JsonSerializer.Serialize(output));
 
                 if (result)
                 {
-                    Success($"User {UserId} signed out successfully");
-
-                    var currentContext = _userContextProvider.GetUserContext();
-                    if (currentContext?.UserId == UserId)
-                    {
-                        ClearAuthTokenFile();
-                    }
+                    Success($"User {context?.UserId} signed out successfully");
+                    ClearAuthTokenFile();
                 }
                 else
                 {
-                    Warn($"Failed to sign out user {UserId} with token {TokenId}");
+                    Warn($"Failed to sign out with token {TokenId}");
                 }
             }
             catch (ValidationException ex)

@@ -67,7 +67,7 @@ public class BasicAuthMapperTests
             UserId = basicAuth.UserId,
             Password = basicAuth.Password,
             ModifiedUtc = modifiedUtc,
-        }.ToEntity(_hashProviderFactory);
+        }.ToEntity();
 
         Assert.NotNull(result);
         Assert.Equal(42, result.Id);
@@ -83,7 +83,7 @@ public class BasicAuthMapperTests
         var request = new CreateBasicAuthRequest(UserId: 123, Password: "password");
         var basicAuth = request.ToBasicAuth(_hashProviderFactory);
 
-        var result = basicAuth.ToEntity(_hashProviderFactory);
+        var result = basicAuth.ToEntity();
 
         Assert.Equal(basicAuth.Password.Hash, result.Password);
     }
@@ -126,7 +126,7 @@ public class BasicAuthMapperTests
             ModifiedUtc = modifiedUtc,
         };
 
-        var entity = originalWithId.ToEntity(_hashProviderFactory);
+        var entity = originalWithId.ToEntity();
         var resultBasicAuth = entity.ToModel(_hashProviderFactory);
 
         Assert.Equal(originalWithId.Id, resultBasicAuth.Id);
@@ -163,7 +163,7 @@ public class BasicAuthMapperTests
             Password = hashedPassword,
         };
 
-        var result = basicAuth.ToEntity(_hashProviderFactory);
+        var result = basicAuth.ToEntity();
 
         Assert.Equal(userId, result.UserId);
         Assert.Equal(hashedPassword.Hash, result.Password);

@@ -31,10 +31,7 @@ internal static class BasicAuthMapper
         };
     }
 
-    public static BasicAuthEntity ToEntity(
-        this BasicAuth basicAuth,
-        IHashProviderFactory hashProviderFactory
-    )
+    public static BasicAuthEntity ToEntity(this BasicAuth basicAuth)
     {
         return new BasicAuthEntity
         {

@@ -14,9 +14,6 @@ internal partial class Authentication : CommandBase
         [Argument("Account public ID (GUID) to switch to", true)]
         private Guid AccountPublicId { get; init; }
 
-        [Argument("Device ID", true)]
-        private string DeviceId { get; init; } = null!;
-
         private readonly IAuthenticationService _authenticationService;
 
         public SwitchAccount(IAuthenticationService authenticationService)
@@ -41,7 +38,7 @@ internal partial class Authentication : CommandBase
 
             try
             {
-                var request = new SwitchAccountRequest(authToken, DeviceId, AccountPublicId);
+                var request = new SwitchAccountRequest(authToken, AccountPublicId);
                 var result = await _authenticationService.SwitchAccountAsync(request);
 
                 if (result.ResultCode == SignInResultCode.Success)

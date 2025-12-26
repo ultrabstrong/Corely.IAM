@@ -17,6 +17,7 @@ internal class AuthenticationService(
     ILogger<AuthenticationService> logger,
     IRepo<UserEntity> userRepo,
     IAuthenticationProvider authenticationProvider,
+    IUserContextProvider userContextProvider,
     IUserContextSetter userContextSetter,
     IBasicAuthProcessor basicAuthProcessor,
     IOptions<SecurityOptions> securityOptions,
@@ -27,6 +28,9 @@ internal class AuthenticationService(
     private readonly IRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
     private readonly IAuthenticationProvider _authenticationProvider =
         authenticationProvider.ThrowIfNull(nameof(authenticationProvider));
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
+    );
     private readonly IUserContextSetter _userContextSetter = userContextSetter.ThrowIfNull(
         nameof(userContextSetter)
     );
@@ -132,10 +136,19 @@ internal class AuthenticationService(
             );
         }
 
+        if (string.IsNullOrEmpty(validationResult.DeviceId))
+        {
+            _logger.LogDebug("Auth token does not contain device ID");
+            return CreateFailedSignInResult(
+                SignInResultCode.InvalidAuthTokenError,
+                "Auth token does not contain device ID"
+            );
+        }
+
         var result = await GenerateAuthTokenAndSetContextAsync(
             validationResult.UserId.Value,
             request.AccountPublicId,
-            request.DeviceId,
+            validationResult.DeviceId,
             "account switch"
         );
 
@@ -154,26 +167,34 @@ internal class AuthenticationService(
     public async Task<bool> SignOutAsync(SignOutRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var context = _userContextProvider.GetUserContext();
+        if (context == null)
+        {
+            _logger.LogDebug("No user context available for sign out");
+            return false;
+        }
+
         _logger.LogDebug(
             "Signing out user {UserId} with token {TokenId}, account {AccountId}, device {DeviceId}",
-            request.UserId,
+            context.UserId,
             request.TokenId,
-            request.AccountId?.ToString() ?? "null",
-            request.DeviceId
+            context.AccountId?.ToString() ?? "null",
+            context.DeviceId
         );
 
         var revokeRequest = new RevokeUserAuthTokenRequest(
-            request.UserId,
+            context.UserId,
             request.TokenId,
-            request.DeviceId,
-            request.AccountId
+            context.DeviceId,
+            context.AccountId
         );
         var result = await _authenticationProvider.RevokeUserAuthTokenAsync(revokeRequest);
-        _userContextSetter.ClearUserContext(request.UserId);
+        _userContextSetter.ClearUserContext(context.UserId);
 
         _logger.LogDebug(
             "User {UserId} signed out with token {TokenId}: {Result}",
-            request.UserId,
+            context.UserId,
             request.TokenId,
             result
         );

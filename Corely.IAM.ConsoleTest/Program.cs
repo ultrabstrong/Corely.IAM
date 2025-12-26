@@ -88,7 +88,6 @@ internal class Program
             var switchAccountResult = await authenticationService.SwitchAccountAsync(
                 new SwitchAccountRequest(
                     signInResult.AuthToken!,
-                    TEST_DEVICE_ID,
                     registerAccountResult.CreatedAccountId
                 )
             );
@@ -169,7 +168,6 @@ internal class Program
             switchAccountResult = await authenticationService.SwitchAccountAsync(
                 new SwitchAccountRequest(
                     signInResult.AuthToken!,
-                    TEST_DEVICE_ID,
                     registerAccountResult.CreatedAccountId
                 )
             );
@@ -181,13 +179,9 @@ internal class Program
 
             // Uncomment to see all deregister fail
             /*
-                var signOutRequest = new SignOutRequest(
-                    registerUserResult.CreatedUserId,
-                    token.Id,
-                    TEST_DEVICE_ID
-                );
-                var signedOut = await authenticationService.SignOutAsync(signOutRequest);
-                await authenticationService.SignOutAllAsync(registerUserResult.CreatedUserId);
+             var signOutRequest = new SignOutRequest(token.Id);
+               var signedOut = await authenticationService.SignOutAsync(signOutRequest);
+       await authenticationService.SignOutAllAsync(registerUserResult.CreatedUserId);
             */
 
             // ========= DEREGISTERING ==========

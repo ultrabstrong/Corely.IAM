@@ -43,68 +43,38 @@ internal class AuthenticationProvider(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var userEntity = await _userRepo.GetAsync(
-            u => u.Id == request.UserId,
-            include: q => q.Include(u => u.AsymmetricKeys).Include(u => u.Accounts)
-        );
+        var userEntity = await GetUserWithKeysAndAccountsAsync(u => u.Id == request.UserId);
 
         if (userEntity == null)
         {
             _logger.LogWarning("User with Id {UserId} not found", request.UserId);
-            return new UserAuthTokenResult(
-                UserAuthTokenResultCode.UserNotFound,
-                null,
-                null,
-                null,
-                null,
-                []
-            );
+            return CreateFailedTokenResult(UserAuthTokenResultCode.UserNotFound);
         }
 
-        var signatureKey = userEntity.AsymmetricKeys?.FirstOrDefault(k =>
-            k.KeyUsedFor == KeyUsedFor.Signature
-        );
+        var signatureKey = GetSignatureKey(userEntity);
         if (signatureKey == null)
         {
             _logger.LogWarning(
                 "User with Id {UserId} does not have an asymmetric signature key",
                 request.UserId
             );
-            return new UserAuthTokenResult(
-                UserAuthTokenResultCode.SignatureKeyNotFound,
-                null,
-                null,
-                null,
-                null,
-                []
-            );
+            return CreateFailedTokenResult(UserAuthTokenResultCode.SignatureKeyNotFound);
         }
 
-        var accounts = userEntity.Accounts?.Select(a => a.ToModel()).ToList() ?? [];
+        var accounts = GetAccountModels(userEntity);
 
         Account? signedInAccount = null;
         if (request.AccountPublicId.HasValue)
         {
-            var matchingAccount = accounts.FirstOrDefault(a =>
-                a.PublicId == request.AccountPublicId.Value
-            );
-            if (matchingAccount != null)
-                signedInAccount = matchingAccount;
-            else
+            signedInAccount = FindAccountByPublicId(accounts, request.AccountPublicId.Value);
+            if (signedInAccount == null)
             {
                 _logger.LogWarning(
                     "User with Id {UserId} does not have access to account {AccountPublicId}",
                     request.UserId,
                     request.AccountPublicId.Value
                 );
-                return new UserAuthTokenResult(
-                    UserAuthTokenResultCode.AccountNotFound,
-                    null,
-                    null,
-                    null,
-                    null,
-                    []
-                );
+                return CreateFailedTokenResult(UserAuthTokenResultCode.AccountNotFound);
             }
         }
 
@@ -119,30 +89,14 @@ internal class AuthenticationProvider(
         var expires = now.AddSeconds(_securityOptions.AuthTokenTtlSeconds);
         var jti = Guid.NewGuid().ToString();
 
-        var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, userEntity.PublicId.ToString()),
-            new(JwtRegisteredClaimNames.Jti, jti),
-            new(
-                JwtRegisteredClaimNames.Iat,
-                new DateTimeOffset(now).ToUnixTimeSeconds().ToString(),
-                ClaimValueTypes.Integer64
-            ),
-            new(UserConstants.DEVICE_ID_CLAIM, request.DeviceId),
-        };
-
-        foreach (var account in accounts)
-        {
-            claims.Add(new Claim(UserConstants.ACCOUNT_ID_CLAIM, account.PublicId.ToString()));
-        }
-
-        if (request.AccountPublicId.HasValue)
-            claims.Add(
-                new Claim(
-                    UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM,
-                    request.AccountPublicId.Value.ToString()
-                )
-            );
+        var claims = BuildTokenClaims(
+            userEntity.PublicId,
+            jti,
+            now,
+            request.DeviceId,
+            accounts,
+            request.AccountPublicId
+        );
 
         var token = new JwtSecurityToken(
             issuer: typeof(AuthenticationProvider).FullName,
@@ -180,39 +134,6 @@ internal class AuthenticationProvider(
         );
     }
 
-    private async Task RevokeExistingTokensForUserAccountDeviceAsync(
-        int userId,
-        int? accountId,
-        string deviceId
-    )
-    {
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var activeTokens = await _authTokenRepo.ListAsync(t =>
-            t.UserId == userId
-            && t.AccountId == accountId
-            && t.DeviceId == deviceId
-            && t.RevokedUtc == null
-            && t.ExpiresUtc > now
-        );
-
-        if (activeTokens.Count == 0)
-            return;
-
-        foreach (var token in activeTokens)
-        {
-            token.RevokedUtc = now;
-            await _authTokenRepo.UpdateAsync(token);
-        }
-
-        _logger.LogDebug(
-            "Revoked {Count} existing token(s) for user {UserId}, account {AccountId}, and device {DeviceId}",
-            activeTokens.Count,
-            userId,
-            accountId?.ToString() ?? "null",
-            deviceId
-        );
-    }
-
     public async Task<UserAuthTokenValidationResult> ValidateUserAuthTokenAsync(string authToken)
     {
         ArgumentNullException.ThrowIfNull(authToken, nameof(authToken));
@@ -222,96 +143,66 @@ internal class AuthenticationProvider(
         if (!tokenHandler.CanReadToken(authToken))
         {
             _logger.LogInformation("Auth token is in invalid format");
-            return new UserAuthTokenValidationResult(
-                UserAuthTokenValidationResultCode.InvalidTokenFormat,
-                null,
-                null,
-                null,
-                []
+            return CreateFailedValidationResult(
+                UserAuthTokenValidationResultCode.InvalidTokenFormat
             );
         }
 
         var jwtToken = tokenHandler.ReadJwtToken(authToken);
 
-        var subClaim = jwtToken
-            .Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)
-            ?.Value;
+        var subClaim = GetClaimValue(jwtToken, JwtRegisteredClaimNames.Sub);
         if (string.IsNullOrEmpty(subClaim) || !Guid.TryParse(subClaim, out var userPublicId))
         {
             _logger.LogInformation("Auth token does not contain valid sub (userPublicId) claim");
-            return new UserAuthTokenValidationResult(
-                UserAuthTokenValidationResultCode.MissingUserIdClaim,
-                null,
-                null,
-                null,
-                []
+            return CreateFailedValidationResult(
+                UserAuthTokenValidationResultCode.MissingUserIdClaim
             );
         }
 
-        var userEntity = await _userRepo.GetAsync(
-            u => u.PublicId == userPublicId,
-            include: q => q.Include(u => u.AsymmetricKeys).Include(u => u.Accounts)
-        );
+        var userEntity = await GetUserWithKeysAndAccountsAsync(u => u.PublicId == userPublicId);
         if (userEntity == null)
         {
             _logger.LogInformation("User with PublicId {UserPublicId} not found", userPublicId);
-            return new UserAuthTokenValidationResult(
-                UserAuthTokenValidationResultCode.TokenValidationFailed,
-                null,
-                null,
-                null,
-                []
+            return CreateFailedValidationResult(
+                UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
 
-        var userId = userEntity.Id;
-
-        var jti = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
+        var jti = GetClaimValue(jwtToken, JwtRegisteredClaimNames.Jti);
         if (string.IsNullOrEmpty(jti))
         {
             _logger.LogInformation("Auth token does not contain jti claim");
-            return new UserAuthTokenValidationResult(
-                UserAuthTokenValidationResultCode.TokenValidationFailed,
-                null,
-                null,
-                null,
-                []
+            return CreateFailedValidationResult(
+                UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.PublicId == jti && t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > now
+            t.PublicId == jti
+            && t.UserId == userEntity.Id
+            && t.RevokedUtc == null
+            && t.ExpiresUtc > now
         );
 
         if (trackedToken == null)
         {
             _logger.LogInformation("Auth token not found, revoked, or expired in server tracking");
-            return new UserAuthTokenValidationResult(
-                UserAuthTokenValidationResultCode.TokenValidationFailed,
-                null,
-                null,
-                null,
-                []
+            return CreateFailedValidationResult(
+                UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
 
-        var signatureKey = userEntity.AsymmetricKeys?.FirstOrDefault(k =>
-            k.KeyUsedFor == KeyUsedFor.Signature
-        );
+        var signatureKey = GetSignatureKey(userEntity);
         if (signatureKey == null)
         {
             _logger.LogWarning(
                 "User with Id {UserId} does not have an asymmetric key for {KeyUse}",
-                userId,
+                userEntity.Id,
                 KeyUsedFor.Signature
             );
-            return new UserAuthTokenValidationResult(
-                UserAuthTokenValidationResultCode.TokenValidationFailed,
-                null,
-                null,
-                null,
-                []
+            return CreateFailedValidationResult(
+                UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
 
@@ -340,63 +231,29 @@ internal class AuthenticationProvider(
         catch (Exception ex)
         {
             _logger.LogInformation("Token validation failed: {Error}", ex.Message);
-            return new UserAuthTokenValidationResult(
-                UserAuthTokenValidationResultCode.TokenValidationFailed,
-                null,
-                null,
-                null,
-                []
+            return CreateFailedValidationResult(
+                UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
 
-        // Extract device_id claim
-        var deviceId = jwtToken
-            .Claims.FirstOrDefault(c => c.Type == UserConstants.DEVICE_ID_CLAIM)
-            ?.Value;
-
+        var deviceId = GetClaimValue(jwtToken, UserConstants.DEVICE_ID_CLAIM);
         if (string.IsNullOrWhiteSpace(deviceId))
         {
             _logger.LogInformation("Auth token does not contain device ID");
-            return new UserAuthTokenValidationResult(
-                UserAuthTokenValidationResultCode.TokenValidationFailed,
-                null,
-                null,
-                null,
-                []
+            return CreateFailedValidationResult(
+                UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
 
-        Account? signedInAccount = null;
-        var signedInAccountIdClaim = jwtToken
-            .Claims.FirstOrDefault(c => c.Type == UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM)
-            ?.Value;
-        if (
-            !string.IsNullOrEmpty(signedInAccountIdClaim)
-            && Guid.TryParse(signedInAccountIdClaim, out var accountPublicId)
-        )
-        {
-            var matchingAccount = userEntity.Accounts?.FirstOrDefault(a =>
-                a.PublicId == accountPublicId
-            );
-            if (matchingAccount != null)
-            {
-                signedInAccount = matchingAccount.ToModel();
-            }
-            else
-            {
-                _logger.LogWarning(
-                    "Account with PublicId {AccountPublicId} not found in user's accounts during token validation",
-                    accountPublicId
-                );
-            }
-        }
+        var accounts = GetAccountModels(userEntity);
+        var signedInAccount = ExtractSignedInAccountFromToken(jwtToken, userEntity);
 
         return new UserAuthTokenValidationResult(
             UserAuthTokenValidationResultCode.Success,
             userEntity.ToModel(),
             signedInAccount,
             deviceId,
-            userEntity.Accounts?.Select(a => a.ToModel())?.ToList() ?? []
+            accounts
         );
     }
 
@@ -461,4 +318,139 @@ internal class AuthenticationProvider(
             );
         }
     }
+
+    #region Private Helpers
+
+    private async Task<UserEntity?> GetUserWithKeysAndAccountsAsync(
+        System.Linq.Expressions.Expression<Func<UserEntity, bool>> predicate
+    ) =>
+        await _userRepo.GetAsync(
+            predicate,
+            include: q => q.Include(u => u.AsymmetricKeys).Include(u => u.Accounts)
+        );
+
+    private static UserAsymmetricKeyEntity? GetSignatureKey(UserEntity userEntity) =>
+        userEntity.AsymmetricKeys?.FirstOrDefault(k => k.KeyUsedFor == KeyUsedFor.Signature);
+
+    private static List<Account> GetAccountModels(UserEntity userEntity) =>
+        userEntity.Accounts?.Select(a => a.ToModel()).ToList() ?? [];
+
+    private static Account? FindAccountByPublicId(List<Account> accounts, Guid publicId) =>
+        accounts.FirstOrDefault(a => a.PublicId == publicId);
+
+    private static string? GetClaimValue(JwtSecurityToken token, string claimType) =>
+        token.Claims.FirstOrDefault(c => c.Type == claimType)?.Value;
+
+    private static List<Claim> BuildTokenClaims(
+        Guid userPublicId,
+        string jti,
+        DateTime issuedAt,
+        string deviceId,
+        List<Account> accounts,
+        Guid? signedInAccountPublicId
+    )
+    {
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, userPublicId.ToString()),
+            new(JwtRegisteredClaimNames.Jti, jti),
+            new(
+                JwtRegisteredClaimNames.Iat,
+                new DateTimeOffset(issuedAt).ToUnixTimeSeconds().ToString(),
+                ClaimValueTypes.Integer64
+            ),
+            new(UserConstants.DEVICE_ID_CLAIM, deviceId),
+        };
+
+        foreach (var account in accounts)
+        {
+            claims.Add(new Claim(UserConstants.ACCOUNT_ID_CLAIM, account.PublicId.ToString()));
+        }
+
+        if (signedInAccountPublicId.HasValue)
+        {
+            claims.Add(
+                new Claim(
+                    UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM,
+                    signedInAccountPublicId.Value.ToString()
+                )
+            );
+        }
+
+        return claims;
+    }
+
+    private Account? ExtractSignedInAccountFromToken(
+        JwtSecurityToken jwtToken,
+        UserEntity userEntity
+    )
+    {
+        var signedInAccountIdClaim = GetClaimValue(
+            jwtToken,
+            UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM
+        );
+        if (
+            !string.IsNullOrEmpty(signedInAccountIdClaim)
+            && Guid.TryParse(signedInAccountIdClaim, out var accountPublicId)
+        )
+        {
+            var matchingAccount = userEntity.Accounts?.FirstOrDefault(a =>
+                a.PublicId == accountPublicId
+            );
+            if (matchingAccount != null)
+            {
+                return matchingAccount.ToModel();
+            }
+
+            _logger.LogWarning(
+                "Account with PublicId {AccountPublicId} not found in user's accounts during token validation",
+                accountPublicId
+            );
+        }
+
+        return null;
+    }
+
+    private async Task RevokeExistingTokensForUserAccountDeviceAsync(
+        int userId,
+        int? accountId,
+        string deviceId
+    )
+    {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var activeTokens = await _authTokenRepo.ListAsync(t =>
+            t.UserId == userId
+            && t.AccountId == accountId
+            && t.DeviceId == deviceId
+            && t.RevokedUtc == null
+            && t.ExpiresUtc > now
+        );
+
+        if (activeTokens.Count == 0)
+            return;
+
+        foreach (var token in activeTokens)
+        {
+            token.RevokedUtc = now;
+            await _authTokenRepo.UpdateAsync(token);
+        }
+
+        _logger.LogDebug(
+            "Revoked {Count} existing token(s) for user {UserId}, account {AccountId}, and device {DeviceId}",
+            activeTokens.Count,
+            userId,
+            accountId?.ToString() ?? "null",
+            deviceId
+        );
+    }
+
+    private static UserAuthTokenResult CreateFailedTokenResult(
+        UserAuthTokenResultCode resultCode
+    ) => new(resultCode, null, null, null, null, []);
+
+    private static UserAuthTokenValidationResult CreateFailedValidationResult(
+        UserAuthTokenValidationResultCode resultCode
+    ) => new(resultCode, null, null, null, []);
+
+    #endregion
 }

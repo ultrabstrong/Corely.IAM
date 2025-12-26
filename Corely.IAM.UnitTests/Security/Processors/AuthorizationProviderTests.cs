@@ -474,7 +474,6 @@ public class AuthorizationProviderTests
         return new AuthorizationProvider(
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>(),
-            _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<ILogger<AuthorizationProvider>>()
         );
     }
@@ -495,56 +494,6 @@ public class AuthorizationProviderTests
         ((IUserContextSetter)userContextProvider).SetUserContext(
             new UserContext(new User() { Id = userId }, currentAccount, null, availableAccounts)
         );
-    }
-
-    private async Task SetupUserWithAccountAsync(int userId, int accountId)
-    {
-        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
-        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-
-        // Get or create user first
-        var existingUser = await userRepo.GetAsync(u => u.Id == userId);
-        if (existingUser == null)
-        {
-            existingUser = new UserEntity
-            {
-                Id = userId,
-                Username = $"testuser{userId}",
-                Email = $"test{userId}@test.com",
-                Accounts = [],
-            };
-            await userRepo.CreateAsync(existingUser);
-        }
-
-        // Get or create account with user in the Users collection
-        var existingAccount = await accountRepo.GetAsync(a => a.Id == accountId);
-        if (existingAccount == null)
-        {
-            existingAccount = new AccountEntity
-            {
-                Id = accountId,
-                AccountName = $"TestAccount{accountId}",
-                Users = [existingUser],
-            };
-            await accountRepo.CreateAsync(existingAccount);
-        }
-        else
-        {
-            existingAccount.Users ??= [];
-            if (!existingAccount.Users.Any(u => u.Id == userId))
-            {
-                existingAccount.Users.Add(existingUser);
-                await accountRepo.UpdateAsync(existingAccount);
-            }
-        }
-
-        // Also update user's Accounts collection for bidirectional relationship
-        existingUser.Accounts ??= [];
-        if (!existingUser.Accounts.Any(a => a.Id == accountId))
-        {
-            existingUser.Accounts.Add(existingAccount);
-            await userRepo.UpdateAsync(existingUser);
-        }
     }
 
     private async Task SetupTestPermissionDataAsync(

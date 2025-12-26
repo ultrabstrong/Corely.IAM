@@ -12,6 +12,7 @@ using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Models.Extensions;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Models.Extensions;
 using Corely.IAM.Users.Processors;
@@ -28,7 +29,8 @@ internal class DeregistrationService(
     IAccountProcessor accountProcessor,
     IUserProcessor userProcessor,
     IUserContextProvider userContextProvider,
-    IUserContextSetter userContextSetter
+    IUserContextSetter userContextSetter,
+    IAuthorizationCacheClearer authorizationCacheClearer
 ) : IDeregistrationService
 {
     private readonly ILogger<DeregistrationService> _logger = logger.ThrowIfNull(nameof(logger));
@@ -53,6 +55,8 @@ internal class DeregistrationService(
     private readonly IUserContextSetter _userContextSetter = userContextSetter.ThrowIfNull(
         nameof(userContextSetter)
     );
+    private readonly IAuthorizationCacheClearer _authorizationCacheClearer =
+        authorizationCacheClearer.ThrowIfNull(nameof(authorizationCacheClearer));
 
     public async Task<DeregisterUserResult> DeregisterUserAsync()
     {
@@ -71,6 +75,7 @@ internal class DeregistrationService(
         }
 
         _userContextSetter.ClearUserContext(userId);
+        _authorizationCacheClearer.ClearCache();
 
         _logger.LogInformation("User {UserId} deregistered", userId);
         return new DeregisterUserResult(DeregisterUserResultCode.Success, string.Empty);

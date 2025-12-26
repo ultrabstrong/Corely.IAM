@@ -26,6 +26,7 @@ public class AuthenticationServiceTests
     private readonly Mock<IAuthenticationProvider> _authenticationProviderMock;
     private readonly Mock<IUserContextProvider> _userContextProviderMock;
     private readonly Mock<IUserContextSetter> _userContextSetterMock;
+    private readonly Mock<IAuthorizationCacheClearer> _authorizationCacheClearerMock;
     private readonly Mock<IBasicAuthProcessor> _basicAuthProcessorMock;
     private readonly AuthenticationService _authenticationService;
 
@@ -41,6 +42,7 @@ public class AuthenticationServiceTests
         _authenticationProviderMock = GetMockAuthenticationProvider();
         _userContextProviderMock = GetMockUserContextProvider();
         _userContextSetterMock = GetMockUserContextSetter();
+        _authorizationCacheClearerMock = new Mock<IAuthorizationCacheClearer>();
         _basicAuthProcessorMock = GetMockBasicAuthProcessor();
 
         _authenticationService = new AuthenticationService(
@@ -49,6 +51,7 @@ public class AuthenticationServiceTests
             _authenticationProviderMock.Object,
             _userContextProviderMock.Object,
             _userContextSetterMock.Object,
+            _authorizationCacheClearerMock.Object,
             _basicAuthProcessorMock.Object,
             Options.Create(new SecurityOptions() { MaxLoginAttempts = MAX_LOGIN_ATTEMPTS }),
             TimeProvider.System

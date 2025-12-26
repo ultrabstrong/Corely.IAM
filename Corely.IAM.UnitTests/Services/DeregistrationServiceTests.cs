@@ -7,6 +7,7 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
@@ -27,6 +28,7 @@ public class DeregistrationServiceTests
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
     private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly Mock<IUserContextSetter> _mockUserContextSetter = new();
+    private readonly Mock<IAuthorizationCacheClearer> _mockAuthorizationCacheClearer = new();
     private readonly DeregistrationService _service;
 
     public DeregistrationServiceTests()
@@ -51,7 +53,8 @@ public class DeregistrationServiceTests
             _mockAccountProcessor.Object,
             _mockUserProcessor.Object,
             _mockUserContextProvider.Object,
-            _mockUserContextSetter.Object
+            _mockUserContextSetter.Object,
+            _mockAuthorizationCacheClearer.Object
         );
     }
 
@@ -70,6 +73,7 @@ public class DeregistrationServiceTests
         Assert.Equal(DeregisterUserResultCode.Success, result.ResultCode);
         _mockUserProcessor.Verify(x => x.DeleteUserAsync(1), Times.Once);
         _mockUserContextSetter.Verify(x => x.ClearUserContext(1), Times.Once);
+        _mockAuthorizationCacheClearer.Verify(x => x.ClearCache(), Times.Once);
     }
 
     [Fact]
@@ -87,6 +91,7 @@ public class DeregistrationServiceTests
 
         Assert.Equal(DeregisterUserResultCode.UserNotFoundError, result.ResultCode);
         _mockUserContextSetter.Verify(x => x.ClearUserContext(It.IsAny<int>()), Times.Never);
+        _mockAuthorizationCacheClearer.Verify(x => x.ClearCache(), Times.Never);
     }
 
     [Fact]
@@ -104,6 +109,7 @@ public class DeregistrationServiceTests
 
         Assert.Equal(DeregisterUserResultCode.UserIsSoleAccountOwnerError, result.ResultCode);
         _mockUserContextSetter.Verify(x => x.ClearUserContext(It.IsAny<int>()), Times.Never);
+        _mockAuthorizationCacheClearer.Verify(x => x.ClearCache(), Times.Never);
     }
 
     [Fact]
@@ -121,6 +127,7 @@ public class DeregistrationServiceTests
 
         Assert.Equal(DeregisterUserResultCode.UnauthorizedError, result.ResultCode);
         _mockUserContextSetter.Verify(x => x.ClearUserContext(It.IsAny<int>()), Times.Never);
+        _mockAuthorizationCacheClearer.Verify(x => x.ClearCache(), Times.Never);
     }
 
     #endregion

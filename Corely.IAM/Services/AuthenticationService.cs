@@ -19,6 +19,7 @@ internal class AuthenticationService(
     IAuthenticationProvider authenticationProvider,
     IUserContextProvider userContextProvider,
     IUserContextSetter userContextSetter,
+    IAuthorizationCacheClearer authorizationCacheClearer,
     IBasicAuthProcessor basicAuthProcessor,
     IOptions<SecurityOptions> securityOptions,
     TimeProvider timeProvider
@@ -34,6 +35,8 @@ internal class AuthenticationService(
     private readonly IUserContextSetter _userContextSetter = userContextSetter.ThrowIfNull(
         nameof(userContextSetter)
     );
+    private readonly IAuthorizationCacheClearer _authorizationCacheClearer =
+        authorizationCacheClearer.ThrowIfNull(nameof(authorizationCacheClearer));
     private readonly IBasicAuthProcessor _basicAuthProcessor = basicAuthProcessor.ThrowIfNull(
         nameof(basicAuthProcessor)
     );
@@ -172,6 +175,7 @@ internal class AuthenticationService(
         );
         var result = await _authenticationProvider.RevokeUserAuthTokenAsync(revokeRequest);
         _userContextSetter.ClearUserContext(context.User.Id);
+        _authorizationCacheClearer.ClearCache();
 
         _logger.LogDebug(
             "User {UserId} signed out with token {TokenId}: {Result}",
@@ -197,6 +201,7 @@ internal class AuthenticationService(
 
         await _authenticationProvider.RevokeAllUserAuthTokensAsync(userId);
         _userContextSetter.ClearUserContext(userId);
+        _authorizationCacheClearer.ClearCache();
 
         _logger.LogDebug("All sessions signed out for user {UserId}", userId);
     }

@@ -121,7 +121,13 @@ public static class ServiceRegistrationExtensions
         serviceCollection.AddScoped<IUserContextSetter>(sp =>
             sp.GetRequiredService<UserContextProvider>()
         );
-        serviceCollection.AddScoped<IAuthorizationProvider, AuthorizationProvider>();
+        serviceCollection.AddScoped<AuthorizationProvider>();
+        serviceCollection.AddScoped<IAuthorizationProvider>(sp =>
+            sp.GetRequiredService<AuthorizationProvider>()
+        );
+        serviceCollection.AddScoped<IAuthorizationCacheClearer>(sp =>
+            sp.GetRequiredService<AuthorizationProvider>()
+        );
 
         serviceCollection.AddScoped<IRegistrationService, RegistrationService>();
         serviceCollection.Decorate<

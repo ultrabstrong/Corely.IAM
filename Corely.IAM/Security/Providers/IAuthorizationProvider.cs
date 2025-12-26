@@ -9,3 +9,8 @@ public interface IAuthorizationProvider
     bool HasUserContext();
     bool HasAccountContext();
 }
+
+internal interface IAuthorizationCacheClearer
+{
+    void ClearCache();
+}

@@ -1,5 +1,4 @@
 using Corely.DataAccess.Interfaces.Repos;
-using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Security.Constants;
@@ -12,13 +11,11 @@ namespace Corely.IAM.Security.Providers;
 internal class AuthorizationProvider(
     IUserContextProvider userContextProvider,
     IReadonlyRepo<PermissionEntity> permissionRepo,
-    IReadonlyRepo<AccountEntity> accountRepo,
     ILogger<AuthorizationProvider> logger
-) : IAuthorizationProvider
+) : IAuthorizationProvider, IAuthorizationCacheClearer
 {
     private readonly IUserContextProvider _userContextProvider = userContextProvider;
     private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo;
-    private readonly IReadonlyRepo<AccountEntity> _accountRepo = accountRepo;
     private readonly ILogger<AuthorizationProvider> _logger = logger;
     private IReadOnlyList<PermissionEntity>? _cachedPermissions;
 
@@ -112,6 +109,11 @@ internal class AuthorizationProvider(
         }
 
         return hasAccountContext;
+    }
+
+    public void ClearCache()
+    {
+        _cachedPermissions = null;
     }
 
     private bool TryGetUserContext(out UserContext userContext, string operation)

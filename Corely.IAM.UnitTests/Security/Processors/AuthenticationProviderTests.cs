@@ -40,7 +40,8 @@ public class AuthenticationProviderTests
             _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>(),
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
             _serviceFactory.GetRequiredService<IOptions<SecurityOptions>>(),
-            _serviceFactory.GetRequiredService<ILogger<AuthenticationProvider>>()
+            _serviceFactory.GetRequiredService<ILogger<AuthenticationProvider>>(),
+            TimeProvider.System
         );
     }
 

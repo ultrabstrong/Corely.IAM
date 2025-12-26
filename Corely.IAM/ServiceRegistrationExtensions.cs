@@ -69,6 +69,8 @@ public static class ServiceRegistrationExtensions
         ISecurityConfigurationProvider securityConfigurationProvider
     )
     {
+        serviceCollection.AddSingleton(TimeProvider.System);
+
         serviceCollection.AddValidatorsFromAssemblyContaining<FluentValidationProvider>(
             includeInternalTypes: true
         );

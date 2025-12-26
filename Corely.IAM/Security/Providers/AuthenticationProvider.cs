@@ -20,7 +20,8 @@ internal class AuthenticationProvider(
     IRepo<UserAuthTokenEntity> authTokenRepo,
     ISecurityProvider securityProcessor,
     IOptions<SecurityOptions> securityOptions,
-    ILogger<AuthenticationProvider> logger
+    ILogger<AuthenticationProvider> logger,
+    TimeProvider timeProvider
 ) : IAuthenticationProvider
 {
     private readonly IRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
@@ -34,6 +35,7 @@ internal class AuthenticationProvider(
         .ThrowIfNull(nameof(securityOptions))
         .Value;
     private readonly ILogger<AuthenticationProvider> _logger = logger.ThrowIfNull(nameof(logger));
+    private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
 
     public async Task<UserAuthTokenResult> GetUserAuthTokenAsync(UserAuthTokenRequest request)
     {
@@ -108,7 +110,7 @@ internal class AuthenticationProvider(
             true
         );
 
-        var now = DateTime.UtcNow;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var expires = now.AddSeconds(_securityOptions.AuthTokenTtlSeconds);
         var jti = Guid.NewGuid().ToString();
 
@@ -168,17 +170,17 @@ internal class AuthenticationProvider(
 
     private async Task RevokeExistingTokensForUserAccountAsync(int userId, int? accountId)
     {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var activeTokens = await _authTokenRepo.ListAsync(t =>
             t.UserId == userId
             && t.AccountId == accountId
             && t.RevokedUtc == null
-            && t.ExpiresUtc > DateTime.UtcNow
+            && t.ExpiresUtc > now
         );
 
         if (activeTokens.Count == 0)
             return;
 
-        var now = DateTime.UtcNow;
         foreach (var token in activeTokens)
         {
             token.RevokedUtc = now;
@@ -255,11 +257,9 @@ internal class AuthenticationProvider(
             );
         }
 
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.PublicId == jti
-            && t.UserId == userId
-            && t.RevokedUtc == null
-            && t.ExpiresUtc > DateTime.UtcNow
+            t.PublicId == jti && t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > now
         );
 
         if (trackedToken == null)
@@ -359,11 +359,12 @@ internal class AuthenticationProvider(
 
     public async Task<bool> RevokeUserAuthTokenAsync(int userId, string tokenId)
     {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var trackedToken = await _authTokenRepo.GetAsync(t =>
             t.PublicId == tokenId
             && t.UserId == userId
             && t.RevokedUtc == null
-            && t.ExpiresUtc > DateTime.UtcNow
+            && t.ExpiresUtc > now
         );
 
         if (trackedToken == null)
@@ -375,7 +376,7 @@ internal class AuthenticationProvider(
             return false;
         }
 
-        trackedToken.RevokedUtc = DateTime.UtcNow;
+        trackedToken.RevokedUtc = now;
         await _authTokenRepo.UpdateAsync(trackedToken);
 
         _logger.LogInformation("Auth token {TokenId} revoked for user {UserId}", tokenId, userId);
@@ -384,11 +385,11 @@ internal class AuthenticationProvider(
 
     public async Task RevokeAllUserAuthTokensAsync(int userId)
     {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var activeTokens = await _authTokenRepo.ListAsync(t =>
-            t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > DateTime.UtcNow
+            t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > now
         );
 
-        var now = DateTime.UtcNow;
         foreach (var token in activeTokens)
         {
             token.RevokedUtc = now;

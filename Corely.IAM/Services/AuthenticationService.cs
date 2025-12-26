@@ -19,7 +19,8 @@ internal class AuthenticationService(
     IAuthenticationProvider authenticationProvider,
     IUserContextSetter userContextSetter,
     IBasicAuthProcessor basicAuthProcessor,
-    IOptions<SecurityOptions> securityOptions
+    IOptions<SecurityOptions> securityOptions,
+    TimeProvider timeProvider
 ) : IAuthenticationService
 {
     private readonly ILogger<AuthenticationService> _logger = logger.ThrowIfNull(nameof(logger));
@@ -35,6 +36,7 @@ internal class AuthenticationService(
     private readonly SecurityOptions _securityOptions = securityOptions
         .ThrowIfNull(nameof(securityOptions))
         .Value;
+    private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
 
     public async Task<SignInResult> SignInAsync(SignInRequest request)
     {
@@ -60,9 +62,10 @@ internal class AuthenticationService(
         );
         if (verifyResult.ResultCode != VerifyBasicAuthResultCode.Success || !verifyResult.IsValid)
         {
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
             userEntity.FailedLoginsSinceLastSuccess++;
             userEntity.TotalFailedLogins++;
-            userEntity.LastFailedLoginUtc = DateTime.UtcNow;
+            userEntity.LastFailedLoginUtc = now;
 
             await _userRepo.UpdateAsync(userEntity);
 
@@ -77,9 +80,10 @@ internal class AuthenticationService(
             );
         }
 
+        var successNow = _timeProvider.GetUtcNow().UtcDateTime;
         userEntity.TotalSuccessfulLogins++;
         userEntity.FailedLoginsSinceLastSuccess = 0;
-        userEntity.LastSuccessfulLoginUtc = DateTime.UtcNow;
+        userEntity.LastSuccessfulLoginUtc = successNow;
         await _userRepo.UpdateAsync(userEntity);
 
         var result = await GenerateAuthTokenAndSetContextAsync(

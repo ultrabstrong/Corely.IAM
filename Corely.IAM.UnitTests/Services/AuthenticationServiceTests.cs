@@ -46,7 +46,8 @@ public class AuthenticationServiceTests
             _authenticationProviderMock.Object,
             _userContextSetterMock.Object,
             _basicAuthProcessorMock.Object,
-            Options.Create(new SecurityOptions() { MaxLoginAttempts = MAX_LOGIN_ATTEMPTS })
+            Options.Create(new SecurityOptions() { MaxLoginAttempts = MAX_LOGIN_ATTEMPTS }),
+            TimeProvider.System
         );
     }
 

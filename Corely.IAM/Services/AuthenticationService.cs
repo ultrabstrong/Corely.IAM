@@ -46,27 +46,13 @@ internal class AuthenticationService(
         if (userEntity == null)
         {
             _logger.LogDebug("User {Username} not found", request.Username);
-            return new SignInResult(
-                SignInResultCode.UserNotFoundError,
-                "User not found",
-                null,
-                null,
-                [],
-                null
-            );
+            return CreateFailedSignInResult(SignInResultCode.UserNotFoundError, "User not found");
         }
 
         if (userEntity.FailedLoginsSinceLastSuccess >= _securityOptions.MaxLoginAttempts)
         {
             _logger.LogDebug("User {Username} is locked out", request.Username);
-            return new SignInResult(
-                SignInResultCode.UserLockedError,
-                "User is locked out",
-                null,
-                null,
-                [],
-                null
-            );
+            return CreateFailedSignInResult(SignInResultCode.UserLockedError, "User is locked out");
         }
 
         var verifyResult = await _basicAuthProcessor.VerifyBasicAuthAsync(
@@ -85,13 +71,9 @@ internal class AuthenticationService(
                 request.Username
             );
 
-            return new SignInResult(
+            return CreateFailedSignInResult(
                 SignInResultCode.PasswordMismatchError,
-                "Invalid password",
-                null,
-                null,
-                [],
-                null
+                "Invalid password"
             );
         }
 
@@ -100,56 +82,18 @@ internal class AuthenticationService(
         userEntity.LastSuccessfulLoginUtc = DateTime.UtcNow;
         await _userRepo.UpdateAsync(userEntity);
 
-        var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id, request.AccountPublicId)
+        var result = await GenerateAuthTokenAndSetContextAsync(
+            userEntity.Id,
+            request.AccountPublicId,
+            "sign in"
         );
 
-        if (authTokenResult.ResultCode != UserAuthTokenResultCode.Success)
+        if (result.ResultCode == SignInResultCode.Success)
         {
-            var (signInResultCode, message) = authTokenResult.ResultCode switch
-            {
-                UserAuthTokenResultCode.UserNotFound => (
-                    SignInResultCode.UserNotFoundError,
-                    "User not found"
-                ),
-                UserAuthTokenResultCode.SignatureKeyNotFound => (
-                    SignInResultCode.SignatureKeyNotFoundError,
-                    "User signature key not found"
-                ),
-                UserAuthTokenResultCode.AccountNotFound => (
-                    SignInResultCode.AccountNotFoundError,
-                    $"Account {request.AccountPublicId} not found for user"
-                ),
-                _ => (SignInResultCode.UserNotFoundError, "Unknown error creating auth token"),
-            };
-
-            _logger.LogWarning(
-                "Failed to create auth token for user {Username}: {ResultCode}",
-                request.Username,
-                authTokenResult.ResultCode
-            );
-
-            return new SignInResult(signInResultCode, message, null, null, [], null);
+            _logger.LogDebug("User {Username} signed in", request.Username);
         }
 
-        _userContextSetter.SetUserContext(
-            new UserContext(
-                userEntity.Id,
-                authTokenResult.SignedInAccountId,
-                authTokenResult.Accounts
-            )
-        );
-
-        _logger.LogDebug("User {Username} signed in", request.Username);
-
-        return new SignInResult(
-            SignInResultCode.Success,
-            null,
-            authTokenResult.Token,
-            authTokenResult.TokenId,
-            authTokenResult.Accounts,
-            authTokenResult.SignedInAccountId
-        );
+        return result;
     }
 
     public async Task<SignInResult> SwitchAccountAsync(SwitchAccountRequest request)
@@ -168,82 +112,37 @@ internal class AuthenticationService(
                 "Auth token validation failed: {ResultCode}",
                 validationResult.ResultCode
             );
-            return new SignInResult(
+            return CreateFailedSignInResult(
                 SignInResultCode.InvalidAuthTokenError,
-                $"Auth token validation failed: {validationResult.ResultCode}",
-                null,
-                null,
-                [],
-                null
+                $"Auth token validation failed: {validationResult.ResultCode}"
             );
         }
 
         if (!validationResult.UserId.HasValue)
         {
             _logger.LogDebug("Auth token does not contain user ID");
-            return new SignInResult(
+            return CreateFailedSignInResult(
                 SignInResultCode.InvalidAuthTokenError,
-                "Auth token does not contain user ID",
-                null,
-                null,
-                [],
-                null
+                "Auth token does not contain user ID"
             );
         }
 
-        var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(validationResult.UserId.Value, request.AccountPublicId)
-        );
-
-        if (authTokenResult.ResultCode != UserAuthTokenResultCode.Success)
-        {
-            var (signInResultCode, message) = authTokenResult.ResultCode switch
-            {
-                UserAuthTokenResultCode.UserNotFound => (
-                    SignInResultCode.UserNotFoundError,
-                    "User not found"
-                ),
-                UserAuthTokenResultCode.SignatureKeyNotFound => (
-                    SignInResultCode.SignatureKeyNotFoundError,
-                    "User signature key not found"
-                ),
-                UserAuthTokenResultCode.AccountNotFound => (
-                    SignInResultCode.AccountNotFoundError,
-                    $"Account {request.AccountPublicId} not found for user"
-                ),
-                _ => (SignInResultCode.UserNotFoundError, "Unknown error creating auth token"),
-            };
-
-            _logger.LogWarning(
-                "Failed to create auth token for account switch: {ResultCode}",
-                authTokenResult.ResultCode
-            );
-
-            return new SignInResult(signInResultCode, message, null, null, [], null);
-        }
-
-        _userContextSetter.SetUserContext(
-            new UserContext(
-                validationResult.UserId.Value,
-                authTokenResult.SignedInAccountId,
-                authTokenResult.Accounts
-            )
-        );
-
-        _logger.LogDebug(
-            "User {UserId} switched to account {AccountId}",
+        var result = await GenerateAuthTokenAndSetContextAsync(
             validationResult.UserId.Value,
-            authTokenResult.SignedInAccountId
+            request.AccountPublicId,
+            "account switch"
         );
 
-        return new SignInResult(
-            SignInResultCode.Success,
-            null,
-            authTokenResult.Token,
-            authTokenResult.TokenId,
-            authTokenResult.Accounts,
-            authTokenResult.SignedInAccountId
-        );
+        if (result.ResultCode == SignInResultCode.Success)
+        {
+            _logger.LogDebug(
+                "User {UserId} switched to account {AccountId}",
+                validationResult.UserId.Value,
+                result.SignedInAccountId
+            );
+        }
+
+        return result;
     }
 
     public async Task<bool> SignOutAsync(int userId, string tokenId)
@@ -273,4 +172,70 @@ internal class AuthenticationService(
 
         _logger.LogDebug("All sessions signed out for user {UserId}", userId);
     }
+
+    private async Task<SignInResult> GenerateAuthTokenAndSetContextAsync(
+        int userId,
+        Guid? accountPublicId,
+        string operationName
+    )
+    {
+        var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(userId, accountPublicId)
+        );
+
+        if (authTokenResult.ResultCode != UserAuthTokenResultCode.Success)
+        {
+            var (signInResultCode, message) = MapAuthTokenResultCode(
+                authTokenResult.ResultCode,
+                accountPublicId
+            );
+
+            _logger.LogWarning(
+                "Failed to create auth token for {OperationName}: {ResultCode}",
+                operationName,
+                authTokenResult.ResultCode
+            );
+
+            return CreateFailedSignInResult(signInResultCode, message);
+        }
+
+        _userContextSetter.SetUserContext(
+            new UserContext(userId, authTokenResult.SignedInAccountId, authTokenResult.Accounts)
+        );
+
+        return new SignInResult(
+            SignInResultCode.Success,
+            null,
+            authTokenResult.Token,
+            authTokenResult.TokenId,
+            authTokenResult.Accounts,
+            authTokenResult.SignedInAccountId
+        );
+    }
+
+    private static (SignInResultCode, string) MapAuthTokenResultCode(
+        UserAuthTokenResultCode resultCode,
+        Guid? accountPublicId
+    ) =>
+        resultCode switch
+        {
+            UserAuthTokenResultCode.UserNotFound => (
+                SignInResultCode.UserNotFoundError,
+                "User not found"
+            ),
+            UserAuthTokenResultCode.SignatureKeyNotFound => (
+                SignInResultCode.SignatureKeyNotFoundError,
+                "User signature key not found"
+            ),
+            UserAuthTokenResultCode.AccountNotFound => (
+                SignInResultCode.AccountNotFoundError,
+                $"Account {accountPublicId} not found for user"
+            ),
+            _ => (SignInResultCode.UserNotFoundError, "Unknown error creating auth token"),
+        };
+
+    private static SignInResult CreateFailedSignInResult(
+        SignInResultCode resultCode,
+        string message
+    ) => new(resultCode, message, null, null, [], null);
 }

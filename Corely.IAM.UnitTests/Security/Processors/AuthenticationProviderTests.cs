@@ -44,7 +44,7 @@ public class AuthenticationProviderTests
         );
     }
 
-    private async Task<UserEntity> CreateUserAsync()
+    private async Task<UserEntity> CreateUserAsync(List<AccountEntity>? accounts = null)
     {
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var securityProcessor = _serviceFactory.GetRequiredService<ISecurityProvider>();
@@ -66,7 +66,7 @@ public class AuthenticationProviderTests
                     EncryptedPrivateKey = signatureKey.PrivateKey.Secret,
                 },
             ],
-            Accounts = [.. _fixture.CreateMany<AccountEntity>()],
+            Accounts = accounts ?? [.. _fixture.CreateMany<AccountEntity>()],
             Groups = [],
             Roles = [],
         };
@@ -74,12 +74,17 @@ public class AuthenticationProviderTests
         return created;
     }
 
-    private async Task<(int AccountId, Guid AccountPublicId)> CreateAccountAsync()
+    private async Task<AccountEntity> CreateAccountAsync()
     {
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
-        var account = new AccountEntity { AccountName = _fixture.Create<string>() };
+        var account = new AccountEntity
+        {
+            AccountName = _fixture.Create<string>(),
+            Id = _fixture.Create<int>(),
+            PublicId = Guid.NewGuid(),
+        };
         var created = await accountRepo.CreateAsync(account);
-        return (created.Id, created.PublicId);
+        return created;
     }
 
     [Fact]
@@ -100,7 +105,6 @@ public class AuthenticationProviderTests
 
         Assert.Equal(typeof(AuthenticationProvider).FullName, jwtToken.Issuer);
         Assert.Equal(UserConstants.JWT_AUDIENCE, jwtToken.Audiences.First());
-        // JWT now contains public ID (GUID) instead of internal ID
         Assert.Contains(
             jwtToken.Claims,
             c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == userEntity.PublicId.ToString()
@@ -139,10 +143,10 @@ public class AuthenticationProviderTests
     public async Task GetUserAuthTokenAsync_ReturnsAccountNotFound_WhenAccountNotBelongsToUser()
     {
         var userEntity = await CreateUserAsync();
-        var (_, accountPublicId) = await CreateAccountAsync();
+        var account = await CreateAccountAsync();
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id, accountPublicId)
+            new UserAuthTokenRequest(userEntity.Id, account.PublicId)
         );
 
         Assert.Equal(UserAuthTokenResultCode.AccountNotFound, result.ResultCode);
@@ -152,26 +156,183 @@ public class AuthenticationProviderTests
     [Fact]
     public async Task GetUserAuthTokenAsync_ReturnsSuccess_WithValidAccount()
     {
-        var (accountId, accountPublicId) = await CreateAccountAsync();
-        var userEntity = await CreateUserAsync();
-        userEntity.Accounts!.Add(
-            new AccountEntity
-            {
-                Id = accountId,
-                PublicId = accountPublicId,
-                AccountName = _fixture.Create<string>(),
-            }
-        );
+        var account = await CreateAccountAsync();
+        var userEntity = await CreateUserAsync([account]);
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new UserAuthTokenRequest(userEntity.Id, accountPublicId)
+            new UserAuthTokenRequest(userEntity.Id, account.PublicId)
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Token);
         Assert.NotNull(result.TokenId);
-        Assert.Equal(accountId, result.SignedInAccountId);
-        Assert.Contains(result.Accounts, a => a.Id == accountId);
+        Assert.Equal(account.Id, result.SignedInAccountId);
+        Assert.Contains(result.Accounts, a => a.Id == account.Id);
+    }
+
+    [Fact]
+    public async Task GetUserAuthTokenAsync_SetsAccountIdOnTokenEntity()
+    {
+        var account = await CreateAccountAsync();
+        var userEntity = await CreateUserAsync([account]);
+
+        var result = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(userEntity.Id, account.PublicId)
+        );
+
+        var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
+        var tokenEntity = await authTokenRepo.GetAsync(t => t.PublicId == result.TokenId);
+
+        Assert.NotNull(tokenEntity);
+        Assert.Equal(account.Id, tokenEntity.AccountId);
+    }
+
+    [Fact]
+    public async Task GetUserAuthTokenAsync_SetsNullAccountIdOnTokenEntity_WhenNoAccountSpecified()
+    {
+        var userEntity = await CreateUserAsync();
+
+        var result = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(userEntity.Id)
+        );
+
+        var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
+        var tokenEntity = await authTokenRepo.GetAsync(t => t.PublicId == result.TokenId);
+
+        Assert.NotNull(tokenEntity);
+        Assert.Null(tokenEntity.AccountId);
+    }
+
+    [Fact]
+    public async Task GetUserAuthTokenAsync_RevokesExistingTokenForSameUserAndAccount()
+    {
+        var account = await CreateAccountAsync();
+        var userEntity = await CreateUserAsync([account]);
+
+        var firstToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(userEntity.Id, account.PublicId)
+        );
+
+        var secondToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(userEntity.Id, account.PublicId)
+        );
+
+        var firstValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            firstToken.Token!
+        );
+        var secondValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            secondToken.Token!
+        );
+
+        Assert.Equal(
+            UserAuthTokenValidationResultCode.TokenValidationFailed,
+            firstValidation.ResultCode
+        );
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, secondValidation.ResultCode);
+    }
+
+    [Fact]
+    public async Task GetUserAuthTokenAsync_RevokesExistingTokenForSameUserWithNullAccount()
+    {
+        var userEntity = await CreateUserAsync();
+
+        var firstToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(userEntity.Id)
+        );
+
+        var secondToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(userEntity.Id)
+        );
+
+        var firstValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            firstToken.Token!
+        );
+        var secondValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            secondToken.Token!
+        );
+
+        Assert.Equal(
+            UserAuthTokenValidationResultCode.TokenValidationFailed,
+            firstValidation.ResultCode
+        );
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, secondValidation.ResultCode);
+    }
+
+    [Fact]
+    public async Task GetUserAuthTokenAsync_DoesNotRevokeTokenForDifferentAccount()
+    {
+        var account1 = await CreateAccountAsync();
+        var account2 = await CreateAccountAsync();
+        var userEntity = await CreateUserAsync([account1, account2]);
+
+        var tokenForAccount1 = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(userEntity.Id, account1.PublicId)
+        );
+
+        Assert.Equal(UserAuthTokenResultCode.Success, tokenForAccount1.ResultCode);
+        Assert.Equal(account1.Id, tokenForAccount1.SignedInAccountId);
+
+        var tokenForAccount2 = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(userEntity.Id, account2.PublicId)
+        );
+
+        Assert.Equal(UserAuthTokenResultCode.Success, tokenForAccount2.ResultCode);
+        Assert.Equal(account2.Id, tokenForAccount2.SignedInAccountId);
+
+        Assert.NotEqual(account1.Id, account2.Id);
+
+        var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
+        var token1Entity = await authTokenRepo.GetAsync(t =>
+            t.PublicId == tokenForAccount1.TokenId
+        );
+        var token2Entity = await authTokenRepo.GetAsync(t =>
+            t.PublicId == tokenForAccount2.TokenId
+        );
+
+        Assert.NotNull(token1Entity);
+        Assert.NotNull(token2Entity);
+        Assert.Equal(account1.Id, token1Entity.AccountId);
+        Assert.Equal(account2.Id, token2Entity.AccountId);
+        Assert.Null(token1Entity.RevokedUtc);
+        Assert.Null(token2Entity.RevokedUtc);
+
+        var validation1 = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            tokenForAccount1.Token!
+        );
+        var validation2 = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            tokenForAccount2.Token!
+        );
+
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, validation1.ResultCode);
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, validation2.ResultCode);
+    }
+
+    [Fact]
+    public async Task GetUserAuthTokenAsync_DoesNotRevokeNullAccountToken_WhenSwitchingToAccount()
+    {
+        var account = await CreateAccountAsync();
+        var userEntity = await CreateUserAsync([account]);
+
+        var tokenWithoutAccount = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(userEntity.Id)
+        );
+
+        var tokenWithAccount = await _authenticationProvider.GetUserAuthTokenAsync(
+            new UserAuthTokenRequest(userEntity.Id, account.PublicId)
+        );
+
+        var validationWithoutAccount = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            tokenWithoutAccount.Token!
+        );
+        var validationWithAccount = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            tokenWithAccount.Token!
+        );
+
+        Assert.Equal(
+            UserAuthTokenValidationResultCode.Success,
+            validationWithoutAccount.ResultCode
+        );
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, validationWithAccount.ResultCode);
     }
 
     [Fact]

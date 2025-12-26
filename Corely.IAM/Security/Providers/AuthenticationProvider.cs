@@ -144,9 +144,12 @@ internal class AuthenticationProvider(
             signingCredentials: credentials
         );
 
+        await RevokeExistingTokensForUserAccountAsync(request.UserId, signedInAccountId);
+
         var authTokenEntity = new UserAuthTokenEntity
         {
             UserId = request.UserId,
+            AccountId = signedInAccountId,
             PublicId = jti,
             IssuedUtc = now,
             ExpiresUtc = expires,
@@ -160,6 +163,33 @@ internal class AuthenticationProvider(
             jti,
             accounts,
             signedInAccountId
+        );
+    }
+
+    private async Task RevokeExistingTokensForUserAccountAsync(int userId, int? accountId)
+    {
+        var activeTokens = await _authTokenRepo.ListAsync(t =>
+            t.UserId == userId
+            && t.AccountId == accountId
+            && t.RevokedUtc == null
+            && t.ExpiresUtc > DateTime.UtcNow
+        );
+
+        if (activeTokens.Count == 0)
+            return;
+
+        var now = DateTime.UtcNow;
+        foreach (var token in activeTokens)
+        {
+            token.RevokedUtc = now;
+            await _authTokenRepo.UpdateAsync(token);
+        }
+
+        _logger.LogDebug(
+            "Revoked {Count} existing token(s) for user {UserId} and account {AccountId}",
+            activeTokens.Count,
+            userId,
+            accountId?.ToString() ?? "null"
         );
     }
 

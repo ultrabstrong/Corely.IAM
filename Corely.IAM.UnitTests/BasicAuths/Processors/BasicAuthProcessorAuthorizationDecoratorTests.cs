@@ -20,42 +20,57 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task UpsertBasicAuthAsync_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
+    public async Task CreateBasicAuthAsync_BypassesAuthorization_AndDelegatesToInner()
     {
-        var request = new UpsertBasicAuthRequest(5, "password");
-        _mockAuthorizationProvider
-            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId))
-            .Returns(false);
+        var request = new CreateBasicAuthRequest(5, "password");
+        var expectedResult = new CreateBasicAuthResult(CreateBasicAuthResultCode.Success, "", 1);
+        _mockInnerProcessor
+            .Setup(x => x.CreateBasicAuthAsync(request))
+            .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.UpsertBasicAuthAsync(request);
+        var result = await _decorator.CreateBasicAuthAsync(request);
 
-        Assert.Equal(UpsertBasicAuthResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerProcessor.Verify(
-            x => x.UpsertBasicAuthAsync(It.IsAny<UpsertBasicAuthRequest>()),
+        Assert.Equal(expectedResult, result);
+        _mockInnerProcessor.Verify(x => x.CreateBasicAuthAsync(request), Times.Once);
+        // Should not call any authorization methods
+        _mockAuthorizationProvider.Verify(
+            x => x.IsAuthorizedForOwnUser(It.IsAny<int>()),
             Times.Never
         );
     }
 
     [Fact]
-    public async Task UpsertBasicAuthAsync_Succeeds_WhenUserOperatesOnOwnCredentials()
+    public async Task UpdateBasicAuthAsync_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
+    {
+        var request = new UpdateBasicAuthRequest(5, "password");
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId))
+            .Returns(false);
+
+        var result = await _decorator.UpdateBasicAuthAsync(request);
+
+        Assert.Equal(UpdateBasicAuthResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerProcessor.Verify(
+            x => x.UpdateBasicAuthAsync(It.IsAny<UpdateBasicAuthRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task UpdateBasicAuthAsync_Succeeds_WhenUserOperatesOnOwnCredentials()
     {
         var userId = 5;
-        var request = new UpsertBasicAuthRequest(userId, "password");
-        var expectedResult = new UpsertBasicAuthResult(
-            UpsertBasicAuthResultCode.Success,
-            "",
-            1,
-            Corely.IAM.Enums.UpsertType.Update
-        );
+        var request = new UpdateBasicAuthRequest(userId, "password");
+        var expectedResult = new UpdateBasicAuthResult(UpdateBasicAuthResultCode.Success, "");
         _mockAuthorizationProvider.Setup(x => x.IsAuthorizedForOwnUser(userId)).Returns(true);
         _mockInnerProcessor
-            .Setup(x => x.UpsertBasicAuthAsync(request))
+            .Setup(x => x.UpdateBasicAuthAsync(request))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.UpsertBasicAuthAsync(request);
+        var result = await _decorator.UpdateBasicAuthAsync(request);
 
         Assert.Equal(expectedResult, result);
-        _mockInnerProcessor.Verify(x => x.UpsertBasicAuthAsync(request), Times.Once);
+        _mockInnerProcessor.Verify(x => x.UpdateBasicAuthAsync(request), Times.Once);
     }
 
     [Fact]

@@ -27,7 +27,6 @@ internal class RegistrationService(
     IGroupProcessor groupProcessor,
     IRoleProcessor roleProcessor,
     IPermissionProcessor permissionProcessor,
-    IUserContextSetter userContextSetter,
     IUserContextProvider userContextProvider,
     IUnitOfWorkProvider uowProvider
 ) : IRegistrationService
@@ -50,9 +49,6 @@ internal class RegistrationService(
     );
     private readonly IPermissionProcessor _permissionProcessor = permissionProcessor.ThrowIfNull(
         nameof(permissionProcessor)
-    );
-    private readonly IUserContextSetter _userContextSetter = userContextSetter.ThrowIfNull(
-        nameof(userContextSetter)
     );
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
@@ -88,12 +84,10 @@ internal class RegistrationService(
                 );
             }
 
-            _userContextSetter.SetUserContext(new UserContext(userResult.CreatedId, null, []));
-
-            var basicAuthResult = await _basicAuthProcessor.UpsertBasicAuthAsync(
+            var basicAuthResult = await _basicAuthProcessor.CreateBasicAuthAsync(
                 new(userResult.CreatedId, request.Password)
             );
-            if (basicAuthResult.ResultCode != UpsertBasicAuthResultCode.Success)
+            if (basicAuthResult.ResultCode != CreateBasicAuthResultCode.Success)
             {
                 _logger.LogInformation(
                     "Registering basic auth failed for username {Username}",
@@ -182,21 +176,6 @@ internal class RegistrationService(
 
             await _uowProvider.CommitAsync();
             uowSucceeded = true;
-
-            _userContextSetter.SetUserContext(
-                new UserContext(
-                    ownerUserId,
-                    createAccountResult.CreatedId,
-                    [
-                        new Account()
-                        {
-                            Id = createAccountResult.CreatedId,
-                            PublicId = createAccountResult.CreatedPublicId,
-                            AccountName = request.AccountName,
-                        },
-                    ]
-                )
-            );
 
             _logger.LogInformation(
                 "Account {AccountName} registered with Id {AccountId}",

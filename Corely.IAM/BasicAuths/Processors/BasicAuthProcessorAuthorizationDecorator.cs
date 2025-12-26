@@ -1,6 +1,5 @@
 using Corely.Common.Extensions;
 using Corely.IAM.BasicAuths.Models;
-using Corely.IAM.Enums;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.BasicAuths.Processors;
@@ -14,14 +13,19 @@ internal class BasicAuthProcessorAuthorizationDecorator(
     private readonly IAuthorizationProvider _authorizationProvider =
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
-    public async Task<UpsertBasicAuthResult> UpsertBasicAuthAsync(UpsertBasicAuthRequest request) =>
+    public Task<CreateBasicAuthResult> CreateBasicAuthAsync(CreateBasicAuthRequest request)
+    {
+        // No authorization required - this is called during user registration
+        // before the user has an authenticated context.
+        return _inner.CreateBasicAuthAsync(request);
+    }
+
+    public async Task<UpdateBasicAuthResult> UpdateBasicAuthAsync(UpdateBasicAuthRequest request) =>
         _authorizationProvider.IsAuthorizedForOwnUser(request.UserId)
-            ? await _inner.UpsertBasicAuthAsync(request)
-            : new UpsertBasicAuthResult(
-                UpsertBasicAuthResultCode.UnauthorizedError,
-                $"Unauthorized to update basic auth for user {request.UserId}",
-                -1,
-                default
+            ? await _inner.UpdateBasicAuthAsync(request)
+            : new UpdateBasicAuthResult(
+                UpdateBasicAuthResultCode.UnauthorizedError,
+                $"Unauthorized to update basic auth for user {request.UserId}"
             );
 
     public Task<VerifyBasicAuthResult> VerifyBasicAuthAsync(VerifyBasicAuthRequest request)

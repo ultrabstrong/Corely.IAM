@@ -4,7 +4,6 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.Enums;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
@@ -31,14 +30,13 @@ public class RegistrationServiceTests
     private readonly Mock<IGroupProcessor> _groupProcessorMock;
     private readonly Mock<IRoleProcessor> _roleProcessorMock;
     private readonly Mock<IPermissionProcessor> _permissionProcessorMock;
-    private readonly Mock<IUserContextSetter> _userContextSetterMock = new();
     private readonly Mock<IUserContextProvider> _userContextProviderMock = new();
     private readonly RegistrationService _registrationService;
 
     private CreateAccountResultCode _createAccountResultCode = CreateAccountResultCode.Success;
     private CreateUserResultCode _createUserResultCode = CreateUserResultCode.Success;
-    private UpsertBasicAuthResultCode _upsertBasicAuthResultCode =
-        UpsertBasicAuthResultCode.Success;
+    private CreateBasicAuthResultCode _createBasicAuthResultCode =
+        CreateBasicAuthResultCode.Success;
     private CreateGroupResultCode _createGroupResultCode = CreateGroupResultCode.Success;
     private CreateRoleResultCode _createRoleResultCode = CreateRoleResultCode.Success;
     private CreatePermissionResultCode _createPermissionResultCode =
@@ -87,7 +85,6 @@ public class RegistrationServiceTests
             _groupProcessorMock.Object,
             _roleProcessorMock.Object,
             _permissionProcessorMock.Object,
-            _userContextSetterMock.Object,
             _userContextProviderMock.Object,
             _unitOfWorkProviderMock.Object
         );
@@ -139,13 +136,12 @@ public class RegistrationServiceTests
     {
         var mock = new Mock<IBasicAuthProcessor>();
 
-        mock.Setup(m => m.UpsertBasicAuthAsync(It.IsAny<UpsertBasicAuthRequest>()))
+        mock.Setup(m => m.CreateBasicAuthAsync(It.IsAny<CreateBasicAuthRequest>()))
             .ReturnsAsync(() =>
-                new UpsertBasicAuthResult(
-                    _upsertBasicAuthResultCode,
+                new CreateBasicAuthResult(
+                    _createBasicAuthResultCode,
                     string.Empty,
-                    _fixture.Create<int>(),
-                    _fixture.Create<UpsertType>()
+                    _fixture.Create<int>()
                 )
             );
 
@@ -224,16 +220,6 @@ public class RegistrationServiceTests
 
         Assert.Equal(RegisterUserResultCode.Success, result.ResultCode);
 
-        _userContextSetterMock.Verify(
-            m =>
-                m.SetUserContext(
-                    It.Is<UserContext>(uc =>
-                        uc.UserId > 0 && uc.AccountId == null && uc.Accounts.Count == 0
-                    )
-                ),
-            Times.Once
-        );
-
         _unitOfWorkProviderMock.Verify(
             m => m.CommitAsync(It.IsAny<CancellationToken>()),
             Times.Once
@@ -250,7 +236,7 @@ public class RegistrationServiceTests
 
         Assert.Equal(RegisterUserResultCode.UserCreationError, result.ResultCode);
         _basicAuthProcessorMock.Verify(
-            m => m.UpsertBasicAuthAsync(It.IsAny<UpsertBasicAuthRequest>()),
+            m => m.CreateBasicAuthAsync(It.IsAny<CreateBasicAuthRequest>()),
             Times.Never
         );
         _unitOfWorkProviderMock.Verify(
@@ -262,7 +248,7 @@ public class RegistrationServiceTests
     [Fact]
     public async Task RegisterUserAsync_Fails_WhenBasicAuthProcessorFails()
     {
-        _upsertBasicAuthResultCode = UpsertBasicAuthResultCode.Failure;
+        _createBasicAuthResultCode = CreateBasicAuthResultCode.BasicAuthExistsError;
         var request = _fixture.Create<RegisterUserRequest>();
 
         var result = await _registrationService.RegisterUserAsync(request);
@@ -290,7 +276,6 @@ public class RegistrationServiceTests
 
         var result = await _registrationService.RegisterAccountAsync(request);
 
-        var userContext = _userContextProviderMock.Object.GetUserContext();
         Assert.Equal(RegisterAccountResultCode.Success, result.ResultCode);
         _roleProcessorMock.Verify(
             m => m.CreateDefaultSystemRolesAsync(It.IsAny<int>()),
@@ -298,17 +283,6 @@ public class RegistrationServiceTests
         );
         _userProcessorMock.Verify(
             m => m.AssignRolesToUserAsync(It.IsAny<AssignRolesToUserRequest>()),
-            Times.Once
-        );
-        _userContextSetterMock.Verify(
-            m =>
-                m.SetUserContext(
-                    It.Is<UserContext>(uc =>
-                        uc.UserId == userContext!.UserId
-                        && uc.AccountId != null
-                        && uc.Accounts.Count == 1
-                    )
-                ),
             Times.Once
         );
         _unitOfWorkProviderMock.Verify(

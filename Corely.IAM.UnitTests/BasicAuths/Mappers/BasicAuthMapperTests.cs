@@ -17,9 +17,22 @@ public class BasicAuthMapperTests
     }
 
     [Fact]
-    public void ToBasicAuth_ShouldMapAllProperties()
+    public void ToBasicAuth_FromCreateRequest_ShouldMapAllProperties()
     {
-        var request = new UpsertBasicAuthRequest(UserId: 123, Password: "mypassword");
+        var request = new CreateBasicAuthRequest(UserId: 123, Password: "mypassword");
+
+        var result = request.ToBasicAuth(_hashProviderFactory);
+
+        Assert.NotNull(result);
+        Assert.Equal(123, result.UserId);
+        Assert.NotNull(result.Password);
+        Assert.True(result.Password.Verify("mypassword"));
+    }
+
+    [Fact]
+    public void ToBasicAuth_FromUpdateRequest_ShouldMapAllProperties()
+    {
+        var request = new UpdateBasicAuthRequest(UserId: 123, Password: "mypassword");
 
         var result = request.ToBasicAuth(_hashProviderFactory);
 
@@ -32,7 +45,7 @@ public class BasicAuthMapperTests
     [Fact]
     public void ToBasicAuth_ShouldHashPassword()
     {
-        var request = new UpsertBasicAuthRequest(UserId: 123, Password: "plainpassword");
+        var request = new CreateBasicAuthRequest(UserId: 123, Password: "plainpassword");
 
         var result = request.ToBasicAuth(_hashProviderFactory);
 
@@ -44,7 +57,7 @@ public class BasicAuthMapperTests
     [Fact]
     public void ToEntity_ShouldMapAllProperties()
     {
-        var request = new UpsertBasicAuthRequest(UserId: 123, Password: "password");
+        var request = new CreateBasicAuthRequest(UserId: 123, Password: "password");
         var basicAuth = request.ToBasicAuth(_hashProviderFactory);
         var modifiedUtc = DateTime.UtcNow;
 
@@ -67,7 +80,7 @@ public class BasicAuthMapperTests
     [Fact]
     public void ToEntity_ShouldConvertHashedPasswordToString()
     {
-        var request = new UpsertBasicAuthRequest(UserId: 123, Password: "password");
+        var request = new CreateBasicAuthRequest(UserId: 123, Password: "password");
         var basicAuth = request.ToBasicAuth(_hashProviderFactory);
 
         var result = basicAuth.ToEntity(_hashProviderFactory);
@@ -101,7 +114,7 @@ public class BasicAuthMapperTests
     [Fact]
     public void ToModel_ToEntity_RoundTrip_ShouldPreserveData()
     {
-        var request = new UpsertBasicAuthRequest(UserId: 456, Password: "testpass");
+        var request = new CreateBasicAuthRequest(UserId: 456, Password: "testpass");
         var originalBasicAuth = request.ToBasicAuth(_hashProviderFactory);
         var modifiedUtc = DateTime.UtcNow;
 
@@ -128,7 +141,7 @@ public class BasicAuthMapperTests
     [InlineData(999, "simple")]
     public void ToBasicAuth_ShouldHandleVariousInputs(int userId, string password)
     {
-        var request = new UpsertBasicAuthRequest(UserId: userId, Password: password);
+        var request = new CreateBasicAuthRequest(UserId: userId, Password: password);
 
         var result = request.ToBasicAuth(_hashProviderFactory);
 

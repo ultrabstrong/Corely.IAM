@@ -2,7 +2,6 @@
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.Enums;
 using Corely.IAM.Validators;
 using Corely.Security.Hashing.Factories;
 using Corely.Security.Password;
@@ -30,35 +29,33 @@ public class BasicAuthProcessorTests
     }
 
     [Fact]
-    public async Task UpsertBasicAuthAsync_ReturnsCreateResult_WhenBasicAuthDoesNotExist()
+    public async Task CreateBasicAuthAsync_ReturnsSuccess_WhenBasicAuthDoesNotExist()
     {
-        var request = new UpsertBasicAuthRequest(1, VALID_PASSWORD);
-        var result = await _basicAuthProcessor.UpsertBasicAuthAsync(request);
+        var request = new CreateBasicAuthRequest(1, VALID_PASSWORD);
+        var result = await _basicAuthProcessor.CreateBasicAuthAsync(request);
 
         Assert.NotNull(result);
-        Assert.Equal(UpsertBasicAuthResultCode.Success, result.ResultCode);
-        Assert.Equal(UpsertType.Create, result.UpsertType);
+        Assert.Equal(CreateBasicAuthResultCode.Success, result.ResultCode);
     }
 
     [Fact]
-    public async Task UpsertBasicAuthAsync_ReturnsUpdateResult_WhenBasicAuthExists()
+    public async Task CreateBasicAuthAsync_ReturnsBasicAuthExistsError_WhenBasicAuthExists()
     {
-        var request = new UpsertBasicAuthRequest(1, VALID_PASSWORD);
-        await _basicAuthProcessor.UpsertBasicAuthAsync(request);
-        var result = await _basicAuthProcessor.UpsertBasicAuthAsync(request);
+        var request = new CreateBasicAuthRequest(1, VALID_PASSWORD);
+        await _basicAuthProcessor.CreateBasicAuthAsync(request);
+        var result = await _basicAuthProcessor.CreateBasicAuthAsync(request);
 
         Assert.NotNull(result);
-        Assert.Equal(UpsertBasicAuthResultCode.Success, result.ResultCode);
-        Assert.Equal(UpsertType.Update, result.UpsertType);
+        Assert.Equal(CreateBasicAuthResultCode.BasicAuthExistsError, result.ResultCode);
     }
 
     [Fact]
-    public async Task UpsertBasicAuthAsync_Throws_WhenPasswordValidationFails()
+    public async Task CreateBasicAuthAsync_Throws_WhenPasswordValidationFails()
     {
-        var request = new UpsertBasicAuthRequest(1, "password");
+        var request = new CreateBasicAuthRequest(1, "password");
 
         var ex = await Record.ExceptionAsync(() =>
-            _basicAuthProcessor.UpsertBasicAuthAsync(request)
+            _basicAuthProcessor.CreateBasicAuthAsync(request)
         );
 
         Assert.NotNull(ex);
@@ -69,9 +66,59 @@ public class BasicAuthProcessorTests
     }
 
     [Fact]
-    public async Task UpsertBasicAuthAsync_Throws_WithNullRequest()
+    public async Task CreateBasicAuthAsync_Throws_WithNullRequest()
     {
-        var ex = await Record.ExceptionAsync(() => _basicAuthProcessor.UpsertBasicAuthAsync(null!));
+        var ex = await Record.ExceptionAsync(() => _basicAuthProcessor.CreateBasicAuthAsync(null!));
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    [Fact]
+    public async Task UpdateBasicAuthAsync_ReturnsSuccess_WhenBasicAuthExists()
+    {
+        var createRequest = new CreateBasicAuthRequest(1, VALID_PASSWORD);
+        await _basicAuthProcessor.CreateBasicAuthAsync(createRequest);
+
+        var updateRequest = new UpdateBasicAuthRequest(1, "NewPassword1!");
+        var result = await _basicAuthProcessor.UpdateBasicAuthAsync(updateRequest);
+
+        Assert.NotNull(result);
+        Assert.Equal(UpdateBasicAuthResultCode.Success, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task UpdateBasicAuthAsync_ReturnsBasicAuthNotFoundError_WhenBasicAuthDoesNotExist()
+    {
+        var request = new UpdateBasicAuthRequest(9999, VALID_PASSWORD);
+        var result = await _basicAuthProcessor.UpdateBasicAuthAsync(request);
+
+        Assert.NotNull(result);
+        Assert.Equal(UpdateBasicAuthResultCode.BasicAuthNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task UpdateBasicAuthAsync_Throws_WhenPasswordValidationFails()
+    {
+        var createRequest = new CreateBasicAuthRequest(1, VALID_PASSWORD);
+        await _basicAuthProcessor.CreateBasicAuthAsync(createRequest);
+
+        var updateRequest = new UpdateBasicAuthRequest(1, "password");
+
+        var ex = await Record.ExceptionAsync(() =>
+            _basicAuthProcessor.UpdateBasicAuthAsync(updateRequest)
+        );
+
+        Assert.NotNull(ex);
+        var pvex = Assert.IsType<PasswordValidationException>(ex);
+        Assert.NotNull(pvex.PasswordValidationResult);
+        Assert.False(pvex.PasswordValidationResult.IsSuccess);
+    }
+
+    [Fact]
+    public async Task UpdateBasicAuthAsync_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() => _basicAuthProcessor.UpdateBasicAuthAsync(null!));
 
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
@@ -80,8 +127,8 @@ public class BasicAuthProcessorTests
     [Fact]
     public async Task VerifyBasicAuthAsync_ReturnsValidTrue_WhenBasicAuthExists()
     {
-        var request = new UpsertBasicAuthRequest(1, VALID_PASSWORD);
-        await _basicAuthProcessor.UpsertBasicAuthAsync(request);
+        var request = new CreateBasicAuthRequest(1, VALID_PASSWORD);
+        await _basicAuthProcessor.CreateBasicAuthAsync(request);
 
         var verifyRequest = new VerifyBasicAuthRequest(1, VALID_PASSWORD);
         var result = await _basicAuthProcessor.VerifyBasicAuthAsync(verifyRequest);
@@ -93,8 +140,8 @@ public class BasicAuthProcessorTests
     [Fact]
     public async Task VerifyBasicAuthAsync_ReturnsValidFalse_WhenPasswordIsIncorrect()
     {
-        var request = new UpsertBasicAuthRequest(1, VALID_PASSWORD);
-        await _basicAuthProcessor.UpsertBasicAuthAsync(request);
+        var request = new CreateBasicAuthRequest(1, VALID_PASSWORD);
+        await _basicAuthProcessor.CreateBasicAuthAsync(request);
 
         var verifyRequest = new VerifyBasicAuthRequest(1, "password");
         var result = await _basicAuthProcessor.VerifyBasicAuthAsync(verifyRequest);

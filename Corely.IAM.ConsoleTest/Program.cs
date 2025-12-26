@@ -65,19 +65,12 @@ internal class Program
             var deregistrationService = host.Services.GetRequiredService<IDeregistrationService>();
             var authenticationService = host.Services.GetRequiredService<IAuthenticationService>();
 
+            // ========= REGISTER USER 1 ==========
             var registerUserResult = await registrationService.RegisterUserAsync(
                 new RegisterUserRequest("user1", "email@x.y", "admin")
             );
 
-            var registerAccountResult = await registrationService.RegisterAccountAsync(
-                new RegisterAccountRequest("acct1")
-            );
-
-            var registerUser2Result = await registrationService.RegisterUserAsync(
-                new RegisterUserRequest("user2", "email2@x.y", "password2")
-            );
-
-            // Sign in without account to get token
+            // Sign in as user1 to establish context before creating account
             var signInResult = await authenticationService.SignInAsync(
                 new SignInRequest("user1", "admin", TEST_DEVICE_ID)
             );
@@ -86,7 +79,12 @@ internal class Program
                 throw new Exception($"Failed to sign in: {signInResult.ResultCode}");
             }
 
-            // Switch to the specific account using the token
+            // ========= REGISTER ACCOUNT ==========
+            var registerAccountResult = await registrationService.RegisterAccountAsync(
+                new RegisterAccountRequest("acct1")
+            );
+
+            // Switch to the account after creating it
             var switchAccountResult = await authenticationService.SwitchAccountAsync(
                 new SwitchAccountRequest(
                     signInResult.AuthToken!,
@@ -101,7 +99,12 @@ internal class Program
                 );
             }
 
-            // simulate owner adding other user to account
+            // ========= REGISTER USER 2 ==========
+            var registerUser2Result = await registrationService.RegisterUserAsync(
+                new RegisterUserRequest("user2", "email2@x.y", "password2")
+            );
+
+            // Add user2 to account (owner action)
             var registerUserWithAccountResult =
                 await registrationService.RegisterUserWithAccountAsync(
                     new RegisterUserWithAccountRequest(registerUser2Result.CreatedUserId)
@@ -156,13 +159,13 @@ internal class Program
                     )
                 );
 
-            // ========= AUTHENTICATION ==========
-            // Sign in without account first
+            // ========= RE-AUTHENTICATE ==========
+            // Sign in again to demonstrate auth flow
             signInResult = await authenticationService.SignInAsync(
                 new SignInRequest("user1", "admin", TEST_DEVICE_ID)
             );
 
-            // Then switch to the specific account
+            // Switch to account
             switchAccountResult = await authenticationService.SwitchAccountAsync(
                 new SwitchAccountRequest(
                     signInResult.AuthToken!,
@@ -178,13 +181,14 @@ internal class Program
 
             // Uncomment to see all deregister fail
             /*
-                 var signedOut = await authenticationService.SignOutAsync(
-                  registerUserResult.CreatedUserId,
-                token.Id,
-            TEST_DEVICE_ID
-          );
-            await authenticationService.SignOutAllAsync(registerUserResult.CreatedUserId);
-        */
+                var signOutRequest = new SignOutRequest(
+                    registerUserResult.CreatedUserId,
+                    token.Id,
+                    TEST_DEVICE_ID
+                );
+                var signedOut = await authenticationService.SignOutAsync(signOutRequest);
+                await authenticationService.SignOutAllAsync(registerUserResult.CreatedUserId);
+            */
 
             // ========= DEREGISTERING ==========
 

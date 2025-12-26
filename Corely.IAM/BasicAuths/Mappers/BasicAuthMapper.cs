@@ -8,7 +8,19 @@ namespace Corely.IAM.BasicAuths.Mappers;
 internal static class BasicAuthMapper
 {
     public static BasicAuth ToBasicAuth(
-        this UpsertBasicAuthRequest request,
+        this CreateBasicAuthRequest request,
+        IHashProviderFactory hashProviderFactory
+    )
+    {
+        return new BasicAuth
+        {
+            UserId = request.UserId,
+            Password = request.Password.ToHashedValueFromPlainText(hashProviderFactory),
+        };
+    }
+
+    public static BasicAuth ToBasicAuth(
+        this UpdateBasicAuthRequest request,
         IHashProviderFactory hashProviderFactory
     )
     {

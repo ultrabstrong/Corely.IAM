@@ -21,23 +21,41 @@ public class BasicAuthProcessorLoggingDecoratorTests
     }
 
     [Fact]
-    public async Task UpsertBasicAuthAsync_DelegatesToInnerAndLogsResult()
+    public async Task CreateBasicAuthAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new UpsertBasicAuthRequest(1, "password");
-        var expectedResult = new UpsertBasicAuthResult(
-            UpsertBasicAuthResultCode.Success,
+        var request = new CreateBasicAuthRequest(1, "password");
+        var expectedResult = new CreateBasicAuthResult(
+            CreateBasicAuthResultCode.Success,
             string.Empty,
-            1,
-            IAM.Enums.UpsertType.Create
+            1
         );
         _mockInnerProcessor
-            .Setup(x => x.UpsertBasicAuthAsync(request))
+            .Setup(x => x.CreateBasicAuthAsync(request))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.UpsertBasicAuthAsync(request);
+        var result = await _decorator.CreateBasicAuthAsync(request);
 
         Assert.Equal(expectedResult, result);
-        _mockInnerProcessor.Verify(x => x.UpsertBasicAuthAsync(request), Times.Once);
+        _mockInnerProcessor.Verify(x => x.CreateBasicAuthAsync(request), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public async Task UpdateBasicAuthAsync_DelegatesToInnerAndLogsResult()
+    {
+        var request = new UpdateBasicAuthRequest(1, "password");
+        var expectedResult = new UpdateBasicAuthResult(
+            UpdateBasicAuthResultCode.Success,
+            string.Empty
+        );
+        _mockInnerProcessor
+            .Setup(x => x.UpdateBasicAuthAsync(request))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.UpdateBasicAuthAsync(request);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerProcessor.Verify(x => x.UpdateBasicAuthAsync(request), Times.Once);
         VerifyLoggedWithResult();
     }
 

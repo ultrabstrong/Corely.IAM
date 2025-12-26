@@ -15,11 +15,19 @@ internal class BasicAuthProcessorLoggingDecorator(
         nameof(logger)
     );
 
-    public async Task<UpsertBasicAuthResult> UpsertBasicAuthAsync(UpsertBasicAuthRequest request) =>
+    public async Task<CreateBasicAuthResult> CreateBasicAuthAsync(CreateBasicAuthRequest request) =>
         await _logger.ExecuteWithLogging(
             nameof(BasicAuthProcessor),
             request,
-            () => _inner.UpsertBasicAuthAsync(request),
+            () => _inner.CreateBasicAuthAsync(request),
+            logResult: true
+        );
+
+    public async Task<UpdateBasicAuthResult> UpdateBasicAuthAsync(UpdateBasicAuthRequest request) =>
+        await _logger.ExecuteWithLogging(
+            nameof(BasicAuthProcessor),
+            request,
+            () => _inner.UpdateBasicAuthAsync(request),
             logResult: true
         );
 

@@ -4,6 +4,7 @@ namespace Corely.IAM.BasicAuths.Processors;
 
 internal interface IBasicAuthProcessor
 {
-    Task<UpsertBasicAuthResult> UpsertBasicAuthAsync(UpsertBasicAuthRequest request);
+    Task<CreateBasicAuthResult> CreateBasicAuthAsync(CreateBasicAuthRequest request);
+    Task<UpdateBasicAuthResult> UpdateBasicAuthAsync(UpdateBasicAuthRequest request);
     Task<VerifyBasicAuthResult> VerifyBasicAuthAsync(VerifyBasicAuthRequest request);
 }

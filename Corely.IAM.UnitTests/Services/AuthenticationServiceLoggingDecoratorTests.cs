@@ -44,7 +44,7 @@ public class AuthenticationServiceLoggingDecoratorTests
     [Fact]
     public async Task SwitchAccountAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new SwitchAccountRequest("auth-token", Guid.NewGuid());
+        var request = new SwitchAccountRequest(Guid.NewGuid());
         var expectedResult = new SignInResult(
             SignInResultCode.Success,
             null,

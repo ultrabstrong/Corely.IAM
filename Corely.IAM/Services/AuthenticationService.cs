@@ -109,38 +109,36 @@ internal class AuthenticationService(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        _logger.LogDebug("Switching to account {AccountPublicId}", request.AccountPublicId);
-
-        var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(
-            request.AuthToken
-        );
-
-        if (validationResult.ResultCode != UserAuthTokenValidationResultCode.Success)
+        var context = _userContextProvider.GetUserContext();
+        if (context == null)
         {
-            _logger.LogDebug(
-                "Auth token validation failed: {ResultCode}",
-                validationResult.ResultCode
-            );
+            _logger.LogDebug("No user context available for account switch");
             return CreateFailedSignInResult(
                 SignInResultCode.InvalidAuthTokenError,
-                $"Auth token validation failed: {validationResult.ResultCode}"
+                "No user context available"
             );
         }
 
+        _logger.LogDebug(
+            "User {UserId} switching to account {AccountPublicId}",
+            context.User.Id,
+            request.AccountPublicId
+        );
+
         var result = await GenerateAuthTokenAndSetContextAsync(
-            validationResult.User!.Id,
+            context.User.Id,
             request.AccountPublicId,
-            validationResult.DeviceId!,
+            context.DeviceId,
             "account switch"
         );
 
         if (result.ResultCode == SignInResultCode.Success)
         {
-            var context = _userContextProvider.GetUserContext();
+            var newContext = _userContextProvider.GetUserContext();
             _logger.LogDebug(
                 "User {UserId} switched to account {AccountId}",
-                validationResult.User.Id,
-                context?.CurrentAccount?.Id
+                context.User.Id,
+                newContext?.CurrentAccount?.Id
             );
         }
 

@@ -84,12 +84,9 @@ internal class Program
                 new RegisterAccountRequest("acct1")
             );
 
-            // Switch to the account after creating it
+            // Switch to the account after creating it (context is already set from sign in)
             var switchAccountResult = await authenticationService.SwitchAccountAsync(
-                new SwitchAccountRequest(
-                    signInResult.AuthToken!,
-                    registerAccountResult.CreatedAccountId
-                )
+                new SwitchAccountRequest(registerAccountResult.CreatedAccountId)
             );
             if (switchAccountResult.ResultCode != SignInResultCode.Success)
             {
@@ -164,16 +161,10 @@ internal class Program
                 new SignInRequest("user1", "admin", TEST_DEVICE_ID)
             );
 
-            // Switch to account
+            // Switch to account (context is set from sign in above)
             switchAccountResult = await authenticationService.SwitchAccountAsync(
-                new SwitchAccountRequest(
-                    signInResult.AuthToken!,
-                    registerAccountResult.CreatedAccountId
-                )
+                new SwitchAccountRequest(registerAccountResult.CreatedAccountId)
             );
-
-            // SwitchAccountAsync sets context, but later when all you have is the auth token use this
-            await userContextProvider.SetUserContextAsync(switchAccountResult.AuthToken!);
 
             var token = new JwtSecurityTokenHandler().ReadJwtToken(switchAccountResult.AuthToken!);
 
@@ -181,8 +172,8 @@ internal class Program
             /*
              var signOutRequest = new SignOutRequest(token.Id);
                var signedOut = await authenticationService.SignOutAsync(signOutRequest);
-       await authenticationService.SignOutAllAsync(registerUserResult.CreatedUserId);
-            */
+       await authenticationService.SignOutAllAsync();
+ */
 
             // ========= DEREGISTERING ==========
 

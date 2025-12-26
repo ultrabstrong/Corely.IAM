@@ -3,6 +3,7 @@ using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 
 namespace Corely.IAM.DevTools.Commands.Authentication;
@@ -15,13 +16,18 @@ internal partial class Authentication : CommandBase
         private Guid AccountPublicId { get; init; }
 
         private readonly IAuthenticationService _authenticationService;
+        private readonly IUserContextProvider _userContextProvider;
 
-        public SwitchAccount(IAuthenticationService authenticationService)
-            : base("switch-account", "Switch to a specific account using existing auth token")
+        public SwitchAccount(
+            IAuthenticationService authenticationService,
+            IUserContextProvider userContextProvider
+        )
+            : base("switch-account", "Switch to a specific account")
         {
             _authenticationService = authenticationService.ThrowIfNull(
                 nameof(authenticationService)
             );
+            _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
         protected override async Task ExecuteAsync()
@@ -32,13 +38,25 @@ internal partial class Authentication : CommandBase
                 return;
             }
 
+            // Set context from saved auth token before switching
             var authToken = await ReadAuthTokenAsync();
             if (string.IsNullOrEmpty(authToken))
                 return;
 
+            // Set the user context from the auth token (simulating middleware)
+            var validationResult = await _userContextProvider.SetUserContextAsync(authToken);
+            if (
+                validationResult
+                != Corely.IAM.Users.Models.UserAuthTokenValidationResultCode.Success
+            )
+            {
+                Error($"Failed to set user context: {validationResult}");
+                return;
+            }
+
             try
             {
-                var request = new SwitchAccountRequest(authToken, AccountPublicId);
+                var request = new SwitchAccountRequest(AccountPublicId);
                 var result = await _authenticationService.SwitchAccountAsync(request);
 
                 if (result.ResultCode == SignInResultCode.Success)

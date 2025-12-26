@@ -100,6 +100,7 @@ public class AuthenticationServiceTests
                     UserAuthTokenValidationResultCode.Success,
                     1,
                     null,
+                    TEST_DEVICE_ID,
                     []
                 )
             );
@@ -359,6 +360,7 @@ public class AuthenticationServiceTests
                     UserAuthTokenValidationResultCode.TokenValidationFailed,
                     null,
                     null,
+                    null,
                     []
                 )
             );
@@ -386,6 +388,7 @@ public class AuthenticationServiceTests
                     UserAuthTokenValidationResultCode.Success,
                     null,
                     null,
+                    TEST_DEVICE_ID,
                     []
                 )
             );

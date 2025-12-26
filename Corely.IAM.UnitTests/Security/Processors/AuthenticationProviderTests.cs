@@ -629,6 +629,47 @@ public class AuthenticationProviderTests
     }
 
     [Fact]
+    public async Task GetUserAuthTokenAsync_IncludesDeviceIdClaim_InJwtToken()
+    {
+        var userEntity = await CreateUserAsync();
+        var deviceId = "test-device-claim-check";
+
+        var result = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, deviceId)
+        );
+
+        Assert.Equal(UserAuthTokenResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.Token);
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jwtToken = tokenHandler.ReadJwtToken(result.Token);
+
+        var deviceIdClaim = jwtToken.Claims.FirstOrDefault(c =>
+            c.Type == UserConstants.DEVICE_ID_CLAIM
+        );
+        Assert.NotNull(deviceIdClaim);
+        Assert.Equal(deviceId, deviceIdClaim.Value);
+    }
+
+    [Fact]
+    public async Task ValidateUserAuthTokenAsync_ReturnsDeviceId_FromJwtToken()
+    {
+        var userEntity = await CreateUserAsync();
+        var deviceId = "test-device-validation-check";
+
+        var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, deviceId)
+        );
+
+        var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            authTokenResult.Token!
+        );
+
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, validationResult.ResultCode);
+        Assert.Equal(deviceId, validationResult.DeviceId);
+    }
+
+    [Fact]
     public async Task RevokeAllUserAuthTokensAsync_RevokesAllTokens()
     {
         var userEntity = await CreateUserAsync();

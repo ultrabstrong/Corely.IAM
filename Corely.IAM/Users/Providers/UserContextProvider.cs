@@ -28,9 +28,15 @@ internal class UserContextProvider(IAuthenticationProvider authenticationProvide
             return validationResult.ResultCode;
         }
 
+        if (string.IsNullOrEmpty(validationResult.DeviceId))
+        {
+            return UserAuthTokenValidationResultCode.MissingDeviceIdClaim;
+        }
+
         _userContext = new UserContext(
             validationResult.UserId.Value,
             validationResult.SignedInAccountId,
+            validationResult.DeviceId,
             validationResult.Accounts
         );
         return UserAuthTokenValidationResultCode.Success;

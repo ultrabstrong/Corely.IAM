@@ -17,6 +17,8 @@ namespace Corely.IAM.UnitTests.Services;
 
 public class DeregistrationServiceTests
 {
+    private const string TEST_DEVICE_ID = "test-device";
+
     private readonly Mock<ILogger<DeregistrationService>> _mockLogger = new();
     private readonly Mock<IPermissionProcessor> _mockPermissionProcessor = new();
     private readonly Mock<IRoleProcessor> _mockRoleProcessor = new();
@@ -32,7 +34,14 @@ public class DeregistrationServiceTests
         // Setup user context provider to return a valid context with account ID
         _mockUserContextProvider
             .Setup(x => x.GetUserContext())
-            .Returns(new UserContext(1, 5, [new Account() { Id = 4 }, new Account() { Id = 5 }]));
+            .Returns(
+                new UserContext(
+                    1,
+                    5,
+                    TEST_DEVICE_ID,
+                    [new Account() { Id = 4 }, new Account() { Id = 5 }]
+                )
+            );
 
         _service = new DeregistrationService(
             _mockLogger.Object,

@@ -75,7 +75,9 @@ public class RegistrationServiceTests
         _permissionProcessorMock = GetMockPermissionProcessor();
 
         // Setup user context provider to return a valid context with account ID
-        _userContextProviderMock.Setup(x => x.GetUserContext()).Returns(new UserContext(1, 1, []));
+        _userContextProviderMock
+            .Setup(x => x.GetUserContext())
+            .Returns(new UserContext(1, 1, "test-device", []));
 
         _registrationService = new RegistrationService(
             _serviceFactory.GetRequiredService<ILogger<RegistrationService>>(),

@@ -9,4 +9,5 @@ public static class UserConstants
     public const string JWT_AUDIENCE = "Corely.IAM";
     public const string ACCOUNT_ID_CLAIM = "account_id";
     public const string SIGNED_IN_ACCOUNT_ID_CLAIM = "signed_in_account_id";
+    public const string DEVICE_ID_CLAIM = "device_id";
 }

@@ -123,6 +123,7 @@ internal class AuthenticationProvider(
                 new DateTimeOffset(now).ToUnixTimeSeconds().ToString(),
                 ClaimValueTypes.Integer64
             ),
+            new(UserConstants.DEVICE_ID_CLAIM, request.DeviceId),
         };
 
         foreach (var account in accounts)
@@ -219,6 +220,7 @@ internal class AuthenticationProvider(
                 UserAuthTokenValidationResultCode.InvalidTokenFormat,
                 null,
                 null,
+                null,
                 []
             );
         }
@@ -233,6 +235,7 @@ internal class AuthenticationProvider(
             _logger.LogInformation("Auth token does not contain valid sub (userPublicId) claim");
             return new UserAuthTokenValidationResult(
                 UserAuthTokenValidationResultCode.MissingUserIdClaim,
+                null,
                 null,
                 null,
                 []
@@ -250,6 +253,7 @@ internal class AuthenticationProvider(
                 UserAuthTokenValidationResultCode.TokenValidationFailed,
                 null,
                 null,
+                null,
                 []
             );
         }
@@ -262,6 +266,7 @@ internal class AuthenticationProvider(
             _logger.LogInformation("Auth token does not contain jti claim");
             return new UserAuthTokenValidationResult(
                 UserAuthTokenValidationResultCode.TokenValidationFailed,
+                null,
                 null,
                 null,
                 []
@@ -280,6 +285,7 @@ internal class AuthenticationProvider(
                 UserAuthTokenValidationResultCode.TokenValidationFailed,
                 null,
                 null,
+                null,
                 []
             );
         }
@@ -296,6 +302,7 @@ internal class AuthenticationProvider(
             );
             return new UserAuthTokenValidationResult(
                 UserAuthTokenValidationResultCode.TokenValidationFailed,
+                null,
                 null,
                 null,
                 []
@@ -331,9 +338,15 @@ internal class AuthenticationProvider(
                 UserAuthTokenValidationResultCode.TokenValidationFailed,
                 null,
                 null,
+                null,
                 []
             );
         }
+
+        // Extract device_id claim
+        var deviceId = jwtToken
+            .Claims.FirstOrDefault(c => c.Type == UserConstants.DEVICE_ID_CLAIM)
+            ?.Value;
 
         int? signedInAccountId = null;
         var signedInAccountIdClaim = jwtToken
@@ -364,6 +377,7 @@ internal class AuthenticationProvider(
             UserAuthTokenValidationResultCode.Success,
             userId,
             signedInAccountId,
+            deviceId,
             userEntity.Accounts?.Select(a => a.ToModel())?.ToList() ?? []
         );
     }

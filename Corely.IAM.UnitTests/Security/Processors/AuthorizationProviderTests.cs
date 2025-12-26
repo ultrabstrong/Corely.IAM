@@ -463,7 +463,7 @@ public class AuthorizationProviderTests
     {
         var userContextProvider = _serviceFactory.GetRequiredService<UserContextProvider>();
         ((IUserContextSetter)userContextProvider).SetUserContext(
-            new UserContext(userId, accountId, [])
+            new UserContext(userId, accountId, null, [])
         );
     }
 

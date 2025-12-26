@@ -219,7 +219,12 @@ internal class AuthenticationService(
         }
 
         _userContextSetter.SetUserContext(
-            new UserContext(userId, authTokenResult.SignedInAccountId, authTokenResult.Accounts)
+            new UserContext(
+                userId,
+                authTokenResult.SignedInAccountId,
+                deviceId,
+                authTokenResult.Accounts
+            )
         );
 
         return new SignInResult(

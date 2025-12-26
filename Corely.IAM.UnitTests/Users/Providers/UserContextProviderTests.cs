@@ -33,23 +33,39 @@ public class UserContextProviderTests
     [Fact]
     public void GetUserContext_ReturnsContext_WhenSetViaInternalSetter()
     {
-        var context = new UserContext(1, 2, TEST_DEVICE_ID, [_fixture.Create<Account>()]);
+        var context = new UserContext(
+            new User() { Id = 1 },
+            new Account() { Id = 2 },
+            TEST_DEVICE_ID,
+            [_fixture.Create<Account>()]
+        );
         ((IUserContextSetter)_provider).SetUserContext(context);
 
         var result = _provider.GetUserContext();
 
         Assert.NotNull(result);
-        Assert.Equal(1, result.UserId);
-        Assert.Equal(2, result.AccountId);
+        Assert.Equal(1, result.User.Id);
+        Assert.NotNull(result.CurrentAccount);
+        Assert.Equal(2, result.CurrentAccount.Id);
         Assert.Equal(TEST_DEVICE_ID, result.DeviceId);
-        Assert.Single(result.Accounts);
+        Assert.Single(result.AvailableAccounts);
     }
 
     [Fact]
     public void SetUserContext_OverwritesPreviousContext()
     {
-        var context1 = new UserContext(1, 2, TEST_DEVICE_ID, [_fixture.Create<Account>()]);
-        var context2 = new UserContext(3, 4, "other-device", [_fixture.Create<Account>()]);
+        var context1 = new UserContext(
+            new User() { Id = 1 },
+            new Account() { Id = 2 },
+            TEST_DEVICE_ID,
+            [_fixture.Create<Account>()]
+        );
+        var context2 = new UserContext(
+            new User() { Id = 3 },
+            new Account() { Id = 4 },
+            "other-device",
+            [_fixture.Create<Account>()]
+        );
 
         var setter = _provider;
         setter.SetUserContext(context1);
@@ -58,11 +74,12 @@ public class UserContextProviderTests
         var result = _provider.GetUserContext();
 
         Assert.NotNull(result);
-        Assert.Equal(3, result.UserId);
-        Assert.Equal(4, result.AccountId);
+        Assert.Equal(3, result.User.Id);
+        Assert.NotNull(result.CurrentAccount);
+        Assert.Equal(4, result.CurrentAccount.Id);
         Assert.Equal("other-device", result.DeviceId);
-        Assert.Single(result.Accounts);
-        Assert.Equal(context2.Accounts, result.Accounts);
+        Assert.Single(result.AvailableAccounts);
+        Assert.Equal(context2.AvailableAccounts, result.AvailableAccounts);
     }
 
     [Fact]
@@ -97,8 +114,8 @@ public class UserContextProviderTests
             .ReturnsAsync(
                 new UserAuthTokenValidationResult(
                     UserAuthTokenValidationResultCode.Success,
-                    42,
-                    100,
+                    new User() { Id = 42 },
+                    new Account() { Id = 100 },
                     TEST_DEVICE_ID,
                     [account]
                 )
@@ -109,11 +126,12 @@ public class UserContextProviderTests
         Assert.Equal(UserAuthTokenValidationResultCode.Success, result);
         var context = _provider.GetUserContext();
         Assert.NotNull(context);
-        Assert.Equal(42, context.UserId);
-        Assert.Equal(100, context.AccountId);
+        Assert.Equal(42, context.User.Id);
+        Assert.NotNull(context.CurrentAccount);
+        Assert.Equal(100, context.CurrentAccount.Id);
         Assert.Equal(TEST_DEVICE_ID, context.DeviceId);
-        Assert.Single(context.Accounts);
-        Assert.Equal(account, context.Accounts[0]);
+        Assert.Single(context.AvailableAccounts);
+        Assert.Equal(account, context.AvailableAccounts[0]);
     }
 
     [Fact]
@@ -125,7 +143,7 @@ public class UserContextProviderTests
             .ReturnsAsync(
                 new UserAuthTokenValidationResult(
                     UserAuthTokenValidationResultCode.Success,
-                    42,
+                    new User() { Id = 42 },
                     null,
                     TEST_DEVICE_ID,
                     []
@@ -137,10 +155,10 @@ public class UserContextProviderTests
         Assert.Equal(UserAuthTokenValidationResultCode.Success, result);
         var context = _provider.GetUserContext();
         Assert.NotNull(context);
-        Assert.Equal(42, context.UserId);
-        Assert.Null(context.AccountId);
+        Assert.Equal(42, context.User.Id);
+        Assert.Null(context.CurrentAccount);
         Assert.Equal(TEST_DEVICE_ID, context.DeviceId);
-        Assert.Empty(context.Accounts);
+        Assert.Empty(context.AvailableAccounts);
     }
 
     [Theory]
@@ -173,8 +191,8 @@ public class UserContextProviderTests
             .ReturnsAsync(
                 new UserAuthTokenValidationResult(
                     UserAuthTokenValidationResultCode.Success,
-                    42,
-                    100,
+                    new User() { Id = 42 },
+                    new Account() { Id = 100 },
                     null, // DeviceId is null
                     []
                 )
@@ -195,8 +213,8 @@ public class UserContextProviderTests
             .ReturnsAsync(
                 new UserAuthTokenValidationResult(
                     UserAuthTokenValidationResultCode.Success,
-                    42,
-                    100,
+                    new User() { Id = 42 },
+                    new Account() { Id = 100 },
                     "", // DeviceId is empty
                     []
                 )
@@ -211,7 +229,12 @@ public class UserContextProviderTests
     [Fact]
     public void ClearUserContext_RemovesContext_WhenUserIdMatches()
     {
-        var context = new UserContext(1, 2, TEST_DEVICE_ID, []);
+        var context = new UserContext(
+            new User() { Id = 1 },
+            new Account() { Id = 2 },
+            TEST_DEVICE_ID,
+            []
+        );
         _provider.SetUserContext(context);
 
         _provider.ClearUserContext(1);
@@ -222,16 +245,22 @@ public class UserContextProviderTests
     [Fact]
     public void ClearUserContext_DoesNotRemoveContext_WhenUserIdDoesNotMatch()
     {
-        var context = new UserContext(1, 2, TEST_DEVICE_ID, [_fixture.Create<Account>()]);
+        var context = new UserContext(
+            new User() { Id = 1 },
+            new Account() { Id = 2 },
+            TEST_DEVICE_ID,
+            [_fixture.Create<Account>()]
+        );
         _provider.SetUserContext(context);
 
         _provider.ClearUserContext(2);
 
         var result = _provider.GetUserContext();
         Assert.NotNull(result);
-        Assert.Equal(1, result.UserId);
-        Assert.Equal(2, result.AccountId);
+        Assert.Equal(1, result.User.Id);
+        Assert.NotNull(result.CurrentAccount);
+        Assert.Equal(2, result.CurrentAccount.Id);
         Assert.Equal(TEST_DEVICE_ID, result.DeviceId);
-        Assert.Single(result.Accounts);
+        Assert.Single(result.AvailableAccounts);
     }
 }

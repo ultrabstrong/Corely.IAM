@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Corely.Common.Extensions;
-using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
@@ -11,9 +10,6 @@ internal partial class Authentication : CommandBase
 {
     internal class SignOutAll : CommandBase
     {
-        [Argument("User ID to sign out from all sessions")]
-        private int UserId { get; init; }
-
         private readonly IAuthenticationService _authenticationService;
         private readonly IUserContextProvider _userContextProvider;
 
@@ -33,16 +29,17 @@ internal partial class Authentication : CommandBase
         {
             try
             {
-                await _authenticationService.SignOutAllAsync(UserId);
-                var output = new { UserId, Success = true };
-                Console.WriteLine(JsonSerializer.Serialize(output));
-                Success($"All sessions for user {UserId} signed out successfully");
-
                 var currentContext = _userContextProvider.GetUserContext();
-                if (currentContext?.UserId == UserId)
-                {
-                    ClearAuthTokenFile();
-                }
+
+                await _authenticationService.SignOutAllAsync();
+
+                var output = new { Success = true };
+                Console.WriteLine(JsonSerializer.Serialize(output));
+                Success(
+                    $"All sessions for user {currentContext!.User.PublicId} signed out successfully"
+                );
+
+                ClearAuthTokenFile();
             }
             catch (ValidationException ex)
             {

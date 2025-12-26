@@ -90,7 +90,9 @@ public class UserProcessorAuthorizationDecoratorTests
         var userId = 5;
         var user = new User { Id = userId, Username = "testuser" };
         var expectedResult = new UpdateUserResult(UpdateUserResultCode.Success, string.Empty);
-        _mockAuthorizationProvider.Setup(x => x.IsAuthorizedForOwnUser(userId)).Returns(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(userId, It.IsAny<bool>()))
+            .Returns(true);
         _mockInnerProcessor.Setup(x => x.UpdateUserAsync(user)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.UpdateUserAsync(user);
@@ -103,7 +105,9 @@ public class UserProcessorAuthorizationDecoratorTests
     public async Task UpdateUserAsync_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
     {
         var user = new User { Id = 5, Username = "testuser" };
-        _mockAuthorizationProvider.Setup(x => x.IsAuthorizedForOwnUser(user.Id)).Returns(false);
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(user.Id, It.IsAny<bool>()))
+            .Returns(false);
 
         var result = await _decorator.UpdateUserAsync(user);
 
@@ -167,7 +171,9 @@ public class UserProcessorAuthorizationDecoratorTests
     public async Task DeleteUserAsync_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
     {
         var userId = 5;
-        _mockAuthorizationProvider.Setup(x => x.IsAuthorizedForOwnUser(userId)).Returns(false);
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(userId, It.IsAny<bool>()))
+            .Returns(false);
 
         var result = await _decorator.DeleteUserAsync(userId);
 
@@ -180,7 +186,9 @@ public class UserProcessorAuthorizationDecoratorTests
     {
         var userId = 5;
         var expectedResult = new DeleteUserResult(DeleteUserResultCode.Success, "");
-        _mockAuthorizationProvider.Setup(x => x.IsAuthorizedForOwnUser(userId)).Returns(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(userId, It.IsAny<bool>()))
+            .Returns(true);
         _mockInnerProcessor.Setup(x => x.DeleteUserAsync(userId)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.DeleteUserAsync(userId);

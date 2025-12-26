@@ -192,7 +192,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
             DeregisterAccountResultCode.Success,
             string.Empty
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService.Setup(x => x.DeregisterAccountAsync()).ReturnsAsync(expectedResult);
 
         var result = await _decorator.DeregisterAccountAsync();
@@ -204,7 +204,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterAccountAsync_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
         var result = await _decorator.DeregisterAccountAsync();
 
@@ -224,7 +224,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
             DeregisterUserFromAccountResultCode.Success,
             string.Empty
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService
             .Setup(x => x.DeregisterUserFromAccountAsync(request))
             .ReturnsAsync(expectedResult);
@@ -239,7 +239,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     public async Task DeregisterUserFromAccountAsync_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new DeregisterUserFromAccountRequest(1);
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
         var result = await _decorator.DeregisterUserFromAccountAsync(request);
 

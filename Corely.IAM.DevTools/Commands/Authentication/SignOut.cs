@@ -40,17 +40,17 @@ internal partial class Authentication : CommandBase
                 var context = _userContextProvider.GetUserContext();
                 var output = new
                 {
-                    context?.UserId,
+                    context?.User,
                     TokenId,
                     context?.DeviceId,
-                    context?.AccountId,
+                    context?.CurrentAccount,
                     Success = result,
                 };
                 Console.WriteLine(JsonSerializer.Serialize(output));
 
                 if (result)
                 {
-                    Success($"User {context?.UserId} signed out successfully");
+                    Success($"User {context?.User} signed out successfully");
                     ClearAuthTokenFile();
                 }
                 else

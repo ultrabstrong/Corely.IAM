@@ -81,12 +81,11 @@ public class AuthenticationServiceLoggingDecoratorTests
     [Fact]
     public async Task SignOutAllAsync_DelegatesToInnerAndLogs()
     {
-        var userId = 1;
-        _mockInnerService.Setup(x => x.SignOutAllAsync(userId)).Returns(Task.CompletedTask);
+        _mockInnerService.Setup(x => x.SignOutAllAsync()).Returns(Task.CompletedTask);
 
-        await _decorator.SignOutAllAsync(userId);
+        await _decorator.SignOutAllAsync();
 
-        _mockInnerService.Verify(x => x.SignOutAllAsync(userId), Times.Once);
+        _mockInnerService.Verify(x => x.SignOutAllAsync(), Times.Once);
         VerifyLoggedWithoutResult();
     }
 

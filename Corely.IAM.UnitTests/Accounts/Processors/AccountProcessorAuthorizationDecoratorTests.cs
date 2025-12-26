@@ -208,7 +208,7 @@ public class AccountProcessorAuthorizationDecoratorTests
         );
         // User is authorized for their own user
         _mockAuthorizationProvider
-            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId))
+            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId, It.IsAny<bool>()))
             .Returns(true);
         _mockInnerProcessor
             .Setup(x => x.RemoveUserFromAccountAsync(request))
@@ -235,7 +235,7 @@ public class AccountProcessorAuthorizationDecoratorTests
         );
         // User is NOT removing themselves
         _mockAuthorizationProvider
-            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId))
+            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId, It.IsAny<bool>()))
             .Returns(false);
         // But user has update permission on the account
         _mockAuthorizationProvider
@@ -268,7 +268,7 @@ public class AccountProcessorAuthorizationDecoratorTests
         var request = new RemoveUserFromAccountRequest(1, 5);
         // User is NOT removing themselves
         _mockAuthorizationProvider
-            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId))
+            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId, It.IsAny<bool>()))
             .Returns(false);
         // And user does NOT have update permission on the account
         _mockAuthorizationProvider

@@ -22,7 +22,7 @@ internal class UserContextProvider(IAuthenticationProvider authenticationProvide
 
         if (
             validationResult.ResultCode != UserAuthTokenValidationResultCode.Success
-            || !validationResult.UserId.HasValue
+            || validationResult.User == null
         )
         {
             return validationResult.ResultCode;
@@ -34,10 +34,10 @@ internal class UserContextProvider(IAuthenticationProvider authenticationProvide
         }
 
         _userContext = new UserContext(
-            validationResult.UserId.Value,
-            validationResult.SignedInAccountId,
+            validationResult.User,
+            validationResult.CurrentAccount,
             validationResult.DeviceId,
-            validationResult.Accounts
+            validationResult.AvailableAccounts
         );
         return UserAuthTokenValidationResultCode.Success;
     }
@@ -45,5 +45,5 @@ internal class UserContextProvider(IAuthenticationProvider authenticationProvide
     public void SetUserContext(UserContext context) => _userContext = context;
 
     public void ClearUserContext(int userId) =>
-        _userContext = _userContext?.UserId == userId ? null : _userContext;
+        _userContext = _userContext?.User?.Id == userId ? null : _userContext;
 }

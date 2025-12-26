@@ -56,7 +56,7 @@ internal class DeregistrationService(
 
     public async Task<DeregisterUserResult> DeregisterUserAsync()
     {
-        var userId = _userContextProvider.GetUserContext()!.UserId;
+        var userId = _userContextProvider.GetUserContext()!.User.Id;
         _logger.LogInformation("Deregistering user {UserId}", userId);
 
         var result = await _userProcessor.DeleteUserAsync(userId);
@@ -78,7 +78,9 @@ internal class DeregistrationService(
 
     public async Task<DeregisterAccountResult> DeregisterAccountAsync()
     {
-        var accountId = _userContextProvider.GetUserContext()!.AccountId!.Value;
+        var context = _userContextProvider.GetUserContext();
+        var accountId = context!.CurrentAccount!.Id;
+
         _logger.LogInformation("Deregistering account {AccountId}", accountId);
 
         var result = await _accountProcessor.DeleteAccountAsync(accountId);
@@ -95,12 +97,8 @@ internal class DeregistrationService(
             );
         }
 
-        var context = _userContextProvider.GetUserContext();
-        if (context != null && context.AccountId == accountId)
-        {
-            context.Accounts.RemoveAll(a => a.Id == accountId);
-            _userContextSetter.SetUserContext(context with { AccountId = null });
-        }
+        context.AvailableAccounts.RemoveAll(a => a.Id == accountId);
+        _userContextSetter.SetUserContext(context with { CurrentAccount = null });
 
         _logger.LogInformation("Account {AccountId} deregistered", accountId);
         return new DeregisterAccountResult(DeregisterAccountResultCode.Success, string.Empty);
@@ -182,7 +180,7 @@ internal class DeregistrationService(
     )
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var accountId = _userContextProvider.GetUserContext()!.AccountId!.Value;
+        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
         _logger.LogInformation(
             "Deregistering user {UserId} from account {AccountId}",
             request.UserId,

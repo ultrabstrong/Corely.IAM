@@ -172,7 +172,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
             string.Empty,
             1
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService.Setup(x => x.RegisterGroupAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.RegisterGroupAsync(request);
@@ -185,7 +185,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     public async Task RegisterGroupAsync_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterGroupRequest("TestGroup");
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
         var result = await _decorator.RegisterGroupAsync(request);
 
@@ -205,7 +205,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     {
         var request = new RegisterRoleRequest("TestRole");
         var expectedResult = new RegisterRoleResult(CreateRoleResultCode.Success, string.Empty, 1);
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService.Setup(x => x.RegisterRoleAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.RegisterRoleAsync(request);
@@ -218,7 +218,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     public async Task RegisterRoleAsync_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterRoleRequest("TestRole");
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
         var result = await _decorator.RegisterRoleAsync(request);
 
@@ -242,7 +242,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
             string.Empty,
             1
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService
             .Setup(x => x.RegisterPermissionAsync(request))
             .ReturnsAsync(expectedResult);
@@ -257,7 +257,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     public async Task RegisterPermissionAsync_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterPermissionRequest("resource", 0);
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
         var result = await _decorator.RegisterPermissionAsync(request);
 
@@ -280,7 +280,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
             RegisterUserWithAccountResultCode.Success,
             string.Empty
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService
             .Setup(x => x.RegisterUserWithAccountAsync(request))
             .ReturnsAsync(expectedResult);
@@ -295,7 +295,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     public async Task RegisterUserWithAccountAsync_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterUserWithAccountRequest(1);
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContextAsync()).ReturnsAsync(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
         var result = await _decorator.RegisterUserWithAccountAsync(request);
 

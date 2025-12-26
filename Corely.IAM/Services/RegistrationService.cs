@@ -104,9 +104,10 @@ internal class RegistrationService(
             await _uowProvider.CommitAsync();
             uowSucceeded = true;
             _logger.LogInformation(
-                "User {Username} registered with Id {UserId}",
+                "User {Username} registered with internal Id {InternalUserId}, public ID {PublicUserId}",
                 request.Username,
-                userResult.CreatedId
+                userResult.CreatedId,
+                userResult.CreatedPublicId
             );
             return new RegisterUserResult(
                 RegisterUserResultCode.Success,
@@ -134,7 +135,7 @@ internal class RegistrationService(
         {
             await _uowProvider.BeginAsync();
 
-            var ownerUserId = _userContextProvider.GetUserContext()!.UserId;
+            var ownerUserId = _userContextProvider.GetUserContext()!.User.Id;
             var createAccountResult = await _accountProcessor.CreateAccountAsync(
                 new(request.AccountName, ownerUserId)
             );
@@ -178,8 +179,9 @@ internal class RegistrationService(
             uowSucceeded = true;
 
             _logger.LogInformation(
-                "Account {AccountName} registered with Id {AccountId}",
+                "Account {AccountName} registered with internal Id {AccountId}, public ID {PublicAccountId}",
                 request.AccountName,
+                createAccountResult.CreatedId,
                 createAccountResult.CreatedPublicId
             );
             return new RegisterAccountResult(
@@ -202,7 +204,7 @@ internal class RegistrationService(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Registering group {GroupName}", request.GroupName);
 
-        var accountId = _userContextProvider.GetUserContext()!.AccountId!.Value;
+        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
         var result = await _groupProcessor.CreateGroupAsync(new(request.GroupName, accountId));
         if (result.ResultCode != CreateGroupResultCode.Success)
         {
@@ -227,7 +229,7 @@ internal class RegistrationService(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Registering role {RoleName}", request.RoleName);
 
-        var accountId = _userContextProvider.GetUserContext()!.AccountId!.Value;
+        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
         var result = await _roleProcessor.CreateRoleAsync(new(request.RoleName, accountId));
         if (result.ResultCode != CreateRoleResultCode.Success)
         {
@@ -258,7 +260,7 @@ internal class RegistrationService(
             request.ResourceId
         );
 
-        var accountId = _userContextProvider.GetUserContext()!.AccountId!.Value;
+        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
         var result = await _permissionProcessor.CreatePermissionAsync(
             new(
                 accountId,
@@ -296,7 +298,7 @@ internal class RegistrationService(
     )
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var accountId = _userContextProvider.GetUserContext()!.AccountId!.Value;
+        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
         _logger.LogInformation(
             "Registering user {UserId} with account {AccountId}",
             request.UserId,

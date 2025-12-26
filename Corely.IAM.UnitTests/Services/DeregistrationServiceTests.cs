@@ -36,8 +36,8 @@ public class DeregistrationServiceTests
             .Setup(x => x.GetUserContext())
             .Returns(
                 new UserContext(
-                    1,
-                    5,
+                    new User() { Id = 1 },
+                    new Account() { Id = 5 },
                     TEST_DEVICE_ID,
                     [new Account() { Id = 4 }, new Account() { Id = 5 }]
                 )
@@ -162,10 +162,10 @@ public class DeregistrationServiceTests
             x =>
                 x.SetUserContext(
                     It.Is<UserContext>(c =>
-                        c.UserId == 1
-                        && c.AccountId == null
-                        && c.Accounts.Count == 1
-                        && c.Accounts[0].Id == 4
+                        c.User.Id == 1
+                        && c.CurrentAccount == null
+                        && c.AvailableAccounts.Count == 1
+                        && c.AvailableAccounts[0].Id == 4
                     )
                 ),
             Times.Once

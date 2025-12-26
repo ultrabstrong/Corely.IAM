@@ -3,10 +3,12 @@ using System.Security.Claims;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Mappers;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Constants;
 using Corely.IAM.Users.Entities;
+using Corely.IAM.Users.Mappers;
 using Corely.IAM.Users.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -53,8 +55,9 @@ internal class AuthenticationProvider(
                 UserAuthTokenResultCode.UserNotFound,
                 null,
                 null,
-                [],
-                null
+                null,
+                null,
+                []
             );
         }
 
@@ -71,21 +74,22 @@ internal class AuthenticationProvider(
                 UserAuthTokenResultCode.SignatureKeyNotFound,
                 null,
                 null,
-                [],
-                null
+                null,
+                null,
+                []
             );
         }
 
         var accounts = userEntity.Accounts?.Select(a => a.ToModel()).ToList() ?? [];
 
-        int? signedInAccountId = null;
+        Account? signedInAccount = null;
         if (request.AccountPublicId.HasValue)
         {
             var matchingAccount = accounts.FirstOrDefault(a =>
                 a.PublicId == request.AccountPublicId.Value
             );
             if (matchingAccount != null)
-                signedInAccountId = matchingAccount.Id;
+                signedInAccount = matchingAccount;
             else
             {
                 _logger.LogWarning(
@@ -97,8 +101,9 @@ internal class AuthenticationProvider(
                     UserAuthTokenResultCode.AccountNotFound,
                     null,
                     null,
-                    accounts,
-                    null
+                    null,
+                    null,
+                    []
                 );
             }
         }
@@ -149,14 +154,14 @@ internal class AuthenticationProvider(
 
         await RevokeExistingTokensForUserAccountDeviceAsync(
             request.UserId,
-            signedInAccountId,
+            signedInAccount?.Id,
             request.DeviceId
         );
 
         var authTokenEntity = new UserAuthTokenEntity
         {
             UserId = request.UserId,
-            AccountId = signedInAccountId,
+            AccountId = signedInAccount?.Id,
             DeviceId = request.DeviceId,
             PublicId = jti,
             IssuedUtc = now,
@@ -169,8 +174,9 @@ internal class AuthenticationProvider(
             UserAuthTokenResultCode.Success,
             tokenString,
             jti,
-            accounts,
-            signedInAccountId
+            userEntity.ToModel(),
+            signedInAccount,
+            accounts
         );
     }
 
@@ -348,7 +354,19 @@ internal class AuthenticationProvider(
             .Claims.FirstOrDefault(c => c.Type == UserConstants.DEVICE_ID_CLAIM)
             ?.Value;
 
-        int? signedInAccountId = null;
+        if (string.IsNullOrWhiteSpace(deviceId))
+        {
+            _logger.LogInformation("Auth token does not contain device ID");
+            return new UserAuthTokenValidationResult(
+                UserAuthTokenValidationResultCode.TokenValidationFailed,
+                null,
+                null,
+                null,
+                []
+            );
+        }
+
+        Account? signedInAccount = null;
         var signedInAccountIdClaim = jwtToken
             .Claims.FirstOrDefault(c => c.Type == UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM)
             ?.Value;
@@ -362,7 +380,7 @@ internal class AuthenticationProvider(
             );
             if (matchingAccount != null)
             {
-                signedInAccountId = matchingAccount.Id;
+                signedInAccount = matchingAccount.ToModel();
             }
             else
             {
@@ -375,8 +393,8 @@ internal class AuthenticationProvider(
 
         return new UserAuthTokenValidationResult(
             UserAuthTokenValidationResultCode.Success,
-            userId,
-            signedInAccountId,
+            userEntity.ToModel(),
+            signedInAccount,
             deviceId,
             userEntity.Accounts?.Select(a => a.ToModel())?.ToList() ?? []
         );

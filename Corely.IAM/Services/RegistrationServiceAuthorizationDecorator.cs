@@ -29,7 +29,7 @@ internal class RegistrationServiceAuthorizationDecorator(
             );
 
     public async Task<RegisterGroupResult> RegisterGroupAsync(RegisterGroupRequest request) =>
-        await _authorizationProvider.HasAccountContextAsync()
+        _authorizationProvider.HasAccountContext()
             ? await _inner.RegisterGroupAsync(request)
             : new RegisterGroupResult(
                 CreateGroupResultCode.UnauthorizedError,
@@ -38,7 +38,7 @@ internal class RegistrationServiceAuthorizationDecorator(
             );
 
     public async Task<RegisterRoleResult> RegisterRoleAsync(RegisterRoleRequest request) =>
-        await _authorizationProvider.HasAccountContextAsync()
+        _authorizationProvider.HasAccountContext()
             ? await _inner.RegisterRoleAsync(request)
             : new RegisterRoleResult(
                 CreateRoleResultCode.UnauthorizedError,
@@ -49,7 +49,7 @@ internal class RegistrationServiceAuthorizationDecorator(
     public async Task<RegisterPermissionResult> RegisterPermissionAsync(
         RegisterPermissionRequest request
     ) =>
-        await _authorizationProvider.HasAccountContextAsync()
+        _authorizationProvider.HasAccountContext()
             ? await _inner.RegisterPermissionAsync(request)
             : new RegisterPermissionResult(
                 CreatePermissionResultCode.UnauthorizedError,
@@ -60,7 +60,7 @@ internal class RegistrationServiceAuthorizationDecorator(
     public async Task<RegisterUserWithAccountResult> RegisterUserWithAccountAsync(
         RegisterUserWithAccountRequest request
     ) =>
-        await _authorizationProvider.HasAccountContextAsync()
+        _authorizationProvider.HasAccountContext()
             ? await _inner.RegisterUserWithAccountAsync(request)
             : new RegisterUserWithAccountResult(
                 RegisterUserWithAccountResultCode.UnauthorizedError,

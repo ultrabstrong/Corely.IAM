@@ -92,8 +92,9 @@ public class AuthenticationServiceTests
                     UserAuthTokenResultCode.Success,
                     "test-token",
                     "test-token-id",
-                    [.. _fixture.CreateMany<Account>()],
-                    null
+                    new User() { Id = 1 },
+                    null,
+                    [.. _fixture.CreateMany<Account>()]
                 )
             );
 
@@ -101,7 +102,7 @@ public class AuthenticationServiceTests
             .ReturnsAsync(
                 new UserAuthTokenValidationResult(
                     UserAuthTokenValidationResultCode.Success,
-                    1,
+                    new User() { Id = 1 },
                     null,
                     TEST_DEVICE_ID,
                     []
@@ -114,7 +115,8 @@ public class AuthenticationServiceTests
     private static Mock<IUserContextProvider> GetMockUserContextProvider()
     {
         var mock = new Mock<IUserContextProvider>();
-        mock.Setup(m => m.GetUserContext()).Returns(new UserContext(1, null, TEST_DEVICE_ID, []));
+        mock.Setup(m => m.GetUserContext())
+            .Returns(new UserContext(new User() { Id = 1 }, null, TEST_DEVICE_ID, []));
         return mock;
     }
 
@@ -155,7 +157,7 @@ public class AuthenticationServiceTests
         );
 
         Assert.Equal(
-            authResult.Accounts.Select(a => a.Id).OrderBy(i => i),
+            authResult.AvailableAccounts.Select(a => a.Id).OrderBy(i => i),
             result.Accounts.Select(a => a.Id).OrderBy(i => i)
         );
 
@@ -256,8 +258,9 @@ public class AuthenticationServiceTests
                     UserAuthTokenResultCode.SignatureKeyNotFound,
                     null,
                     null,
-                    [],
-                    null
+                    null,
+                    null,
+                    []
                 )
             );
 
@@ -288,8 +291,9 @@ public class AuthenticationServiceTests
                     UserAuthTokenResultCode.AccountNotFound,
                     null,
                     null,
-                    [],
-                    null
+                    null,
+                    null,
+                    []
                 )
             );
 
@@ -383,54 +387,6 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SwitchAccountAsync_Fails_WhenTokenMissingUserId()
-    {
-        var request = new SwitchAccountRequest("token-without-userid", Guid.NewGuid());
-
-        _authenticationProviderMock
-            .Setup(m => m.ValidateUserAuthTokenAsync(It.IsAny<string>()))
-            .ReturnsAsync(
-                new UserAuthTokenValidationResult(
-                    UserAuthTokenValidationResultCode.Success,
-                    null,
-                    null,
-                    TEST_DEVICE_ID,
-                    []
-                )
-            );
-
-        var result = await _authenticationService.SwitchAccountAsync(request);
-
-        Assert.Equal(SignInResultCode.InvalidAuthTokenError, result.ResultCode);
-        Assert.Contains("user ID", result.Message);
-        Assert.Null(result.AuthToken);
-    }
-
-    [Fact]
-    public async Task SwitchAccountAsync_Fails_WhenTokenMissingDeviceId()
-    {
-        var request = new SwitchAccountRequest("token-without-deviceid", Guid.NewGuid());
-
-        _authenticationProviderMock
-            .Setup(m => m.ValidateUserAuthTokenAsync(It.IsAny<string>()))
-            .ReturnsAsync(
-                new UserAuthTokenValidationResult(
-                    UserAuthTokenValidationResultCode.Success,
-                    1,
-                    null,
-                    null, // Missing device ID
-                    []
-                )
-            );
-
-        var result = await _authenticationService.SwitchAccountAsync(request);
-
-        Assert.Equal(SignInResultCode.InvalidAuthTokenError, result.ResultCode);
-        Assert.Contains("device ID", result.Message);
-        Assert.Null(result.AuthToken);
-    }
-
-    [Fact]
     public async Task SwitchAccountAsync_Fails_WhenAccountNotFound()
     {
         var accountPublicId = Guid.NewGuid();
@@ -443,8 +399,9 @@ public class AuthenticationServiceTests
                     UserAuthTokenResultCode.AccountNotFound,
                     null,
                     null,
-                    [],
-                    null
+                    null,
+                    null,
+                    []
                 )
             );
 
@@ -467,8 +424,9 @@ public class AuthenticationServiceTests
                     UserAuthTokenResultCode.SignatureKeyNotFound,
                     null,
                     null,
-                    [],
-                    null
+                    null,
+                    null,
+                    []
                 )
             );
 
@@ -499,7 +457,7 @@ public class AuthenticationServiceTests
 
         _userContextProviderMock
             .Setup(m => m.GetUserContext())
-            .Returns(new UserContext(userId, accountId, TEST_DEVICE_ID, []));
+            .Returns(new UserContext(new User() { Id = 1 }, null, TEST_DEVICE_ID, []));
 
         _authenticationProviderMock
             .Setup(m =>
@@ -560,11 +518,29 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task SignOutAllAsync_CallsAuthenticationProvider()
     {
-        var userId = _fixture.Create<int>();
+        var userId = 1;
 
-        await _authenticationService.SignOutAllAsync(userId);
+        _userContextProviderMock
+            .Setup(m => m.GetUserContext())
+            .Returns(new UserContext(new User() { Id = userId }, null, TEST_DEVICE_ID, []));
+
+        await _authenticationService.SignOutAllAsync();
 
         _authenticationProviderMock.Verify(m => m.RevokeAllUserAuthTokensAsync(userId), Times.Once);
         _userContextSetterMock.Verify(m => m.ClearUserContext(userId), Times.Once);
+    }
+
+    [Fact]
+    public async Task SignOutAllAsync_DoesNothing_WhenNoUserContext()
+    {
+        _userContextProviderMock.Setup(m => m.GetUserContext()).Returns((UserContext?)null);
+
+        await _authenticationService.SignOutAllAsync();
+
+        _authenticationProviderMock.Verify(
+            m => m.RevokeAllUserAuthTokensAsync(It.IsAny<int>()),
+            Times.Never
+        );
+        _userContextSetterMock.Verify(m => m.ClearUserContext(It.IsAny<int>()), Times.Never);
     }
 }

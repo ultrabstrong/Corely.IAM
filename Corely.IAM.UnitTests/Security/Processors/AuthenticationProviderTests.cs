@@ -100,7 +100,7 @@ public class AuthenticationProviderTests
 
         Assert.Equal(UserAuthTokenResultCode.Success, authTokenResult.ResultCode);
         Assert.NotNull(authTokenResult.Token);
-        Assert.NotNull(authTokenResult.Accounts);
+        Assert.NotNull(authTokenResult.AvailableAccounts);
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token);
@@ -168,8 +168,9 @@ public class AuthenticationProviderTests
         Assert.Equal(UserAuthTokenResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Token);
         Assert.NotNull(result.TokenId);
-        Assert.Equal(account.Id, result.SignedInAccountId);
-        Assert.Contains(result.Accounts, a => a.Id == account.Id);
+        Assert.NotNull(result.CurrentAccount);
+        Assert.Equal(account.Id, result.CurrentAccount.Id);
+        Assert.Contains(result.AvailableAccounts, a => a.Id == account.Id);
     }
 
     [Fact]
@@ -272,14 +273,16 @@ public class AuthenticationProviderTests
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, tokenForAccount1.ResultCode);
-        Assert.Equal(account1.Id, tokenForAccount1.SignedInAccountId);
+        Assert.NotNull(tokenForAccount1.CurrentAccount);
+        Assert.Equal(account1.Id, tokenForAccount1.CurrentAccount.Id);
 
         var tokenForAccount2 = await _authenticationProvider.GetUserAuthTokenAsync(
             new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account2.PublicId)
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, tokenForAccount2.ResultCode);
-        Assert.Equal(account2.Id, tokenForAccount2.SignedInAccountId);
+        Assert.NotNull(tokenForAccount2.CurrentAccount);
+        Assert.Equal(account2.Id, tokenForAccount2.CurrentAccount.Id);
 
         Assert.NotEqual(account1.Id, account2.Id);
 
@@ -422,15 +425,16 @@ public class AuthenticationProviderTests
         );
 
         Assert.Equal(UserAuthTokenValidationResultCode.Success, validationResult.ResultCode);
-        Assert.Equal(userEntity.Id, validationResult.UserId);
-        Assert.Null(validationResult.SignedInAccountId);
+        Assert.NotNull(validationResult.User);
+        Assert.Equal(userEntity.Id, validationResult.User.Id);
+        Assert.Null(validationResult.CurrentAccount);
         Assert.Equal(
             userEntity.Accounts!.Select(a => a.Id).OrderBy(id => id),
-            validationResult.Accounts.Select(a => a.Id).OrderBy(id => id)
+            validationResult.AvailableAccounts.Select(a => a.Id).OrderBy(id => id)
         );
         Assert.Equal(
-            authTokenResult.Accounts!.Select(a => a.Id).OrderBy(id => id),
-            validationResult.Accounts.Select(a => a.Id).OrderBy(id => id)
+            authTokenResult.AvailableAccounts!.Select(a => a.Id).OrderBy(id => id),
+            validationResult.AvailableAccounts.Select(a => a.Id).OrderBy(id => id)
         );
     }
 
@@ -445,9 +449,9 @@ public class AuthenticationProviderTests
             UserAuthTokenValidationResultCode.InvalidTokenFormat,
             validationResult.ResultCode
         );
-        Assert.Null(validationResult.UserId);
-        Assert.Null(validationResult.SignedInAccountId);
-        Assert.Empty(validationResult.Accounts);
+        Assert.Null(validationResult.User);
+        Assert.Null(validationResult.CurrentAccount);
+        Assert.Empty(validationResult.AvailableAccounts);
     }
 
     [Fact]
@@ -466,9 +470,9 @@ public class AuthenticationProviderTests
             UserAuthTokenValidationResultCode.TokenValidationFailed,
             validationResult.ResultCode
         );
-        Assert.Null(validationResult.UserId);
-        Assert.Null(validationResult.SignedInAccountId);
-        Assert.Empty(validationResult.Accounts);
+        Assert.Null(validationResult.User);
+        Assert.Null(validationResult.CurrentAccount);
+        Assert.Empty(validationResult.AvailableAccounts);
     }
 
     [Fact]
@@ -488,9 +492,9 @@ public class AuthenticationProviderTests
             UserAuthTokenValidationResultCode.MissingUserIdClaim,
             validationResult.ResultCode
         );
-        Assert.Null(validationResult.UserId);
-        Assert.Null(validationResult.SignedInAccountId);
-        Assert.Empty(validationResult.Accounts);
+        Assert.Null(validationResult.User);
+        Assert.Null(validationResult.CurrentAccount);
+        Assert.Empty(validationResult.AvailableAccounts);
     }
 
     [Fact]
@@ -514,9 +518,9 @@ public class AuthenticationProviderTests
             UserAuthTokenValidationResultCode.MissingUserIdClaim,
             validationResult.ResultCode
         );
-        Assert.Null(validationResult.UserId);
-        Assert.Null(validationResult.SignedInAccountId);
-        Assert.Empty(validationResult.Accounts);
+        Assert.Null(validationResult.User);
+        Assert.Null(validationResult.CurrentAccount);
+        Assert.Empty(validationResult.AvailableAccounts);
     }
 
     [Fact]
@@ -536,9 +540,9 @@ public class AuthenticationProviderTests
             UserAuthTokenValidationResultCode.TokenValidationFailed,
             validationResult.ResultCode
         );
-        Assert.Null(validationResult.UserId);
-        Assert.Null(validationResult.SignedInAccountId);
-        Assert.Empty(validationResult.Accounts);
+        Assert.Null(validationResult.User);
+        Assert.Null(validationResult.CurrentAccount);
+        Assert.Empty(validationResult.AvailableAccounts);
     }
 
     [Fact]
@@ -564,9 +568,9 @@ public class AuthenticationProviderTests
             UserAuthTokenValidationResultCode.TokenValidationFailed,
             validationResult.ResultCode
         );
-        Assert.Null(validationResult.UserId);
-        Assert.Null(validationResult.SignedInAccountId);
-        Assert.Empty(validationResult.Accounts);
+        Assert.Null(validationResult.User);
+        Assert.Null(validationResult.CurrentAccount);
+        Assert.Empty(validationResult.AvailableAccounts);
     }
 
     [Fact]
@@ -592,9 +596,9 @@ public class AuthenticationProviderTests
             UserAuthTokenValidationResultCode.TokenValidationFailed,
             validationResult.ResultCode
         );
-        Assert.Null(validationResult.UserId);
-        Assert.Null(validationResult.SignedInAccountId);
-        Assert.Empty(validationResult.Accounts);
+        Assert.Null(validationResult.User);
+        Assert.Null(validationResult.CurrentAccount);
+        Assert.Empty(validationResult.AvailableAccounts);
     }
 
     [Fact]

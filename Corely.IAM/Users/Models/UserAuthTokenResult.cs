@@ -14,6 +14,7 @@ public record UserAuthTokenResult(
     UserAuthTokenResultCode ResultCode,
     string? Token,
     string? TokenId,
-    List<Account> Accounts,
-    int? SignedInAccountId
+    User? User,
+    Account? CurrentAccount,
+    List<Account> AvailableAccounts
 );

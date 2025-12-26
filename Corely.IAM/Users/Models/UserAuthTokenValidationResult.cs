@@ -11,10 +11,10 @@ public enum UserAuthTokenValidationResultCode
     TokenValidationFailed,
 }
 
-public record UserAuthTokenValidationResult(
+internal record UserAuthTokenValidationResult(
     UserAuthTokenValidationResultCode ResultCode,
-    int? UserId,
-    int? SignedInAccountId,
+    User? User,
+    Account? CurrentAccount,
     string? DeviceId,
-    List<Account> Accounts
+    List<Account> AvailableAccounts
 );

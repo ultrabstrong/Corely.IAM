@@ -34,7 +34,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
         _mockInnerProcessor.Verify(x => x.CreateBasicAuthAsync(request), Times.Once);
         // Should not call any authorization methods
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedForOwnUser(It.IsAny<int>()),
+            x => x.IsAuthorizedForOwnUser(It.IsAny<int>(), It.IsAny<bool>()),
             Times.Never
         );
     }
@@ -44,7 +44,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     {
         var request = new UpdateBasicAuthRequest(5, "password");
         _mockAuthorizationProvider
-            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId))
+            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId, It.IsAny<bool>()))
             .Returns(false);
 
         var result = await _decorator.UpdateBasicAuthAsync(request);
@@ -62,7 +62,9 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
         var userId = 5;
         var request = new UpdateBasicAuthRequest(userId, "password");
         var expectedResult = new UpdateBasicAuthResult(UpdateBasicAuthResultCode.Success, "");
-        _mockAuthorizationProvider.Setup(x => x.IsAuthorizedForOwnUser(userId)).Returns(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(userId, It.IsAny<bool>()))
+            .Returns(true);
         _mockInnerProcessor
             .Setup(x => x.UpdateBasicAuthAsync(request))
             .ReturnsAsync(expectedResult);
@@ -92,7 +94,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
         _mockInnerProcessor.Verify(x => x.VerifyBasicAuthAsync(request), Times.Once);
         // Should not call any authorization methods
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedForOwnUser(It.IsAny<int>()),
+            x => x.IsAuthorizedForOwnUser(It.IsAny<int>(), It.IsAny<bool>()),
             Times.Never
         );
         _mockAuthorizationProvider.Verify(

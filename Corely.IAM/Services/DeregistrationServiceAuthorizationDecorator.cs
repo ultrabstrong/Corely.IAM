@@ -24,7 +24,7 @@ internal class DeregistrationServiceAuthorizationDecorator(
             );
 
     public async Task<DeregisterAccountResult> DeregisterAccountAsync() =>
-        await _authorizationProvider.HasAccountContextAsync()
+        _authorizationProvider.HasAccountContext()
             ? await _inner.DeregisterAccountAsync()
             : new DeregisterAccountResult(
                 DeregisterAccountResultCode.UnauthorizedError,
@@ -44,7 +44,7 @@ internal class DeregistrationServiceAuthorizationDecorator(
     public async Task<DeregisterUserFromAccountResult> DeregisterUserFromAccountAsync(
         DeregisterUserFromAccountRequest request
     ) =>
-        await _authorizationProvider.HasAccountContextAsync()
+        _authorizationProvider.HasAccountContext()
             ? await _inner.DeregisterUserFromAccountAsync(request)
             : new DeregisterUserFromAccountResult(
                 DeregisterUserFromAccountResultCode.UnauthorizedError,

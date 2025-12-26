@@ -39,10 +39,6 @@ internal class AuthenticationServiceLoggingDecorator(
             logResult: true
         );
 
-    public async Task SignOutAllAsync(int userId) =>
-        await _logger.ExecuteWithLogging(
-            nameof(AuthenticationService),
-            userId,
-            () => _inner.SignOutAllAsync(userId)
-        );
+    public async Task SignOutAllAsync() =>
+        await _logger.ExecuteWithLogging(nameof(AuthenticationService), _inner.SignOutAllAsync);
 }

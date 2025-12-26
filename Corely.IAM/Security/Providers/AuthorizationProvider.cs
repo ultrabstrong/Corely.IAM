@@ -21,7 +21,6 @@ internal class AuthorizationProvider(
     private readonly IReadonlyRepo<AccountEntity> _accountRepo = accountRepo;
     private readonly ILogger<AuthorizationProvider> _logger = logger;
     private IReadOnlyList<PermissionEntity>? _cachedPermissions;
-    private IReadOnlyList<int>? _cachedAccountIds;
 
     public async Task<bool> IsAuthorizedAsync(
         AuthAction action,
@@ -54,7 +53,7 @@ internal class AuthorizationProvider(
         {
             _logger.LogInformation(
                 "Authorization denied: User {UserId} lacks {Action} permission for {ResourceType}{ResourceIds}",
-                userContext.UserId,
+                userContext.User,
                 action,
                 resourceType,
                 resourceIdDisplay
@@ -64,18 +63,18 @@ internal class AuthorizationProvider(
         return hasPermission;
     }
 
-    public bool IsAuthorizedForOwnUser(int requestUserId)
+    public bool IsAuthorizedForOwnUser(int requestUserId, bool suppressLog = true)
     {
         if (!TryGetUserContext(out var userContext, $"act on user {requestUserId}"))
             return false;
 
-        var isAuthorized = userContext.UserId == requestUserId;
+        var isAuthorized = userContext.User.Id == requestUserId;
 
-        if (!isAuthorized)
+        if (!isAuthorized && !suppressLog)
         {
             _logger.LogInformation(
                 "Authorization denied: User {UserId} is not authorized to act on user {RequestUserId}",
-                userContext.UserId,
+                userContext.User.Id,
                 requestUserId
             );
         }
@@ -85,29 +84,30 @@ internal class AuthorizationProvider(
 
     public bool HasUserContext() => _userContextProvider.GetUserContext() != null;
 
-    public async Task<bool> HasAccountContextAsync()
+    public bool HasAccountContext()
     {
         if (!TryGetUserContext(out var userContext, "check account context"))
             return false;
 
-        if (userContext.AccountId == null)
+        if (userContext.CurrentAccount == null)
         {
             _logger.LogInformation(
                 "Authorization denied: User {UserId} is not signed in to an account",
-                userContext.UserId
+                userContext.User
             );
             return false;
         }
 
-        var accountIds = await GetAccountIdsAsync();
-        var hasAccountContext = accountIds.Any(id => id == userContext.AccountId);
+        var hasAccountContext = userContext.AvailableAccounts.Any(a =>
+            a.Id == userContext.CurrentAccount.Id
+        );
 
         if (!hasAccountContext)
         {
             _logger.LogInformation(
                 "Authorization denied: User {UserId} does not have access to account {AccountId}",
-                userContext.UserId,
-                userContext.AccountId
+                userContext.User,
+                userContext.CurrentAccount
             );
         }
 
@@ -137,32 +137,18 @@ internal class AuthorizationProvider(
             return _cachedPermissions;
 
         var userContext = _userContextProvider.GetUserContext()!;
+        var contextUserId = userContext.User.Id;
+        var contextAccountId = userContext.CurrentAccount?.Id;
 
         _cachedPermissions = await _permissionRepo.ListAsync(p =>
             p.Roles!.Any(r =>
-                r.Users!.Any(u => u.Id == userContext.UserId)
-                || r.Groups!.Any(g => g.Users!.Any(u => u.Id == userContext.UserId))
+                r.Users!.Any(u => u.Id == contextUserId)
+                || r.Groups!.Any(g => g.Users!.Any(u => u.Id == contextUserId))
             )
-            && p.AccountId == userContext.AccountId
+            && p.AccountId == contextAccountId
         );
 
         return _cachedPermissions;
-    }
-
-    private async Task<IReadOnlyList<int>> GetAccountIdsAsync()
-    {
-        if (_cachedAccountIds != null)
-            return _cachedAccountIds;
-
-        var userContext = _userContextProvider.GetUserContext()!;
-
-        var accounts = await _accountRepo.ListAsync(a =>
-            a.Users!.Any(u => u.Id == userContext.UserId)
-        );
-
-        _cachedAccountIds = [.. accounts.Select(a => a.Id)];
-
-        return _cachedAccountIds;
     }
 
     private static bool HasAction(PermissionEntity permission, AuthAction action) =>

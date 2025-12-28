@@ -161,9 +161,9 @@ internal class AuthenticationService(
 
         _logger.LogDebug(
             "Signing out user {UserId} with token {TokenId}, account {AccountId}, device {DeviceId}",
-            context.User,
+            context.User.Id,
             request.TokenId,
-            context.CurrentAccount?.ToString() ?? "null",
+            context.CurrentAccount?.Id,
             context.DeviceId
         );
 
@@ -179,7 +179,7 @@ internal class AuthenticationService(
 
         _logger.LogDebug(
             "User {UserId} signed out with token {TokenId}: {Result}",
-            context.User,
+            context.User.Id,
             request.TokenId,
             result
         );

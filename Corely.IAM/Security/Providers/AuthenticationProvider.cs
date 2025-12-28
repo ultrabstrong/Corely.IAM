@@ -277,7 +277,7 @@ internal class AuthenticationProvider(
                 "Auth token {TokenId} not found, already revoked, or expired for user {UserId}, account {AccountId}, device {DeviceId}",
                 request.TokenId,
                 request.UserId,
-                request.AccountId?.ToString() ?? "null",
+                request.AccountId,
                 request.DeviceId
             );
             return false;
@@ -290,7 +290,7 @@ internal class AuthenticationProvider(
             "Auth token {TokenId} revoked for user {UserId}, account {AccountId}, device {DeviceId}",
             request.TokenId,
             request.UserId,
-            request.AccountId?.ToString() ?? "null",
+            request.AccountId,
             request.DeviceId
         );
         return true;
@@ -439,7 +439,7 @@ internal class AuthenticationProvider(
             "Revoked {Count} existing token(s) for user {UserId}, account {AccountId}, and device {DeviceId}",
             activeTokens.Count,
             userId,
-            accountId?.ToString() ?? "null",
+            accountId,
             deviceId
         );
     }

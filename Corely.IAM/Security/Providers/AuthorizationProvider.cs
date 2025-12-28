@@ -18,6 +18,7 @@ internal class AuthorizationProvider(
     private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo;
     private readonly ILogger<AuthorizationProvider> _logger = logger;
     private IReadOnlyList<PermissionEntity>? _cachedPermissions;
+    private readonly SemaphoreSlim _cacheLock = new(1, 1);
 
     public async Task<bool> IsAuthorizedAsync(
         AuthAction action,
@@ -50,7 +51,7 @@ internal class AuthorizationProvider(
         {
             _logger.LogInformation(
                 "Authorization denied: User {UserId} lacks {Action} permission for {ResourceType}{ResourceIds}",
-                userContext.User,
+                userContext.User.Id,
                 action,
                 resourceType,
                 resourceIdDisplay
@@ -90,7 +91,7 @@ internal class AuthorizationProvider(
         {
             _logger.LogInformation(
                 "Authorization denied: User {UserId} is not signed in to an account",
-                userContext.User
+                userContext.User.Id
             );
             return false;
         }
@@ -103,8 +104,8 @@ internal class AuthorizationProvider(
         {
             _logger.LogInformation(
                 "Authorization denied: User {UserId} does not have access to account {AccountId}",
-                userContext.User,
-                userContext.CurrentAccount
+                userContext.User.Id,
+                userContext.CurrentAccount?.Id
             );
         }
 
@@ -135,22 +136,36 @@ internal class AuthorizationProvider(
 
     private async Task<IReadOnlyList<PermissionEntity>> GetPermissionsAsync()
     {
-        if (_cachedPermissions != null)
+        // Fast path - cache already populated
+        if (_cachedPermissions is not null)
             return _cachedPermissions;
 
-        var userContext = _userContextProvider.GetUserContext()!;
-        var contextUserId = userContext.User.Id;
-        var contextAccountId = userContext.CurrentAccount?.Id;
+        // Serialize access to prevent concurrent DbContext usage
+        await _cacheLock.WaitAsync();
+        try
+        {
+            // Double-check after acquiring lock
+            if (_cachedPermissions is not null)
+                return _cachedPermissions;
 
-        _cachedPermissions = await _permissionRepo.ListAsync(p =>
-            p.Roles!.Any(r =>
-                r.Users!.Any(u => u.Id == contextUserId)
-                || r.Groups!.Any(g => g.Users!.Any(u => u.Id == contextUserId))
-            )
-            && p.AccountId == contextAccountId
-        );
+            var userContext = _userContextProvider.GetUserContext()!;
+            var contextUserId = userContext.User.Id;
+            var contextAccountId = userContext.CurrentAccount?.Id;
 
-        return _cachedPermissions;
+            _cachedPermissions = await _permissionRepo.ListAsync(p =>
+                p.Roles!.Any(r =>
+                    r.Users!.Any(u => u.Id == contextUserId)
+                    || r.Groups!.Any(g => g.Users!.Any(u => u.Id == contextUserId))
+                )
+                && p.AccountId == contextAccountId
+            );
+
+            return _cachedPermissions;
+        }
+        finally
+        {
+            _cacheLock.Release();
+        }
     }
 
     private static bool HasAction(PermissionEntity permission, AuthAction action) =>

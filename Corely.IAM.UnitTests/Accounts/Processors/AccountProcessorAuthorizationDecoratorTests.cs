@@ -35,7 +35,8 @@ public class AccountProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
+            x =>
+                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(x => x.CreateAccountAsync(request), Times.Once);
@@ -156,7 +157,11 @@ public class AccountProcessorAuthorizationDecoratorTests
         var expectedResult = new AddUserToAccountResult(AddUserToAccountResultCode.Success, "");
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE, request.AccountId)
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    request.AccountId
+                )
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
@@ -184,7 +189,11 @@ public class AccountProcessorAuthorizationDecoratorTests
         var request = new AddUserToAccountRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE, request.AccountId)
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    request.AccountId
+                )
             )
             .ReturnsAsync(false);
 
@@ -200,7 +209,10 @@ public class AccountProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemoveUserFromAccountAsync_Succeeds_WhenUserIsRemovingThemselves()
     {
-        var request = new RemoveUserFromAccountRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
+        var request = new RemoveUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         var expectedResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.Success,
             ""
@@ -218,7 +230,8 @@ public class AccountProcessorAuthorizationDecoratorTests
         Assert.Equal(expectedResult, result);
         // Should not check account update authorization when user is removing themselves
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
+            x =>
+                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(x => x.RemoveUserFromAccountAsync(request), Times.Once);
@@ -227,7 +240,10 @@ public class AccountProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemoveUserFromAccountAsync_Succeeds_WhenUserHasAccountUpdatePermission()
     {
-        var request = new RemoveUserFromAccountRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
+        var request = new RemoveUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         var expectedResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.Success,
             ""
@@ -239,7 +255,11 @@ public class AccountProcessorAuthorizationDecoratorTests
         // But user has update permission on the account
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE, request.AccountId)
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    request.AccountId
+                )
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
@@ -264,7 +284,10 @@ public class AccountProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemoveUserFromAccountAsync_ReturnsUnauthorized_WhenNotOwnUserAndNoAccountPermission()
     {
-        var request = new RemoveUserFromAccountRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
+        var request = new RemoveUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         // User is NOT removing themselves
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedForOwnUser(request.UserId, It.IsAny<bool>()))
@@ -272,7 +295,11 @@ public class AccountProcessorAuthorizationDecoratorTests
         // And user does NOT have update permission on the account
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE, request.AccountId)
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    request.AccountId
+                )
             )
             .ReturnsAsync(false);
 

@@ -119,7 +119,9 @@ public class AuthenticationServiceTests
     {
         var mock = new Mock<IUserContextProvider>();
         mock.Setup(m => m.GetUserContext())
-            .Returns(new UserContext(new User() { Id = Guid.CreateVersion7() }, null, TEST_DEVICE_ID, []));
+            .Returns(
+                new UserContext(new User() { Id = Guid.CreateVersion7() }, null, TEST_DEVICE_ID, [])
+            );
         return mock;
     }
 
@@ -382,7 +384,9 @@ public class AuthenticationServiceTests
 
         _userContextProviderMock
             .Setup(m => m.GetUserContext())
-            .Returns(new UserContext(new User() { Id = Guid.CreateVersion7() }, null, TEST_DEVICE_ID, []));
+            .Returns(
+                new UserContext(new User() { Id = Guid.CreateVersion7() }, null, TEST_DEVICE_ID, [])
+            );
 
         _authenticationProviderMock
             .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<GetUserAuthTokenRequest>()))
@@ -411,7 +415,9 @@ public class AuthenticationServiceTests
 
         _userContextProviderMock
             .Setup(m => m.GetUserContext())
-            .Returns(new UserContext(new User() { Id = Guid.CreateVersion7() }, null, TEST_DEVICE_ID, []));
+            .Returns(
+                new UserContext(new User() { Id = Guid.CreateVersion7() }, null, TEST_DEVICE_ID, [])
+            );
 
         _authenticationProviderMock
             .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<GetUserAuthTokenRequest>()))

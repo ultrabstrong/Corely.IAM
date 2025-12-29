@@ -43,7 +43,11 @@ internal class AuthorizationProvider(
                 p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
                 || p.ResourceType == resourceType
             )
-            && (p.ResourceId == Guid.Empty || resourceIds.Length == 0 || resourceIds.Contains(p.ResourceId))
+            && (
+                p.ResourceId == Guid.Empty
+                || resourceIds.Length == 0
+                || resourceIds.Contains(p.ResourceId)
+            )
             && HasAction(p, action)
         );
 

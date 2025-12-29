@@ -1,4 +1,5 @@
-﻿using Corely.Common.Providers.Redaction;
+﻿using System.IdentityModel.Tokens.Jwt;
+using Corely.Common.Providers.Redaction;
 using Corely.IAM.ConsoleApp.SerilogCustomization;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
@@ -8,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace Corely.IAM.ConsoleApp;
 
@@ -121,7 +121,11 @@ internal class Program
             var registerUsersWithGroupResult =
                 await registrationService.RegisterUsersWithGroupAsync(
                     new RegisterUsersWithGroupRequest(
-                        [registerUserResult.CreatedUserId, Guid.CreateVersion7(), Guid.CreateVersion7()],
+                        [
+                            registerUserResult.CreatedUserId,
+                            Guid.CreateVersion7(),
+                            Guid.CreateVersion7(),
+                        ],
                         registerGroupResult.CreatedGroupId
                     )
                 );
@@ -133,7 +137,11 @@ internal class Program
             var registerPermissionsWithRoleResult =
                 await registrationService.RegisterPermissionsWithRoleAsync(
                     new RegisterPermissionsWithRoleRequest(
-                        [registerPermissionResult.CreatedPermissionId, Guid.CreateVersion7(), Guid.CreateVersion7()],
+                        [
+                            registerPermissionResult.CreatedPermissionId,
+                            Guid.CreateVersion7(),
+                            Guid.CreateVersion7(),
+                        ],
                         registerRoleResult.CreatedRoleId
                     )
                 );

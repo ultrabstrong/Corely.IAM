@@ -24,7 +24,11 @@ public class RoleProcessorLoggingDecoratorTests
     public async Task CreateRoleAsync_DelegatesToInnerAndLogsResult()
     {
         var request = new CreateRoleRequest("testrole", Guid.CreateVersion7());
-        var expectedResult = new CreateRoleResult(CreateRoleResultCode.Success, string.Empty, request.OwnerAccountId);
+        var expectedResult = new CreateRoleResult(
+            CreateRoleResultCode.Success,
+            string.Empty,
+            request.OwnerAccountId
+        );
         _mockInnerProcessor.Setup(x => x.CreateRoleAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.CreateRoleAsync(request);
@@ -38,7 +42,11 @@ public class RoleProcessorLoggingDecoratorTests
     public async Task CreateDefaultSystemRolesAsync_DelegatesToInnerAndLogsResult()
     {
         var ownerAccountId = Guid.CreateVersion7();
-        var expectedResult = new CreateDefaultSystemRolesResult(Guid.CreateVersion7(), Guid.CreateVersion7(), Guid.CreateVersion7());
+        var expectedResult = new CreateDefaultSystemRolesResult(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         _mockInnerProcessor
             .Setup(x => x.CreateDefaultSystemRolesAsync(ownerAccountId))
             .ReturnsAsync(expectedResult);
@@ -95,7 +103,10 @@ public class RoleProcessorLoggingDecoratorTests
     [Fact]
     public async Task AssignPermissionsToRoleAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new AssignPermissionsToRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new AssignPermissionsToRoleRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
         var expectedResult = new AssignPermissionsToRoleResult(
             AssignPermissionsToRoleResultCode.Success,
             string.Empty,

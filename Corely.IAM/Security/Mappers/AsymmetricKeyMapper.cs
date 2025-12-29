@@ -7,9 +7,7 @@ namespace Corely.IAM.Security.Mappers;
 
 internal static class AsymmetricKeyMapper
 {
-    public static AsymmetricKeyEntity ToEntity(
-        this AsymmetricKey asymmetricKey
-    )
+    public static AsymmetricKeyEntity ToEntity(this AsymmetricKey asymmetricKey)
     {
         return new AsymmetricKeyEntity
         {

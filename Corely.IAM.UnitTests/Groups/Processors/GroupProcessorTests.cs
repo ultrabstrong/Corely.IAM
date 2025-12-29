@@ -85,7 +85,9 @@ public class GroupProcessorTests
         return (created, account);
     }
 
-    private async Task<(GroupEntity Group, AccountEntity Account)> CreateGroupWithUsersAsync(params Guid[] userIds)
+    private async Task<(GroupEntity Group, AccountEntity Account)> CreateGroupWithUsersAsync(
+        params Guid[] userIds
+    )
     {
         var account = await CreateAccountAsync();
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
@@ -537,7 +539,10 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_Fails_WhenGroupDoesNotExist()
     {
-        var request = new RemoveUsersFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new RemoveUsersFromGroupRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
 
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
@@ -703,9 +708,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_Succeeds_WhenGroupHasOwnerRoleAndSomeUsersRemain()
     {
-        var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
-            userCount: 3
-        );
+        var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 3);
 
         // Remove only 2 of 3 users - one remains to hold the owner role
         var request = new RemoveUsersFromGroupRequest([userIds[0], userIds[1]], groupId);
@@ -736,9 +739,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_Fails_WhenAllUsersRemovedAndNoneHaveOwnershipElsewhere()
     {
-        var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
-            userCount: 2
-        );
+        var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 2);
 
         // Don't give any user ownership elsewhere - all ownership is via this group
 
@@ -754,9 +755,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_Fails_WhenSingleUserRemovedFromOwnerGroupWithNoOtherOwnership()
     {
-        var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
-            userCount: 1
-        );
+        var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 1);
 
         // Single user, only ownership via group - should fail
         var request = new RemoveUsersFromGroupRequest(userIds, groupId);
@@ -853,9 +852,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task DeleteGroupAsync_Fails_WhenGroupHasOwnerRoleAndNoUserHasOwnershipElsewhere()
     {
-        var (groupId, _, _) = await CreateGroupWithOwnerRoleAndUsersAsync(
-            userCount: 2
-        );
+        var (groupId, _, _) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 2);
 
         // Don't give any user ownership elsewhere
 
@@ -868,9 +865,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task DeleteGroupAsync_Fails_WhenSingleUserInOwnerGroupWithNoOtherOwnership()
     {
-        var (groupId, _, _) = await CreateGroupWithOwnerRoleAndUsersAsync(
-            userCount: 1
-        );
+        var (groupId, _, _) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 1);
 
         // Single user, only ownership via group - should fail
         var result = await _groupProcessor.DeleteGroupAsync(groupId);
@@ -896,7 +891,10 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveRolesFromGroupAsync_Fails_WhenGroupDoesNotExist()
     {
-        var request = new RemoveRolesFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new RemoveRolesFromGroupRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
 
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
 
@@ -987,9 +985,7 @@ public class GroupProcessorTests
             g => g.Id == groupId,
             include: q => q.Include(g => g.Roles)
         );
-        var ownerRoleId = group!
-            .Roles!.First(r => r.Name == RoleConstants.OWNER_ROLE_NAME)
-            .Id;
+        var ownerRoleId = group!.Roles!.First(r => r.Name == RoleConstants.OWNER_ROLE_NAME).Id;
 
         var request = new RemoveRolesFromGroupRequest([ownerRoleId], groupId);
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
@@ -1013,9 +1009,7 @@ public class GroupProcessorTests
             g => g.Id == groupId,
             include: q => q.Include(g => g.Roles)
         );
-        var ownerRoleId = group!
-            .Roles!.First(r => r.Name == RoleConstants.OWNER_ROLE_NAME)
-            .Id;
+        var ownerRoleId = group!.Roles!.First(r => r.Name == RoleConstants.OWNER_ROLE_NAME).Id;
 
         var request = new RemoveRolesFromGroupRequest([ownerRoleId], groupId);
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
@@ -1059,9 +1053,7 @@ public class GroupProcessorTests
         group!.Roles!.Add(createdRegularRole);
         await groupRepo.UpdateAsync(group);
 
-        var ownerRoleId = group
-            .Roles.First(r => r.Name == RoleConstants.OWNER_ROLE_NAME)
-            .Id;
+        var ownerRoleId = group.Roles.First(r => r.Name == RoleConstants.OWNER_ROLE_NAME).Id;
 
         var request = new RemoveRolesFromGroupRequest(
             [ownerRoleId, createdRegularRole.Id],

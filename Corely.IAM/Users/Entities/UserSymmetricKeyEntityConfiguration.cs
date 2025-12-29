@@ -5,8 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Corely.IAM.Users.Entities;
 
-internal class UserSymmetricKeyEntityConfiguration
-    : EntityConfigurationBase<UserSymmetricKeyEntity>
+internal class UserSymmetricKeyEntityConfiguration : EntityConfigurationBase<UserSymmetricKeyEntity>
 {
     public UserSymmetricKeyEntityConfiguration(IDbTypes dbTypes)
         : base(dbTypes) { }

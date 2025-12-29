@@ -426,7 +426,10 @@ public class AccountProcessorTests
 
         await CreateOwnerRoleAsync(createAccountResult.CreatedId, ownerUser1.Id, ownerUser2.Id);
 
-        var request = new RemoveUserFromAccountRequest(ownerUser1.Id, createAccountResult.CreatedId);
+        var request = new RemoveUserFromAccountRequest(
+            ownerUser1.Id,
+            createAccountResult.CreatedId
+        );
         var result = await _accountProcessor.RemoveUserFromAccountAsync(request);
 
         Assert.Equal(RemoveUserFromAccountResultCode.Success, result.ResultCode);
@@ -465,7 +468,10 @@ public class AccountProcessorTests
             groupUserIds: [ownerUser2.Id]
         );
 
-        var request = new RemoveUserFromAccountRequest(ownerUser1.Id, createAccountResult.CreatedId);
+        var request = new RemoveUserFromAccountRequest(
+            ownerUser1.Id,
+            createAccountResult.CreatedId
+        );
         var result = await _accountProcessor.RemoveUserFromAccountAsync(request);
 
         Assert.Equal(RemoveUserFromAccountResultCode.Success, result.ResultCode);

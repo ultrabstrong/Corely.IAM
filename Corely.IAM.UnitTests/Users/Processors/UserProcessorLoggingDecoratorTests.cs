@@ -27,7 +27,6 @@ public class UserProcessorLoggingDecoratorTests
         var expectedResult = new CreateUserResult(
             CreateUserResultCode.Success,
             string.Empty,
-            1,
             Guid.CreateVersion7()
         );
         _mockInnerProcessor.Setup(x => x.CreateUserAsync(request)).ReturnsAsync(expectedResult);
@@ -42,7 +41,7 @@ public class UserProcessorLoggingDecoratorTests
     [Fact]
     public async Task GetUserAsyncById_DelegatesToInnerAndLogsResult()
     {
-        var userId = 1;
+        var userId = Guid.CreateVersion7();
         var expectedResult = new GetUserResult(
             GetUserResultCode.Success,
             string.Empty,
@@ -74,7 +73,7 @@ public class UserProcessorLoggingDecoratorTests
     [Fact]
     public async Task GetAsymmetricSignatureVerificationKeyAsync_DelegatesToInnerAndLogsResult()
     {
-        var userId = 1;
+        var userId = Guid.CreateVersion7();
         var expectedResult = new GetAsymmetricKeyResult(
             GetAsymmetricKeyResultCode.Success,
             string.Empty,
@@ -97,7 +96,10 @@ public class UserProcessorLoggingDecoratorTests
     [Fact]
     public async Task AssignRolesToUserAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new AssignRolesToUserRequest([1, 2], 1);
+        var request = new AssignRolesToUserRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
         var expectedResult = new AssignRolesToUserResult(
             AssignRolesToUserResultCode.Success,
             string.Empty,
@@ -118,7 +120,10 @@ public class UserProcessorLoggingDecoratorTests
     [Fact]
     public async Task RemoveRolesFromUserAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new RemoveRolesFromUserRequest([1, 2], 1);
+        var request = new RemoveRolesFromUserRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
         var expectedResult = new RemoveRolesFromUserResult(
             RemoveRolesFromUserResultCode.Success,
             string.Empty,
@@ -139,7 +144,7 @@ public class UserProcessorLoggingDecoratorTests
     [Fact]
     public async Task DeleteUserAsync_DelegatesToInnerAndLogsResult()
     {
-        var userId = 1;
+        var userId = Guid.CreateVersion7();
         var expectedResult = new DeleteUserResult(DeleteUserResultCode.Success, string.Empty);
         _mockInnerProcessor.Setup(x => x.DeleteUserAsync(userId)).ReturnsAsync(expectedResult);
 

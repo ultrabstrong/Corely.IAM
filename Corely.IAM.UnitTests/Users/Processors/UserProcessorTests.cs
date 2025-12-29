@@ -37,12 +37,12 @@ public class UserProcessorTests
         );
     }
 
-    private async Task<int> CreateAccountAsync()
+    private async Task<AccountEntity> CreateAccountAsync()
     {
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var account = new AccountEntity { Id = Guid.CreateVersion7() };
         var created = await accountRepo.CreateAsync(account);
-        return created.Id;
+        return created;
     }
 
     private async Task<UserEntity> CreateUserInAccountAsync(Guid accountId)
@@ -60,19 +60,18 @@ public class UserProcessorTests
             Roles = [],
         };
         var created = await userRepo.CreateAsync(user);
-        return created.Id;
+        return created;
     }
 
-    private async Task<(Guid UserId, Guid AccountId)> CreateUserAsync()
+    private async Task<(UserEntity User, AccountEntity Account)> CreateUserAsync()
     {
-        var accountId = await CreateAccountAsync();
-        var userId = await CreateUserInAccountAsync(accountId);
-        return (userId, accountId);
+        var account = await CreateAccountAsync();
+        var user = await CreateUserInAccountAsync(account.Id);
+        return (user, account);
     }
 
     private async Task<RoleEntity> CreateRoleAsync(Guid accountId, params Guid[] userIds)
     {
-        var roleId = Guid.CreateVersion7();
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
 
         var users = new List<UserEntity>();
@@ -87,7 +86,7 @@ public class UserProcessorTests
 
         var role = new RoleEntity
         {
-            Id = roleId,
+            Id = Guid.CreateVersion7(),
             Users = users,
             Groups = [],
             AccountId = accountId,
@@ -96,7 +95,7 @@ public class UserProcessorTests
         };
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var created = await roleRepo.CreateAsync(role);
-        return created.Id;
+        return created;
     }
 
     private async Task CreateOwnerRoleAsync(Guid accountId, params Guid[] userIds)
@@ -139,8 +138,8 @@ public class UserProcessorTests
 
     private async Task CreateOwnerRoleWithGroupAsync(
         Guid accountId,
-        int[] directUserIds,
-        int[] groupUserIds
+        Guid[] directUserIds,
+        Guid[] groupUserIds
     )
     {
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
@@ -237,7 +236,7 @@ public class UserProcessorTests
     [Fact]
     public async Task GetUserByUseridAsync_ReturnsNull_WhenUserNotFound()
     {
-        var result = await _userProcessor.GetUserAsync(_fixture.Create<int>());
+        var result = await _userProcessor.GetUserAsync(Guid.CreateVersion7());
         Assert.Equal(GetUserResultCode.UserNotFoundError, result.ResultCode);
         Assert.Null(result.User);
     }
@@ -288,7 +287,7 @@ public class UserProcessorTests
     public async Task GetAsymmetricSignatureVerificationKeyAsync_ReturnsUserNotFound_WhenUserDNE()
     {
         var result = await _userProcessor.GetAsymmetricSignatureVerificationKeyAsync(
-            _fixture.Create<int>()
+            Guid.CreateVersion7()
         );
 
         Assert.Equal(GetAsymmetricKeyResultCode.UserNotFoundError, result.ResultCode);
@@ -317,7 +316,7 @@ public class UserProcessorTests
     [Fact]
     public async Task AssignRolesToUserAsync_Fails_WhenUserDoesNotExist()
     {
-        var request = new AssignRolesToUserRequest([], _fixture.Create<int>());
+        var request = new AssignRolesToUserRequest([], Guid.CreateVersion7());
         var result = await _userProcessor.AssignRolesToUserAsync(request);
         Assert.Equal(AssignRolesToUserResultCode.UserNotFoundError, result.ResultCode);
     }
@@ -325,8 +324,8 @@ public class UserProcessorTests
     [Fact]
     public async Task AssignRolesToUserAsync_Fails_WhenRolesNotProvided()
     {
-        var (userId, _) = await CreateUserAsync();
-        var request = new AssignRolesToUserRequest([], userId);
+        var (user, _) = await CreateUserAsync();
+        var request = new AssignRolesToUserRequest([], user.Id);
 
         var result = await _userProcessor.AssignRolesToUserAsync(request);
 
@@ -336,9 +335,9 @@ public class UserProcessorTests
     [Fact]
     public async Task AssignRolesToUserAsync_Succeeds_WhenRolesAssigned()
     {
-        var (userId, accountId) = await CreateUserAsync();
-        var roleId = await CreateRoleAsync(accountId);
-        var request = new AssignRolesToUserRequest([roleId], userId);
+        var (user, account) = await CreateUserAsync();
+        var role = await CreateRoleAsync(account.Id);
+        var request = new AssignRolesToUserRequest([role.Id], user.Id);
 
         var result = await _userProcessor.AssignRolesToUserAsync(request);
 
@@ -346,13 +345,13 @@ public class UserProcessorTests
 
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var userEntity = await userRepo.GetAsync(
-            g => g.Id == userId,
+            g => g.Id == user.Id,
             include: u => u.Include(u => u.Roles)
         );
 
         Assert.NotNull(userEntity);
         Assert.NotNull(userEntity.Roles);
-        Assert.Contains(userEntity.Roles, r => r.Id == roleId);
+        Assert.Contains(userEntity.Roles, r => r.Id == role.Id);
     }
 
     [Fact]
@@ -379,7 +378,7 @@ public class UserProcessorTests
     [Fact]
     public async Task DeleteUserAsync_ReturnsNotFound_WhenUserDoesNotExist()
     {
-        var result = await _userProcessor.DeleteUserAsync(_fixture.Create<int>());
+        var result = await _userProcessor.DeleteUserAsync(Guid.CreateVersion7());
 
         Assert.Equal(DeleteUserResultCode.UserNotFoundError, result.ResultCode);
     }
@@ -387,10 +386,10 @@ public class UserProcessorTests
     [Fact]
     public async Task DeleteUserAsync_ReturnsSoleOwnerError_WhenUserIsSoleOwner()
     {
-        var (userId, accountId) = await CreateUserAsync();
-        await CreateOwnerRoleAsync(accountId, userId);
+        var (user, account) = await CreateUserAsync();
+        await CreateOwnerRoleAsync(account.Id, user.Id);
 
-        var result = await _userProcessor.DeleteUserAsync(userId);
+        var result = await _userProcessor.DeleteUserAsync(user.Id);
 
         Assert.Equal(DeleteUserResultCode.UserIsSoleAccountOwnerError, result.ResultCode);
         Assert.Contains("sole owner", result.Message);
@@ -399,13 +398,13 @@ public class UserProcessorTests
     [Fact]
     public async Task DeleteUserAsync_ReturnsSuccess_WhenOtherOwnerExistsDirectly()
     {
-        var accountId = await CreateAccountAsync();
-        var userId1 = await CreateUserInAccountAsync(accountId);
-        var userId2 = await CreateUserInAccountAsync(accountId);
+        var account = await CreateAccountAsync();
+        var user1 = await CreateUserInAccountAsync(account.Id);
+        var user2 = await CreateUserInAccountAsync(account.Id);
 
-        await CreateOwnerRoleAsync(accountId, userId1, userId2);
+        await CreateOwnerRoleAsync(account.Id, user1.Id, user2.Id);
 
-        var result = await _userProcessor.DeleteUserAsync(userId1);
+        var result = await _userProcessor.DeleteUserAsync(user1.Id);
 
         Assert.Equal(DeleteUserResultCode.Success, result.ResultCode);
     }
@@ -413,17 +412,17 @@ public class UserProcessorTests
     [Fact]
     public async Task DeleteUserAsync_ReturnsSuccess_WhenOtherOwnerExistsViaGroup()
     {
-        var accountId = await CreateAccountAsync();
-        var userId1 = await CreateUserInAccountAsync(accountId);
-        var userId2 = await CreateUserInAccountAsync(accountId);
+        var account = await CreateAccountAsync();
+        var user1 = await CreateUserInAccountAsync(account.Id);
+        var user2 = await CreateUserInAccountAsync(account.Id);
 
         await CreateOwnerRoleWithGroupAsync(
-            accountId,
-            directUserIds: [userId1],
-            groupUserIds: [userId2]
+            account.Id,
+            directUserIds: [user1.Id],
+            groupUserIds: [user2.Id]
         );
 
-        var result = await _userProcessor.DeleteUserAsync(userId1);
+        var result = await _userProcessor.DeleteUserAsync(user1.Id);
 
         Assert.Equal(DeleteUserResultCode.Success, result.ResultCode);
     }
@@ -431,7 +430,10 @@ public class UserProcessorTests
     [Fact]
     public async Task RemoveRolesFromUserAsync_Fails_WhenUserDoesNotExist()
     {
-        var request = new RemoveRolesFromUserRequest([1, 2], _fixture.Create<int>());
+        var request = new RemoveRolesFromUserRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
 
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
@@ -441,17 +443,15 @@ public class UserProcessorTests
     [Fact]
     public async Task RemoveRolesFromUserAsync_Succeeds_WhenNonOwnerRoleRemoved()
     {
-        var (userId, accountId) = await CreateUserAsync();
-        var roleId = await CreateRoleAsync(accountId, userId);
+        var (user, account) = await CreateUserAsync();
+        var role = await CreateRoleAsync(account.Id, user.Id);
 
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
-        var user = await userRepo.GetAsync(u => u.Id == userId);
-        var role = await roleRepo.GetAsync(r => r.Id == roleId);
+
         user!.Roles = [role!];
         await userRepo.UpdateAsync(user);
 
-        var request = new RemoveRolesFromUserRequest([roleId], userId);
+        var request = new RemoveRolesFromUserRequest([role.Id], user.Id);
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
         Assert.Equal(RemoveRolesFromUserResultCode.Success, result.ResultCode);
@@ -461,23 +461,23 @@ public class UserProcessorTests
     [Fact]
     public async Task RemoveRolesFromUserAsync_Succeeds_WhenOwnerRoleRemovedAndUserIsNotSoleOwner()
     {
-        var accountId = await CreateAccountAsync();
-        var userId1 = await CreateUserInAccountAsync(accountId);
-        var userId2 = await CreateUserInAccountAsync(accountId);
+        var account = await CreateAccountAsync();
+        var user1 = await CreateUserInAccountAsync(account.Id);
+        var user2 = await CreateUserInAccountAsync(account.Id);
 
-        await CreateOwnerRoleAsync(accountId, userId1, userId2);
+        await CreateOwnerRoleAsync(account.Id, user1.Id, user2.Id);
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var ownerRole = await roleRepo.GetAsync(r =>
-            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
         );
 
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var user1 = await userRepo.GetAsync(u => u.Id == userId1);
+
         user1!.Roles = [ownerRole!];
         await userRepo.UpdateAsync(user1);
 
-        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], userId1);
+        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], user1.Id);
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
         Assert.Equal(RemoveRolesFromUserResultCode.Success, result.ResultCode);
@@ -487,26 +487,26 @@ public class UserProcessorTests
     [Fact]
     public async Task RemoveRolesFromUserAsync_Succeeds_WhenOwnerRoleRemovedAndUserHasOwnershipViaGroup()
     {
-        var accountId = await CreateAccountAsync();
-        var userId = await CreateUserInAccountAsync(accountId);
+        var account = await CreateAccountAsync();
+        var user = await CreateUserInAccountAsync(account.Id);
 
         await CreateOwnerRoleWithGroupAsync(
-            accountId,
-            directUserIds: [userId],
-            groupUserIds: [userId]
+            account.Id,
+            directUserIds: [user.Id],
+            groupUserIds: [user.Id]
         );
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var ownerRole = await roleRepo.GetAsync(r =>
-            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
         );
 
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var user = await userRepo.GetAsync(u => u.Id == userId);
+
         user!.Roles = [ownerRole!];
         await userRepo.UpdateAsync(user);
 
-        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], userId);
+        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], user.Id);
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
         Assert.Equal(RemoveRolesFromUserResultCode.Success, result.ResultCode);
@@ -516,20 +516,20 @@ public class UserProcessorTests
     [Fact]
     public async Task RemoveRolesFromUserAsync_Fails_WhenOwnerRoleRemovedAndUserIsSoleOwner()
     {
-        var (userId, accountId) = await CreateUserAsync();
-        await CreateOwnerRoleAsync(accountId, userId);
+        var (user, account) = await CreateUserAsync();
+        await CreateOwnerRoleAsync(account.Id, user.Id);
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var ownerRole = await roleRepo.GetAsync(r =>
-            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
         );
 
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var user = await userRepo.GetAsync(u => u.Id == userId);
+
         user!.Roles = [ownerRole!];
         await userRepo.UpdateAsync(user);
 
-        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], userId);
+        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], user.Id);
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
         Assert.Equal(RemoveRolesFromUserResultCode.UserIsSoleOwnerError, result.ResultCode);
@@ -540,22 +540,21 @@ public class UserProcessorTests
     [Fact]
     public async Task RemoveRolesFromUserAsync_PartialSuccess_WhenMixedOwnerAndNonOwnerRoles()
     {
-        var (userId, accountId) = await CreateUserAsync();
-        await CreateOwnerRoleAsync(accountId, userId);
-        var regularRoleId = await CreateRoleAsync(accountId, userId);
+        var (user, account) = await CreateUserAsync();
+        await CreateOwnerRoleAsync(account.Id, user.Id);
+        var regularRole = await CreateRoleAsync(account.Id, user.Id);
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var ownerRole = await roleRepo.GetAsync(r =>
-            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
         );
-        var regularRole = await roleRepo.GetAsync(r => r.Id == regularRoleId);
 
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
-        var user = await userRepo.GetAsync(u => u.Id == userId);
+
         user!.Roles = [ownerRole!, regularRole!];
         await userRepo.UpdateAsync(user);
 
-        var request = new RemoveRolesFromUserRequest([ownerRole!.Id, regularRoleId], userId);
+        var request = new RemoveRolesFromUserRequest([ownerRole!.Id, regularRole.Id], user.Id);
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
         Assert.Equal(RemoveRolesFromUserResultCode.PartialSuccess, result.ResultCode);

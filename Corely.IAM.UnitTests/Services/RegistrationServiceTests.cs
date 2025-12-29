@@ -78,7 +78,12 @@ public class RegistrationServiceTests
         _userContextProviderMock
             .Setup(x => x.GetUserContext())
             .Returns(
-                new UserContext(new User() { Id = Guid.CreateVersion7() }, new Account() { Id = Guid.CreateVersion7() }, "test-device", [])
+                new UserContext(
+                    new User() { Id = Guid.CreateVersion7() },
+                    new Account() { Id = Guid.CreateVersion7() },
+                    "test-device",
+                    []
+                )
             );
 
         _registrationService = new RegistrationService(
@@ -103,7 +108,6 @@ public class RegistrationServiceTests
                 new CreateAccountResult(
                     _createAccountResultCode,
                     string.Empty,
-                    _fixture.Create<int>(),
                     Guid.CreateVersion7()
                 )
             );
@@ -122,12 +126,7 @@ public class RegistrationServiceTests
 
         mock.Setup(m => m.CreateUserAsync(It.IsAny<CreateUserRequest>()))
             .ReturnsAsync(() =>
-                new CreateUserResult(
-                    _createUserResultCode,
-                    string.Empty,
-                    _fixture.Create<int>(),
-                    _fixture.Create<Guid>()
-                )
+                new CreateUserResult(_createUserResultCode, string.Empty, _fixture.Create<Guid>())
             );
 
         mock.Setup(m => m.AssignRolesToUserAsync(It.IsAny<AssignRolesToUserRequest>()))
@@ -145,7 +144,7 @@ public class RegistrationServiceTests
                 new CreateBasicAuthResult(
                     _createBasicAuthResultCode,
                     string.Empty,
-                    _fixture.Create<int>()
+                    Guid.CreateVersion7()
                 )
             );
 
@@ -158,7 +157,7 @@ public class RegistrationServiceTests
 
         mock.Setup(m => m.CreateGroupAsync(It.IsAny<CreateGroupRequest>()))
             .ReturnsAsync(() =>
-                new CreateGroupResult(_createGroupResultCode, string.Empty, _fixture.Create<int>())
+                new CreateGroupResult(_createGroupResultCode, string.Empty, Guid.CreateVersion7())
             );
 
         mock.Setup(m => m.AddUsersToGroupAsync(It.IsAny<AddUsersToGroupRequest>()))
@@ -176,19 +175,19 @@ public class RegistrationServiceTests
 
         mock.Setup(m => m.CreateRoleAsync(It.IsAny<CreateRoleRequest>()))
             .ReturnsAsync(() =>
-                new CreateRoleResult(_createRoleResultCode, string.Empty, _fixture.Create<int>())
+                new CreateRoleResult(_createRoleResultCode, string.Empty, Guid.CreateVersion7())
             );
 
-        mock.Setup(m => m.CreateDefaultSystemRolesAsync(It.IsAny<int>()))
+        mock.Setup(m => m.CreateDefaultSystemRolesAsync(It.IsAny<Guid>()))
             .ReturnsAsync(() =>
                 new CreateDefaultSystemRolesResult(
-                    _fixture.Create<int>(),
-                    _fixture.Create<int>(),
-                    _fixture.Create<int>()
+                    _fixture.Create<Guid>(),
+                    _fixture.Create<Guid>(),
+                    _fixture.Create<Guid>()
                 )
             );
 
-        mock.Setup(m => m.GetRoleAsync(It.IsAny<string>(), It.IsAny<int>()))
+        mock.Setup(m => m.GetRoleAsync(It.IsAny<string>(), It.IsAny<Guid>()))
             .ReturnsAsync(() =>
                 new GetRoleResult(GetRoleResultCode.Success, string.Empty, _fixture.Create<Role>())
             );
@@ -208,7 +207,7 @@ public class RegistrationServiceTests
                 new CreatePermissionResult(
                     _createPermissionResultCode,
                     string.Empty,
-                    _fixture.Create<int>()
+                    _fixture.Create<Guid>()
                 )
             );
 
@@ -282,7 +281,7 @@ public class RegistrationServiceTests
 
         Assert.Equal(RegisterAccountResultCode.Success, result.ResultCode);
         _roleProcessorMock.Verify(
-            m => m.CreateDefaultSystemRolesAsync(It.IsAny<int>()),
+            m => m.CreateDefaultSystemRolesAsync(It.IsAny<Guid>()),
             Times.Once
         );
         _userProcessorMock.Verify(

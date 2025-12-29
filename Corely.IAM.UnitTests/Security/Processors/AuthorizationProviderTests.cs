@@ -17,7 +17,6 @@ public class AuthorizationProviderTests
 {
     private readonly ServiceFactory _serviceFactory = new();
 
-
     [Fact]
     public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasPermission()
     {
@@ -282,7 +281,11 @@ public class AuthorizationProviderTests
     {
         var provider = CreateProvider();
         var account = new Account() { Id = Guid.CreateVersion7() };
-        SetUserContext(userId: Guid.CreateVersion7(), currentAccount: account, availableAccounts: [account]);
+        SetUserContext(
+            userId: Guid.CreateVersion7(),
+            currentAccount: account,
+            availableAccounts: [account]
+        );
 
         var result = provider.HasAccountContext();
 
@@ -305,7 +308,11 @@ public class AuthorizationProviderTests
     {
         var provider = CreateProvider();
         var account = new Account() { Id = Guid.CreateVersion7() };
-        SetUserContext(userId: Guid.CreateVersion7(), currentAccount: null, availableAccounts: [account]);
+        SetUserContext(
+            userId: Guid.CreateVersion7(),
+            currentAccount: null,
+            availableAccounts: [account]
+        );
 
         var result = provider.HasAccountContext();
 
@@ -352,7 +359,11 @@ public class AuthorizationProviderTests
     {
         var provider = CreateProvider();
         var currentAccount = new Account() { Id = Guid.CreateVersion7() };
-        SetUserContext(userId: Guid.CreateVersion7(), currentAccount: currentAccount, availableAccounts: []);
+        SetUserContext(
+            userId: Guid.CreateVersion7(),
+            currentAccount: currentAccount,
+            availableAccounts: []
+        );
 
         var result = provider.HasAccountContext();
 
@@ -467,8 +478,7 @@ public class AuthorizationProviderTests
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.USER_RESOURCE_TYPE,
-            resourceIdWithPermission
-            ,
+            resourceIdWithPermission,
             Guid.CreateVersion7()
         );
 

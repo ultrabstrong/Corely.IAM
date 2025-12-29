@@ -10,7 +10,10 @@ public class AccountMapperTests
     public void ToAccount_ShouldMapAllProperties()
     {
         // Arrange
-        var request = new CreateAccountRequest(AccountName: "TestAccount", OwnerUserId: Guid.CreateVersion7());
+        var request = new CreateAccountRequest(
+            AccountName: "TestAccount",
+            OwnerUserId: Guid.CreateVersion7()
+        );
 
         // Act
         var result = request.ToAccount();
@@ -24,11 +27,7 @@ public class AccountMapperTests
     public void ToEntity_ShouldMapAllProperties()
     {
         // Arrange
-        var account = new Account
-        {
-            Id = Guid.CreateVersion7(),
-            AccountName = "TestAccount",
-        };
+        var account = new Account { Id = Guid.CreateVersion7(), AccountName = "TestAccount" };
 
         // Act
         var result = account.ToEntity();

@@ -7,9 +7,7 @@ namespace Corely.IAM.Security.Mappers;
 
 internal static class SymmetricKeyMapper
 {
-    public static SymmetricKeyEntity ToEntity(
-        this SymmetricKey symmetricKey
-    )
+    public static SymmetricKeyEntity ToEntity(this SymmetricKey symmetricKey)
     {
         return new SymmetricKeyEntity
         {
@@ -22,10 +20,7 @@ internal static class SymmetricKeyMapper
         };
     }
 
-    public static UserSymmetricKeyEntity ToUserEntity(
-        this SymmetricKey symmetricKey,
-        Guid userId
-    )
+    public static UserSymmetricKeyEntity ToUserEntity(this SymmetricKey symmetricKey, Guid userId)
     {
         return new UserSymmetricKeyEntity
         {

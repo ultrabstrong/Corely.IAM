@@ -50,7 +50,11 @@ public class UserOwnershipProcessorTests
         return created;
     }
 
-    private async Task CreateOwnerRoleAsync(Guid accountId, Guid[] directUserIds, Guid[] groupUserIds)
+    private async Task CreateOwnerRoleAsync(
+        Guid accountId,
+        Guid[] directUserIds,
+        Guid[] groupUserIds
+    )
     {
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
@@ -171,7 +175,11 @@ public class UserOwnershipProcessorTests
         var user1 = await CreateUserInAccountAsync(account.Id);
         var user2 = await CreateUserInAccountAsync(account.Id);
 
-        await CreateOwnerRoleAsync(account.Id, directUserIds: [user1.Id, user2.Id], groupUserIds: []);
+        await CreateOwnerRoleAsync(
+            account.Id,
+            directUserIds: [user1.Id, user2.Id],
+            groupUserIds: []
+        );
 
         var result = await _userOwnershipProcessor.IsSoleOwnerOfAccountAsync(user1.Id, account.Id);
 

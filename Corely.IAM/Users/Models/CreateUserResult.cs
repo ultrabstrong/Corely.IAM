@@ -6,8 +6,4 @@ public enum CreateUserResultCode
     UserExistsError,
 }
 
-internal record CreateUserResult(
-    CreateUserResultCode ResultCode,
-    string Message,
-    Guid CreatedId
-);
+internal record CreateUserResult(CreateUserResultCode ResultCode, string Message, Guid CreatedId);

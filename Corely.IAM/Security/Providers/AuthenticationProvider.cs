@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Mappers;
@@ -12,8 +14,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace Corely.IAM.Security.Providers;
 
@@ -401,9 +401,7 @@ internal class AuthenticationProvider(
             && Guid.TryParse(signedInAccountIdClaim, out var accountId)
         )
         {
-            var matchingAccount = userEntity.Accounts?.FirstOrDefault(a =>
-                a.Id == accountId
-            );
+            var matchingAccount = userEntity.Accounts?.FirstOrDefault(a => a.Id == accountId);
             if (matchingAccount != null)
             {
                 return matchingAccount.ToModel();

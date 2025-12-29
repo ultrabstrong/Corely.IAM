@@ -10,7 +10,10 @@ public class GroupMapperTests
     public void ToGroup_ShouldMapAllProperties()
     {
         // Arrange
-        var request = new CreateGroupRequest(GroupName: "TestGroup", OwnerAccountId: Guid.CreateVersion7());
+        var request = new CreateGroupRequest(
+            GroupName: "TestGroup",
+            OwnerAccountId: Guid.CreateVersion7()
+        );
 
         // Act
         var result = request.ToGroup();
@@ -25,7 +28,10 @@ public class GroupMapperTests
     public void ToGroup_ShouldSetDefaultValues()
     {
         // Arrange
-        var request = new CreateGroupRequest(GroupName: "TestGroup", OwnerAccountId: Guid.CreateVersion7());
+        var request = new CreateGroupRequest(
+            GroupName: "TestGroup",
+            OwnerAccountId: Guid.CreateVersion7()
+        );
 
         // Act
         var result = request.ToGroup();

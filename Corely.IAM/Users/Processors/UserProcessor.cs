@@ -88,11 +88,7 @@ internal class UserProcessor(
         var userEntity = user.ToEntity();
         var created = await _userRepo.CreateAsync(userEntity);
 
-        return new CreateUserResult(
-            CreateUserResultCode.Success,
-            string.Empty,
-            created.Id
-        );
+        return new CreateUserResult(CreateUserResultCode.Success, string.Empty, created.Id);
     }
 
     public async Task<GetUserResult> GetUserAsync(Guid userId)
@@ -120,7 +116,9 @@ internal class UserProcessor(
         return new UpdateUserResult(UpdateUserResultCode.Success, string.Empty);
     }
 
-    public async Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(Guid userId)
+    public async Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(
+        Guid userId
+    )
     {
         var userEntity = await _userRepo.GetAsync(
             u => u.Id == userId,

@@ -59,7 +59,10 @@ public class AccountProcessorLoggingDecoratorTests
     [Fact]
     public async Task RemoveUserFromAccountAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new RemoveUserFromAccountRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
+        var request = new RemoveUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         var expectedResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.Success,
             string.Empty

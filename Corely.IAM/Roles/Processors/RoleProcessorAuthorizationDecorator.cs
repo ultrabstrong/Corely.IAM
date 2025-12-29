@@ -27,8 +27,9 @@ internal class RoleProcessorAuthorizationDecorator(
                 Guid.Empty
             );
 
-    public Task<CreateDefaultSystemRolesResult> CreateDefaultSystemRolesAsync(Guid ownerAccountId) =>
-        _inner.CreateDefaultSystemRolesAsync(ownerAccountId);
+    public Task<CreateDefaultSystemRolesResult> CreateDefaultSystemRolesAsync(
+        Guid ownerAccountId
+    ) => _inner.CreateDefaultSystemRolesAsync(ownerAccountId);
 
     public async Task<GetRoleResult> GetRoleAsync(Guid roleId) =>
         await _authorizationProvider.IsAuthorizedAsync(

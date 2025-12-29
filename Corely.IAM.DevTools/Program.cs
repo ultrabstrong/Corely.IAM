@@ -1,4 +1,6 @@
-﻿using Corely.Common.Providers.Redaction;
+﻿using System.CommandLine;
+using System.Reflection;
+using Corely.Common.Providers.Redaction;
 using Corely.IAM.DevTools.Commands;
 using Corely.IAM.DevTools.SerilogCustomization;
 using Microsoft.Extensions.Configuration;
@@ -6,8 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
-using System.CommandLine;
-using System.Reflection;
 
 namespace Corely.IAM.DevTools;
 

@@ -56,7 +56,7 @@ internal class RoleProcessor(
             return new CreateRoleResult(
                 CreateRoleResultCode.RoleExistsError,
                 $"Role with name {role.Name} already exists",
-               Guid.Empty
+                Guid.Empty
             );
         }
 

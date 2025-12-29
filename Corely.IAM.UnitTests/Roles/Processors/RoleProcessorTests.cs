@@ -452,7 +452,10 @@ public class RoleProcessorTests
     [Fact]
     public async Task RemovePermissionsFromRoleAsync_Fails_WhenRoleDoesNotExist()
     {
-        var request = new RemovePermissionsFromRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new RemovePermissionsFromRoleRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
 
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
 

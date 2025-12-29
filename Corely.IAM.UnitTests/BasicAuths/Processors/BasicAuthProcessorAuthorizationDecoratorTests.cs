@@ -23,7 +23,11 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     public async Task CreateBasicAuthAsync_BypassesAuthorization_AndDelegatesToInner()
     {
         var request = new CreateBasicAuthRequest(Guid.CreateVersion7(), "password");
-        var expectedResult = new CreateBasicAuthResult(CreateBasicAuthResultCode.Success, "", Guid.CreateVersion7());
+        var expectedResult = new CreateBasicAuthResult(
+            CreateBasicAuthResultCode.Success,
+            "",
+            Guid.CreateVersion7()
+        );
         _mockInnerProcessor
             .Setup(x => x.CreateBasicAuthAsync(request))
             .ReturnsAsync(expectedResult);
@@ -98,7 +102,8 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
             Times.Never
         );
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
+            x =>
+                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
             Times.Never
         );
     }

@@ -1,8 +1,8 @@
+using System.Text.Json;
 using Corely.Common.Extensions;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
-using System.Text.Json;
 
 namespace Corely.IAM.DevTools.Commands.Authentication;
 
@@ -35,9 +35,7 @@ internal partial class Authentication : CommandBase
 
                 var output = new { Success = true };
                 Console.WriteLine(JsonSerializer.Serialize(output));
-                Success(
-                    $"All sessions for user {currentContext!.User.Id} signed out successfully"
-                );
+                Success($"All sessions for user {currentContext!.User.Id} signed out successfully");
 
                 ClearAuthTokenFile();
             }

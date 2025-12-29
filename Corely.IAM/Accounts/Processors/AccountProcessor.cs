@@ -81,11 +81,7 @@ internal class AccountProcessor(
         accountEntity.Users = [userEntity];
         var created = await _accountRepo.CreateAsync(accountEntity);
 
-        return new CreateAccountResult(
-            CreateAccountResultCode.Success,
-            string.Empty,
-            created.Id
-        );
+        return new CreateAccountResult(CreateAccountResultCode.Success, string.Empty, created.Id);
     }
 
     public async Task<GetAccountResult> GetAccountAsync(Guid accountId)

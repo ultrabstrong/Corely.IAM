@@ -24,7 +24,11 @@ public class RoleProcessorAuthorizationDecoratorTests
     public async Task CreateRoleAsync_CallsAuthorizationProvider()
     {
         var request = new CreateRoleRequest("TestRole", Guid.CreateVersion7());
-        var expectedResult = new CreateRoleResult(CreateRoleResultCode.Success, "", request.OwnerAccountId);
+        var expectedResult = new CreateRoleResult(
+            CreateRoleResultCode.Success,
+            "",
+            request.OwnerAccountId
+        );
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.ROLE_RESOURCE_TYPE)
@@ -69,7 +73,8 @@ public class RoleProcessorAuthorizationDecoratorTests
         await _decorator.CreateDefaultSystemRolesAsync(accountId);
 
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
+            x =>
+                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(x => x.CreateDefaultSystemRolesAsync(accountId), Times.Once);
@@ -174,7 +179,10 @@ public class RoleProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AssignPermissionsToRoleAsync_CallsAuthorizationProvider()
     {
-        var request = new AssignPermissionsToRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new AssignPermissionsToRoleRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
         var expectedResult = new AssignPermissionsToRoleResult(
             AssignPermissionsToRoleResultCode.Success,
             "",
@@ -183,7 +191,11 @@ public class RoleProcessorAuthorizationDecoratorTests
         );
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleId)
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ROLE_RESOURCE_TYPE,
+                    request.RoleId
+                )
             )
             .ReturnsAsync(true);
         _mockAuthorizationProvider
@@ -204,7 +216,12 @@ public class RoleProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleId),
+            x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ROLE_RESOURCE_TYPE,
+                    request.RoleId
+                ),
             Times.Once
         );
         _mockAuthorizationProvider.Verify(
@@ -222,10 +239,17 @@ public class RoleProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AssignPermissionsToRoleAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
-        var request = new AssignPermissionsToRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new AssignPermissionsToRoleRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleId)
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ROLE_RESOURCE_TYPE,
+                    request.RoleId
+                )
             )
             .ReturnsAsync(false);
 
@@ -241,10 +265,17 @@ public class RoleProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AssignPermissionsToRoleAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadPermissions()
     {
-        var request = new AssignPermissionsToRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new AssignPermissionsToRoleRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleId)
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ROLE_RESOURCE_TYPE,
+                    request.RoleId
+                )
             )
             .ReturnsAsync(true);
         _mockAuthorizationProvider
@@ -270,7 +301,11 @@ public class RoleProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AssignPermissionsToRoleAsync_BypassesAuthorization_WhenFlagSet()
     {
-        var request = new AssignPermissionsToRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7(), BypassAuthorization: true);
+        var request = new AssignPermissionsToRoleRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
+            BypassAuthorization: true
+        );
         var expectedResult = new AssignPermissionsToRoleResult(
             AssignPermissionsToRoleResultCode.Success,
             "",
@@ -285,7 +320,8 @@ public class RoleProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
+            x =>
+                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(x => x.AssignPermissionsToRoleAsync(request), Times.Once);
@@ -294,7 +330,10 @@ public class RoleProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemovePermissionsFromRoleAsync_CallsAuthorizationProvider()
     {
-        var request = new RemovePermissionsFromRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new RemovePermissionsFromRoleRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
         var expectedResult = new RemovePermissionsFromRoleResult(
             RemovePermissionsFromRoleResultCode.Success,
             "",
@@ -303,7 +342,11 @@ public class RoleProcessorAuthorizationDecoratorTests
         );
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleId)
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ROLE_RESOURCE_TYPE,
+                    request.RoleId
+                )
             )
             .ReturnsAsync(true);
         _mockAuthorizationProvider
@@ -324,7 +367,12 @@ public class RoleProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleId),
+            x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ROLE_RESOURCE_TYPE,
+                    request.RoleId
+                ),
             Times.Once
         );
         _mockAuthorizationProvider.Verify(
@@ -343,10 +391,17 @@ public class RoleProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemovePermissionsFromRoleAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
-        var request = new RemovePermissionsFromRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new RemovePermissionsFromRoleRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleId)
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ROLE_RESOURCE_TYPE,
+                    request.RoleId
+                )
             )
             .ReturnsAsync(false);
 
@@ -362,10 +417,17 @@ public class RoleProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemovePermissionsFromRoleAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadPermissions()
     {
-        var request = new RemovePermissionsFromRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new RemovePermissionsFromRoleRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleId)
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ROLE_RESOURCE_TYPE,
+                    request.RoleId
+                )
             )
             .ReturnsAsync(true);
         _mockAuthorizationProvider
@@ -391,7 +453,11 @@ public class RoleProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemovePermissionsFromRoleAsync_BypassesAuthorization_WhenFlagSet()
     {
-        var request = new RemovePermissionsFromRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7(), BypassAuthorization: true);
+        var request = new RemovePermissionsFromRoleRequest(
+            [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
+            BypassAuthorization: true
+        );
         var expectedResult = new RemovePermissionsFromRoleResult(
             RemovePermissionsFromRoleResultCode.Success,
             "",
@@ -406,7 +472,8 @@ public class RoleProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
+            x =>
+                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(x => x.RemovePermissionsFromRoleAsync(request), Times.Once);

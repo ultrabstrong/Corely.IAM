@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
@@ -9,8 +11,6 @@ using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace Corely.IAM.UnitTests.Security.Processors;
 
@@ -82,7 +82,7 @@ public class AuthenticationProviderTests
         var account = new AccountEntity
         {
             AccountName = _fixture.Create<string>(),
-            Id = Guid.CreateVersion7()
+            Id = Guid.CreateVersion7(),
         };
         var created = await accountRepo.CreateAsync(account);
         return created;
@@ -286,12 +286,8 @@ public class AuthenticationProviderTests
         Assert.NotEqual(account1.Id, account2.Id);
 
         var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
-        var token1Entity = await authTokenRepo.GetAsync(t =>
-            t.Id == tokenForAccount1.TokenId
-        );
-        var token2Entity = await authTokenRepo.GetAsync(t =>
-            t.Id == tokenForAccount2.TokenId
-        );
+        var token1Entity = await authTokenRepo.GetAsync(t => t.Id == tokenForAccount1.TokenId);
+        var token2Entity = await authTokenRepo.GetAsync(t => t.Id == tokenForAccount2.TokenId);
 
         Assert.NotNull(token1Entity);
         Assert.NotNull(token2Entity);

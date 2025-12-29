@@ -10,7 +10,10 @@ public class RoleMapperTests
     public void ToRole_ShouldMapAllProperties()
     {
         // Arrange
-        var request = new CreateRoleRequest(RoleName: "TestRole", OwnerAccountId: Guid.CreateVersion7());
+        var request = new CreateRoleRequest(
+            RoleName: "TestRole",
+            OwnerAccountId: Guid.CreateVersion7()
+        );
 
         // Act
         var result = request.ToRole();
@@ -25,7 +28,10 @@ public class RoleMapperTests
     public void ToRole_ShouldSetDefaultValues()
     {
         // Arrange
-        var request = new CreateRoleRequest(RoleName: "TestRole", OwnerAccountId: Guid.CreateVersion7());
+        var request = new CreateRoleRequest(
+            RoleName: "TestRole",
+            OwnerAccountId: Guid.CreateVersion7()
+        );
 
         // Act
         var result = request.ToRole();

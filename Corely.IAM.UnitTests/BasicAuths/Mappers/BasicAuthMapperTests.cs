@@ -19,7 +19,10 @@ public class BasicAuthMapperTests
     [Fact]
     public void ToBasicAuth_FromCreateRequest_ShouldMapAllProperties()
     {
-        var request = new CreateBasicAuthRequest(UserId: Guid.CreateVersion7(), Password: "mypassword");
+        var request = new CreateBasicAuthRequest(
+            UserId: Guid.CreateVersion7(),
+            Password: "mypassword"
+        );
 
         var result = request.ToBasicAuth(_hashProviderFactory);
 
@@ -32,7 +35,10 @@ public class BasicAuthMapperTests
     [Fact]
     public void ToBasicAuth_FromUpdateRequest_ShouldMapAllProperties()
     {
-        var request = new UpdateBasicAuthRequest(UserId: Guid.CreateVersion7(), Password: "mypassword");
+        var request = new UpdateBasicAuthRequest(
+            UserId: Guid.CreateVersion7(),
+            Password: "mypassword"
+        );
 
         var result = request.ToBasicAuth(_hashProviderFactory);
 
@@ -45,7 +51,10 @@ public class BasicAuthMapperTests
     [Fact]
     public void ToBasicAuth_ShouldHashPassword()
     {
-        var request = new CreateBasicAuthRequest(UserId: Guid.CreateVersion7(), Password: "plainpassword");
+        var request = new CreateBasicAuthRequest(
+            UserId: Guid.CreateVersion7(),
+            Password: "plainpassword"
+        );
 
         var result = request.ToBasicAuth(_hashProviderFactory);
 
@@ -57,7 +66,10 @@ public class BasicAuthMapperTests
     [Fact]
     public void ToEntity_ShouldMapAllProperties()
     {
-        var request = new CreateBasicAuthRequest(UserId: Guid.CreateVersion7(), Password: "password");
+        var request = new CreateBasicAuthRequest(
+            UserId: Guid.CreateVersion7(),
+            Password: "password"
+        );
         var basicAuth = request.ToBasicAuth(_hashProviderFactory);
         var modifiedUtc = DateTime.UtcNow;
 
@@ -82,7 +94,10 @@ public class BasicAuthMapperTests
     [Fact]
     public void ToEntity_ShouldConvertHashedPasswordToString()
     {
-        var request = new CreateBasicAuthRequest(UserId: Guid.CreateVersion7(), Password: "password");
+        var request = new CreateBasicAuthRequest(
+            UserId: Guid.CreateVersion7(),
+            Password: "password"
+        );
         var basicAuth = request.ToBasicAuth(_hashProviderFactory);
 
         var result = basicAuth.ToEntity();

@@ -6,13 +6,16 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Corely.IAM.Users.Entities;
 
 internal class UserSymmetricKeyEntityConfiguration
-    : EntityConfigurationBase<UserSymmetricKeyEntity, int>
+    : EntityConfigurationBase<UserSymmetricKeyEntity>
 {
     public UserSymmetricKeyEntityConfiguration(IDbTypes dbTypes)
         : base(dbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<UserSymmetricKeyEntity> builder)
     {
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id).ValueGeneratedNever();
+
         builder.HasIndex(e => new { e.UserId, e.KeyUsedFor }).IsUnique();
 
         builder.Property(m => m.KeyUsedFor).HasConversion<string>();

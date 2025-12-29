@@ -24,7 +24,7 @@ internal class GroupProcessorAuthorizationDecorator(
             : new CreateGroupResult(
                 CreateGroupResultCode.UnauthorizedError,
                 "Unauthorized to create group",
-                -1
+                Guid.Empty
             );
 
     public async Task<AddUsersToGroupResult> AddUsersToGroupAsync(AddUsersToGroupRequest request) =>
@@ -112,7 +112,7 @@ internal class GroupProcessorAuthorizationDecorator(
                 []
             );
 
-    public async Task<DeleteGroupResult> DeleteGroupAsync(int groupId) =>
+    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
             PermissionConstants.GROUP_RESOURCE_TYPE,

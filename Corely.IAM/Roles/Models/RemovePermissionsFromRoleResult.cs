@@ -14,9 +14,9 @@ public record RemovePermissionsFromRoleResult(
     RemovePermissionsFromRoleResultCode ResultCode,
     string? Message,
     int RemovedPermissionCount,
-    List<int> InvalidPermissionIds,
-    List<int> SystemPermissionIds = null!
+    List<Guid> InvalidPermissionIds,
+    List<Guid> SystemPermissionIds = null!
 )
 {
-    public List<int> SystemPermissionIds { get; init; } = SystemPermissionIds ?? [];
+    public List<Guid> SystemPermissionIds { get; init; } = SystemPermissionIds ?? [];
 }

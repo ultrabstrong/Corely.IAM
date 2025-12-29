@@ -10,6 +10,5 @@ public enum CreateAccountResultCode
 internal record CreateAccountResult(
     CreateAccountResultCode ResultCode,
     string Message,
-    int CreatedId,
-    Guid CreatedPublicId
+    Guid CreatedId
 );

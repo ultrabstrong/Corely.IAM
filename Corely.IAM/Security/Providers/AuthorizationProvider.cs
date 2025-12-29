@@ -23,7 +23,7 @@ internal class AuthorizationProvider(
     public async Task<bool> IsAuthorizedAsync(
         AuthAction action,
         string resourceType,
-        params int[] resourceIds
+        params Guid[] resourceIds
     )
     {
         var resourceIdDisplay =
@@ -43,7 +43,7 @@ internal class AuthorizationProvider(
                 p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
                 || p.ResourceType == resourceType
             )
-            && (p.ResourceId == 0 || resourceIds.Length == 0 || resourceIds.Contains(p.ResourceId))
+            && (p.ResourceId == Guid.Empty || resourceIds.Length == 0 || resourceIds.Contains(p.ResourceId))
             && HasAction(p, action)
         );
 
@@ -61,7 +61,7 @@ internal class AuthorizationProvider(
         return hasPermission;
     }
 
-    public bool IsAuthorizedForOwnUser(int requestUserId, bool suppressLog = true)
+    public bool IsAuthorizedForOwnUser(Guid requestUserId, bool suppressLog = true)
     {
         if (!TryGetUserContext(out var userContext, $"act on user {requestUserId}"))
             return false;

@@ -79,7 +79,6 @@ internal class RegistrationService(
                 return new RegisterUserResult(
                     RegisterUserResultCode.UserCreationError,
                     userResult.Message,
-                    -1,
                     Guid.Empty
                 );
             }
@@ -96,7 +95,6 @@ internal class RegistrationService(
                 return new RegisterUserResult(
                     RegisterUserResultCode.BasicAuthCreationError,
                     basicAuthResult.Message,
-                    -1,
                     Guid.Empty
                 );
             }
@@ -104,16 +102,14 @@ internal class RegistrationService(
             await _uowProvider.CommitAsync();
             uowSucceeded = true;
             _logger.LogInformation(
-                "User {Username} registered with internal Id {InternalUserId}, public ID {PublicUserId}",
+                "User {Username} registered with Id {UserId}",
                 request.Username,
-                userResult.CreatedId,
-                userResult.CreatedPublicId
+                userResult.CreatedId
             );
             return new RegisterUserResult(
                 RegisterUserResultCode.Success,
                 string.Empty,
-                userResult.CreatedId,
-                userResult.CreatedPublicId
+                userResult.CreatedId
             );
         }
         finally
@@ -179,15 +175,14 @@ internal class RegistrationService(
             uowSucceeded = true;
 
             _logger.LogInformation(
-                "Account {AccountName} registered with internal Id {AccountId}, public ID {PublicAccountId}",
+                "Account {AccountName} registered with Id {AccountId}",
                 request.AccountName,
-                createAccountResult.CreatedId,
-                createAccountResult.CreatedPublicId
+                createAccountResult.CreatedId
             );
             return new RegisterAccountResult(
                 RegisterAccountResultCode.Success,
                 string.Empty,
-                createAccountResult.CreatedPublicId
+                createAccountResult.CreatedId
             );
         }
         finally
@@ -212,7 +207,7 @@ internal class RegistrationService(
                 "Registering group failed for group name {GroupName}",
                 request.GroupName
             );
-            return new RegisterGroupResult(result.ResultCode, result.Message, -1);
+            return new RegisterGroupResult(result.ResultCode, result.Message, Guid.Empty);
         }
 
         _logger.LogInformation(
@@ -237,7 +232,7 @@ internal class RegistrationService(
                 "Registering role failed for role name {RoleName}",
                 request.RoleName
             );
-            return new RegisterRoleResult(result.ResultCode, result.Message, -1);
+            return new RegisterRoleResult(result.ResultCode, result.Message, Guid.Empty);
         }
 
         _logger.LogInformation(
@@ -281,7 +276,7 @@ internal class RegistrationService(
                 request.ResourceType,
                 request.ResourceId
             );
-            return new RegisterPermissionResult(result.ResultCode, result.Message, -1);
+            return new RegisterPermissionResult(result.ResultCode, result.Message, Guid.Empty);
         }
 
         _logger.LogInformation(

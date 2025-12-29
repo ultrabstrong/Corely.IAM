@@ -1,5 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using Corely.Common.Providers.Redaction;
+﻿using Corely.Common.Providers.Redaction;
 using Corely.IAM.ConsoleApp.SerilogCustomization;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
@@ -9,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Corely.IAM.ConsoleApp;
 
@@ -32,7 +32,7 @@ internal class Program
             .MinimumLevel.Override("System", LogEventLevel.Fatal)
             .Enrich.FromLogContext()
             .Enrich.WithProperty("Application", $"Corely.IAM.{nameof(ConsoleApp)}")
-            .Enrich.WithProperty("CorrelationId", Guid.NewGuid())
+            .Enrich.WithProperty("CorrelationId", Guid.CreateVersion7())
             .Enrich.With(new SerilogRedactionEnricher([new PasswordRedactionProvider()]))
             .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Information)
             .WriteTo.Seq("http://localhost:5341")
@@ -121,7 +121,7 @@ internal class Program
             var registerUsersWithGroupResult =
                 await registrationService.RegisterUsersWithGroupAsync(
                     new RegisterUsersWithGroupRequest(
-                        [registerUserResult.CreatedUserId, 9999, 8888],
+                        [registerUserResult.CreatedUserId, Guid.CreateVersion7(), Guid.CreateVersion7()],
                         registerGroupResult.CreatedGroupId
                     )
                 );
@@ -133,7 +133,7 @@ internal class Program
             var registerPermissionsWithRoleResult =
                 await registrationService.RegisterPermissionsWithRoleAsync(
                     new RegisterPermissionsWithRoleRequest(
-                        [registerPermissionResult.CreatedPermissionId, 9999, 8888],
+                        [registerPermissionResult.CreatedPermissionId, Guid.CreateVersion7(), Guid.CreateVersion7()],
                         registerRoleResult.CreatedRoleId
                     )
                 );

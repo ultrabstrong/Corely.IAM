@@ -1,9 +1,9 @@
 ﻿namespace Corely.IAM.Permissions.Models;
 
 internal record CreatePermissionRequest(
-    int OwnerAccountId,
+    Guid OwnerAccountId,
     string ResourceType,
-    int ResourceId,
+    Guid ResourceId,
     bool Create = false,
     bool Read = false,
     bool Update = false,

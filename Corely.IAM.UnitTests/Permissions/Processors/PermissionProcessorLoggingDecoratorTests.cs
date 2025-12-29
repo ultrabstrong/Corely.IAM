@@ -23,11 +23,11 @@ public class PermissionProcessorLoggingDecoratorTests
     [Fact]
     public async Task CreatePermissionAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new CreatePermissionRequest(1, "group", 1, Read: true);
+        var request = new CreatePermissionRequest(Guid.CreateVersion7(), "group", Guid.CreateVersion7(), Read: true);
         var expectedResult = new CreatePermissionResult(
             CreatePermissionResultCode.Success,
             string.Empty,
-            1
+            request.OwnerAccountId
         );
         _mockInnerProcessor
             .Setup(x => x.CreatePermissionAsync(request))
@@ -43,7 +43,7 @@ public class PermissionProcessorLoggingDecoratorTests
     [Fact]
     public async Task CreateDefaultSystemPermissionsAsync_DelegatesToInner()
     {
-        var accountId = 1;
+        var accountId = Guid.CreateVersion7();
         _mockInnerProcessor
             .Setup(x => x.CreateDefaultSystemPermissionsAsync(accountId))
             .Returns(Task.CompletedTask);

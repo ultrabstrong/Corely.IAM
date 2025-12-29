@@ -11,5 +11,5 @@ public interface IUserContextProvider
 internal interface IUserContextSetter
 {
     void SetUserContext(UserContext context);
-    void ClearUserContext(int userId);
+    void ClearUserContext(Guid userId);
 }

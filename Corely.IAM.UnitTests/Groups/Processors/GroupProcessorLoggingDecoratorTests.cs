@@ -23,8 +23,8 @@ public class GroupProcessorLoggingDecoratorTests
     [Fact]
     public async Task CreateGroupAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new CreateGroupRequest("testgroup", 1);
-        var expectedResult = new CreateGroupResult(CreateGroupResultCode.Success, string.Empty, 1);
+        var request = new CreateGroupRequest("testgroup", Guid.CreateVersion7());
+        var expectedResult = new CreateGroupResult(CreateGroupResultCode.Success, string.Empty, request.OwnerAccountId);
         _mockInnerProcessor.Setup(x => x.CreateGroupAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.CreateGroupAsync(request);
@@ -37,7 +37,7 @@ public class GroupProcessorLoggingDecoratorTests
     [Fact]
     public async Task AddUsersToGroupAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new AddUsersToGroupRequest([1, 2], 1);
+        var request = new AddUsersToGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new AddUsersToGroupResult(
             AddUsersToGroupResultCode.Success,
             string.Empty,
@@ -58,7 +58,7 @@ public class GroupProcessorLoggingDecoratorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new RemoveUsersFromGroupRequest([1, 2], 1);
+        var request = new RemoveUsersFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new RemoveUsersFromGroupResult(
             RemoveUsersFromGroupResultCode.Success,
             string.Empty,
@@ -79,7 +79,7 @@ public class GroupProcessorLoggingDecoratorTests
     [Fact]
     public async Task AssignRolesToGroupAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new AssignRolesToGroupRequest([1, 2], 1);
+        var request = new AssignRolesToGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new AssignRolesToGroupResult(
             AssignRolesToGroupResultCode.Success,
             string.Empty,

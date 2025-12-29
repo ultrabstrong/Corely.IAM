@@ -5,12 +5,12 @@ using Corely.IAM.Users.Entities;
 
 namespace Corely.IAM.Groups.Entities;
 
-internal class GroupEntity : IHasIdPk<int>, IHasCreatedUtc, IHasModifiedUtc
+internal class GroupEntity : IHasCreatedUtc, IHasModifiedUtc
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Name { get; set; } = null!;
     public string? Description { get; set; } = null!;
-    public int AccountId { get; set; }
+    public Guid AccountId { get; set; }
     public virtual AccountEntity? Account { get; set; } = null!;
     public virtual ICollection<UserEntity>? Users { get; set; }
     public virtual ICollection<RoleEntity>? Roles { get; set; }

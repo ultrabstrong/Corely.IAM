@@ -23,8 +23,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task CreateGroupAsync_CallsAuthorizationProvider()
     {
-        var request = new CreateGroupRequest("TestGroup", 1);
-        var expectedResult = new CreateGroupResult(CreateGroupResultCode.Success, "", 1);
+        var request = new CreateGroupRequest("TestGroup", Guid.CreateVersion7());
+        var expectedResult = new CreateGroupResult(CreateGroupResultCode.Success, "", request.OwnerAccountId);
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.GROUP_RESOURCE_TYPE)
@@ -45,7 +45,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task CreateGroupAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
-        var request = new CreateGroupRequest("TestGroup", 1);
+        var request = new CreateGroupRequest("TestGroup", Guid.CreateVersion7());
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.GROUP_RESOURCE_TYPE)
@@ -64,7 +64,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AddUsersToGroupAsync_CallsAuthorizationProviderWithResourceId()
     {
-        var request = new AddUsersToGroupRequest([1, 2], 5);
+        var request = new AddUsersToGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new AddUsersToGroupResult(
             AddUsersToGroupResultCode.Success,
             "",
@@ -73,12 +73,12 @@ public class GroupProcessorAuthorizationDecoratorTests
         );
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId)
             )
             .ReturnsAsync(true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, 1, 2)
+                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, request.UserIds[0], request.UserIds[1])
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
@@ -89,11 +89,11 @@ public class GroupProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5),
+            x => x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId),
             Times.Once
         );
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, 1, 2),
+            x => x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, request.UserIds[0], request.UserIds[1]),
             Times.Once
         );
     }
@@ -101,10 +101,10 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AddUsersToGroupAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
-        var request = new AddUsersToGroupRequest([1, 2], 5);
+        var request = new AddUsersToGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId)
             )
             .ReturnsAsync(false);
 
@@ -120,15 +120,15 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AddUsersToGroupAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadUsers()
     {
-        var request = new AddUsersToGroupRequest([1, 2], 5);
+        var request = new AddUsersToGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId)
             )
             .ReturnsAsync(true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, 1, 2)
+                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, request.UserIds[0], request.UserIds[1])
             )
             .ReturnsAsync(false);
 
@@ -144,7 +144,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_CallsAuthorizationProviderWithResourceId()
     {
-        var request = new RemoveUsersFromGroupRequest([1, 2], 5);
+        var request = new RemoveUsersFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new RemoveUsersFromGroupResult(
             RemoveUsersFromGroupResultCode.Success,
             "",
@@ -153,12 +153,12 @@ public class GroupProcessorAuthorizationDecoratorTests
         );
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId)
             )
             .ReturnsAsync(true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, 1, 2)
+                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, request.UserIds[0], request.UserIds[1])
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
@@ -169,11 +169,11 @@ public class GroupProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5),
+            x => x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId),
             Times.Once
         );
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, 1, 2),
+            x => x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, request.UserIds[0], request.UserIds[1]),
             Times.Once
         );
     }
@@ -181,10 +181,10 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
-        var request = new RemoveUsersFromGroupRequest([1, 2], 5);
+        var request = new RemoveUsersFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId)
             )
             .ReturnsAsync(false);
 
@@ -200,15 +200,15 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadUsers()
     {
-        var request = new RemoveUsersFromGroupRequest([1, 2], 5);
+        var request = new RemoveUsersFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId)
             )
             .ReturnsAsync(true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, 1, 2)
+                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, request.UserIds[0], request.UserIds[1])
             )
             .ReturnsAsync(false);
 
@@ -224,7 +224,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AssignRolesToGroupAsync_CallsAuthorizationProviderWithResourceId()
     {
-        var request = new AssignRolesToGroupRequest([1, 2], 5);
+        var request = new AssignRolesToGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new AssignRolesToGroupResult(
             AssignRolesToGroupResultCode.Success,
             "",
@@ -233,12 +233,12 @@ public class GroupProcessorAuthorizationDecoratorTests
         );
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId)
             )
             .ReturnsAsync(true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, 1, 2)
+                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleIds[0], request.RoleIds[1])
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
@@ -249,11 +249,11 @@ public class GroupProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5),
+            x => x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId),
             Times.Once
         );
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, 1, 2),
+            x => x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleIds[0], request.RoleIds[1]),
             Times.Once
         );
     }
@@ -261,10 +261,10 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AssignRolesToGroupAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
-        var request = new AssignRolesToGroupRequest([1, 2], 5);
+        var request = new AssignRolesToGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId)
             )
             .ReturnsAsync(false);
 
@@ -280,15 +280,15 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AssignRolesToGroupAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadRoles()
     {
-        var request = new AssignRolesToGroupRequest([1, 2], 5);
+        var request = new AssignRolesToGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId)
             )
             .ReturnsAsync(true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, 1, 2)
+                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleIds[0], request.RoleIds[1])
             )
             .ReturnsAsync(false);
 
@@ -304,7 +304,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemoveRolesFromGroupAsync_CallsAuthorizationProviderWithResourceId()
     {
-        var request = new RemoveRolesFromGroupRequest([1, 2], 5);
+        var request = new RemoveRolesFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new RemoveRolesFromGroupResult(
             RemoveRolesFromGroupResultCode.Success,
             "",
@@ -313,12 +313,12 @@ public class GroupProcessorAuthorizationDecoratorTests
         );
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId)
             )
             .ReturnsAsync(true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, 1, 2)
+                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleIds[0], request.RoleIds[1])
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
@@ -329,11 +329,11 @@ public class GroupProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5),
+            x => x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId),
             Times.Once
         );
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, 1, 2),
+            x => x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleIds[0], request.RoleIds[1]),
             Times.Once
         );
     }
@@ -341,10 +341,10 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemoveRolesFromGroupAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
-        var request = new RemoveRolesFromGroupRequest([1, 2], 5);
+        var request = new RemoveRolesFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId)
             )
             .ReturnsAsync(false);
 
@@ -360,15 +360,15 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemoveRolesFromGroupAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadRoles()
     {
-        var request = new RemoveRolesFromGroupRequest([1, 2], 5);
+        var request = new RemoveRolesFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, 5)
+                x.IsAuthorizedAsync(AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE, request.GroupId)
             )
             .ReturnsAsync(true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, 1, 2)
+                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, request.RoleIds[0], request.RoleIds[1])
             )
             .ReturnsAsync(false);
 
@@ -384,7 +384,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task RemoveRolesFromGroupAsync_BypassesAuthorization_WhenFlagSet()
     {
-        var request = new RemoveRolesFromGroupRequest([1, 2], 5, BypassAuthorization: true);
+        var request = new RemoveRolesFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7(), BypassAuthorization: true);
         var expectedResult = new RemoveRolesFromGroupResult(
             RemoveRolesFromGroupResultCode.Success,
             "",
@@ -399,7 +399,7 @@ public class GroupProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int[]>()),
+            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(x => x.RemoveRolesFromGroupAsync(request), Times.Once);
@@ -408,7 +408,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task DeleteGroupAsync_CallsAuthorizationProvider()
     {
-        var groupId = 5;
+        var groupId = Guid.CreateVersion7();
         var expectedResult = new DeleteGroupResult(DeleteGroupResultCode.Success, "");
         _mockAuthorizationProvider
             .Setup(x =>
@@ -439,7 +439,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task DeleteGroupAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
-        var groupId = 5;
+        var groupId = Guid.CreateVersion7();
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(
@@ -453,7 +453,7 @@ public class GroupProcessorAuthorizationDecoratorTests
         var result = await _decorator.DeleteGroupAsync(groupId);
 
         Assert.Equal(DeleteGroupResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerProcessor.Verify(x => x.DeleteGroupAsync(It.IsAny<int>()), Times.Never);
+        _mockInnerProcessor.Verify(x => x.DeleteGroupAsync(It.IsAny<Guid>()), Times.Never);
     }
 
     [Fact]

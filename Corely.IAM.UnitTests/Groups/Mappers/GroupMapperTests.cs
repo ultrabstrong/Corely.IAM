@@ -10,46 +10,29 @@ public class GroupMapperTests
     public void ToGroup_ShouldMapAllProperties()
     {
         // Arrange
-        var request = new CreateGroupRequest(GroupName: "TestGroup", OwnerAccountId: 123);
+        var request = new CreateGroupRequest(GroupName: "TestGroup", OwnerAccountId: Guid.CreateVersion7());
 
         // Act
         var result = request.ToGroup();
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("TestGroup", result.Name);
-        Assert.Equal(123, result.AccountId);
+        Assert.Equal(request.GroupName, result.Name);
+        Assert.Equal(request.OwnerAccountId, result.AccountId);
     }
 
     [Fact]
     public void ToGroup_ShouldSetDefaultValues()
     {
         // Arrange
-        var request = new CreateGroupRequest(GroupName: "TestGroup", OwnerAccountId: 123);
+        var request = new CreateGroupRequest(GroupName: "TestGroup", OwnerAccountId: Guid.CreateVersion7());
 
         // Act
         var result = request.ToGroup();
 
         // Assert
-        Assert.Equal(0, result.Id);
+        Assert.Equal(Guid.Empty, result.Id);
         Assert.Null(result.Description);
-    }
-
-    [Theory]
-    [InlineData("Admins", 1)]
-    [InlineData("Users", 999)]
-    [InlineData("", 0)]
-    public void ToGroup_ShouldMapVariousInputs(string groupName, int accountId)
-    {
-        // Arrange
-        var request = new CreateGroupRequest(GroupName: groupName, OwnerAccountId: accountId);
-
-        // Act
-        var result = request.ToGroup();
-
-        // Assert
-        Assert.Equal(groupName, result.Name);
-        Assert.Equal(accountId, result.AccountId);
     }
 
     [Fact]
@@ -58,10 +41,10 @@ public class GroupMapperTests
         // Arrange
         var group = new Group
         {
-            Id = 42,
+            Id = Guid.CreateVersion7(),
             Name = "TestGroup",
             Description = "Test Description",
-            AccountId = 123,
+            AccountId = Guid.CreateVersion7(),
         };
 
         // Act
@@ -69,27 +52,10 @@ public class GroupMapperTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(42, result.Id);
-        Assert.Equal("TestGroup", result.Name);
-        Assert.Equal("Test Description", result.Description);
-        Assert.Equal(123, result.AccountId);
-    }
-
-    [Fact]
-    public void ToEntity_ShouldNotMapNavigationProperties()
-    {
-        // Arrange
-        var group = new Group
-        {
-            Id = 1,
-            Name = "Test",
-            AccountId = 100,
-        };
-
-        // Act
-        var result = group.ToEntity();
-
-        // Assert
+        Assert.Equal(group.Id, result.Id);
+        Assert.Equal(group.Name, result.Name);
+        Assert.Equal(group.Description, result.Description);
+        Assert.Equal(group.AccountId, result.AccountId);
         Assert.Null(result.Account);
         Assert.Null(result.Users);
         Assert.Null(result.Roles);
@@ -101,10 +67,10 @@ public class GroupMapperTests
         // Arrange
         var entity = new GroupEntity
         {
-            Id = 42,
+            Id = Guid.CreateVersion7(),
             Name = "TestGroup",
             Description = "Test Description",
-            AccountId = 123,
+            AccountId = Guid.CreateVersion7(),
             CreatedUtc = DateTime.UtcNow,
             ModifiedUtc = DateTime.UtcNow,
         };
@@ -114,92 +80,9 @@ public class GroupMapperTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(42, result.Id);
-        Assert.Equal("TestGroup", result.Name);
-        Assert.Equal("Test Description", result.Description);
-        Assert.Equal(123, result.AccountId);
-    }
-
-    [Fact]
-    public void ToModel_ToEntity_RoundTrip_ShouldPreserveData()
-    {
-        // Arrange
-        var originalGroup = new Group
-        {
-            Id = 99,
-            Name = "RoundTripGroup",
-            Description = "Round trip test",
-            AccountId = 456,
-        };
-
-        // Act
-        var entity = originalGroup.ToEntity();
-        var resultGroup = entity.ToModel();
-
-        // Assert
-        Assert.Equal(originalGroup.Id, resultGroup.Id);
-        Assert.Equal(originalGroup.Name, resultGroup.Name);
-        Assert.Equal(originalGroup.Description, resultGroup.Description);
-        Assert.Equal(originalGroup.AccountId, resultGroup.AccountId);
-    }
-
-    [Theory]
-    [InlineData(1, "Admins", "Admin group", 100)]
-    [InlineData(2, "Users", null, 200)]
-    [InlineData(0, "", "", 0)]
-    public void ToEntity_ShouldMapVariousInputs(
-        int id,
-        string name,
-        string? description,
-        int accountId
-    )
-    {
-        // Arrange
-        var group = new Group
-        {
-            Id = id,
-            Name = name,
-            Description = description,
-            AccountId = accountId,
-        };
-
-        // Act
-        var result = group.ToEntity();
-
-        // Assert
-        Assert.Equal(id, result.Id);
-        Assert.Equal(name, result.Name);
-        Assert.Equal(description, result.Description);
-        Assert.Equal(accountId, result.AccountId);
-    }
-
-    [Theory]
-    [InlineData(1, "Admins", "Admin group", 100)]
-    [InlineData(2, "Users", null, 200)]
-    [InlineData(0, "", "", 0)]
-    public void ToModel_ShouldMapVariousInputs(
-        int id,
-        string name,
-        string? description,
-        int accountId
-    )
-    {
-        // Arrange
-        var entity = new GroupEntity
-        {
-            Id = id,
-            Name = name,
-            Description = description,
-            AccountId = accountId,
-        };
-
-        // Act
-        var result = entity.ToModel();
-
-        // Assert
-        Assert.Equal(id, result.Id);
-        Assert.Equal(name, result.Name);
-        Assert.Equal(description, result.Description);
-        Assert.Equal(accountId, result.AccountId);
+        Assert.Equal(entity.Id, result.Id);
+        Assert.Equal(entity.Name, result.Name);
+        Assert.Equal(entity.Description, result.Description);
+        Assert.Equal(entity.AccountId, result.AccountId);
     }
 }

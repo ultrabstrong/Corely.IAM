@@ -17,14 +17,15 @@ public class AuthorizationProviderTests
 {
     private readonly ServiceFactory _serviceFactory = new();
 
+
     [Fact]
     public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasPermission()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
-            resourceId: 0,
+            resourceId: Guid.Empty,
             create: true
         );
 
@@ -40,17 +41,18 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasPermissionForSpecificResource()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
+        var resourceId = Guid.CreateVersion7();
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
-            resourceId: 5,
+            resourceId: resourceId,
             update: true
         );
 
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.GROUP_RESOURCE_TYPE,
-            5
+            resourceId
         );
 
         Assert.True(result);
@@ -60,17 +62,17 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasWildcardPermission()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), null);
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
-            resourceId: 0, // Wildcard - applies to all
+            resourceId: Guid.Empty, // Wildcard - applies to all
             read: true
         );
 
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.GROUP_RESOURCE_TYPE,
-            99
+            Guid.NewGuid()
         );
 
         Assert.True(result);
@@ -94,7 +96,7 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsFalse_WhenNoPermissions()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         // Don't setup any permissions
 
         var result = await provider.IsAuthorizedAsync(
@@ -109,10 +111,10 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsFalse_WhenWrongAction()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
-            resourceId: 0,
+            resourceId: Guid.Empty,
             read: true // Only has Read
         );
 
@@ -128,10 +130,10 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsFalse_WhenWrongResourceType()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.ROLE_RESOURCE_TYPE, // Has role permission
-            resourceId: 0,
+            resourceId: Guid.Empty,
             create: true
         );
 
@@ -147,17 +149,17 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsFalse_WhenWrongResourceId()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
-            resourceId: 5, // Only for resource 5
+            resourceId: Guid.CreateVersion7(), // Only for resource 5
             update: true
         );
 
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.GROUP_RESOURCE_TYPE,
-            99
+            Guid.CreateVersion7()
         );
 
         Assert.False(result);
@@ -167,10 +169,10 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasWildcardResourceTypePermission()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.ALL_RESOURCE_TYPES, // Wildcard - applies to all resource types
-            resourceId: 0,
+            resourceId: Guid.Empty,
             create: true
         );
 
@@ -198,10 +200,10 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_CachesPermissions()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
-            resourceId: 0,
+            resourceId: Guid.Empty,
             create: true,
             read: true
         );
@@ -224,9 +226,10 @@ public class AuthorizationProviderTests
     public void IsAuthorizedForOwnUser_ReturnsTrue_WhenUserMatchesContext()
     {
         var provider = CreateProvider();
-        SetUserContext(5, 1);
+        var userId = Guid.CreateVersion7();
+        SetUserContext(userId, Guid.CreateVersion7());
 
-        var result = provider.IsAuthorizedForOwnUser(5);
+        var result = provider.IsAuthorizedForOwnUser(userId);
 
         Assert.True(result);
     }
@@ -237,7 +240,7 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         // Don't set user context
 
-        var result = provider.IsAuthorizedForOwnUser(5);
+        var result = provider.IsAuthorizedForOwnUser(Guid.CreateVersion7());
 
         Assert.False(result);
     }
@@ -246,9 +249,9 @@ public class AuthorizationProviderTests
     public void IsAuthorizedForOwnUser_ReturnsFalse_WhenUserDoesNotMatchContext()
     {
         var provider = CreateProvider();
-        SetUserContext(99, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
 
-        var result = provider.IsAuthorizedForOwnUser(5);
+        var result = provider.IsAuthorizedForOwnUser(Guid.CreateVersion7());
 
         Assert.False(result);
     }
@@ -257,7 +260,7 @@ public class AuthorizationProviderTests
     public void HasUserContext_ReturnsTrue_WhenUserContextExists()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
 
         var result = provider.HasUserContext();
 
@@ -278,8 +281,8 @@ public class AuthorizationProviderTests
     public void HasAccountContext_ReturnsTrue_WhenUserHasAccessToCurrentAccount()
     {
         var provider = CreateProvider();
-        var account = new Account() { Id = 1 };
-        SetUserContext(userId: 1, currentAccount: account, availableAccounts: [account]);
+        var account = new Account() { Id = Guid.CreateVersion7() };
+        SetUserContext(userId: Guid.CreateVersion7(), currentAccount: account, availableAccounts: [account]);
 
         var result = provider.HasAccountContext();
 
@@ -301,8 +304,8 @@ public class AuthorizationProviderTests
     public void HasAccountContext_ReturnsFalse_WhenCurrentAccountIsNull()
     {
         var provider = CreateProvider();
-        var account = new Account() { Id = 1 };
-        SetUserContext(userId: 1, currentAccount: null, availableAccounts: [account]);
+        var account = new Account() { Id = Guid.CreateVersion7() };
+        SetUserContext(userId: Guid.CreateVersion7(), currentAccount: null, availableAccounts: [account]);
 
         var result = provider.HasAccountContext();
 
@@ -313,10 +316,10 @@ public class AuthorizationProviderTests
     public void HasAccountContext_ReturnsFalse_WhenCurrentAccountNotInAvailableAccounts()
     {
         var provider = CreateProvider();
-        var currentAccount = new Account() { Id = 99 };
-        var availableAccount = new Account() { Id = 1 };
+        var currentAccount = new Account() { Id = Guid.CreateVersion7() };
+        var availableAccount = new Account() { Id = Guid.CreateVersion7() };
         SetUserContext(
-            userId: 1,
+            userId: Guid.CreateVersion7(),
             currentAccount: currentAccount,
             availableAccounts: [availableAccount]
         );
@@ -330,11 +333,11 @@ public class AuthorizationProviderTests
     public void HasAccountContext_ReturnsTrue_WhenCurrentAccountIsOneOfMultipleAvailableAccounts()
     {
         var provider = CreateProvider();
-        var account1 = new Account() { Id = 1 };
-        var account2 = new Account() { Id = 2 };
-        var account3 = new Account() { Id = 3 };
+        var account1 = new Account() { Id = Guid.CreateVersion7() };
+        var account2 = new Account() { Id = Guid.CreateVersion7() };
+        var account3 = new Account() { Id = Guid.CreateVersion7() };
         SetUserContext(
-            userId: 1,
+            userId: Guid.CreateVersion7(),
             currentAccount: account2,
             availableAccounts: [account1, account2, account3]
         );
@@ -348,8 +351,8 @@ public class AuthorizationProviderTests
     public void HasAccountContext_ReturnsFalse_WhenAvailableAccountsIsEmpty()
     {
         var provider = CreateProvider();
-        var currentAccount = new Account() { Id = 1 };
-        SetUserContext(userId: 1, currentAccount: currentAccount, availableAccounts: []);
+        var currentAccount = new Account() { Id = Guid.CreateVersion7() };
+        SetUserContext(userId: Guid.CreateVersion7(), currentAccount: currentAccount, availableAccounts: []);
 
         var result = provider.HasAccountContext();
 
@@ -360,10 +363,11 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasPermissionForOneOfMultipleResourceIds()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
+        var resourceIdWithPermission = Guid.CreateVersion7();
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.USER_RESOURCE_TYPE,
-            resourceId: 5, // Only has permission for resource 5
+            resourceId: resourceIdWithPermission,
             read: true
         );
 
@@ -371,9 +375,9 @@ public class AuthorizationProviderTests
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.USER_RESOURCE_TYPE,
-            5,
-            10,
-            15
+            resourceIdWithPermission,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
         );
 
         Assert.True(result);
@@ -383,10 +387,10 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsFalse_WhenUserHasNoPermissionForAnyOfMultipleResourceIds()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.USER_RESOURCE_TYPE,
-            resourceId: 5, // Only has permission for resource 5
+            resourceId: Guid.CreateVersion7(), // Only has permission for resource 5
             read: true
         );
 
@@ -394,9 +398,9 @@ public class AuthorizationProviderTests
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.USER_RESOURCE_TYPE,
-            10,
-            15,
-            20
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
         );
 
         Assert.False(result);
@@ -406,10 +410,10 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasWildcardPermissionForMultipleResourceIds()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.USER_RESOURCE_TYPE,
-            resourceId: 0, // Wildcard - applies to all resources
+            resourceId: Guid.Empty, // Wildcard - applies to all resources
             read: true
         );
 
@@ -417,11 +421,11 @@ public class AuthorizationProviderTests
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.USER_RESOURCE_TYPE,
-            5,
-            10,
-            15,
-            20,
-            25
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
         );
 
         Assert.True(result);
@@ -431,10 +435,10 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsTrue_WithEmptyResourceIds_WhenUserHasGeneralPermission()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
-            resourceId: 0,
+            resourceId: Guid.Empty,
             create: true
         );
 
@@ -451,10 +455,11 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsFalse_WithMultipleResourceIds_WhenWrongAction()
     {
         var provider = CreateProvider();
-        SetUserContext(1, 1);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
+        var resourceIdWithPermission = Guid.CreateVersion7();
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.USER_RESOURCE_TYPE,
-            resourceId: 5,
+            resourceId: resourceIdWithPermission,
             read: true // Only has Read
         );
 
@@ -462,8 +467,9 @@ public class AuthorizationProviderTests
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.USER_RESOURCE_TYPE,
-            5,
-            10
+            resourceIdWithPermission
+            ,
+            Guid.CreateVersion7()
         );
 
         Assert.False(result);
@@ -478,14 +484,14 @@ public class AuthorizationProviderTests
         );
     }
 
-    private void SetUserContext(int userId, int? accountId)
+    private void SetUserContext(Guid userId, Guid? accountId)
     {
         var account = accountId == null ? null : new Account() { Id = accountId.Value };
         SetUserContext(userId, account, account == null ? [] : [account]);
     }
 
     private void SetUserContext(
-        int userId,
+        Guid userId,
         Account? currentAccount,
         List<Account> availableAccounts
     )
@@ -498,7 +504,7 @@ public class AuthorizationProviderTests
 
     private async Task SetupTestPermissionDataAsync(
         string resourceType,
-        int resourceId,
+        Guid resourceId,
         bool create = false,
         bool read = false,
         bool update = false,
@@ -511,12 +517,12 @@ public class AuthorizationProviderTests
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
 
-        var account = new AccountEntity { Id = 1, AccountName = "TestAccount" };
+        var account = new AccountEntity { Id = Guid.CreateVersion7(), AccountName = "TestAccount" };
         await accountRepo.CreateAsync(account);
 
         var user = new UserEntity
         {
-            Id = 1,
+            Id = Guid.CreateVersion7(),
             Username = "testuser",
             Email = "test@test.com",
         };
@@ -524,17 +530,17 @@ public class AuthorizationProviderTests
 
         var role = new RoleEntity
         {
-            Id = 1,
+            Id = Guid.CreateVersion7(),
             Name = "TestRole",
-            AccountId = 1,
+            AccountId = account.Id,
             Users = [user],
         };
         await roleRepo.CreateAsync(role);
 
         var permission = new PermissionEntity
         {
-            Id = 1,
-            AccountId = 1,
+            Id = Guid.CreateVersion7(),
+            AccountId = account.Id,
             ResourceType = resourceType,
             ResourceId = resourceId,
             Create = create,

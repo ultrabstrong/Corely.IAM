@@ -28,7 +28,7 @@ public class UserProcessorLoggingDecoratorTests
             CreateUserResultCode.Success,
             string.Empty,
             1,
-            Guid.NewGuid()
+            Guid.CreateVersion7()
         );
         _mockInnerProcessor.Setup(x => x.CreateUserAsync(request)).ReturnsAsync(expectedResult);
 

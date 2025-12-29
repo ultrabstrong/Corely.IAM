@@ -8,4 +8,4 @@ public enum CreateGroupResultCode
     UnauthorizedError,
 }
 
-internal record CreateGroupResult(CreateGroupResultCode ResultCode, string Message, int CreatedId);
+internal record CreateGroupResult(CreateGroupResultCode ResultCode, string Message, Guid CreatedId);

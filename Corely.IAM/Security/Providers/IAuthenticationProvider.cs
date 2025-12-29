@@ -7,5 +7,5 @@ internal interface IAuthenticationProvider
     Task<UserAuthTokenResult> GetUserAuthTokenAsync(GetUserAuthTokenRequest request);
     Task<UserAuthTokenValidationResult> ValidateUserAuthTokenAsync(string authToken);
     Task<bool> RevokeUserAuthTokenAsync(RevokeUserAuthTokenRequest request);
-    Task RevokeAllUserAuthTokensAsync(int userId);
+    Task RevokeAllUserAuthTokensAsync(Guid userId);
 }

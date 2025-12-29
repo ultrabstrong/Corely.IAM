@@ -4,5 +4,5 @@ public record SignInRequest(
     string Username,
     string Password,
     string DeviceId,
-    Guid? AccountPublicId = null
+    Guid? AccountId = null
 );

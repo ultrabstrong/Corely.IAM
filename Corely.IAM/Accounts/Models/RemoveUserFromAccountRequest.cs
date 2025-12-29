@@ -1,3 +1,3 @@
 namespace Corely.IAM.Accounts.Models;
 
-public record RemoveUserFromAccountRequest(int UserId, int AccountId);
+public record RemoveUserFromAccountRequest(Guid UserId, Guid AccountId);

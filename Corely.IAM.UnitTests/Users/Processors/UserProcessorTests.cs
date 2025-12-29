@@ -40,12 +40,12 @@ public class UserProcessorTests
     private async Task<int> CreateAccountAsync()
     {
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
-        var account = new AccountEntity { Id = _fixture.Create<int>() };
+        var account = new AccountEntity { Id = Guid.CreateVersion7() };
         var created = await accountRepo.CreateAsync(account);
         return created.Id;
     }
 
-    private async Task<int> CreateUserInAccountAsync(int accountId)
+    private async Task<UserEntity> CreateUserInAccountAsync(Guid accountId)
     {
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var account = await accountRepo.GetAsync(a => a.Id == accountId);
@@ -53,7 +53,7 @@ public class UserProcessorTests
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var user = new UserEntity
         {
-            Id = _fixture.Create<int>(),
+            Id = Guid.CreateVersion7(),
             Username = _fixture.Create<string>(),
             Accounts = account != null ? [account] : [],
             Groups = [],
@@ -63,16 +63,16 @@ public class UserProcessorTests
         return created.Id;
     }
 
-    private async Task<(int UserId, int AccountId)> CreateUserAsync()
+    private async Task<(Guid UserId, Guid AccountId)> CreateUserAsync()
     {
         var accountId = await CreateAccountAsync();
         var userId = await CreateUserInAccountAsync(accountId);
         return (userId, accountId);
     }
 
-    private async Task<int> CreateRoleAsync(int accountId, params int[] userIds)
+    private async Task<RoleEntity> CreateRoleAsync(Guid accountId, params Guid[] userIds)
     {
-        var roleId = _fixture.Create<int>();
+        var roleId = Guid.CreateVersion7();
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
 
         var users = new List<UserEntity>();
@@ -99,7 +99,7 @@ public class UserProcessorTests
         return created.Id;
     }
 
-    private async Task CreateOwnerRoleAsync(int accountId, params int[] userIds)
+    private async Task CreateOwnerRoleAsync(Guid accountId, params Guid[] userIds)
     {
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
@@ -124,7 +124,7 @@ public class UserProcessorTests
 
         var ownerRole = new RoleEntity
         {
-            Id = _fixture.Create<int>(),
+            Id = Guid.CreateVersion7(),
             AccountId = accountId,
             Name = RoleConstants.OWNER_ROLE_NAME,
             IsSystemDefined = true,
@@ -138,7 +138,7 @@ public class UserProcessorTests
     }
 
     private async Task CreateOwnerRoleWithGroupAsync(
-        int accountId,
+        Guid accountId,
         int[] directUserIds,
         int[] groupUserIds
     )
@@ -183,7 +183,7 @@ public class UserProcessorTests
 
         var group = new GroupEntity
         {
-            Id = _fixture.Create<int>(),
+            Id = Guid.CreateVersion7(),
             AccountId = accountId,
             Name = "OwnerGroup",
             Users = groupUsers,
@@ -193,7 +193,7 @@ public class UserProcessorTests
 
         var ownerRole = new RoleEntity
         {
-            Id = _fixture.Create<int>(),
+            Id = Guid.CreateVersion7(),
             AccountId = accountId,
             Name = RoleConstants.OWNER_ROLE_NAME,
             IsSystemDefined = true,

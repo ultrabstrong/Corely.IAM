@@ -1,10 +1,9 @@
-﻿using Corely.DataAccess.Interfaces.Entities;
-using Corely.IAM.Security.Entities;
+﻿using Corely.IAM.Security.Entities;
 
 namespace Corely.IAM.Users.Entities;
 
-internal class UserAsymmetricKeyEntity : AsymmetricKeyEntity, IHasIdPk<int>
+internal class UserAsymmetricKeyEntity : AsymmetricKeyEntity
 {
-    public int Id { get; set; }
-    public int UserId { get; set; }
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
 }

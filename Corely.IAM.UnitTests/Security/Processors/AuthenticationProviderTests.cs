@@ -1,5 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
@@ -11,6 +9,8 @@ using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Corely.IAM.UnitTests.Security.Processors;
 
@@ -82,8 +82,7 @@ public class AuthenticationProviderTests
         var account = new AccountEntity
         {
             AccountName = _fixture.Create<string>(),
-            Id = _fixture.Create<int>(),
-            PublicId = Guid.NewGuid(),
+            Id = Guid.CreateVersion7()
         };
         var created = await accountRepo.CreateAsync(account);
         return created;
@@ -109,7 +108,7 @@ public class AuthenticationProviderTests
         Assert.Equal(UserConstants.JWT_AUDIENCE, jwtToken.Audiences.First());
         Assert.Contains(
             jwtToken.Claims,
-            c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == userEntity.PublicId.ToString()
+            c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == userEntity.Id.ToString()
         );
         Assert.Contains(jwtToken.Claims, c => c.Type == JwtRegisteredClaimNames.Jti);
         Assert.Contains(jwtToken.Claims, c => c.Type == JwtRegisteredClaimNames.Iat);
@@ -119,7 +118,7 @@ public class AuthenticationProviderTests
     public async Task GetUserAuthTokenAsync_ReturnsUserNotFound_WhenUserDNE()
     {
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(9999, TEST_DEVICE_ID)
+            new GetUserAuthTokenRequest(Guid.CreateVersion7(), TEST_DEVICE_ID)
         );
 
         Assert.Equal(UserAuthTokenResultCode.UserNotFound, result.ResultCode);
@@ -148,7 +147,7 @@ public class AuthenticationProviderTests
         var account = await CreateAccountAsync();
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id)
         );
 
         Assert.Equal(UserAuthTokenResultCode.AccountNotFound, result.ResultCode);
@@ -162,7 +161,7 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync([account]);
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id)
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, result.ResultCode);
@@ -180,11 +179,11 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync([account]);
 
         var result = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id)
         );
 
         var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
-        var tokenEntity = await authTokenRepo.GetAsync(t => t.PublicId == result.TokenId);
+        var tokenEntity = await authTokenRepo.GetAsync(t => t.Id == result.TokenId);
 
         Assert.NotNull(tokenEntity);
         Assert.Equal(account.Id, tokenEntity.AccountId);
@@ -200,7 +199,7 @@ public class AuthenticationProviderTests
         );
 
         var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
-        var tokenEntity = await authTokenRepo.GetAsync(t => t.PublicId == result.TokenId);
+        var tokenEntity = await authTokenRepo.GetAsync(t => t.Id == result.TokenId);
 
         Assert.NotNull(tokenEntity);
         Assert.Null(tokenEntity.AccountId);
@@ -213,11 +212,11 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync([account]);
 
         var firstToken = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id)
         );
 
         var secondToken = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id)
         );
 
         var firstValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
@@ -269,7 +268,7 @@ public class AuthenticationProviderTests
         var userEntity = await CreateUserAsync([account1, account2]);
 
         var tokenForAccount1 = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account1.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account1.Id)
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, tokenForAccount1.ResultCode);
@@ -277,7 +276,7 @@ public class AuthenticationProviderTests
         Assert.Equal(account1.Id, tokenForAccount1.CurrentAccount.Id);
 
         var tokenForAccount2 = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account2.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account2.Id)
         );
 
         Assert.Equal(UserAuthTokenResultCode.Success, tokenForAccount2.ResultCode);
@@ -288,10 +287,10 @@ public class AuthenticationProviderTests
 
         var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
         var token1Entity = await authTokenRepo.GetAsync(t =>
-            t.PublicId == tokenForAccount1.TokenId
+            t.Id == tokenForAccount1.TokenId
         );
         var token2Entity = await authTokenRepo.GetAsync(t =>
-            t.PublicId == tokenForAccount2.TokenId
+            t.Id == tokenForAccount2.TokenId
         );
 
         Assert.NotNull(token1Entity);
@@ -323,7 +322,7 @@ public class AuthenticationProviderTests
         );
 
         var tokenWithAccount = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id)
         );
 
         var validationWithoutAccount = await _authenticationProvider.ValidateUserAuthTokenAsync(
@@ -351,7 +350,7 @@ public class AuthenticationProviderTests
         );
 
         var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
-        var tokenEntity = await authTokenRepo.GetAsync(t => t.PublicId == result.TokenId);
+        var tokenEntity = await authTokenRepo.GetAsync(t => t.Id == result.TokenId);
 
         Assert.NotNull(tokenEntity);
         Assert.Equal(deviceId, tokenEntity.DeviceId);
@@ -365,11 +364,11 @@ public class AuthenticationProviderTests
         var deviceId = "test-device-456";
 
         var firstToken = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(userEntity.Id, deviceId, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, deviceId, account.Id)
         );
 
         var secondToken = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(userEntity.Id, deviceId, account.PublicId)
+            new GetUserAuthTokenRequest(userEntity.Id, deviceId, account.Id)
         );
 
         var firstValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
@@ -479,7 +478,7 @@ public class AuthenticationProviderTests
     public async Task ValidateUserAuthTokenAsync_ReturnsMissingUserIdClaim_WhenNoSubClaim()
     {
         var token = new JwtSecurityToken(
-            claims: [new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())],
+            claims: [new Claim(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString())],
             expires: DateTime.UtcNow.AddHours(1)
         );
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
@@ -504,7 +503,7 @@ public class AuthenticationProviderTests
             claims:
             [
                 new Claim(JwtRegisteredClaimNames.Sub, "123"),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString()),
             ],
             expires: DateTime.UtcNow.AddHours(1)
         );
@@ -527,7 +526,7 @@ public class AuthenticationProviderTests
     public async Task ValidateUserAuthTokenAsync_ReturnsTokenValidationFailed_WhenNoJtiClaim()
     {
         var token = new JwtSecurityToken(
-            claims: [new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString())],
+            claims: [new Claim(JwtRegisteredClaimNames.Sub, Guid.CreateVersion7().ToString())],
             expires: DateTime.UtcNow.AddHours(1)
         );
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
@@ -553,8 +552,8 @@ public class AuthenticationProviderTests
         var token = new JwtSecurityToken(
             claims:
             [
-                new Claim(JwtRegisteredClaimNames.Sub, userEntity.PublicId.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, userEntity.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString()),
             ],
             expires: DateTime.UtcNow.AddHours(1)
         );
@@ -623,7 +622,7 @@ public class AuthenticationProviderTests
     public async Task RevokeUserAuthTokenAsync_ReturnsFalse_WhenTokenNotFound()
     {
         var revokeRequest = new RevokeUserAuthTokenRequest(
-            9999,
+            Guid.CreateVersion7(),
             "non-existent-token-id",
             TEST_DEVICE_ID
         );

@@ -15,7 +15,6 @@ internal static class AccountMapper
         return new AccountEntity
         {
             Id = account.Id,
-            PublicId = account.PublicId,
             AccountName = account.AccountName,
         };
     }
@@ -25,7 +24,6 @@ internal static class AccountMapper
         return new Account
         {
             Id = entity.Id,
-            PublicId = entity.PublicId,
             AccountName = entity.AccountName,
         };
     }

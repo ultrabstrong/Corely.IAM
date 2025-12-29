@@ -2,12 +2,11 @@ using Corely.DataAccess.Interfaces.Entities;
 
 namespace Corely.IAM.Users.Entities;
 
-internal class UserAuthTokenEntity : IHasIdPk<int>, IHasCreatedUtc
+internal class UserAuthTokenEntity : IHasCreatedUtc
 {
-    public int Id { get; set; }
-    public string PublicId { get; set; } = null!;
-    public int UserId { get; set; }
-    public int? AccountId { get; set; }
+    public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid? AccountId { get; set; }
     public string DeviceId { get; set; } = null!;
     public DateTime IssuedUtc { get; set; }
     public DateTime ExpiresUtc { get; set; }

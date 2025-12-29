@@ -6,18 +6,17 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Corely.IAM.Users.Entities;
 
 internal sealed class UserAuthTokenEntityConfiguration
-    : EntityConfigurationBase<UserAuthTokenEntity, int>
+    : EntityConfigurationBase<UserAuthTokenEntity>
 {
     public UserAuthTokenEntityConfiguration(IDbTypes dbTypes)
         : base(dbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<UserAuthTokenEntity> builder)
     {
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id).ValueGeneratedNever();
+
         builder.Property(e => e.UserId).IsRequired();
-
-        builder.Property(e => e.PublicId).HasMaxLength(36).IsRequired(); // GUID length
-
-        builder.HasIndex(e => e.PublicId).IsUnique();
 
         builder.Property(e => e.IssuedUtc).IsRequired();
 

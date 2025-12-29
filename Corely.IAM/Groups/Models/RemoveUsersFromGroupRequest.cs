@@ -1,3 +1,3 @@
 namespace Corely.IAM.Groups.Models;
 
-public record RemoveUsersFromGroupRequest(List<int> UserIds, int GroupId);
+public record RemoveUsersFromGroupRequest(List<Guid> UserIds, Guid GroupId);

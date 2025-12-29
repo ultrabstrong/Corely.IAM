@@ -51,7 +51,7 @@ internal class GroupProcessor(
             return new CreateGroupResult(
                 CreateGroupResultCode.AccountNotFoundError,
                 $"Account with Id {group.AccountId} not found",
-                -1
+                Guid.Empty
             );
         }
 
@@ -61,7 +61,7 @@ internal class GroupProcessor(
             return new CreateGroupResult(
                 CreateGroupResultCode.GroupExistsError,
                 $"Group with name {group.Name} already exists",
-                -1
+                Guid.Empty
             );
         }
 
@@ -346,7 +346,7 @@ internal class GroupProcessor(
         // 2. If owner role is being removed AND group has no users -> allow removal
         // 3. If owner role is being removed AND at least one user has ownership elsewhere -> allow removal
         // 4. If owner role is being removed AND no users have ownership elsewhere -> block
-        var blockedOwnerRoleIds = new List<int>();
+        var blockedOwnerRoleIds = new List<Guid>();
         var ownerRole = rolesToRemove.FirstOrDefault(r =>
             r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined
         );
@@ -431,7 +431,7 @@ internal class GroupProcessor(
         );
     }
 
-    public async Task<DeleteGroupResult> DeleteGroupAsync(int groupId)
+    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId)
     {
         var groupEntity = await _groupRepo.GetAsync(
             g => g.Id == groupId,

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Corely.IAM.DataAccessMigrations.Migrations
 {
     [DbContext(typeof(IamDbContext))]
-    [Migration("20251213203456_AddAccountAndUserPublicIds")]
-    partial class AddAccountAndUserPublicIds
+    [Migration("20251213203456_AddAccountAndUserIds")]
+    partial class AddAccountAndUserIds
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

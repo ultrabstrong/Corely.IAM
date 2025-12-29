@@ -49,7 +49,6 @@ internal class AccountProcessor(
             return new CreateAccountResult(
                 CreateAccountResultCode.UserOwnerNotFoundError,
                 $"User with Id {request.OwnerUserId} not found",
-                -1,
                 Guid.Empty
             );
         }
@@ -63,7 +62,6 @@ internal class AccountProcessor(
             return new CreateAccountResult(
                 CreateAccountResultCode.AccountExistsError,
                 $"Account {request.AccountName} already exists",
-                -1,
                 Guid.Empty
             );
         }
@@ -79,19 +77,18 @@ internal class AccountProcessor(
         ];
 
         var accountEntity = account.ToEntity();
-        accountEntity.PublicId = Guid.NewGuid();
+        accountEntity.Id = Guid.CreateVersion7();
         accountEntity.Users = [userEntity];
         var created = await _accountRepo.CreateAsync(accountEntity);
 
         return new CreateAccountResult(
             CreateAccountResultCode.Success,
             string.Empty,
-            created.Id,
-            created.PublicId
+            created.Id
         );
     }
 
-    public async Task<GetAccountResult> GetAccountAsync(int accountId)
+    public async Task<GetAccountResult> GetAccountAsync(Guid accountId)
     {
         var accountEntity = await _accountRepo.GetAsync(a => a.Id == accountId);
         var account = accountEntity?.ToModel();
@@ -108,7 +105,7 @@ internal class AccountProcessor(
         return new GetAccountResult(GetAccountResultCode.Success, string.Empty, account);
     }
 
-    public async Task<ListAccountsForUserResult> ListAccountsForUserAsync(int userId)
+    public async Task<ListAccountsForUserResult> ListAccountsForUserAsync(Guid userId)
     {
         var accountEntities = await _accountRepo.ListAsync(a =>
             a.Users != null && a.Users.Any(u => u.Id == userId)
@@ -121,7 +118,7 @@ internal class AccountProcessor(
         );
     }
 
-    public async Task<DeleteAccountResult> DeleteAccountAsync(int accountId)
+    public async Task<DeleteAccountResult> DeleteAccountAsync(Guid accountId)
     {
         var accountEntity = await _accountRepo.GetAsync(a => a.Id == accountId);
         if (accountEntity == null)

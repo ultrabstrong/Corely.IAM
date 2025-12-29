@@ -7,16 +7,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Corely.IAM.Users.Entities;
 
-internal sealed class UserEntityConfiguration : EntityConfigurationBase<UserEntity, int>
+internal sealed class UserEntityConfiguration : EntityConfigurationBase<UserEntity>
 {
     public UserEntityConfiguration(IDbTypes dbTypes)
         : base(dbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<UserEntity> builder)
     {
-        builder.Property(e => e.PublicId).IsRequired();
-
-        builder.HasIndex(e => e.PublicId).IsUnique();
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id).ValueGeneratedNever();
 
         builder.Property(e => e.Disabled).IsRequired();
 

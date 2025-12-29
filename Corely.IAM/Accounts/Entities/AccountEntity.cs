@@ -6,10 +6,9 @@ using Corely.IAM.Users.Entities;
 
 namespace Corely.IAM.Accounts.Entities;
 
-internal class AccountEntity : IHasIdPk<int>, IHasCreatedUtc, IHasModifiedUtc
+internal class AccountEntity : IHasCreatedUtc, IHasModifiedUtc
 {
-    public int Id { get; set; }
-    public Guid PublicId { get; set; }
+    public Guid Id { get; set; }
     public string AccountName { get; init; } = null!;
     public DateTime CreatedUtc { get; set; }
     public DateTime? ModifiedUtc { get; set; }

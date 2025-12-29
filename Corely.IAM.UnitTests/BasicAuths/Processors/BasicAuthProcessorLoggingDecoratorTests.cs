@@ -23,11 +23,11 @@ public class BasicAuthProcessorLoggingDecoratorTests
     [Fact]
     public async Task CreateBasicAuthAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new CreateBasicAuthRequest(1, "password");
+        var request = new CreateBasicAuthRequest(Guid.CreateVersion7(), "password");
         var expectedResult = new CreateBasicAuthResult(
             CreateBasicAuthResultCode.Success,
             string.Empty,
-            1
+            Guid.CreateVersion7()
         );
         _mockInnerProcessor
             .Setup(x => x.CreateBasicAuthAsync(request))
@@ -43,7 +43,7 @@ public class BasicAuthProcessorLoggingDecoratorTests
     [Fact]
     public async Task UpdateBasicAuthAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new UpdateBasicAuthRequest(1, "password");
+        var request = new UpdateBasicAuthRequest(Guid.CreateVersion7(), "password");
         var expectedResult = new UpdateBasicAuthResult(
             UpdateBasicAuthResultCode.Success,
             string.Empty
@@ -62,7 +62,7 @@ public class BasicAuthProcessorLoggingDecoratorTests
     [Fact]
     public async Task VerifyBasicAuthAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new VerifyBasicAuthRequest(1, "password");
+        var request = new VerifyBasicAuthRequest(Guid.CreateVersion7(), "password");
         var expectedResult = new VerifyBasicAuthResult(
             VerifyBasicAuthResultCode.Success,
             string.Empty,

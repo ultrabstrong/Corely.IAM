@@ -4,11 +4,11 @@ public record DeregisterUsersFromGroupResult(
     DeregisterUsersFromGroupResultCode ResultCode,
     string Message,
     int RemovedUserCount,
-    List<int> InvalidUserIds,
-    List<int> SoleOwnerUserIds = null!
+    List<Guid> InvalidUserIds,
+    List<Guid> SoleOwnerUserIds = null!
 )
 {
-    public List<int> SoleOwnerUserIds { get; init; } = SoleOwnerUserIds ?? [];
+    public List<Guid> SoleOwnerUserIds { get; init; } = SoleOwnerUserIds ?? [];
 }
 
 public enum DeregisterUsersFromGroupResultCode

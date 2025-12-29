@@ -5,5 +5,5 @@ namespace Corely.IAM.Models;
 public record RegisterRoleResult(
     CreateRoleResultCode ResultCode,
     string Message,
-    int CreatedRoleId
+    Guid CreatedRoleId
 );

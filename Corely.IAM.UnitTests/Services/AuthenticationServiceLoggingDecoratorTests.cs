@@ -30,7 +30,7 @@ public class AuthenticationServiceLoggingDecoratorTests
             SignInResultCode.Success,
             null,
             "auth-token",
-            "token123"
+            Guid.CreateVersion7()
         );
         _mockInnerService.Setup(x => x.SignInAsync(request)).ReturnsAsync(expectedResult);
 
@@ -44,12 +44,12 @@ public class AuthenticationServiceLoggingDecoratorTests
     [Fact]
     public async Task SwitchAccountAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new SwitchAccountRequest(Guid.NewGuid());
+        var request = new SwitchAccountRequest(Guid.CreateVersion7());
         var expectedResult = new SignInResult(
             SignInResultCode.Success,
             null,
             "new-token",
-            "token123"
+            Guid.CreateVersion7()
         );
         _mockInnerService.Setup(x => x.SwitchAccountAsync(request)).ReturnsAsync(expectedResult);
 

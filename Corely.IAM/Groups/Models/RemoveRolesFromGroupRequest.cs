@@ -1,7 +1,7 @@
 namespace Corely.IAM.Groups.Models;
 
 internal record RemoveRolesFromGroupRequest(
-    List<int> RoleIds,
-    int GroupId,
+    List<Guid> RoleIds,
+    Guid GroupId,
     bool BypassAuthorization = false
 );

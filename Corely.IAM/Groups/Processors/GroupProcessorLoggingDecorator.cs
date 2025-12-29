@@ -61,7 +61,7 @@ internal class GroupProcessorLoggingDecorator(
             logResult: true
         );
 
-    public async Task<DeleteGroupResult> DeleteGroupAsync(int groupId) =>
+    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),
             groupId,

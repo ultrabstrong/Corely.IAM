@@ -6,5 +6,5 @@ public record RegisterUsersWithGroupResult(
     AddUsersToGroupResultCode ResultCode,
     string Message,
     int RegisteredUserCount,
-    List<int> InvalidUserIds = null
+    List<Guid> InvalidUserIds = null
 );

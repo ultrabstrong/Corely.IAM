@@ -23,7 +23,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterGroupAsync_DelegatesToInner()
     {
-        var request = new DeregisterGroupRequest(1);
+        var request = new DeregisterGroupRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterGroupResult(
             DeregisterGroupResultCode.Success,
             string.Empty
@@ -39,7 +39,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterRoleAsync_DelegatesToInner()
     {
-        var request = new DeregisterRoleRequest(1);
+        var request = new DeregisterRoleRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterRoleResult(
             DeregisterRoleResultCode.Success,
             string.Empty
@@ -55,7 +55,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterPermissionAsync_DelegatesToInner()
     {
-        var request = new DeregisterPermissionRequest(1);
+        var request = new DeregisterPermissionRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterPermissionResult(
             DeregisterPermissionResultCode.Success,
             string.Empty
@@ -73,7 +73,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterUsersFromGroupAsync_DelegatesToInner()
     {
-        var request = new DeregisterUsersFromGroupRequest([1, 2], 1);
+        var request = new DeregisterUsersFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new DeregisterUsersFromGroupResult(
             DeregisterUsersFromGroupResultCode.Success,
             string.Empty,
@@ -93,7 +93,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterRolesFromGroupAsync_DelegatesToInner()
     {
-        var request = new DeregisterRolesFromGroupRequest([1, 2], 1);
+        var request = new DeregisterRolesFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new DeregisterRolesFromGroupResult(
             DeregisterRolesFromGroupResultCode.Success,
             string.Empty,
@@ -113,7 +113,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterRolesFromUserAsync_DelegatesToInner()
     {
-        var request = new DeregisterRolesFromUserRequest([1, 2], 1);
+        var request = new DeregisterRolesFromUserRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new DeregisterRolesFromUserResult(
             DeregisterRolesFromUserResultCode.Success,
             string.Empty,
@@ -133,7 +133,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterPermissionsFromRoleAsync_DelegatesToInner()
     {
-        var request = new DeregisterPermissionsFromRoleRequest([1, 2], 1);
+        var request = new DeregisterPermissionsFromRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new DeregisterPermissionsFromRoleResult(
             DeregisterPermissionsFromRoleResultCode.Success,
             string.Empty,
@@ -219,7 +219,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterUserFromAccountAsync_Succeeds_WhenHasAccountContext()
     {
-        var request = new DeregisterUserFromAccountRequest(1);
+        var request = new DeregisterUserFromAccountRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterUserFromAccountResult(
             DeregisterUserFromAccountResultCode.Success,
             string.Empty
@@ -238,7 +238,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterUserFromAccountAsync_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        var request = new DeregisterUserFromAccountRequest(1);
+        var request = new DeregisterUserFromAccountRequest(Guid.CreateVersion7());
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
         var result = await _decorator.DeregisterUserFromAccountAsync(request);

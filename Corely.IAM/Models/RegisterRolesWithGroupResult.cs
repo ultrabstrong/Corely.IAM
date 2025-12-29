@@ -6,5 +6,5 @@ public record RegisterRolesWithGroupResult(
     AssignRolesToGroupResultCode ResultCode,
     string Message,
     int RegisteredRoleCount,
-    List<int> InvalidRoleIds = null
+    List<Guid> InvalidRoleIds = null
 );

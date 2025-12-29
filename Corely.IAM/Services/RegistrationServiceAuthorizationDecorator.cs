@@ -34,7 +34,7 @@ internal class RegistrationServiceAuthorizationDecorator(
             : new RegisterGroupResult(
                 CreateGroupResultCode.UnauthorizedError,
                 "Unauthorized to create group",
-                -1
+                Guid.Empty
             );
 
     public async Task<RegisterRoleResult> RegisterRoleAsync(RegisterRoleRequest request) =>
@@ -43,7 +43,7 @@ internal class RegistrationServiceAuthorizationDecorator(
             : new RegisterRoleResult(
                 CreateRoleResultCode.UnauthorizedError,
                 "Unauthorized to create role",
-                -1
+                Guid.Empty
             );
 
     public async Task<RegisterPermissionResult> RegisterPermissionAsync(
@@ -54,7 +54,7 @@ internal class RegistrationServiceAuthorizationDecorator(
             : new RegisterPermissionResult(
                 CreatePermissionResultCode.UnauthorizedError,
                 "Unauthorized to create permission",
-                -1
+                Guid.Empty
             );
 
     public async Task<RegisterUserWithAccountResult> RegisterUserWithAccountAsync(

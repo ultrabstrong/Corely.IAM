@@ -18,7 +18,7 @@ internal class AccountProcessorAuthorizationDecorator(
     public Task<CreateAccountResult> CreateAccountAsync(CreateAccountRequest request) =>
         _inner.CreateAccountAsync(request);
 
-    public async Task<GetAccountResult> GetAccountAsync(int accountId) =>
+    public async Task<GetAccountResult> GetAccountAsync(Guid accountId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
@@ -31,7 +31,7 @@ internal class AccountProcessorAuthorizationDecorator(
                 null
             );
 
-    public async Task<DeleteAccountResult> DeleteAccountAsync(int accountId) =>
+    public async Task<DeleteAccountResult> DeleteAccountAsync(Guid accountId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,

@@ -9,8 +9,6 @@ internal class PermissionValidator : AbstractValidator<Permission>
     {
         RuleFor(x => x.ResourceType).NotEmpty();
 
-        RuleFor(x => x.ResourceId).GreaterThanOrEqualTo(0);
-
         RuleFor(x => x)
             .Must(x => x.Create || x.Read || x.Update || x.Delete || x.Execute)
             .WithMessage(

@@ -23,8 +23,8 @@ public class RoleProcessorLoggingDecoratorTests
     [Fact]
     public async Task CreateRoleAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new CreateRoleRequest("testrole", 1);
-        var expectedResult = new CreateRoleResult(CreateRoleResultCode.Success, string.Empty, 1);
+        var request = new CreateRoleRequest("testrole", Guid.CreateVersion7());
+        var expectedResult = new CreateRoleResult(CreateRoleResultCode.Success, string.Empty, request.OwnerAccountId);
         _mockInnerProcessor.Setup(x => x.CreateRoleAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.CreateRoleAsync(request);
@@ -37,8 +37,8 @@ public class RoleProcessorLoggingDecoratorTests
     [Fact]
     public async Task CreateDefaultSystemRolesAsync_DelegatesToInnerAndLogsResult()
     {
-        var ownerAccountId = 1;
-        var expectedResult = new CreateDefaultSystemRolesResult(1, 2, 3);
+        var ownerAccountId = Guid.CreateVersion7();
+        var expectedResult = new CreateDefaultSystemRolesResult(Guid.CreateVersion7(), Guid.CreateVersion7(), Guid.CreateVersion7());
         _mockInnerProcessor
             .Setup(x => x.CreateDefaultSystemRolesAsync(ownerAccountId))
             .ReturnsAsync(expectedResult);
@@ -56,7 +56,7 @@ public class RoleProcessorLoggingDecoratorTests
     [Fact]
     public async Task GetRoleAsyncById_DelegatesToInnerAndLogsResult()
     {
-        var roleId = 1;
+        var roleId = Guid.CreateVersion7();
         var expectedResult = new GetRoleResult(
             GetRoleResultCode.Success,
             string.Empty,
@@ -75,7 +75,7 @@ public class RoleProcessorLoggingDecoratorTests
     public async Task GetRoleAsyncByNameAndAccount_DelegatesToInnerAndLogsResult()
     {
         var roleName = "testrole";
-        var ownerAccountId = 1;
+        var ownerAccountId = Guid.CreateVersion7();
         var expectedResult = new GetRoleResult(
             GetRoleResultCode.Success,
             string.Empty,
@@ -95,7 +95,7 @@ public class RoleProcessorLoggingDecoratorTests
     [Fact]
     public async Task AssignPermissionsToRoleAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new AssignPermissionsToRoleRequest([1, 2], 1);
+        var request = new AssignPermissionsToRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new AssignPermissionsToRoleResult(
             AssignPermissionsToRoleResultCode.Success,
             string.Empty,
@@ -132,36 +132,6 @@ public class RoleProcessorLoggingDecoratorTests
                     LogLevel.Trace,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("with result")),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.Once
-        );
-
-    private void VerifyLoggedWithoutResult() =>
-        _mockLogger.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Trace,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>(
-                        (v, t) =>
-                            v.ToString()!.Contains("completed")
-                            && !v.ToString()!.Contains("with result")
-                    ),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
-                ),
-            Times.Once
-        );
-
-    private void VerifyLogged() =>
-        _mockLogger.Verify(
-            x =>
-                x.Log(
-                    LogLevel.Trace,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("completed")),
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),

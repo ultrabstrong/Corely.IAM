@@ -1,10 +1,10 @@
-using System.Text.Json;
 using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
+using System.Text.Json;
 
 namespace Corely.IAM.DevTools.Commands.Registration;
 
@@ -39,7 +39,7 @@ internal partial class Registration : CommandBase
                     RequestJsonFile,
                     new RegisterPermissionRequest(
                         "resourceType",
-                        1,
+                        Guid.Empty,
                         Create: true,
                         Read: true,
                         Update: true,

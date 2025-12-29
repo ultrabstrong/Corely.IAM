@@ -1,5 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Mappers;
@@ -14,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Corely.IAM.Security.Providers;
 
@@ -64,15 +64,15 @@ internal class AuthenticationProvider(
         var accounts = GetAccountModels(userEntity);
 
         Account? signedInAccount = null;
-        if (request.AccountPublicId.HasValue)
+        if (request.AccountId.HasValue)
         {
-            signedInAccount = FindAccountByPublicId(accounts, request.AccountPublicId.Value);
+            signedInAccount = FindAccountById(accounts, request.AccountId.Value);
             if (signedInAccount == null)
             {
                 _logger.LogWarning(
-                    "User with Id {UserId} does not have access to account {AccountPublicId}",
+                    "User with Id {UserId} does not have access to account {AccountId}",
                     request.UserId,
-                    request.AccountPublicId.Value
+                    request.AccountId.Value
                 );
                 return CreateFailedTokenResult(UserAuthTokenResultCode.AccountNotFound);
             }
@@ -87,15 +87,15 @@ internal class AuthenticationProvider(
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var expires = now.AddSeconds(_securityOptions.AuthTokenTtlSeconds);
-        var jti = Guid.NewGuid().ToString();
+        var tokenId = Guid.CreateVersion7();
 
         var claims = BuildTokenClaims(
-            userEntity.PublicId,
-            jti,
+            userEntity.Id,
+            tokenId.ToString(),
             now,
             request.DeviceId,
             accounts,
-            request.AccountPublicId
+            request.AccountId
         );
 
         var token = new JwtSecurityToken(
@@ -114,10 +114,10 @@ internal class AuthenticationProvider(
 
         var authTokenEntity = new UserAuthTokenEntity
         {
+            Id = tokenId,
             UserId = request.UserId,
             AccountId = signedInAccount?.Id,
             DeviceId = request.DeviceId,
-            PublicId = jti,
             IssuedUtc = now,
             ExpiresUtc = expires,
         };
@@ -127,7 +127,7 @@ internal class AuthenticationProvider(
         return new UserAuthTokenResult(
             UserAuthTokenResultCode.Success,
             tokenString,
-            jti,
+            tokenId,
             userEntity.ToModel(),
             signedInAccount,
             accounts
@@ -151,18 +151,18 @@ internal class AuthenticationProvider(
         var jwtToken = tokenHandler.ReadJwtToken(authToken);
 
         var subClaim = GetClaimValue(jwtToken, JwtRegisteredClaimNames.Sub);
-        if (string.IsNullOrEmpty(subClaim) || !Guid.TryParse(subClaim, out var userPublicId))
+        if (string.IsNullOrEmpty(subClaim) || !Guid.TryParse(subClaim, out var userId))
         {
-            _logger.LogInformation("Auth token does not contain valid sub (userPublicId) claim");
+            _logger.LogInformation("Auth token does not contain valid sub (userId) claim");
             return CreateFailedValidationResult(
                 UserAuthTokenValidationResultCode.MissingUserIdClaim
             );
         }
 
-        var userEntity = await GetUserWithKeysAndAccountsAsync(u => u.PublicId == userPublicId);
+        var userEntity = await GetUserWithKeysAndAccountsAsync(u => u.Id == userId);
         if (userEntity == null)
         {
-            _logger.LogInformation("User with PublicId {UserPublicId} not found", userPublicId);
+            _logger.LogInformation("User with Id {UserId} not found", userId);
             return CreateFailedValidationResult(
                 UserAuthTokenValidationResultCode.TokenValidationFailed
             );
@@ -177,9 +177,17 @@ internal class AuthenticationProvider(
             );
         }
 
+        if (!Guid.TryParse(jti, out var tokenId))
+        {
+            _logger.LogInformation("Auth token jti claim is not a valid GUID");
+            return CreateFailedValidationResult(
+                UserAuthTokenValidationResultCode.TokenValidationFailed
+            );
+        }
+
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.PublicId == jti
+            t.Id == tokenId
             && t.UserId == userEntity.Id
             && t.RevokedUtc == null
             && t.ExpiresUtc > now
@@ -263,8 +271,7 @@ internal class AuthenticationProvider(
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.PublicId == request.TokenId
-            && t.UserId == request.UserId
+            t.UserId == request.UserId
             && t.AccountId == request.AccountId
             && t.DeviceId == request.DeviceId
             && t.RevokedUtc == null
@@ -296,7 +303,7 @@ internal class AuthenticationProvider(
         return true;
     }
 
-    public async Task RevokeAllUserAuthTokensAsync(int userId)
+    public async Task RevokeAllUserAuthTokensAsync(Guid userId)
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var activeTokens = await _authTokenRepo.ListAsync(t =>
@@ -335,24 +342,24 @@ internal class AuthenticationProvider(
     private static List<Account> GetAccountModels(UserEntity userEntity) =>
         userEntity.Accounts?.Select(a => a.ToModel()).ToList() ?? [];
 
-    private static Account? FindAccountByPublicId(List<Account> accounts, Guid publicId) =>
-        accounts.FirstOrDefault(a => a.PublicId == publicId);
+    private static Account? FindAccountById(List<Account> accounts, Guid accountId) =>
+        accounts.FirstOrDefault(a => a.Id == accountId);
 
     private static string? GetClaimValue(JwtSecurityToken token, string claimType) =>
         token.Claims.FirstOrDefault(c => c.Type == claimType)?.Value;
 
     private static List<Claim> BuildTokenClaims(
-        Guid userPublicId,
+        Guid userId,
         string jti,
         DateTime issuedAt,
         string deviceId,
         List<Account> accounts,
-        Guid? signedInAccountPublicId
+        Guid? signedInAccountId
     )
     {
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, userPublicId.ToString()),
+            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new(JwtRegisteredClaimNames.Jti, jti),
             new(
                 JwtRegisteredClaimNames.Iat,
@@ -364,15 +371,15 @@ internal class AuthenticationProvider(
 
         foreach (var account in accounts)
         {
-            claims.Add(new Claim(UserConstants.ACCOUNT_ID_CLAIM, account.PublicId.ToString()));
+            claims.Add(new Claim(UserConstants.ACCOUNT_ID_CLAIM, account.Id.ToString()));
         }
 
-        if (signedInAccountPublicId.HasValue)
+        if (signedInAccountId.HasValue)
         {
             claims.Add(
                 new Claim(
                     UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM,
-                    signedInAccountPublicId.Value.ToString()
+                    signedInAccountId.Value.ToString()
                 )
             );
         }
@@ -391,11 +398,11 @@ internal class AuthenticationProvider(
         );
         if (
             !string.IsNullOrEmpty(signedInAccountIdClaim)
-            && Guid.TryParse(signedInAccountIdClaim, out var accountPublicId)
+            && Guid.TryParse(signedInAccountIdClaim, out var accountId)
         )
         {
             var matchingAccount = userEntity.Accounts?.FirstOrDefault(a =>
-                a.PublicId == accountPublicId
+                a.Id == accountId
             );
             if (matchingAccount != null)
             {
@@ -403,8 +410,8 @@ internal class AuthenticationProvider(
             }
 
             _logger.LogWarning(
-                "Account with PublicId {AccountPublicId} not found in user's accounts during token validation",
-                accountPublicId
+                "Account with Id {AccountId} not found in user's accounts during token validation",
+                accountId
             );
         }
 
@@ -412,8 +419,8 @@ internal class AuthenticationProvider(
     }
 
     private async Task RevokeExistingTokensForUserAccountDeviceAsync(
-        int userId,
-        int? accountId,
+        Guid userId,
+        Guid? accountId,
         string deviceId
     )
     {

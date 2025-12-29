@@ -4,6 +4,7 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
+using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.UnitTests.ClassData;
 using Corely.IAM.Users.Entities;
@@ -35,61 +36,58 @@ public class GroupProcessorTests
         );
     }
 
-    private async Task<int> CreateAccountAsync()
+    private async Task<AccountEntity> CreateAccountAsync()
     {
-        var accountId = _fixture.Create<int>();
-        var account = new AccountEntity { Id = accountId };
+        var account = new AccountEntity { Id = Guid.CreateVersion7() };
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var created = await accountRepo.CreateAsync(account);
-        return created.Id;
+        return created;
     }
 
-    private async Task<int> CreateUserAsync(int accountId, params int[] groupIds)
+    private async Task<UserEntity> CreateUserAsync(Guid accountId, params Guid[] groupIds)
     {
-        var userId = _fixture.Create<int>();
         var user = new UserEntity
         {
-            Id = userId,
+            Id = Guid.CreateVersion7(),
             Groups = groupIds?.Select(g => new GroupEntity { Id = g })?.ToList() ?? [],
             Accounts = [new AccountEntity { Id = accountId }],
         };
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var created = await userRepo.CreateAsync(user);
-        return created.Id;
+        return created;
     }
 
-    private async Task<int> CreateRoleAsync(int accountId, params int[] groupIds)
+    private async Task<RoleEntity> CreateRoleAsync(Guid accountId, params Guid[] groupIds)
     {
-        var roleId = _fixture.Create<int>();
         var role = new RoleEntity
         {
-            Id = roleId,
+            Id = Guid.CreateVersion7(),
             Groups = groupIds?.Select(g => new GroupEntity { Id = g })?.ToList() ?? [],
             AccountId = accountId,
             Account = new AccountEntity { Id = accountId },
         };
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var created = await roleRepo.CreateAsync(role);
-        return created.Id;
+        return created;
     }
 
-    private async Task<(int GroupId, int AccountId)> CreateGroupAsync()
+    private async Task<(GroupEntity Group, AccountEntity Account)> CreateGroupAsync()
     {
-        var accountId = await CreateAccountAsync();
+        var account = await CreateAccountAsync();
         var group = new GroupEntity
         {
             Name = VALID_GROUP_NAME,
-            AccountId = accountId,
-            Account = new AccountEntity { Id = accountId },
+            AccountId = account.Id,
+            Account = new AccountEntity { Id = account.Id },
         };
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var created = await groupRepo.CreateAsync(group);
-        return (created.Id, accountId);
+        return (created, account);
     }
 
-    private async Task<(int GroupId, int AccountId)> CreateGroupWithUsersAsync(params int[] userIds)
+    private async Task<(GroupEntity Group, AccountEntity Account)> CreateGroupWithUsersAsync(params Guid[] userIds)
     {
-        var accountId = await CreateAccountAsync();
+        var account = await CreateAccountAsync();
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var users = new List<UserEntity>();
         foreach (var userId in userIds)
@@ -104,19 +102,19 @@ public class GroupProcessorTests
         var group = new GroupEntity
         {
             Name = VALID_GROUP_NAME,
-            AccountId = accountId,
-            Account = new AccountEntity { Id = accountId },
+            AccountId = account.Id,
+            Account = new AccountEntity { Id = account.Id },
             Users = users,
         };
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var created = await groupRepo.CreateAsync(group);
-        return (created.Id, accountId);
+        return (created, account);
     }
 
     [Fact]
     public async Task CreateGroupAsync_Fails_WhenAccountDoesNotExist()
     {
-        var request = new CreateGroupRequest(VALID_GROUP_NAME, _fixture.Create<int>());
+        var request = new CreateGroupRequest(VALID_GROUP_NAME, Guid.CreateVersion7());
 
         var result = await _groupProcessor.CreateGroupAsync(request);
 
@@ -126,7 +124,8 @@ public class GroupProcessorTests
     [Fact]
     public async Task CreateGroupAsync_Fails_WhenGroupExists()
     {
-        var request = new CreateGroupRequest(VALID_GROUP_NAME, await CreateAccountAsync());
+        var account = await CreateAccountAsync();
+        var request = new CreateGroupRequest(VALID_GROUP_NAME, account.Id);
         await _groupProcessor.CreateGroupAsync(request);
 
         var result = await _groupProcessor.CreateGroupAsync(request);
@@ -137,8 +136,8 @@ public class GroupProcessorTests
     [Fact]
     public async Task CreateGroupAsync_ReturnsCreateGroupResult()
     {
-        var accountId = await CreateAccountAsync();
-        var request = new CreateGroupRequest(VALID_GROUP_NAME, accountId);
+        var account = await CreateAccountAsync();
+        var request = new CreateGroupRequest(VALID_GROUP_NAME, account.Id);
 
         var result = await _groupProcessor.CreateGroupAsync(request);
 
@@ -152,7 +151,7 @@ public class GroupProcessorTests
         );
         Assert.NotNull(groupEntity);
         //Assert.NotNull(groupEntity.Account); // Account not available for memory mock repo
-        Assert.Equal(accountId, groupEntity.AccountId);
+        Assert.Equal(account.Id, groupEntity.AccountId);
     }
 
     [Fact]
@@ -167,7 +166,8 @@ public class GroupProcessorTests
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]
     public async Task CreateGroupAsync_Throws_WithInvalidGroupName(string groupName)
     {
-        var request = new CreateGroupRequest(groupName, await CreateAccountAsync());
+        var account = await CreateAccountAsync();
+        var request = new CreateGroupRequest(groupName, account.Id);
 
         var ex = await Record.ExceptionAsync(() => _groupProcessor.CreateGroupAsync(request));
 
@@ -178,7 +178,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task AddUsersToGroupAsync_Fails_WhenGroupDoesNotExist()
     {
-        var request = new AddUsersToGroupRequest([], _fixture.Create<int>());
+        var request = new AddUsersToGroupRequest([], Guid.CreateVersion7());
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
         Assert.Equal(AddUsersToGroupResultCode.GroupNotFoundError, result.ResultCode);
     }
@@ -186,8 +186,8 @@ public class GroupProcessorTests
     [Fact]
     public async Task AddUsersToGroupAsync_Fails_WhenUsersNotProvided()
     {
-        var (groupId, _) = await CreateGroupAsync();
-        var request = new AddUsersToGroupRequest([], groupId);
+        var (group, _) = await CreateGroupAsync();
+        var request = new AddUsersToGroupRequest([], group.Id);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -201,9 +201,9 @@ public class GroupProcessorTests
     [Fact]
     public async Task AddUsersToGroupAsync_Succeeds_WhenUsersAdded()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var userId = await CreateUserAsync(accountId);
-        var request = new AddUsersToGroupRequest([userId], groupId);
+        var (group, account) = await CreateGroupAsync();
+        var user = await CreateUserAsync(account.Id);
+        var request = new AddUsersToGroupRequest([user.Id], group.Id);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -211,22 +211,22 @@ public class GroupProcessorTests
 
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var groupEntity = await groupRepo.GetAsync(
-            g => g.Id == groupId,
+            g => g.Id == group.Id,
             include: q => q.Include(g => g.Users)
         );
 
         Assert.NotNull(groupEntity);
         Assert.NotNull(groupEntity.Users);
-        Assert.Contains(groupEntity.Users, u => u.Id == userId);
+        Assert.Contains(groupEntity.Users, u => u.Id == user.Id);
     }
 
     [Fact]
     public async Task AddUsersToGroupAsync_PartiallySucceeds_WhenSomeUsersExistInGroup()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var existingUserId = await CreateUserAsync(accountId, groupId);
-        var newUserId = await CreateUserAsync(accountId);
-        var request = new AddUsersToGroupRequest([existingUserId, newUserId], groupId);
+        var (group, account) = await CreateGroupAsync();
+        var existingUser = await CreateUserAsync(account.Id, group.Id);
+        var newUser = await CreateUserAsync(account.Id);
+        var request = new AddUsersToGroupRequest([existingUser.Id, newUser.Id], group.Id);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -237,15 +237,15 @@ public class GroupProcessorTests
         );
         Assert.Equal(1, result.AddedUserCount);
         Assert.NotEmpty(result.InvalidUserIds);
-        Assert.Contains(existingUserId, result.InvalidUserIds);
+        Assert.Contains(existingUser.Id, result.InvalidUserIds);
     }
 
     [Fact]
     public async Task AddUsersToGroupAsync_PartiallySucceeds_WhenSomeUsersDoNotExist()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var userId = await CreateUserAsync(accountId);
-        var request = new AddUsersToGroupRequest([userId, -1], groupId);
+        var (group, account) = await CreateGroupAsync();
+        var user = await CreateUserAsync(account.Id);
+        var request = new AddUsersToGroupRequest([user.Id, Guid.Empty], group.Id);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -255,18 +255,18 @@ public class GroupProcessorTests
             result.Message
         );
         Assert.NotEmpty(result.InvalidUserIds);
-        Assert.Contains(-1, result.InvalidUserIds);
+        Assert.Contains(Guid.Empty, result.InvalidUserIds);
     }
 
     [Fact]
     public async Task AddUsersToGroupAsync_PartiallySucceeds_WhenSomeUsersDoNotHaveGroupAccount()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var userIdSameAccount = await CreateUserAsync(accountId);
-        var userIdDifferentAccount = await CreateUserAsync(accountId + 1);
+        var (group, account) = await CreateGroupAsync();
+        var userSameAccount = await CreateUserAsync(account.Id);
+        var userDifferentAccount = await CreateUserAsync(Guid.CreateVersion7());
         var request = new AddUsersToGroupRequest(
-            [userIdSameAccount, userIdDifferentAccount],
-            groupId
+            [userSameAccount.Id, userDifferentAccount.Id],
+            group.Id
         );
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
@@ -278,19 +278,19 @@ public class GroupProcessorTests
         );
         Assert.Equal(1, result.AddedUserCount);
         Assert.NotEmpty(result.InvalidUserIds);
-        Assert.Contains(userIdDifferentAccount, result.InvalidUserIds);
+        Assert.Contains(userDifferentAccount.Id, result.InvalidUserIds);
     }
 
     [Fact]
     public async Task AddUsersToGroupAsync_Fails_WhenAllUsersExistInGroup()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var userIds = new List<int>()
+        var (group, account) = await CreateGroupAsync();
+        var userIds = new List<Guid>()
         {
-            await CreateUserAsync(accountId, groupId),
-            await CreateUserAsync(accountId, groupId),
+            (await CreateUserAsync(account.Id, group.Id)).Id,
+            (await CreateUserAsync(account.Id, group.Id)).Id,
         };
-        var request = new AddUsersToGroupRequest(userIds, groupId);
+        var request = new AddUsersToGroupRequest(userIds, group.Id);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -306,9 +306,9 @@ public class GroupProcessorTests
     [Fact]
     public async Task AddUsersToGroupAsync_Fails_WhenAllUsersDoNotExist()
     {
-        var (groupId, _) = await CreateGroupAsync();
-        var userIds = _fixture.CreateMany<int>().ToList();
-        var request = new AddUsersToGroupRequest(userIds, groupId);
+        var (group, _) = await CreateGroupAsync();
+        var userIds = _fixture.CreateMany<Guid>().ToList();
+        var request = new AddUsersToGroupRequest(userIds, group.Id);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -324,13 +324,13 @@ public class GroupProcessorTests
     [Fact]
     public async Task AddUsersToGroupAsync_Fails_WhenAllUsersDoNotHaveGroupAccount()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var userIds = new List<int>()
+        var (group, _) = await CreateGroupAsync();
+        var userIds = new List<Guid>()
         {
-            await CreateUserAsync(accountId + 1),
-            await CreateUserAsync(accountId + 2),
+            (await CreateUserAsync(Guid.CreateVersion7())).Id,
+            (await CreateUserAsync(Guid.CreateVersion7())).Id,
         };
-        var request = new AddUsersToGroupRequest(userIds, groupId);
+        var request = new AddUsersToGroupRequest(userIds, group.Id);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -346,7 +346,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task AssignRolesToGroupAsync_Fails_WhenGroupDoesNotExist()
     {
-        var request = new AssignRolesToGroupRequest([], _fixture.Create<int>());
+        var request = new AssignRolesToGroupRequest([], Guid.CreateVersion7());
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
         Assert.Equal(AssignRolesToGroupResultCode.GroupNotFoundError, result.ResultCode);
     }
@@ -354,8 +354,8 @@ public class GroupProcessorTests
     [Fact]
     public async Task AssignRolesToGroupAsync_Fails_WhenRolesNotProvided()
     {
-        var (groupId, _) = await CreateGroupAsync();
-        var request = new AssignRolesToGroupRequest([], groupId);
+        var (group, _) = await CreateGroupAsync();
+        var request = new AssignRolesToGroupRequest([], group.Id);
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
 
@@ -369,9 +369,9 @@ public class GroupProcessorTests
     [Fact]
     public async Task AssignRolesToGroupAsync_Succeeds_WhenRolesAssigned()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var roleId = await CreateRoleAsync(accountId);
-        var request = new AssignRolesToGroupRequest([roleId], groupId);
+        var (group, account) = await CreateGroupAsync();
+        var role = await CreateRoleAsync(account.Id);
+        var request = new AssignRolesToGroupRequest([role.Id], group.Id);
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
 
@@ -379,22 +379,22 @@ public class GroupProcessorTests
 
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var groupEntity = await groupRepo.GetAsync(
-            g => g.Id == groupId,
+            g => g.Id == group.Id,
             include: q => q.Include(g => g.Roles)
         );
 
         Assert.NotNull(groupEntity);
         Assert.NotNull(groupEntity.Roles);
-        Assert.Contains(groupEntity.Roles, r => r.Id == roleId);
+        Assert.Contains(groupEntity.Roles, r => r.Id == role.Id);
     }
 
     [Fact]
     public async Task AssignRolesToGroupAsync_PartiallySucceeds_WhenSomeRolesExistForGroup()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var existingRoleId = await CreateRoleAsync(accountId, groupId);
-        var newRoleId = await CreateRoleAsync(accountId, groupId + 1);
-        var request = new AssignRolesToGroupRequest([existingRoleId, newRoleId], groupId);
+        var (group, account) = await CreateGroupAsync();
+        var existingRole = await CreateRoleAsync(account.Id, group.Id);
+        var newRole = await CreateRoleAsync(account.Id, Guid.CreateVersion7());
+        var request = new AssignRolesToGroupRequest([existingRole.Id, newRole.Id], group.Id);
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
 
@@ -405,15 +405,16 @@ public class GroupProcessorTests
         );
         Assert.Equal(1, result.AddedRoleCount);
         Assert.NotEmpty(result.InvalidRoleIds);
-        Assert.Contains(existingRoleId, result.InvalidRoleIds);
+        Assert.Contains(existingRole.Id, result.InvalidRoleIds);
     }
 
     [Fact]
     public async Task AssignRolesToGroupAsync_PartiallySucceeds_WhenSomeRolesDoNotExist()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var roleId = await CreateRoleAsync(accountId);
-        var request = new AssignRolesToGroupRequest([roleId, -1], groupId);
+        var (group, account) = await CreateGroupAsync();
+        var role = await CreateRoleAsync(account.Id);
+        var invalidRoleId = Guid.CreateVersion7();
+        var request = new AssignRolesToGroupRequest([role.Id, invalidRoleId], group.Id);
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
 
@@ -423,18 +424,18 @@ public class GroupProcessorTests
             result.Message
         );
         Assert.NotEmpty(result.InvalidRoleIds);
-        Assert.Contains(-1, result.InvalidRoleIds);
+        Assert.Contains(invalidRoleId, result.InvalidRoleIds);
     }
 
     [Fact]
     public async Task AssignRolesToGroupAsync_PartiallySucceeds_WhenSomeRolesBelongToDifferentAccount()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var roleIdSameAccount = await CreateRoleAsync(accountId);
-        var roleIdDifferentAccount = await CreateRoleAsync(accountId + 1);
+        var (group, account) = await CreateGroupAsync();
+        var roleSameAccount = await CreateRoleAsync(account.Id);
+        var roleDifferentAccount = await CreateRoleAsync(Guid.CreateVersion7());
         var request = new AssignRolesToGroupRequest(
-            [roleIdSameAccount, roleIdDifferentAccount],
-            groupId
+            [roleSameAccount.Id, roleDifferentAccount.Id],
+            group.Id
         );
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
@@ -446,19 +447,19 @@ public class GroupProcessorTests
         );
         Assert.Equal(1, result.AddedRoleCount);
         Assert.NotEmpty(result.InvalidRoleIds);
-        Assert.Contains(roleIdDifferentAccount, result.InvalidRoleIds);
+        Assert.Contains(roleDifferentAccount.Id, result.InvalidRoleIds);
     }
 
     [Fact]
     public async Task AssignRolesToGroupAsync_Fails_WhenAllRolesExistForGroup()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var roleIds = new List<int>
+        var (group, account) = await CreateGroupAsync();
+        var roleIds = new List<Guid>
         {
-            await CreateRoleAsync(accountId, groupId),
-            await CreateRoleAsync(accountId, groupId),
+            (await CreateRoleAsync(account.Id, group.Id)).Id,
+            (await CreateRoleAsync(account.Id, group.Id)).Id,
         };
-        var request = new AssignRolesToGroupRequest(roleIds, groupId);
+        var request = new AssignRolesToGroupRequest(roleIds, group.Id);
         await _groupProcessor.AssignRolesToGroupAsync(request);
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
@@ -474,9 +475,9 @@ public class GroupProcessorTests
     [Fact]
     public async Task AssignRolesToGroupAsync_Fails_WhenAllRolesDoNotExist()
     {
-        var (groupId, _) = await CreateGroupAsync();
-        var roleIds = _fixture.CreateMany<int>().ToList();
-        var request = new AssignRolesToGroupRequest(roleIds, groupId);
+        var (group, _) = await CreateGroupAsync();
+        var roleIds = _fixture.CreateMany<Guid>().ToList();
+        var request = new AssignRolesToGroupRequest(roleIds, group.Id);
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
 
@@ -492,13 +493,13 @@ public class GroupProcessorTests
     [Fact]
     public async Task AssignRolesToGroupAsync_Fails_WhenAllRolesBelongToDifferentAccount()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var roleIds = new List<int>()
+        var (group, _) = await CreateGroupAsync();
+        var roleIds = new List<Guid>()
         {
-            await CreateRoleAsync(accountId + 1),
-            await CreateRoleAsync(accountId + 2),
+            (await CreateRoleAsync(Guid.CreateVersion7())).Id,
+            (await CreateRoleAsync(Guid.CreateVersion7())).Id,
         };
-        var request = new AssignRolesToGroupRequest(roleIds, groupId);
+        var request = new AssignRolesToGroupRequest(roleIds, group.Id);
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
 
@@ -514,21 +515,21 @@ public class GroupProcessorTests
     [Fact]
     public async Task DeleteGroupAsync_ReturnsSuccess_WhenGroupExists()
     {
-        var (groupId, _) = await CreateGroupAsync();
+        var (group, _) = await CreateGroupAsync();
 
-        var result = await _groupProcessor.DeleteGroupAsync(groupId);
+        var result = await _groupProcessor.DeleteGroupAsync(group.Id);
 
         Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
 
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
-        var groupEntity = await groupRepo.GetAsync(g => g.Id == groupId);
+        var groupEntity = await groupRepo.GetAsync(g => g.Id == group.Id);
         Assert.Null(groupEntity);
     }
 
     [Fact]
     public async Task DeleteGroupAsync_ReturnsNotFound_WhenGroupDoesNotExist()
     {
-        var result = await _groupProcessor.DeleteGroupAsync(_fixture.Create<int>());
+        var result = await _groupProcessor.DeleteGroupAsync(Guid.CreateVersion7());
 
         Assert.Equal(DeleteGroupResultCode.GroupNotFoundError, result.ResultCode);
     }
@@ -536,7 +537,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_Fails_WhenGroupDoesNotExist()
     {
-        var request = new RemoveUsersFromGroupRequest([1, 2], _fixture.Create<int>());
+        var request = new RemoveUsersFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
 
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
@@ -546,11 +547,11 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_Succeeds_WhenUsersRemoved()
     {
-        var accountId = await CreateAccountAsync();
-        var userId = await CreateUserAsync(accountId);
-        var (groupId, _) = await CreateGroupWithUsersAsync(userId);
+        var account = await CreateAccountAsync();
+        var user = await CreateUserAsync(account.Id);
+        var (group, _) = await CreateGroupWithUsersAsync(user.Id);
 
-        var request = new RemoveUsersFromGroupRequest([userId], groupId);
+        var request = new RemoveUsersFromGroupRequest([user.Id], group.Id);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
         Assert.Equal(RemoveUsersFromGroupResultCode.Success, result.ResultCode);
@@ -561,30 +562,32 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_Succeeds_WhenNoUsersInGroup()
     {
-        var (groupId, _) = await CreateGroupAsync();
+        var (group, _) = await CreateGroupAsync();
 
-        var request = new RemoveUsersFromGroupRequest([9999], groupId);
+        var invalidUserId = Guid.CreateVersion7();
+        var request = new RemoveUsersFromGroupRequest([invalidUserId], group.Id);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
         Assert.Equal(RemoveUsersFromGroupResultCode.PartialSuccess, result.ResultCode);
         Assert.Equal(0, result.RemovedUserCount);
-        Assert.Contains(9999, result.InvalidUserIds);
+        Assert.Contains(invalidUserId, result.InvalidUserIds);
     }
 
     [Fact]
     public async Task RemoveUsersFromGroupAsync_PartiallySucceeds_WhenSomeUsersNotInGroup()
     {
-        var accountId = await CreateAccountAsync();
-        var userId = await CreateUserAsync(accountId);
-        var (groupId, _) = await CreateGroupWithUsersAsync(userId);
+        var account = await CreateAccountAsync();
+        var user = await CreateUserAsync(account.Id);
+        var (group, _) = await CreateGroupWithUsersAsync(user.Id);
 
-        var request = new RemoveUsersFromGroupRequest([userId, 9999], groupId);
+        var invalidUserId = Guid.CreateVersion7();
+        var request = new RemoveUsersFromGroupRequest([user.Id, invalidUserId], group.Id);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
         Assert.Equal(RemoveUsersFromGroupResultCode.PartialSuccess, result.ResultCode);
         Assert.Equal(1, result.RemovedUserCount);
-        Assert.Contains(9999, result.InvalidUserIds);
-        Assert.DoesNotContain(userId, result.InvalidUserIds);
+        Assert.Contains(invalidUserId, result.InvalidUserIds);
+        Assert.DoesNotContain(user.Id, result.InvalidUserIds);
     }
 
     [Fact]
@@ -599,27 +602,24 @@ public class GroupProcessorTests
     }
 
     private async Task<(
-        int GroupId,
-        int AccountId,
-        List<int> UserIds
+        Guid GroupId,
+        Guid AccountId,
+        List<Guid> UserIds
     )> CreateGroupWithOwnerRoleAndUsersAsync(int userCount, bool assignOwnerRoleToGroup = true)
     {
-        var accountId = await CreateAccountAsync();
+        var account = await CreateAccountAsync();
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
-        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
-
-        var account = await accountRepo.GetAsync(a => a.Id == accountId);
 
         // Create users in the account
-        var userIds = new List<int>();
+        var userIds = new List<Guid>();
         var users = new List<UserEntity>();
         for (int i = 0; i < userCount; i++)
         {
             var user = new UserEntity
             {
-                Id = _fixture.Create<int>(),
+                Id = Guid.CreateVersion7(),
                 Username = _fixture.Create<string>(),
                 Accounts = account != null ? [account] : [],
                 Groups = [],
@@ -633,9 +633,9 @@ public class GroupProcessorTests
         // Create group with users
         var group = new GroupEntity
         {
-            Id = _fixture.Create<int>(),
+            Id = Guid.CreateVersion7(),
             Name = VALID_GROUP_NAME,
-            AccountId = accountId,
+            AccountId = account!.Id,
             Users = users,
             Roles = [],
         };
@@ -646,9 +646,9 @@ public class GroupProcessorTests
         {
             var ownerRole = new RoleEntity
             {
-                Id = _fixture.Create<int>(),
-                AccountId = accountId,
-                Name = Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME,
+                Id = Guid.CreateVersion7(),
+                AccountId = account.Id,
+                Name = RoleConstants.OWNER_ROLE_NAME,
                 IsSystemDefined = true,
                 Users = [],
                 Groups = [createdGroup],
@@ -661,10 +661,10 @@ public class GroupProcessorTests
             await groupRepo.UpdateAsync(createdGroup);
         }
 
-        return (createdGroup.Id, accountId, userIds);
+        return (createdGroup.Id, account.Id, userIds);
     }
 
-    private async Task AssignDirectOwnerRoleToUserAsync(int userId, int accountId)
+    private async Task AssignDirectOwnerRoleToUserAsync(Guid userId, Guid accountId)
     {
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
@@ -673,9 +673,9 @@ public class GroupProcessorTests
 
         var ownerRole = new RoleEntity
         {
-            Id = _fixture.Create<int>(),
+            Id = Guid.CreateVersion7(),
             AccountId = accountId,
-            Name = Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME,
+            Name = RoleConstants.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = [user!],
             Groups = [],
@@ -688,7 +688,7 @@ public class GroupProcessorTests
     public async Task RemoveUsersFromGroupAsync_Succeeds_WhenGroupHasNoOwnerRole()
     {
         // Create group WITHOUT owner role
-        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+        var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
             userCount: 2,
             assignOwnerRoleToGroup: false
         );
@@ -703,7 +703,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_Succeeds_WhenGroupHasOwnerRoleAndSomeUsersRemain()
     {
-        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+        var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
             userCount: 3
         );
 
@@ -736,7 +736,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_Fails_WhenAllUsersRemovedAndNoneHaveOwnershipElsewhere()
     {
-        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+        var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
             userCount: 2
         );
 
@@ -754,7 +754,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveUsersFromGroupAsync_Fails_WhenSingleUserRemovedFromOwnerGroupWithNoOtherOwnership()
     {
-        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+        var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
             userCount: 1
         );
 
@@ -788,7 +788,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task DeleteGroupAsync_Succeeds_WhenGroupHasNoOwnerRole()
     {
-        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+        var (groupId, _, _) = await CreateGroupWithOwnerRoleAndUsersAsync(
             userCount: 2,
             assignOwnerRoleToGroup: false
         );
@@ -802,15 +802,15 @@ public class GroupProcessorTests
     public async Task DeleteGroupAsync_Succeeds_WhenGroupHasOwnerRoleButNoUsers()
     {
         // Create a group with owner role but no users
-        var accountId = await CreateAccountAsync();
+        var account = await CreateAccountAsync();
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
 
         var group = new GroupEntity
         {
-            Id = _fixture.Create<int>(),
+            Id = Guid.CreateVersion7(),
             Name = VALID_GROUP_NAME,
-            AccountId = accountId,
+            AccountId = account.Id,
             Users = [],
             Roles = [],
         };
@@ -818,9 +818,9 @@ public class GroupProcessorTests
 
         var ownerRole = new RoleEntity
         {
-            Id = _fixture.Create<int>(),
-            AccountId = accountId,
-            Name = Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME,
+            Id = Guid.CreateVersion7(),
+            AccountId = account.Id,
+            Name = RoleConstants.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = [],
             Groups = [createdGroup],
@@ -853,7 +853,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task DeleteGroupAsync_Fails_WhenGroupHasOwnerRoleAndNoUserHasOwnershipElsewhere()
     {
-        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+        var (groupId, _, _) = await CreateGroupWithOwnerRoleAndUsersAsync(
             userCount: 2
         );
 
@@ -868,7 +868,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task DeleteGroupAsync_Fails_WhenSingleUserInOwnerGroupWithNoOtherOwnership()
     {
-        var (groupId, accountId, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
+        var (groupId, _, _) = await CreateGroupWithOwnerRoleAndUsersAsync(
             userCount: 1
         );
 
@@ -896,7 +896,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveRolesFromGroupAsync_Fails_WhenGroupDoesNotExist()
     {
-        var request = new RemoveRolesFromGroupRequest([1, 2], _fixture.Create<int>());
+        var request = new RemoveRolesFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
 
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
 
@@ -906,9 +906,9 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveRolesFromGroupAsync_Fails_WhenRolesNotAssignedToGroup()
     {
-        var (groupId, _) = await CreateGroupAsync();
+        var (group, _) = await CreateGroupAsync();
 
-        var request = new RemoveRolesFromGroupRequest([9999], groupId);
+        var request = new RemoveRolesFromGroupRequest([Guid.CreateVersion7()], group.Id);
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
 
         Assert.Equal(RemoveRolesFromGroupResultCode.InvalidRoleIdsError, result.ResultCode);
@@ -917,18 +917,15 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveRolesFromGroupAsync_Succeeds_WhenNonOwnerRoleRemoved()
     {
-        var (groupId, accountId) = await CreateGroupAsync();
-        var roleId = await CreateRoleAsync(accountId, groupId);
+        var (group, account) = await CreateGroupAsync();
+        var role = await CreateRoleAsync(account.Id, group.Id);
 
         // Assign role to group
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
-        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
-        var group = await groupRepo.GetAsync(g => g.Id == groupId);
-        var role = await roleRepo.GetAsync(r => r.Id == roleId);
-        group!.Roles = [role!];
+        group!.Roles = [role];
         await groupRepo.UpdateAsync(group);
 
-        var request = new RemoveRolesFromGroupRequest([roleId], groupId);
+        var request = new RemoveRolesFromGroupRequest([role.Id], group.Id);
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
 
         Assert.Equal(RemoveRolesFromGroupResultCode.Success, result.ResultCode);
@@ -939,15 +936,15 @@ public class GroupProcessorTests
     public async Task RemoveRolesFromGroupAsync_Succeeds_WhenOwnerRoleRemovedFromGroupWithNoUsers()
     {
         // Create group with owner role but no users
-        var accountId = await CreateAccountAsync();
+        var account = await CreateAccountAsync();
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
 
         var group = new GroupEntity
         {
-            Id = _fixture.Create<int>(),
+            Id = Guid.CreateVersion7(),
             Name = VALID_GROUP_NAME,
-            AccountId = accountId,
+            AccountId = account.Id,
             Users = [],
             Roles = [],
         };
@@ -955,9 +952,9 @@ public class GroupProcessorTests
 
         var ownerRole = new RoleEntity
         {
-            Id = _fixture.Create<int>(),
-            AccountId = accountId,
-            Name = Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME,
+            Id = Guid.CreateVersion7(),
+            AccountId = account.Id,
+            Name = RoleConstants.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = [],
             Groups = [createdGroup],
@@ -991,7 +988,7 @@ public class GroupProcessorTests
             include: q => q.Include(g => g.Roles)
         );
         var ownerRoleId = group!
-            .Roles!.First(r => r.Name == Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME)
+            .Roles!.First(r => r.Name == RoleConstants.OWNER_ROLE_NAME)
             .Id;
 
         var request = new RemoveRolesFromGroupRequest([ownerRoleId], groupId);
@@ -1017,7 +1014,7 @@ public class GroupProcessorTests
             include: q => q.Include(g => g.Roles)
         );
         var ownerRoleId = group!
-            .Roles!.First(r => r.Name == Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME)
+            .Roles!.First(r => r.Name == RoleConstants.OWNER_ROLE_NAME)
             .Id;
 
         var request = new RemoveRolesFromGroupRequest([ownerRoleId], groupId);
@@ -1050,7 +1047,7 @@ public class GroupProcessorTests
 
         var regularRole = new RoleEntity
         {
-            Id = _fixture.Create<int>(),
+            Id = Guid.CreateVersion7(),
             AccountId = accountId,
             Name = "RegularRole",
             IsSystemDefined = false,
@@ -1063,7 +1060,7 @@ public class GroupProcessorTests
         await groupRepo.UpdateAsync(group);
 
         var ownerRoleId = group
-            .Roles.First(r => r.Name == Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME)
+            .Roles.First(r => r.Name == RoleConstants.OWNER_ROLE_NAME)
             .Id;
 
         var request = new RemoveRolesFromGroupRequest(

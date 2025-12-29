@@ -44,6 +44,6 @@ internal class UserContextProvider(IAuthenticationProvider authenticationProvide
 
     public void SetUserContext(UserContext context) => _userContext = context;
 
-    public void ClearUserContext(int userId) =>
+    public void ClearUserContext(Guid userId) =>
         _userContext = _userContext?.User?.Id == userId ? null : _userContext;
 }

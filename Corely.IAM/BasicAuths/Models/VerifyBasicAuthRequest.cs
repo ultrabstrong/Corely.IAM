@@ -1,3 +1,3 @@
 ﻿namespace Corely.IAM.BasicAuths.Models;
 
-internal record VerifyBasicAuthRequest(int UserId, string Password);
+internal record VerifyBasicAuthRequest(Guid UserId, string Password);

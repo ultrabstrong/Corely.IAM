@@ -23,12 +23,11 @@ public class AccountProcessorLoggingDecoratorTests
     [Fact]
     public async Task CreateAccountAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new CreateAccountRequest("testaccount", 1);
+        var request = new CreateAccountRequest("testaccount", Guid.CreateVersion7());
         var expectedResult = new CreateAccountResult(
             CreateAccountResultCode.Success,
             string.Empty,
-            1,
-            Guid.NewGuid()
+            Guid.CreateVersion7()
         );
         _mockInnerProcessor.Setup(x => x.CreateAccountAsync(request)).ReturnsAsync(expectedResult);
 
@@ -42,7 +41,7 @@ public class AccountProcessorLoggingDecoratorTests
     [Fact]
     public async Task GetAccountAsyncById_DelegatesToInnerAndLogsResult()
     {
-        var accountId = 1;
+        var accountId = Guid.CreateVersion7();
         var expectedResult = new GetAccountResult(
             GetAccountResultCode.Success,
             string.Empty,
@@ -60,7 +59,7 @@ public class AccountProcessorLoggingDecoratorTests
     [Fact]
     public async Task RemoveUserFromAccountAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new RemoveUserFromAccountRequest(1, 5);
+        var request = new RemoveUserFromAccountRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var expectedResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.Success,
             string.Empty

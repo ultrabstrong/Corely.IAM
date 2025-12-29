@@ -16,8 +16,8 @@ internal class UserOwnershipProcessor(
     private readonly ILogger<UserOwnershipProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<IsSoleOwnerOfAccountResult> IsSoleOwnerOfAccountAsync(
-        int userId,
-        int accountId
+        Guid userId,
+        Guid accountId
     )
     {
         // Check if user has the owner role directly
@@ -98,9 +98,9 @@ internal class UserOwnershipProcessor(
     }
 
     public async Task<bool> HasOwnershipOutsideGroupAsync(
-        int userId,
-        int accountId,
-        int excludeGroupId
+        Guid userId,
+        Guid accountId,
+        Guid excludeGroupId
     )
     {
         // Check if user has the owner role directly assigned
@@ -150,9 +150,9 @@ internal class UserOwnershipProcessor(
     }
 
     public async Task<bool> AnyUserHasOwnershipOutsideGroupAsync(
-        IEnumerable<int> userIds,
-        int accountId,
-        int excludeGroupId
+        IEnumerable<Guid> userIds,
+        Guid accountId,
+        Guid excludeGroupId
     )
     {
         foreach (var userId in userIds)

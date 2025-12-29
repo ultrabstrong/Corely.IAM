@@ -1,5 +1,4 @@
-﻿using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Permissions.Models;
+﻿using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Validators;
 using Corely.IAM.UnitTests.ClassData;
 using FluentValidation.TestHelper;
@@ -25,7 +24,7 @@ public class PermissionValidatorTests
         var permission = new Permission
         {
             ResourceType = "group",
-            ResourceId = -1,
+            ResourceId = Guid.CreateVersion7(),
             Create = true,
         };
 
@@ -36,7 +35,7 @@ public class PermissionValidatorTests
     [Fact]
     public void PermissionValidator_HasValidationError_WhenNoCrudxFlagsSet()
     {
-        var permission = new Permission { ResourceType = "group", ResourceId = 0 };
+        var permission = new Permission { ResourceType = "group", ResourceId = Guid.Empty };
 
         var result = _validator.TestValidate(permission);
         result.ShouldHaveValidationErrorFor(x => x);
@@ -60,7 +59,7 @@ public class PermissionValidatorTests
         var permission = new Permission
         {
             ResourceType = "group",
-            ResourceId = 0,
+            ResourceId = Guid.Empty,
             Create = create,
             Read = read,
             Update = update,

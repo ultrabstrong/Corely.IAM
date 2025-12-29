@@ -78,7 +78,7 @@ public class RegistrationServiceTests
         _userContextProviderMock
             .Setup(x => x.GetUserContext())
             .Returns(
-                new UserContext(new User() { Id = 1 }, new Account() { Id = 1 }, "test-device", [])
+                new UserContext(new User() { Id = Guid.CreateVersion7() }, new Account() { Id = Guid.CreateVersion7() }, "test-device", [])
             );
 
         _registrationService = new RegistrationService(
@@ -104,7 +104,7 @@ public class RegistrationServiceTests
                     _createAccountResultCode,
                     string.Empty,
                     _fixture.Create<int>(),
-                    Guid.NewGuid()
+                    Guid.CreateVersion7()
                 )
             );
 

@@ -9,6 +9,5 @@ public enum CreateUserResultCode
 internal record CreateUserResult(
     CreateUserResultCode ResultCode,
     string Message,
-    int CreatedId,
-    Guid CreatedPublicId
+    Guid CreatedId
 );

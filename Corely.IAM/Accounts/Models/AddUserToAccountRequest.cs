@@ -1,3 +1,3 @@
 namespace Corely.IAM.Accounts.Models;
 
-public record AddUserToAccountRequest(int UserId, int AccountId);
+public record AddUserToAccountRequest(Guid UserId, Guid AccountId);

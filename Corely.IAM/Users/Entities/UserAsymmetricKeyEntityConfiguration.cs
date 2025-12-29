@@ -5,13 +5,16 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Corely.IAM.Users.Entities;
 
 internal class UserAsymmetricKeyEntityConfiguration
-    : EntityConfigurationBase<UserAsymmetricKeyEntity, int>
+    : EntityConfigurationBase<UserAsymmetricKeyEntity>
 {
     public UserAsymmetricKeyEntityConfiguration(IDbTypes dbTypes)
         : base(dbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<UserAsymmetricKeyEntity> builder)
     {
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id).ValueGeneratedNever();
+
         builder.HasIndex(e => new { e.UserId, e.KeyUsedFor }).IsUnique();
 
         builder.Property(m => m.KeyUsedFor).HasConversion<string>();

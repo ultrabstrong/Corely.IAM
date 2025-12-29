@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Corely.IAM.DataAccessMigrations.Migrations
 {
     /// <inheritdoc />
-    public partial class AddAccountAndUserPublicIds : Migration
+    public partial class AddAccountAndUserIds : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

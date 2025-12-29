@@ -31,8 +31,7 @@ public class RegistrationServiceLoggingDecoratorTests
         var expectedResult = new RegisterUserResult(
             RegisterUserResultCode.Success,
             string.Empty,
-            1,
-            Guid.NewGuid()
+            Guid.CreateVersion7()
         );
         _mockInnerService.Setup(x => x.RegisterUserAsync(request)).ReturnsAsync(expectedResult);
 
@@ -50,7 +49,7 @@ public class RegistrationServiceLoggingDecoratorTests
         var expectedResult = new RegisterAccountResult(
             RegisterAccountResultCode.Success,
             string.Empty,
-            Guid.NewGuid()
+            Guid.CreateVersion7()
         );
         _mockInnerService.Setup(x => x.RegisterAccountAsync(request)).ReturnsAsync(expectedResult);
 
@@ -68,7 +67,7 @@ public class RegistrationServiceLoggingDecoratorTests
         var expectedResult = new RegisterGroupResult(
             CreateGroupResultCode.Success,
             string.Empty,
-            1
+            Guid.CreateVersion7()
         );
         _mockInnerService.Setup(x => x.RegisterGroupAsync(request)).ReturnsAsync(expectedResult);
 
@@ -83,7 +82,7 @@ public class RegistrationServiceLoggingDecoratorTests
     public async Task RegisterRoleAsync_DelegatesToInnerAndLogsResult()
     {
         var request = new RegisterRoleRequest("testrole");
-        var expectedResult = new RegisterRoleResult(CreateRoleResultCode.Success, string.Empty, 1);
+        var expectedResult = new RegisterRoleResult(CreateRoleResultCode.Success, string.Empty, Guid.CreateVersion7());
         _mockInnerService.Setup(x => x.RegisterRoleAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.RegisterRoleAsync(request);
@@ -98,7 +97,7 @@ public class RegistrationServiceLoggingDecoratorTests
     {
         var request = new RegisterPermissionRequest(
             "Resource",
-            1,
+            Guid.CreateVersion7(),
             true,
             true,
             true,
@@ -109,7 +108,7 @@ public class RegistrationServiceLoggingDecoratorTests
         var expectedResult = new RegisterPermissionResult(
             CreatePermissionResultCode.Success,
             string.Empty,
-            1
+            request.ResourceId
         );
         _mockInnerService
             .Setup(x => x.RegisterPermissionAsync(request))
@@ -125,7 +124,7 @@ public class RegistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task RegisterUserWithAccountAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new RegisterUserWithAccountRequest(1);
+        var request = new RegisterUserWithAccountRequest(Guid.CreateVersion7());
         var expectedResult = new RegisterUserWithAccountResult(
             RegisterUserWithAccountResultCode.Success,
             string.Empty
@@ -144,7 +143,7 @@ public class RegistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task RegisterUsersWithGroupAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new RegisterUsersWithGroupRequest([1, 2, 3], 1);
+        var request = new RegisterUsersWithGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new RegisterUsersWithGroupResult(
             AddUsersToGroupResultCode.Success,
             string.Empty,
@@ -165,7 +164,7 @@ public class RegistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task RegisterRolesWithGroupAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new RegisterRolesWithGroupRequest([1, 2], 1);
+        var request = new RegisterRolesWithGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new RegisterRolesWithGroupResult(
             AssignRolesToGroupResultCode.Success,
             string.Empty,
@@ -186,7 +185,7 @@ public class RegistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task RegisterRolesWithUserAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new RegisterRolesWithUserRequest([1, 2], 1);
+        var request = new RegisterRolesWithUserRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new RegisterRolesWithUserResult(
             AssignRolesToUserResultCode.Success,
             string.Empty,
@@ -207,7 +206,7 @@ public class RegistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task RegisterPermissionsWithRoleAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new RegisterPermissionsWithRoleRequest([1, 2], 1);
+        var request = new RegisterPermissionsWithRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new RegisterPermissionsWithRoleResult(
             AssignPermissionsToRoleResultCode.Success,
             string.Empty,

@@ -1,3 +1,3 @@
 namespace Corely.IAM.BasicAuths.Models;
 
-internal record UpdateBasicAuthRequest(int UserId, string Password);
+internal record UpdateBasicAuthRequest(Guid UserId, string Password);

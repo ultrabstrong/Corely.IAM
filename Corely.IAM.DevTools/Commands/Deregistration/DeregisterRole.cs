@@ -1,10 +1,10 @@
-using System.Text.Json;
 using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
+using System.Text.Json;
 
 namespace Corely.IAM.DevTools.Commands.Deregistration;
 
@@ -39,7 +39,7 @@ internal partial class Deregistration : CommandBase
             {
                 SampleJsonFileHelper.CreateSampleMultipleRequestJson(
                     RequestJsonFile,
-                    new DeregisterRoleRequest(1)
+                    new DeregisterRoleRequest(Guid.Empty)
                 );
             }
             else

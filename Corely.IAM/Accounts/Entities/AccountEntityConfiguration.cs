@@ -6,16 +6,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Corely.IAM.Accounts.Entities;
 
-internal sealed class AccountEntityConfiguration : EntityConfigurationBase<AccountEntity, int>
+internal sealed class AccountEntityConfiguration : EntityConfigurationBase<AccountEntity>
 {
     public AccountEntityConfiguration(IDbTypes dbTypes)
         : base(dbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<AccountEntity> builder)
     {
-        builder.Property(e => e.PublicId).IsRequired();
-
-        builder.HasIndex(e => e.PublicId).IsUnique();
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id).ValueGeneratedNever();
 
         builder
             .Property(e => e.AccountName)

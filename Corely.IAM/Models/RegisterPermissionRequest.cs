@@ -2,7 +2,7 @@
 
 public record RegisterPermissionRequest(
     string ResourceType,
-    int ResourceId,
+    Guid ResourceId,
     bool Create = false,
     bool Read = false,
     bool Update = false,

@@ -46,7 +46,7 @@ internal class RoleProcessor(
             return new CreateRoleResult(
                 CreateRoleResultCode.AccountNotFoundError,
                 $"Account with Id {role.AccountId} not found",
-                -1
+                Guid.Empty
             );
         }
 
@@ -56,7 +56,7 @@ internal class RoleProcessor(
             return new CreateRoleResult(
                 CreateRoleResultCode.RoleExistsError,
                 $"Role with name {role.Name} already exists",
-                -1
+               Guid.Empty
             );
         }
 
@@ -67,7 +67,7 @@ internal class RoleProcessor(
     }
 
     public async Task<CreateDefaultSystemRolesResult> CreateDefaultSystemRolesAsync(
-        int ownerAccountId
+        Guid ownerAccountId
     )
     {
         var ownerRole = new RoleEntity
@@ -94,7 +94,7 @@ internal class RoleProcessor(
         return new CreateDefaultSystemRolesResult(ownerRole.Id, adminRole.Id, userRole.Id);
     }
 
-    public async Task<GetRoleResult> GetRoleAsync(int roleId)
+    public async Task<GetRoleResult> GetRoleAsync(Guid roleId)
     {
         var roleEntity = await _roleRepo.GetAsync(r => r.Id == roleId);
 
@@ -111,7 +111,7 @@ internal class RoleProcessor(
         return new GetRoleResult(GetRoleResultCode.Success, string.Empty, roleEntity.ToModel());
     }
 
-    public async Task<GetRoleResult> GetRoleAsync(string roleName, int ownerAccountId)
+    public async Task<GetRoleResult> GetRoleAsync(string roleName, Guid ownerAccountId)
     {
         var roleEntity = await _roleRepo.GetAsync(r =>
             r.Name == roleName && r.AccountId == ownerAccountId
@@ -243,7 +243,7 @@ internal class RoleProcessor(
         // 1. If role is not system-defined -> allow all permission removal
         // 2. If role is system-defined -> allow non-system permission removal
         // 3. If role is system-defined -> disallow system permission removal
-        var blockedSystemPermissionIds = new List<int>();
+        var blockedSystemPermissionIds = new List<Guid>();
 
         if (roleEntity.IsSystemDefined)
         {
@@ -317,7 +317,7 @@ internal class RoleProcessor(
         );
     }
 
-    public async Task<DeleteRoleResult> DeleteRoleAsync(int roleId)
+    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId)
     {
         var roleEntity = await _roleRepo.GetAsync(r => r.Id == roleId);
         if (roleEntity == null)

@@ -35,22 +35,21 @@ public class AccountProcessorTests
         );
     }
 
-    private async Task<int> CreateUserAsync()
+    private async Task<UserEntity> CreateUserAsync()
     {
-        var userId = _fixture.Create<int>();
         var user = new UserEntity
         {
-            Id = userId,
+            Id = Guid.CreateVersion7(),
             Accounts = [],
             Groups = [],
             Roles = [],
         };
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var created = await userRepo.CreateAsync(user);
-        return created.Id;
+        return created;
     }
 
-    private async Task<RoleEntity> CreateOwnerRoleAsync(int accountId, params int[] userIds)
+    private async Task<RoleEntity> CreateOwnerRoleAsync(Guid accountId, params Guid[] userIds)
     {
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
@@ -86,9 +85,9 @@ public class AccountProcessorTests
     }
 
     private async Task<RoleEntity> CreateOwnerRoleWithGroupAsync(
-        int accountId,
-        int[] directUserIds,
-        int[] groupUserIds
+        Guid accountId,
+        Guid[] directUserIds,
+        Guid[] groupUserIds
     )
     {
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
@@ -151,7 +150,8 @@ public class AccountProcessorTests
     [Fact]
     public async Task CreateAccountAsync_Fails_WhenAccountExists()
     {
-        var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, await CreateUserAsync());
+        var ownerUser = await CreateUserAsync();
+        var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
         await _accountProcessor.CreateAccountAsync(request);
 
         var result = await _accountProcessor.CreateAccountAsync(request);
@@ -162,8 +162,8 @@ public class AccountProcessorTests
     [Fact]
     public async Task CreateAccount_ReturnsCreateAccountResult()
     {
-        var userIdOfOwner = await CreateUserAsync();
-        var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, userIdOfOwner);
+        var ownerUser = await CreateUserAsync();
+        var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
 
         var result = await _accountProcessor.CreateAccountAsync(request);
 
@@ -178,7 +178,7 @@ public class AccountProcessorTests
         Assert.NotNull(accountEntity);
         Assert.NotNull(accountEntity.Users);
         Assert.Single(accountEntity.Users);
-        Assert.Equal(userIdOfOwner, accountEntity.Users.First().Id);
+        Assert.Equal(ownerUser.Id, accountEntity.Users.First().Id);
     }
 
     [Fact]
@@ -193,7 +193,7 @@ public class AccountProcessorTests
     [Fact]
     public async Task CreateAccount_Fails_WithInvalidUserId()
     {
-        var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, -1);
+        var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, Guid.Empty);
 
         var result = await _accountProcessor.CreateAccountAsync(request);
 
@@ -203,7 +203,7 @@ public class AccountProcessorTests
     [Fact]
     public async Task CreateAccount_Throws_WithNullAccountName()
     {
-        var request = new CreateAccountRequest(null!, -1);
+        var request = new CreateAccountRequest(null!, Guid.Empty);
         var ex = await Record.ExceptionAsync(() => _accountProcessor.CreateAccountAsync(request));
 
         Assert.NotNull(ex);
@@ -213,7 +213,7 @@ public class AccountProcessorTests
     [Fact]
     public async Task GetAccountByAccountIdAsync_ReturnsNull_WhenAccountDNE()
     {
-        var result = await _accountProcessor.GetAccountAsync(_fixture.Create<int>());
+        var result = await _accountProcessor.GetAccountAsync(Guid.CreateVersion7());
 
         Assert.Equal(GetAccountResultCode.AccountNotFoundError, result.ResultCode);
         Assert.Null(result.Account);
@@ -222,7 +222,8 @@ public class AccountProcessorTests
     [Fact]
     public async Task GetAccountByAccountIdAsync_ReturnsAccount_WhenAccountExists()
     {
-        var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, await CreateUserAsync());
+        var ownerUser = await CreateUserAsync();
+        var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
         var createResult = await _accountProcessor.CreateAccountAsync(request);
 
         var result = await _accountProcessor.GetAccountAsync(createResult.CreatedId);
@@ -235,7 +236,8 @@ public class AccountProcessorTests
     [Fact]
     public async Task DeleteAccountAsync_ReturnsSuccess_WhenAccountExists()
     {
-        var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, await CreateUserAsync());
+        var ownerUser = await CreateUserAsync();
+        var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
         var createResult = await _accountProcessor.CreateAccountAsync(request);
 
         var result = await _accountProcessor.DeleteAccountAsync(createResult.CreatedId);
@@ -250,7 +252,7 @@ public class AccountProcessorTests
     [Fact]
     public async Task DeleteAccountAsync_ReturnsNotFound_WhenAccountDoesNotExist()
     {
-        var result = await _accountProcessor.DeleteAccountAsync(_fixture.Create<int>());
+        var result = await _accountProcessor.DeleteAccountAsync(Guid.CreateVersion7());
 
         Assert.Equal(DeleteAccountResultCode.AccountNotFoundError, result.ResultCode);
     }
@@ -258,12 +260,12 @@ public class AccountProcessorTests
     [Fact]
     public async Task AddUserToAccountAsync_ReturnsSuccess_WhenUserAndAccountExist()
     {
-        var ownerUserId = await CreateUserAsync();
-        var newUserId = await CreateUserAsync();
-        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId);
+        var ownerUser = await CreateUserAsync();
+        var newUser = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
         var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
 
-        var request = new AddUserToAccountRequest(newUserId, createAccountResult.CreatedId);
+        var request = new AddUserToAccountRequest(newUser.Id, createAccountResult.CreatedId);
         var result = await _accountProcessor.AddUserToAccountAsync(request);
 
         Assert.Equal(AddUserToAccountResultCode.Success, result.ResultCode);
@@ -275,18 +277,18 @@ public class AccountProcessorTests
         );
         Assert.NotNull(accountEntity?.Users);
         Assert.Equal(2, accountEntity.Users.Count);
-        Assert.Contains(accountEntity.Users, u => u.Id == newUserId);
+        Assert.Contains(accountEntity.Users, u => u.Id == newUser.Id);
     }
 
     [Fact]
     public async Task AddUserToAccountAsync_ReturnsUserNotFound_WhenUserDoesNotExist()
     {
-        var ownerUserId = await CreateUserAsync();
-        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId);
+        var ownerUser = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
         var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
 
         var request = new AddUserToAccountRequest(
-            _fixture.Create<int>(),
+            Guid.CreateVersion7(),
             createAccountResult.CreatedId
         );
         var result = await _accountProcessor.AddUserToAccountAsync(request);
@@ -297,9 +299,9 @@ public class AccountProcessorTests
     [Fact]
     public async Task AddUserToAccountAsync_ReturnsAccountNotFound_WhenAccountDoesNotExist()
     {
-        var userId = await CreateUserAsync();
+        var user = await CreateUserAsync();
 
-        var request = new AddUserToAccountRequest(userId, _fixture.Create<int>());
+        var request = new AddUserToAccountRequest(user.Id, Guid.CreateVersion7());
         var result = await _accountProcessor.AddUserToAccountAsync(request);
 
         Assert.Equal(AddUserToAccountResultCode.AccountNotFoundError, result.ResultCode);
@@ -308,12 +310,12 @@ public class AccountProcessorTests
     [Fact]
     public async Task AddUserToAccountAsync_ReturnsUserAlreadyInAccount_WhenUserAlreadyInAccount()
     {
-        var ownerUserId = await CreateUserAsync();
-        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId);
+        var ownerUser = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
         var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
 
         // Try to add the owner user again
-        var request = new AddUserToAccountRequest(ownerUserId, createAccountResult.CreatedId);
+        var request = new AddUserToAccountRequest(ownerUser.Id, createAccountResult.CreatedId);
         var result = await _accountProcessor.AddUserToAccountAsync(request);
 
         Assert.Equal(AddUserToAccountResultCode.UserAlreadyInAccountError, result.ResultCode);
@@ -331,17 +333,17 @@ public class AccountProcessorTests
     [Fact]
     public async Task RemoveUserFromAccountAsync_ReturnsSuccess_WhenUserIsNotOwner()
     {
-        var ownerUserId = await CreateUserAsync();
-        var nonOwnerUserId = await CreateUserAsync();
-        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId);
+        var ownerUser = await CreateUserAsync();
+        var nonOwnerUser = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
         var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
 
         await _accountProcessor.AddUserToAccountAsync(
-            new AddUserToAccountRequest(nonOwnerUserId, createAccountResult.CreatedId)
+            new AddUserToAccountRequest(nonOwnerUser.Id, createAccountResult.CreatedId)
         );
 
         var request = new RemoveUserFromAccountRequest(
-            nonOwnerUserId,
+            nonOwnerUser.Id,
             createAccountResult.CreatedId
         );
         var result = await _accountProcessor.RemoveUserFromAccountAsync(request);
@@ -355,18 +357,18 @@ public class AccountProcessorTests
         );
         Assert.NotNull(accountEntity?.Users);
         Assert.Single(accountEntity.Users);
-        Assert.DoesNotContain(accountEntity.Users, u => u.Id == nonOwnerUserId);
+        Assert.DoesNotContain(accountEntity.Users, u => u.Id == nonOwnerUser.Id);
     }
 
     [Fact]
     public async Task RemoveUserFromAccountAsync_ReturnsUserNotFound_WhenUserDoesNotExist()
     {
-        var ownerUserId = await CreateUserAsync();
-        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId);
+        var ownerUser = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
         var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
 
         var request = new RemoveUserFromAccountRequest(
-            _fixture.Create<int>(),
+            Guid.CreateVersion7(),
             createAccountResult.CreatedId
         );
         var result = await _accountProcessor.RemoveUserFromAccountAsync(request);
@@ -377,9 +379,9 @@ public class AccountProcessorTests
     [Fact]
     public async Task RemoveUserFromAccountAsync_ReturnsAccountNotFound_WhenAccountDoesNotExist()
     {
-        var userId = await CreateUserAsync();
+        var user = await CreateUserAsync();
 
-        var request = new RemoveUserFromAccountRequest(userId, _fixture.Create<int>());
+        var request = new RemoveUserFromAccountRequest(user.Id, Guid.CreateVersion7());
         var result = await _accountProcessor.RemoveUserFromAccountAsync(request);
 
         Assert.Equal(RemoveUserFromAccountResultCode.AccountNotFoundError, result.ResultCode);
@@ -388,12 +390,12 @@ public class AccountProcessorTests
     [Fact]
     public async Task RemoveUserFromAccountAsync_ReturnsUserNotInAccount_WhenUserNotInAccount()
     {
-        var ownerUserId = await CreateUserAsync();
-        var otherUserId = await CreateUserAsync();
-        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId);
+        var ownerUser = await CreateUserAsync();
+        var otherUser = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
         var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
 
-        var request = new RemoveUserFromAccountRequest(otherUserId, createAccountResult.CreatedId);
+        var request = new RemoveUserFromAccountRequest(otherUser.Id, createAccountResult.CreatedId);
         var result = await _accountProcessor.RemoveUserFromAccountAsync(request);
 
         Assert.Equal(RemoveUserFromAccountResultCode.UserNotInAccountError, result.ResultCode);
@@ -413,18 +415,18 @@ public class AccountProcessorTests
     [Fact]
     public async Task RemoveUserFromAccountAsync_ReturnsSuccess_WhenOwnerRemovedButOtherOwnersExist()
     {
-        var ownerUserId1 = await CreateUserAsync();
-        var ownerUserId2 = await CreateUserAsync();
-        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId1);
+        var ownerUser1 = await CreateUserAsync();
+        var ownerUser2 = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser1.Id);
         var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
 
         await _accountProcessor.AddUserToAccountAsync(
-            new AddUserToAccountRequest(ownerUserId2, createAccountResult.CreatedId)
+            new AddUserToAccountRequest(ownerUser2.Id, createAccountResult.CreatedId)
         );
 
-        await CreateOwnerRoleAsync(createAccountResult.CreatedId, ownerUserId1, ownerUserId2);
+        await CreateOwnerRoleAsync(createAccountResult.CreatedId, ownerUser1.Id, ownerUser2.Id);
 
-        var request = new RemoveUserFromAccountRequest(ownerUserId1, createAccountResult.CreatedId);
+        var request = new RemoveUserFromAccountRequest(ownerUser1.Id, createAccountResult.CreatedId);
         var result = await _accountProcessor.RemoveUserFromAccountAsync(request);
 
         Assert.Equal(RemoveUserFromAccountResultCode.Success, result.ResultCode);
@@ -433,13 +435,13 @@ public class AccountProcessorTests
     [Fact]
     public async Task RemoveUserFromAccountAsync_ReturnsSoleOwnerError_WhenSoleOwnerRemoved()
     {
-        var ownerUserId = await CreateUserAsync();
-        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId);
+        var ownerUser = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
         var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
 
-        await CreateOwnerRoleAsync(createAccountResult.CreatedId, ownerUserId);
+        await CreateOwnerRoleAsync(createAccountResult.CreatedId, ownerUser.Id);
 
-        var request = new RemoveUserFromAccountRequest(ownerUserId, createAccountResult.CreatedId);
+        var request = new RemoveUserFromAccountRequest(ownerUser.Id, createAccountResult.CreatedId);
         var result = await _accountProcessor.RemoveUserFromAccountAsync(request);
 
         Assert.Equal(RemoveUserFromAccountResultCode.UserIsSoleOwnerError, result.ResultCode);
@@ -448,22 +450,22 @@ public class AccountProcessorTests
     [Fact]
     public async Task RemoveUserFromAccountAsync_ReturnsSuccess_WhenOwnerRemovedButOtherOwnerExistsViaGroup()
     {
-        var ownerUserId1 = await CreateUserAsync();
-        var ownerUserId2 = await CreateUserAsync();
-        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId1);
+        var ownerUser1 = await CreateUserAsync();
+        var ownerUser2 = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser1.Id);
         var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
 
         await _accountProcessor.AddUserToAccountAsync(
-            new AddUserToAccountRequest(ownerUserId2, createAccountResult.CreatedId)
+            new AddUserToAccountRequest(ownerUser2.Id, createAccountResult.CreatedId)
         );
 
         await CreateOwnerRoleWithGroupAsync(
             createAccountResult.CreatedId,
-            directUserIds: [ownerUserId1],
-            groupUserIds: [ownerUserId2]
+            directUserIds: [ownerUser1.Id],
+            groupUserIds: [ownerUser2.Id]
         );
 
-        var request = new RemoveUserFromAccountRequest(ownerUserId1, createAccountResult.CreatedId);
+        var request = new RemoveUserFromAccountRequest(ownerUser1.Id, createAccountResult.CreatedId);
         var result = await _accountProcessor.RemoveUserFromAccountAsync(request);
 
         Assert.Equal(RemoveUserFromAccountResultCode.Success, result.ResultCode);
@@ -472,17 +474,17 @@ public class AccountProcessorTests
     [Fact]
     public async Task RemoveUserFromAccountAsync_ReturnsSoleOwnerError_WhenOwnerViaGroupIsOnlyOwner()
     {
-        var ownerUserId = await CreateUserAsync();
-        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUserId);
+        var ownerUser = await CreateUserAsync();
+        var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
         var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
 
         await CreateOwnerRoleWithGroupAsync(
             createAccountResult.CreatedId,
             directUserIds: [],
-            groupUserIds: [ownerUserId]
+            groupUserIds: [ownerUser.Id]
         );
 
-        var request = new RemoveUserFromAccountRequest(ownerUserId, createAccountResult.CreatedId);
+        var request = new RemoveUserFromAccountRequest(ownerUser.Id, createAccountResult.CreatedId);
         var result = await _accountProcessor.RemoveUserFromAccountAsync(request);
 
         Assert.Equal(RemoveUserFromAccountResultCode.UserIsSoleOwnerError, result.ResultCode);

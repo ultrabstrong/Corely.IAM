@@ -24,13 +24,13 @@ internal class RoleProcessorAuthorizationDecorator(
             : new CreateRoleResult(
                 CreateRoleResultCode.UnauthorizedError,
                 "Unauthorized to create role",
-                -1
+                Guid.Empty
             );
 
-    public Task<CreateDefaultSystemRolesResult> CreateDefaultSystemRolesAsync(int ownerAccountId) =>
+    public Task<CreateDefaultSystemRolesResult> CreateDefaultSystemRolesAsync(Guid ownerAccountId) =>
         _inner.CreateDefaultSystemRolesAsync(ownerAccountId);
 
-    public async Task<GetRoleResult> GetRoleAsync(int roleId) =>
+    public async Task<GetRoleResult> GetRoleAsync(Guid roleId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.ROLE_RESOURCE_TYPE,
@@ -43,7 +43,7 @@ internal class RoleProcessorAuthorizationDecorator(
                 null
             );
 
-    public async Task<GetRoleResult> GetRoleAsync(string roleName, int ownerAccountId) =>
+    public async Task<GetRoleResult> GetRoleAsync(string roleName, Guid ownerAccountId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.ROLE_RESOURCE_TYPE
@@ -103,7 +103,7 @@ internal class RoleProcessorAuthorizationDecorator(
                 []
             );
 
-    public async Task<DeleteRoleResult> DeleteRoleAsync(int roleId) =>
+    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
             PermissionConstants.ROLE_RESOURCE_TYPE,

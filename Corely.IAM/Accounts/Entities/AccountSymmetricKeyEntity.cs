@@ -1,10 +1,9 @@
-﻿using Corely.DataAccess.Interfaces.Entities;
-using Corely.IAM.Security.Entities;
+﻿using Corely.IAM.Security.Entities;
 
 namespace Corely.IAM.Accounts.Entities;
 
-internal class AccountSymmetricKeyEntity : SymmetricKeyEntity, IHasIdPk<int>
+internal class AccountSymmetricKeyEntity : SymmetricKeyEntity
 {
-    public int Id { get; set; }
-    public int AccountId { get; set; }
+    public Guid Id { get; set; }
+    public Guid AccountId { get; set; }
 }

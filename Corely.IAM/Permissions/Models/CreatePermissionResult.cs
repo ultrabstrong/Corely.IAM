@@ -11,5 +11,5 @@ public enum CreatePermissionResultCode
 internal record CreatePermissionResult(
     CreatePermissionResultCode ResultCode,
     string Message,
-    int CreatedId
+    Guid CreatedId
 );

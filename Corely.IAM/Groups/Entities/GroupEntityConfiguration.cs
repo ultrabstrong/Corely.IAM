@@ -6,13 +6,16 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Corely.IAM.Groups.Entities;
 
-internal sealed class GroupEntityConfiguration : EntityConfigurationBase<GroupEntity, int>
+internal sealed class GroupEntityConfiguration : EntityConfigurationBase<GroupEntity>
 {
     public GroupEntityConfiguration(IDbTypes dbTypes)
         : base(dbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<GroupEntity> builder)
     {
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id).ValueGeneratedNever();
+
         builder
             .Property(e => e.Name)
             .IsRequired()

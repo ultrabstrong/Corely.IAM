@@ -55,7 +55,7 @@ public class DeregistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task DeregisterGroupAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new DeregisterGroupRequest(1);
+        var request = new DeregisterGroupRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterGroupResult(
             DeregisterGroupResultCode.Success,
             string.Empty
@@ -72,7 +72,7 @@ public class DeregistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task DeregisterRoleAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new DeregisterRoleRequest(1);
+        var request = new DeregisterRoleRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterRoleResult(
             DeregisterRoleResultCode.Success,
             string.Empty
@@ -89,7 +89,7 @@ public class DeregistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task DeregisterPermissionAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new DeregisterPermissionRequest(1);
+        var request = new DeregisterPermissionRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterPermissionResult(
             DeregisterPermissionResultCode.Success,
             string.Empty
@@ -108,7 +108,7 @@ public class DeregistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task DeregisterUserFromAccountAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new DeregisterUserFromAccountRequest(1);
+        var request = new DeregisterUserFromAccountRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterUserFromAccountResult(
             DeregisterUserFromAccountResultCode.Success,
             string.Empty
@@ -127,7 +127,7 @@ public class DeregistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task DeregisterUsersFromGroupAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new DeregisterUsersFromGroupRequest([1, 2, 3], 1);
+        var request = new DeregisterUsersFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new DeregisterUsersFromGroupResult(
             DeregisterUsersFromGroupResultCode.Success,
             string.Empty,
@@ -148,7 +148,7 @@ public class DeregistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task DeregisterRolesFromGroupAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new DeregisterRolesFromGroupRequest([1, 2], 1);
+        var request = new DeregisterRolesFromGroupRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new DeregisterRolesFromGroupResult(
             DeregisterRolesFromGroupResultCode.Success,
             string.Empty,
@@ -169,7 +169,7 @@ public class DeregistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task DeregisterRolesFromUserAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new DeregisterRolesFromUserRequest([1, 2], 1);
+        var request = new DeregisterRolesFromUserRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new DeregisterRolesFromUserResult(
             DeregisterRolesFromUserResultCode.Success,
             string.Empty,
@@ -190,7 +190,7 @@ public class DeregistrationServiceLoggingDecoratorTests
     [Fact]
     public async Task DeregisterPermissionsFromRoleAsync_DelegatesToInnerAndLogsResult()
     {
-        var request = new DeregisterPermissionsFromRoleRequest([1, 2], 1);
+        var request = new DeregisterPermissionsFromRoleRequest([Guid.CreateVersion7(), Guid.CreateVersion7()], Guid.CreateVersion7());
         var expectedResult = new DeregisterPermissionsFromRoleResult(
             DeregisterPermissionsFromRoleResultCode.Success,
             string.Empty,

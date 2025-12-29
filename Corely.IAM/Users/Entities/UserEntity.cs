@@ -6,10 +6,9 @@ using Corely.IAM.Roles.Entities;
 
 namespace Corely.IAM.Users.Entities;
 
-internal class UserEntity : IHasIdPk<int>, IHasCreatedUtc, IHasModifiedUtc
+internal class UserEntity : IHasCreatedUtc, IHasModifiedUtc
 {
-    public int Id { get; set; }
-    public Guid PublicId { get; set; }
+    public Guid Id { get; set; }
     public string Username { get; set; } = null!;
     public string Email { get; set; } = null!;
     public bool Disabled { get; set; }

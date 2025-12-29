@@ -18,7 +18,7 @@ internal class UserProcessorAuthorizationDecorator(
     public Task<CreateUserResult> CreateUserAsync(CreateUserRequest request) =>
         _inner.CreateUserAsync(request);
 
-    public async Task<GetUserResult> GetUserAsync(int userId) =>
+    public async Task<GetUserResult> GetUserAsync(Guid userId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.USER_RESOURCE_TYPE,
@@ -40,7 +40,7 @@ internal class UserProcessorAuthorizationDecorator(
             );
 
     public async Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(
-        int userId
+        Guid userId
     ) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
@@ -102,7 +102,7 @@ internal class UserProcessorAuthorizationDecorator(
                 []
             );
 
-    public async Task<DeleteUserResult> DeleteUserAsync(int userId) =>
+    public async Task<DeleteUserResult> DeleteUserAsync(Guid userId) =>
         _authorizationProvider.IsAuthorizedForOwnUser(userId)
             ? await _inner.DeleteUserAsync(userId)
             : new DeleteUserResult(

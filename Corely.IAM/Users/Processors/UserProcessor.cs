@@ -74,7 +74,6 @@ internal class UserProcessor(
             return new CreateUserResult(
                 CreateUserResultCode.UserExistsError,
                 $"{usernameExistsMessage} {emailExistsMessage}".Trim(),
-                -1,
                 Guid.Empty
             );
         }
@@ -86,19 +85,17 @@ internal class UserProcessor(
             _securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey(),
         ];
 
-        var userEntity = user.ToEntity(_encryptionProviderFactory); // user is validated
-        userEntity.PublicId = Guid.NewGuid();
+        var userEntity = user.ToEntity();
         var created = await _userRepo.CreateAsync(userEntity);
 
         return new CreateUserResult(
             CreateUserResultCode.Success,
             string.Empty,
-            created.Id,
-            created.PublicId
+            created.Id
         );
     }
 
-    public async Task<GetUserResult> GetUserAsync(int userId)
+    public async Task<GetUserResult> GetUserAsync(Guid userId)
     {
         var userEntity = await _userRepo.GetAsync(u => u.Id == userId);
 
@@ -123,7 +120,7 @@ internal class UserProcessor(
         return new UpdateUserResult(UpdateUserResultCode.Success, string.Empty);
     }
 
-    public async Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(int userId)
+    public async Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(Guid userId)
     {
         var userEntity = await _userRepo.GetAsync(
             u => u.Id == userId,
@@ -281,7 +278,7 @@ internal class UserProcessor(
         // 2. If any role is owner role and user IS NOT sole owner -> remove the role
         // 3. If any role is owner role and user IS sole owner and user has multiple ownership sources -> remove the role
         // 4. If any role is owner role and user IS sole owner and user has single ownership source -> block
-        var blockedOwnerRoleIds = new List<int>();
+        var blockedOwnerRoleIds = new List<Guid>();
         var ownerRoles = rolesToRemove
             .Where(r => r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined)
             .ToList();
@@ -367,7 +364,7 @@ internal class UserProcessor(
         );
     }
 
-    public async Task<DeleteUserResult> DeleteUserAsync(int userId)
+    public async Task<DeleteUserResult> DeleteUserAsync(Guid userId)
     {
         var userEntity = await _userRepo.GetAsync(
             u => u.Id == userId,

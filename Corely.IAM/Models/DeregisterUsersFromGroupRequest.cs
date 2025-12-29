@@ -1,3 +1,3 @@
 namespace Corely.IAM.Models;
 
-public record DeregisterUsersFromGroupRequest(List<int> UserIds, int GroupId);
+public record DeregisterUsersFromGroupRequest(List<Guid> UserIds, Guid GroupId);

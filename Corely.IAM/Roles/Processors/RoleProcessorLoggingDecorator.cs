@@ -24,7 +24,7 @@ internal class RoleProcessorLoggingDecorator(
         );
 
     public async Task<CreateDefaultSystemRolesResult> CreateDefaultSystemRolesAsync(
-        int ownerAccountId
+        Guid ownerAccountId
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
@@ -33,7 +33,7 @@ internal class RoleProcessorLoggingDecorator(
             logResult: true
         );
 
-    public async Task<GetRoleResult> GetRoleAsync(int roleId) =>
+    public async Task<GetRoleResult> GetRoleAsync(Guid roleId) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
             roleId,
@@ -41,7 +41,7 @@ internal class RoleProcessorLoggingDecorator(
             logResult: true
         );
 
-    public async Task<GetRoleResult> GetRoleAsync(string roleName, int ownerAccountId) =>
+    public async Task<GetRoleResult> GetRoleAsync(string roleName, Guid ownerAccountId) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
             new { roleName, ownerAccountId },
@@ -69,7 +69,7 @@ internal class RoleProcessorLoggingDecorator(
             logResult: true
         );
 
-    public async Task<DeleteRoleResult> DeleteRoleAsync(int roleId) =>
+    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
             roleId,

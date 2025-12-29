@@ -23,8 +23,8 @@ public class PermissionProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task CreatePermissionAsync_CallsAuthorizationProvider()
     {
-        var request = new CreatePermissionRequest(1, "group", 0, Read: true);
-        var expectedResult = new CreatePermissionResult(CreatePermissionResultCode.Success, "", 1);
+        var request = new CreatePermissionRequest(Guid.CreateVersion7(), "group", Guid.Empty, Read: true);
+        var expectedResult = new CreatePermissionResult(CreatePermissionResultCode.Success, "", request.OwnerAccountId);
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.PERMISSION_RESOURCE_TYPE)
@@ -51,7 +51,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task CreatePermissionAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
-        var request = new CreatePermissionRequest(1, "group", 0, Read: true);
+        var request = new CreatePermissionRequest(Guid.CreateVersion7(), "group", Guid.Empty, Read: true);
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.PERMISSION_RESOURCE_TYPE)
@@ -70,12 +70,12 @@ public class PermissionProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task CreateDefaultSystemPermissionsAsync_BypassesAuthorization()
     {
-        var accountId = 1;
+        var accountId = Guid.CreateVersion7();
 
         await _decorator.CreateDefaultSystemPermissionsAsync(accountId);
 
         _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<int[]>()),
+            x => x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
             Times.Never
         );
         _mockInnerProcessor.Verify(
@@ -87,7 +87,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task DeletePermissionAsync_CallsAuthorizationProvider()
     {
-        var permissionId = 5;
+        var permissionId = Guid.CreateVersion7();
         var expectedResult = new DeletePermissionResult(DeletePermissionResultCode.Success, "");
         _mockAuthorizationProvider
             .Setup(x =>
@@ -120,7 +120,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task DeletePermissionAsync_ReturnsUnauthorized_WhenNotAuthorized()
     {
-        var permissionId = 5;
+        var permissionId = Guid.CreateVersion7();
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(
@@ -134,7 +134,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
         var result = await _decorator.DeletePermissionAsync(permissionId);
 
         Assert.Equal(DeletePermissionResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerProcessor.Verify(x => x.DeletePermissionAsync(It.IsAny<int>()), Times.Never);
+        _mockInnerProcessor.Verify(x => x.DeletePermissionAsync(It.IsAny<Guid>()), Times.Never);
     }
 
     [Fact]

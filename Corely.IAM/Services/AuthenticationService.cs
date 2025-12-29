@@ -95,7 +95,7 @@ internal class AuthenticationService(
 
         var result = await GenerateAuthTokenAndSetContextAsync(
             userEntity.Id,
-            request.AccountPublicId,
+            request.AccountId,
             request.DeviceId,
             "sign in"
         );
@@ -123,14 +123,14 @@ internal class AuthenticationService(
         }
 
         _logger.LogDebug(
-            "User {UserId} switching to account {AccountPublicId}",
+            "User {UserId} switching to account {AccountId}",
             context.User.Id,
-            request.AccountPublicId
+            request.AccountId
         );
 
         var result = await GenerateAuthTokenAndSetContextAsync(
             context.User.Id,
-            request.AccountPublicId,
+            request.AccountId,
             context.DeviceId,
             "account switch"
         );
@@ -207,21 +207,21 @@ internal class AuthenticationService(
     }
 
     private async Task<SignInResult> GenerateAuthTokenAndSetContextAsync(
-        int userId,
-        Guid? accountPublicId,
+        Guid userId,
+        Guid? accountId,
         string deviceId,
         string operationName
     )
     {
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(userId, deviceId, accountPublicId)
+            new GetUserAuthTokenRequest(userId, deviceId, accountId)
         );
 
         if (authTokenResult.ResultCode != UserAuthTokenResultCode.Success)
         {
             var (signInResultCode, message) = MapAuthTokenResultCode(
                 authTokenResult.ResultCode,
-                accountPublicId
+                accountId
             );
 
             _logger.LogWarning(
@@ -252,7 +252,7 @@ internal class AuthenticationService(
 
     private static (SignInResultCode, string) MapAuthTokenResultCode(
         UserAuthTokenResultCode resultCode,
-        Guid? accountPublicId
+        Guid? accountId
     ) =>
         resultCode switch
         {
@@ -266,7 +266,7 @@ internal class AuthenticationService(
             ),
             UserAuthTokenResultCode.AccountNotFound => (
                 SignInResultCode.AccountNotFoundError,
-                $"Account {accountPublicId} not found for user"
+                $"Account {accountId} not found for user"
             ),
             _ => (SignInResultCode.UserNotFoundError, "Unknown error creating auth token"),
         };

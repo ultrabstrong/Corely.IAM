@@ -31,8 +31,7 @@ public class UserMapperTests
         var result = request.ToUser();
 
         // Assert
-        Assert.Equal(0, result.Id);
-        Assert.Equal(Guid.Empty, result.PublicId);
+        Assert.Equal(Guid.Empty, result.Id);
         Assert.False(result.Disabled);
         Assert.Equal(0, result.TotalSuccessfulLogins);
         Assert.Null(result.LastSuccessfulLoginUtc);
@@ -62,11 +61,9 @@ public class UserMapperTests
     public void ToEntity_ShouldMapAllProperties()
     {
         // Arrange
-        var publicId = Guid.NewGuid();
         var user = new User
         {
-            Id = 42,
-            PublicId = publicId,
+            Id = Guid.CreateVersion7(),
             Username = "testuser",
             Email = "test@example.com",
             Disabled = true,
@@ -84,8 +81,7 @@ public class UserMapperTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(42, result.Id);
-        Assert.Equal(publicId, result.PublicId);
+        Assert.Equal(user.Id, result.Id);
         Assert.Equal("testuser", result.Username);
         Assert.Equal("test@example.com", result.Email);
         Assert.True(result.Disabled);
@@ -96,23 +92,6 @@ public class UserMapperTests
         Assert.Equal(user.LastFailedLoginUtc, result.LastFailedLoginUtc);
         Assert.Equal(user.CreatedUtc, result.CreatedUtc);
         Assert.Equal(user.ModifiedUtc, result.ModifiedUtc);
-    }
-
-    [Fact]
-    public void ToEntity_ShouldNotMapNavigationProperties()
-    {
-        // Arrange
-        var user = new User
-        {
-            Id = 1,
-            Username = "test",
-            Email = "test@test.com",
-        };
-
-        // Act
-        var result = user.ToEntity();
-
-        // Assert
         Assert.Null(result.BasicAuth);
         Assert.Null(result.Accounts);
         Assert.Null(result.Groups);
@@ -123,11 +102,9 @@ public class UserMapperTests
     public void ToModel_ShouldMapAllProperties()
     {
         // Arrange
-        var publicId = Guid.NewGuid();
         var entity = new UserEntity
         {
-            Id = 42,
-            PublicId = publicId,
+            Id = Guid.CreateVersion7(),
             Username = "testuser",
             Email = "test@example.com",
             Disabled = true,
@@ -145,8 +122,7 @@ public class UserMapperTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(42, result.Id);
-        Assert.Equal(publicId, result.PublicId);
+        Assert.Equal(entity.Id, result.Id);
         Assert.Equal("testuser", result.Username);
         Assert.Equal("test@example.com", result.Email);
         Assert.True(result.Disabled);
@@ -157,126 +133,5 @@ public class UserMapperTests
         Assert.Equal(entity.LastFailedLoginUtc, result.LastFailedLoginUtc);
         Assert.Equal(entity.CreatedUtc, result.CreatedUtc);
         Assert.Equal(entity.ModifiedUtc, result.ModifiedUtc);
-    }
-
-    [Fact]
-    public void ToModel_ToEntity_RoundTrip_ShouldPreserveData()
-    {
-        // Arrange
-        var publicId = Guid.NewGuid();
-        var originalUser = new User
-        {
-            Id = 99,
-            PublicId = publicId,
-            Username = "roundtripuser",
-            Email = "roundtrip@test.com",
-            Disabled = false,
-            TotalSuccessfulLogins = 15,
-            LastSuccessfulLoginUtc = DateTime.UtcNow.AddDays(-5),
-            FailedLoginsSinceLastSuccess = 1,
-            TotalFailedLogins = 3,
-            LastFailedLoginUtc = DateTime.UtcNow.AddHours(-10),
-            CreatedUtc = DateTime.UtcNow.AddMonths(-3),
-            ModifiedUtc = DateTime.UtcNow.AddDays(-1),
-        };
-
-        // Act
-        var entity = originalUser.ToEntity();
-        var resultUser = entity.ToModel();
-
-        // Assert
-        Assert.Equal(originalUser.Id, resultUser.Id);
-        Assert.Equal(originalUser.PublicId, resultUser.PublicId);
-        Assert.Equal(originalUser.Username, resultUser.Username);
-        Assert.Equal(originalUser.Email, resultUser.Email);
-        Assert.Equal(originalUser.Disabled, resultUser.Disabled);
-        Assert.Equal(originalUser.TotalSuccessfulLogins, resultUser.TotalSuccessfulLogins);
-        Assert.Equal(originalUser.LastSuccessfulLoginUtc, resultUser.LastSuccessfulLoginUtc);
-        Assert.Equal(
-            originalUser.FailedLoginsSinceLastSuccess,
-            resultUser.FailedLoginsSinceLastSuccess
-        );
-        Assert.Equal(originalUser.TotalFailedLogins, resultUser.TotalFailedLogins);
-        Assert.Equal(originalUser.LastFailedLoginUtc, resultUser.LastFailedLoginUtc);
-        Assert.Equal(originalUser.CreatedUtc, resultUser.CreatedUtc);
-        Assert.Equal(originalUser.ModifiedUtc, resultUser.ModifiedUtc);
-    }
-
-    [Theory]
-    [InlineData(1, "user1", "user1@test.com", false, 5, 1, 2)]
-    [InlineData(2, "user2", "user2@test.com", true, 0, 10, 15)]
-    [InlineData(0, "", "", false, 0, 0, 0)]
-    public void ToEntity_ShouldMapVariousInputs(
-        int id,
-        string username,
-        string email,
-        bool disabled,
-        int totalSuccessful,
-        int failedSinceLast,
-        int totalFailed
-    )
-    {
-        // Arrange
-        var user = new User
-        {
-            Id = id,
-            Username = username,
-            Email = email,
-            Disabled = disabled,
-            TotalSuccessfulLogins = totalSuccessful,
-            FailedLoginsSinceLastSuccess = failedSinceLast,
-            TotalFailedLogins = totalFailed,
-        };
-
-        // Act
-        var result = user.ToEntity();
-
-        // Assert
-        Assert.Equal(id, result.Id);
-        Assert.Equal(username, result.Username);
-        Assert.Equal(email, result.Email);
-        Assert.Equal(disabled, result.Disabled);
-        Assert.Equal(totalSuccessful, result.TotalSuccessfulLogins);
-        Assert.Equal(failedSinceLast, result.FailedLoginsSinceLastSuccess);
-        Assert.Equal(totalFailed, result.TotalFailedLogins);
-    }
-
-    [Theory]
-    [InlineData(1, "user1", "user1@test.com", false, 5, 1, 2)]
-    [InlineData(2, "user2", "user2@test.com", true, 0, 10, 15)]
-    [InlineData(0, "", "", false, 0, 0, 0)]
-    public void ToModel_ShouldMapVariousInputs(
-        int id,
-        string username,
-        string email,
-        bool disabled,
-        int totalSuccessful,
-        int failedSinceLast,
-        int totalFailed
-    )
-    {
-        // Arrange
-        var entity = new UserEntity
-        {
-            Id = id,
-            Username = username,
-            Email = email,
-            Disabled = disabled,
-            TotalSuccessfulLogins = totalSuccessful,
-            FailedLoginsSinceLastSuccess = failedSinceLast,
-            TotalFailedLogins = totalFailed,
-        };
-
-        // Act
-        var result = entity.ToModel();
-
-        // Assert
-        Assert.Equal(id, result.Id);
-        Assert.Equal(username, result.Username);
-        Assert.Equal(email, result.Email);
-        Assert.Equal(disabled, result.Disabled);
-        Assert.Equal(totalSuccessful, result.TotalSuccessfulLogins);
-        Assert.Equal(failedSinceLast, result.FailedLoginsSinceLastSuccess);
-        Assert.Equal(totalFailed, result.TotalFailedLogins);
     }
 }

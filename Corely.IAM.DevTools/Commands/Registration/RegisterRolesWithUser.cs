@@ -1,10 +1,10 @@
-﻿using System.Text.Json;
-using Corely.Common.Extensions;
+﻿using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
+using System.Text.Json;
 
 namespace Corely.IAM.DevTools.Commands.Registration;
 
@@ -37,7 +37,7 @@ internal partial class Registration : CommandBase
             {
                 SampleJsonFileHelper.CreateSampleMultipleRequestJson(
                     RequestJsonFile,
-                    new RegisterRolesWithUserRequest([1, 2], 3)
+                    new RegisterRolesWithUserRequest([Guid.Empty], Guid.Empty)
                 );
             }
             else

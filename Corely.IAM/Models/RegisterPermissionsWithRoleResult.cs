@@ -6,5 +6,5 @@ public record RegisterPermissionsWithRoleResult(
     AssignPermissionsToRoleResultCode ResultCode,
     string Message,
     int RegisteredPermissionCount,
-    List<int> InvalidPermissionIds = null
+    List<Guid> InvalidPermissionIds = null
 );

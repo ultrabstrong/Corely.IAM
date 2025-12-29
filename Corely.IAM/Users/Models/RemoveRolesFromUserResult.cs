@@ -14,9 +14,9 @@ public record RemoveRolesFromUserResult(
     RemoveRolesFromUserResultCode ResultCode,
     string? Message,
     int RemovedRoleCount,
-    List<int> InvalidRoleIds,
-    List<int> BlockedOwnerRoleIds = null!
+    List<Guid> InvalidRoleIds,
+    List<Guid> BlockedOwnerRoleIds = null!
 )
 {
-    public List<int> BlockedOwnerRoleIds { get; init; } = BlockedOwnerRoleIds ?? [];
+    public List<Guid> BlockedOwnerRoleIds { get; init; } = BlockedOwnerRoleIds ?? [];
 }

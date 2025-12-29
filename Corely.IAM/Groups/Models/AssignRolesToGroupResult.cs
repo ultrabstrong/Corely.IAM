@@ -13,5 +13,5 @@ internal record AssignRolesToGroupResult(
     AssignRolesToGroupResultCode ResultCode,
     string? Message,
     int AddedRoleCount,
-    List<int> InvalidRoleIds = null
+    List<Guid> InvalidRoleIds = null
 );

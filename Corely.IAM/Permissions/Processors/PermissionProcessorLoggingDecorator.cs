@@ -25,14 +25,14 @@ internal class PermissionProcessorLoggingDecorator(
             logResult: true
         );
 
-    public async Task CreateDefaultSystemPermissionsAsync(int accountId) =>
+    public async Task CreateDefaultSystemPermissionsAsync(Guid accountId) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(PermissionProcessor),
             accountId,
             () => _inner.CreateDefaultSystemPermissionsAsync(accountId)
         );
 
-    public async Task<DeletePermissionResult> DeletePermissionAsync(int permissionId) =>
+    public async Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(PermissionProcessor),
             permissionId,

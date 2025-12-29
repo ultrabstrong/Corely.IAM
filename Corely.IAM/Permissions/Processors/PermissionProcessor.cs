@@ -46,7 +46,7 @@ internal class PermissionProcessor(
             return new CreatePermissionResult(
                 CreatePermissionResultCode.AccountNotFoundError,
                 $"Account with Id {permission.AccountId} not found",
-                -1
+                Guid.Empty
             );
         }
 
@@ -71,7 +71,7 @@ internal class PermissionProcessor(
             return new CreatePermissionResult(
                 CreatePermissionResultCode.PermissionExistsError,
                 $"Permission already exists for {permission.ResourceType} - {permission.ResourceId}",
-                -1
+                Guid.Empty
             );
         }
 
@@ -85,7 +85,7 @@ internal class PermissionProcessor(
         );
     }
 
-    public async Task CreateDefaultSystemPermissionsAsync(int accountId)
+    public async Task CreateDefaultSystemPermissionsAsync(Guid accountId)
     {
         var ownerRole = await _roleRepo.GetAsync(r =>
             r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
@@ -104,7 +104,7 @@ internal class PermissionProcessor(
             {
                 AccountId = accountId,
                 ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
-                ResourceId = 0,
+                ResourceId = Guid.Empty,
                 Create = true,
                 Read = true,
                 Update = true,
@@ -119,7 +119,7 @@ internal class PermissionProcessor(
             {
                 AccountId = accountId,
                 ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
-                ResourceId = 0,
+                ResourceId = Guid.Empty,
                 Create = true,
                 Read = true,
                 Update = true,
@@ -134,7 +134,7 @@ internal class PermissionProcessor(
             {
                 AccountId = accountId,
                 ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
-                ResourceId = 0,
+                ResourceId = Guid.Empty,
                 Create = false,
                 Read = true,
                 Update = false,
@@ -149,7 +149,7 @@ internal class PermissionProcessor(
         await _permissionRepo.CreateAsync(permissionEntities);
     }
 
-    public async Task<DeletePermissionResult> DeletePermissionAsync(int permissionId)
+    public async Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId)
     {
         var permissionEntity = await _permissionRepo.GetAsync(p => p.Id == permissionId);
         if (permissionEntity == null)

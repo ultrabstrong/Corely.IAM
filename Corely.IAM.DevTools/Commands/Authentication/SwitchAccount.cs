@@ -13,7 +13,7 @@ internal partial class Authentication : CommandBase
     internal class SwitchAccount : CommandBase
     {
         [Argument("Account public ID (GUID) to switch to", true)]
-        private Guid AccountPublicId { get; init; }
+        private Guid AccountId { get; init; }
 
         private readonly IAuthenticationService _authenticationService;
         private readonly IUserContextProvider _userContextProvider;
@@ -56,13 +56,13 @@ internal partial class Authentication : CommandBase
 
             try
             {
-                var request = new SwitchAccountRequest(AccountPublicId);
+                var request = new SwitchAccountRequest(AccountId);
                 var result = await _authenticationService.SwitchAccountAsync(request);
 
                 if (result.ResultCode == SignInResultCode.Success)
                 {
                     await WriteAuthTokenToFileAsync(result);
-                    Success($"Switched to account {AccountPublicId}. Auth token updated.");
+                    Success($"Switched to account {AccountId}. Auth token updated.");
                 }
                 else
                 {

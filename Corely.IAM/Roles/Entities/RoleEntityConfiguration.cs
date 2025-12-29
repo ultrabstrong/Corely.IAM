@@ -6,13 +6,16 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Corely.IAM.Roles.Entities;
 
-internal sealed class RoleEntityConfiguration : EntityConfigurationBase<RoleEntity, int>
+internal sealed class RoleEntityConfiguration : EntityConfigurationBase<RoleEntity>
 {
     public RoleEntityConfiguration(IDbTypes dbTypes)
         : base(dbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<RoleEntity> builder)
     {
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id).ValueGeneratedNever();
+
         builder.Property(e => e.Name).IsRequired().HasMaxLength(RoleConstants.ROLE_NAME_MAX_LENGTH);
 
         builder.HasIndex(e => new { e.AccountId, e.Name }).IsUnique();

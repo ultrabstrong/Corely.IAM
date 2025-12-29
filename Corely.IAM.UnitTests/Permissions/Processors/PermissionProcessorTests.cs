@@ -30,16 +30,15 @@ public class PermissionProcessorTests
         );
     }
 
-    private async Task<int> CreateAccountAsync()
+    private async Task<AccountEntity> CreateAccountAsync()
     {
-        var accountId = _fixture.Create<int>();
-        var account = new AccountEntity { Id = accountId };
+        var account = new AccountEntity { Id = Guid.CreateVersion7() };
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var created = await accountRepo.CreateAsync(account);
-        return created.Id;
+        return created;
     }
 
-    private async Task CreateDefaultRolesAsync(int accountId)
+    private async Task CreateDefaultRolesAsync(Guid accountId)
     {
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         RoleEntity[] roles =
@@ -70,9 +69,9 @@ public class PermissionProcessorTests
     public async Task CreatePermissionAsync_Fails_WhenAccountDoesNotExist()
     {
         var request = new CreatePermissionRequest(
-            _fixture.Create<int>(),
+            Guid.CreateVersion7(),
             PermissionConstants.GROUP_RESOURCE_TYPE,
-            0,
+            Guid.Empty,
             Read: true
         );
 
@@ -84,11 +83,11 @@ public class PermissionProcessorTests
     [Fact]
     public async Task CreatePermissionAsync_Fails_WhenPermissionExists()
     {
-        var accountId = await CreateAccountAsync();
+        var account = await CreateAccountAsync();
         var request = new CreatePermissionRequest(
-            accountId,
+            account.Id,
             PermissionConstants.GROUP_RESOURCE_TYPE,
-            0,
+            Guid.Empty,
             Read: true
         );
         await _permissionProcessor.CreatePermissionAsync(request);
@@ -101,11 +100,11 @@ public class PermissionProcessorTests
     [Fact]
     public async Task CreatePermissionAsync_ReturnsCreatePermissionResult()
     {
-        var accountId = await CreateAccountAsync();
+        var account = await CreateAccountAsync();
         var request = new CreatePermissionRequest(
-            accountId,
+            account.Id,
             PermissionConstants.GROUP_RESOURCE_TYPE,
-            0,
+            Guid.Empty,
             Read: true
         );
 
@@ -119,19 +118,19 @@ public class PermissionProcessorTests
             include: q => q.Include(g => g.Account)
         );
         Assert.NotNull(permissionEntity);
-        Assert.Equal(accountId, permissionEntity.AccountId);
+        Assert.Equal(account.Id, permissionEntity.AccountId);
     }
 
     [Fact]
     public async Task CreateDefaultSystemPermissionsAsync_CreatesThreePermissions()
     {
-        var accountId = await CreateAccountAsync();
-        await CreateDefaultRolesAsync(accountId);
+        var account = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(account.Id);
 
-        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(accountId);
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(account.Id);
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
-        var permissions = await permissionRepo.ListAsync(p => p.AccountId == accountId);
+        var permissions = await permissionRepo.ListAsync(p => p.AccountId == account.Id);
         Assert.Equal(3, permissions.Count);
         Assert.All(
             permissions,
@@ -143,14 +142,14 @@ public class PermissionProcessorTests
     [Fact]
     public async Task CreateDefaultSystemPermissionsAsync_CreatesOwnerPermission_WithFullAccess()
     {
-        var accountId = await CreateAccountAsync();
-        await CreateDefaultRolesAsync(accountId);
+        var account = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(account.Id);
 
-        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(accountId);
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(account.Id);
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var permissions = await permissionRepo.ListAsync(
-            p => p.AccountId == accountId,
+            p => p.AccountId == account.Id,
             include: q => q.Include(p => p.Roles)
         );
 
@@ -164,14 +163,14 @@ public class PermissionProcessorTests
     [Fact]
     public async Task CreateDefaultSystemPermissionsAsync_CreatesAdminPermission_WithoutDelete()
     {
-        var accountId = await CreateAccountAsync();
-        await CreateDefaultRolesAsync(accountId);
+        var account = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(account.Id);
 
-        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(accountId);
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(account.Id);
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var permissions = await permissionRepo.ListAsync(
-            p => p.AccountId == accountId,
+            p => p.AccountId == account.Id,
             include: q => q.Include(p => p.Roles)
         );
 
@@ -185,14 +184,14 @@ public class PermissionProcessorTests
     [Fact]
     public async Task CreateDefaultSystemPermissionsAsync_CreatesUserPermission_ReadOnly()
     {
-        var accountId = await CreateAccountAsync();
-        await CreateDefaultRolesAsync(accountId);
+        var account = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(account.Id);
 
-        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(accountId);
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(account.Id);
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var permissions = await permissionRepo.ListAsync(
-            p => p.AccountId == accountId,
+            p => p.AccountId == account.Id,
             include: q => q.Include(p => p.Roles)
         );
 
@@ -206,11 +205,11 @@ public class PermissionProcessorTests
     [Fact]
     public async Task DeletePermissionAsync_ReturnsSuccess_WhenPermissionExists()
     {
-        var accountId = await CreateAccountAsync();
+        var account = await CreateAccountAsync();
         var createRequest = new CreatePermissionRequest(
-            accountId,
+            account.Id,
             PermissionConstants.GROUP_RESOURCE_TYPE,
-            0,
+            Guid.Empty,
             Read: true
         );
         var createResult = await _permissionProcessor.CreatePermissionAsync(createRequest);
@@ -227,7 +226,7 @@ public class PermissionProcessorTests
     [Fact]
     public async Task DeletePermissionAsync_ReturnsNotFound_WhenPermissionDoesNotExist()
     {
-        var result = await _permissionProcessor.DeletePermissionAsync(_fixture.Create<int>());
+        var result = await _permissionProcessor.DeletePermissionAsync(Guid.CreateVersion7());
 
         Assert.Equal(DeletePermissionResultCode.PermissionNotFoundError, result.ResultCode);
     }
@@ -235,13 +234,13 @@ public class PermissionProcessorTests
     [Fact]
     public async Task DeletePermissionAsync_ReturnsSystemDefinedPermissionError_WhenPermissionIsSystemDefined()
     {
-        var accountId = await CreateAccountAsync();
-        await CreateDefaultRolesAsync(accountId);
-        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(accountId);
+        var account = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(account.Id);
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(account.Id);
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var systemPermission = await permissionRepo.GetAsync(p =>
-            p.AccountId == accountId && p.IsSystemDefined
+            p.AccountId == account.Id && p.IsSystemDefined
         );
 
         var result = await _permissionProcessor.DeletePermissionAsync(systemPermission!.Id);
@@ -257,13 +256,13 @@ public class PermissionProcessorTests
     [Fact]
     public async Task DeletePermissionAsync_ReturnsSystemDefinedPermissionError_ForAllSystemDefinedPermissions()
     {
-        var accountId = await CreateAccountAsync();
-        await CreateDefaultRolesAsync(accountId);
-        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(accountId);
+        var account = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(account.Id);
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(account.Id);
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var systemPermissions = await permissionRepo.ListAsync(p =>
-            p.AccountId == accountId && p.IsSystemDefined
+            p.AccountId == account.Id && p.IsSystemDefined
         );
 
         Assert.Equal(3, systemPermissions.Count);

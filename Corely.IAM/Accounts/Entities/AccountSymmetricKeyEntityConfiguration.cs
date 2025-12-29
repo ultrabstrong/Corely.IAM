@@ -6,23 +6,26 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace Corely.IAM.Accounts.Entities;
 
 internal class AccountSymmetricKeyEntityConfiguration
-    : EntityConfigurationBase<AccountSymmetricKeyEntity, int>
+    : EntityConfigurationBase<AccountSymmetricKeyEntity>
 {
     public AccountSymmetricKeyEntityConfiguration(IDbTypes dbTypes)
         : base(dbTypes) { }
 
     protected override void ConfigureInternal(EntityTypeBuilder<AccountSymmetricKeyEntity> builder)
     {
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id).ValueGeneratedNever();
+
         builder.HasIndex(e => new { e.AccountId, e.KeyUsedFor }).IsUnique();
 
-        builder.Property(m => m.KeyUsedFor).HasConversion<string>();
+        builder.Property(e => e.KeyUsedFor).HasConversion<string>();
 
-        builder.Property(m => m.ProviderTypeCode).IsRequired();
+        builder.Property(e => e.ProviderTypeCode).IsRequired();
 
-        builder.Property(m => m.Version).IsRequired();
+        builder.Property(e => e.Version).IsRequired();
 
         builder
-            .Property(m => m.EncryptedKey)
+            .Property(e => e.EncryptedKey)
             .IsRequired()
             .HasMaxLength(SymmetricKeyConstants.KEY_MAX_LENGTH);
     }

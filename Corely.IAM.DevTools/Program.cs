@@ -1,6 +1,4 @@
-﻿using System.CommandLine;
-using System.Reflection;
-using Corely.Common.Providers.Redaction;
+﻿using Corely.Common.Providers.Redaction;
 using Corely.IAM.DevTools.Commands;
 using Corely.IAM.DevTools.SerilogCustomization;
 using Microsoft.Extensions.Configuration;
@@ -8,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
+using System.CommandLine;
+using System.Reflection;
 
 namespace Corely.IAM.DevTools;
 
@@ -21,7 +21,7 @@ internal class Program
             .MinimumLevel.Override("System", LogEventLevel.Fatal)
             .Enrich.FromLogContext()
             .Enrich.WithProperty("Application", "Corely.IAM.DevTools")
-            .Enrich.WithProperty("CorrelationId", Guid.NewGuid())
+            .Enrich.WithProperty("CorrelationId", Guid.CreateVersion7())
             .Enrich.With(new SerilogRedactionEnricher([new PasswordRedactionProvider()]))
             .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Information)
             .WriteTo.Seq("http://localhost:5341")

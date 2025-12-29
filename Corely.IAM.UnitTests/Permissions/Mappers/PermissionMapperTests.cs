@@ -11,9 +11,9 @@ public class PermissionMapperTests
     {
         // Arrange
         var request = new CreatePermissionRequest(
-            OwnerAccountId: 123,
+            OwnerAccountId: Guid.CreateVersion7(),
             ResourceType: "TestResource",
-            ResourceId: 456,
+            ResourceId: Guid.CreateVersion7(),
             Create: true,
             Read: true,
             Update: false,
@@ -27,15 +27,15 @@ public class PermissionMapperTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(123, result.AccountId);
-        Assert.Equal("TestResource", result.ResourceType);
-        Assert.Equal(456, result.ResourceId);
+        Assert.Equal(request.OwnerAccountId, result.AccountId);
+        Assert.Equal(request.ResourceType, result.ResourceType);
+        Assert.Equal(request.ResourceId, result.ResourceId);
         Assert.True(result.Create);
         Assert.True(result.Read);
         Assert.False(result.Update);
         Assert.False(result.Delete);
         Assert.True(result.Execute);
-        Assert.Equal("Test Description", result.Description);
+        Assert.Equal(request.Description, result.Description);
     }
 
     [Fact]
@@ -43,16 +43,16 @@ public class PermissionMapperTests
     {
         // Arrange
         var request = new CreatePermissionRequest(
-            OwnerAccountId: 123,
+            OwnerAccountId: Guid.CreateVersion7(),
             ResourceType: "TestResource",
-            ResourceId: 456
+            ResourceId: Guid.CreateVersion7()
         );
 
         // Act
         var result = request.ToPermission();
 
         // Assert
-        Assert.Equal(0, result.Id);
+        Assert.Equal(Guid.Empty, result.Id);
         Assert.Null(result.Description);
         Assert.False(result.Create);
         Assert.False(result.Read);
@@ -62,13 +62,11 @@ public class PermissionMapperTests
     }
 
     [Theory]
-    [InlineData(1, "User", 100, true, false, false, false, false)]
-    [InlineData(2, "Document", 200, false, true, false, false, false)]
-    [InlineData(0, "", 0, false, false, false, false, false)]
+    [InlineData("User", true, false, false, false, false)]
+    [InlineData("Document", false, true, false, false, false)]
+    [InlineData("", false, false, false, false, false)]
     public void ToPermission_ShouldMapVariousInputs(
-        int accountId,
         string resourceType,
-        int resourceId,
         bool create,
         bool read,
         bool update,
@@ -76,6 +74,8 @@ public class PermissionMapperTests
         bool execute
     )
     {
+        var accountId = Guid.CreateVersion7();
+        var resourceId = Guid.CreateVersion7();
         // Arrange
         var request = new CreatePermissionRequest(
             OwnerAccountId: accountId,
@@ -108,11 +108,11 @@ public class PermissionMapperTests
         // Arrange
         var permission = new Permission
         {
-            Id = 42,
+            Id = Guid.CreateVersion7(),
             Description = "Test Description",
-            AccountId = 123,
+            AccountId = Guid.CreateVersion7(),
             ResourceType = "TestResource",
-            ResourceId = 456,
+            ResourceId = Guid.CreateVersion7(),
             Create = true,
             Read = true,
             Update = false,
@@ -125,34 +125,16 @@ public class PermissionMapperTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(42, result.Id);
-        Assert.Equal("Test Description", result.Description);
-        Assert.Equal(123, result.AccountId);
-        Assert.Equal("TestResource", result.ResourceType);
-        Assert.Equal(456, result.ResourceId);
+        Assert.Equal(permission.Id, result.Id);
+        Assert.Equal(permission.Description, result.Description);
+        Assert.Equal(permission.AccountId, result.AccountId);
+        Assert.Equal(permission.ResourceType, result.ResourceType);
+        Assert.Equal(permission.ResourceId, result.ResourceId);
         Assert.True(result.Create);
         Assert.True(result.Read);
         Assert.False(result.Update);
         Assert.False(result.Delete);
         Assert.True(result.Execute);
-    }
-
-    [Fact]
-    public void ToEntity_ShouldNotMapNavigationProperties()
-    {
-        // Arrange
-        var permission = new Permission
-        {
-            Id = 1,
-            AccountId = 100,
-            ResourceType = "Resource",
-            ResourceId = 1,
-        };
-
-        // Act
-        var result = permission.ToEntity();
-
-        // Assert
         Assert.Null(result.Account);
         Assert.Null(result.Roles);
     }
@@ -163,11 +145,11 @@ public class PermissionMapperTests
         // Arrange
         var entity = new PermissionEntity
         {
-            Id = 42,
+            Id = Guid.CreateVersion7(),
             Description = "Test Description",
-            AccountId = 123,
+            AccountId = Guid.CreateVersion7(),
             ResourceType = "TestResource",
-            ResourceId = 456,
+            ResourceId = Guid.CreateVersion7(),
             Create = true,
             Read = true,
             Update = false,
@@ -182,11 +164,11 @@ public class PermissionMapperTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(42, result.Id);
-        Assert.Equal("Test Description", result.Description);
-        Assert.Equal(123, result.AccountId);
-        Assert.Equal("TestResource", result.ResourceType);
-        Assert.Equal(456, result.ResourceId);
+        Assert.Equal(entity.Id, result.Id);
+        Assert.Equal(entity.Description, result.Description);
+        Assert.Equal(entity.AccountId, result.AccountId);
+        Assert.Equal(entity.ResourceType, result.ResourceType);
+        Assert.Equal(entity.ResourceId, result.ResourceId);
         Assert.True(result.Create);
         Assert.True(result.Read);
         Assert.False(result.Update);
@@ -200,11 +182,11 @@ public class PermissionMapperTests
         // Arrange
         var originalPermission = new Permission
         {
-            Id = 99,
+            Id = Guid.CreateVersion7(),
             Description = "Round trip test",
-            AccountId = 456,
+            AccountId = Guid.CreateVersion7(),
             ResourceType = "TestResource",
-            ResourceId = 789,
+            ResourceId = Guid.CreateVersion7(),
             Create = true,
             Read = false,
             Update = true,
@@ -230,15 +212,12 @@ public class PermissionMapperTests
     }
 
     [Theory]
-    [InlineData(1, "Admin permission", 100, "User", 1, true, true, true, true, true)]
-    [InlineData(2, null, 200, "Document", 2, false, true, false, false, false)]
-    [InlineData(0, "", 0, "", 0, false, false, false, false, false)]
+    [InlineData("Admin permission", "User", true, true, true, true, true)]
+    [InlineData(null, "Document", false, true, false, false, false)]
+    [InlineData("", "", false, false, false, false, false)]
     public void ToEntity_ShouldMapVariousInputs(
-        int id,
         string? description,
-        int accountId,
         string resourceType,
-        int resourceId,
         bool create,
         bool read,
         bool update,
@@ -246,10 +225,14 @@ public class PermissionMapperTests
         bool execute
     )
     {
+        var permissionId = Guid.CreateVersion7();
+        var accountId = Guid.CreateVersion7();
+        var resourceId = Guid.CreateVersion7();
+
         // Arrange
         var permission = new Permission
         {
-            Id = id,
+            Id = permissionId,
             Description = description,
             AccountId = accountId,
             ResourceType = resourceType,
@@ -265,7 +248,7 @@ public class PermissionMapperTests
         var result = permission.ToEntity();
 
         // Assert
-        Assert.Equal(id, result.Id);
+        Assert.Equal(permissionId, result.Id);
         Assert.Equal(description, result.Description);
         Assert.Equal(accountId, result.AccountId);
         Assert.Equal(resourceType, result.ResourceType);
@@ -278,15 +261,12 @@ public class PermissionMapperTests
     }
 
     [Theory]
-    [InlineData(1, "Admin permission", 100, "User", 1, true, true, true, true, true)]
-    [InlineData(2, null, 200, "Document", 2, false, true, false, false, false)]
-    [InlineData(0, "", 0, "", 0, false, false, false, false, false)]
+    [InlineData("Admin permission", "User", true, true, true, true, true)]
+    [InlineData(null, "Document", false, true, false, false, false)]
+    [InlineData("", "", false, false, false, false, false)]
     public void ToModel_ShouldMapVariousInputs(
-        int id,
         string? description,
-        int accountId,
         string resourceType,
-        int resourceId,
         bool create,
         bool read,
         bool update,
@@ -294,10 +274,14 @@ public class PermissionMapperTests
         bool execute
     )
     {
+        var permissionId = Guid.CreateVersion7();
+        var accountId = Guid.CreateVersion7();
+        var resourceId = Guid.CreateVersion7();
+
         // Arrange
         var entity = new PermissionEntity
         {
-            Id = id,
+            Id = permissionId,
             Description = description,
             AccountId = accountId,
             ResourceType = resourceType,
@@ -313,7 +297,7 @@ public class PermissionMapperTests
         var result = entity.ToModel();
 
         // Assert
-        Assert.Equal(id, result.Id);
+        Assert.Equal(permissionId, result.Id);
         Assert.Equal(description, result.Description);
         Assert.Equal(accountId, result.AccountId);
         Assert.Equal(resourceType, result.ResourceType);
@@ -332,7 +316,7 @@ public class PermissionMapperTests
         var permission = new Permission
         {
             ResourceType = "group",
-            ResourceId = 0,
+            ResourceId = Guid.Empty,
             Create = true,
             Read = true,
             Update = false,
@@ -351,7 +335,7 @@ public class PermissionMapperTests
         var permission = new Permission
         {
             ResourceType = "group",
-            ResourceId = 42,
+            ResourceId = Guid.CreateVersion7(),
             Create = false,
             Read = true,
             Update = false,
@@ -370,7 +354,7 @@ public class PermissionMapperTests
         var permission = new Permission
         {
             ResourceType = "user",
-            ResourceId = 0,
+            ResourceId = Guid.CreateVersion7(),
             Create = true,
             Read = true,
             Update = true,

@@ -8,4 +8,4 @@ public enum CreateRoleResultCode
     UnauthorizedError,
 }
 
-internal record CreateRoleResult(CreateRoleResultCode ResultCode, string Message, int CreatedId);
+internal record CreateRoleResult(CreateRoleResultCode ResultCode, string Message, Guid CreatedId);

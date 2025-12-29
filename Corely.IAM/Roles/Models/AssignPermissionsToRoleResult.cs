@@ -13,5 +13,5 @@ internal record AssignPermissionsToRoleResult(
     AssignPermissionsToRoleResultCode ResultCode,
     string? Message,
     int AddedPermissionCount,
-    List<int> InvalidPermissionIds = null
+    List<Guid> InvalidPermissionIds = null
 );

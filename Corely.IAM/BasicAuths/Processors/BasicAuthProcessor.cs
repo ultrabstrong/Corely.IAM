@@ -43,7 +43,7 @@ internal class BasicAuthProcessor(
             return new CreateBasicAuthResult(
                 CreateBasicAuthResultCode.BasicAuthExistsError,
                 $"Basic auth already exists for UserId {request.UserId}",
-                -1
+                Guid.Empty
             );
         }
 

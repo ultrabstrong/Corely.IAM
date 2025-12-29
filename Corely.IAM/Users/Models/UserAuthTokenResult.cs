@@ -13,7 +13,7 @@ public enum UserAuthTokenResultCode
 public record UserAuthTokenResult(
     UserAuthTokenResultCode ResultCode,
     string? Token,
-    string? TokenId,
+    Guid? TokenId,
     User? User,
     Account? CurrentAccount,
     List<Account> AvailableAccounts

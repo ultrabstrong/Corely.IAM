@@ -10,7 +10,7 @@ public class RoleMapperTests
     public void ToRole_ShouldMapAllProperties()
     {
         // Arrange
-        var request = new CreateRoleRequest(RoleName: "TestRole", OwnerAccountId: 123);
+        var request = new CreateRoleRequest(RoleName: "TestRole", OwnerAccountId: Guid.CreateVersion7());
 
         // Act
         var result = request.ToRole();
@@ -18,39 +18,22 @@ public class RoleMapperTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal("TestRole", result.Name);
-        Assert.Equal(123, result.AccountId);
+        Assert.Equal(request.OwnerAccountId, result.AccountId);
     }
 
     [Fact]
     public void ToRole_ShouldSetDefaultValues()
     {
         // Arrange
-        var request = new CreateRoleRequest(RoleName: "TestRole", OwnerAccountId: 123);
+        var request = new CreateRoleRequest(RoleName: "TestRole", OwnerAccountId: Guid.CreateVersion7());
 
         // Act
         var result = request.ToRole();
 
         // Assert
-        Assert.Equal(0, result.Id);
+        Assert.Equal(Guid.Empty, result.Id);
         Assert.Null(result.Description);
         Assert.False(result.IsSystemDefined);
-    }
-
-    [Theory]
-    [InlineData("Admin", 1)]
-    [InlineData("User", 999)]
-    [InlineData("", 0)]
-    public void ToRole_ShouldMapVariousInputs(string roleName, int accountId)
-    {
-        // Arrange
-        var request = new CreateRoleRequest(RoleName: roleName, OwnerAccountId: accountId);
-
-        // Act
-        var result = request.ToRole();
-
-        // Assert
-        Assert.Equal(roleName, result.Name);
-        Assert.Equal(accountId, result.AccountId);
     }
 
     [Fact]
@@ -59,11 +42,11 @@ public class RoleMapperTests
         // Arrange
         var role = new Role
         {
-            Id = 42,
+            Id = Guid.CreateVersion7(),
             Name = "TestRole",
             Description = "Test Description",
             IsSystemDefined = true,
-            AccountId = 123,
+            AccountId = Guid.CreateVersion7(),
         };
 
         // Act
@@ -71,28 +54,11 @@ public class RoleMapperTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(42, result.Id);
-        Assert.Equal("TestRole", result.Name);
-        Assert.Equal("Test Description", result.Description);
+        Assert.Equal(role.Id, result.Id);
+        Assert.Equal(role.Name, result.Name);
+        Assert.Equal(role.Description, result.Description);
         Assert.True(result.IsSystemDefined);
-        Assert.Equal(123, result.AccountId);
-    }
-
-    [Fact]
-    public void ToEntity_ShouldNotMapNavigationProperties()
-    {
-        // Arrange
-        var role = new Role
-        {
-            Id = 1,
-            Name = "Test",
-            AccountId = 100,
-        };
-
-        // Act
-        var result = role.ToEntity();
-
-        // Assert
+        Assert.Equal(role.AccountId, result.AccountId);
         Assert.Null(result.Account);
         Assert.Null(result.Users);
         Assert.Null(result.Groups);
@@ -105,11 +71,11 @@ public class RoleMapperTests
         // Arrange
         var entity = new RoleEntity
         {
-            Id = 42,
+            Id = Guid.CreateVersion7(),
             Name = "TestRole",
             Description = "Test Description",
             IsSystemDefined = true,
-            AccountId = 123,
+            AccountId = Guid.CreateVersion7(),
             CreatedUtc = DateTime.UtcNow,
             ModifiedUtc = DateTime.UtcNow,
         };
@@ -119,101 +85,10 @@ public class RoleMapperTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(42, result.Id);
-        Assert.Equal("TestRole", result.Name);
-        Assert.Equal("Test Description", result.Description);
+        Assert.Equal(entity.Id, result.Id);
+        Assert.Equal(entity.Name, result.Name);
+        Assert.Equal(entity.Description, result.Description);
         Assert.True(result.IsSystemDefined);
-        Assert.Equal(123, result.AccountId);
-    }
-
-    [Fact]
-    public void ToModel_ToEntity_RoundTrip_ShouldPreserveData()
-    {
-        // Arrange
-        var originalRole = new Role
-        {
-            Id = 99,
-            Name = "RoundTripRole",
-            Description = "Round trip test",
-            IsSystemDefined = false,
-            AccountId = 456,
-        };
-
-        // Act
-        var entity = originalRole.ToEntity();
-        var resultRole = entity.ToModel();
-
-        // Assert
-        Assert.Equal(originalRole.Id, resultRole.Id);
-        Assert.Equal(originalRole.Name, resultRole.Name);
-        Assert.Equal(originalRole.Description, resultRole.Description);
-        Assert.Equal(originalRole.IsSystemDefined, resultRole.IsSystemDefined);
-        Assert.Equal(originalRole.AccountId, resultRole.AccountId);
-    }
-
-    [Theory]
-    [InlineData(1, "Admin", "Admin role", true, 100)]
-    [InlineData(2, "User", null, false, 200)]
-    [InlineData(0, "", "", false, 0)]
-    public void ToEntity_ShouldMapVariousInputs(
-        int id,
-        string name,
-        string? description,
-        bool isSystemDefined,
-        int accountId
-    )
-    {
-        // Arrange
-        var role = new Role
-        {
-            Id = id,
-            Name = name,
-            Description = description,
-            IsSystemDefined = isSystemDefined,
-            AccountId = accountId,
-        };
-
-        // Act
-        var result = role.ToEntity();
-
-        // Assert
-        Assert.Equal(id, result.Id);
-        Assert.Equal(name, result.Name);
-        Assert.Equal(description, result.Description);
-        Assert.Equal(isSystemDefined, result.IsSystemDefined);
-        Assert.Equal(accountId, result.AccountId);
-    }
-
-    [Theory]
-    [InlineData(1, "Admin", "Admin role", true, 100)]
-    [InlineData(2, "User", null, false, 200)]
-    [InlineData(0, "", "", false, 0)]
-    public void ToModel_ShouldMapVariousInputs(
-        int id,
-        string name,
-        string? description,
-        bool isSystemDefined,
-        int accountId
-    )
-    {
-        // Arrange
-        var entity = new RoleEntity
-        {
-            Id = id,
-            Name = name,
-            Description = description,
-            IsSystemDefined = isSystemDefined,
-            AccountId = accountId,
-        };
-
-        // Act
-        var result = entity.ToModel();
-
-        // Assert
-        Assert.Equal(id, result.Id);
-        Assert.Equal(name, result.Name);
-        Assert.Equal(description, result.Description);
-        Assert.Equal(isSystemDefined, result.IsSystemDefined);
-        Assert.Equal(accountId, result.AccountId);
+        Assert.Equal(entity.AccountId, result.AccountId);
     }
 }

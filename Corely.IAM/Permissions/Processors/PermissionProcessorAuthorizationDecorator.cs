@@ -26,13 +26,13 @@ internal class PermissionProcessorAuthorizationDecorator(
             : new CreatePermissionResult(
                 CreatePermissionResultCode.UnauthorizedError,
                 "Unauthorized to create permission",
-                -1
+                Guid.Empty
             );
 
-    public Task CreateDefaultSystemPermissionsAsync(int accountId) =>
+    public Task CreateDefaultSystemPermissionsAsync(Guid accountId) =>
         _inner.CreateDefaultSystemPermissionsAsync(accountId);
 
-    public async Task<DeletePermissionResult> DeletePermissionAsync(int permissionId) =>
+    public async Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
             PermissionConstants.PERMISSION_RESOURCE_TYPE,

@@ -31,7 +31,7 @@ public class BasicAuthProcessorTests
     [Fact]
     public async Task CreateBasicAuthAsync_ReturnsSuccess_WhenBasicAuthDoesNotExist()
     {
-        var request = new CreateBasicAuthRequest(1, VALID_PASSWORD);
+        var request = new CreateBasicAuthRequest(Guid.CreateVersion7(), VALID_PASSWORD);
         var result = await _basicAuthProcessor.CreateBasicAuthAsync(request);
 
         Assert.NotNull(result);
@@ -41,7 +41,7 @@ public class BasicAuthProcessorTests
     [Fact]
     public async Task CreateBasicAuthAsync_ReturnsBasicAuthExistsError_WhenBasicAuthExists()
     {
-        var request = new CreateBasicAuthRequest(1, VALID_PASSWORD);
+        var request = new CreateBasicAuthRequest(Guid.CreateVersion7(), VALID_PASSWORD);
         await _basicAuthProcessor.CreateBasicAuthAsync(request);
         var result = await _basicAuthProcessor.CreateBasicAuthAsync(request);
 
@@ -52,7 +52,7 @@ public class BasicAuthProcessorTests
     [Fact]
     public async Task CreateBasicAuthAsync_Throws_WhenPasswordValidationFails()
     {
-        var request = new CreateBasicAuthRequest(1, "password");
+        var request = new CreateBasicAuthRequest(Guid.CreateVersion7(), "password");
 
         var ex = await Record.ExceptionAsync(() =>
             _basicAuthProcessor.CreateBasicAuthAsync(request)
@@ -77,10 +77,10 @@ public class BasicAuthProcessorTests
     [Fact]
     public async Task UpdateBasicAuthAsync_ReturnsSuccess_WhenBasicAuthExists()
     {
-        var createRequest = new CreateBasicAuthRequest(1, VALID_PASSWORD);
+        var createRequest = new CreateBasicAuthRequest(Guid.CreateVersion7(), VALID_PASSWORD);
         await _basicAuthProcessor.CreateBasicAuthAsync(createRequest);
 
-        var updateRequest = new UpdateBasicAuthRequest(1, "NewPassword1!");
+        var updateRequest = new UpdateBasicAuthRequest(createRequest.UserId, "NewPassword1!");
         var result = await _basicAuthProcessor.UpdateBasicAuthAsync(updateRequest);
 
         Assert.NotNull(result);
@@ -90,7 +90,7 @@ public class BasicAuthProcessorTests
     [Fact]
     public async Task UpdateBasicAuthAsync_ReturnsBasicAuthNotFoundError_WhenBasicAuthDoesNotExist()
     {
-        var request = new UpdateBasicAuthRequest(9999, VALID_PASSWORD);
+        var request = new UpdateBasicAuthRequest(Guid.CreateVersion7(), VALID_PASSWORD);
         var result = await _basicAuthProcessor.UpdateBasicAuthAsync(request);
 
         Assert.NotNull(result);
@@ -100,10 +100,10 @@ public class BasicAuthProcessorTests
     [Fact]
     public async Task UpdateBasicAuthAsync_Throws_WhenPasswordValidationFails()
     {
-        var createRequest = new CreateBasicAuthRequest(1, VALID_PASSWORD);
+        var createRequest = new CreateBasicAuthRequest(Guid.CreateVersion7(), VALID_PASSWORD);
         await _basicAuthProcessor.CreateBasicAuthAsync(createRequest);
 
-        var updateRequest = new UpdateBasicAuthRequest(1, "password");
+        var updateRequest = new UpdateBasicAuthRequest(createRequest.UserId, "password");
 
         var ex = await Record.ExceptionAsync(() =>
             _basicAuthProcessor.UpdateBasicAuthAsync(updateRequest)
@@ -127,10 +127,10 @@ public class BasicAuthProcessorTests
     [Fact]
     public async Task VerifyBasicAuthAsync_ReturnsValidTrue_WhenBasicAuthExists()
     {
-        var request = new CreateBasicAuthRequest(1, VALID_PASSWORD);
+        var request = new CreateBasicAuthRequest(Guid.CreateVersion7(), VALID_PASSWORD);
         await _basicAuthProcessor.CreateBasicAuthAsync(request);
 
-        var verifyRequest = new VerifyBasicAuthRequest(1, VALID_PASSWORD);
+        var verifyRequest = new VerifyBasicAuthRequest(request.UserId, VALID_PASSWORD);
         var result = await _basicAuthProcessor.VerifyBasicAuthAsync(verifyRequest);
 
         Assert.Equal(VerifyBasicAuthResultCode.Success, result.ResultCode);
@@ -140,10 +140,10 @@ public class BasicAuthProcessorTests
     [Fact]
     public async Task VerifyBasicAuthAsync_ReturnsValidFalse_WhenPasswordIsIncorrect()
     {
-        var request = new CreateBasicAuthRequest(1, VALID_PASSWORD);
+        var request = new CreateBasicAuthRequest(Guid.CreateVersion7(), VALID_PASSWORD);
         await _basicAuthProcessor.CreateBasicAuthAsync(request);
 
-        var verifyRequest = new VerifyBasicAuthRequest(1, "password");
+        var verifyRequest = new VerifyBasicAuthRequest(request.UserId, "password");
         var result = await _basicAuthProcessor.VerifyBasicAuthAsync(verifyRequest);
 
         Assert.Equal(VerifyBasicAuthResultCode.Success, result.ResultCode);
@@ -153,7 +153,7 @@ public class BasicAuthProcessorTests
     [Fact]
     public async Task VerifyBasicAuthAsync_ReturnsUserNotFoundError_WhenBasicAuthDoesNotExist()
     {
-        var request = new VerifyBasicAuthRequest(1, VALID_PASSWORD);
+        var request = new VerifyBasicAuthRequest(Guid.CreateVersion7(), VALID_PASSWORD);
 
         var result = await _basicAuthProcessor.VerifyBasicAuthAsync(request);
 

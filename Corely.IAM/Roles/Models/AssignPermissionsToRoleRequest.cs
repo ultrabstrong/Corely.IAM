@@ -1,7 +1,7 @@
 ﻿namespace Corely.IAM.Roles.Models;
 
 internal record AssignPermissionsToRoleRequest(
-    List<int> PermissionIds,
-    int RoleId,
+    List<Guid> PermissionIds,
+    Guid RoleId,
     bool BypassAuthorization = false
 );

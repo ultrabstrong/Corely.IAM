@@ -85,7 +85,7 @@ internal class UserProcessor(
             _securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey(),
         ];
 
-        var userEntity = user.ToEntity();
+        var userEntity = user.ToEntity(_encryptionProviderFactory);
         var created = await _userRepo.CreateAsync(userEntity);
 
         return new CreateUserResult(CreateUserResultCode.Success, string.Empty, created.Id);

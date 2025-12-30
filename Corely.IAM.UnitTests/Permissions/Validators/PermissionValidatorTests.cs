@@ -19,20 +19,6 @@ public class PermissionValidatorTests
     }
 
     [Fact]
-    public void PermissionValidator_HasValidationError_WhenResourceIdNegative()
-    {
-        var permission = new Permission
-        {
-            ResourceType = "group",
-            ResourceId = Guid.CreateVersion7(),
-            Create = true,
-        };
-
-        var result = _validator.TestValidate(permission);
-        result.ShouldHaveValidationErrorFor(x => x.ResourceId);
-    }
-
-    [Fact]
     public void PermissionValidator_HasValidationError_WhenNoCrudxFlagsSet()
     {
         var permission = new Permission { ResourceType = "group", ResourceId = Guid.Empty };

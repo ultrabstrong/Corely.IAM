@@ -344,7 +344,7 @@ public class PermissionMapperTests
         };
 
         // Act & Assert
-        Assert.Equal("group - 42 cRudx", permission.DisplayName);
+        Assert.Equal($"group - {permission.ResourceId} cRudx", permission.DisplayName);
     }
 
     [Fact]
@@ -354,7 +354,7 @@ public class PermissionMapperTests
         var permission = new Permission
         {
             ResourceType = "user",
-            ResourceId = Guid.CreateVersion7(),
+            ResourceId = Guid.Empty,
             Create = true,
             Read = true,
             Update = true,

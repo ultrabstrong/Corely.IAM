@@ -279,7 +279,8 @@ public class RoleProcessorTests
     public async Task AssignPermissionsToRoleAsync_PartiallySucceeds_WhenSomePermissionsDoNotExist()
     {
         var (role, _) = await CreateRoleAsync();
-        var request = new AssignPermissionsToRoleRequest([Guid.Empty], role.Id);
+        var permission = await CreatePermissionAsync(role.AccountId);
+        var request = new AssignPermissionsToRoleRequest([Guid.Empty, permission.Id], role.Id);
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
@@ -290,6 +291,7 @@ public class RoleProcessorTests
         );
         Assert.NotEmpty(result.InvalidPermissionIds);
         Assert.Contains(Guid.Empty, result.InvalidPermissionIds);
+        Assert.DoesNotContain(permission.Id, result.InvalidPermissionIds);
     }
 
     [Fact]

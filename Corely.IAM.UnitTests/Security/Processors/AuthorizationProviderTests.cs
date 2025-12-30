@@ -61,7 +61,7 @@ public class AuthorizationProviderTests
     public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasWildcardPermission()
     {
         var provider = CreateProvider();
-        SetUserContext(Guid.CreateVersion7(), null);
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
             resourceId: Guid.Empty, // Wildcard - applies to all
@@ -527,12 +527,19 @@ public class AuthorizationProviderTests
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
 
-        var account = new AccountEntity { Id = Guid.CreateVersion7(), AccountName = "TestAccount" };
+        var userContextProvider = _serviceFactory.GetRequiredService<UserContextProvider>();
+        var context = userContextProvider.GetUserContext();
+
+        var account = new AccountEntity
+        {
+            Id = context!.CurrentAccount?.Id ?? Guid.CreateVersion7(),
+            AccountName = "TestAccount",
+        };
         await accountRepo.CreateAsync(account);
 
         var user = new UserEntity
         {
-            Id = Guid.CreateVersion7(),
+            Id = context.User.Id,
             Username = "testuser",
             Email = "test@test.com",
         };
@@ -544,6 +551,7 @@ public class AuthorizationProviderTests
             Name = "TestRole",
             AccountId = account.Id,
             Users = [user],
+            Groups = [],
         };
         await roleRepo.CreateAsync(role);
 

@@ -223,7 +223,7 @@ public class UserProcessorAuthorizationDecoratorTests
                 x.IsAuthorizedAsync(
                     AuthAction.Read,
                     PermissionConstants.ROLE_RESOURCE_TYPE,
-                    It.IsAny<Guid>()
+                    It.IsAny<Guid[]>()
                 )
             )
             .ReturnsAsync(true);

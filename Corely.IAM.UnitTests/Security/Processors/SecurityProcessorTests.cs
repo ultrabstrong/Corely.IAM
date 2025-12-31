@@ -49,6 +49,7 @@ public class SecurityProcessorTests
         var result = _securityProcessor.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
 
         Assert.NotNull(result);
+        Assert.NotEqual(Guid.Empty, result.Id);
         Assert.NotNull(result.Key);
         Assert.True(result.Version > -1);
         Assert.Equal(KeyUsedFor.Encryption, result.KeyUsedFor);
@@ -66,6 +67,7 @@ public class SecurityProcessorTests
     {
         var result = _securityProcessor.GetAsymmetricEncryptionKeyEncryptedWithSystemKey();
 
+        Assert.NotEqual(Guid.Empty, result.Id);
         Assert.NotNull(result);
         Assert.NotNull(result.PublicKey);
         Assert.NotNull(result.PrivateKey);
@@ -87,6 +89,7 @@ public class SecurityProcessorTests
     {
         var result = _securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey();
 
+        Assert.NotEqual(Guid.Empty, result.Id);
         Assert.NotNull(result);
         Assert.NotNull(result.PublicKey);
         Assert.NotNull(result.PrivateKey);

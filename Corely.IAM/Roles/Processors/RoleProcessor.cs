@@ -61,6 +61,7 @@ internal class RoleProcessor(
         }
 
         var roleEntity = role.ToEntity();
+        roleEntity.Id = Guid.CreateVersion7();
         var created = await _roleRepo.CreateAsync(roleEntity);
 
         return new CreateRoleResult(CreateRoleResultCode.Success, string.Empty, created.Id);
@@ -72,18 +73,21 @@ internal class RoleProcessor(
     {
         var ownerRole = new RoleEntity
         {
+            Id = Guid.CreateVersion7(),
             AccountId = ownerAccountId,
             Name = RoleConstants.OWNER_ROLE_NAME,
             IsSystemDefined = true,
         };
         var adminRole = new RoleEntity
         {
+            Id = Guid.CreateVersion7(),
             AccountId = ownerAccountId,
             Name = RoleConstants.ADMIN_ROLE_NAME,
             IsSystemDefined = true,
         };
         var userRole = new RoleEntity
         {
+            Id = Guid.CreateVersion7(),
             AccountId = ownerAccountId,
             Name = RoleConstants.USER_ROLE_NAME,
             IsSystemDefined = true,

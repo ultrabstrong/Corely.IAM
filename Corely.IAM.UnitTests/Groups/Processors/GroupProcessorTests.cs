@@ -143,6 +143,7 @@ public class GroupProcessorTests
 
         var result = await _groupProcessor.CreateGroupAsync(request);
 
+        Assert.NotEqual(Guid.Empty, result.CreatedId);
         Assert.Equal(CreateGroupResultCode.Success, result.ResultCode);
 
         // Verify group is linked to account id

@@ -110,6 +110,7 @@ public class PermissionProcessorTests
 
         var result = await _permissionProcessor.CreatePermissionAsync(request);
 
+        Assert.NotEqual(Guid.Empty, result.CreatedId);
         Assert.Equal(CreatePermissionResultCode.Success, result.ResultCode);
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
@@ -134,7 +135,12 @@ public class PermissionProcessorTests
         Assert.Equal(3, permissions.Count);
         Assert.All(
             permissions,
-            p => Assert.Equal(PermissionConstants.ALL_RESOURCE_TYPES, p.ResourceType)
+            p =>
+            {
+                Assert.NotEqual(Guid.Empty, p.Id);
+                Assert.Equal(Guid.Empty, p.ResourceId);
+                Assert.Equal(PermissionConstants.ALL_RESOURCE_TYPES, p.ResourceType);
+            }
         );
         Assert.All(permissions, p => Assert.True(p.IsSystemDefined));
     }

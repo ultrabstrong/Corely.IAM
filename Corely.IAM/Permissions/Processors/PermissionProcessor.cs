@@ -76,6 +76,7 @@ internal class PermissionProcessor(
         }
 
         var permissionEntity = permission.ToEntity();
+        permissionEntity.Id = Guid.CreateVersion7();
         var created = await _permissionRepo.CreateAsync(permissionEntity);
 
         return new CreatePermissionResult(
@@ -102,6 +103,7 @@ internal class PermissionProcessor(
             // Owner: CRUDX on all resources
             new()
             {
+                Id = Guid.CreateVersion7(),
                 AccountId = accountId,
                 ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
                 ResourceId = Guid.Empty,
@@ -117,6 +119,7 @@ internal class PermissionProcessor(
             // Admin: CRUdX on all resources (no Delete)
             new()
             {
+                Id = Guid.CreateVersion7(),
                 AccountId = accountId,
                 ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
                 ResourceId = Guid.Empty,
@@ -132,6 +135,7 @@ internal class PermissionProcessor(
             // User: cRudx on all resources (Read only)
             new()
             {
+                Id = Guid.CreateVersion7(),
                 AccountId = accountId,
                 ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
                 ResourceId = Guid.Empty,

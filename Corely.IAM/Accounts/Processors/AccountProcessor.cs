@@ -77,8 +77,8 @@ internal class AccountProcessor(
         ];
 
         var accountEntity = account.ToEntity();
-        accountEntity.Id = Guid.CreateVersion7();
         accountEntity.Users = [userEntity];
+        accountEntity.Id = Guid.CreateVersion7();
         var created = await _accountRepo.CreateAsync(accountEntity);
 
         return new CreateAccountResult(CreateAccountResultCode.Success, string.Empty, created.Id);

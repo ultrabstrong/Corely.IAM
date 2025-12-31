@@ -105,6 +105,7 @@ public class RoleProcessorTests
 
         var result = await _roleProcessor.CreateRoleAsync(request);
 
+        Assert.NotEqual(Guid.Empty, result.CreatedId);
         Assert.Equal(CreateRoleResultCode.Success, result.ResultCode);
 
         // Verify role is linked to account id
@@ -144,7 +145,11 @@ public class RoleProcessorTests
     {
         var ownerAccount = await CreateAccountAsync();
 
-        await _roleProcessor.CreateDefaultSystemRolesAsync(ownerAccount.Id);
+        var result = await _roleProcessor.CreateDefaultSystemRolesAsync(ownerAccount.Id);
+
+        Assert.NotEqual(Guid.Empty, result.OwnerRoleId);
+        Assert.NotEqual(Guid.Empty, result.AdminRoleId);
+        Assert.NotEqual(Guid.Empty, result.UserRoleId);
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var roles = await roleRepo.ListAsync(r => r.AccountId == ownerAccount.Id);

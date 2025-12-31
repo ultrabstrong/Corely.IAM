@@ -175,6 +175,8 @@ public class AccountProcessorTests
             a => a.Id == result.CreatedId,
             include: q => q.Include(a => a.Users)
         );
+
+        Assert.NotEqual(Guid.Empty, result.CreatedId);
         Assert.NotNull(accountEntity);
         Assert.NotNull(accountEntity.Users);
         Assert.Single(accountEntity.Users);

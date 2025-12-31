@@ -66,6 +66,7 @@ internal class GroupProcessor(
         }
 
         var groupEntity = group.ToEntity();
+        groupEntity.Id = Guid.CreateVersion7();
         var created = await _groupRepo.CreateAsync(groupEntity);
 
         return new CreateGroupResult(CreateGroupResultCode.Success, string.Empty, created.Id);

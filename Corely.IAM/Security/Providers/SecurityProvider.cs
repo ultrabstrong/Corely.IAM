@@ -39,6 +39,7 @@ internal class SecurityProvider(
 
         var symmetricKey = new SymmetricKey
         {
+            Id = Guid.CreateVersion7(),
             KeyUsedFor = KeyUsedFor.Encryption,
             ProviderTypeCode = symmetricEncryptionProvider.EncryptionTypeCode,
             Version = systemKeyStoreProvider.GetCurrentVersion(),
@@ -67,6 +68,7 @@ internal class SecurityProvider(
 
         var asymmetricKey = new AsymmetricKey
         {
+            Id = Guid.CreateVersion7(),
             KeyUsedFor = KeyUsedFor.Encryption,
             ProviderTypeCode = asymmetricEncryptionProvider.EncryptionTypeCode,
             Version = systemKeyStoreProvider.GetCurrentVersion(),
@@ -95,6 +97,7 @@ internal class SecurityProvider(
 
         var asymmetricKey = new AsymmetricKey
         {
+            Id = Guid.CreateVersion7(),
             KeyUsedFor = KeyUsedFor.Signature,
             ProviderTypeCode = asymmetricSignatureProvider.SignatureTypeCode,
             Version = systemKeyStoreProvider.GetCurrentVersion(),

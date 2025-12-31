@@ -221,6 +221,7 @@ public class UserProcessorTests
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         var res = await _userProcessor.CreateUserAsync(request);
+        Assert.NotEqual(Guid.Empty, res.CreatedId);
         Assert.Equal(CreateUserResultCode.Success, res.ResultCode);
     }
 

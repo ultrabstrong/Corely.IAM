@@ -8,8 +8,8 @@ if (-not (Test-Path $targetDir)) {
 }
 
 # Source paths for published executables
-$devToolsSource = "Corely.IAM.DevTools\bin\Release\net8.0\win-x64\publish\Corely.IAM.DevTools.exe"
-$dataAccessSource = "Corely.IAM.DataAccessMigrations\bin\Release\net8.0\win-x64\publish\Corely.IAM.DataAccessMigrations.exe"
+$devToolsSource = "Corely.IAM.DevTools\bin\Release\net9.0\win-x64\publish\Corely.IAM.DevTools.exe"
+$dataAccessSource = "Corely.IAM.DataAccessMigrations\bin\Release\net9.0\win-x64\publish\Corely.IAM.DataAccessMigrations.exe"
 
 # Copy and rename DevTools to corely.exe
 if (Test-Path $devToolsSource) {

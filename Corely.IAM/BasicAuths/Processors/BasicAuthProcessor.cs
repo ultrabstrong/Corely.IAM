@@ -64,6 +64,7 @@ internal class BasicAuthProcessor(
         var basicAuthEntity = basicAuth.ToEntity();
 
         _logger.LogDebug("Creating basic auth for UserId {UserId}", request.UserId);
+        basicAuthEntity.Id = Guid.CreateVersion7();
         var created = await _basicAuthRepo.CreateAsync(basicAuthEntity);
         return new CreateBasicAuthResult(
             CreateBasicAuthResultCode.Success,

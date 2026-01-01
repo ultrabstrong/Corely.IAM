@@ -35,6 +35,7 @@ public class BasicAuthProcessorTests
         var result = await _basicAuthProcessor.CreateBasicAuthAsync(request);
 
         Assert.NotNull(result);
+        Assert.NotEqual(Guid.Empty, result.CreatedId);
         Assert.Equal(CreateBasicAuthResultCode.Success, result.ResultCode);
     }
 

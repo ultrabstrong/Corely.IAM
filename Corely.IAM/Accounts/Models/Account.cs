@@ -4,7 +4,7 @@ namespace Corely.IAM.Accounts.Models;
 
 public class Account
 {
-    internal Guid Id { get; init; }
+    public Guid Id { get; init; }
     public string AccountName { get; init; } = null!;
     public List<SymmetricKey>? SymmetricKeys { get; set; } = null!;
     public List<AsymmetricKey>? AsymmetricKeys { get; set; } = null!;

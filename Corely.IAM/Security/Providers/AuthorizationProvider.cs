@@ -38,18 +38,25 @@ internal class AuthorizationProvider(
 
         var permissions = await GetPermissionsAsync();
 
-        var hasPermission = permissions.Any(p =>
-            (
-                p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
-                || p.ResourceType == resourceType
+        var relevantPermissions = permissions
+            .Where(p =>
+                (
+                    p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
+                    || p.ResourceType == resourceType
+                ) && HasAction(p, action)
             )
-            && (
-                p.ResourceId == Guid.Empty
-                || resourceIds.Length == 0
-                || resourceIds.Contains(p.ResourceId)
-            )
-            && HasAction(p, action)
-        );
+            .ToList();
+
+        // Check if user has a wildcard permission (ResourceId == Guid.Empty)
+        var hasWildcardPermission = relevantPermissions.Any(p => p.ResourceId == Guid.Empty);
+
+        // If no specific resource IDs requested, just need any relevant permission
+        // If user has wildcard permission, all resources are authorized
+        // Otherwise, verify ALL requested resource IDs have a matching permission
+        var hasPermission =
+            hasWildcardPermission || resourceIds.Length == 0
+                ? relevantPermissions.Count > 0
+                : resourceIds.All(id => relevantPermissions.Any(p => p.ResourceId == id));
 
         if (!hasPermission)
         {

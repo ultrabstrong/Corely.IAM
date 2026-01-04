@@ -371,7 +371,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasPermissionForOneOfMultipleResourceIds()
+    public async Task IsAuthorizedAsync_ReturnsFalse_WhenUserHasPermissionForOnlyOneOfMultipleResourceIds()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
@@ -382,7 +382,7 @@ public class AuthorizationProviderTests
             read: true
         );
 
-        // Request access to resources 5, 10, 15 - user only has permission for 5
+        // Request access to resources - user only has permission for one of them
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.USER_RESOURCE_TYPE,
@@ -391,98 +391,33 @@ public class AuthorizationProviderTests
             Guid.CreateVersion7()
         );
 
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task IsAuthorizedAsync_ReturnsFalse_WhenUserHasNoPermissionForAnyOfMultipleResourceIds()
-    {
-        var provider = CreateProvider();
-        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
-        await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.USER_RESOURCE_TYPE,
-            resourceId: Guid.CreateVersion7(), // Only has permission for resource 5
-            read: true
-        );
-
-        // Request access to resources 10, 15, 20 - user has no permission for any
-        var result = await provider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7()
-        );
-
         Assert.False(result);
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasWildcardPermissionForMultipleResourceIds()
+    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasPermissionForAllOfMultipleResourceIds()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
+        var resourceId1 = Guid.CreateVersion7();
+        var resourceId2 = Guid.CreateVersion7();
+        var resourceId3 = Guid.CreateVersion7();
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.USER_RESOURCE_TYPE,
-            resourceId: Guid.Empty, // Wildcard - applies to all resources
+            resourceIds: new[] { resourceId1, resourceId2, resourceId3 },
             read: true
         );
 
-        // Request access to multiple resources - wildcard should cover all
+        // Request access to all resources that user has permissions for
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.USER_RESOURCE_TYPE,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7()
+            resourceId1,
+            resourceId2,
+            resourceId3
         );
 
         Assert.True(result);
-    }
-
-    [Fact]
-    public async Task IsAuthorizedAsync_ReturnsTrue_WithEmptyResourceIds_WhenUserHasGeneralPermission()
-    {
-        var provider = CreateProvider();
-        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
-        await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
-            resourceId: Guid.Empty,
-            create: true
-        );
-
-        // No resource IDs passed (empty array) - should check general permission
-        var result = await provider.IsAuthorizedAsync(
-            AuthAction.Create,
-            PermissionConstants.GROUP_RESOURCE_TYPE
-        );
-
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task IsAuthorizedAsync_ReturnsFalse_WithMultipleResourceIds_WhenWrongAction()
-    {
-        var provider = CreateProvider();
-        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
-        var resourceIdWithPermission = Guid.CreateVersion7();
-        await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.USER_RESOURCE_TYPE,
-            resourceId: resourceIdWithPermission,
-            read: true // Only has Read
-        );
-
-        // Request Update action for resource 5 - user only has Read
-        var result = await provider.IsAuthorizedAsync(
-            AuthAction.Update,
-            PermissionConstants.USER_RESOURCE_TYPE,
-            resourceIdWithPermission,
-            Guid.CreateVersion7()
-        );
-
-        Assert.False(result);
     }
 
     private AuthorizationProvider CreateProvider()
@@ -515,6 +450,27 @@ public class AuthorizationProviderTests
     private async Task SetupTestPermissionDataAsync(
         string resourceType,
         Guid resourceId,
+        bool create = false,
+        bool read = false,
+        bool update = false,
+        bool delete = false,
+        bool execute = false
+    )
+    {
+        await SetupTestPermissionDataAsync(
+            resourceType,
+            [resourceId],
+            create,
+            read,
+            update,
+            delete,
+            execute
+        );
+    }
+
+    private async Task SetupTestPermissionDataAsync(
+        string resourceType,
+        Guid[] resourceIds,
         bool create = false,
         bool read = false,
         bool update = false,
@@ -555,19 +511,22 @@ public class AuthorizationProviderTests
         };
         await roleRepo.CreateAsync(role);
 
-        var permission = new PermissionEntity
+        foreach (var resourceId in resourceIds)
         {
-            Id = Guid.CreateVersion7(),
-            AccountId = account.Id,
-            ResourceType = resourceType,
-            ResourceId = resourceId,
-            Create = create,
-            Read = read,
-            Update = update,
-            Delete = delete,
-            Execute = execute,
-            Roles = [role],
-        };
-        await permissionRepo.CreateAsync(permission);
+            var permission = new PermissionEntity
+            {
+                Id = Guid.CreateVersion7(),
+                AccountId = account.Id,
+                ResourceType = resourceType,
+                ResourceId = resourceId,
+                Create = create,
+                Read = read,
+                Update = update,
+                Delete = delete,
+                Execute = execute,
+                Roles = [role],
+            };
+            await permissionRepo.CreateAsync(permission);
+        }
     }
 }

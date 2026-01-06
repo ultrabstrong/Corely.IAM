@@ -1,6 +1,6 @@
 {
   "ConnectionStrings": {
-    "DataRepoConnection": "Server=localhost;Port=3306;Database=MaxStrongReporting;Uid=root;Pwd=admin;"
+    "DataRepoConnection": "Server=localhost;Port=3306;Database=IAM;Uid=root;Pwd=admin;"
   },
   "SystemSymmetricEncryptionKey": "xZoYnypljZSkbaf/+oa47LKGRd3EdKnVy6siXjOOVEk=",
   "PasswordValidationOptions": {

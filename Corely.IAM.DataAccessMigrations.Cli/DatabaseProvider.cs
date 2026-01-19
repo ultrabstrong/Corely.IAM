@@ -4,6 +4,7 @@ public enum DatabaseProvider
 {
     MySql,
     MariaDb,
+    MsSql,
 }
 
 public static class DatabaseProviderExtensions

@@ -9,7 +9,8 @@
 
 $projects = @(
     "Corely.IAM.DataAccessMigrations.MySql",
-    "Corely.IAM.DataAccessMigrations.MariaDb"
+    "Corely.IAM.DataAccessMigrations.MariaDb",
+    "Corely.IAM.DataAccessMigrations.MsSql"
 )
 
 $failed = @()

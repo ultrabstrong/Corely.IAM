@@ -7,6 +7,7 @@ A command-line tool for managing Corely IAM database migrations and schema.
 This CLI tool supports migrations for:
 - **MySQL** (via `Corely.IAM.DataAccessMigrations.MySql`)
 - **MariaDB** (via `Corely.IAM.DataAccessMigrations.MariaDb`)
+- **SQL Server** (via `Corely.IAM.DataAccessMigrations.MsSql`)
 
 ## Creating Migrations (Development)
 
@@ -75,8 +76,14 @@ corely-db config init MySql
 # Create a settings file for MariaDB
 corely-db config init MariaDb
 
-# Create with a specific connection string
+# Create a settings file for SQL Server
+corely-db config init MsSql
+
+# Create with a specific connection string (MySQL/MariaDB)
 corely-db config init MySql -c "Server=myserver;Database=mydb;User=myuser;Password=mypassword;"
+
+# Create with a specific connection string (SQL Server)
+corely-db config init MsSql -c "Server=localhost;Database=IAM;User Id=sa;Password=yourpassword;TrustServerCertificate=True;"
 
 # Overwrite an existing settings file
 corely-db config init MySql -f

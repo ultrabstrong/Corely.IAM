@@ -35,6 +35,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plans", "Plans", "{448CBB50-139F-47E2-A177-EDACBDB1A7BA}"
 	ProjectSection(SolutionItems) = preProject
 		Plans\DataAccessMigrations-Add-MariaDb-Support.md = Plans\DataAccessMigrations-Add-MariaDb-Support.md
+		DataAccessMigrations-Add-MsSql-Support.md = DataAccessMigrations-Add-MsSql-Support.md
 		Plans\DataAccessMigrations-CLI-Refactor.md = Plans\DataAccessMigrations-CLI-Refactor.md
 	EndProjectSection
 EndProject
@@ -43,6 +44,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Corely.IAM.DataAccessMigrations.MySql", "Corely.IAM.DataAccessMigrations.MySql\Corely.IAM.DataAccessMigrations.MySql.csproj", "{AC05A0EF-1A5C-40CD-A19E-C4614D59C6D7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Corely.IAM.DataAccessMigrations.MariaDb", "Corely.IAM.DataAccessMigrations.MariaDb\Corely.IAM.DataAccessMigrations.MariaDb.csproj", "{887A2D34-619F-BD72-CA40-0D22F5004972}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Corely.IAM.DataAccessMigrations.MsSql", "Corely.IAM.DataAccessMigrations.MsSql\Corely.IAM.DataAccessMigrations.MsSql.csproj", "{9F3C418A-B838-4B12-B350-E55931A48637}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -138,6 +141,18 @@ Global
 		{887A2D34-619F-BD72-CA40-0D22F5004972}.Release|x64.Build.0 = Release|Any CPU
 		{887A2D34-619F-BD72-CA40-0D22F5004972}.Release|x86.ActiveCfg = Release|Any CPU
 		{887A2D34-619F-BD72-CA40-0D22F5004972}.Release|x86.Build.0 = Release|Any CPU
+		{9F3C418A-B838-4B12-B350-E55931A48637}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F3C418A-B838-4B12-B350-E55931A48637}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F3C418A-B838-4B12-B350-E55931A48637}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9F3C418A-B838-4B12-B350-E55931A48637}.Debug|x64.Build.0 = Debug|Any CPU
+		{9F3C418A-B838-4B12-B350-E55931A48637}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9F3C418A-B838-4B12-B350-E55931A48637}.Debug|x86.Build.0 = Debug|Any CPU
+		{9F3C418A-B838-4B12-B350-E55931A48637}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F3C418A-B838-4B12-B350-E55931A48637}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F3C418A-B838-4B12-B350-E55931A48637}.Release|x64.ActiveCfg = Release|Any CPU
+		{9F3C418A-B838-4B12-B350-E55931A48637}.Release|x64.Build.0 = Release|Any CPU
+		{9F3C418A-B838-4B12-B350-E55931A48637}.Release|x86.ActiveCfg = Release|Any CPU
+		{9F3C418A-B838-4B12-B350-E55931A48637}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,5 +1,0 @@
-{
-  "ConnectionStrings": {
-    "DataRepoConnection": "Server=localhost;Port=3306;Database=IAM;Uid=root;Pwd=admin;"
-  }
-}

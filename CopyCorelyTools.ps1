@@ -9,24 +9,24 @@ if (-not (Test-Path $targetDir)) {
 
 # Source paths for published executables
 $devToolsSource = "Corely.IAM.DevTools\bin\Release\net9.0\win-x64\publish\Corely.IAM.DevTools.exe"
-$dataAccessSource = "Corely.IAM.DataAccessMigrations\bin\Release\net9.0\win-x64\publish\Corely.IAM.DataAccessMigrations.exe"
+$dataAccessCliSource = "Corely.IAM.DataAccessMigrations.Cli\bin\Release\net9.0\win-x64\publish\Corely.IAM.DataAccessMigrations.Cli.exe"
 
 # Copy and rename DevTools to corely.exe
 if (Test-Path $devToolsSource) {
     Copy-Item $devToolsSource -Destination (Join-Path $targetDir "corely.exe") -Force
     Write-Host "Copied Corely.IAM.DevTools.exe to $targetDir\corely.exe"
 } else {
-  Write-Warning "DevTools executable not found at: $devToolsSource"
- Write-Warning "Run 'dotnet publish Corely.IAM.DevTools\Corely.IAM.DevTools.csproj -c Release -r win-x64' first"
+    Write-Warning "DevTools executable not found at: $devToolsSource"
+    Write-Warning "Run 'dotnet publish Corely.IAM.DevTools\Corely.IAM.DevTools.csproj -c Release -r win-x64' first"
 }
 
-# Copy and rename DataAccessMigrations to corely-db.exe
-if (Test-Path $dataAccessSource) {
-    Copy-Item $dataAccessSource -Destination (Join-Path $targetDir "corely-db.exe") -Force
-    Write-Host "Copied Corely.IAM.DataAccessMigrations.exe to $targetDir\corely-db.exe"
+# Copy and rename DataAccessMigrations.Cli to corely-db.exe
+if (Test-Path $dataAccessCliSource) {
+    Copy-Item $dataAccessCliSource -Destination (Join-Path $targetDir "corely-db.exe") -Force
+    Write-Host "Copied Corely.IAM.DataAccessMigrations.Cli.exe to $targetDir\corely-db.exe"
 } else {
-    Write-Warning "DataAccessMigrations executable not found at: $dataAccessSource"
-  Write-Warning "Run 'dotnet publish Corely.IAM.DataAccessMigrations\Corely.IAM.DataAccessMigrations.csproj -c Release -r win-x64' first"
+    Write-Warning "DataAccessMigrations.Cli executable not found at: $dataAccessCliSource"
+    Write-Warning "Run 'dotnet publish Corely.IAM.DataAccessMigrations.Cli\Corely.IAM.DataAccessMigrations.Cli.csproj -c Release -r win-x64' first"
 }
 
 # Check if directory is already in PATH
@@ -45,5 +45,5 @@ if ($currentPath -split ";" -contains $targetDir) {
 
 Write-Host ""
 Write-Host "Tools available:"
-Write-Host "  corely     - DevTools (encryption, auth, registration commands)"
-Write-Host "  corely-db  - Database migrations"
+Write-Host "  corely    - DevTools (encryption, auth, registration commands)"
+Write-Host "  corely-db - Database migrations"

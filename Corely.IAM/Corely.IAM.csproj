@@ -13,7 +13,8 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Corely.IAM.UnitTests" />
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
-    <InternalsVisibleTo Include="Corely.IAM.DataAccessMigrations" />
+    <InternalsVisibleTo Include="Corely.IAM.DataAccessMigrations.Cli" />
+    <InternalsVisibleTo Include="Corely.IAM.DataAccessMigrations.MySql" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Corely.Common" Version="1.1.1" />

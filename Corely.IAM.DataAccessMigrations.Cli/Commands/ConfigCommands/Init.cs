@@ -2,8 +2,12 @@ using Corely.IAM.DataAccessMigrations.Cli.Attributes;
 
 namespace Corely.IAM.DataAccessMigrations.Cli.Commands.ConfigCommands;
 
-internal class Init() : CommandBase("init", "Create a new settings file")
+internal class Init()
+    : CommandBase("init", "Create a new settings file with the specified provider")
 {
+    [Argument("The database provider to use (MySql, MariaDb)")]
+    private string ProviderName { get; init; } = null!;
+
     [Option("-f", "--force", Description = "Overwrite existing settings file")]
     private bool Force { get; init; }
 
@@ -12,6 +16,25 @@ internal class Init() : CommandBase("init", "Create a new settings file")
 
     protected override Task ExecuteAsync()
     {
+        if (string.IsNullOrEmpty(ProviderName))
+        {
+            Error("Provider name is required.");
+            Info(
+                $"Available providers: {string.Join(", ", DatabaseProviderExtensions.GetNames())}"
+            );
+            Info("Usage: config init <provider> [-f] [-c <connection>]");
+            return Task.CompletedTask;
+        }
+
+        if (!DatabaseProviderExtensions.TryParse(ProviderName, out var provider))
+        {
+            Error($"Invalid provider: {ProviderName}");
+            Info(
+                $"Available providers: {string.Join(", ", DatabaseProviderExtensions.GetNames())}"
+            );
+            return Task.CompletedTask;
+        }
+
         var settingsPath = ConfigurationProvider.SettingsFilePath;
 
         if (File.Exists(settingsPath) && !Force)
@@ -22,18 +45,21 @@ internal class Init() : CommandBase("init", "Create a new settings file")
         }
 
         var connectionString = string.IsNullOrEmpty(ConnectionString)
-            ? "Server=localhost;Database=YourDatabase;User=root;Password=yourpassword;"
+            ? "Server=localhost;Port=3306;Database=YourDatabase;Uid=root;Pwd=yourpassword;"
             : ConnectionString;
 
-        var settingsContent =
-            $@"{{
-  ""ConnectionStrings"": {{
-    ""DataRepoConnection"": ""{connectionString}""
-  }}
-}}";
+        var settingsContent = $$"""
+            {
+              "Provider": "{{provider}}",
+              "ConnectionStrings": {
+                "DataRepoConnection": "{{connectionString}}"
+              }
+            }
+            """;
 
         File.WriteAllText(settingsPath, settingsContent);
         Success($"Settings file created: {settingsPath}");
+        Info($"Provider: {provider}");
 
         if (string.IsNullOrEmpty(ConnectionString))
         {

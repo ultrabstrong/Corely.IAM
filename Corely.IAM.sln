@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.2.11408.102
@@ -12,13 +11,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
+		AddMigration.ps1 = AddMigration.ps1
 		CONTRIBUTING.md = CONTRIBUTING.md
 		.github\instructions\copilot-instructions.md = .github\instructions\copilot-instructions.md
 		CopyCorelyTools.ps1 = CopyCorelyTools.ps1
 		Feature-Ideas.md = Feature-Ideas.md
 		LICENSE = LICENSE
+		ListMigrations.ps1 = ListMigrations.ps1
 		README.md = README.md
 		RebuildAndTest.ps1 = RebuildAndTest.ps1
+		RemoveMigration.ps1 = RemoveMigration.ps1
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Corely.IAM", "Corely.IAM\Corely.IAM.csproj", "{B8428647-121D-476A-BBD6-B377D159417A}"
@@ -32,13 +34,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{02EA681E-C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plans", "Plans", "{448CBB50-139F-47E2-A177-EDACBDB1A7BA}"
 	ProjectSection(SolutionItems) = preProject
+		Plans\DataAccessMigrations-Add-MariaDb-Support.md = Plans\DataAccessMigrations-Add-MariaDb-Support.md
 		Plans\DataAccessMigrations-CLI-Refactor.md = Plans\DataAccessMigrations-CLI-Refactor.md
-		Plans\Future-MultiProvider-Support.md = Plans\Future-MultiProvider-Support.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Corely.IAM.DataAccessMigrations.Cli", "Corely.IAM.DataAccessMigrations.Cli\Corely.IAM.DataAccessMigrations.Cli.csproj", "{E7C5C630-4696-4DF6-AD09-990CE57F5BCB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Corely.IAM.DataAccessMigrations.MySql", "Corely.IAM.DataAccessMigrations.MySql\Corely.IAM.DataAccessMigrations.MySql.csproj", "{AC05A0EF-1A5C-40CD-A19E-C4614D59C6D7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Corely.IAM.DataAccessMigrations.MariaDb", "Corely.IAM.DataAccessMigrations.MariaDb\Corely.IAM.DataAccessMigrations.MariaDb.csproj", "{887A2D34-619F-BD72-CA40-0D22F5004972}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -122,6 +126,18 @@ Global
 		{AC05A0EF-1A5C-40CD-A19E-C4614D59C6D7}.Release|x64.Build.0 = Release|Any CPU
 		{AC05A0EF-1A5C-40CD-A19E-C4614D59C6D7}.Release|x86.ActiveCfg = Release|Any CPU
 		{AC05A0EF-1A5C-40CD-A19E-C4614D59C6D7}.Release|x86.Build.0 = Release|Any CPU
+		{887A2D34-619F-BD72-CA40-0D22F5004972}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{887A2D34-619F-BD72-CA40-0D22F5004972}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{887A2D34-619F-BD72-CA40-0D22F5004972}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{887A2D34-619F-BD72-CA40-0D22F5004972}.Debug|x64.Build.0 = Debug|Any CPU
+		{887A2D34-619F-BD72-CA40-0D22F5004972}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{887A2D34-619F-BD72-CA40-0D22F5004972}.Debug|x86.Build.0 = Debug|Any CPU
+		{887A2D34-619F-BD72-CA40-0D22F5004972}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{887A2D34-619F-BD72-CA40-0D22F5004972}.Release|Any CPU.Build.0 = Release|Any CPU
+		{887A2D34-619F-BD72-CA40-0D22F5004972}.Release|x64.ActiveCfg = Release|Any CPU
+		{887A2D34-619F-BD72-CA40-0D22F5004972}.Release|x64.Build.0 = Release|Any CPU
+		{887A2D34-619F-BD72-CA40-0D22F5004972}.Release|x86.ActiveCfg = Release|Any CPU
+		{887A2D34-619F-BD72-CA40-0D22F5004972}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

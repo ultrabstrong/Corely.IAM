@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Reflection;
 using Corely.IAM.DataAccess;
 using Corely.IAM.DataAccessMigrations.Cli.Commands;
+using Corely.IAM.DataAccessMigrations.MariaDb;
 using Corely.IAM.DataAccessMigrations.MySql;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,9 +23,20 @@ internal class Program
                     {
                         services.AddTransient(sp =>
                         {
+                            var provider = ConfigurationProvider.GetProvider();
                             var connectionString = ConfigurationProvider.GetConnectionString();
                             var tempServices = new ServiceCollection();
-                            tempServices.AddMySqlIamDbContext(connectionString);
+
+                            switch (provider)
+                            {
+                                case DatabaseProvider.MySql:
+                                    tempServices.AddMySqlIamDbContext(connectionString);
+                                    break;
+                                case DatabaseProvider.MariaDb:
+                                    tempServices.AddMariaDbIamDbContext(connectionString);
+                                    break;
+                            }
+
                             var tempProvider = tempServices.BuildServiceProvider();
                             return tempProvider.GetRequiredService<IamDbContext>();
                         });

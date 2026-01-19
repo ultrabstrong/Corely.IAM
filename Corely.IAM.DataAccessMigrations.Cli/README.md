@@ -6,7 +6,7 @@ A command-line tool for managing Corely IAM database migrations and schema.
 
 This CLI tool supports migrations for:
 - **MySQL** (via `Corely.IAM.DataAccessMigrations.MySql`)
-- **MariaDB** (via `Corely.IAM.DataAccessMigrations.MariaDb`) - *coming soon*
+- **MariaDB** (via `Corely.IAM.DataAccessMigrations.MariaDb`)
 
 ## Creating Migrations (Development)
 
@@ -69,20 +69,24 @@ The tool requires a `corely-iam-db-migration-settings.json` file in the same dir
 ### Creating the Settings File
 
 ```bash
-# Create a template settings file
-corely-db config init
+# Create a settings file for MySQL
+corely-db config init MySql
+
+# Create a settings file for MariaDB
+corely-db config init MariaDb
 
 # Create with a specific connection string
-corely-db config init -c "Server=myserver;Database=mydb;User=myuser;Password=mypassword;"
+corely-db config init MySql -c "Server=myserver;Database=mydb;User=myuser;Password=mypassword;"
 
 # Overwrite an existing settings file
-corely-db config init -f
+corely-db config init MySql -f
 ```
 
 ### Settings File Format
 
 ```json
 {
+  "Provider": "MySql",
   "ConnectionStrings": {
     "DataRepoConnection": "Server=localhost;Port=3306;Database=IAM;Uid=root;Pwd=yourpassword;"
   }
@@ -107,9 +111,18 @@ corely-db config init -f
 
 | Command | Description |
 |---------|-------------|
-| `config init [-f] [-c <connection>]` | Create a new settings file |
+| `config init <provider> [-f] [-c <connection>]` | Create a new settings file with the specified provider |
+| `config set-connection <connection>` | Set the database connection string |
 | `config show` | Display the current settings file contents |
 | `config path` | Display the expected settings file path |
+
+### Provider Commands (`provider`)
+
+| Command | Description |
+|---------|-------------|
+| `provider list` | List available database providers |
+| `provider show` | Show current provider from config |
+| `provider set <provider>` | Change the provider in the config file |
 
 ## Usage Examples
 

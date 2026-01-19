@@ -17,6 +17,26 @@ internal static class ConfigurationProvider
         _configuration = builder.Build();
     }
 
+    public static DatabaseProvider? TryGetProvider()
+    {
+        var value = _configuration["Provider"];
+        if (DatabaseProviderExtensions.TryParse(value, out var provider))
+        {
+            return provider;
+        }
+        return null;
+    }
+
+    public static DatabaseProvider GetProvider()
+    {
+        return TryGetProvider()
+            ?? throw new InvalidOperationException(
+                $"Provider not found or invalid in {SETTINGS_FILE_NAME}. "
+                    + $"Run 'config init <provider>' to create a settings file. "
+                    + $"Valid providers: {string.Join(", ", DatabaseProviderExtensions.GetNames())}"
+            );
+    }
+
     public static string? TryGetConnectionString()
     {
         return _configuration.GetConnectionString("DataRepoConnection");
@@ -27,11 +47,13 @@ internal static class ConfigurationProvider
         return TryGetConnectionString()
             ?? throw new InvalidOperationException(
                 $"DataRepoConnection string not found in {SETTINGS_FILE_NAME}. "
-                    + $"Run 'config init' to create a settings file or 'config path' to see the expected location."
+                    + $"Run 'config init <provider>' to create a settings file or 'config path' to see the expected location."
             );
     }
 
     public static bool HasConnectionString => TryGetConnectionString() != null;
+
+    public static bool HasProvider => TryGetProvider() != null;
 
     public static string SettingsFilePath =>
         Path.Combine(AppContext.BaseDirectory, SETTINGS_FILE_NAME);

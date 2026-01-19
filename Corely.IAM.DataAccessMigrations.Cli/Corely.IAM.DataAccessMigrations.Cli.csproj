@@ -38,5 +38,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Corely.IAM.DataAccessMigrations.MySql\Corely.IAM.DataAccessMigrations.MySql.csproj" />
+    <ProjectReference Include="..\Corely.IAM.DataAccessMigrations.MariaDb\Corely.IAM.DataAccessMigrations.MariaDb.csproj" />
   </ItemGroup>
 </Project>

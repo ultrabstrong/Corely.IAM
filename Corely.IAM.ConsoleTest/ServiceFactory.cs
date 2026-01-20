@@ -24,15 +24,25 @@ internal static class ServiceFactory
                 ?? throw new Exception($"SystemSymmetricEncryptionKey not found in configuration")
         );
 
-        services.AddIAMServicesWithEF(
-            configuration,
-            securityConfigurationProvider,
-            sp => new MySqlEFConfiguration(
-                configuration.GetConnectionString("DataRepoConnection")
-                    ?? throw new Exception($"DataRepoConnection string not found in configuration"),
+        Func<IServiceProvider, IEFConfiguration> efConfig;
+
+        var connectionString =
+            configuration.GetConnectionString("DataRepoConnection")
+            ?? throw new Exception($"DataRepoConnection string not found in configuration");
+
+        bool useMySql = false;
+        if (useMySql)
+            efConfig = sp => new MySqlEFConfiguration(
+                connectionString,
                 sp.GetRequiredService<ILoggerFactory>()
-            )
-        );
+            );
+        else
+            efConfig = sp => new MsSqlEFConfiguration(
+                connectionString,
+                sp.GetRequiredService<ILoggerFactory>()
+            );
+
+        services.AddIAMServicesWithEF(configuration, securityConfigurationProvider, efConfig);
 
         return services;
     }

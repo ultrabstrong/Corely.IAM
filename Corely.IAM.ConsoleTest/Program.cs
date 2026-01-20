@@ -184,7 +184,6 @@ internal class Program
  */
 
             // ========= DEREGISTERING ==========
-
             // Deregister roles from group example
             var deregisterRolesFromGroupResult =
                 await deregistrationService.DeregisterRolesFromGroupAsync(

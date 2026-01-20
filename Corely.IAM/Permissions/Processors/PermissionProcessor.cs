@@ -8,6 +8,7 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Validators;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Permissions.Processors;
@@ -155,7 +156,10 @@ internal class PermissionProcessor(
 
     public async Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId)
     {
-        var permissionEntity = await _permissionRepo.GetAsync(p => p.Id == permissionId);
+        var permissionEntity = await _permissionRepo.GetAsync(
+            p => p.Id == permissionId,
+            include: q => q.Include(p => p.Roles)
+        );
         if (permissionEntity == null)
         {
             _logger.LogInformation("Permission with Id {PermissionId} not found", permissionId);
@@ -176,6 +180,9 @@ internal class PermissionProcessor(
                 $"Cannot delete system-defined permission. System-defined permissions are required for account ownership and access control."
             );
         }
+
+        // Clear join table (NoAction side - must do manually for SQL Server compatibility)
+        permissionEntity.Roles?.Clear();
 
         await _permissionRepo.DeleteAsync(permissionEntity);
 

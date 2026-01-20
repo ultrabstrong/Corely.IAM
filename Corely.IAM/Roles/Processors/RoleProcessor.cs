@@ -323,7 +323,10 @@ internal class RoleProcessor(
 
     public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId)
     {
-        var roleEntity = await _roleRepo.GetAsync(r => r.Id == roleId);
+        var roleEntity = await _roleRepo.GetAsync(
+            r => r.Id == roleId,
+            include: q => q.Include(r => r.Users).Include(r => r.Groups)
+        );
         if (roleEntity == null)
         {
             _logger.LogInformation("Role with Id {RoleId} not found", roleId);
@@ -345,6 +348,10 @@ internal class RoleProcessor(
                 $"Cannot delete system-defined role '{roleEntity.Name}'. System-defined roles are required for account ownership and access control."
             );
         }
+
+        // Clear join tables (NoAction side - must do manually for SQL Server compatibility)
+        roleEntity.Users?.Clear();
+        roleEntity.Groups?.Clear();
 
         await _roleRepo.DeleteAsync(roleEntity);
 

@@ -34,6 +34,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{02EA681E-C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plans", "Plans", "{448CBB50-139F-47E2-A177-EDACBDB1A7BA}"
 	ProjectSection(SolutionItems) = preProject
+		Plans\CascadeDeleteCleanup.md = Plans\CascadeDeleteCleanup.md
 		Plans\DataAccessMigrations-Add-MariaDb-Support.md = Plans\DataAccessMigrations-Add-MariaDb-Support.md
 		DataAccessMigrations-Add-MsSql-Support.md = DataAccessMigrations-Add-MsSql-Support.md
 		Plans\DataAccessMigrations-CLI-Refactor.md = Plans\DataAccessMigrations-CLI-Refactor.md

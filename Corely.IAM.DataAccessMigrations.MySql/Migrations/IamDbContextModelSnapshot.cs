@@ -22,21 +22,6 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("AccountEntityUserEntity", b =>
-                {
-                    b.Property<Guid>("AccountsId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("UsersId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("AccountsId", "UsersId");
-
-                    b.HasIndex("UsersId");
-
-                    b.ToTable("UserAccounts", (string)null);
-                });
-
             modelBuilder.Entity("Corely.IAM.Accounts.Entities.AccountAsymmetricKeyEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -173,6 +158,81 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .IsUnique();
 
                     b.ToTable("BasicAuths", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.GroupRole", b =>
+                {
+                    b.Property<Guid>("GroupsId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("RolesId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("GroupsId", "RolesId");
+
+                    b.HasIndex("RolesId");
+
+                    b.ToTable("GroupRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.RolePermission", b =>
+                {
+                    b.Property<Guid>("PermissionsId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("RolesId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("PermissionsId", "RolesId");
+
+                    b.HasIndex("RolesId");
+
+                    b.ToTable("RolePermissions", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.UserAccount", b =>
+                {
+                    b.Property<Guid>("AccountsId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("UsersId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("AccountsId", "UsersId");
+
+                    b.HasIndex("UsersId");
+
+                    b.ToTable("UserAccounts", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.UserGroup", b =>
+                {
+                    b.Property<Guid>("GroupsId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("UsersId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("GroupsId", "UsersId");
+
+                    b.HasIndex("UsersId");
+
+                    b.ToTable("UserGroups", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.UserRole", b =>
+                {
+                    b.Property<Guid>("RolesId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("UsersId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("RolesId", "UsersId");
+
+                    b.HasIndex("UsersId");
+
+                    b.ToTable("UserRoles", (string)null);
                 });
 
             modelBuilder.Entity("Corely.IAM.Groups.Entities.GroupEntity", b =>
@@ -467,81 +527,6 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.ToTable("UserSymmetricKeys", (string)null);
                 });
 
-            modelBuilder.Entity("GroupEntityRoleEntity", b =>
-                {
-                    b.Property<Guid>("GroupsId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("RolesId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("GroupsId", "RolesId");
-
-                    b.HasIndex("RolesId");
-
-                    b.ToTable("GroupRoles", (string)null);
-                });
-
-            modelBuilder.Entity("GroupEntityUserEntity", b =>
-                {
-                    b.Property<Guid>("GroupsId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("UsersId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("GroupsId", "UsersId");
-
-                    b.HasIndex("UsersId");
-
-                    b.ToTable("UserGroups", (string)null);
-                });
-
-            modelBuilder.Entity("PermissionEntityRoleEntity", b =>
-                {
-                    b.Property<Guid>("PermissionsId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("RolesId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("PermissionsId", "RolesId");
-
-                    b.HasIndex("RolesId");
-
-                    b.ToTable("RolePermissions", (string)null);
-                });
-
-            modelBuilder.Entity("RoleEntityUserEntity", b =>
-                {
-                    b.Property<Guid>("RolesId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("UsersId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("RolesId", "UsersId");
-
-                    b.HasIndex("UsersId");
-
-                    b.ToTable("UserRoles", (string)null);
-                });
-
-            modelBuilder.Entity("AccountEntityUserEntity", b =>
-                {
-                    b.HasOne("Corely.IAM.Accounts.Entities.AccountEntity", null)
-                        .WithMany()
-                        .HasForeignKey("AccountsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", null)
-                        .WithMany()
-                        .HasForeignKey("UsersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Corely.IAM.Accounts.Entities.AccountAsymmetricKeyEntity", b =>
                 {
                     b.HasOne("Corely.IAM.Accounts.Entities.AccountEntity", null)
@@ -569,6 +554,81 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.GroupRole", b =>
+                {
+                    b.HasOne("Corely.IAM.Groups.Entities.GroupEntity", null)
+                        .WithMany()
+                        .HasForeignKey("GroupsId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Corely.IAM.Roles.Entities.RoleEntity", null)
+                        .WithMany()
+                        .HasForeignKey("RolesId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.RolePermission", b =>
+                {
+                    b.HasOne("Corely.IAM.Permissions.Entities.PermissionEntity", null)
+                        .WithMany()
+                        .HasForeignKey("PermissionsId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Corely.IAM.Roles.Entities.RoleEntity", null)
+                        .WithMany()
+                        .HasForeignKey("RolesId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.UserAccount", b =>
+                {
+                    b.HasOne("Corely.IAM.Accounts.Entities.AccountEntity", null)
+                        .WithMany()
+                        .HasForeignKey("AccountsId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("UsersId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.UserGroup", b =>
+                {
+                    b.HasOne("Corely.IAM.Groups.Entities.GroupEntity", null)
+                        .WithMany()
+                        .HasForeignKey("GroupsId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("UsersId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.UserRole", b =>
+                {
+                    b.HasOne("Corely.IAM.Roles.Entities.RoleEntity", null)
+                        .WithMany()
+                        .HasForeignKey("RolesId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", null)
+                        .WithMany()
+                        .HasForeignKey("UsersId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Corely.IAM.Groups.Entities.GroupEntity", b =>
@@ -629,66 +689,6 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.HasOne("Corely.IAM.Users.Entities.UserEntity", null)
                         .WithMany("SymmetricKeys")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GroupEntityRoleEntity", b =>
-                {
-                    b.HasOne("Corely.IAM.Groups.Entities.GroupEntity", null)
-                        .WithMany()
-                        .HasForeignKey("GroupsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Corely.IAM.Roles.Entities.RoleEntity", null)
-                        .WithMany()
-                        .HasForeignKey("RolesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("GroupEntityUserEntity", b =>
-                {
-                    b.HasOne("Corely.IAM.Groups.Entities.GroupEntity", null)
-                        .WithMany()
-                        .HasForeignKey("GroupsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", null)
-                        .WithMany()
-                        .HasForeignKey("UsersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PermissionEntityRoleEntity", b =>
-                {
-                    b.HasOne("Corely.IAM.Permissions.Entities.PermissionEntity", null)
-                        .WithMany()
-                        .HasForeignKey("PermissionsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Corely.IAM.Roles.Entities.RoleEntity", null)
-                        .WithMany()
-                        .HasForeignKey("RolesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("RoleEntityUserEntity", b =>
-                {
-                    b.HasOne("Corely.IAM.Roles.Entities.RoleEntity", null)
-                        .WithMany()
-                        .HasForeignKey("RolesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", null)
-                        .WithMany()
-                        .HasForeignKey("UsersId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

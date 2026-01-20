@@ -116,7 +116,24 @@ internal class AccountProcessor(
 
     public async Task<DeleteAccountResult> DeleteAccountAsync(Guid accountId)
     {
-        var accountEntity = await _accountRepo.GetAsync(a => a.Id == accountId);
+        // Include all entities and their join tables that need to be cleared before cascade delete
+        var accountEntity = await _accountRepo.GetAsync(
+            a => a.Id == accountId,
+            include: q =>
+                q.Include(a => a.Users)
+                    .Include(a => a.Roles)!
+                        .ThenInclude(r => r.Users)
+                    .Include(a => a.Roles)!
+                        .ThenInclude(r => r.Groups)
+                    .Include(a => a.Roles)!
+                        .ThenInclude(r => r.Permissions)
+                    .Include(a => a.Groups)!
+                        .ThenInclude(g => g.Users)
+                    .Include(a => a.Groups)!
+                        .ThenInclude(g => g.Roles)
+                    .Include(a => a.Permissions)!
+                        .ThenInclude(p => p.Roles)
+        );
         if (accountEntity == null)
         {
             _logger.LogWarning("Account with Id {AccountId} not found", accountId);
@@ -125,6 +142,42 @@ internal class AccountProcessor(
                 $"Account with Id {accountId} not found"
             );
         }
+
+        // Clear all join tables (NoAction side - must do manually for SQL Server compatibility)
+        // Order matters: clear child join tables before parent join tables
+
+        // Clear Permission -> Role relationships
+        if (accountEntity.Permissions != null)
+        {
+            foreach (var permission in accountEntity.Permissions)
+            {
+                permission.Roles?.Clear();
+            }
+        }
+
+        // Clear Role -> User, Group, Permission relationships
+        if (accountEntity.Roles != null)
+        {
+            foreach (var role in accountEntity.Roles)
+            {
+                role.Users?.Clear();
+                role.Groups?.Clear();
+                role.Permissions?.Clear();
+            }
+        }
+
+        // Clear Group -> User, Role relationships
+        if (accountEntity.Groups != null)
+        {
+            foreach (var group in accountEntity.Groups)
+            {
+                group.Users?.Clear();
+                group.Roles?.Clear();
+            }
+        }
+
+        // Clear Account -> User relationships
+        accountEntity.Users?.Clear();
 
         await _accountRepo.DeleteAsync(accountEntity);
 

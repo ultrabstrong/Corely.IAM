@@ -274,8 +274,8 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                 name: "UserAccounts",
                 columns: table => new
                 {
-                    AccountsId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UsersId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AccountsId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -284,15 +284,13 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         name: "FK_UserAccounts_Accounts_AccountsId",
                         column: x => x.AccountsId,
                         principalTable: "Accounts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade
+                        principalColumn: "Id"
                     );
                     table.ForeignKey(
                         name: "FK_UserAccounts_Users_UsersId",
                         column: x => x.UsersId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade
+                        principalColumn: "Id"
                     );
                 }
             );
@@ -399,8 +397,8 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                 name: "UserGroups",
                 columns: table => new
                 {
-                    GroupsId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UsersId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    GroupsId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -409,15 +407,13 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         name: "FK_UserGroups_Groups_GroupsId",
                         column: x => x.GroupsId,
                         principalTable: "Groups",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade
+                        principalColumn: "Id"
                     );
                     table.ForeignKey(
                         name: "FK_UserGroups_Users_UsersId",
                         column: x => x.UsersId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade
+                        principalColumn: "Id"
                     );
                 }
             );
@@ -436,15 +432,13 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         name: "FK_GroupRoles_Groups_GroupsId",
                         column: x => x.GroupsId,
                         principalTable: "Groups",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade
+                        principalColumn: "Id"
                     );
                     table.ForeignKey(
                         name: "FK_GroupRoles_Roles_RolesId",
                         column: x => x.RolesId,
                         principalTable: "Roles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade
+                        principalColumn: "Id"
                     );
                 }
             );
@@ -453,8 +447,8 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                 name: "RolePermissions",
                 columns: table => new
                 {
-                    PermissionsId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     RolesId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PermissionsId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -463,15 +457,13 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         name: "FK_RolePermissions_Permissions_PermissionsId",
                         column: x => x.PermissionsId,
                         principalTable: "Permissions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade
+                        principalColumn: "Id"
                     );
                     table.ForeignKey(
                         name: "FK_RolePermissions_Roles_RolesId",
                         column: x => x.RolesId,
                         principalTable: "Roles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade
+                        principalColumn: "Id"
                     );
                 }
             );
@@ -480,8 +472,8 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                 name: "UserRoles",
                 columns: table => new
                 {
-                    RolesId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UsersId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RolesId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                 },
                 constraints: table =>
                 {
@@ -490,15 +482,13 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         name: "FK_UserRoles_Roles_RolesId",
                         column: x => x.RolesId,
                         principalTable: "Roles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade
+                        principalColumn: "Id"
                     );
                     table.ForeignKey(
                         name: "FK_UserRoles_Users_UsersId",
                         column: x => x.UsersId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade
+                        principalColumn: "Id"
                     );
                 }
             );

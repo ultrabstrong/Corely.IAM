@@ -367,7 +367,7 @@ internal class UserProcessor(
     {
         var userEntity = await _userRepo.GetAsync(
             u => u.Id == userId,
-            include: q => q.Include(u => u.Accounts)
+            include: q => q.Include(u => u.Accounts).Include(u => u.Groups).Include(u => u.Roles)
         );
 
         if (userEntity == null)
@@ -381,7 +381,7 @@ internal class UserProcessor(
 
         if (userEntity.Accounts != null)
         {
-            foreach (var account in userEntity.Accounts)
+            foreach (var account in userEntity.Accounts.ToList())
             {
                 var soleOwnerResult = await _userOwnershipProcessor.IsSoleOwnerOfAccountAsync(
                     userId,
@@ -401,6 +401,11 @@ internal class UserProcessor(
                 }
             }
         }
+
+        // Clear join tables (NoAction side - must do manually for SQL Server compatibility)
+        userEntity.Accounts?.Clear();
+        userEntity.Groups?.Clear();
+        userEntity.Roles?.Clear();
 
         await _userRepo.DeleteAsync(userEntity);
 

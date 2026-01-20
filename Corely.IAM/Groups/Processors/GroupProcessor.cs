@@ -478,6 +478,10 @@ internal class GroupProcessor(
             }
         }
 
+        // Clear join tables (NoAction side - must do manually for SQL Server compatibility)
+        groupEntity.Users?.Clear();
+        groupEntity.Roles?.Clear();
+
         await _groupRepo.DeleteAsync(groupEntity);
 
         _logger.LogInformation("Group with Id {GroupId} deleted", groupId);

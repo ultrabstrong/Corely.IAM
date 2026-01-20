@@ -1,6 +1,9 @@
 ﻿using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
+using Corely.DataAccess.Extensions;
+using Corely.IAM.Entities;
 using Corely.IAM.Groups.Constants;
+using Corely.IAM.Roles.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -26,6 +29,18 @@ internal sealed class GroupEntityConfiguration : EntityConfigurationBase<GroupEn
         builder
             .HasMany(e => e.Roles)
             .WithMany(e => e.Groups)
-            .UsingEntity(j => j.ToTable("GroupRoles"));
+            .UsingEntity<GroupRole>(
+                j =>
+                    j.HasOne<RoleEntity>()
+                        .WithMany()
+                        .HasForeignKey(e => e.RolesId)
+                        .OnDelete(DeleteBehavior.NoAction),
+                j =>
+                    j.HasOne<GroupEntity>()
+                        .WithMany()
+                        .HasForeignKey(e => e.GroupsId)
+                        .OnDelete(DeleteBehavior.NoAction),
+                j => j.ConfigureTable()
+            );
     }
 }

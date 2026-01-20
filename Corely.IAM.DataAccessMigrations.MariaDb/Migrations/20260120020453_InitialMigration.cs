@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
+namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
 {
     /// <inheritdoc />
     public partial class InitialMigration : Migration
@@ -362,12 +362,12 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     name: "UserAccounts",
                     columns: table => new
                     {
-                        AccountsId = table.Column<Guid>(
+                        UsersId = table.Column<Guid>(
                             type: "char(36)",
                             nullable: false,
                             collation: "ascii_general_ci"
                         ),
-                        UsersId = table.Column<Guid>(
+                        AccountsId = table.Column<Guid>(
                             type: "char(36)",
                             nullable: false,
                             collation: "ascii_general_ci"
@@ -380,15 +380,13 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                             name: "FK_UserAccounts_Accounts_AccountsId",
                             column: x => x.AccountsId,
                             principalTable: "Accounts",
-                            principalColumn: "Id",
-                            onDelete: ReferentialAction.Cascade
+                            principalColumn: "Id"
                         );
                         table.ForeignKey(
                             name: "FK_UserAccounts_Users_UsersId",
                             column: x => x.UsersId,
                             principalTable: "Users",
-                            principalColumn: "Id",
-                            onDelete: ReferentialAction.Cascade
+                            principalColumn: "Id"
                         );
                     }
                 )
@@ -540,12 +538,12 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     name: "UserGroups",
                     columns: table => new
                     {
-                        GroupsId = table.Column<Guid>(
+                        UsersId = table.Column<Guid>(
                             type: "char(36)",
                             nullable: false,
                             collation: "ascii_general_ci"
                         ),
-                        UsersId = table.Column<Guid>(
+                        GroupsId = table.Column<Guid>(
                             type: "char(36)",
                             nullable: false,
                             collation: "ascii_general_ci"
@@ -558,15 +556,13 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                             name: "FK_UserGroups_Groups_GroupsId",
                             column: x => x.GroupsId,
                             principalTable: "Groups",
-                            principalColumn: "Id",
-                            onDelete: ReferentialAction.Cascade
+                            principalColumn: "Id"
                         );
                         table.ForeignKey(
                             name: "FK_UserGroups_Users_UsersId",
                             column: x => x.UsersId,
                             principalTable: "Users",
-                            principalColumn: "Id",
-                            onDelete: ReferentialAction.Cascade
+                            principalColumn: "Id"
                         );
                     }
                 )
@@ -595,15 +591,13 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                             name: "FK_GroupRoles_Groups_GroupsId",
                             column: x => x.GroupsId,
                             principalTable: "Groups",
-                            principalColumn: "Id",
-                            onDelete: ReferentialAction.Cascade
+                            principalColumn: "Id"
                         );
                         table.ForeignKey(
                             name: "FK_GroupRoles_Roles_RolesId",
                             column: x => x.RolesId,
                             principalTable: "Roles",
-                            principalColumn: "Id",
-                            onDelete: ReferentialAction.Cascade
+                            principalColumn: "Id"
                         );
                     }
                 )
@@ -614,12 +608,12 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     name: "RolePermissions",
                     columns: table => new
                     {
-                        PermissionsId = table.Column<Guid>(
+                        RolesId = table.Column<Guid>(
                             type: "char(36)",
                             nullable: false,
                             collation: "ascii_general_ci"
                         ),
-                        RolesId = table.Column<Guid>(
+                        PermissionsId = table.Column<Guid>(
                             type: "char(36)",
                             nullable: false,
                             collation: "ascii_general_ci"
@@ -635,15 +629,13 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                             name: "FK_RolePermissions_Permissions_PermissionsId",
                             column: x => x.PermissionsId,
                             principalTable: "Permissions",
-                            principalColumn: "Id",
-                            onDelete: ReferentialAction.Cascade
+                            principalColumn: "Id"
                         );
                         table.ForeignKey(
                             name: "FK_RolePermissions_Roles_RolesId",
                             column: x => x.RolesId,
                             principalTable: "Roles",
-                            principalColumn: "Id",
-                            onDelete: ReferentialAction.Cascade
+                            principalColumn: "Id"
                         );
                     }
                 )
@@ -654,12 +646,12 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     name: "UserRoles",
                     columns: table => new
                     {
-                        RolesId = table.Column<Guid>(
+                        UsersId = table.Column<Guid>(
                             type: "char(36)",
                             nullable: false,
                             collation: "ascii_general_ci"
                         ),
-                        UsersId = table.Column<Guid>(
+                        RolesId = table.Column<Guid>(
                             type: "char(36)",
                             nullable: false,
                             collation: "ascii_general_ci"
@@ -672,15 +664,13 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                             name: "FK_UserRoles_Roles_RolesId",
                             column: x => x.RolesId,
                             principalTable: "Roles",
-                            principalColumn: "Id",
-                            onDelete: ReferentialAction.Cascade
+                            principalColumn: "Id"
                         );
                         table.ForeignKey(
                             name: "FK_UserRoles_Users_UsersId",
                             column: x => x.UsersId,
                             principalTable: "Users",
-                            principalColumn: "Id",
-                            onDelete: ReferentialAction.Cascade
+                            principalColumn: "Id"
                         );
                     }
                 )

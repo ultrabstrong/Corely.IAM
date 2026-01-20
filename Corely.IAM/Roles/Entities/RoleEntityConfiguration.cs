@@ -1,5 +1,8 @@
 ﻿using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
+using Corely.DataAccess.Extensions;
+using Corely.IAM.Entities;
+using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Roles.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -23,6 +26,18 @@ internal sealed class RoleEntityConfiguration : EntityConfigurationBase<RoleEnti
         builder
             .HasMany(e => e.Permissions)
             .WithMany(e => e.Roles)
-            .UsingEntity(j => j.ToTable("RolePermissions"));
+            .UsingEntity<RolePermission>(
+                j =>
+                    j.HasOne<PermissionEntity>()
+                        .WithMany()
+                        .HasForeignKey(e => e.PermissionsId)
+                        .OnDelete(DeleteBehavior.NoAction),
+                j =>
+                    j.HasOne<RoleEntity>()
+                        .WithMany()
+                        .HasForeignKey(e => e.RolesId)
+                        .OnDelete(DeleteBehavior.NoAction),
+                j => j.ConfigureTable()
+            );
     }
 }

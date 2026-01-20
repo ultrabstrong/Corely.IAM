@@ -1,6 +1,11 @@
 ﻿using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
+using Corely.DataAccess.Extensions;
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.BasicAuths.Entities;
+using Corely.IAM.Entities;
+using Corely.IAM.Groups.Entities;
+using Corely.IAM.Roles.Entities;
 using Corely.IAM.Users.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -39,17 +44,53 @@ internal sealed class UserEntityConfiguration : EntityConfigurationBase<UserEnti
         builder
             .HasMany(e => e.Accounts)
             .WithMany(e => e.Users)
-            .UsingEntity(j => j.ToTable("UserAccounts"));
+            .UsingEntity<UserAccount>(
+                j =>
+                    j.HasOne<AccountEntity>()
+                        .WithMany()
+                        .HasForeignKey(e => e.AccountsId)
+                        .OnDelete(DeleteBehavior.NoAction),
+                j =>
+                    j.HasOne<UserEntity>()
+                        .WithMany()
+                        .HasForeignKey(e => e.UsersId)
+                        .OnDelete(DeleteBehavior.NoAction),
+                j => j.ConfigureTable()
+            );
 
         builder
             .HasMany(e => e.Groups)
             .WithMany(e => e.Users)
-            .UsingEntity(j => j.ToTable("UserGroups"));
+            .UsingEntity<UserGroup>(
+                j =>
+                    j.HasOne<GroupEntity>()
+                        .WithMany()
+                        .HasForeignKey(e => e.GroupsId)
+                        .OnDelete(DeleteBehavior.NoAction),
+                j =>
+                    j.HasOne<UserEntity>()
+                        .WithMany()
+                        .HasForeignKey(e => e.UsersId)
+                        .OnDelete(DeleteBehavior.NoAction),
+                j => j.ConfigureTable()
+            );
 
         builder
             .HasMany(e => e.Roles)
             .WithMany(e => e.Users)
-            .UsingEntity(j => j.ToTable("UserRoles"));
+            .UsingEntity<UserRole>(
+                j =>
+                    j.HasOne<RoleEntity>()
+                        .WithMany()
+                        .HasForeignKey(e => e.RolesId)
+                        .OnDelete(DeleteBehavior.NoAction),
+                j =>
+                    j.HasOne<UserEntity>()
+                        .WithMany()
+                        .HasForeignKey(e => e.UsersId)
+                        .OnDelete(DeleteBehavior.NoAction),
+                j => j.ConfigureTable()
+            );
 
         builder
             .HasMany(e => e.SymmetricKeys)

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Corely.DataAccess.EntityFramework.Configurations;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -22,19 +23,34 @@ internal static class ServiceFactory
         // This allows config commands to work without a settings file
         var encryptionKey = configuration["SystemSymmetricEncryptionKey"];
         var connectionString = configuration.GetConnectionString("DataRepoConnection");
+        var provider = ConfigurationProvider.TryGetProvider();
 
-        if (!string.IsNullOrEmpty(encryptionKey) && !string.IsNullOrEmpty(connectionString))
+        if (
+            !string.IsNullOrEmpty(encryptionKey)
+            && !string.IsNullOrEmpty(connectionString)
+            && provider.HasValue
+        )
         {
             var securityConfigurationProvider = new SecurityConfigurationProvider(encryptionKey);
 
-            services.AddIAMServicesWithEF(
-                configuration,
-                securityConfigurationProvider,
-                sp => new MySqlEFConfiguration(
+            Func<IServiceProvider, IEFConfiguration> efConfig = provider.Value switch
+            {
+                DatabaseProvider.MySql => sp => new MySqlEFConfiguration(
                     connectionString,
                     sp.GetRequiredService<ILoggerFactory>()
-                )
-            );
+                ),
+                DatabaseProvider.MariaDb => sp => new MySqlEFConfiguration(
+                    connectionString,
+                    sp.GetRequiredService<ILoggerFactory>()
+                ),
+                DatabaseProvider.MsSql => sp => new MsSqlEFConfiguration(
+                    connectionString,
+                    sp.GetRequiredService<ILoggerFactory>()
+                ),
+                _ => throw new InvalidOperationException($"Unsupported provider: {provider}"),
+            };
+
+            services.AddIAMServicesWithEF(configuration, securityConfigurationProvider, efConfig);
         }
 
         return services;

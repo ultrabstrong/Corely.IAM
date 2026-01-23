@@ -1,7 +1,7 @@
 using Corely.IAM.DataAccess;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Corely.IAM.DataAccessMigrations.Cli.Commands.DatabaseCommands;
+namespace Corely.IAM.DataAccessMigrations.Cli.Commands.ConfigCommands;
 
 internal class TestConnection(IServiceProvider serviceProvider)
     : CommandBase("test-connection", "Test the database connection")

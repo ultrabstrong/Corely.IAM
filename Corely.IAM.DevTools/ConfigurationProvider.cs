@@ -20,6 +20,26 @@ internal static class ConfigurationProvider
 
     public static IConfiguration Configuration => _configuration;
 
+    public static DatabaseProvider? TryGetProvider()
+    {
+        var value = _configuration["Provider"];
+        if (DatabaseProviderExtensions.TryParse(value, out var provider))
+        {
+            return provider;
+        }
+        return null;
+    }
+
+    public static DatabaseProvider GetProvider()
+    {
+        return TryGetProvider()
+            ?? throw new InvalidOperationException(
+                $"Provider not found or invalid in {SETTINGS_FILE_NAME}. "
+                    + $"Run 'provider set <provider>' to set a provider. "
+                    + $"Valid providers: {string.Join(", ", DatabaseProviderExtensions.GetNames())}"
+            );
+    }
+
     public static string? TryGetConnectionString()
     {
         return _configuration.GetConnectionString("DataRepoConnection");
@@ -52,6 +72,8 @@ internal static class ConfigurationProvider
 
     public static bool HasSystemSymmetricEncryptionKey =>
         !string.IsNullOrEmpty(TryGetSystemSymmetricEncryptionKey());
+
+    public static bool HasProvider => TryGetProvider() != null;
 
     public static string SettingsFilePath =>
         Path.Combine(AppContext.BaseDirectory, SETTINGS_FILE_NAME);

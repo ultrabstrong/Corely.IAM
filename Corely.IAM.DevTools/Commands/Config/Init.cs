@@ -12,6 +12,9 @@ internal partial class Config
         [Option("-c", "--connection", Description = "Database connection string")]
         private string ConnectionString { get; init; } = null!;
 
+        [Option("-p", "--provider", Description = "Database provider (MySql, MariaDb, MsSql)")]
+        private string ProviderName { get; init; } = null!;
+
         public Init()
             : base("init", "Create a new settings file") { }
 
@@ -26,12 +29,27 @@ internal partial class Config
                 return;
             }
 
+            var provider = "MySql";
+            if (!string.IsNullOrEmpty(ProviderName))
+            {
+                if (!DatabaseProviderExtensions.TryParse(ProviderName, out var parsedProvider))
+                {
+                    Error($"Invalid provider: {ProviderName}");
+                    Info(
+                        $"Available providers: {string.Join(", ", DatabaseProviderExtensions.GetNames())}"
+                    );
+                    return;
+                }
+                provider = parsedProvider.ToString();
+            }
+
             var connectionString = string.IsNullOrEmpty(ConnectionString)
                 ? "Server=localhost;Port=3306;Database=YourDatabase;Uid=root;Pwd=yourpassword;"
                 : ConnectionString;
 
             var settingsContent =
                 $@"{{
+  ""Provider"": ""{provider}"",
   ""ConnectionStrings"": {{
     ""DataRepoConnection"": ""{connectionString}""
   }},

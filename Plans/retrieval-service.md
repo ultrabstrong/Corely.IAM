@@ -546,6 +546,17 @@ If a phase has issues, work resumes from the previous checkpoint branch.
 
 **Validation:** Run `.\RebuildAndTest.ps1` after each phase to ensure formatting, build, and all tests pass before creating the checkpoint branch.
 
+**Codebase reference points for implementation:**
+- **Existing processor pattern** — see any processor (e.g., `Groups/Processors/GroupProcessor.cs`) for method structure, repo usage, and mapper calls
+- **Authorization decorator pattern** — see `Groups/Processors/GroupProcessorAuthorizationDecorator.cs` for how permission checks wrap processor calls
+- **Telemetry decorator pattern** — see `Groups/Processors/GroupProcessorTelemetryDecorator.cs` for logging wrapper structure
+- **Service pattern** — see `Services/RegistrationService.cs` for how services orchestrate processor calls
+- **DI registration** — see `ServiceRegistrationExtensions.cs` for service + decorator registration order (decorators applied bottom-up: last registered = outermost)
+- **DevTools command pattern** — see `Corely.IAM.DevTools/Commands/` for `CommandBase` inheritance, `[Argument]`/`[Option]` attributes, and nested command structure
+- **ConsoleTest pattern** — see `Corely.IAM.ConsoleTest/` for usage examples; note that authentication into an account is required before any scoped operations
+- **Unit test pattern** — see `Corely.IAM.UnitTests/` for XUnit + Moq + AutoFixture + FluentAssertions conventions
+- **Request models** — use `internal record` for request types (see e.g., `Groups/Models/RemoveRolesFromGroupRequest.cs`)
+
 ### Phase 0: Scaffolding
 
 Build the shared infrastructure before touching any entity-specific code.

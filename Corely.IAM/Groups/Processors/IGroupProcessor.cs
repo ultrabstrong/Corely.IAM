@@ -1,4 +1,7 @@
-﻿using Corely.IAM.Groups.Models;
+﻿using Corely.IAM.Filtering;
+using Corely.IAM.Filtering.Ordering;
+using Corely.IAM.Groups.Models;
+using Corely.IAM.Models;
 
 namespace Corely.IAM.Groups.Processors;
 
@@ -10,4 +13,11 @@ internal interface IGroupProcessor
     Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(AssignRolesToGroupRequest request);
     Task<RemoveRolesFromGroupResult> RemoveRolesFromGroupAsync(RemoveRolesFromGroupRequest request);
     Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId);
+    Task<ListResult<Group>> ListGroupsAsync(
+        FilterBuilder<Group>? filter,
+        OrderBuilder<Group>? order,
+        int skip,
+        int take
+    );
+    Task<GetResult<Group>> GetGroupByIdAsync(Guid groupId, bool hydrate);
 }

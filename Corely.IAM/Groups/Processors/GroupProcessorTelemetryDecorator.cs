@@ -1,6 +1,9 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Extensions;
+using Corely.IAM.Filtering;
+using Corely.IAM.Filtering.Ordering;
 using Corely.IAM.Groups.Models;
+using Corely.IAM.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Groups.Processors;
@@ -66,6 +69,26 @@ internal class GroupProcessorTelemetryDecorator(
             nameof(GroupProcessor),
             groupId,
             () => _inner.DeleteGroupAsync(groupId),
+            logResult: true
+        );
+
+    public async Task<ListResult<Group>> ListGroupsAsync(
+        FilterBuilder<Group>? filter,
+        OrderBuilder<Group>? order,
+        int skip,
+        int take
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(GroupProcessor),
+            () => _inner.ListGroupsAsync(filter, order, skip, take),
+            logResult: true
+        );
+
+    public async Task<GetResult<Group>> GetGroupByIdAsync(Guid groupId, bool hydrate) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(GroupProcessor),
+            groupId,
+            () => _inner.GetGroupByIdAsync(groupId, hydrate),
             logResult: true
         );
 }

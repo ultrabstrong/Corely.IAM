@@ -1,4 +1,6 @@
-﻿namespace Corely.IAM.Groups.Models;
+﻿using Corely.IAM.Models;
+
+namespace Corely.IAM.Groups.Models;
 
 public class Group
 {
@@ -6,4 +8,6 @@ public class Group
     public string Name { get; set; } = null!;
     public string? Description { get; set; } = null!;
     public Guid AccountId { get; set; }
+    public List<ChildRef>? Users { get; set; }
+    public List<ChildRef>? Roles { get; set; }
 }

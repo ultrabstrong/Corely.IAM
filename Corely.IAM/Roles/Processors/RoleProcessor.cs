@@ -1,11 +1,16 @@
-﻿using Corely.Common.Extensions;
+﻿using System.Linq.Expressions;
+using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Filtering;
+using Corely.IAM.Filtering.Ordering;
+using Corely.IAM.Models;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Mappers;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,6 +21,7 @@ internal class RoleProcessor(
     IRepo<RoleEntity> roleRepo,
     IReadonlyRepo<AccountEntity> accountRepo,
     IReadonlyRepo<PermissionEntity> permissionRepo,
+    IUserContextProvider userContextProvider,
     IValidationProvider validationProvider,
     ILogger<RoleProcessor> logger
 ) : IRoleProcessor
@@ -26,6 +32,9 @@ internal class RoleProcessor(
     );
     private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo.ThrowIfNull(
         nameof(permissionRepo)
+    );
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
     );
     private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
         nameof(validationProvider)
@@ -132,6 +141,109 @@ internal class RoleProcessor(
         }
 
         return new GetRoleResult(GetRoleResultCode.Success, string.Empty, roleEntity.ToModel());
+    }
+
+    public async Task<ListResult<Role>> ListRolesAsync(
+        FilterBuilder<Role>? filter,
+        OrderBuilder<Role>? order,
+        int skip,
+        int take
+    )
+    {
+        var accountId = _userContextProvider.GetUserContext()?.CurrentAccount?.Id;
+        if (accountId == null)
+        {
+            _logger.LogWarning("No account context available for listing roles");
+            return new ListResult<Role>(
+                RetrieveResultCode.UnauthorizedError,
+                "No account context available",
+                null
+            );
+        }
+
+        // Account scope predicate — always applied
+        Expression<Func<RoleEntity, bool>> accountScope = r => r.AccountId == accountId.Value;
+
+        // Combine with user-provided filter if present
+        var filterExpression = filter?.Build();
+        Expression<Func<RoleEntity, bool>> combinedPredicate;
+        if (filterExpression != null)
+        {
+            var mappedFilter = ExpressionMapper.MapPredicate<Role, RoleEntity>(filterExpression);
+            var param = Expression.Parameter(typeof(RoleEntity), "r");
+            var body = Expression.AndAlso(
+                Expression.Invoke(accountScope, param),
+                Expression.Invoke(mappedFilter, param)
+            );
+            combinedPredicate = Expression.Lambda<Func<RoleEntity, bool>>(body, param);
+        }
+        else
+        {
+            combinedPredicate = accountScope;
+        }
+
+        var totalCount = await _roleRepo.CountAsync(combinedPredicate);
+
+        var items = await _roleRepo.QueryAsync<RoleEntity>(q =>
+        {
+            var query = q.Where(combinedPredicate);
+
+            if (order != null)
+            {
+                query = ExpressionMapper.ApplyOrder<Role, RoleEntity>(query, order);
+            }
+            else
+            {
+                query = query.OrderBy(r => r.Id);
+            }
+
+            return query.Skip(skip).Take(take);
+        });
+
+        var roles = items.Select(e => e.ToModel()).ToList();
+
+        return new ListResult<Role>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            PagedResult<Role>.Create(roles, totalCount, skip, take)
+        );
+    }
+
+    public async Task<GetResult<Role>> GetRoleByIdAsync(Guid roleId, bool hydrate)
+    {
+        var roleEntity = hydrate
+            ? await _roleRepo.GetAsync(
+                r => r.Id == roleId,
+                include: q =>
+                    q.Include(r => r.Users).Include(r => r.Groups).Include(r => r.Permissions)
+            )
+            : await _roleRepo.GetAsync(r => r.Id == roleId);
+
+        if (roleEntity == null)
+        {
+            _logger.LogInformation("Role with Id {RoleId} not found", roleId);
+            return new GetResult<Role>(
+                RetrieveResultCode.NotFoundError,
+                $"Role with Id {roleId} not found",
+                null
+            );
+        }
+
+        var role = roleEntity.ToModel();
+
+        if (hydrate)
+        {
+            role.Users =
+                roleEntity.Users?.Select(u => new ChildRef(u.Id, u.Username)).ToList() ?? [];
+            role.Groups = roleEntity.Groups?.Select(g => new ChildRef(g.Id, g.Name)).ToList() ?? [];
+            role.Permissions =
+                roleEntity
+                    .Permissions?.Select(p => new ChildRef(p.Id, p.Description ?? string.Empty))
+                    .ToList()
+                ?? [];
+        }
+
+        return new GetResult<Role>(RetrieveResultCode.Success, string.Empty, role);
     }
 
     public async Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(

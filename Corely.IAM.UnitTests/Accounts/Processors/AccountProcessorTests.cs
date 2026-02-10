@@ -9,6 +9,7 @@ using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Processors;
+using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,7 @@ public class AccountProcessorTests
             _serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
+            _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<ILogger<AccountProcessor>>()
         );

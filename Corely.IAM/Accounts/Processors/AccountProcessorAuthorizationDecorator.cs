@@ -1,5 +1,8 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Filtering;
+using Corely.IAM.Filtering.Ordering;
+using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
@@ -70,5 +73,35 @@ internal class AccountProcessorAuthorizationDecorator(
             : new RemoveUserFromAccountResult(
                 RemoveUserFromAccountResultCode.UnauthorizedError,
                 $"Unauthorized to update account {request.AccountId}"
+            );
+
+    public async Task<ListResult<Account>> ListAccountsAsync(
+        FilterBuilder<Account>? filter,
+        OrderBuilder<Account>? order,
+        int skip,
+        int take
+    ) =>
+        await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.ACCOUNT_RESOURCE_TYPE
+        )
+            ? await _inner.ListAccountsAsync(filter, order, skip, take)
+            : new ListResult<Account>(
+                RetrieveResultCode.UnauthorizedError,
+                "Unauthorized to list accounts",
+                null
+            );
+
+    public async Task<GetResult<Account>> GetAccountByIdAsync(Guid accountId, bool hydrate) =>
+        await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            accountId
+        )
+            ? await _inner.GetAccountByIdAsync(accountId, hydrate)
+            : new GetResult<Account>(
+                RetrieveResultCode.UnauthorizedError,
+                $"Unauthorized to read account {accountId}",
+                null
             );
 }

@@ -1,6 +1,9 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Extensions;
+using Corely.IAM.Filtering;
+using Corely.IAM.Filtering.Ordering;
+using Corely.IAM.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Accounts.Processors;
@@ -56,6 +59,26 @@ internal class AccountProcessorTelemetryDecorator(
             nameof(AccountProcessor),
             request,
             () => _inner.RemoveUserFromAccountAsync(request),
+            logResult: true
+        );
+
+    public async Task<ListResult<Account>> ListAccountsAsync(
+        FilterBuilder<Account>? filter,
+        OrderBuilder<Account>? order,
+        int skip,
+        int take
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(AccountProcessor),
+            () => _inner.ListAccountsAsync(filter, order, skip, take),
+            logResult: true
+        );
+
+    public async Task<GetResult<Account>> GetAccountByIdAsync(Guid accountId, bool hydrate) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(AccountProcessor),
+            accountId,
+            () => _inner.GetAccountByIdAsync(accountId, hydrate),
             logResult: true
         );
 }

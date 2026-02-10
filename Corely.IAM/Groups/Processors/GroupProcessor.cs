@@ -1,13 +1,18 @@
-﻿using Corely.Common.Extensions;
+﻿using System.Linq.Expressions;
+using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Filtering;
+using Corely.IAM.Filtering.Ordering;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Mappers;
 using Corely.IAM.Groups.Models;
+using Corely.IAM.Models;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Processors;
+using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -20,6 +25,7 @@ internal class GroupProcessor(
     IReadonlyRepo<UserEntity> userRepo,
     IReadonlyRepo<RoleEntity> roleRepo,
     IUserOwnershipProcessor userOwnershipProcessor,
+    IUserContextProvider userContextProvider,
     IValidationProvider validationProvider,
     ILogger<GroupProcessor> logger
 ) : IGroupProcessor
@@ -32,6 +38,9 @@ internal class GroupProcessor(
     private readonly IReadonlyRepo<RoleEntity> _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
     private readonly IUserOwnershipProcessor _userOwnershipProcessor =
         userOwnershipProcessor.ThrowIfNull(nameof(userOwnershipProcessor));
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
+    );
     private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
         nameof(validationProvider)
     );
@@ -486,5 +495,106 @@ internal class GroupProcessor(
 
         _logger.LogInformation("Group with Id {GroupId} deleted", groupId);
         return new DeleteGroupResult(DeleteGroupResultCode.Success, string.Empty);
+    }
+
+    public async Task<ListResult<Group>> ListGroupsAsync(
+        FilterBuilder<Group>? filter,
+        OrderBuilder<Group>? order,
+        int skip,
+        int take
+    )
+    {
+        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
+
+        Expression<Func<GroupEntity, bool>> accountScope = g => g.AccountId == accountId;
+
+        Expression<Func<GroupEntity, bool>> predicate;
+        if (filter != null)
+        {
+            var filterExpression = filter.Build();
+            if (filterExpression != null)
+            {
+                var entityFilter = ExpressionMapper.MapPredicate<Group, GroupEntity>(
+                    filterExpression
+                );
+
+                var param = Expression.Parameter(typeof(GroupEntity), "g");
+                var combined = Expression.AndAlso(
+                    Expression.Invoke(accountScope, param),
+                    Expression.Invoke(entityFilter, param)
+                );
+                predicate = Expression.Lambda<Func<GroupEntity, bool>>(combined, param);
+            }
+            else
+            {
+                predicate = accountScope;
+            }
+        }
+        else
+        {
+            predicate = accountScope;
+        }
+
+        var entities = await _groupRepo.QueryAsync(q =>
+        {
+            var query = q.Where(predicate);
+
+            if (order != null)
+            {
+                query = ExpressionMapper.ApplyOrder<Group, GroupEntity>(query, order);
+            }
+            else
+            {
+                query = query.OrderBy(g => g.Id);
+            }
+
+            return query.Skip(skip).Take(take);
+        });
+
+        var totalCount = await _groupRepo.CountAsync(predicate);
+
+        var items = entities.Select(e => e.ToModel()).ToList();
+        return new ListResult<Group>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            PagedResult<Group>.Create(items, totalCount, skip, take)
+        );
+    }
+
+    public async Task<GetResult<Group>> GetGroupByIdAsync(Guid groupId, bool hydrate)
+    {
+        GroupEntity? groupEntity;
+
+        if (hydrate)
+        {
+            groupEntity = await _groupRepo.GetAsync(
+                g => g.Id == groupId,
+                include: q => q.Include(g => g.Users).Include(g => g.Roles)
+            );
+        }
+        else
+        {
+            groupEntity = await _groupRepo.GetAsync(g => g.Id == groupId);
+        }
+
+        if (groupEntity == null)
+        {
+            _logger.LogInformation("Group with Id {GroupId} not found", groupId);
+            return new GetResult<Group>(
+                RetrieveResultCode.NotFoundError,
+                $"Group with Id {groupId} not found",
+                null
+            );
+        }
+
+        var group = groupEntity.ToModel();
+
+        if (hydrate)
+        {
+            group.Users = groupEntity.Users?.Select(u => new ChildRef(u.Id, u.Username)).ToList();
+            group.Roles = groupEntity.Roles?.Select(r => new ChildRef(r.Id, r.Name)).ToList();
+        }
+
+        return new GetResult<Group>(RetrieveResultCode.Success, string.Empty, group);
     }
 }

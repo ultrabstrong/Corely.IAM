@@ -1,5 +1,8 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Extensions;
+using Corely.IAM.Filtering;
+using Corely.IAM.Filtering.Ordering;
+using Corely.IAM.Models;
 using Corely.IAM.Roles.Models;
 using Microsoft.Extensions.Logging;
 
@@ -46,6 +49,27 @@ internal class RoleProcessorTelemetryDecorator(
             nameof(RoleProcessor),
             new { roleName, ownerAccountId },
             () => _inner.GetRoleAsync(roleName, ownerAccountId),
+            logResult: true
+        );
+
+    public async Task<ListResult<Role>> ListRolesAsync(
+        FilterBuilder<Role>? filter,
+        OrderBuilder<Role>? order,
+        int skip,
+        int take
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RoleProcessor),
+            new { skip, take },
+            () => _inner.ListRolesAsync(filter, order, skip, take),
+            logResult: true
+        );
+
+    public async Task<GetResult<Role>> GetRoleByIdAsync(Guid roleId, bool hydrate) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RoleProcessor),
+            new { roleId, hydrate },
+            () => _inner.GetRoleByIdAsync(roleId, hydrate),
             logResult: true
         );
 

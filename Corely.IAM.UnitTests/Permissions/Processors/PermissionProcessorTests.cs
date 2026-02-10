@@ -7,6 +7,7 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,7 @@ public class PermissionProcessorTests
             _serviceFactory.GetRequiredService<IRepo<RoleEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
+            _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<ILogger<PermissionProcessor>>()
         );
     }

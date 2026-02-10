@@ -1,11 +1,16 @@
-﻿using Corely.Common.Extensions;
+﻿using System.Linq.Expressions;
+using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Filtering;
+using Corely.IAM.Filtering.Ordering;
+using Corely.IAM.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Processors;
+using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -17,6 +22,7 @@ internal class AccountProcessor(
     IReadonlyRepo<UserEntity> userRepo,
     IUserOwnershipProcessor userOwnershipProcessor,
     ISecurityProvider securityService,
+    IUserContextProvider userContextProvider,
     IValidationProvider validationProvider,
     ILogger<AccountProcessor> logger
 ) : IAccountProcessor
@@ -29,6 +35,9 @@ internal class AccountProcessor(
         userOwnershipProcessor.ThrowIfNull(nameof(userOwnershipProcessor));
     private readonly ISecurityProvider _securityService = securityService.ThrowIfNull(
         nameof(securityService)
+    );
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
     );
     private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
         nameof(validationProvider)
@@ -309,5 +318,137 @@ internal class AccountProcessor(
             RemoveUserFromAccountResultCode.Success,
             string.Empty
         );
+    }
+
+    public async Task<ListResult<Account>> ListAccountsAsync(
+        FilterBuilder<Account>? filter,
+        OrderBuilder<Account>? order,
+        int skip,
+        int take
+    )
+    {
+        var userAccountIds = _userContextProvider
+            .GetUserContext()!
+            .AvailableAccounts.Select(a => a.Id)
+            .ToList();
+
+        Expression<Func<AccountEntity, bool>> accountScope = a => userAccountIds.Contains(a.Id);
+
+        Expression<Func<AccountEntity, bool>> predicate;
+        if (filter != null)
+        {
+            var filterExpression = filter.Build();
+            if (filterExpression != null)
+            {
+                var entityFilter = ExpressionMapper.MapPredicate<Account, AccountEntity>(
+                    filterExpression
+                );
+
+                var param = Expression.Parameter(typeof(AccountEntity), "a");
+                var combined = Expression.AndAlso(
+                    Expression.Invoke(accountScope, param),
+                    Expression.Invoke(entityFilter, param)
+                );
+                predicate = Expression.Lambda<Func<AccountEntity, bool>>(combined, param);
+            }
+            else
+            {
+                predicate = accountScope;
+            }
+        }
+        else
+        {
+            predicate = accountScope;
+        }
+
+        var entities = await _accountRepo.QueryAsync(q =>
+        {
+            var query = q.Where(predicate);
+
+            if (order != null)
+            {
+                query = ExpressionMapper.ApplyOrder<Account, AccountEntity>(query, order);
+            }
+            else
+            {
+                query = query.OrderBy(a => a.Id);
+            }
+
+            return query.Skip(skip).Take(take);
+        });
+
+        var totalCount = await _accountRepo.CountAsync(predicate);
+
+        var items = entities.Select(e => e.ToModel()).ToList();
+        return new ListResult<Account>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            PagedResult<Account>.Create(items, totalCount, skip, take)
+        );
+    }
+
+    public async Task<GetResult<Account>> GetAccountByIdAsync(Guid accountId, bool hydrate)
+    {
+        var userAccountIds = _userContextProvider
+            .GetUserContext()!
+            .AvailableAccounts.Select(a => a.Id)
+            .ToHashSet();
+
+        if (!userAccountIds.Contains(accountId))
+        {
+            _logger.LogInformation(
+                "Account with Id {AccountId} not found or not accessible",
+                accountId
+            );
+            return new GetResult<Account>(
+                RetrieveResultCode.NotFoundError,
+                $"Account with Id {accountId} not found",
+                null
+            );
+        }
+
+        AccountEntity? accountEntity;
+
+        if (hydrate)
+        {
+            accountEntity = await _accountRepo.GetAsync(
+                a => a.Id == accountId,
+                include: q =>
+                    q.Include(a => a.Users)
+                        .Include(a => a.Groups)
+                        .Include(a => a.Roles)
+                        .Include(a => a.Permissions)
+            );
+        }
+        else
+        {
+            accountEntity = await _accountRepo.GetAsync(a => a.Id == accountId);
+        }
+
+        if (accountEntity == null)
+        {
+            _logger.LogInformation("Account with Id {AccountId} not found", accountId);
+            return new GetResult<Account>(
+                RetrieveResultCode.NotFoundError,
+                $"Account with Id {accountId} not found",
+                null
+            );
+        }
+
+        var account = accountEntity.ToModel();
+
+        if (hydrate)
+        {
+            account.Users = accountEntity
+                .Users?.Select(u => new ChildRef(u.Id, u.Username))
+                .ToList();
+            account.Groups = accountEntity.Groups?.Select(g => new ChildRef(g.Id, g.Name)).ToList();
+            account.Roles = accountEntity.Roles?.Select(r => new ChildRef(r.Id, r.Name)).ToList();
+            account.Permissions = accountEntity
+                .Permissions?.Select(p => new ChildRef(p.Id, p.Description ?? p.ResourceType))
+                .ToList();
+        }
+
+        return new GetResult<Account>(RetrieveResultCode.Success, string.Empty, account);
     }
 }

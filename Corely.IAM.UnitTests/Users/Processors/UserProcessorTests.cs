@@ -8,6 +8,7 @@ using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
+using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Corely.Security.Encryption.Factories;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,7 @@ public class UserProcessorTests
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
             _serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
+            _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<ILogger<UserProcessor>>()
         );
     }

@@ -1,11 +1,16 @@
-﻿using Corely.Common.Extensions;
+﻿using System.Linq.Expressions;
+using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.Filtering;
+using Corely.IAM.Filtering.Ordering;
+using Corely.IAM.Models;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Mappers;
 using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Corely.Security.Encryption.Factories;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +25,7 @@ internal class UserProcessor(
     ISecurityProvider securityProcessor,
     ISymmetricEncryptionProviderFactory encryptionProviderFactory,
     IValidationProvider validationProvider,
+    IUserContextProvider userContextProvider,
     ILogger<UserProcessor> logger
 ) : IUserProcessor
 {
@@ -34,6 +40,9 @@ internal class UserProcessor(
         encryptionProviderFactory.ThrowIfNull(nameof(encryptionProviderFactory));
     private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
         nameof(validationProvider)
+    );
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
     );
     private readonly ILogger<UserProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
@@ -411,5 +420,111 @@ internal class UserProcessor(
 
         _logger.LogInformation("User with Id {UserId} deleted", userId);
         return new DeleteUserResult(DeleteUserResultCode.Success, string.Empty);
+    }
+
+    public async Task<ListResult<User>> ListUsersAsync(
+        FilterBuilder<User>? filter,
+        OrderBuilder<User>? order,
+        int skip,
+        int take
+    )
+    {
+        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
+
+        Expression<Func<UserEntity, bool>> accountScope = u =>
+            u.Accounts!.Any(a => a.Id == accountId);
+
+        Expression<Func<UserEntity, bool>> predicate;
+        if (filter != null)
+        {
+            var filterExpression = filter.Build();
+            if (filterExpression != null)
+            {
+                var entityFilter = ExpressionMapper.MapPredicate<User, UserEntity>(
+                    filterExpression
+                );
+
+                var param = Expression.Parameter(typeof(UserEntity), "u");
+                var combined = Expression.AndAlso(
+                    Expression.Invoke(accountScope, param),
+                    Expression.Invoke(entityFilter, param)
+                );
+                predicate = Expression.Lambda<Func<UserEntity, bool>>(combined, param);
+            }
+            else
+            {
+                predicate = accountScope;
+            }
+        }
+        else
+        {
+            predicate = accountScope;
+        }
+
+        var entities = await _userRepo.QueryAsync(q =>
+        {
+            var query = q.Where(predicate);
+
+            if (order != null)
+            {
+                query = ExpressionMapper.ApplyOrder<User, UserEntity>(query, order);
+            }
+            else
+            {
+                query = query.OrderBy(u => u.Id);
+            }
+
+            return query.Skip(skip).Take(take);
+        });
+
+        var totalCount = await _userRepo.CountAsync(predicate);
+
+        var items = entities.Select(e => e.ToModel()).ToList();
+        return new ListResult<User>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            PagedResult<User>.Create(items, totalCount, skip, take)
+        );
+    }
+
+    public async Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate)
+    {
+        UserEntity? userEntity;
+
+        if (hydrate)
+        {
+            userEntity = await _userRepo.GetAsync(
+                u => u.Id == userId,
+                include: q =>
+                    q.Include(u => u.Accounts).Include(u => u.Groups).Include(u => u.Roles)
+            );
+        }
+        else
+        {
+            userEntity = await _userRepo.GetAsync(u => u.Id == userId);
+        }
+
+        if (userEntity == null)
+        {
+            _logger.LogInformation("User with Id {UserId} not found", userId);
+            return new GetResult<User>(
+                RetrieveResultCode.NotFoundError,
+                $"User with Id {userId} not found",
+                null
+            );
+        }
+
+        var user = userEntity.ToModel();
+
+        if (hydrate)
+        {
+            user.Accounts = userEntity
+                .Accounts?.Select(a => new ChildRef(a.Id, a.AccountName))
+                .ToList();
+            user.Groups = userEntity.Groups?.Select(g => new ChildRef(g.Id, g.Name)).ToList();
+            user.Roles = userEntity.Roles?.Select(r => new ChildRef(r.Id, r.Name)).ToList();
+        }
+
+        return new GetResult<User>(RetrieveResultCode.Success, string.Empty, user);
     }
 }

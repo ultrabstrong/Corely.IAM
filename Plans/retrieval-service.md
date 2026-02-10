@@ -6,69 +6,69 @@ The library currently has no comprehensive read/list capability exposed to exter
 
 ## Implementation Progress
 
-### Phase 0: Scaffolding
-- [ ] 0a. Filtering & ordering system (Corely.Common)
-  - [ ] Filter types (StringFilter, ComparableFilter, GuidFilter, BoolFilter, EnumFilter)
-  - [ ] FilterBuilder with Where overloads
-  - [ ] ExpressionTranslator
-  - [ ] OrderBuilder with By/ThenBy
-  - [ ] Unit tests (filter translation + order builder)
-- [ ] 0b. Shared models & utilities (Corely.IAM)
-  - [ ] PagedResult
-  - [ ] ChildRef
-  - [ ] EffectivePermission / EffectiveRole / EffectiveGroup
-  - [ ] PermissionLabelProvider + refactor Permission.CrudxString
-  - [ ] Response types (RetrievalResultCode, ListResult, GetResult, RetrieveListResult, RetrieveSingleResult)
-- [ ] 0c. Service shell (Corely.IAM)
-  - [ ] IRetrievalService interface
-  - [ ] RetrievalService implementation shell
-  - [ ] Authorization + Telemetry decorators (shell)
-  - [ ] DI registration
+### Phase 0: Scaffolding ✅
+- [x] 0a. Filtering & ordering system (Corely.IAM.Filtering namespace)
+  - [x] Filter types (StringFilter, ComparableFilter, GuidFilter, BoolFilter, EnumFilter)
+  - [x] FilterBuilder with Where overloads
+  - [x] ExpressionMapper (model→entity expression rewriting)
+  - [x] OrderBuilder with By/ThenBy
+  - [x] Unit tests (70 tests: filter translation, order builder, expression mapper)
+- [x] 0b. Shared models & utilities (Corely.IAM)
+  - [x] PagedResult
+  - [x] ChildRef
+  - [x] EffectivePermission / EffectiveRole / EffectiveGroup
+  - [x] PermissionLabelProvider + refactor Permission.CrudxString
+  - [x] Response types (RetrieveResultCode, ListResult, GetResult, RetrieveListResult, RetrieveSingleResult)
+- [x] 0c. Service shell (Corely.IAM)
+  - [x] IRetrievalService interface
+  - [x] RetrievalService implementation shell
+  - [x] Authorization + Telemetry decorators (shell)
+  - [x] DI registration
 
-### Phase 1: Permission
-- [ ] Processor List/Get methods
-- [ ] RetrievalService wiring
-- [ ] Authorization decorator
-- [ ] Telemetry decorator
+### Phase 1: Permission ✅
+- [x] Processor List/Get methods
+- [x] RetrievalService wiring
+- [x] Authorization decorator
+- [x] Telemetry decorator
 - [ ] DevTools CLI command
 - [ ] ConsoleTest example
-- [ ] Unit tests
+- [x] Unit tests
 
-### Phase 2: Group
-- [ ] Processor List/Get methods
-- [ ] RetrievalService wiring
-- [ ] Authorization decorator
-- [ ] Telemetry decorator
+### Phase 2: Group ✅
+- [x] Processor List/Get methods
+- [x] RetrievalService wiring
+- [x] Authorization decorator
+- [x] Telemetry decorator
 - [ ] DevTools CLI command
 - [ ] ConsoleTest example
-- [ ] Unit tests
+- [x] Unit tests
 
-### Phase 3: Role
-- [ ] Processor List/Get methods
-- [ ] RetrievalService wiring
-- [ ] Authorization decorator
-- [ ] Telemetry decorator
+### Phase 3: Role ✅
+- [x] Processor List/Get methods
+- [x] RetrievalService wiring
+- [x] Authorization decorator
+- [x] Telemetry decorator
 - [ ] DevTools CLI command
 - [ ] ConsoleTest example
-- [ ] Unit tests
+- [x] Unit tests
 
-### Phase 4: User
-- [ ] Processor List/Get methods
-- [ ] RetrievalService wiring
-- [ ] Authorization decorator
-- [ ] Telemetry decorator
+### Phase 4: User ✅
+- [x] Processor List/Get methods
+- [x] RetrievalService wiring
+- [x] Authorization decorator
+- [x] Telemetry decorator
 - [ ] DevTools CLI command
 - [ ] ConsoleTest example
-- [ ] Unit tests
+- [x] Unit tests
 
-### Phase 5: Account
-- [ ] Processor List/Get methods
-- [ ] RetrievalService wiring
-- [ ] Authorization decorator
-- [ ] Telemetry decorator
+### Phase 5: Account ✅
+- [x] Processor List/Get methods
+- [x] RetrievalService wiring
+- [x] Authorization decorator
+- [x] Telemetry decorator
 - [ ] DevTools CLI command
 - [ ] ConsoleTest example
-- [ ] Unit tests
+- [x] Unit tests
 
 ---
 

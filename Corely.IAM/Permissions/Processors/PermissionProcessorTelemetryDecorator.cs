@@ -1,5 +1,8 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Extensions;
+using Corely.IAM.Filtering;
+using Corely.IAM.Filtering.Ordering;
+using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Microsoft.Extensions.Logging;
 
@@ -30,6 +33,30 @@ internal class PermissionProcessorTelemetryDecorator(
             nameof(PermissionProcessor),
             accountId,
             () => _inner.CreateDefaultSystemPermissionsAsync(accountId)
+        );
+
+    public async Task<ListResult<Permission>> ListPermissionsAsync(
+        FilterBuilder<Permission>? filter,
+        OrderBuilder<Permission>? order,
+        int skip,
+        int take
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(PermissionProcessor),
+            new { skip, take },
+            () => _inner.ListPermissionsAsync(filter, order, skip, take),
+            logResult: true
+        );
+
+    public async Task<GetResult<Permission>> GetPermissionByIdAsync(
+        Guid permissionId,
+        bool hydrate
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(PermissionProcessor),
+            new { permissionId, hydrate },
+            () => _inner.GetPermissionByIdAsync(permissionId, hydrate),
+            logResult: true
         );
 
     public async Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId) =>

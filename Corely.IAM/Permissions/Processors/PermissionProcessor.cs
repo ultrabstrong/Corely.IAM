@@ -1,12 +1,17 @@
-﻿using Corely.Common.Extensions;
+﻿using System.Linq.Expressions;
+using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Filtering;
+using Corely.IAM.Filtering.Ordering;
+using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -18,6 +23,7 @@ internal class PermissionProcessor(
     IRepo<RoleEntity> roleRepo,
     IReadonlyRepo<AccountEntity> accountRepo,
     IValidationProvider validationProvider,
+    IUserContextProvider userContextProvider,
     ILogger<PermissionProcessor> logger
 ) : IPermissionProcessor
 {
@@ -30,6 +36,9 @@ internal class PermissionProcessor(
     );
     private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
         nameof(validationProvider)
+    );
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
     );
     private readonly ILogger<PermissionProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
@@ -152,6 +161,91 @@ internal class PermissionProcessor(
         ];
 
         await _permissionRepo.CreateAsync(permissionEntities);
+    }
+
+    public async Task<ListResult<Permission>> ListPermissionsAsync(
+        FilterBuilder<Permission>? filter,
+        OrderBuilder<Permission>? order,
+        int skip,
+        int take
+    )
+    {
+        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
+
+        Expression<Func<PermissionEntity, bool>> accountScope = p => p.AccountId == accountId;
+
+        var filterPredicate = filter?.Build();
+        Expression<Func<PermissionEntity, bool>> predicate;
+        if (filterPredicate != null)
+        {
+            var mappedFilter = ExpressionMapper.MapPredicate<Permission, PermissionEntity>(
+                filterPredicate
+            );
+            var param = Expression.Parameter(typeof(PermissionEntity), "p");
+            var combined = Expression.AndAlso(
+                Expression.Invoke(accountScope, param),
+                Expression.Invoke(mappedFilter, param)
+            );
+            predicate = Expression.Lambda<Func<PermissionEntity, bool>>(combined, param);
+        }
+        else
+        {
+            predicate = accountScope;
+        }
+
+        var allEntities = await _permissionRepo.ListAsync(predicate);
+        var totalCount = allEntities.Count;
+
+        IEnumerable<PermissionEntity> ordered;
+        if (order != null)
+        {
+            ordered = ExpressionMapper
+                .ApplyOrder<Permission, PermissionEntity>(allEntities.AsQueryable(), order)
+                .AsEnumerable();
+        }
+        else
+        {
+            ordered = allEntities.OrderBy(p => p.Id);
+        }
+
+        var items = ordered.Skip(skip).Take(take).Select(e => e.ToModel()).ToList();
+
+        return new ListResult<Permission>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            PagedResult<Permission>.Create(items, totalCount, skip, take)
+        );
+    }
+
+    public async Task<GetResult<Permission>> GetPermissionByIdAsync(Guid permissionId, bool hydrate)
+    {
+        var permissionEntity = hydrate
+            ? await _permissionRepo.GetAsync(
+                p => p.Id == permissionId,
+                include: q => q.Include(p => p.Roles)
+            )
+            : await _permissionRepo.GetAsync(p => p.Id == permissionId);
+
+        if (permissionEntity == null)
+        {
+            _logger.LogInformation("Permission with Id {PermissionId} not found", permissionId);
+            return new GetResult<Permission>(
+                RetrieveResultCode.NotFoundError,
+                $"Permission with Id {permissionId} not found",
+                null
+            );
+        }
+
+        var permission = permissionEntity.ToModel();
+
+        if (hydrate && permissionEntity.Roles != null)
+        {
+            permission.Roles = permissionEntity
+                .Roles.Select(r => new ChildRef(r.Id, r.Name))
+                .ToList();
+        }
+
+        return new GetResult<Permission>(RetrieveResultCode.Success, string.Empty, permission);
     }
 
     public async Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId)

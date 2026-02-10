@@ -1,4 +1,6 @@
-﻿namespace Corely.IAM.Permissions.Models;
+﻿using Corely.IAM.Models;
+
+namespace Corely.IAM.Permissions.Models;
 
 public class Permission
 {
@@ -12,6 +14,7 @@ public class Permission
     public bool Update { get; set; }
     public bool Delete { get; set; }
     public bool Execute { get; set; }
+    public List<ChildRef>? Roles { get; set; }
 
     public string DisplayName =>
         $"{ResourceType} - {(ResourceId == Guid.Empty ? "all" : ResourceId)} {CrudxString}";

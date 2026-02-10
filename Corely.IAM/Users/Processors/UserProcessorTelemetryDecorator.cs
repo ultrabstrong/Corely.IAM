@@ -1,5 +1,8 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Extensions;
+using Corely.IAM.Filtering;
+using Corely.IAM.Filtering.Ordering;
+using Corely.IAM.Models;
 using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
 
@@ -74,6 +77,26 @@ internal class UserProcessorTelemetryDecorator(
             nameof(UserProcessor),
             userId,
             () => _inner.DeleteUserAsync(userId),
+            logResult: true
+        );
+
+    public async Task<ListResult<User>> ListUsersAsync(
+        FilterBuilder<User>? filter,
+        OrderBuilder<User>? order,
+        int skip,
+        int take
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(UserProcessor),
+            () => _inner.ListUsersAsync(filter, order, skip, take),
+            logResult: true
+        );
+
+    public async Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(UserProcessor),
+            userId,
+            () => _inner.GetUserByIdAsync(userId, hydrate),
             logResult: true
         );
 }

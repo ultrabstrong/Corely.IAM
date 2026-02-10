@@ -1,4 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Text.Json;
 using Corely.Common.Providers.Redaction;
 using Corely.IAM.ConsoleApp.SerilogCustomization;
 using Corely.IAM.Models;
@@ -64,6 +65,7 @@ internal class Program
             var registrationService = host.Services.GetRequiredService<IRegistrationService>();
             var deregistrationService = host.Services.GetRequiredService<IDeregistrationService>();
             var authenticationService = host.Services.GetRequiredService<IAuthenticationService>();
+            var retrievalService = host.Services.GetRequiredService<IRetrievalService>();
 
             // ========= REGISTER USER 1 ==========
             var registerUserResult = await registrationService.RegisterUserAsync(
@@ -182,6 +184,60 @@ internal class Program
                var signedOut = await authenticationService.SignOutAsync(signOutRequest);
        await authenticationService.SignOutAllAsync();
  */
+
+            // ========= RETRIEVAL SERVICE ========== //
+
+            // List all groups
+            var listGroupsResult = await retrievalService.ListGroupsAsync();
+            Console.WriteLine($"List Groups: {JsonSerializer.Serialize(listGroupsResult)}");
+
+            // List all roles
+            var listRolesResult = await retrievalService.ListRolesAsync();
+            Console.WriteLine($"List Roles: {JsonSerializer.Serialize(listRolesResult)}");
+
+            // List all permissions
+            var listPermissionsResult = await retrievalService.ListPermissionsAsync();
+            Console.WriteLine(
+                $"List Permissions: {JsonSerializer.Serialize(listPermissionsResult)}"
+            );
+
+            // List all users
+            var listUsersResult = await retrievalService.ListUsersAsync();
+            Console.WriteLine($"List Users: {JsonSerializer.Serialize(listUsersResult)}");
+
+            // List all accounts
+            var listAccountsResult = await retrievalService.ListAccountsAsync();
+            Console.WriteLine($"List Accounts: {JsonSerializer.Serialize(listAccountsResult)}");
+
+            // Get group by ID with hydration
+            var getGroupResult = await retrievalService.GetGroupAsync(
+                registerGroupResult.CreatedGroupId,
+                hydrate: true
+            );
+            Console.WriteLine($"Get Group (hydrated): {JsonSerializer.Serialize(getGroupResult)}");
+
+            // Get role by ID with hydration
+            var getRoleResult = await retrievalService.GetRoleAsync(
+                registerRoleResult.CreatedRoleId,
+                hydrate: true
+            );
+            Console.WriteLine($"Get Role (hydrated): {JsonSerializer.Serialize(getRoleResult)}");
+
+            // Get user by ID with hydration
+            var getUserResult = await retrievalService.GetUserAsync(
+                registerUserResult.CreatedUserId,
+                hydrate: true
+            );
+            Console.WriteLine($"Get User (hydrated): {JsonSerializer.Serialize(getUserResult)}");
+
+            // Get account by ID with hydration
+            var getAccountResult = await retrievalService.GetAccountAsync(
+                registerAccountResult.CreatedAccountId,
+                hydrate: true
+            );
+            Console.WriteLine(
+                $"Get Account (hydrated): {JsonSerializer.Serialize(getAccountResult)}"
+            );
 
             // ========= DEREGISTERING ==========
             // Deregister roles from group example

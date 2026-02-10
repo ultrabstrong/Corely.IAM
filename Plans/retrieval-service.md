@@ -30,8 +30,8 @@ The library currently has no comprehensive read/list capability exposed to exter
 - [x] RetrievalService wiring
 - [x] Authorization decorator
 - [x] Telemetry decorator
-- [ ] DevTools CLI command
-- [ ] ConsoleTest example
+- [x] DevTools CLI command
+- [x] ConsoleTest example
 - [x] Unit tests
 
 ### Phase 2: Group ✅
@@ -39,8 +39,8 @@ The library currently has no comprehensive read/list capability exposed to exter
 - [x] RetrievalService wiring
 - [x] Authorization decorator
 - [x] Telemetry decorator
-- [ ] DevTools CLI command
-- [ ] ConsoleTest example
+- [x] DevTools CLI command
+- [x] ConsoleTest example
 - [x] Unit tests
 
 ### Phase 3: Role ✅
@@ -48,8 +48,8 @@ The library currently has no comprehensive read/list capability exposed to exter
 - [x] RetrievalService wiring
 - [x] Authorization decorator
 - [x] Telemetry decorator
-- [ ] DevTools CLI command
-- [ ] ConsoleTest example
+- [x] DevTools CLI command
+- [x] ConsoleTest example
 - [x] Unit tests
 
 ### Phase 4: User ✅
@@ -57,8 +57,8 @@ The library currently has no comprehensive read/list capability exposed to exter
 - [x] RetrievalService wiring
 - [x] Authorization decorator
 - [x] Telemetry decorator
-- [ ] DevTools CLI command
-- [ ] ConsoleTest example
+- [x] DevTools CLI command
+- [x] ConsoleTest example
 - [x] Unit tests
 
 ### Phase 5: Account ✅
@@ -66,8 +66,8 @@ The library currently has no comprehensive read/list capability exposed to exter
 - [x] RetrievalService wiring
 - [x] Authorization decorator
 - [x] Telemetry decorator
-- [ ] DevTools CLI command
-- [ ] ConsoleTest example
+- [x] DevTools CLI command
+- [x] ConsoleTest example
 - [x] Unit tests
 
 ---

@@ -18,6 +18,7 @@ The library currently has no comprehensive read/list capability exposed to exter
   - [ ] ChildRef
   - [ ] EffectivePermission / EffectiveRole / EffectiveGroup
   - [ ] PermissionLabelProvider + refactor Permission.CrudxString
+  - [ ] Response types (RetrievalResultCode, ListResult, GetResult, RetrieveListResult, RetrieveSingleResult)
 - [ ] 0c. Service shell (Corely.IAM)
   - [ ] IRetrievalService interface
   - [ ] RetrievalService implementation shell
@@ -573,6 +574,10 @@ Build the shared infrastructure before touching any entity-specific code.
 - `ChildRef` — reusable name/ID pair for hydrated children
 - `EffectivePermission`, `EffectiveRole`, `EffectiveGroup` — permission tree models
 - `PermissionLabelProvider` — shared CRUDX → string formatter; refactor `Permission.CrudxString` to use it
+- Response types (two layers, shared `RetrievalResultCode`):
+  - **Processor layer:** `ListResult<T>` (PagedResult + ResultCode), `GetResult<T>` (Data + ResultCode)
+  - **Service layer:** `RetrieveListResult<T>` (PagedResult + ResultCode), `RetrieveSingleResult<T>` (Data + EffectivePermissions + ResultCode)
+  - `RetrievalResultCode` — shared enum: Success, NotFound
 
 **0c. Service shell (Corely.IAM)**
 - `IRetrievalService` interface with method stubs for all 5 entities

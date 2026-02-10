@@ -8,17 +8,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Services;
 
-public class RegistrationServiceLoggingDecoratorTests
+public class RegistrationServiceTelemetryDecoratorTests
 {
     private readonly Mock<IRegistrationService> _mockInnerService;
-    private readonly Mock<ILogger<RegistrationServiceLoggingDecorator>> _mockLogger;
-    private readonly RegistrationServiceLoggingDecorator _decorator;
+    private readonly Mock<ILogger<RegistrationServiceTelemetryDecorator>> _mockLogger;
+    private readonly RegistrationServiceTelemetryDecorator _decorator;
 
-    public RegistrationServiceLoggingDecoratorTests()
+    public RegistrationServiceTelemetryDecoratorTests()
     {
         _mockInnerService = new Mock<IRegistrationService>();
-        _mockLogger = new Mock<ILogger<RegistrationServiceLoggingDecorator>>();
-        _decorator = new RegistrationServiceLoggingDecorator(
+        _mockLogger = new Mock<ILogger<RegistrationServiceTelemetryDecorator>>();
+        _decorator = new RegistrationServiceTelemetryDecorator(
             _mockInnerService.Object,
             _mockLogger.Object
         );
@@ -243,13 +243,13 @@ public class RegistrationServiceLoggingDecoratorTests
     [Fact]
     public void Constructor_ThrowsOnNullInnerService() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new RegistrationServiceLoggingDecorator(null!, _mockLogger.Object)
+            new RegistrationServiceTelemetryDecorator(null!, _mockLogger.Object)
         );
 
     [Fact]
     public void Constructor_ThrowsOnNullLogger() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new RegistrationServiceLoggingDecorator(_mockInnerService.Object, null!)
+            new RegistrationServiceTelemetryDecorator(_mockInnerService.Object, null!)
         );
 
     private void VerifyLoggedWithResult() =>

@@ -4,17 +4,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Services;
 
-public class DeregistrationServiceLoggingDecoratorTests
+public class DeregistrationServiceTelemetryDecoratorTests
 {
     private readonly Mock<IDeregistrationService> _mockInnerService;
-    private readonly Mock<ILogger<DeregistrationServiceLoggingDecorator>> _mockLogger;
-    private readonly DeregistrationServiceLoggingDecorator _decorator;
+    private readonly Mock<ILogger<DeregistrationServiceTelemetryDecorator>> _mockLogger;
+    private readonly DeregistrationServiceTelemetryDecorator _decorator;
 
-    public DeregistrationServiceLoggingDecoratorTests()
+    public DeregistrationServiceTelemetryDecoratorTests()
     {
         _mockInnerService = new Mock<IDeregistrationService>();
-        _mockLogger = new Mock<ILogger<DeregistrationServiceLoggingDecorator>>();
-        _decorator = new DeregistrationServiceLoggingDecorator(
+        _mockLogger = new Mock<ILogger<DeregistrationServiceTelemetryDecorator>>();
+        _decorator = new DeregistrationServiceTelemetryDecorator(
             _mockInnerService.Object,
             _mockLogger.Object
         );
@@ -223,13 +223,13 @@ public class DeregistrationServiceLoggingDecoratorTests
     [Fact]
     public void Constructor_ThrowsOnNullInnerService() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new DeregistrationServiceLoggingDecorator(null!, _mockLogger.Object)
+            new DeregistrationServiceTelemetryDecorator(null!, _mockLogger.Object)
         );
 
     [Fact]
     public void Constructor_ThrowsOnNullLogger() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new DeregistrationServiceLoggingDecorator(_mockInnerService.Object, null!)
+            new DeregistrationServiceTelemetryDecorator(_mockInnerService.Object, null!)
         );
 
     private void VerifyLoggedWithResult() =>

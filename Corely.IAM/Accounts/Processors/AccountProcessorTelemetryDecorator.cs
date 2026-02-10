@@ -5,13 +5,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Accounts.Processors;
 
-internal class AccountProcessorLoggingDecorator(
+internal class AccountProcessorTelemetryDecorator(
     IAccountProcessor inner,
-    ILogger<AccountProcessorLoggingDecorator> logger
+    ILogger<AccountProcessorTelemetryDecorator> logger
 ) : IAccountProcessor
 {
     private readonly IAccountProcessor _inner = inner.ThrowIfNull(nameof(inner));
-    private readonly ILogger<AccountProcessorLoggingDecorator> _logger = logger.ThrowIfNull(
+    private readonly ILogger<AccountProcessorTelemetryDecorator> _logger = logger.ThrowIfNull(
         nameof(logger)
     );
 

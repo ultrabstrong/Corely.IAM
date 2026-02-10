@@ -134,43 +134,49 @@ public static class ServiceRegistrationExtensions
             IRegistrationService,
             RegistrationServiceAuthorizationDecorator
         >();
-        serviceCollection.Decorate<IRegistrationService, RegistrationServiceLoggingDecorator>();
+        serviceCollection.Decorate<IRegistrationService, RegistrationServiceTelemetryDecorator>();
         serviceCollection.AddScoped<IDeregistrationService, DeregistrationService>();
         serviceCollection.Decorate<
             IDeregistrationService,
             DeregistrationServiceAuthorizationDecorator
         >();
-        serviceCollection.Decorate<IDeregistrationService, DeregistrationServiceLoggingDecorator>();
+        serviceCollection.Decorate<
+            IDeregistrationService,
+            DeregistrationServiceTelemetryDecorator
+        >();
         serviceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
-        serviceCollection.Decorate<IAuthenticationService, AuthenticationServiceLoggingDecorator>();
+        serviceCollection.Decorate<
+            IAuthenticationService,
+            AuthenticationServiceTelemetryDecorator
+        >();
 
         serviceCollection.AddScoped<IUserOwnershipProcessor, UserOwnershipProcessor>();
 
         serviceCollection.AddScoped<IAccountProcessor, AccountProcessor>();
         serviceCollection.Decorate<IAccountProcessor, AccountProcessorAuthorizationDecorator>();
-        serviceCollection.Decorate<IAccountProcessor, AccountProcessorLoggingDecorator>();
+        serviceCollection.Decorate<IAccountProcessor, AccountProcessorTelemetryDecorator>();
 
         serviceCollection.AddScoped<IUserProcessor, UserProcessor>();
         serviceCollection.Decorate<IUserProcessor, UserProcessorAuthorizationDecorator>();
-        serviceCollection.Decorate<IUserProcessor, UserProcessorLoggingDecorator>();
+        serviceCollection.Decorate<IUserProcessor, UserProcessorTelemetryDecorator>();
 
         serviceCollection.AddScoped<IBasicAuthProcessor, BasicAuthProcessor>();
         serviceCollection.Decorate<IBasicAuthProcessor, BasicAuthProcessorAuthorizationDecorator>();
-        serviceCollection.Decorate<IBasicAuthProcessor, BasicAuthProcessorLoggingDecorator>();
+        serviceCollection.Decorate<IBasicAuthProcessor, BasicAuthProcessorTelemetryDecorator>();
 
         serviceCollection.AddScoped<IGroupProcessor, GroupProcessor>();
         serviceCollection.Decorate<IGroupProcessor, GroupProcessorAuthorizationDecorator>();
-        serviceCollection.Decorate<IGroupProcessor, GroupProcessorLoggingDecorator>();
+        serviceCollection.Decorate<IGroupProcessor, GroupProcessorTelemetryDecorator>();
 
         serviceCollection.AddScoped<IRoleProcessor, RoleProcessor>();
         serviceCollection.Decorate<IRoleProcessor, RoleProcessorAuthorizationDecorator>();
-        serviceCollection.Decorate<IRoleProcessor, RoleProcessorLoggingDecorator>();
+        serviceCollection.Decorate<IRoleProcessor, RoleProcessorTelemetryDecorator>();
 
         serviceCollection.AddScoped<IPermissionProcessor, PermissionProcessor>();
         serviceCollection.Decorate<
             IPermissionProcessor,
             PermissionProcessorAuthorizationDecorator
         >();
-        serviceCollection.Decorate<IPermissionProcessor, PermissionProcessorLoggingDecorator>();
+        serviceCollection.Decorate<IPermissionProcessor, PermissionProcessorTelemetryDecorator>();
     }
 }

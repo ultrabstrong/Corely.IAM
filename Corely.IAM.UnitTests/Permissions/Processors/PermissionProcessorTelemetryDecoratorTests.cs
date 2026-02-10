@@ -4,17 +4,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Permissions.Processors;
 
-public class PermissionProcessorLoggingDecoratorTests
+public class PermissionProcessorTelemetryDecoratorTests
 {
     private readonly Mock<IPermissionProcessor> _mockInnerProcessor;
-    private readonly Mock<ILogger<PermissionProcessorLoggingDecorator>> _mockLogger;
-    private readonly PermissionProcessorLoggingDecorator _decorator;
+    private readonly Mock<ILogger<PermissionProcessorTelemetryDecorator>> _mockLogger;
+    private readonly PermissionProcessorTelemetryDecorator _decorator;
 
-    public PermissionProcessorLoggingDecoratorTests()
+    public PermissionProcessorTelemetryDecoratorTests()
     {
         _mockInnerProcessor = new Mock<IPermissionProcessor>();
-        _mockLogger = new Mock<ILogger<PermissionProcessorLoggingDecorator>>();
-        _decorator = new PermissionProcessorLoggingDecorator(
+        _mockLogger = new Mock<ILogger<PermissionProcessorTelemetryDecorator>>();
+        _decorator = new PermissionProcessorTelemetryDecorator(
             _mockInnerProcessor.Object,
             _mockLogger.Object
         );
@@ -65,13 +65,13 @@ public class PermissionProcessorLoggingDecoratorTests
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new PermissionProcessorLoggingDecorator(null!, _mockLogger.Object)
+            new PermissionProcessorTelemetryDecorator(null!, _mockLogger.Object)
         );
 
     [Fact]
     public void Constructor_ThrowsOnNullLogger() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new PermissionProcessorLoggingDecorator(_mockInnerProcessor.Object, null!)
+            new PermissionProcessorTelemetryDecorator(_mockInnerProcessor.Object, null!)
         );
 
     private void VerifyLoggedWithResult() =>

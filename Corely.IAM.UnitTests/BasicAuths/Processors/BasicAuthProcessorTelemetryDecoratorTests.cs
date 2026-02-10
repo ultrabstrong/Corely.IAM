@@ -4,17 +4,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.BasicAuths.Processors;
 
-public class BasicAuthProcessorLoggingDecoratorTests
+public class BasicAuthProcessorTelemetryDecoratorTests
 {
     private readonly Mock<IBasicAuthProcessor> _mockInnerProcessor;
-    private readonly Mock<ILogger<BasicAuthProcessorLoggingDecorator>> _mockLogger;
-    private readonly BasicAuthProcessorLoggingDecorator _decorator;
+    private readonly Mock<ILogger<BasicAuthProcessorTelemetryDecorator>> _mockLogger;
+    private readonly BasicAuthProcessorTelemetryDecorator _decorator;
 
-    public BasicAuthProcessorLoggingDecoratorTests()
+    public BasicAuthProcessorTelemetryDecoratorTests()
     {
         _mockInnerProcessor = new Mock<IBasicAuthProcessor>();
-        _mockLogger = new Mock<ILogger<BasicAuthProcessorLoggingDecorator>>();
-        _decorator = new BasicAuthProcessorLoggingDecorator(
+        _mockLogger = new Mock<ILogger<BasicAuthProcessorTelemetryDecorator>>();
+        _decorator = new BasicAuthProcessorTelemetryDecorator(
             _mockInnerProcessor.Object,
             _mockLogger.Object
         );
@@ -82,13 +82,13 @@ public class BasicAuthProcessorLoggingDecoratorTests
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new BasicAuthProcessorLoggingDecorator(null!, _mockLogger.Object)
+            new BasicAuthProcessorTelemetryDecorator(null!, _mockLogger.Object)
         );
 
     [Fact]
     public void Constructor_ThrowsOnNullLogger() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new BasicAuthProcessorLoggingDecorator(_mockInnerProcessor.Object, null!)
+            new BasicAuthProcessorTelemetryDecorator(_mockInnerProcessor.Object, null!)
         );
 
     private void VerifyLoggedWithResult() =>

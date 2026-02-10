@@ -5,13 +5,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
 
-internal class AuthenticationServiceLoggingDecorator(
+internal class AuthenticationServiceTelemetryDecorator(
     IAuthenticationService inner,
-    ILogger<AuthenticationServiceLoggingDecorator> logger
+    ILogger<AuthenticationServiceTelemetryDecorator> logger
 ) : IAuthenticationService
 {
     private readonly IAuthenticationService _inner = inner.ThrowIfNull(nameof(inner));
-    private readonly ILogger<AuthenticationServiceLoggingDecorator> _logger = logger.ThrowIfNull(
+    private readonly ILogger<AuthenticationServiceTelemetryDecorator> _logger = logger.ThrowIfNull(
         nameof(logger)
     );
 

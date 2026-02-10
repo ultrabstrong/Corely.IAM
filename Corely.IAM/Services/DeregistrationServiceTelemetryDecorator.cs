@@ -5,13 +5,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
 
-internal class DeregistrationServiceLoggingDecorator(
+internal class DeregistrationServiceTelemetryDecorator(
     IDeregistrationService inner,
-    ILogger<DeregistrationServiceLoggingDecorator> logger
+    ILogger<DeregistrationServiceTelemetryDecorator> logger
 ) : IDeregistrationService
 {
     private readonly IDeregistrationService _inner = inner.ThrowIfNull(nameof(inner));
-    private readonly ILogger<DeregistrationServiceLoggingDecorator> _logger = logger.ThrowIfNull(
+    private readonly ILogger<DeregistrationServiceTelemetryDecorator> _logger = logger.ThrowIfNull(
         nameof(logger)
     );
 

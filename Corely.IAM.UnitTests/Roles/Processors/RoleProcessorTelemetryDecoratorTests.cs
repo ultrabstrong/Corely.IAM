@@ -4,17 +4,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Roles.Processors;
 
-public class RoleProcessorLoggingDecoratorTests
+public class RoleProcessorTelemetryDecoratorTests
 {
     private readonly Mock<IRoleProcessor> _mockInnerProcessor;
-    private readonly Mock<ILogger<RoleProcessorLoggingDecorator>> _mockLogger;
-    private readonly RoleProcessorLoggingDecorator _decorator;
+    private readonly Mock<ILogger<RoleProcessorTelemetryDecorator>> _mockLogger;
+    private readonly RoleProcessorTelemetryDecorator _decorator;
 
-    public RoleProcessorLoggingDecoratorTests()
+    public RoleProcessorTelemetryDecoratorTests()
     {
         _mockInnerProcessor = new Mock<IRoleProcessor>();
-        _mockLogger = new Mock<ILogger<RoleProcessorLoggingDecorator>>();
-        _decorator = new RoleProcessorLoggingDecorator(
+        _mockLogger = new Mock<ILogger<RoleProcessorTelemetryDecorator>>();
+        _decorator = new RoleProcessorTelemetryDecorator(
             _mockInnerProcessor.Object,
             _mockLogger.Object
         );
@@ -127,13 +127,13 @@ public class RoleProcessorLoggingDecoratorTests
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new RoleProcessorLoggingDecorator(null!, _mockLogger.Object)
+            new RoleProcessorTelemetryDecorator(null!, _mockLogger.Object)
         );
 
     [Fact]
     public void Constructor_ThrowsOnNullLogger() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new RoleProcessorLoggingDecorator(_mockInnerProcessor.Object, null!)
+            new RoleProcessorTelemetryDecorator(_mockInnerProcessor.Object, null!)
         );
 
     private void VerifyLoggedWithResult() =>

@@ -33,12 +33,7 @@ dotnet test --filter "UserProcessorTests.CreateUserAsync_WithValidRequest_Return
 
 CSharpier enforced via MSBuild integration. Files are auto-formatted on build.
 
-```powershell
-dotnet csharpier format .        # Format all files
-dotnet csharpier check .         # Verify compliance without changes
-```
-
-**IMPORTANT for Claude Code:** Before committing, ALWAYS run `dotnet csharpier format .` on any new or modified C# files to ensure consistent formatting.
+**IMPORTANT for Claude Code:** After making changes, ALWAYS run `.\RebuildAndTest.ps1` to format, rebuild, and test everything before committing.
 
 ## Migrations
 
@@ -72,7 +67,7 @@ Services (public) → Processors (internal) → Repositories/UoW → EF Core DbC
 
 Every processor and service is wrapped with **decorator layers** via Scrutor:
 - `AuthorizationDecorator` — checks permissions before calling the inner implementation
-- `LoggingDecorator` — logs operations
+- `TelemetryDecorator` — logs operations
 
 Registration order in `ServiceRegistrationExtensions.cs` matters: decorators are applied bottom-up (last registered = outermost).
 
@@ -85,7 +80,7 @@ Domain/
 ├── Constants/        # Domain constants (SCREAMING_SNAKE_CASE)
 ├── Entities/         # EF Core entities
 ├── Models/           # Request/response/domain models
-├── Processors/       # Business logic + authorization/logging decorators
+├── Processors/       # Business logic + authorization/telemetry decorators
 ├── Mappers/          # Entity ↔ Model mapping
 └── Validators/       # FluentValidation rules
 ```
@@ -103,7 +98,7 @@ Domain/
 - **Production**: `AddIAMServicesWithEF()` — registers EF Core repositories and UoW
 - **Testing**: `AddIAMServicesWithMockDb()` — registers in-memory mock repositories
 
-New services go in `Services/` with an interface, registered in `ServiceRegistrationExtensions.cs`. New processors go in their domain's `Processors/` folder and should follow the existing Authorization + Logging decorator pattern.
+New services go in `Services/` with an interface, registered in `ServiceRegistrationExtensions.cs`. New processors go in their domain's `Processors/` folder and should follow the existing Authorization + Telemetry decorator pattern.
 
 ### Security Model
 
@@ -159,7 +154,7 @@ public class UserProcessor
 
 ### Service Registration
 
-New services go in `Services/` folder with interface, registered as `Scoped` in `ServiceRegistrationExtensions.cs`. Follow the existing pattern of adding Authorization and Logging decorators via Scrutor's `.Decorate<>()`.
+New services go in `Services/` folder with interface, registered as `Scoped` in `ServiceRegistrationExtensions.cs`. Follow the existing pattern of adding Authorization and Telemetry decorators via Scrutor's `.Decorate<>()`.
 
 ### String Validation
 

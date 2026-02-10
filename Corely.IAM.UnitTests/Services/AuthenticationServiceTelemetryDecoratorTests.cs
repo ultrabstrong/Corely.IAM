@@ -4,19 +4,19 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Services;
 
-public class AuthenticationServiceLoggingDecoratorTests
+public class AuthenticationServiceTelemetryDecoratorTests
 {
     private const string TEST_DEVICE_ID = "test-device";
 
     private readonly Mock<IAuthenticationService> _mockInnerService;
-    private readonly Mock<ILogger<AuthenticationServiceLoggingDecorator>> _mockLogger;
-    private readonly AuthenticationServiceLoggingDecorator _decorator;
+    private readonly Mock<ILogger<AuthenticationServiceTelemetryDecorator>> _mockLogger;
+    private readonly AuthenticationServiceTelemetryDecorator _decorator;
 
-    public AuthenticationServiceLoggingDecoratorTests()
+    public AuthenticationServiceTelemetryDecoratorTests()
     {
         _mockInnerService = new Mock<IAuthenticationService>();
-        _mockLogger = new Mock<ILogger<AuthenticationServiceLoggingDecorator>>();
-        _decorator = new AuthenticationServiceLoggingDecorator(
+        _mockLogger = new Mock<ILogger<AuthenticationServiceTelemetryDecorator>>();
+        _decorator = new AuthenticationServiceTelemetryDecorator(
             _mockInnerService.Object,
             _mockLogger.Object
         );
@@ -88,13 +88,13 @@ public class AuthenticationServiceLoggingDecoratorTests
     [Fact]
     public void Constructor_ThrowsOnNullInnerService() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new AuthenticationServiceLoggingDecorator(null!, _mockLogger.Object)
+            new AuthenticationServiceTelemetryDecorator(null!, _mockLogger.Object)
         );
 
     [Fact]
     public void Constructor_ThrowsOnNullLogger() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new AuthenticationServiceLoggingDecorator(_mockInnerService.Object, null!)
+            new AuthenticationServiceTelemetryDecorator(_mockInnerService.Object, null!)
         );
 
     private void VerifyLoggedWithResult() =>

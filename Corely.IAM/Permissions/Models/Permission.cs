@@ -17,5 +17,5 @@ public class Permission
         $"{ResourceType} - {(ResourceId == Guid.Empty ? "all" : ResourceId)} {CrudxString}";
 
     private string CrudxString =>
-        $"{(Create ? "C" : "c")}{(Read ? "R" : "r")}{(Update ? "U" : "u")}{(Delete ? "D" : "d")}{(Execute ? "X" : "x")}";
+        PermissionLabelProvider.GetCrudxLabel(Create, Read, Update, Delete, Execute);
 }

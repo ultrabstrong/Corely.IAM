@@ -144,6 +144,9 @@ public static class ServiceRegistrationExtensions
             IDeregistrationService,
             DeregistrationServiceTelemetryDecorator
         >();
+        serviceCollection.AddScoped<IRetrievalService, RetrievalService>();
+        serviceCollection.Decorate<IRetrievalService, RetrievalServiceAuthorizationDecorator>();
+        serviceCollection.Decorate<IRetrievalService, RetrievalServiceTelemetryDecorator>();
         serviceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
         serviceCollection.Decorate<
             IAuthenticationService,

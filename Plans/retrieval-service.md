@@ -530,11 +530,27 @@ BasicAuth and Security Keys are excluded — BasicAuth is internal authenticatio
 
 ## 🗺️ Implementation Roadmap
 
+### Implementation Notes
+
+**Filtering/ordering lives in Corely.IAM for now.** The filtering and ordering system is designed for eventual extraction to Corely.Common, but Corely.Common is a separate repo/NuGet package. Build it within Corely.IAM in an extractable namespace (e.g., `Corely.IAM.Common.Filtering`) and move it to Corely.Common later.
+
+**Branching strategy:** Each phase is implemented cumulatively on a single working branch, with a local branch checkpoint after each phase:
+- `retrieval/phase-0` — scaffolding only
+- `retrieval/phase-1` — scaffolding + Permission
+- `retrieval/phase-2` — scaffolding + Permission + Group
+- `retrieval/phase-3` — ... + Role
+- `retrieval/phase-4` — ... + User
+- `retrieval/phase-5` — ... + Account (final, complete)
+
+If a phase has issues, work resumes from the previous checkpoint branch.
+
+**Validation:** Run `.\RebuildAndTest.ps1` after each phase to ensure formatting, build, and all tests pass before creating the checkpoint branch.
+
 ### Phase 0: Scaffolding
 
 Build the shared infrastructure before touching any entity-specific code.
 
-**0a. Filtering & ordering system (Corely.Common)**
+**0a. Filtering & ordering system (Corely.IAM, extractable to Corely.Common later)**
 - Filter types: `StringFilter`, `ComparableFilter<T>`, `GuidFilter`, `BoolFilter`, `EnumFilter<TEnum>`
 - `FilterBuilder<T>` with `Where` overloads (property, collection navigation)
 - `ExpressionTranslator` — converts FilterBuilder state to `Expression<Func<T, bool>>`

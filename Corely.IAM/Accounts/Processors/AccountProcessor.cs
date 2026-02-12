@@ -1,11 +1,11 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Corely.Common.Extensions;
+using Corely.Common.Filtering;
+using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.Filtering;
-using Corely.IAM.Filtering.Ordering;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;

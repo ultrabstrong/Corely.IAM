@@ -1,7 +1,7 @@
 using Corely.Common.Extensions;
+using Corely.Common.Filtering;
+using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.Filtering;
-using Corely.IAM.Filtering.Ordering;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;

@@ -1,5 +1,5 @@
-﻿using Corely.IAM.Filtering;
-using Corely.IAM.Filtering.Ordering;
+using Corely.Common.Filtering;
+using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Models;
 using Corely.IAM.Users.Models;
 

@@ -1,9 +1,9 @@
 using Corely.Common.Extensions;
+using Corely.Common.Filtering;
+using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
-using Corely.IAM.Filtering;
-using Corely.IAM.Filtering.Ordering;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;

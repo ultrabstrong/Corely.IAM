@@ -1,8 +1,8 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Corely.Common.Extensions;
+using Corely.Common.Filtering;
+using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.Repos;
-using Corely.IAM.Filtering;
-using Corely.IAM.Filtering.Ordering;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;

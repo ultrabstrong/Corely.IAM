@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Corely.Common.Extensions;
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
@@ -332,58 +331,14 @@ internal class AccountProcessor(
             .AvailableAccounts.Select(a => a.Id)
             .ToList();
 
-        Expression<Func<AccountEntity, bool>> accountScope = a => userAccountIds.Contains(a.Id);
-
-        Expression<Func<AccountEntity, bool>> predicate;
-        if (filter != null)
-        {
-            var filterExpression = filter.Build();
-            if (filterExpression != null)
-            {
-                var entityFilter = ExpressionMapper.MapPredicate<Account, AccountEntity>(
-                    filterExpression
-                );
-
-                var param = Expression.Parameter(typeof(AccountEntity), "a");
-                var combined = Expression.AndAlso(
-                    Expression.Invoke(accountScope, param),
-                    Expression.Invoke(entityFilter, param)
-                );
-                predicate = Expression.Lambda<Func<AccountEntity, bool>>(combined, param);
-            }
-            else
-            {
-                predicate = accountScope;
-            }
-        }
-        else
-        {
-            predicate = accountScope;
-        }
-
-        var entities = await _accountRepo.QueryAsync(q =>
-        {
-            var query = q.Where(predicate);
-
-            if (order != null)
-            {
-                query = ExpressionMapper.ApplyOrder<Account, AccountEntity>(query, order);
-            }
-            else
-            {
-                query = query.OrderBy(a => a.Id);
-            }
-
-            return query.Skip(skip).Take(take);
-        });
-
-        var totalCount = await _accountRepo.CountAsync(predicate);
-
-        var items = entities.Select(e => e.ToModel()).ToList();
-        return new ListResult<Account>(
-            RetrieveResultCode.Success,
-            string.Empty,
-            PagedResult<Account>.Create(items, totalCount, skip, take)
+        return await ListQueryHelper.ExecuteListAsync(
+            _accountRepo,
+            a => userAccountIds.Contains(a.Id),
+            filter,
+            order,
+            skip,
+            take,
+            e => e.ToModel()
         );
     }
 

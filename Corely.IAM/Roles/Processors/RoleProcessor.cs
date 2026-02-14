@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Corely.Common.Extensions;
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
@@ -161,51 +160,14 @@ internal class RoleProcessor(
             );
         }
 
-        // Account scope predicate — always applied
-        Expression<Func<RoleEntity, bool>> accountScope = r => r.AccountId == accountId.Value;
-
-        // Combine with user-provided filter if present
-        var filterExpression = filter?.Build();
-        Expression<Func<RoleEntity, bool>> combinedPredicate;
-        if (filterExpression != null)
-        {
-            var mappedFilter = ExpressionMapper.MapPredicate<Role, RoleEntity>(filterExpression);
-            var param = Expression.Parameter(typeof(RoleEntity), "r");
-            var body = Expression.AndAlso(
-                Expression.Invoke(accountScope, param),
-                Expression.Invoke(mappedFilter, param)
-            );
-            combinedPredicate = Expression.Lambda<Func<RoleEntity, bool>>(body, param);
-        }
-        else
-        {
-            combinedPredicate = accountScope;
-        }
-
-        var totalCount = await _roleRepo.CountAsync(combinedPredicate);
-
-        var items = await _roleRepo.QueryAsync<RoleEntity>(q =>
-        {
-            var query = q.Where(combinedPredicate);
-
-            if (order != null)
-            {
-                query = ExpressionMapper.ApplyOrder<Role, RoleEntity>(query, order);
-            }
-            else
-            {
-                query = query.OrderBy(r => r.Id);
-            }
-
-            return query.Skip(skip).Take(take);
-        });
-
-        var roles = items.Select(e => e.ToModel()).ToList();
-
-        return new ListResult<Role>(
-            RetrieveResultCode.Success,
-            string.Empty,
-            PagedResult<Role>.Create(roles, totalCount, skip, take)
+        return await ListQueryHelper.ExecuteListAsync(
+            _roleRepo,
+            r => r.AccountId == accountId.Value,
+            filter,
+            order,
+            skip,
+            take,
+            e => e.ToModel()
         );
     }
 

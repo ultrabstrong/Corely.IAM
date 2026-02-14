@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Corely.Common.Extensions;
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
@@ -171,49 +170,14 @@ internal class PermissionProcessor(
     )
     {
         var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
-
-        Expression<Func<PermissionEntity, bool>> accountScope = p => p.AccountId == accountId;
-
-        var filterPredicate = filter?.Build();
-        Expression<Func<PermissionEntity, bool>> predicate;
-        if (filterPredicate != null)
-        {
-            var mappedFilter = ExpressionMapper.MapPredicate<Permission, PermissionEntity>(
-                filterPredicate
-            );
-            var param = Expression.Parameter(typeof(PermissionEntity), "p");
-            var combined = Expression.AndAlso(
-                Expression.Invoke(accountScope, param),
-                Expression.Invoke(mappedFilter, param)
-            );
-            predicate = Expression.Lambda<Func<PermissionEntity, bool>>(combined, param);
-        }
-        else
-        {
-            predicate = accountScope;
-        }
-
-        var allEntities = await _permissionRepo.ListAsync(predicate);
-        var totalCount = allEntities.Count;
-
-        IEnumerable<PermissionEntity> ordered;
-        if (order != null)
-        {
-            ordered = ExpressionMapper
-                .ApplyOrder<Permission, PermissionEntity>(allEntities.AsQueryable(), order)
-                .AsEnumerable();
-        }
-        else
-        {
-            ordered = allEntities.OrderBy(p => p.Id);
-        }
-
-        var items = ordered.Skip(skip).Take(take).Select(e => e.ToModel()).ToList();
-
-        return new ListResult<Permission>(
-            RetrieveResultCode.Success,
-            string.Empty,
-            PagedResult<Permission>.Create(items, totalCount, skip, take)
+        return await ListQueryHelper.ExecuteListAsync(
+            _permissionRepo,
+            p => p.AccountId == accountId,
+            filter,
+            order,
+            skip,
+            take,
+            e => e.ToModel()
         );
     }
 

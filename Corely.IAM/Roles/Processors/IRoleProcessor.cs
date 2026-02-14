@@ -24,5 +24,6 @@ internal interface IRoleProcessor
     Task<RemovePermissionsFromRoleResult> RemovePermissionsFromRoleAsync(
         RemovePermissionsFromRoleRequest request
     );
+    Task<ModifyResult> UpdateRoleAsync(UpdateRoleRequest request);
     Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId);
 }

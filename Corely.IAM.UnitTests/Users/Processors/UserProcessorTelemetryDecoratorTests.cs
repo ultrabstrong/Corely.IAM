@@ -1,3 +1,4 @@
+using Corely.IAM.Models;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Microsoft.Extensions.Logging;
@@ -59,14 +60,14 @@ public class UserProcessorTelemetryDecoratorTests
     [Fact]
     public async Task UpdateUserAsync_DelegatesToInnerAndLogsResult()
     {
-        var user = new User { Username = "testuser" };
-        var expectedResult = new UpdateUserResult(UpdateUserResultCode.Success, string.Empty);
-        _mockInnerProcessor.Setup(x => x.UpdateUserAsync(user)).ReturnsAsync(expectedResult);
+        var request = new UpdateUserRequest(Guid.CreateVersion7(), "testuser", "test@test.com");
+        var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
+        _mockInnerProcessor.Setup(x => x.UpdateUserAsync(request)).ReturnsAsync(expectedResult);
 
-        var result = await _decorator.UpdateUserAsync(user);
+        var result = await _decorator.UpdateUserAsync(request);
 
         Assert.Equal(expectedResult, result);
-        _mockInnerProcessor.Verify(x => x.UpdateUserAsync(user), Times.Once);
+        _mockInnerProcessor.Verify(x => x.UpdateUserAsync(request), Times.Once);
         VerifyLoggedWithResult();
     }
 

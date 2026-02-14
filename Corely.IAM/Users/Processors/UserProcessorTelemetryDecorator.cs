@@ -34,11 +34,11 @@ internal class UserProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<UpdateUserResult> UpdateUserAsync(User user) =>
+    public async Task<ModifyResult> UpdateUserAsync(UpdateUserRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),
-            user,
-            () => _inner.UpdateUserAsync(user),
+            request,
+            () => _inner.UpdateUserAsync(request),
             logResult: true
         );
 

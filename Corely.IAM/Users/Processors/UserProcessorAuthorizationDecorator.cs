@@ -34,12 +34,12 @@ internal class UserProcessorAuthorizationDecorator(
                 null
             );
 
-    public async Task<UpdateUserResult> UpdateUserAsync(User user) =>
-        _authorizationProvider.IsAuthorizedForOwnUser(user.Id)
-            ? await _inner.UpdateUserAsync(user)
-            : new UpdateUserResult(
-                UpdateUserResultCode.UnauthorizedError,
-                $"Unauthorized to update user {user.Id}"
+    public async Task<ModifyResult> UpdateUserAsync(UpdateUserRequest request) =>
+        _authorizationProvider.IsAuthorizedForOwnUser(request.UserId)
+            ? await _inner.UpdateUserAsync(request)
+            : new ModifyResult(
+                ModifyResultCode.UnauthorizedError,
+                $"Unauthorized to update user {request.UserId}"
             );
 
     public async Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(

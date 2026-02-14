@@ -137,6 +137,18 @@ internal class RoleProcessorAuthorizationDecorator(
                 []
             );
 
+    public async Task<ModifyResult> UpdateRoleAsync(UpdateRoleRequest request) =>
+        await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
+            PermissionConstants.ROLE_RESOURCE_TYPE,
+            request.RoleId
+        )
+            ? await _inner.UpdateRoleAsync(request)
+            : new ModifyResult(
+                ModifyResultCode.UnauthorizedError,
+                $"Unauthorized to update role {request.RoleId}"
+            );
+
     public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,

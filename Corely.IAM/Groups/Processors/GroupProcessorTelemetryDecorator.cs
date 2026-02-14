@@ -64,6 +64,14 @@ internal class GroupProcessorTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<ModifyResult> UpdateGroupAsync(UpdateGroupRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(GroupProcessor),
+            request,
+            () => _inner.UpdateGroupAsync(request),
+            logResult: true
+        );
+
     public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),

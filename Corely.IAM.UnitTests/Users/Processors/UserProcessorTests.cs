@@ -2,6 +2,7 @@ using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Entities;
+using Corely.IAM.Models;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Providers;
@@ -262,14 +263,18 @@ public class UserProcessorTests
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         var createUserResult = await _userProcessor.CreateUserAsync(request);
+
+        var updateRequest = new UpdateUserRequest(
+            createUserResult.CreatedId,
+            "newusername",
+            "new@test.com"
+        );
+        var updateResult = await _userProcessor.UpdateUserAsync(updateRequest);
         var getResult = await _userProcessor.GetUserAsync(createUserResult.CreatedId);
-        var user = getResult.User!;
-        user.Disabled = false;
 
-        await _userProcessor.UpdateUserAsync(user);
-        var updatedResult = await _userProcessor.GetUserAsync(createUserResult.CreatedId);
-
-        Assert.False(updatedResult.User!.Disabled);
+        Assert.Equal(ModifyResultCode.Success, updateResult.ResultCode);
+        Assert.Equal("newusername", getResult.User!.Username);
+        Assert.Equal("new@test.com", getResult.User.Email);
     }
 
     [Fact]

@@ -440,6 +440,30 @@ internal class GroupProcessor(
         );
     }
 
+    public async Task<ModifyResult> UpdateGroupAsync(UpdateGroupRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _validationProvider.ThrowIfInvalid(request);
+
+        var accountId = _userContextProvider.GetUserContext()?.CurrentAccount?.Id;
+        var entity = await _groupRepo.GetAsync(e =>
+            e.Id == request.GroupId && e.AccountId == accountId
+        );
+        if (entity == null)
+        {
+            _logger.LogInformation("Group with Id {GroupId} not found", request.GroupId);
+            return new ModifyResult(
+                ModifyResultCode.NotFoundError,
+                $"Group with Id {request.GroupId} not found"
+            );
+        }
+
+        entity.Name = request.Name;
+        entity.Description = request.Description;
+        await _groupRepo.UpdateAsync(entity);
+        return new ModifyResult(ModifyResultCode.Success, string.Empty);
+    }
+
     public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId)
     {
         var groupEntity = await _groupRepo.GetAsync(

@@ -34,6 +34,18 @@ internal class AccountProcessorAuthorizationDecorator(
                 null
             );
 
+    public async Task<ModifyResult> UpdateAccountAsync(UpdateAccountRequest request) =>
+        await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
+            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            request.AccountId
+        )
+            ? await _inner.UpdateAccountAsync(request)
+            : new ModifyResult(
+                ModifyResultCode.UnauthorizedError,
+                $"Unauthorized to update account {request.AccountId}"
+            );
+
     public async Task<DeleteAccountResult> DeleteAccountAsync(Guid accountId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,

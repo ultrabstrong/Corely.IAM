@@ -9,7 +9,7 @@ namespace Corely.IAM.Accounts.Entities;
 internal class AccountEntity : IHasCreatedUtc, IHasModifiedUtc
 {
     public Guid Id { get; set; }
-    public string AccountName { get; init; } = null!;
+    public string AccountName { get; set; } = null!;
     public DateTime CreatedUtc { get; set; }
     public DateTime? ModifiedUtc { get; set; }
     public virtual ICollection<UserEntity>? Users { get; set; }

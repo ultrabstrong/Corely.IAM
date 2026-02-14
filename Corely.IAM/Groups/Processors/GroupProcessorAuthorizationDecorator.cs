@@ -115,6 +115,18 @@ internal class GroupProcessorAuthorizationDecorator(
                 []
             );
 
+    public async Task<ModifyResult> UpdateGroupAsync(UpdateGroupRequest request) =>
+        await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
+            PermissionConstants.GROUP_RESOURCE_TYPE,
+            request.GroupId
+        )
+            ? await _inner.UpdateGroupAsync(request)
+            : new ModifyResult(
+                ModifyResultCode.UnauthorizedError,
+                $"Unauthorized to update group {request.GroupId}"
+            );
+
     public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,

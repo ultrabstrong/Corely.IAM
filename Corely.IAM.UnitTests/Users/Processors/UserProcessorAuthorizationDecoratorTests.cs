@@ -1,3 +1,4 @@
+using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
@@ -87,31 +88,34 @@ public class UserProcessorAuthorizationDecoratorTests
     public async Task UpdateUserAsync_Succeeds_WhenUserUpdatesOwnAccount()
     {
         var userId = Guid.CreateVersion7();
-        var user = new User { Id = userId, Username = "testuser" };
-        var expectedResult = new UpdateUserResult(UpdateUserResultCode.Success, string.Empty);
+        var request = new UpdateUserRequest(userId, "testuser", "test@test.com");
+        var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedForOwnUser(userId, It.IsAny<bool>()))
             .Returns(true);
-        _mockInnerProcessor.Setup(x => x.UpdateUserAsync(user)).ReturnsAsync(expectedResult);
+        _mockInnerProcessor.Setup(x => x.UpdateUserAsync(request)).ReturnsAsync(expectedResult);
 
-        var result = await _decorator.UpdateUserAsync(user);
+        var result = await _decorator.UpdateUserAsync(request);
 
         Assert.Equal(expectedResult, result);
-        _mockInnerProcessor.Verify(x => x.UpdateUserAsync(user), Times.Once);
+        _mockInnerProcessor.Verify(x => x.UpdateUserAsync(request), Times.Once);
     }
 
     [Fact]
     public async Task UpdateUserAsync_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
     {
-        var user = new User { Id = Guid.CreateVersion7(), Username = "testuser" };
+        var request = new UpdateUserRequest(Guid.CreateVersion7(), "testuser", "test@test.com");
         _mockAuthorizationProvider
-            .Setup(x => x.IsAuthorizedForOwnUser(user.Id, It.IsAny<bool>()))
+            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId, It.IsAny<bool>()))
             .Returns(false);
 
-        var result = await _decorator.UpdateUserAsync(user);
+        var result = await _decorator.UpdateUserAsync(request);
 
-        Assert.Equal(UpdateUserResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerProcessor.Verify(x => x.UpdateUserAsync(It.IsAny<User>()), Times.Never);
+        Assert.Equal(ModifyResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerProcessor.Verify(
+            x => x.UpdateUserAsync(It.IsAny<UpdateUserRequest>()),
+            Times.Never
+        );
     }
 
     [Fact]

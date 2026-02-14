@@ -117,12 +117,25 @@ internal class UserProcessor(
         return new GetUserResult(GetUserResultCode.Success, string.Empty, userEntity.ToModel());
     }
 
-    public async Task<UpdateUserResult> UpdateUserAsync(User user)
+    public async Task<ModifyResult> UpdateUserAsync(UpdateUserRequest request)
     {
-        _validationProvider.ThrowIfInvalid(user);
-        var userEntity = user.ToEntity();
-        await _userRepo.UpdateAsync(userEntity);
-        return new UpdateUserResult(UpdateUserResultCode.Success, string.Empty);
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _validationProvider.ThrowIfInvalid(request);
+
+        var entity = await _userRepo.GetAsync(u => u.Id == request.UserId);
+        if (entity == null)
+        {
+            _logger.LogInformation("User with Id {UserId} not found", request.UserId);
+            return new ModifyResult(
+                ModifyResultCode.NotFoundError,
+                $"User with Id {request.UserId} not found"
+            );
+        }
+
+        entity.Username = request.Username;
+        entity.Email = request.Email;
+        await _userRepo.UpdateAsync(entity);
+        return new ModifyResult(ModifyResultCode.Success, string.Empty);
     }
 
     public async Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(

@@ -93,6 +93,14 @@ internal class RoleProcessorTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<ModifyResult> UpdateRoleAsync(UpdateRoleRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RoleProcessor),
+            request,
+            () => _inner.UpdateRoleAsync(request),
+            logResult: true
+        );
+
     public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),

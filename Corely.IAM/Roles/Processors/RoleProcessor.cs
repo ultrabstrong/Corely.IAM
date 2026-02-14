@@ -395,6 +395,43 @@ internal class RoleProcessor(
         );
     }
 
+    public async Task<ModifyResult> UpdateRoleAsync(UpdateRoleRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _validationProvider.ThrowIfInvalid(request);
+
+        var accountId = _userContextProvider.GetUserContext()?.CurrentAccount?.Id;
+        var entity = await _roleRepo.GetAsync(e =>
+            e.Id == request.RoleId && e.AccountId == accountId
+        );
+        if (entity == null)
+        {
+            _logger.LogInformation("Role with Id {RoleId} not found", request.RoleId);
+            return new ModifyResult(
+                ModifyResultCode.NotFoundError,
+                $"Role with Id {request.RoleId} not found"
+            );
+        }
+
+        if (entity.IsSystemDefined)
+        {
+            _logger.LogInformation(
+                "Cannot modify system-defined role {RoleName} with Id {RoleId}",
+                entity.Name,
+                request.RoleId
+            );
+            return new ModifyResult(
+                ModifyResultCode.SystemDefinedError,
+                $"Cannot modify system-defined role '{entity.Name}'"
+            );
+        }
+
+        entity.Name = request.Name;
+        entity.Description = request.Description;
+        await _roleRepo.UpdateAsync(entity);
+        return new ModifyResult(ModifyResultCode.Success, string.Empty);
+    }
+
     public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId)
     {
         var roleEntity = await _roleRepo.GetAsync(

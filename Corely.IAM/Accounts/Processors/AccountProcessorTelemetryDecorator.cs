@@ -34,6 +34,14 @@ internal class AccountProcessorTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<ModifyResult> UpdateAccountAsync(UpdateAccountRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(AccountProcessor),
+            request,
+            () => _inner.UpdateAccountAsync(request),
+            logResult: true
+        );
+
     public async Task<DeleteAccountResult> DeleteAccountAsync(Guid accountId) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AccountProcessor),

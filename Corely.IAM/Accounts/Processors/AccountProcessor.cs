@@ -109,6 +109,42 @@ internal class AccountProcessor(
         return new GetAccountResult(GetAccountResultCode.Success, string.Empty, account);
     }
 
+    public async Task<ModifyResult> UpdateAccountAsync(UpdateAccountRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _validationProvider.ThrowIfInvalid(request);
+
+        var userAccountIds = _userContextProvider
+            .GetUserContext()!
+            .AvailableAccounts.Select(a => a.Id)
+            .ToHashSet();
+
+        if (!userAccountIds.Contains(request.AccountId))
+        {
+            _logger.LogInformation(
+                "Account with Id {AccountId} not found or not accessible",
+                request.AccountId
+            );
+            return new ModifyResult(
+                ModifyResultCode.NotFoundError,
+                $"Account with Id {request.AccountId} not found"
+            );
+        }
+
+        var entity = await _accountRepo.GetAsync(a => a.Id == request.AccountId);
+        if (entity == null)
+        {
+            return new ModifyResult(
+                ModifyResultCode.NotFoundError,
+                $"Account with Id {request.AccountId} not found"
+            );
+        }
+
+        entity.AccountName = request.AccountName;
+        await _accountRepo.UpdateAsync(entity);
+        return new ModifyResult(ModifyResultCode.Success, string.Empty);
+    }
+
     public async Task<ListAccountsForUserResult> ListAccountsForUserAsync(Guid userId)
     {
         var accountEntities = await _accountRepo.ListAsync(a =>

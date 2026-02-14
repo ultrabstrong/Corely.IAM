@@ -1,9 +1,13 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 using Corely.Common.Providers.Redaction;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.ConsoleApp.SerilogCustomization;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
+using Corely.IAM.Roles.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,6 +70,7 @@ internal class Program
             var deregistrationService = host.Services.GetRequiredService<IDeregistrationService>();
             var authenticationService = host.Services.GetRequiredService<IAuthenticationService>();
             var retrievalService = host.Services.GetRequiredService<IRetrievalService>();
+            var modificationService = host.Services.GetRequiredService<IModificationService>();
 
             // ========= REGISTER USER 1 ==========
             var registerUserResult = await registrationService.RegisterUserAsync(
@@ -238,6 +243,44 @@ internal class Program
             Console.WriteLine(
                 $"Get Account (hydrated): {JsonSerializer.Serialize(getAccountResult)}"
             );
+
+            // ========= MODIFICATION SERVICE ========== //
+
+            // Update account name
+            var modifyAccountResult = await modificationService.ModifyAccountAsync(
+                new UpdateAccountRequest(registerAccountResult.CreatedAccountId, "acct1-updated")
+            );
+            Console.WriteLine($"Modify Account: {JsonSerializer.Serialize(modifyAccountResult)}");
+
+            // Update user1 username and email
+            var modifyUserResult = await modificationService.ModifyUserAsync(
+                new UpdateUserRequest(
+                    registerUserResult.CreatedUserId,
+                    "user1-updated",
+                    "updated-email@x.y"
+                )
+            );
+            Console.WriteLine($"Modify User: {JsonSerializer.Serialize(modifyUserResult)}");
+
+            // Update group name and description
+            var modifyGroupResult = await modificationService.ModifyGroupAsync(
+                new UpdateGroupRequest(
+                    registerGroupResult.CreatedGroupId,
+                    "grp1-updated",
+                    "Updated group description"
+                )
+            );
+            Console.WriteLine($"Modify Group: {JsonSerializer.Serialize(modifyGroupResult)}");
+
+            // Update role name and description
+            var modifyRoleResult = await modificationService.ModifyRoleAsync(
+                new UpdateRoleRequest(
+                    registerRoleResult.CreatedRoleId,
+                    "role1-updated",
+                    "Updated role description"
+                )
+            );
+            Console.WriteLine($"Modify Role: {JsonSerializer.Serialize(modifyRoleResult)}");
 
             // ========= DEREGISTERING ==========
             // Deregister roles from group example

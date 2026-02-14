@@ -653,3 +653,76 @@ Each entity phase includes a usage example in `Corely.IAM.ConsoleTest` demonstra
 - **Authorization decorator tests** — correct permission checks (READ required), bypass behavior
 - **Telemetry decorator tests** — correct logging calls
 - Filtering in Phase 1–5 tests is used *incidentally* (e.g., pass a filter to verify the processor hands it to the repo) — not re-testing that `StringFilter.Contains` produces the right expression. That's Phase 0's job.
+
+
+# Testing Feedback
+1. Is the role on the hydraded user just an empherial role? We don't allow users any access to do stuff for users other than themselves. 
+```json
+Get User (hydrated
+{
+    "ResultCode": 0,
+    "Message": "",
+    "Item": {
+        "Id": "019c59df-3761-7cf1-b55f-5a4f81e5c8a8",
+        "Username": "user1",
+        "Email": "email@x.y",
+        "Disabled": false,
+        "TotalSuccessfulLogins": 2,
+        "LastSuccessfulLoginUtc": "2026-02-14T01:58:48.5287099Z",
+        "FailedLoginsSinceLastSuccess": 0,
+        "TotalFailedLogins": 0,
+        "LastFailedLoginUtc": null,
+        "CreatedUtc": "2026-02-14T01:58:47.1265348",
+        "ModifiedUtc": "2026-02-14T01:58:48.5287139Z",
+        "SymmetricKeys": null,
+        "AsymmetricKeys": null,
+        "Accounts": [
+            {
+                "Id": "019c59df-3a3c-7973-bf55-d33eda1ef05e",
+                "Name": "acct1"
+            }
+        ],
+        "Groups": [
+            {
+                "Id": "019c59df-3c61-73ae-9dc8-3b38f0c80d17",
+                "Name": "grp1"
+            }
+        ],
+        "Roles": [
+            {
+                "Id": "019c59df-3a67-7d99-85ae-fee3da3f55a5",
+                "Name": "Owner"
+            }
+        ]
+    },
+    "EffectivePermissions": [
+        {
+            "PermissionId": "019c59df-3ab2-7823-883a-84bd99b6a7ea",
+            "Create": true,
+            "Read": true,
+            "Update": true,
+            "Delete": true,
+            "Execute": true,
+            "Description": "Owner - Full access to all resources",
+            "ResourceType": "*",
+            "ResourceId": "00000000-0000-0000-0000-000000000000",
+            "Roles": [
+                {
+                    "RoleId": "019c59df-3a67-7d99-85ae-fee3da3f55a5",
+                    "RoleName": "Owner",
+                    "IsDirect": true,
+                    "Groups": []
+                }
+            ],
+            "CrudxLabel": "CRUDX"
+        }
+    ]
+}
+```
+
+2. I'm not sure that it makes sense for the hydrated account to show users, groups, roles, and permissions. That's always going to pull everyting for the account and it could become bloated quickly. I think it makes sense to just call the list for each of those individually
+...actually thinking more, it makes sense to leave them in because we have the option to request full hydration; so most of the time the caller could just invoke without full hydration enabled. Leave as is
+
+3. Is there an opportunity to abstract the filter predicate builder stuff? Seems like there's a fair bit of duplicated code for that in the different processor list methods
+
+4. Can the filter we've provided be abused? There's a lot of places where we start out with a base account scope, but couldn't the filter request override it by using something like less than or greater than on the account id? or not equals?

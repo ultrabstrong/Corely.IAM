@@ -436,7 +436,15 @@ internal class UserProcessor(
             order,
             skip,
             take,
-            e => e.ToModel()
+            e => new User
+            {
+                Id = e.Id,
+                Username = e.Username,
+                Email = e.Email,
+                Disabled = e.Disabled,
+                CreatedUtc = e.CreatedUtc,
+                ModifiedUtc = e.ModifiedUtc,
+            }
         );
     }
 

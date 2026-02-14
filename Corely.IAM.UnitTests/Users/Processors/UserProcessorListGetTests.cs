@@ -168,6 +168,34 @@ public class UserProcessorListGetTests
     }
 
     [Fact]
+    public async Task ListUsersAsync_ReturnsLimitedFieldsOnly()
+    {
+        await CreateUserEntityAsync("limiteduser");
+
+        var result = await _userProcessor.ListUsersAsync(null, null, 0, 10);
+
+        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
+        var user = Assert.Single(result.Data!.Items);
+        Assert.Equal("limiteduser", user.Username);
+        Assert.Equal("limiteduser@test.com", user.Email);
+        Assert.NotEqual(Guid.Empty, user.Id);
+
+        // Login stats should not be populated
+        Assert.Equal(0, user.TotalSuccessfulLogins);
+        Assert.Null(user.LastSuccessfulLoginUtc);
+        Assert.Equal(0, user.FailedLoginsSinceLastSuccess);
+        Assert.Equal(0, user.TotalFailedLogins);
+        Assert.Null(user.LastFailedLoginUtc);
+
+        // Keys and child refs should not be populated
+        Assert.Null(user.SymmetricKeys);
+        Assert.Null(user.AsymmetricKeys);
+        Assert.Null(user.Accounts);
+        Assert.Null(user.Groups);
+        Assert.Null(user.Roles);
+    }
+
+    [Fact]
     public async Task GetUserByIdAsync_ReturnsUserWhenFound()
     {
         var user = await CreateUserEntityAsync("testuser1");

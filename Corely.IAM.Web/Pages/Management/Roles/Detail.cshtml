@@ -1,0 +1,92 @@
+@page "/iam/roles/{id:guid}"
+@model Corely.IAM.Web.Pages.Management.Roles.DetailModel
+@{
+    Layout = "_ManagementLayout";
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="management-header">
+    <h1>Role: @Model.Name</h1>
+    <a href="@Corely.IAM.Web.AppRoutes.Roles" class="btn btn-outline-secondary">Back to List</a>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <partial name="_Alert" view-data='new ViewDataDictionary(ViewData) { { "AlertType", Model.MessageType }, { "AlertMessage", Model.Message } }' />
+}
+
+<div class="detail-section">
+    <h3>Properties</h3>
+    @if (Model.IsSystemDefined)
+    {
+        <div class="alert alert-info">This is a system-defined role and cannot be edited.</div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Name</label>
+                <input type="text" class="form-control" value="@Model.Name" disabled />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-control" value="@Model.Description" disabled />
+            </div>
+        </div>
+    }
+    else
+    {
+        <form method="post" asp-page-handler="Edit">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Id" value="@Model.Id" />
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-control" name="Name" value="@Model.Name" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-control" name="Description" value="@Model.Description" />
+                </div>
+                <div class="col-auto d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </form>
+    }
+</div>
+
+<div class="detail-section">
+    <h3>Permissions</h3>
+    <form method="post" asp-page-handler="AddPermission" class="row g-3 mb-3">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <div class="col-auto flex-grow-1">
+            <input type="text" class="form-control" name="PermissionId" placeholder="Permission ID (GUID)" required />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary">Add Permission</button>
+        </div>
+    </form>
+    <table class="table table-hover mb-0">
+        <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+        <tbody>
+            @if (Model.Permissions.Count == 0)
+            {
+                <tr><td colspan="2" class="text-muted text-center">No permissions</td></tr>
+            }
+            @foreach (var permission in Model.Permissions)
+            {
+                <tr>
+                    <td>@permission.Name</td>
+                    <td class="table-actions">
+                        <a href="@Corely.IAM.Web.AppRoutes.Permissions/@permission.Id" class="btn btn-sm btn-outline-primary">View</a>
+                        <form method="post" asp-page-handler="RemovePermission" class="d-inline" onsubmit="return confirm('Remove permission?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Id" value="@Model.Id" />
+                            <input type="hidden" name="PermissionId" value="@permission.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,124 @@
+@page "/accounts/{Id:guid}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits EntityDetailPageBase
+@inject IRetrievalService RetrievalService
+@inject IModificationService ModificationService
+@inject IRegistrationService RegistrationService
+@inject IDeregistrationService DeregistrationService
+
+<PageTitle>@_accountName - Corely IAM</PageTitle>
+
+<div class="management-header">
+    <h1>Account: @_accountName</h1>
+    <a href="@AppRoutes.Blazor.Accounts" class="btn btn-outline-secondary">Back to List</a>
+</div>
+
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+@if (_loading && _accountName == null)
+{
+    <LoadingSpinner />
+}
+else
+{
+    <div class="detail-section">
+        <h3>Properties</h3>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Account Name</label>
+                <input type="text" class="form-control" @bind="_accountName" />
+            </div>
+            <div class="col-auto d-flex align-items-end">
+                <button class="btn btn-primary" @onclick="SaveAsync" disabled="@_loading">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-section">
+        <h3>Users</h3>
+        <div class="row g-3 mb-3">
+            <div class="col-auto flex-grow-1">
+                <input type="text" class="form-control" @bind="_newUserId" placeholder="User ID (GUID)" />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-outline-primary" @onclick="AddUserAsync" disabled="@_loading">Add User</button>
+            </div>
+        </div>
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+            <tbody>
+                @if (_users.Count == 0)
+                {
+                    <tr><td colspan="2" class="text-muted text-center">No users</td></tr>
+                }
+                @foreach (var user in _users)
+                {
+                    <tr>
+                        <td>@user.Name</td>
+                        <td class="table-actions">
+                            <a href="@AppRoutes.Blazor.Users/@user.Id" class="btn btn-sm btn-outline-primary">View</a>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)">Remove</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<ConfirmModal @ref="_confirmModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />
+
+@code {
+    private string? _accountName;
+    private List<ChildRef> _users = [];
+    private string? _newUserId;
+    private ConfirmModal _confirmModal = null!;
+
+    protected override async Task LoadCoreAsync()
+    {
+        var result = await RetrievalService.GetAccountAsync(Id, hydrate: true);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
+        {
+            _accountName = result.Item.AccountName;
+            _users = result.Item.Users ?? [];
+        }
+        else
+        {
+            NavigationManager.NavigateTo(AppRoutes.Blazor.Accounts);
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_accountName)) return;
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await ModificationService.ModifyAccountAsync(new UpdateAccountRequest(Id, _accountName));
+            SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Saved.", result.Message);
+        });
+    }
+
+    private async Task AddUserAsync()
+    {
+        if (!TryParseGuid(_newUserId, out var userId)) return;
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.RegisterUserWithAccountAsync(new RegisterUserWithAccountRequest(userId));
+            SetResultMessage(result.ResultCode == RegisterUserWithAccountResultCode.Success, "User added.", result.Message ?? "Failed.");
+            _newUserId = string.Empty;
+            await ReloadAsync();
+        });
+    }
+
+    private void ConfirmRemoveUser(Guid userId, string name) => ShowConfirmation(_confirmModal, userId, $"Remove user '{name}'?");
+
+    private async Task RemoveUserAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(_confirmItemId));
+            SetResultMessage(result.ResultCode == DeregisterUserFromAccountResultCode.Success, "User removed.", result.Message ?? "Failed.");
+            await ReloadAsync();
+        });
+    }
+}

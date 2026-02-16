@@ -1,0 +1,78 @@
+@inject IAuthorizationProvider AuthorizationProvider
+
+@if (_checkComplete)
+{
+    if (_isAuthorized)
+    {
+        if (Authorized != null)
+        {
+            @Authorized
+        }
+        else
+        {
+            @ChildContent
+        }
+    }
+    else if (NotAuthorized != null)
+    {
+        @NotAuthorized
+    }
+}
+
+@code {
+    [Parameter]
+    public AuthAction Action { get; set; }
+
+    [Parameter]
+    public string Resource { get; set; } = string.Empty;
+
+    [Parameter]
+    public Guid[]? ResourceIds { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? Authorized { get; set; }
+
+    [Parameter]
+    public RenderFragment? NotAuthorized { get; set; }
+
+    private bool _checkComplete;
+    private bool _isAuthorized;
+    private AuthAction _lastAction;
+    private string _lastResource = string.Empty;
+    private Guid[]? _lastResourceIds;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (
+            _checkComplete
+            && Action == _lastAction
+            && Resource == _lastResource
+            && ResourceIdsEqual(ResourceIds, _lastResourceIds)
+        )
+        {
+            return;
+        }
+
+        _lastAction = Action;
+        _lastResource = Resource;
+        _lastResourceIds = ResourceIds;
+        _isAuthorized = await AuthorizationProvider.IsAuthorizedAsync(
+            Action,
+            Resource,
+            ResourceIds ?? []
+        );
+        _checkComplete = true;
+    }
+
+    private static bool ResourceIdsEqual(Guid[]? a, Guid[]? b)
+    {
+        if (ReferenceEquals(a, b))
+            return true;
+        if (a is null || b is null)
+            return false;
+        return a.AsSpan().SequenceEqual(b);
+    }
+}

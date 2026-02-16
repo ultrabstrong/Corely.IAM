@@ -1,0 +1,126 @@
+@page "/roles"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits EntityListPageBase<Role>
+@inject IRetrievalService RetrievalService
+@inject IRegistrationService RegistrationService
+@inject IDeregistrationService DeregistrationService
+
+<PageTitle>Roles - Corely IAM</PageTitle>
+
+<div class="management-header">
+    <h1>Roles</h1>
+</div>
+
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+<PermissionView Action="AuthAction.Create" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE">
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Create Role</h5></div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-auto flex-grow-1">
+                    <input type="text" class="form-control" @bind="_newRoleName" placeholder="Role name" />
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_loading">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</PermissionView>
+
+@if (_loading && _items == null)
+{
+    <LoadingSpinner />
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>System</th>
+                        <th class="table-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_items == null || _items.Count == 0)
+                    {
+                        <tr><td colspan="4" class="text-muted text-center">No roles found</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var role in _items)
+                        {
+                            <tr>
+                                <td>@role.Name</td>
+                                <td>@(role.Description ?? "—")</td>
+                                <td>
+                                    @if (role.IsSystemDefined)
+                                    {
+                                        <span class="badge bg-secondary">System</span>
+                                    }
+                                </td>
+                                <td class="table-actions">
+                                    <a href="@AppRoutes.Blazor.Roles/@role.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                    @if (!role.IsSystemDefined)
+                                    {
+                                        <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { role.Id }">
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(role.Id, role.Name)">Delete</button>
+                                        </PermissionView>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <Pagination Skip="_skip" Take="_take" TotalCount="_totalCount" OnPageChanged="OnPageChangedAsync" />
+}
+
+<ConfirmModal @ref="_confirmModal" Title="Delete Role" Message="@_confirmMessage" ConfirmText="Delete" OnConfirm="DeleteAsync" />
+
+@code {
+    private string? _newRoleName;
+    private ConfirmModal _confirmModal = null!;
+
+    protected override async Task LoadCoreAsync()
+    {
+        var result = await RetrievalService.ListRolesAsync(skip: _skip, take: _take);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
+        {
+            _items = result.Data.Items;
+            _totalCount = result.Data.TotalCount;
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newRoleName)) return;
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.RegisterRoleAsync(new RegisterRoleRequest(_newRoleName));
+            SetResultMessage(result.ResultCode == CreateRoleResultCode.Success, "Role created.", result.Message);
+            _newRoleName = string.Empty;
+            await ReloadAsync();
+        });
+    }
+
+    private void ConfirmDelete(Guid id, string name) => ShowConfirmation(_confirmModal, id, $"Delete role '{name}'?");
+
+    private async Task DeleteAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterRoleAsync(new DeregisterRoleRequest(_confirmItemId));
+            SetResultMessage(result.ResultCode == DeregisterRoleResultCode.Success, "Role deleted.", result.Message);
+            await ReloadAsync();
+        });
+    }
+}

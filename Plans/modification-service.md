@@ -13,7 +13,7 @@ The service layer now covers Create (Registration), Read (Retrieval), and Delete
 | **Group** | `Name`, `Description` |
 | **Role** | `Name`, `Description` (reject if `IsSystemDefined`) |
 
-**Out of scope:** Permissions (delete + recreate), passwords (auth concern), User.Disabled (future admin op), login stats (system-managed), bulk updates, relationship changes.
+**Out of scope:** Permissions (delete + recreate), passwords (auth concern), login stats (system-managed), bulk updates, relationship changes.
 
 ---
 

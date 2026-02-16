@@ -1,0 +1,56 @@
+@page "/"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits AuthenticatedPageBase
+
+<PageTitle>Dashboard - Corely IAM</PageTitle>
+
+<h1>Dashboard</h1>
+<p class="text-muted">Manage your IAM resources</p>
+
+<div class="row g-4 mt-3">
+    <div class="col-md-4">
+        <div class="card entity-card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-building fs-1 text-primary"></i>
+                <h5 class="card-title mt-2">Accounts</h5>
+                <a href="@AppRoutes.Blazor.Accounts" class="btn btn-outline-primary mt-2">Manage</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card entity-card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-people fs-1 text-success"></i>
+                <h5 class="card-title mt-2">Users</h5>
+                <a href="@AppRoutes.Blazor.Users" class="btn btn-outline-success mt-2">Manage</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card entity-card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-diagram-3 fs-1 text-info"></i>
+                <h5 class="card-title mt-2">Groups</h5>
+                <a href="@AppRoutes.Blazor.Groups" class="btn btn-outline-info mt-2">Manage</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card entity-card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-shield fs-1 text-warning"></i>
+                <h5 class="card-title mt-2">Roles</h5>
+                <a href="@AppRoutes.Blazor.Roles" class="btn btn-outline-warning mt-2">Manage</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card entity-card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-key fs-1 text-danger"></i>
+                <h5 class="card-title mt-2">Permissions</h5>
+                <a href="@AppRoutes.Blazor.Permissions" class="btn btn-outline-danger mt-2">Manage</a>
+            </div>
+        </div>
+    </div>
+</div>

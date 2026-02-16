@@ -1,10 +1,6 @@
 # Preface
 List of features that may be nice to implement
 
-### Disabled Flags
-- [ ] Add IsDisabled bool to entities and groups
-- [ ] Resepect IsDisabled flag in queries and operations
-
 ### Soft Deletes
 - [ ] Add IsDeleted bool to entities and groups
 - [ ] Resepect IsDeleted flag in queries and operations

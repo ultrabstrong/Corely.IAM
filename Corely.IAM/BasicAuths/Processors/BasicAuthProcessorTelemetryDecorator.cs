@@ -18,7 +18,6 @@ internal class BasicAuthProcessorTelemetryDecorator(
     public async Task<CreateBasicAuthResult> CreateBasicAuthAsync(CreateBasicAuthRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(BasicAuthProcessor),
-            request,
             () => _inner.CreateBasicAuthAsync(request),
             logResult: true
         );
@@ -26,7 +25,6 @@ internal class BasicAuthProcessorTelemetryDecorator(
     public async Task<UpdateBasicAuthResult> UpdateBasicAuthAsync(UpdateBasicAuthRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(BasicAuthProcessor),
-            request,
             () => _inner.UpdateBasicAuthAsync(request),
             logResult: true
         );
@@ -34,7 +32,6 @@ internal class BasicAuthProcessorTelemetryDecorator(
     public async Task<VerifyBasicAuthResult> VerifyBasicAuthAsync(VerifyBasicAuthRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(BasicAuthProcessor),
-            request,
             () => _inner.VerifyBasicAuthAsync(request),
             logResult: true
         );

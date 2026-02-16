@@ -1,0 +1,114 @@
+@page "/iam/permissions"
+@model Corely.IAM.Web.Pages.Management.Permissions.IndexModel
+@{
+    Layout = "_ManagementLayout";
+    ViewData["Title"] = "Permissions";
+}
+
+<div class="management-header">
+    <h1>Permissions</h1>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <partial name="_Alert" view-data='new ViewDataDictionary(ViewData) { { "AlertType", Model.MessageType }, { "AlertMessage", Model.Message } }' />
+}
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">Create Permission</h5></div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="Create">
+            @Html.AntiForgeryToken()
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Resource Type</label>
+                    <input type="text" class="form-control" name="ResourceType" placeholder="e.g. account, user, group" required />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Resource ID</label>
+                    <input type="text" class="form-control" name="ResourceId" placeholder="GUID or empty for all" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-control" name="Description" placeholder="Optional" />
+                </div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-auto">
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input" name="CanCreate" value="true" id="canCreate" />
+                        <label class="form-check-label" for="canCreate">Create</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input" name="CanRead" value="true" id="canRead" />
+                        <label class="form-check-label" for="canRead">Read</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input" name="CanUpdate" value="true" id="canUpdate" />
+                        <label class="form-check-label" for="canUpdate">Update</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input" name="CanDelete" value="true" id="canDelete" />
+                        <label class="form-check-label" for="canDelete">Delete</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input" name="CanExecute" value="true" id="canExecute" />
+                        <label class="form-check-label" for="canExecute">Execute</label>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Create</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Resource Type</th>
+                    <th>Resource ID</th>
+                    <th>CRUDX</th>
+                    <th class="table-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Items.Count == 0)
+                {
+                    <tr><td colspan="4" class="text-muted text-center">No permissions found</td></tr>
+                }
+                @foreach (var perm in Model.Items)
+                {
+                    <tr>
+                        <td>@perm.ResourceType</td>
+                        <td>@(perm.ResourceId == Guid.Empty ? "(all)" : perm.ResourceId.ToString())</td>
+                        <td class="crudx-display">
+                            <span class="permission-badge @(perm.Create ? "active" : "inactive") badge">C</span>
+                            <span class="permission-badge @(perm.Read ? "active" : "inactive") badge">R</span>
+                            <span class="permission-badge @(perm.Update ? "active" : "inactive") badge">U</span>
+                            <span class="permission-badge @(perm.Delete ? "active" : "inactive") badge">D</span>
+                            <span class="permission-badge @(perm.Execute ? "active" : "inactive") badge">X</span>
+                        </td>
+                        <td class="table-actions">
+                            <a href="@Corely.IAM.Web.AppRoutes.Permissions/@perm.Id" class="btn btn-sm btn-outline-primary">View</a>
+                            <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Delete this permission?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="PermissionId" value="@perm.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@{
+    ViewData["PaginationSkip"] = Model.Skip;
+    ViewData["PaginationTake"] = Model.Take;
+    ViewData["PaginationTotalCount"] = Model.TotalCount;
+    ViewData["PaginationBaseUrl"] = Corely.IAM.Web.AppRoutes.Permissions;
+}
+<partial name="_Pagination" />

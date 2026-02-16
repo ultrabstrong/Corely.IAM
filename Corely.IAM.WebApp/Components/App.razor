@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="_content/Corely.IAM.Web/css/iam-web.css" />
+    <HeadOutlet @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+</head>
+
+<body>
+    <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+
+    <div id="blazor-error-ui" class="d-none">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">X</a>
+    </div>
+
+    <div id="components-reconnect-modal" class="components-reconnect-hide">
+        <div class="d-flex flex-column align-items-center justify-content-center vh-100">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Reconnecting...</span>
+            </div>
+            <p class="text-muted">Attempting to reconnect to the server...</p>
+            <p class="text-muted small">
+                <a href="javascript:location.reload()">Reload page</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>

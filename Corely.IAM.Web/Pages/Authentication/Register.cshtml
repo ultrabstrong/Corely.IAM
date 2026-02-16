@@ -1,0 +1,42 @@
+@page "/register"
+@model Corely.IAM.Web.Pages.Authentication.RegisterModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Register";
+}
+
+<div class="auth-card">
+    <h2 class="text-center mb-4">Create Account</h2>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="Username"
+                   value="@Model.Username" required autofocus />
+        </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="Email"
+                   value="@Model.Email" required />
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="Password" required />
+        </div>
+        <div class="mb-3">
+            <label for="confirmPassword" class="form-label">Confirm Password</label>
+            <input type="password" class="form-control" id="confirmPassword" name="ConfirmPassword" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Register</button>
+    </form>
+
+    <div class="text-center mt-3">
+        Already have an account? <a href="@Corely.IAM.Web.AppRoutes.SignIn">Sign in</a>
+    </div>
+</div>

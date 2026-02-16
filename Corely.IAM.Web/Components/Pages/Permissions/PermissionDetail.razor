@@ -1,0 +1,97 @@
+@page "/permissions/{Id:guid}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits EntityDetailPageBase
+@inject IRetrievalService RetrievalService
+@inject IDeregistrationService DeregistrationService
+
+<PageTitle>Permission Detail - Corely IAM</PageTitle>
+
+<div class="management-header">
+    <h1>Permission Detail</h1>
+    <a href="@AppRoutes.Blazor.Permissions" class="btn btn-outline-secondary btn-sm">Back to Permissions</a>
+</div>
+
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+@if (_loading && _permission == null)
+{
+    <LoadingSpinner />
+}
+else if (_permission == null)
+{
+    <div class="alert alert-warning">Permission not found.</div>
+}
+else
+{
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Properties</h5></div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Resource Type</label>
+                <input type="text" class="form-control" value="@_permission.ResourceType" disabled />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Resource ID</label>
+                <input type="text" class="form-control" value="@(_permission.ResourceId == Guid.Empty ? "all" : _permission.ResourceId)" disabled />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Description</label>
+                <input type="text" class="form-control" value="@(_permission.Description ?? "—")" disabled />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">CRUDX</label>
+                <div class="d-flex gap-2">
+                    <span class="permission-badge @(_permission.Create ? "active" : "inactive")">C</span>
+                    <span class="permission-badge @(_permission.Read ? "active" : "inactive")">R</span>
+                    <span class="permission-badge @(_permission.Update ? "active" : "inactive")">U</span>
+                    <span class="permission-badge @(_permission.Delete ? "active" : "inactive")">D</span>
+                    <span class="permission-badge @(_permission.Execute ? "active" : "inactive")">X</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+        <div class="card border-danger">
+            <div class="card-body">
+                <button class="btn btn-danger" @onclick="ConfirmDelete" disabled="@_loading">Delete Permission</button>
+            </div>
+        </div>
+    </PermissionView>
+}
+
+<ConfirmModal @ref="_confirmModal" Title="Delete Permission" ConfirmText="Delete" OnConfirm="DeleteAsync" />
+
+@code {
+    private Permission? _permission;
+    private ConfirmModal _confirmModal = null!;
+
+    protected override async Task LoadCoreAsync()
+    {
+        var result = await RetrievalService.GetPermissionAsync(Id);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
+        {
+            _permission = result.Item;
+        }
+    }
+
+    private void ConfirmDelete()
+    {
+        if (_loading) return;
+        _confirmModal.Show();
+    }
+
+    private async Task DeleteAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterPermissionAsync(new DeregisterPermissionRequest(Id));
+            if (result.ResultCode == DeregisterPermissionResultCode.Success)
+            {
+                NavigationManager.NavigateTo(AppRoutes.Blazor.Permissions);
+                return;
+            }
+            SetResultMessage(false, string.Empty, result.Message);
+        });
+    }
+}

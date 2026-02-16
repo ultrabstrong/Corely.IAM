@@ -71,7 +71,7 @@ public class AuthorizationProviderTests
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.GROUP_RESOURCE_TYPE,
-            Guid.NewGuid()
+            Guid.CreateVersion7()
         );
 
         Assert.True(result);

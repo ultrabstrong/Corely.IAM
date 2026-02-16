@@ -1,0 +1,73 @@
+@page "/iam/accounts"
+@model Corely.IAM.Web.Pages.Management.Accounts.IndexModel
+@{
+    Layout = "_ManagementLayout";
+    ViewData["Title"] = "Accounts";
+}
+
+<div class="management-header">
+    <h1>Accounts</h1>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <partial name="_Alert" view-data='new ViewDataDictionary(ViewData) { { "AlertType", Model.MessageType }, { "AlertMessage", Model.Message } }' />
+}
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Create Account</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="Create" class="row g-3">
+            @Html.AntiForgeryToken()
+            <div class="col-auto flex-grow-1">
+                <input type="text" class="form-control" name="AccountName" placeholder="Account name" required />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th class="table-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Items.Count == 0)
+                {
+                    <tr><td colspan="2" class="text-muted text-center">No accounts found</td></tr>
+                }
+                @foreach (var account in Model.Items)
+                {
+                    <tr>
+                        <td>@account.AccountName</td>
+                        <td class="table-actions">
+                            <a href="@Corely.IAM.Web.AppRoutes.Accounts/@account.Id" class="btn btn-sm btn-outline-primary">View</a>
+                            <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Delete this account?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="AccountId" value="@account.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@{
+    ViewData["PaginationSkip"] = Model.Skip;
+    ViewData["PaginationTake"] = Model.Take;
+    ViewData["PaginationTotalCount"] = Model.TotalCount;
+    ViewData["PaginationBaseUrl"] = Corely.IAM.Web.AppRoutes.Accounts;
+}
+<partial name="_Pagination" />

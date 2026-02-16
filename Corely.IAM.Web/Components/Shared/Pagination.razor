@@ -1,0 +1,47 @@
+@if (TotalCount > Take && Take > 0)
+{
+    var currentPage = (Skip / Take) + 1;
+    var totalPages = (int)Math.Ceiling((double)TotalCount / Take);
+
+    <nav aria-label="Page navigation" class="mt-3">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                <button class="page-link" @onclick="() => GoToPage(currentPage - 1)" disabled="@(currentPage <= 1)">Previous</button>
+            </li>
+            @for (var i = 1; i <= totalPages && i <= 10; i++)
+            {
+                var page = i;
+                <li class="page-item @(page == currentPage ? "active" : "")">
+                    <button class="page-link" @onclick="() => GoToPage(page)">@(page)</button>
+                </li>
+            }
+            <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                <button class="page-link" @onclick="() => GoToPage(currentPage + 1)" disabled="@(currentPage >= totalPages)">Next</button>
+            </li>
+        </ul>
+        <p class="text-center text-muted small">Showing @(Skip + 1)–@(Math.Min(Skip + Take, TotalCount)) of @TotalCount</p>
+    </nav>
+}
+
+@code {
+    [Parameter]
+    public int Skip { get; set; }
+
+    [Parameter]
+    public int Take { get; set; } = 25;
+
+    [Parameter]
+    public int TotalCount { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnPageChanged { get; set; }
+
+    private async Task GoToPage(int page)
+    {
+        var newSkip = (page - 1) * Take;
+        if (newSkip >= 0 && newSkip < TotalCount)
+        {
+            await OnPageChanged.InvokeAsync(newSkip);
+        }
+    }
+}

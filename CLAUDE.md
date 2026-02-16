@@ -71,6 +71,12 @@ Every processor and service is wrapped with **decorator layers** via Scrutor:
 
 Registration order in `ServiceRegistrationExtensions.cs` matters: decorators are applied bottom-up (last registered = outermost).
 
+Authorization is split into two layers:
+- **Service decorators** — validate context only (`HasUserContext()` / `HasAccountContext()`). They do NOT check CRUDX permissions.
+- **Processor decorators** — enforce specific CRUDX permission checks on resources via `AuthorizationProvider.IsAuthorizedAsync()`.
+
+Service methods that appear "unguarded" (e.g., `RegisterUsersWithGroupAsync`) are protected at the processor level where the actual work happens.
+
 ### Domain Structure
 
 Each domain (Accounts, Users, BasicAuths, Groups, Roles, Permissions) follows a consistent folder layout:
@@ -107,6 +113,7 @@ New services go in `Services/` with an interface, registered in `ServiceRegistra
 - CRUDX permission model (Create, Read, Update, Delete, Execute) with wildcard support (`ResourceId == Guid.Empty` = all resources)
 - JWT-based authentication via `AuthenticationProvider`
 - Host-agnostic auth context: `UserContextProvider` implements both `IUserContextProvider` (read) and `IUserContextSetter` (write) — no HttpContext dependency
+- Multi-tenant user model: users exist independently of accounts (M:M relationship). There is no concept of "user A administrates user B" — account owners can register/deregister users with account entities but cannot read or modify other users directly.
 
 ## Development Patterns
 

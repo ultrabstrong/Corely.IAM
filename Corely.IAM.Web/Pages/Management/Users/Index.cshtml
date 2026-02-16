@@ -1,0 +1,58 @@
+@page "/iam/users"
+@model Corely.IAM.Web.Pages.Management.Users.IndexModel
+@{
+    Layout = "_ManagementLayout";
+    ViewData["Title"] = "Users";
+}
+
+<div class="management-header">
+    <h1>Users</h1>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <partial name="_Alert" view-data='new ViewDataDictionary(ViewData) { { "AlertType", Model.MessageType }, { "AlertMessage", Model.Message } }' />
+}
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th class="table-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Items.Count == 0)
+                {
+                    <tr><td colspan="3" class="text-muted text-center">No users found</td></tr>
+                }
+                @foreach (var user in Model.Items)
+                {
+                    <tr>
+                        <td>@user.Username</td>
+                        <td>@user.Email</td>
+                        <td class="table-actions">
+                            <a href="@Corely.IAM.Web.AppRoutes.Users/@user.Id" class="btn btn-sm btn-outline-primary">View</a>
+                            <form method="post" asp-page-handler="Remove" class="d-inline" onsubmit="return confirm('Remove this user from the account?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="UserId" value="@user.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@{
+    ViewData["PaginationSkip"] = Model.Skip;
+    ViewData["PaginationTake"] = Model.Take;
+    ViewData["PaginationTotalCount"] = Model.TotalCount;
+    ViewData["PaginationBaseUrl"] = Corely.IAM.Web.AppRoutes.Users;
+}
+<partial name="_Pagination" />

@@ -1,0 +1,130 @@
+@page "/users/{Id:guid}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits EntityDetailPageBase
+@inject IRetrievalService RetrievalService
+@inject IModificationService ModificationService
+@inject IRegistrationService RegistrationService
+@inject IDeregistrationService DeregistrationService
+
+<PageTitle>@_username - Corely IAM</PageTitle>
+
+<div class="management-header">
+    <h1>User: @_username</h1>
+    <a href="@AppRoutes.Blazor.Users" class="btn btn-outline-secondary">Back to List</a>
+</div>
+
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+@if (_loading && _username == null)
+{
+    <LoadingSpinner />
+}
+else
+{
+    <div class="detail-section">
+        <h3>Properties</h3>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" @bind="_username" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" @bind="_email" />
+            </div>
+            <div class="col-auto d-flex align-items-end">
+                <button class="btn btn-primary" @onclick="SaveAsync" disabled="@_loading">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-section">
+        <h3>Roles</h3>
+        <div class="row g-3 mb-3">
+            <div class="col-auto flex-grow-1">
+                <input type="text" class="form-control" @bind="_newRoleId" placeholder="Role ID (GUID)" />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-outline-primary" @onclick="AddRoleAsync" disabled="@_loading">Assign Role</button>
+            </div>
+        </div>
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+            <tbody>
+                @if (_roles.Count == 0)
+                {
+                    <tr><td colspan="2" class="text-muted text-center">No roles assigned</td></tr>
+                }
+                @foreach (var role in _roles)
+                {
+                    <tr>
+                        <td>@role.Name</td>
+                        <td class="table-actions">
+                            <a href="@AppRoutes.Blazor.Roles/@role.Id" class="btn btn-sm btn-outline-primary">View</a>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)">Remove</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<ConfirmModal @ref="_confirmModal" Title="Remove Role" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveRoleAsync" />
+
+@code {
+    private string? _username;
+    private string? _email;
+    private List<ChildRef> _roles = [];
+    private string? _newRoleId;
+    private ConfirmModal _confirmModal = null!;
+
+    protected override async Task LoadCoreAsync()
+    {
+        var result = await RetrievalService.GetUserAsync(Id, hydrate: true);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
+        {
+            _username = result.Item.Username;
+            _email = result.Item.Email;
+            _roles = result.Item.Roles ?? [];
+        }
+        else
+        {
+            NavigationManager.NavigateTo(AppRoutes.Blazor.Users);
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_email)) return;
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await ModificationService.ModifyUserAsync(new UpdateUserRequest(Id, _username, _email));
+            SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Saved.", result.Message);
+        });
+    }
+
+    private async Task AddRoleAsync()
+    {
+        if (!TryParseGuid(_newRoleId, out var roleId)) return;
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.RegisterRolesWithUserAsync(new RegisterRolesWithUserRequest([roleId], Id));
+            SetResultMessage(result.ResultCode == AssignRolesToUserResultCode.Success, "Role assigned.", result.Message ?? "Failed.");
+            _newRoleId = string.Empty;
+            await ReloadAsync();
+        });
+    }
+
+    private void ConfirmRemoveRole(Guid roleId, string name) => ShowConfirmation(_confirmModal, roleId, $"Remove role '{name}'?");
+
+    private async Task RemoveRoleAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterRolesFromUserAsync(new DeregisterRolesFromUserRequest([_confirmItemId], Id));
+            SetResultMessage(result.ResultCode == DeregisterRolesFromUserResultCode.Success, "Role removed.", result.Message ?? "Failed.");
+            await ReloadAsync();
+        });
+    }
+}

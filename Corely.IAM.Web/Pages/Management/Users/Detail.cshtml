@@ -1,0 +1,82 @@
+@page "/iam/users/{id:guid}"
+@model Corely.IAM.Web.Pages.Management.Users.DetailModel
+@{
+    Layout = "_ManagementLayout";
+    ViewData["Title"] = Model.Username;
+}
+
+<div class="management-header">
+    <h1>User: @Model.Username</h1>
+    <a href="@Corely.IAM.Web.AppRoutes.Users" class="btn btn-outline-secondary">Back to List</a>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Message))
+{
+    <partial name="_Alert" view-data='new ViewDataDictionary(ViewData) { { "AlertType", Model.MessageType }, { "AlertMessage", Model.Message } }' />
+}
+
+<div class="detail-section">
+    <h3>Properties</h3>
+    <form method="post" asp-page-handler="Edit">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" name="Username" value="@Model.Username" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" name="Email" value="@Model.Email" required />
+            </div>
+            <div class="col-auto d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="detail-section">
+    <h3>Roles</h3>
+
+    <form method="post" asp-page-handler="AddRole" class="row g-3 mb-3">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <div class="col-auto flex-grow-1">
+            <input type="text" class="form-control" name="RoleId" placeholder="Role ID (GUID)" required />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary">Assign Role</button>
+        </div>
+    </form>
+
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th class="table-actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Roles.Count == 0)
+            {
+                <tr><td colspan="2" class="text-muted text-center">No roles assigned</td></tr>
+            }
+            @foreach (var role in Model.Roles)
+            {
+                <tr>
+                    <td>@role.Name</td>
+                    <td class="table-actions">
+                        <a href="@Corely.IAM.Web.AppRoutes.Roles/@role.Id" class="btn btn-sm btn-outline-primary">View</a>
+                        <form method="post" asp-page-handler="RemoveRole" class="d-inline" onsubmit="return confirm('Remove this role?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Id" value="@Model.Id" />
+                            <input type="hidden" name="RoleId" value="@role.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

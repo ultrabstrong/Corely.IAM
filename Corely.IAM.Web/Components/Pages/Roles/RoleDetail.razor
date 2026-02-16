@@ -1,0 +1,159 @@
+@page "/roles/{Id:guid}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits EntityDetailPageBase
+@inject IRetrievalService RetrievalService
+@inject IModificationService ModificationService
+@inject IRegistrationService RegistrationService
+@inject IDeregistrationService DeregistrationService
+
+<PageTitle>Role Detail - Corely IAM</PageTitle>
+
+<div class="management-header">
+    <h1>Role Detail</h1>
+    <a href="@AppRoutes.Blazor.Roles" class="btn btn-outline-secondary btn-sm">Back to Roles</a>
+</div>
+
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+@if (_loading && _role == null)
+{
+    <LoadingSpinner />
+}
+else if (_role == null)
+{
+    <div class="alert alert-warning">Role not found.</div>
+}
+else
+{
+    <!-- Properties -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                Properties
+                @if (_role.IsSystemDefined)
+                {
+                    <span class="badge bg-secondary ms-2">System Defined</span>
+                }
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Name</label>
+                <input type="text" class="form-control" @bind="_editName" disabled="@_role.IsSystemDefined" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Description</label>
+                <input type="text" class="form-control" @bind="_editDescription" placeholder="Optional description" disabled="@_role.IsSystemDefined" />
+            </div>
+            @if (!_role.IsSystemDefined)
+            {
+                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-primary" @onclick="SavePropertiesAsync" disabled="@_loading">Save</button>
+                </PermissionView>
+            }
+        </div>
+    </div>
+
+    <!-- Permissions -->
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Permissions</h5></div>
+        <div class="card-body">
+            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <div class="row g-3 mb-3">
+                    <div class="col-auto flex-grow-1">
+                        <input type="text" class="form-control" @bind="_addPermissionId" placeholder="Permission ID (GUID)" />
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-primary" @onclick="AddPermissionAsync" disabled="@_loading">Add Permission</button>
+                    </div>
+                </div>
+            </PermissionView>
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th class="table-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_role.Permissions == null || _role.Permissions.Count == 0)
+                    {
+                        <tr><td colspan="3" class="text-muted text-center">No permissions assigned</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var permission in _role.Permissions)
+                        {
+                            <tr>
+                                <td><code>@permission.Id</code></td>
+                                <td>@permission.Name</td>
+                                <td class="table-actions">
+                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemovePermission(permission.Id, permission.Name)">Remove</button>
+                                    </PermissionView>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<ConfirmModal @ref="_removePermissionModal" Title="Remove Permission" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemovePermissionAsync" />
+
+@code {
+    private Role? _role;
+    private string _editName = string.Empty;
+    private string? _editDescription;
+    private string? _addPermissionId;
+    private ConfirmModal _removePermissionModal = null!;
+
+    protected override async Task LoadCoreAsync()
+    {
+        var result = await RetrievalService.GetRoleAsync(Id, hydrate: true);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
+        {
+            _role = result.Item;
+            _editName = _role.Name;
+            _editDescription = _role.Description;
+        }
+    }
+
+    private async Task SavePropertiesAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_editName)) return;
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await ModificationService.ModifyRoleAsync(new UpdateRoleRequest(Id, _editName, _editDescription));
+            SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Role updated.", result.Message);
+            await ReloadAsync();
+        });
+    }
+
+    private async Task AddPermissionAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_addPermissionId) || !TryParseGuid(_addPermissionId, out var permissionId)) return;
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.RegisterPermissionsWithRoleAsync(new RegisterPermissionsWithRoleRequest([permissionId], Id));
+            SetResultMessage(result.ResultCode == AssignPermissionsToRoleResultCode.Success, "Permission added.", result.Message);
+            _addPermissionId = string.Empty;
+            await ReloadAsync();
+        });
+    }
+
+    private void ConfirmRemovePermission(Guid permissionId, string name) => ShowConfirmation(_removePermissionModal, permissionId, $"Remove permission '{name}'?");
+
+    private async Task RemovePermissionAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterPermissionsFromRoleAsync(new DeregisterPermissionsFromRoleRequest([_confirmItemId], Id));
+            SetResultMessage(result.ResultCode == DeregisterPermissionsFromRoleResultCode.Success, "Permission removed.", result.Message);
+            await ReloadAsync();
+        });
+    }
+}

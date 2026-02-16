@@ -445,9 +445,6 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .HasColumnType("DATETIME2")
                         .HasDefaultValueSql("(SYSUTCDATETIME())");
 
-                    b.Property<bool>("Disabled")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(254)
@@ -460,6 +457,9 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("LastSuccessfulLoginUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LockedUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("ModifiedUtc")

@@ -445,9 +445,6 @@ namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
                         .HasColumnType("TIMESTAMP")
                         .HasDefaultValueSql("(UTC_TIMESTAMP)");
 
-                    b.Property<bool>("Disabled")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(254)
@@ -460,6 +457,9 @@ namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("LastSuccessfulLoginUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("LockedUtc")
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("ModifiedUtc")

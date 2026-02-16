@@ -76,6 +76,8 @@ app.UseStaticFiles();
 app.UseAntiforgery();
 
 app.MapRazorPages();
-app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+app.MapRazorComponents<App>()
+    .AddAdditionalAssemblies(typeof(Corely.IAM.Web.AppRoutes).Assembly)
+    .AddInteractiveServerRenderMode();
 
 app.Run();

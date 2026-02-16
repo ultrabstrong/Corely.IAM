@@ -4,6 +4,7 @@ using Corely.IAM.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
 {
     [DbContext(typeof(IamDbContext))]
-    partial class IamDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260216191854_RemoveDisabledAddLockedUtc")]
+    partial class RemoveDisabledAddLockedUtc
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

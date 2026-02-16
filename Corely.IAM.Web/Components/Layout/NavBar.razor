@@ -1,0 +1,68 @@
+@inject IBlazorUserContextAccessor BlazorUserContextAccessor
+@inject NavigationManager NavigationManager
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="@AppRoutes.Blazor.Dashboard">Corely IAM</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#blazorNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="blazorNavbar">
+            @if (_isAuthenticated && _hasAccount)
+            {
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="@AppRoutes.Blazor.Accounts">Accounts</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@AppRoutes.Blazor.Users">Users</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@AppRoutes.Blazor.Groups">Groups</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@AppRoutes.Blazor.Roles">Roles</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@AppRoutes.Blazor.Permissions">Permissions</a>
+                    </li>
+                </ul>
+            }
+            @if (_isAuthenticated)
+            {
+                <ul class="navbar-nav">
+                    @if (_accountName != null)
+                    {
+                        <li class="nav-item">
+                            <span class="nav-link"><i class="bi bi-building"></i> @_accountName</span>
+                        </li>
+                    }
+                    <li class="nav-item">
+                        <span class="nav-link"><i class="bi bi-person"></i> @_username</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@AppRoutes.SignOut" data-enhance-nav="false">
+                            Sign Out
+                        </a>
+                    </li>
+                </ul>
+            }
+        </div>
+    </div>
+</nav>
+
+@code {
+    private bool _isAuthenticated;
+    private bool _hasAccount;
+    private string? _username;
+    private string? _accountName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var context = await BlazorUserContextAccessor.GetUserContextAsync();
+        _isAuthenticated = context?.User != null;
+        _hasAccount = context?.CurrentAccount != null;
+        _username = context?.User?.Username;
+        _accountName = context?.CurrentAccount?.AccountName;
+    }
+}

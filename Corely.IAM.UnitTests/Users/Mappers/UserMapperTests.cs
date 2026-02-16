@@ -32,7 +32,7 @@ public class UserMapperTests
 
         // Assert
         Assert.Equal(Guid.Empty, result.Id);
-        Assert.False(result.Disabled);
+        Assert.Null(result.LockedUtc);
         Assert.Equal(0, result.TotalSuccessfulLogins);
         Assert.Null(result.LastSuccessfulLoginUtc);
         Assert.Equal(0, result.FailedLoginsSinceLastSuccess);
@@ -66,7 +66,7 @@ public class UserMapperTests
             Id = Guid.CreateVersion7(),
             Username = "testuser",
             Email = "test@example.com",
-            Disabled = true,
+            LockedUtc = DateTime.UtcNow.AddMinutes(-5),
             TotalSuccessfulLogins = 10,
             LastSuccessfulLoginUtc = DateTime.UtcNow.AddDays(-1),
             FailedLoginsSinceLastSuccess = 2,
@@ -84,7 +84,7 @@ public class UserMapperTests
         Assert.Equal(user.Id, result.Id);
         Assert.Equal("testuser", result.Username);
         Assert.Equal("test@example.com", result.Email);
-        Assert.True(result.Disabled);
+        Assert.Equal(user.LockedUtc, result.LockedUtc);
         Assert.Equal(10, result.TotalSuccessfulLogins);
         Assert.Equal(user.LastSuccessfulLoginUtc, result.LastSuccessfulLoginUtc);
         Assert.Equal(2, result.FailedLoginsSinceLastSuccess);
@@ -107,7 +107,7 @@ public class UserMapperTests
             Id = Guid.CreateVersion7(),
             Username = "testuser",
             Email = "test@example.com",
-            Disabled = true,
+            LockedUtc = DateTime.UtcNow.AddMinutes(-5),
             TotalSuccessfulLogins = 10,
             LastSuccessfulLoginUtc = DateTime.UtcNow.AddDays(-1),
             FailedLoginsSinceLastSuccess = 2,
@@ -125,7 +125,7 @@ public class UserMapperTests
         Assert.Equal(entity.Id, result.Id);
         Assert.Equal("testuser", result.Username);
         Assert.Equal("test@example.com", result.Email);
-        Assert.True(result.Disabled);
+        Assert.Equal(entity.LockedUtc, result.LockedUtc);
         Assert.Equal(10, result.TotalSuccessfulLogins);
         Assert.Equal(entity.LastSuccessfulLoginUtc, result.LastSuccessfulLoginUtc);
         Assert.Equal(2, result.FailedLoginsSinceLastSuccess);

@@ -1,0 +1,23 @@
+@inject IBlazorUserContextAccessor BlazorUserContextAccessor
+
+@if (_loaded)
+{
+    @ChildContent
+}
+else
+{
+    <LoadingSpinner />
+}
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool _loaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await BlazorUserContextAccessor.GetUserContextAsync();
+        _loaded = true;
+    }
+}

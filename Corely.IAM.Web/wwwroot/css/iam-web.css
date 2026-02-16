@@ -1,0 +1,138 @@
+/* Auth pages */
+.auth-card {
+    background: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    padding: 2rem;
+}
+
+/* Management pages */
+.management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.management-header h1 {
+    margin-bottom: 0;
+}
+
+/* Detail page sections */
+.detail-section {
+    background: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.detail-section h3 {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Entity cards on dashboard */
+.entity-card {
+    transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.entity-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+/* Table improvements */
+.table-actions {
+    white-space: nowrap;
+}
+
+.table-actions form {
+    display: inline;
+}
+
+/* Permission badges */
+.permission-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    margin-right: 0.25rem;
+}
+
+.permission-badge.active {
+    background-color: #198754;
+    color: #fff;
+}
+
+.permission-badge.inactive {
+    background-color: #6c757d;
+    color: #fff;
+    opacity: 0.5;
+}
+
+/* Loading overlay for Blazor */
+.loading-overlay {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+/* Blazor reconnect modal styling */
+#components-reconnect-modal.components-reconnect-show {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+#components-reconnect-modal.components-reconnect-hide {
+    display: none;
+}
+
+#components-reconnect-modal.components-reconnect-failed,
+#components-reconnect-modal.components-reconnect-rejected {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+/* NavBar sign out button */
+.navbar .btn-link {
+    color: rgba(255, 255, 255, 0.55);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+}
+
+.navbar .btn-link:hover {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* CRUDX permission display */
+.crudx-display {
+    font-family: monospace;
+    letter-spacing: 0.1em;
+}
+
+/* Confirm delete styling */
+.confirm-delete-btn {
+    border: none;
+    background: none;
+    color: #dc3545;
+    padding: 0;
+    cursor: pointer;
+}
+
+.confirm-delete-btn:hover {
+    color: #bb2d3b;
+    text-decoration: underline;
+}

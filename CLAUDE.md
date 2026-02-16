@@ -44,6 +44,60 @@ CSharpier enforced via MSBuild integration. Files are auto-formatted on build.
 .\ListMigrations.ps1                   # Lists migrations (no DB connection needed)
 ```
 
+## Running the WebApp Locally
+
+### Prerequisites
+
+1. **.NET 10.0 SDK** (or 9.0 — the WebApp targets net10.0)
+2. **SQL Server** (LocalDB or full instance) — or MySQL/MariaDB if you change the provider
+
+### Setup Steps
+
+**1. Generate a system encryption key**
+
+```powershell
+cd Corely.IAM.DevTools
+dotnet run -- sym-encrypt --create
+# Outputs a hex key string — copy it
+```
+
+**2. Configure `Corely.IAM.WebApp/appsettings.json`**
+
+Fill in the two required values (see `appsettings.template.json` for reference):
+
+| Key | Value |
+|-----|-------|
+| `ConnectionStrings:DefaultConnection` | Your SQL Server connection string (e.g. `Server=(localdb)\MSSQLLocalDB;Database=CorelIAM;Trusted_Connection=True;`) |
+| `Security:SystemKey` | The hex key from step 1 |
+
+`Database:Provider` defaults to `"mssql"`. Change to `"mysql"` or `"mariadb"` if needed.
+
+**3. Create the database and apply migrations**
+
+```powershell
+cd Corely.IAM.DataAccessMigrations.Cli
+dotnet run -- config init mssql -c "your-connection-string"
+dotnet run -- db create
+```
+
+- `config init` creates a local settings file for the migration CLI (provider + connection string)
+- `db create` creates the database and applies all pending migrations
+
+**4. Run the app**
+
+Set `Corely.IAM.WebApp` as the startup project in Visual Studio and press F5, or:
+
+```powershell
+cd Corely.IAM.WebApp
+dotnet run
+```
+
+The app launches at **https://localhost:7100**.
+
+### Optional: Seq Logging
+
+The default config sends structured logs to [Seq](https://datalust.co/seq) at `http://localhost:5341`. If Seq isn't running, the app still works — console logging is unaffected. Remove the Seq entry from `Serilog:WriteTo` in `appsettings.json` to suppress connection warnings.
+
 ## Architecture
 
 ### Solution Structure
@@ -70,6 +124,12 @@ Every processor and service is wrapped with **decorator layers** via Scrutor:
 - `TelemetryDecorator` — logs operations
 
 Registration order in `ServiceRegistrationExtensions.cs` matters: decorators are applied bottom-up (last registered = outermost).
+
+Authorization is split into two layers:
+- **Service decorators** — validate context only (`HasUserContext()` / `HasAccountContext()`). They do NOT check CRUDX permissions.
+- **Processor decorators** — enforce specific CRUDX permission checks on resources via `AuthorizationProvider.IsAuthorizedAsync()`.
+
+Service methods that appear "unguarded" (e.g., `RegisterUsersWithGroupAsync`) are protected at the processor level where the actual work happens.
 
 ### Domain Structure
 
@@ -107,6 +167,7 @@ New services go in `Services/` with an interface, registered in `ServiceRegistra
 - CRUDX permission model (Create, Read, Update, Delete, Execute) with wildcard support (`ResourceId == Guid.Empty` = all resources)
 - JWT-based authentication via `AuthenticationProvider`
 - Host-agnostic auth context: `UserContextProvider` implements both `IUserContextProvider` (read) and `IUserContextSetter` (write) — no HttpContext dependency
+- Multi-tenant user model: users exist independently of accounts (M:M relationship). There is no concept of "user A administrates user B" — account owners can register/deregister users with account entities but cannot read or modify other users directly.
 
 ## Development Patterns
 

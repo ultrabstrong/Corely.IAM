@@ -1,0 +1,102 @@
+@using Corely.IAM.Users.Providers
+@using Corely.IAM.Web
+@using Corely.IAM.Web.Security
+@inject IUserContextProvider UserContextProvider
+@{
+    var title = ViewData["Title"]?.ToString() ?? "Management";
+    var userContext = UserContextProvider.GetUserContext();
+    var isAuthenticated = userContext?.User != null;
+    var username = userContext?.User?.Username ?? "";
+    var currentAccountName = userContext?.CurrentAccount?.AccountName;
+    var availableAccounts = userContext?.AvailableAccounts ?? new List<Corely.IAM.Accounts.Models.Account>();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - Corely IAM</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/_content/Corely.IAM.Web/css/iam-web.css" />
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="@AppRoutes.Dashboard">Corely IAM</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                @if (isAuthenticated && currentAccountName != null)
+                {
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="@AppRoutes.Accounts">Accounts</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="@AppRoutes.Users">Users</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="@AppRoutes.Groups">Groups</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="@AppRoutes.Roles">Roles</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="@AppRoutes.Permissions">Permissions</a>
+                        </li>
+                    </ul>
+                }
+                @if (isAuthenticated)
+                {
+                    <ul class="navbar-nav">
+                        @if (availableAccounts.Count > 1)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button"
+                                   data-bs-toggle="dropdown">
+                                    <i class="bi bi-building"></i> @currentAccountName
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    @foreach (var account in availableAccounts.Where(a => a.Id != userContext!.CurrentAccount?.Id))
+                                    {
+                                        <li>
+                                            <form method="post" action="@AppRoutes.SelectAccount">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="AccountId" value="@account.Id" />
+                                                <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                                <button type="submit" class="dropdown-item">@account.AccountName</button>
+                                            </form>
+                                        </li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                        <li class="nav-item">
+                            <span class="nav-link"><i class="bi bi-person"></i> @username</span>
+                        </li>
+                        <li class="nav-item">
+                            <form method="post" action="@AppRoutes.SignOut">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="nav-link btn btn-link">Sign Out</button>
+                            </form>
+                        </li>
+                    </ul>
+                }
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        @RenderBody()
+    </div>
+
+    <footer class="container mt-5 mb-3">
+        <hr />
+        <p class="text-muted text-center small">Corely IAM Management</p>
+    </footer>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -22,7 +22,7 @@ internal sealed class UserEntityConfiguration : EntityConfigurationBase<UserEnti
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).ValueGeneratedNever();
 
-        builder.Property(e => e.Disabled).IsRequired();
+        builder.Property(e => e.LockedUtc).IsRequired(false);
 
         builder
             .Property(e => e.Username)

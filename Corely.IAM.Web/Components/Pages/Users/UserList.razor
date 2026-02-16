@@ -1,0 +1,78 @@
+@page "/users"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits EntityListPageBase<User>
+@inject IRetrievalService RetrievalService
+@inject IDeregistrationService DeregistrationService
+
+<PageTitle>Users - Corely IAM</PageTitle>
+
+<div class="management-header">
+    <h1>Users</h1>
+</div>
+
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+@if (_loading && _items == null)
+{
+    <LoadingSpinner />
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>Username</th><th>Email</th><th class="table-actions">Actions</th></tr></thead>
+                <tbody>
+                    @if (_items == null || _items.Count == 0)
+                    {
+                        <tr><td colspan="3" class="text-muted text-center">No users found</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var user in _items)
+                        {
+                            <tr>
+                                <td>@user.Username</td>
+                                <td>@user.Email</td>
+                                <td class="table-actions">
+                                    <a href="@AppRoutes.Blazor.Users/@user.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemove(user.Id, user.Username)">Remove</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <Pagination Skip="_skip" Take="_take" TotalCount="_totalCount" OnPageChanged="OnPageChangedAsync" />
+}
+
+<ConfirmModal @ref="_confirmModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveAsync" />
+
+@code {
+    private ConfirmModal _confirmModal = null!;
+
+    protected override async Task LoadCoreAsync()
+    {
+        var result = await RetrievalService.ListUsersAsync(skip: _skip, take: _take);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
+        {
+            _items = result.Data.Items;
+            _totalCount = result.Data.TotalCount;
+        }
+    }
+
+    private void ConfirmRemove(Guid id, string name) => ShowConfirmation(_confirmModal, id, $"Remove '{name}' from account?");
+
+    private async Task RemoveAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(_confirmItemId));
+            SetResultMessage(result.ResultCode == DeregisterUserFromAccountResultCode.Success, "Removed.", result.Message ?? "Failed.");
+            await ReloadAsync();
+        });
+    }
+}

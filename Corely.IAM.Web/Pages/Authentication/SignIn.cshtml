@@ -1,0 +1,33 @@
+@page "/signin"
+@model Corely.IAM.Web.Pages.Authentication.SignInModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Sign In";
+}
+
+<div class="auth-card">
+    <h2 class="text-center mb-4">Sign In</h2>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="Username"
+                   value="@Model.Username" required autofocus />
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="Password" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Sign In</button>
+    </form>
+
+    <div class="text-center mt-3">
+        <a href="@Corely.IAM.Web.AppRoutes.Register">Create an account</a>
+    </div>
+</div>

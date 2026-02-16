@@ -18,7 +18,6 @@ internal class AuthenticationServiceTelemetryDecorator(
     public async Task<SignInResult> SignInAsync(SignInRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),
-            request,
             () => _inner.SignInAsync(request),
             logResult: true
         );

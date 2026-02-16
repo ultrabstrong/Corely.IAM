@@ -1,0 +1,31 @@
+@{
+    var skip = (int)(ViewData["PaginationSkip"] ?? 0);
+    var take = (int)(ViewData["PaginationTake"] ?? 25);
+    var totalCount = (int)(ViewData["PaginationTotalCount"] ?? 0);
+    var baseUrl = (string)(ViewData["PaginationBaseUrl"] ?? "");
+
+    var currentPage = take > 0 ? (skip / take) + 1 : 1;
+    var totalPages = take > 0 ? (int)Math.Ceiling((double)totalCount / take) : 1;
+}
+
+@if (totalPages > 1)
+{
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                <a class="page-link" href="@baseUrl?skip=@(Math.Max(0, skip - take))&take=@take">Previous</a>
+            </li>
+            @for (var i = 1; i <= totalPages && i <= 10; i++)
+            {
+                var pageSkip = (i - 1) * take;
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link" href="@baseUrl?skip=@pageSkip&take=@take">@i</a>
+                </li>
+            }
+            <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                <a class="page-link" href="@baseUrl?skip=@(skip + take)&take=@take">Next</a>
+            </li>
+        </ul>
+    </nav>
+    <p class="text-center text-muted small">Showing @(skip + 1)–@(Math.Min(skip + take, totalCount)) of @totalCount</p>
+}

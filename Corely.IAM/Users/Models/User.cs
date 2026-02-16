@@ -8,7 +8,7 @@ public class User
     public Guid Id { get; set; }
     public string Username { get; set; } = null!;
     public string Email { get; set; } = null!;
-    public bool Disabled { get; set; }
+    public DateTime? LockedUtc { get; set; }
     public int TotalSuccessfulLogins { get; set; }
     public DateTime? LastSuccessfulLoginUtc { get; set; }
     public int FailedLoginsSinceLastSuccess { get; set; }

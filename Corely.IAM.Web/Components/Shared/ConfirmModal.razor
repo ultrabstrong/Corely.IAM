@@ -1,0 +1,91 @@
+@if (_visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="OnBackdropClick">
+        <div class="modal-dialog" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@Title</h5>
+                    <button type="button" class="btn-close" @onclick="Cancel" disabled="@_loading"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="@(Type == ConfirmModalType.Danger ? "text-danger" : "")">@Message</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Cancel" disabled="@_loading">Cancel</button>
+                    <button type="button" class="btn btn-@Type.ToString().ToLower()" @onclick="Confirm" disabled="@_loading">
+                        @if (_loading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        }
+                        @ConfirmText
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Confirm";
+
+    [Parameter]
+    public string Message { get; set; } = "Are you sure?";
+
+    [Parameter]
+    public string ConfirmText { get; set; } = "Confirm";
+
+    [Parameter]
+    public ConfirmModalType Type { get; set; } = ConfirmModalType.Danger;
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private bool _visible;
+    private bool _loading;
+
+    public void Show()
+    {
+        _visible = true;
+        _loading = false;
+        StateHasChanged();
+    }
+
+    public void Hide()
+    {
+        _visible = false;
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task Confirm()
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            await OnConfirm.InvokeAsync();
+        }
+        finally
+        {
+            Hide();
+        }
+    }
+
+    private async Task Cancel()
+    {
+        await OnCancel.InvokeAsync();
+        Hide();
+    }
+
+    private async Task OnBackdropClick()
+    {
+        if (!_loading)
+        {
+            await Cancel();
+        }
+    }
+}

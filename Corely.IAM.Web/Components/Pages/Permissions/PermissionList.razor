@@ -1,0 +1,190 @@
+@page "/permissions"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits EntityListPageBase<Permission>
+@inject IRetrievalService RetrievalService
+@inject IRegistrationService RegistrationService
+@inject IDeregistrationService DeregistrationService
+
+<PageTitle>Permissions - Corely IAM</PageTitle>
+
+<div class="management-header">
+    <h1>Permissions</h1>
+</div>
+
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+<PermissionView Action="AuthAction.Create" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE">
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Create Permission</h5></div>
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Resource Type</label>
+                    <input type="text" class="form-control" @bind="_newResourceType" placeholder="e.g. account, user" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Resource ID</label>
+                    <input type="text" class="form-control" @bind="_newResourceId" placeholder="GUID (empty = all)" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-control" @bind="_newDescription" placeholder="Optional description" />
+                </div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-auto">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="chkCreate" @bind="_newCreate" />
+                        <label class="form-check-label" for="chkCreate">Create</label>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="chkRead" @bind="_newRead" />
+                        <label class="form-check-label" for="chkRead">Read</label>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="chkUpdate" @bind="_newUpdate" />
+                        <label class="form-check-label" for="chkUpdate">Update</label>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="chkDelete" @bind="_newDelete" />
+                        <label class="form-check-label" for="chkDelete">Delete</label>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="chkExecute" @bind="_newExecute" />
+                        <label class="form-check-label" for="chkExecute">Execute</label>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_loading">Create</button>
+        </div>
+    </div>
+</PermissionView>
+
+@if (_loading && _items == null)
+{
+    <LoadingSpinner />
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Resource Type</th>
+                        <th>Resource ID</th>
+                        <th>C</th>
+                        <th>R</th>
+                        <th>U</th>
+                        <th>D</th>
+                        <th>X</th>
+                        <th class="table-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_items == null || _items.Count == 0)
+                    {
+                        <tr><td colspan="8" class="text-muted text-center">No permissions found</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var perm in _items)
+                        {
+                            <tr>
+                                <td>@perm.ResourceType</td>
+                                <td><code>@(perm.ResourceId == Guid.Empty ? "all" : perm.ResourceId)</code></td>
+                                <td><span class="permission-badge @(perm.Create ? "active" : "inactive")">C</span></td>
+                                <td><span class="permission-badge @(perm.Read ? "active" : "inactive")">R</span></td>
+                                <td><span class="permission-badge @(perm.Update ? "active" : "inactive")">U</span></td>
+                                <td><span class="permission-badge @(perm.Delete ? "active" : "inactive")">D</span></td>
+                                <td><span class="permission-badge @(perm.Execute ? "active" : "inactive")">X</span></td>
+                                <td class="table-actions">
+                                    <a href="@AppRoutes.Blazor.Permissions/@perm.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                    <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { perm.Id }">
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(perm.Id, perm.DisplayName)">Delete</button>
+                                    </PermissionView>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <Pagination Skip="_skip" Take="_take" TotalCount="_totalCount" OnPageChanged="OnPageChangedAsync" />
+}
+
+<ConfirmModal @ref="_confirmModal" Title="Delete Permission" Message="@_confirmMessage" ConfirmText="Delete" OnConfirm="DeleteAsync" />
+
+@code {
+    private string? _newResourceType;
+    private string? _newResourceId;
+    private string? _newDescription;
+    private bool _newCreate;
+    private bool _newRead;
+    private bool _newUpdate;
+    private bool _newDelete;
+    private bool _newExecute;
+    private ConfirmModal _confirmModal = null!;
+
+    protected override async Task LoadCoreAsync()
+    {
+        var result = await RetrievalService.ListPermissionsAsync(skip: _skip, take: _take);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
+        {
+            _items = result.Data.Items;
+            _totalCount = result.Data.TotalCount;
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newResourceType)) return;
+        var resourceId = Guid.TryParse(_newResourceId, out var parsed) ? parsed : Guid.Empty;
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.RegisterPermissionAsync(
+                new RegisterPermissionRequest(_newResourceType, resourceId, _newCreate, _newRead, _newUpdate, _newDelete, _newExecute, _newDescription));
+            SetResultMessage(result.ResultCode == CreatePermissionResultCode.Success, "Permission created.", result.Message);
+            ResetCreateForm();
+            await ReloadAsync();
+        });
+    }
+
+    private void ResetCreateForm()
+    {
+        _newResourceType = string.Empty;
+        _newResourceId = string.Empty;
+        _newDescription = string.Empty;
+        _newCreate = false;
+        _newRead = false;
+        _newUpdate = false;
+        _newDelete = false;
+        _newExecute = false;
+    }
+
+    private void ConfirmDelete(Guid id, string name)
+    {
+        if (_loading) return;
+        ShowConfirmation(_confirmModal, id, $"Delete permission '{name}'?");
+    }
+
+    private async Task DeleteAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterPermissionAsync(new DeregisterPermissionRequest(_confirmItemId));
+            SetResultMessage(result.ResultCode == DeregisterPermissionResultCode.Success, "Permission deleted.", result.Message);
+            await ReloadAsync();
+        });
+    }
+}

@@ -454,7 +454,7 @@ internal class UserProcessor(
                 Id = e.Id,
                 Username = e.Username,
                 Email = e.Email,
-                Disabled = e.Disabled,
+                LockedUtc = e.LockedUtc,
                 CreatedUtc = e.CreatedUtc,
                 ModifiedUtc = e.ModifiedUtc,
             }

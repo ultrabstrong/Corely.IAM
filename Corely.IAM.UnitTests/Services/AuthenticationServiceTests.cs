@@ -19,6 +19,7 @@ namespace Corely.IAM.UnitTests.Services;
 public class AuthenticationServiceTests
 {
     private const int MAX_LOGIN_ATTEMPTS = 5;
+    private const int LOCKOUT_COOLDOWN_SECONDS = 900;
     private const string TEST_DEVICE_ID = "test-device";
 
     private readonly ServiceFactory _serviceFactory = new();
@@ -28,6 +29,7 @@ public class AuthenticationServiceTests
     private readonly Mock<IUserContextSetter> _userContextSetterMock;
     private readonly Mock<IAuthorizationCacheClearer> _authorizationCacheClearerMock;
     private readonly Mock<IBasicAuthProcessor> _basicAuthProcessorMock;
+    private readonly Mock<TimeProvider> _timeProviderMock;
     private readonly AuthenticationService _authenticationService;
 
     private UserEntity? _testUserEntity;
@@ -44,6 +46,8 @@ public class AuthenticationServiceTests
         _userContextSetterMock = GetMockUserContextSetter();
         _authorizationCacheClearerMock = new Mock<IAuthorizationCacheClearer>();
         _basicAuthProcessorMock = GetMockBasicAuthProcessor();
+        _timeProviderMock = new Mock<TimeProvider>();
+        _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(DateTimeOffset.UtcNow);
 
         _authenticationService = new AuthenticationService(
             _serviceFactory.GetRequiredService<ILogger<AuthenticationService>>(),
@@ -53,8 +57,14 @@ public class AuthenticationServiceTests
             _userContextSetterMock.Object,
             _authorizationCacheClearerMock.Object,
             _basicAuthProcessorMock.Object,
-            Options.Create(new SecurityOptions() { MaxLoginAttempts = MAX_LOGIN_ATTEMPTS }),
-            TimeProvider.System
+            Options.Create(
+                new SecurityOptions()
+                {
+                    MaxLoginAttempts = MAX_LOGIN_ATTEMPTS,
+                    LockoutCooldownSeconds = LOCKOUT_COOLDOWN_SECONDS,
+                }
+            ),
+            _timeProviderMock.Object
         );
     }
 
@@ -189,8 +199,11 @@ public class AuthenticationServiceTests
     [Fact]
     public async Task SignInAsync_Fails_WhenUserIsLockedOut()
     {
+        var now = DateTimeOffset.UtcNow;
+        _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(now);
+
         var userEntity = await CreateTestUserAsync();
-        userEntity.FailedLoginsSinceLastSuccess = MAX_LOGIN_ATTEMPTS;
+        userEntity.LockedUtc = now.UtcDateTime.AddSeconds(-10);
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         await userRepo.UpdateAsync(userEntity);
 
@@ -205,6 +218,68 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.UserLockedError, result.ResultCode);
         Assert.Equal("User is locked out", result.Message);
         Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task SignInAsync_LockedUser_AfterCooldownExpires_AllowsRetry()
+    {
+        var now = DateTimeOffset.UtcNow;
+        _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(now);
+
+        var userEntity = await CreateTestUserAsync();
+        userEntity.LockedUtc = now.UtcDateTime.AddSeconds(-(LOCKOUT_COOLDOWN_SECONDS + 1));
+        userEntity.FailedLoginsSinceLastSuccess = MAX_LOGIN_ATTEMPTS;
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        await userRepo.UpdateAsync(userEntity);
+
+        var request = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
+
+        var result = await _authenticationService.SignInAsync(request);
+
+        Assert.Equal(SignInResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.AuthToken);
+
+        var updatedUser = await userRepo.GetAsync(u => u.Id == userEntity.Id);
+        Assert.NotNull(updatedUser);
+        Assert.Null(updatedUser.LockedUtc);
+        Assert.Equal(0, updatedUser.FailedLoginsSinceLastSuccess);
+    }
+
+    [Fact]
+    public async Task SignInAsync_LockedUser_AfterCooldownExpires_FailedAttempt_IncrementsFromZero()
+    {
+        var now = DateTimeOffset.UtcNow;
+        _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(now);
+
+        var userEntity = await CreateTestUserAsync();
+        userEntity.LockedUtc = now.UtcDateTime.AddSeconds(-(LOCKOUT_COOLDOWN_SECONDS + 1));
+        userEntity.FailedLoginsSinceLastSuccess = MAX_LOGIN_ATTEMPTS;
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        await userRepo.UpdateAsync(userEntity);
+
+        _basicAuthProcessorMock
+            .Setup(m => m.VerifyBasicAuthAsync(It.IsAny<VerifyBasicAuthRequest>()))
+            .ReturnsAsync(
+                new VerifyBasicAuthResult(VerifyBasicAuthResultCode.Success, string.Empty, false)
+            );
+
+        var request = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
+
+        var result = await _authenticationService.SignInAsync(request);
+
+        Assert.Equal(SignInResultCode.PasswordMismatchError, result.ResultCode);
+
+        var updatedUser = await userRepo.GetAsync(u => u.Id == userEntity.Id);
+        Assert.NotNull(updatedUser);
+        Assert.Equal(1, updatedUser.FailedLoginsSinceLastSuccess);
     }
 
     [Fact]

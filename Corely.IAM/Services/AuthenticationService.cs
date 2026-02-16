@@ -58,10 +58,24 @@ internal class AuthenticationService(
             return CreateFailedSignInResult(SignInResultCode.UserNotFoundError, "User not found");
         }
 
-        if (userEntity.FailedLoginsSinceLastSuccess >= _securityOptions.MaxLoginAttempts)
+        if (userEntity.LockedUtc != null)
         {
-            _logger.LogDebug("User {Username} is locked out", request.Username);
-            return CreateFailedSignInResult(SignInResultCode.UserLockedError, "User is locked out");
+            var cooldownExpiry = userEntity.LockedUtc.Value.AddSeconds(
+                _securityOptions.LockoutCooldownSeconds
+            );
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+
+            if (cooldownExpiry > now)
+            {
+                _logger.LogDebug("User {Username} is locked out", request.Username);
+                return CreateFailedSignInResult(
+                    SignInResultCode.UserLockedError,
+                    "User is locked out"
+                );
+            }
+
+            userEntity.LockedUtc = null;
+            userEntity.FailedLoginsSinceLastSuccess = 0;
         }
 
         var verifyResult = await _basicAuthProcessor.VerifyBasicAuthAsync(
@@ -69,10 +83,15 @@ internal class AuthenticationService(
         );
         if (verifyResult.ResultCode != VerifyBasicAuthResultCode.Success || !verifyResult.IsValid)
         {
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var failNow = _timeProvider.GetUtcNow().UtcDateTime;
             userEntity.FailedLoginsSinceLastSuccess++;
             userEntity.TotalFailedLogins++;
-            userEntity.LastFailedLoginUtc = now;
+            userEntity.LastFailedLoginUtc = failNow;
+
+            if (userEntity.FailedLoginsSinceLastSuccess >= _securityOptions.MaxLoginAttempts)
+            {
+                userEntity.LockedUtc = failNow;
+            }
 
             await _userRepo.UpdateAsync(userEntity);
 

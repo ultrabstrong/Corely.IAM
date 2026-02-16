@@ -1,0 +1,116 @@
+@page "/groups"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits EntityListPageBase<Group>
+@inject IRetrievalService RetrievalService
+@inject IRegistrationService RegistrationService
+@inject IDeregistrationService DeregistrationService
+
+<PageTitle>Groups - Corely IAM</PageTitle>
+
+<div class="management-header">
+    <h1>Groups</h1>
+</div>
+
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+<PermissionView Action="AuthAction.Create" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE">
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Create Group</h5></div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-auto flex-grow-1">
+                    <input type="text" class="form-control" @bind="_newGroupName" placeholder="Group name" />
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_loading">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</PermissionView>
+
+@if (_loading && _items == null)
+{
+    <LoadingSpinner />
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th class="table-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_items == null || _items.Count == 0)
+                    {
+                        <tr><td colspan="3" class="text-muted text-center">No groups found</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var group in _items)
+                        {
+                            <tr>
+                                <td>@group.Name</td>
+                                <td>@(group.Description ?? "—")</td>
+                                <td class="table-actions">
+                                    <a href="@AppRoutes.Blazor.Groups/@group.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                    <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { group.Id }">
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(group.Id, group.Name)">Delete</button>
+                                    </PermissionView>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <Pagination Skip="_skip" Take="_take" TotalCount="_totalCount" OnPageChanged="OnPageChangedAsync" />
+}
+
+<ConfirmModal @ref="_confirmModal" Title="Delete Group" Message="@_confirmMessage" ConfirmText="Delete" OnConfirm="DeleteAsync" />
+
+@code {
+    private string? _newGroupName;
+    private ConfirmModal _confirmModal = null!;
+
+    protected override async Task LoadCoreAsync()
+    {
+        var result = await RetrievalService.ListGroupsAsync(skip: _skip, take: _take);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
+        {
+            _items = result.Data.Items;
+            _totalCount = result.Data.TotalCount;
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newGroupName)) return;
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.RegisterGroupAsync(new RegisterGroupRequest(_newGroupName));
+            SetResultMessage(result.ResultCode == CreateGroupResultCode.Success, "Group created.", result.Message);
+            _newGroupName = string.Empty;
+            await ReloadAsync();
+        });
+    }
+
+    private void ConfirmDelete(Guid id, string name) => ShowConfirmation(_confirmModal, id, $"Delete group '{name}'?");
+
+    private async Task DeleteAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterGroupAsync(new DeregisterGroupRequest(_confirmItemId));
+            SetResultMessage(result.ResultCode == DeregisterGroupResultCode.Success, "Group deleted.", result.Message);
+            await ReloadAsync();
+        });
+    }
+}

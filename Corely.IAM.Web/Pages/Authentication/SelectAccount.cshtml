@@ -1,0 +1,28 @@
+@page "/select-account"
+@model Corely.IAM.Web.Pages.Authentication.SelectAccountModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Select Account";
+}
+
+<div class="auth-card">
+    <h2 class="text-center mb-4">Select Account</h2>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <div class="list-group">
+        @foreach (var account in Model.Accounts)
+        {
+            <form method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="AccountId" value="@account.Id" />
+                <button type="submit" class="list-group-item list-group-item-action">
+                    @account.AccountName
+                </button>
+            </form>
+        }
+    </div>
+</div>

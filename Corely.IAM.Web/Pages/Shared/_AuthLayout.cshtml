@@ -20,8 +20,8 @@
         </div>
     </header>
 
-    <main class="container flex-grow-1 d-flex justify-content-center mt-5 mb-5">
-        <div class="col-md-5">
+    <main class="container flex-grow-1 d-flex justify-content-center">
+        <div class="col-md-5 auth-container">
             @RenderBody()
         </div>
     </main>
@@ -30,7 +30,7 @@
         <div class="container d-flex justify-content-between align-items-center">
             <span>&copy; @DateTime.UtcNow.Year Corely IAM</span>
             <a href="https://github.com/ultrabstrong/Corely.IAM" target="_blank"><i class="bi bi-github me-1"></i>Source</a>
-            <span>v@version</span>
+            <span>v@(version)</span>
         </div>
     </footer>
 

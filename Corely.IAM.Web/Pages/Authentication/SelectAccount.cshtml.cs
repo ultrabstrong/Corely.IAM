@@ -31,12 +31,7 @@ public class SelectAccountModel(
             return Redirect(AppRoutes.SignIn);
         }
 
-        if (userContext.CurrentAccount != null)
-        {
-            return Redirect(AppRoutes.Dashboard);
-        }
-
-        Accounts = userContext.AvailableAccounts;
+        Accounts = userContext.AvailableAccounts.OrderBy(a => a.AccountName).ToList();
         return Page();
     }
 

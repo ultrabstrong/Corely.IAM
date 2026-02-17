@@ -9,7 +9,7 @@
 <PageTitle>Role Detail - Corely IAM</PageTitle>
 
 <div class="management-header">
-    <h1>Role Detail</h1>
+    <h1><i class="bi bi-shield me-2"></i>@(_role?.Name ?? "Role") <span class="resource-label">Role</span></h1>
     <a href="@AppRoutes.Roles" class="btn btn-outline-secondary btn-sm">Back to Roles</a>
 </div>
 
@@ -52,7 +52,7 @@ else
             <button class="btn btn-primary btn-sm" @onclick="() => _permissionPickerModal.ShowAsync()" disabled="@_loading">Add Permissions</button>
         </PermissionView>
     </div>
-    <table class="table table-sm table-striped table-hover mb-0">
+    <table class="table table-sm table-hover mb-0">
         <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
         <tbody>
             @if (_role.Permissions == null || _role.Permissions.Count == 0)

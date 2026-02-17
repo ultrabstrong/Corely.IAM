@@ -6,7 +6,14 @@
 }
 
 <div class="auth-card">
-    <h2 class="text-center mb-4">Sign Up</h2>
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="@Corely.IAM.Web.AppRoutes.SignIn">Sign In</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" type="button">Sign Up</button>
+        </li>
+    </ul>
 
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
@@ -35,8 +42,4 @@
         </div>
         <button type="submit" class="btn btn-primary w-100">Sign Up</button>
     </form>
-
-    <div class="text-center mt-3">
-        Already signed up? <a href="@Corely.IAM.Web.AppRoutes.SignIn">Sign in</a>
-    </div>
 </div>

@@ -49,17 +49,29 @@ public class SelectAccountModelTests
     }
 
     [Fact]
-    public void OnGet_HasCurrentAccount_RedirectsToDashboard()
+    public void OnGet_HasCurrentAccount_ReturnsPageWithSortedAccounts()
     {
-        var currentAccount = new Account { Id = Guid.CreateVersion7(), AccountName = "Current" };
+        var accounts = new List<Account>
+        {
+            new() { Id = Guid.CreateVersion7(), AccountName = "Zebra" },
+            new() { Id = Guid.CreateVersion7(), AccountName = "Alpha" },
+        };
+        var currentAccount = accounts[0];
         _mockUserContextProvider
             .Setup(p => p.GetUserContext())
-            .Returns(PageTestHelpers.CreateUserContext(currentAccount: currentAccount));
+            .Returns(
+                PageTestHelpers.CreateUserContext(
+                    currentAccount: currentAccount,
+                    availableAccounts: accounts
+                )
+            );
 
         var result = _model.OnGet();
 
-        var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(AppRoutes.Dashboard, redirect.Url);
+        Assert.IsType<PageResult>(result);
+        Assert.Equal(2, _model.Accounts.Count);
+        Assert.Equal("Alpha", _model.Accounts[0].AccountName);
+        Assert.Equal("Zebra", _model.Accounts[1].AccountName);
     }
 
     [Fact]

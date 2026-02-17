@@ -8,7 +8,7 @@
 <PageTitle>Accounts - Corely IAM</PageTitle>
 
 <div class="management-header">
-    <h1>Accounts</h1>
+    <h1><i class="bi bi-building me-2"></i>Accounts</h1>
     <PermissionView Action="AuthAction.Create" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE">
         <button class="icon-btn text-primary" @onclick="() => _createModal.Show()" title="Create"><i class="bi bi-plus-lg"></i></button>
     </PermissionView>
@@ -22,7 +22,7 @@
 }
 else
 {
-    <table class="table table-sm table-striped table-hover mb-0">
+    <table class="table table-sm table-hover mb-0">
         <thead>
             <tr>
                 <th>Name</th>

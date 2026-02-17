@@ -3,11 +3,33 @@
    ============================================================= */
 
 /* Auth pages */
+.auth-container {
+    margin-top: 15vh;
+}
+
 .auth-card {
     background: #fff;
     border-radius: 0.75rem;
     box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
-    padding: 2.5rem 2rem;
+    padding: 2rem;
+}
+
+.auth-card .nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+}
+
+.auth-card .nav-tabs .nav-link {
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.auth-card .nav-tabs .nav-link.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+    background: transparent;
 }
 
 /* Page headers */
@@ -23,6 +45,13 @@
     margin-bottom: 0;
     font-size: 1.5rem;
     font-weight: 600;
+}
+
+.management-header .resource-label {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: #9ca3af;
+    margin-left: 0.5rem;
 }
 
 /* Compact property lists */
@@ -108,7 +137,7 @@
     background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
     color: #fff;
     border: none;
-    border-radius: 0.5rem;
+    border-radius: 0;
     padding: 0.6rem 1rem;
 }
 
@@ -218,6 +247,11 @@
 
 .site-footer a:hover {
     color: #fff;
+}
+
+/* Modals — positioned lower on screen */
+.modal-dialog {
+    margin-top: 15vh;
 }
 
 /* Blazor reconnect modal */

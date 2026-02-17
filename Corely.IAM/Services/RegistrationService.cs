@@ -28,6 +28,7 @@ internal class RegistrationService(
     IRoleProcessor roleProcessor,
     IPermissionProcessor permissionProcessor,
     IUserContextProvider userContextProvider,
+    IUserContextSetter userContextSetter,
     IUnitOfWorkProvider uowProvider
 ) : IRegistrationService
 {
@@ -52,6 +53,9 @@ internal class RegistrationService(
     );
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
+    );
+    private readonly IUserContextSetter _userContextSetter = userContextSetter.ThrowIfNull(
+        nameof(userContextSetter)
     );
     private readonly IUnitOfWorkProvider _uowProvider = uowProvider.ThrowIfNull(
         nameof(uowProvider)
@@ -173,6 +177,16 @@ internal class RegistrationService(
 
             await _uowProvider.CommitAsync();
             uowSucceeded = true;
+
+            _userContextProvider
+                .GetUserContext()!
+                .AvailableAccounts.Add(
+                    new Account
+                    {
+                        Id = createAccountResult.CreatedId,
+                        AccountName = request.AccountName,
+                    }
+                );
 
             _logger.LogInformation(
                 "Account {AccountName} registered with Id {AccountId}",

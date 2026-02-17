@@ -95,6 +95,7 @@ public class RegistrationServiceTests
             _roleProcessorMock.Object,
             _permissionProcessorMock.Object,
             _userContextProviderMock.Object,
+            new Mock<IUserContextSetter>().Object,
             _unitOfWorkProviderMock.Object
         );
     }

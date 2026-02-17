@@ -9,25 +9,12 @@
 
 <div class="management-header">
     <h1>Roles</h1>
+    <PermissionView Action="AuthAction.Create" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE">
+        <button class="icon-btn text-primary" @onclick="() => _createModal.Show()" title="Create"><i class="bi bi-plus-lg"></i></button>
+    </PermissionView>
 </div>
 
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
-
-<PermissionView Action="AuthAction.Create" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE">
-    <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0">Create Role</h5></div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-auto flex-grow-1">
-                    <input type="text" class="form-control" @bind="_newRoleName" placeholder="Role name" />
-                </div>
-                <div class="col-auto">
-                    <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_loading">Create</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</PermissionView>
 
 @if (_loading && _items == null)
 {
@@ -35,59 +22,66 @@
 }
 else
 {
-    <div class="card">
-        <div class="card-body">
-            <table class="table table-hover mb-0">
-                <thead>
+    <table class="table table-sm table-striped table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>System</th>
+                <th class="table-actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (_items == null || _items.Count == 0)
+            {
+                <tr><td colspan="4" class="text-muted text-center">No roles found</td></tr>
+            }
+            else
+            {
+                @foreach (var role in _items)
+                {
                     <tr>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>System</th>
-                        <th class="table-actions">Actions</th>
+                        <td>
+                            @role.Name
+                            <br /><small class="guid-text">@role.Id</small>
+                        </td>
+                        <td>@(role.Description ?? "—")</td>
+                        <td>
+                            @if (role.IsSystemDefined)
+                            {
+                                <span class="sys-badge">System</span>
+                            }
+                        </td>
+                        <td class="table-actions">
+                            <a href="@AppRoutes.Roles/@role.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
+                            @if (!role.IsSystemDefined)
+                            {
+                                <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { role.Id }">
+                                    <button class="icon-btn text-danger" @onclick="() => ConfirmDelete(role.Id, role.Name)" title="Delete"><i class="bi bi-trash"></i></button>
+                                </PermissionView>
+                            }
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @if (_items == null || _items.Count == 0)
-                    {
-                        <tr><td colspan="4" class="text-muted text-center">No roles found</td></tr>
-                    }
-                    else
-                    {
-                        @foreach (var role in _items)
-                        {
-                            <tr>
-                                <td>@role.Name</td>
-                                <td>@(role.Description ?? "—")</td>
-                                <td>
-                                    @if (role.IsSystemDefined)
-                                    {
-                                        <span class="badge bg-secondary">System</span>
-                                    }
-                                </td>
-                                <td class="table-actions">
-                                    <a href="@AppRoutes.Blazor.Roles/@role.Id" class="btn btn-sm btn-outline-primary">View</a>
-                                    @if (!role.IsSystemDefined)
-                                    {
-                                        <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { role.Id }">
-                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(role.Id, role.Name)">Delete</button>
-                                        </PermissionView>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
+                }
+            }
+        </tbody>
+    </table>
 
     <Pagination Skip="_skip" Take="_take" TotalCount="_totalCount" OnPageChanged="OnPageChangedAsync" />
 }
+
+<FormModal @ref="_createModal" Title="Create Role" OnConfirm="CreateAsync">
+    <div class="mb-3">
+        <label class="form-label">Role Name</label>
+        <input type="text" class="form-control" @bind="_newRoleName" placeholder="Role name" />
+    </div>
+</FormModal>
 
 <ConfirmModal @ref="_confirmModal" Title="Delete Role" Message="@_confirmMessage" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
     private string? _newRoleName;
+    private FormModal _createModal = null!;
     private ConfirmModal _confirmModal = null!;
 
     protected override async Task LoadCoreAsync()

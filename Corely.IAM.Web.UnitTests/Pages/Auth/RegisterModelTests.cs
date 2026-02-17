@@ -4,6 +4,8 @@ using Corely.IAM.Services;
 using Corely.IAM.Web.Pages.Authentication;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.UnitTests.Helpers;
+using Corely.Security.Password;
+using Corely.Security.PasswordValidation.Providers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -90,6 +92,28 @@ public class RegisterModelTests
 
         Assert.IsType<PageResult>(result);
         Assert.Equal("Username already taken", _model.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task OnPostAsync_PasswordValidationFails_ReturnsPageWithError()
+    {
+        _model.Username = "testuser";
+        _model.Email = "test@test.com";
+        _model.Password = "weak";
+        _model.ConfirmPassword = "weak";
+        _mockRegistrationService
+            .Setup(s => s.RegisterUserAsync(It.IsAny<RegisterUserRequest>()))
+            .ThrowsAsync(
+                new PasswordValidationException(
+                    new PasswordValidationResult(false, ["Password must be at least 8 characters"]),
+                    "Password validation failed"
+                )
+            );
+
+        var result = await _model.OnPostAsync();
+
+        Assert.IsType<PageResult>(result);
+        Assert.Contains("at least 8 characters", _model.ErrorMessage);
     }
 
     [Fact]

@@ -3,42 +3,55 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="@AppRoutes.Blazor.Dashboard">Corely IAM</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#blazorNavbar">
-            <span class="navbar-toggler-icon"></span>
+        <a class="navbar-brand" href="@AppRoutes.Dashboard">Corely IAM</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#blazorNavbar" aria-controls="blazorNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
         </button>
         <div class="collapse navbar-collapse" id="blazorNavbar">
             @if (_isAuthenticated && _hasAccount)
             {
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="@AppRoutes.Blazor.Accounts">Accounts</a>
+                        <a class="nav-link" href="@AppRoutes.Accounts">Accounts</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="@AppRoutes.Blazor.Users">Users</a>
+                        <a class="nav-link" href="@AppRoutes.Users">Users</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="@AppRoutes.Blazor.Groups">Groups</a>
+                        <a class="nav-link" href="@AppRoutes.Groups">Groups</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="@AppRoutes.Blazor.Roles">Roles</a>
+                        <a class="nav-link" href="@AppRoutes.Roles">Roles</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="@AppRoutes.Blazor.Permissions">Permissions</a>
+                        <a class="nav-link" href="@AppRoutes.Permissions">Permissions</a>
                     </li>
                 </ul>
             }
             @if (_isAuthenticated)
             {
                 <ul class="navbar-nav">
-                    @if (_accountName != null)
+                    @if (_hasMultipleAccounts)
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-building"></i> @_accountName
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="@AppRoutes.Accounts">Manage Accounts</a></li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li><a class="dropdown-item" href="@AppRoutes.SelectAccount" data-enhance-nav="false">Switch Account</a></li>
+                            </ul>
+                        </li>
+                    }
+                    else if (_accountName != null)
                     {
                         <li class="nav-item">
-                            <span class="nav-link"><i class="bi bi-building"></i> @_accountName</span>
+                            <a class="nav-link" href="@AppRoutes.Accounts"><i class="bi bi-building"></i> @_accountName</a>
                         </li>
                     }
                     <li class="nav-item">
-                        <span class="nav-link"><i class="bi bi-person"></i> @_username</span>
+                        <a class="nav-link" href="@AppRoutes.Users/@_userId"><i class="bi bi-person"></i> @_username</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="@AppRoutes.SignOut" data-enhance-nav="false">
@@ -54,6 +67,8 @@
 @code {
     private bool _isAuthenticated;
     private bool _hasAccount;
+    private bool _hasMultipleAccounts;
+    private Guid _userId;
     private string? _username;
     private string? _accountName;
 
@@ -62,6 +77,8 @@
         var context = await BlazorUserContextAccessor.GetUserContextAsync();
         _isAuthenticated = context?.User != null;
         _hasAccount = context?.CurrentAccount != null;
+        _hasMultipleAccounts = context?.AvailableAccounts.Count > 1;
+        _userId = context?.User?.Id ?? Guid.Empty;
         _username = context?.User?.Username;
         _accountName = context?.CurrentAccount?.AccountName;
     }

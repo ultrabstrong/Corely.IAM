@@ -37,12 +37,58 @@ public class SwitchAccountModelTests
     }
 
     [Fact]
-    public void OnGet_RedirectsToDashboard()
+    public async Task OnGetAsync_WithoutAccountId_RedirectsToDashboard()
     {
-        var result = _model.OnGet();
+        var result = await _model.OnGetAsync();
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.Dashboard, redirect.Url);
+    }
+
+    [Fact]
+    public async Task OnGetAsync_WithAccountId_SwitchesAndRedirectsToReturnUrl()
+    {
+        var accountId = Guid.CreateVersion7();
+        var tokenId = Guid.CreateVersion7();
+
+        _mockAuthService
+            .Setup(s =>
+                s.SwitchAccountAsync(It.Is<SwitchAccountRequest>(r => r.AccountId == accountId))
+            )
+            .ReturnsAsync(new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId));
+
+        var result = await _model.OnGetAsync(accountId, "/local-path");
+
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.Equal("/local-path", redirect.Url);
+        _mockCookieManager.Verify(
+            c =>
+                c.SetAuthCookies(
+                    It.IsAny<IResponseCookies>(),
+                    "auth-token",
+                    tokenId,
+                    It.IsAny<bool>(),
+                    It.IsAny<int>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task OnGetAsync_WithAccountId_SwitchFails_RedirectsToSelectAccount()
+    {
+        var accountId = Guid.CreateVersion7();
+
+        _mockAuthService
+            .Setup(s => s.SwitchAccountAsync(It.IsAny<SwitchAccountRequest>()))
+            .ReturnsAsync(
+                new SignInResult(SignInResultCode.AccountNotFoundError, "Not found", null, null)
+            );
+
+        var result = await _model.OnGetAsync(accountId, "/local-path");
+
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.Equal(AppRoutes.SelectAccount, redirect.Url);
     }
 
     [Fact]

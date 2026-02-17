@@ -2,6 +2,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Security;
+using Corely.Security.Password;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
@@ -48,9 +49,18 @@ public class RegisterModel(
             return Page();
         }
 
-        var registerResult = await registrationService.RegisterUserAsync(
-            new RegisterUserRequest(Username, Email, Password)
-        );
+        RegisterUserResult registerResult;
+        try
+        {
+            registerResult = await registrationService.RegisterUserAsync(
+                new RegisterUserRequest(Username, Email, Password)
+            );
+        }
+        catch (PasswordValidationException ex)
+        {
+            ErrorMessage = string.Join(" ", ex.PasswordValidationResult.ValidationFailures);
+            return Page();
+        }
 
         if (registerResult.ResultCode != RegisterUserResultCode.Success)
         {

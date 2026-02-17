@@ -18,33 +18,32 @@
 }
 else
 {
-    <div class="card">
-        <div class="card-body">
-            <table class="table table-hover mb-0">
-                <thead><tr><th>Username</th><th>Email</th><th class="table-actions">Actions</th></tr></thead>
-                <tbody>
-                    @if (_items == null || _items.Count == 0)
-                    {
-                        <tr><td colspan="3" class="text-muted text-center">No users found</td></tr>
-                    }
-                    else
-                    {
-                        @foreach (var user in _items)
-                        {
-                            <tr>
-                                <td>@user.Username</td>
-                                <td>@user.Email</td>
-                                <td class="table-actions">
-                                    <a href="@AppRoutes.Blazor.Users/@user.Id" class="btn btn-sm btn-outline-primary">View</a>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemove(user.Id, user.Username)">Remove</button>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <table class="table table-sm table-striped table-hover mb-0">
+        <thead><tr><th>Username</th><th>Email</th><th class="table-actions">Actions</th></tr></thead>
+        <tbody>
+            @if (_items == null || _items.Count == 0)
+            {
+                <tr><td colspan="3" class="text-muted text-center">No users found</td></tr>
+            }
+            else
+            {
+                @foreach (var user in _items)
+                {
+                    <tr>
+                        <td>
+                            @user.Username
+                            <br /><small class="guid-text">@user.Id</small>
+                        </td>
+                        <td>@user.Email</td>
+                        <td class="table-actions">
+                            <a href="@AppRoutes.Users/@user.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
+                            <button class="icon-btn text-danger" @onclick="() => ConfirmRemove(user.Id, user.Username)" title="Remove"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
 
     <Pagination Skip="_skip" Take="_take" TotalCount="_totalCount" OnPageChanged="OnPageChangedAsync" />
 }

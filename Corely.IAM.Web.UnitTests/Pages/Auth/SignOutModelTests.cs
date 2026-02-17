@@ -25,12 +25,16 @@ public class SignOutModelTests
     }
 
     [Fact]
-    public void OnGet_RedirectsToDashboard()
+    public async Task OnGetAsync_SignsOutAndRedirectsToSignIn()
     {
-        var result = _model.OnGet();
+        var result = await _model.OnGetAsync();
 
         var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(AppRoutes.Dashboard, redirect.Url);
+        Assert.Equal(AppRoutes.SignIn, redirect.Url);
+        _mockCookieManager.Verify(
+            m => m.DeleteAuthCookies(It.IsAny<IResponseCookies>()),
+            Times.Once
+        );
     }
 
     [Fact]

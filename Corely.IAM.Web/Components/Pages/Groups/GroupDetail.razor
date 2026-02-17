@@ -10,7 +10,7 @@
 
 <div class="management-header">
     <h1>Group Detail</h1>
-    <a href="@AppRoutes.Blazor.Groups" class="btn btn-outline-secondary btn-sm">Back to Groups</a>
+    <a href="@AppRoutes.Groups" class="btn btn-outline-secondary btn-sm">Back to Groups</a>
 </div>
 
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
@@ -26,117 +26,98 @@ else if (_group == null)
 else
 {
     <!-- Properties -->
-    <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0">Properties</h5></div>
-        <div class="card-body">
-            <div class="mb-3">
-                <label class="form-label fw-bold">Name</label>
-                <input type="text" class="form-control" @bind="_editName" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label fw-bold">Description</label>
-                <input type="text" class="form-control" @bind="_editDescription" placeholder="Optional description" />
-            </div>
-            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                <button class="btn btn-primary" @onclick="SavePropertiesAsync" disabled="@_loading">Save</button>
-            </PermissionView>
-        </div>
+    <div class="props-grid mb-3">
+        <span class="prop-label">Name</span>
+        <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editName" /></div>
+        <span class="prop-label">Description</span>
+        <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editDescription" placeholder="Optional" /></div>
     </div>
+    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+        <button class="btn btn-primary btn-sm" @onclick="SavePropertiesAsync" disabled="@_loading">Save</button>
+    </PermissionView>
 
     <!-- Users -->
-    <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0">Users</h5></div>
-        <div class="card-body">
-            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                <div class="row g-3 mb-3">
-                    <div class="col-auto flex-grow-1">
-                        <input type="text" class="form-control" @bind="_addUserId" placeholder="User ID (GUID)" />
-                    </div>
-                    <div class="col-auto">
-                        <button class="btn btn-primary" @onclick="AddUserAsync" disabled="@_loading">Add User</button>
-                    </div>
-                </div>
-            </PermissionView>
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th class="table-actions">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (_group.Users == null || _group.Users.Count == 0)
-                    {
-                        <tr><td colspan="3" class="text-muted text-center">No users assigned</td></tr>
-                    }
-                    else
-                    {
-                        @foreach (var user in _group.Users)
-                        {
-                            <tr>
-                                <td><code>@user.Id</code></td>
-                                <td>@user.Name</td>
-                                <td class="table-actions">
-                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)">Remove</button>
-                                    </PermissionView>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
+    <div class="section-bar mt-4">
+        <h6>Users</h6>
+        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+            <button class="btn btn-primary btn-sm" @onclick="() => _userPickerModal.ShowAsync()" disabled="@_loading">Add Users</button>
+        </PermissionView>
     </div>
+    <table class="table table-sm table-striped table-hover mb-0">
+        <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+        <tbody>
+            @if (_group.Users == null || _group.Users.Count == 0)
+            {
+                <tr><td colspan="2" class="text-muted text-center">No users assigned</td></tr>
+            }
+            else
+            {
+                @foreach (var user in _group.Users)
+                {
+                    <tr>
+                        <td>
+                            @user.Name
+                            <br /><small class="guid-text">@user.Id</small>
+                        </td>
+                        <td class="table-actions">
+                            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                            </PermissionView>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
 
     <!-- Roles -->
-    <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0">Roles</h5></div>
-        <div class="card-body">
-            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                <div class="row g-3 mb-3">
-                    <div class="col-auto flex-grow-1">
-                        <input type="text" class="form-control" @bind="_addRoleId" placeholder="Role ID (GUID)" />
-                    </div>
-                    <div class="col-auto">
-                        <button class="btn btn-primary" @onclick="AddRoleAsync" disabled="@_loading">Add Role</button>
-                    </div>
-                </div>
-            </PermissionView>
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th class="table-actions">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (_group.Roles == null || _group.Roles.Count == 0)
-                    {
-                        <tr><td colspan="3" class="text-muted text-center">No roles assigned</td></tr>
-                    }
-                    else
-                    {
-                        @foreach (var role in _group.Roles)
-                        {
-                            <tr>
-                                <td><code>@role.Id</code></td>
-                                <td>@role.Name</td>
-                                <td class="table-actions">
-                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)">Remove</button>
-                                    </PermissionView>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
+    <div class="section-bar mt-4">
+        <h6>Roles</h6>
+        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+            <button class="btn btn-primary btn-sm" @onclick="() => _rolePickerModal.ShowAsync()" disabled="@_loading">Add Roles</button>
+        </PermissionView>
     </div>
+    <table class="table table-sm table-striped table-hover mb-0">
+        <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+        <tbody>
+            @if (_group.Roles == null || _group.Roles.Count == 0)
+            {
+                <tr><td colspan="2" class="text-muted text-center">No roles assigned</td></tr>
+            }
+            else
+            {
+                @foreach (var role in _group.Roles)
+                {
+                    <tr>
+                        <td>
+                            @role.Name
+                            <br /><small class="guid-text">@role.Id</small>
+                        </td>
+                        <td class="table-actions">
+                            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                            </PermissionView>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
 }
+
+<EntityPickerModal @ref="_userPickerModal"
+                   Title="Add Users to Group"
+                   SearchPlaceholder="Search users..."
+                   FetchItemsAsync="FetchAvailableUsersAsync"
+                   ExcludeIds="_assignedUserIds"
+                   OnConfirm="AddUsersAsync" />
+
+<EntityPickerModal @ref="_rolePickerModal"
+                   Title="Add Roles to Group"
+                   SearchPlaceholder="Search roles..."
+                   FetchItemsAsync="FetchAvailableRolesAsync"
+                   ExcludeIds="_assignedRoleIds"
+                   OnConfirm="AddRolesAsync" />
 
 <ConfirmModal @ref="_removeUserModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />
 <ConfirmModal @ref="_removeRoleModal" Title="Remove Role" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveRoleAsync" />
@@ -145,10 +126,12 @@ else
     private Group? _group;
     private string _editName = string.Empty;
     private string? _editDescription;
-    private string? _addUserId;
-    private string? _addRoleId;
+    private EntityPickerModal _userPickerModal = null!;
+    private EntityPickerModal _rolePickerModal = null!;
     private ConfirmModal _removeUserModal = null!;
     private ConfirmModal _removeRoleModal = null!;
+    private HashSet<Guid> _assignedUserIds = [];
+    private HashSet<Guid> _assignedRoleIds = [];
 
     protected override async Task LoadCoreAsync()
     {
@@ -158,7 +141,31 @@ else
             _group = result.Item;
             _editName = _group.Name;
             _editDescription = _group.Description;
+            _assignedUserIds = (_group.Users ?? []).Select(u => u.Id).ToHashSet();
+            _assignedRoleIds = (_group.Roles ?? []).Select(r => r.Id).ToHashSet();
         }
+    }
+
+    private async Task<(List<PickerItem>, int)> FetchAvailableUsersAsync(int skip, int take)
+    {
+        var result = await RetrievalService.ListUsersAsync(skip: skip, take: take);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
+        {
+            var items = result.Data.Items.Select(u => new PickerItem(u.Id, u.Username, u.Email)).ToList();
+            return (items, result.Data.TotalCount);
+        }
+        return ([], 0);
+    }
+
+    private async Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take)
+    {
+        var result = await RetrievalService.ListRolesAsync(skip: skip, take: take);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
+        {
+            var items = result.Data.Items.Select(r => new PickerItem(r.Id, r.Name, r.Description)).ToList();
+            return (items, result.Data.TotalCount);
+        }
+        return ([], 0);
     }
 
     private async Task SavePropertiesAsync()
@@ -172,14 +179,12 @@ else
         });
     }
 
-    private async Task AddUserAsync()
+    private async Task AddUsersAsync(List<Guid> userIds)
     {
-        if (string.IsNullOrWhiteSpace(_addUserId) || !TryParseGuid(_addUserId, out var userId)) return;
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.RegisterUsersWithGroupAsync(new RegisterUsersWithGroupRequest([userId], Id));
-            SetResultMessage(result.ResultCode == AddUsersToGroupResultCode.Success, "User added.", result.Message);
-            _addUserId = string.Empty;
+            var result = await RegistrationService.RegisterUsersWithGroupAsync(new RegisterUsersWithGroupRequest(userIds, Id));
+            SetResultMessage(result.ResultCode == AddUsersToGroupResultCode.Success, $"{userIds.Count} user(s) added.", result.Message);
             await ReloadAsync();
         });
     }
@@ -196,14 +201,12 @@ else
         });
     }
 
-    private async Task AddRoleAsync()
+    private async Task AddRolesAsync(List<Guid> roleIds)
     {
-        if (string.IsNullOrWhiteSpace(_addRoleId) || !TryParseGuid(_addRoleId, out var roleId)) return;
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.RegisterRolesWithGroupAsync(new RegisterRolesWithGroupRequest([roleId], Id));
-            SetResultMessage(result.ResultCode == AssignRolesToGroupResultCode.Success, "Role added.", result.Message);
-            _addRoleId = string.Empty;
+            var result = await RegistrationService.RegisterRolesWithGroupAsync(new RegisterRolesWithGroupRequest(roleIds, Id));
+            SetResultMessage(result.ResultCode == AssignRolesToGroupResultCode.Success, $"{roleIds.Count} role(s) added.", result.Message);
             await ReloadAsync();
         });
     }

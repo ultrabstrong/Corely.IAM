@@ -10,7 +10,7 @@
 
 <div class="management-header">
     <h1>User: @_username</h1>
-    <a href="@AppRoutes.Blazor.Users" class="btn btn-outline-secondary">Back to List</a>
+    <a href="@AppRoutes.Users" class="btn btn-outline-secondary">Back to List</a>
 </div>
 
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
@@ -21,54 +21,48 @@
 }
 else
 {
-    <div class="detail-section">
-        <h3>Properties</h3>
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Username</label>
-                <input type="text" class="form-control" @bind="_username" />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Email</label>
-                <input type="email" class="form-control" @bind="_email" />
-            </div>
-            <div class="col-auto d-flex align-items-end">
-                <button class="btn btn-primary" @onclick="SaveAsync" disabled="@_loading">Save</button>
-            </div>
-        </div>
+    <div class="props-grid mb-3">
+        <span class="prop-label">Username</span>
+        <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_username" /></div>
+        <span class="prop-label">Email</span>
+        <div class="prop-value"><input type="email" class="form-control form-control-sm" @bind="_email" /></div>
     </div>
+    <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
 
-    <div class="detail-section">
-        <h3>Roles</h3>
-        <div class="row g-3 mb-3">
-            <div class="col-auto flex-grow-1">
-                <input type="text" class="form-control" @bind="_newRoleId" placeholder="Role ID (GUID)" />
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-outline-primary" @onclick="AddRoleAsync" disabled="@_loading">Assign Role</button>
-            </div>
-        </div>
-        <table class="table table-hover mb-0">
-            <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
-            <tbody>
-                @if (_roles.Count == 0)
-                {
-                    <tr><td colspan="2" class="text-muted text-center">No roles assigned</td></tr>
-                }
-                @foreach (var role in _roles)
-                {
-                    <tr>
-                        <td>@role.Name</td>
-                        <td class="table-actions">
-                            <a href="@AppRoutes.Blazor.Roles/@role.Id" class="btn btn-sm btn-outline-primary">View</a>
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)">Remove</button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <div class="section-bar mt-4">
+        <h6>Roles</h6>
+        <button class="btn btn-primary btn-sm" @onclick="() => _rolePickerModal.ShowAsync()" disabled="@_loading">Add Roles</button>
     </div>
+    <table class="table table-sm table-striped table-hover mb-0">
+        <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+        <tbody>
+            @if (_roles.Count == 0)
+            {
+                <tr><td colspan="2" class="text-muted text-center">No roles assigned</td></tr>
+            }
+            @foreach (var role in _roles)
+            {
+                <tr>
+                    <td>
+                        @role.Name
+                        <br /><small class="guid-text">@role.Id</small>
+                    </td>
+                    <td class="table-actions">
+                        <a href="@AppRoutes.Roles/@role.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
+                        <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
+
+<EntityPickerModal @ref="_rolePickerModal"
+                   Title="Assign Roles to User"
+                   SearchPlaceholder="Search roles..."
+                   FetchItemsAsync="FetchAvailableRolesAsync"
+                   ExcludeIds="_assignedRoleIds"
+                   OnConfirm="AddRolesAsync" />
 
 <ConfirmModal @ref="_confirmModal" Title="Remove Role" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveRoleAsync" />
 
@@ -76,7 +70,8 @@ else
     private string? _username;
     private string? _email;
     private List<ChildRef> _roles = [];
-    private string? _newRoleId;
+    private HashSet<Guid> _assignedRoleIds = [];
+    private EntityPickerModal _rolePickerModal = null!;
     private ConfirmModal _confirmModal = null!;
 
     protected override async Task LoadCoreAsync()
@@ -87,11 +82,23 @@ else
             _username = result.Item.Username;
             _email = result.Item.Email;
             _roles = result.Item.Roles ?? [];
+            _assignedRoleIds = _roles.Select(r => r.Id).ToHashSet();
         }
         else
         {
-            NavigationManager.NavigateTo(AppRoutes.Blazor.Users);
+            NavigationManager.NavigateTo(AppRoutes.Users);
         }
+    }
+
+    private async Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take)
+    {
+        var result = await RetrievalService.ListRolesAsync(skip: skip, take: take);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
+        {
+            var items = result.Data.Items.Select(r => new PickerItem(r.Id, r.Name, r.Description)).ToList();
+            return (items, result.Data.TotalCount);
+        }
+        return ([], 0);
     }
 
     private async Task SaveAsync()
@@ -104,14 +111,12 @@ else
         });
     }
 
-    private async Task AddRoleAsync()
+    private async Task AddRolesAsync(List<Guid> roleIds)
     {
-        if (!TryParseGuid(_newRoleId, out var roleId)) return;
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.RegisterRolesWithUserAsync(new RegisterRolesWithUserRequest([roleId], Id));
-            SetResultMessage(result.ResultCode == AssignRolesToUserResultCode.Success, "Role assigned.", result.Message ?? "Failed.");
-            _newRoleId = string.Empty;
+            var result = await RegistrationService.RegisterRolesWithUserAsync(new RegisterRolesWithUserRequest(roleIds, Id));
+            SetResultMessage(result.ResultCode == AssignRolesToUserResultCode.Success, $"{roleIds.Count} role(s) assigned.", result.Message ?? "Failed.");
             await ReloadAsync();
         });
     }

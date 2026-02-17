@@ -1,62 +1,163 @@
+/* =============================================================
+   Corely IAM Web — Minimal custom CSS (Bootstrap-first approach)
+   ============================================================= */
+
 /* Auth pages */
 .auth-card {
     background: #fff;
-    border-radius: 0.5rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    padding: 2rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+    padding: 2.5rem 2rem;
 }
 
-/* Management pages */
+/* Page headers */
 .management-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding-bottom: 0.5rem;
     margin-bottom: 1.5rem;
 }
 
 .management-header h1 {
     margin-bottom: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
 }
 
-/* Detail page sections */
-.detail-section {
-    background: #fff;
+/* Compact property lists */
+.props-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.4rem 1rem;
+    align-items: center;
+    max-width: 600px;
+}
+
+.props-grid .prop-label {
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.props-grid .prop-value {
+    margin-bottom: 0;
+}
+
+.props-grid .form-control {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Section headers for detail page relation tables */
+.section-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.section-bar h6 {
+    margin-bottom: 0;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #495057;
+}
+
+/* Icon action buttons */
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    padding: 0;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.icon-btn:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+.icon-btn.text-danger:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.icon-btn.text-primary:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+/* Dashboard account header */
+.dashboard-account-header {
+    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+    color: #fff;
+    border: none;
     border-radius: 0.5rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
+    padding: 0.6rem 1rem;
 }
 
-.detail-section h3 {
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #dee2e6;
-}
-
-/* Entity cards on dashboard */
+/* Entity cards (dashboard grid) */
 .entity-card {
     transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .entity-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Onboarding card */
+.onboarding-card {
+    max-width: 480px;
+    width: 100%;
 }
 
 /* Table improvements */
 .table-actions {
     white-space: nowrap;
+    width: 1%;
+    text-align: right;
+    vertical-align: middle;
 }
 
 .table-actions form {
     display: inline;
 }
 
+/* GUID display */
+.guid-text {
+    font-size: 0.72rem;
+    color: #9ca3af;
+    font-family: monospace;
+    letter-spacing: -0.02em;
+}
+
 /* Permission badges */
 .permission-badge {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    margin-right: 0.25rem;
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    width: 1.5rem;
+    height: 1.5rem;
+    line-height: 1.5rem;
+    text-align: center;
+    border-radius: 0.25rem;
 }
 
 .permission-badge.active {
@@ -65,20 +166,61 @@
 }
 
 .permission-badge.inactive {
-    background-color: #6c757d;
+    background-color: #e9ecef;
+    color: #adb5bd;
+}
+
+/* System badge */
+.sys-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    background: #e9ecef;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+    margin-left: 0.4rem;
+}
+
+/* Danger zone */
+.danger-zone {
+    padding: 0.75rem 0;
+    margin-top: 2rem;
+    border-top: 1px solid #f1aeb5;
+}
+
+/* Navbar toggler — CSP-safe icon instead of inline SVG */
+.navbar-toggler .navbar-toggler-icon {
+    background-image: none;
+}
+
+.navbar-toggler .navbar-toggler-icon .bi-list {
+    font-size: 1.5em;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.75);
+    vertical-align: middle;
+}
+
+/* Slim footer */
+.site-footer {
+    background: #212529;
+    color: #9ca3af;
+    padding: 0.6rem 0;
+    font-size: 0.8rem;
+}
+
+.site-footer a {
+    color: #9ca3af;
+    text-decoration: none;
+}
+
+.site-footer a:hover {
     color: #fff;
-    opacity: 0.5;
 }
 
-/* Loading overlay for Blazor */
-.loading-overlay {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 200px;
-}
-
-/* Blazor reconnect modal styling */
+/* Blazor reconnect modal */
 #components-reconnect-modal.components-reconnect-show {
     display: block;
     position: fixed;
@@ -104,35 +246,4 @@
     bottom: 0;
     z-index: 9999;
     background: rgba(0, 0, 0, 0.7);
-}
-
-/* NavBar sign out button */
-.navbar .btn-link {
-    color: rgba(255, 255, 255, 0.55);
-    text-decoration: none;
-    padding: 0.5rem 1rem;
-}
-
-.navbar .btn-link:hover {
-    color: rgba(255, 255, 255, 0.75);
-}
-
-/* CRUDX permission display */
-.crudx-display {
-    font-family: monospace;
-    letter-spacing: 0.1em;
-}
-
-/* Confirm delete styling */
-.confirm-delete-btn {
-    border: none;
-    background: none;
-    color: #dc3545;
-    padding: 0;
-    cursor: pointer;
-}
-
-.confirm-delete-btn:hover {
-    color: #bb2d3b;
-    text-decoration: underline;
 }

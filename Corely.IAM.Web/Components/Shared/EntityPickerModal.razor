@@ -1,0 +1,238 @@
+@if (_visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="OnBackdropClick">
+        <div class="modal-dialog modal-lg" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@Title</h5>
+                    <button type="button" class="btn-close" @onclick="Close" disabled="@_saving"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text"
+                           class="form-control mb-3"
+                           placeholder="@SearchPlaceholder"
+                           @bind="_searchText"
+                           @bind:event="oninput"
+                           @bind:after="OnSearchChanged"
+                           disabled="@_saving" />
+
+                    @if (_loading && _allItems.Count == 0)
+                    {
+                        <div class="text-center py-3">
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            Loading...
+                        </div>
+                    }
+                    else
+                    {
+                        var filtered = GetFilteredItems();
+
+                        @if (filtered.Count == 0)
+                        {
+                            <div class="text-muted text-center py-3">
+                                @if (_allItems.Count == 0 && !_loading)
+                                {
+                                    <span>No items available</span>
+                                }
+                                else
+                                {
+                                    <span>No matches for "@_searchText"</span>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="list-group" style="max-height: 400px; overflow-y: auto;">
+                                @foreach (var item in filtered)
+                                {
+                                    var isChecked = _selectedIds.Contains(item.Id);
+                                    <label class="list-group-item list-group-item-action d-flex align-items-center gap-2 @(isChecked ? "active" : "")" style="cursor: pointer;">
+                                        <input type="checkbox"
+                                               class="form-check-input m-0"
+                                               checked="@isChecked"
+                                               @onchange="() => ToggleSelection(item.Id)"
+                                               disabled="@_saving" />
+                                        <div class="flex-grow-1">
+                                            <span class="@(isChecked ? "text-white" : "")">@item.DisplayText</span>
+                                            <br /><small class="guid-text">@item.Id</small>
+                                            @if (!string.IsNullOrWhiteSpace(item.Description))
+                                            {
+                                                <br />
+                                                <small class="@(isChecked ? "text-white-50" : "text-muted")">@item.Description</small>
+                                            }
+                                        </div>
+                                    </label>
+                                }
+                            </div>
+                        }
+
+                        @if (_allItems.Count < _serverTotal)
+                        {
+                            <div class="text-center mt-3">
+                                <button class="btn btn-outline-secondary btn-sm" @onclick="LoadMoreAsync" disabled="@(_loading || _saving)">
+                                    @if (_loading)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                                    }
+                                    Load More
+                                </button>
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <span class="text-muted">@(_selectedIds.Count) selected</span>
+                    <div>
+                        <button type="button" class="btn btn-secondary" @onclick="Close" disabled="@_saving">Cancel</button>
+                        <button type="button" class="btn btn-primary" @onclick="ConfirmAsync" disabled="@(_saving || _selectedIds.Count == 0)">
+                            @if (_saving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            }
+                            Add Selected (@_selectedIds.Count)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Select Items";
+
+    [Parameter]
+    public string SearchPlaceholder { get; set; } = "Search...";
+
+    [Parameter]
+    public Func<int, int, Task<(List<PickerItem> Items, int TotalCount)>> FetchItemsAsync { get; set; } = null!;
+
+    [Parameter]
+    public IReadOnlyCollection<Guid> ExcludeIds { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<List<Guid>> OnConfirm { get; set; }
+
+    private const int PageSize = 25;
+    private bool _visible;
+    private bool _loading;
+    private bool _saving;
+    private string _searchText = string.Empty;
+    private readonly List<PickerItem> _allItems = [];
+    private readonly HashSet<Guid> _selectedIds = [];
+    private int _serverTotal;
+    private CancellationTokenSource? _debounceCts;
+
+    public async Task ShowAsync()
+    {
+        _visible = true;
+        _loading = false;
+        _saving = false;
+        _searchText = string.Empty;
+        _allItems.Clear();
+        _selectedIds.Clear();
+        _serverTotal = 0;
+        StateHasChanged();
+        await FetchBatchAsync(0);
+    }
+
+    private void Close()
+    {
+        if (_saving) return;
+        _visible = false;
+        StateHasChanged();
+    }
+
+    private async Task FetchBatchAsync(int skip)
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            var (items, totalCount) = await FetchItemsAsync(skip, PageSize);
+            if (skip == 0)
+            {
+                _allItems.Clear();
+            }
+            _allItems.AddRange(items);
+            _serverTotal = totalCount;
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadMoreAsync()
+    {
+        await FetchBatchAsync(_allItems.Count);
+    }
+
+    private async Task OnSearchChanged()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+
+        try
+        {
+            await Task.Delay(300, token);
+            if (!token.IsCancellationRequested)
+            {
+                StateHasChanged();
+            }
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private List<PickerItem> GetFilteredItems()
+    {
+        var excludeSet = ExcludeIds as HashSet<Guid> ?? ExcludeIds.ToHashSet();
+        var items = _allItems.Where(i => !excludeSet.Contains(i.Id));
+
+        if (!string.IsNullOrWhiteSpace(_searchText))
+        {
+            var search = _searchText.Trim();
+            items = items.Where(i =>
+                i.DisplayText.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || (i.Description?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        return items.ToList();
+    }
+
+    private void ToggleSelection(Guid id)
+    {
+        if (!_selectedIds.Remove(id))
+        {
+            _selectedIds.Add(id);
+        }
+    }
+
+    private async Task ConfirmAsync()
+    {
+        if (_selectedIds.Count == 0) return;
+        _saving = true;
+        StateHasChanged();
+        try
+        {
+            await OnConfirm.InvokeAsync(_selectedIds.ToList());
+        }
+        finally
+        {
+            _visible = false;
+            _saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnBackdropClick()
+    {
+        if (!_saving)
+        {
+            Close();
+        }
+    }
+}

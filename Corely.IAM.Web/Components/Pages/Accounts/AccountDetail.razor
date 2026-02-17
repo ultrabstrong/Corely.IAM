@@ -10,7 +10,7 @@
 
 <div class="management-header">
     <h1>Account: @_accountName</h1>
-    <a href="@AppRoutes.Blazor.Accounts" class="btn btn-outline-secondary">Back to List</a>
+    <a href="@AppRoutes.Accounts" class="btn btn-outline-secondary">Back to List</a>
 </div>
 
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
@@ -21,49 +21,41 @@
 }
 else
 {
-    <div class="detail-section">
-        <h3>Properties</h3>
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label">Account Name</label>
-                <input type="text" class="form-control" @bind="_accountName" />
-            </div>
-            <div class="col-auto d-flex align-items-end">
-                <button class="btn btn-primary" @onclick="SaveAsync" disabled="@_loading">Save</button>
-            </div>
-        </div>
+    <div class="props-grid mb-3">
+        <span class="prop-label">Account Name</span>
+        <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_accountName" /></div>
     </div>
+    <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
 
-    <div class="detail-section">
-        <h3>Users</h3>
-        <div class="row g-3 mb-3">
-            <div class="col-auto flex-grow-1">
-                <input type="text" class="form-control" @bind="_newUserId" placeholder="User ID (GUID)" />
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-outline-primary" @onclick="AddUserAsync" disabled="@_loading">Add User</button>
-            </div>
+    <div class="section-bar mt-4">
+        <h6>Users</h6>
+        <div class="d-flex gap-2 align-items-center">
+            <input type="text" class="form-control form-control-sm" style="width: 260px;" @bind="_newUserId" placeholder="User ID (GUID)" />
+            <button class="btn btn-primary btn-sm" @onclick="AddUserAsync" disabled="@_loading">Add User</button>
         </div>
-        <table class="table table-hover mb-0">
-            <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
-            <tbody>
-                @if (_users.Count == 0)
-                {
-                    <tr><td colspan="2" class="text-muted text-center">No users</td></tr>
-                }
-                @foreach (var user in _users)
-                {
-                    <tr>
-                        <td>@user.Name</td>
-                        <td class="table-actions">
-                            <a href="@AppRoutes.Blazor.Users/@user.Id" class="btn btn-sm btn-outline-primary">View</a>
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)">Remove</button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
     </div>
+    <table class="table table-sm table-striped table-hover mb-0">
+        <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+        <tbody>
+            @if (_users.Count == 0)
+            {
+                <tr><td colspan="2" class="text-muted text-center">No users</td></tr>
+            }
+            @foreach (var user in _users)
+            {
+                <tr>
+                    <td>
+                        @user.Name
+                        <br /><small class="guid-text">@user.Id</small>
+                    </td>
+                    <td class="table-actions">
+                        <a href="@AppRoutes.Users/@user.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
+                        <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
 
 <ConfirmModal @ref="_confirmModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />
@@ -84,7 +76,7 @@ else
         }
         else
         {
-            NavigationManager.NavigateTo(AppRoutes.Blazor.Accounts);
+            NavigationManager.NavigateTo(AppRoutes.Accounts);
         }
     }
 

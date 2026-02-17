@@ -16,12 +16,22 @@ public class SwitchAccountModel(
 {
     private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
 
-    public IActionResult OnGet()
+    public async Task<IActionResult> OnGetAsync(Guid? accountId = null, string? returnUrl = null)
     {
-        return Redirect(AppRoutes.Dashboard);
+        if (accountId == null)
+        {
+            return Redirect(AppRoutes.Dashboard);
+        }
+
+        return await SwitchAndRedirectAsync(accountId.Value, returnUrl);
     }
 
     public async Task<IActionResult> OnPostAsync(Guid accountId, string? returnUrl)
+    {
+        return await SwitchAndRedirectAsync(accountId, returnUrl);
+    }
+
+    private async Task<IActionResult> SwitchAndRedirectAsync(Guid accountId, string? returnUrl)
     {
         var result = await authenticationService.SwitchAccountAsync(
             new SwitchAccountRequest(accountId)

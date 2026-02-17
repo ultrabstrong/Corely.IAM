@@ -11,30 +11,28 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "Disabled",
-                table: "Users");
+            migrationBuilder.DropColumn(name: "Disabled", table: "Users");
 
             migrationBuilder.AddColumn<DateTime>(
                 name: "LockedUtc",
                 table: "Users",
                 type: "datetime(6)",
-                nullable: true);
+                nullable: true
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "LockedUtc",
-                table: "Users");
+            migrationBuilder.DropColumn(name: "LockedUtc", table: "Users");
 
             migrationBuilder.AddColumn<bool>(
                 name: "Disabled",
                 table: "Users",
                 type: "tinyint(1)",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
         }
     }
 }

@@ -2,11 +2,11 @@
 @model Corely.IAM.Web.Pages.Authentication.RegisterModel
 @{
     Layout = "_AuthLayout";
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = "Sign Up";
 }
 
 <div class="auth-card">
-    <h2 class="text-center mb-4">Create Account</h2>
+    <h2 class="text-center mb-4">Sign Up</h2>
 
     @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
     {
@@ -33,10 +33,10 @@
             <label for="confirmPassword" class="form-label">Confirm Password</label>
             <input type="password" class="form-control" id="confirmPassword" name="ConfirmPassword" required />
         </div>
-        <button type="submit" class="btn btn-primary w-100">Register</button>
+        <button type="submit" class="btn btn-primary w-100">Sign Up</button>
     </form>
 
     <div class="text-center mt-3">
-        Already have an account? <a href="@Corely.IAM.Web.AppRoutes.SignIn">Sign in</a>
+        Already signed up? <a href="@Corely.IAM.Web.AppRoutes.SignIn">Sign in</a>
     </div>
 </div>

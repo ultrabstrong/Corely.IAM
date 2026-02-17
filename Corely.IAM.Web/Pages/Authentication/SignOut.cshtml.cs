@@ -11,12 +11,17 @@ public class SignOutModel(
     IAuthCookieManager authCookieManager
 ) : PageModel
 {
-    public IActionResult OnGet()
+    public async Task<IActionResult> OnGetAsync()
     {
-        return Redirect(AppRoutes.Dashboard);
+        return await SignOutCoreAsync();
     }
 
     public async Task<IActionResult> OnPostAsync()
+    {
+        return await SignOutCoreAsync();
+    }
+
+    private async Task<IActionResult> SignOutCoreAsync()
     {
         var tokenId = Request.Cookies[AuthenticationConstants.AUTH_TOKEN_ID_COOKIE];
         if (!string.IsNullOrWhiteSpace(tokenId))

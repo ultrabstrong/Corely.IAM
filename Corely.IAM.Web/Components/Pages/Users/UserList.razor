@@ -8,6 +8,7 @@
 
 <div class="management-header">
     <h1><i class="bi bi-people me-2"></i>Users</h1>
+    <a href="@AppRoutes.Dashboard" class="btn btn-outline-secondary btn-sm">Dashboard</a>
 </div>
 
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
@@ -19,7 +20,31 @@
 else
 {
     <table class="table table-sm table-hover mb-0">
-        <thead><tr><th>Username</th><th>Email</th><th class="table-actions">Actions</th></tr></thead>
+        <thead>
+            <tr>
+                <th class="@GetSortClass(nameof(User.Username))" @onclick="() => CycleSortAsync(nameof(User.Username))">
+                    <span>Username <i class="bi @(GetSortIcon(nameof(User.Username))) sort-icon"></i></span>
+                    <div class="th-search" @onclick:stopPropagation="true">
+                        <input type="text" class="form-control"
+                               placeholder="Search..."
+                               @bind="_searchText"
+                               @bind:event="oninput"
+                               @bind:after="OnSearchChangedAsync" />
+                    </div>
+                </th>
+                <th class="@GetSortClass(nameof(User.Email))" @onclick="() => CycleSortAsync(nameof(User.Email))">
+                    <span>Email <i class="bi @(GetSortIcon(nameof(User.Email))) sort-icon"></i></span>
+                    <div class="th-search" @onclick:stopPropagation="true">
+                        <input type="text" class="form-control"
+                               placeholder="Search..."
+                               @bind="_searchEmail"
+                               @bind:event="oninput"
+                               @bind:after="OnSearchChangedAsync" />
+                    </div>
+                </th>
+                <th class="table-actions">Actions</th>
+            </tr>
+        </thead>
         <tbody>
             @if (_items == null || _items.Count == 0)
             {
@@ -51,11 +76,35 @@ else
 <ConfirmModal @ref="_confirmModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveAsync" />
 
 @code {
+    private string _searchEmail = string.Empty;
     private ConfirmModal _confirmModal = null!;
 
     protected override async Task LoadCoreAsync()
     {
-        var result = await RetrievalService.ListUsersAsync(skip: _skip, take: _take);
+        var filterBuilder = Filter.For<User>();
+        var hasFilter = false;
+        if (!string.IsNullOrWhiteSpace(_searchText))
+        {
+            filterBuilder.Where(u => u.Username, StringFilter.Contains(_searchText.Trim()));
+            hasFilter = true;
+        }
+        if (!string.IsNullOrWhiteSpace(_searchEmail))
+        {
+            filterBuilder.Where(u => u.Email, StringFilter.Contains(_searchEmail.Trim()));
+            hasFilter = true;
+        }
+        var filter = hasFilter ? filterBuilder : null;
+        OrderBuilder<User>? order = null;
+        if (_sortColumn != null && _sortDirection != null)
+        {
+            order = _sortColumn switch
+            {
+                nameof(User.Username) => Order.For<User>().By(u => u.Username, _sortDirection.Value),
+                nameof(User.Email) => Order.For<User>().By(u => u.Email, _sortDirection.Value),
+                _ => null
+            };
+        }
+        var result = await RetrievalService.ListUsersAsync(filter: filter, order: order, skip: _skip, take: _take);
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             _items = result.Data.Items;

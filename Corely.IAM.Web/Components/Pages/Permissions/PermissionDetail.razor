@@ -42,6 +42,8 @@ else
         </span>
     </div>
 
+    <EffectivePermissionsPanel Permissions="_effectivePermissions" />
+
     <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { Id }">
         <div class="danger-zone">
             <button class="btn btn-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete Permission</button>
@@ -53,6 +55,7 @@ else
 
 @code {
     private Permission? _permission;
+    private List<EffectivePermission>? _effectivePermissions;
     private ConfirmModal _confirmModal = null!;
 
     protected override async Task LoadCoreAsync()
@@ -61,6 +64,7 @@ else
         if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
         {
             _permission = result.Item;
+            _effectivePermissions = result.EffectivePermissions;
         }
     }
 

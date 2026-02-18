@@ -26,15 +26,31 @@ else if (_group == null)
 else
 {
     <!-- Properties -->
-    <div class="props-grid mb-3">
-        <span class="prop-label">Name</span>
-        <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editName" /></div>
-        <span class="prop-label">Description</span>
-        <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editDescription" placeholder="Optional" /></div>
-    </div>
-    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-        <button class="btn btn-primary btn-sm" @onclick="SavePropertiesAsync" disabled="@_loading">Save</button>
-    </PermissionView>
+    @if (_isEditing)
+    {
+        <div class="props-grid mb-3">
+            <span class="prop-label">Name</span>
+            <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editName" /></div>
+            <span class="prop-label">Description</span>
+            <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editDescription" placeholder="Optional" /></div>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm" @onclick="SavePropertiesAsync" disabled="@_loading">Save</button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
+        </div>
+    }
+    else
+    {
+        <div class="props-grid mb-3">
+            <span class="prop-label">Name</span>
+            <span class="prop-value">@_group.Name</span>
+            <span class="prop-label">Description</span>
+            <span class="prop-value">@(_group.Description ?? "—")</span>
+        </div>
+        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+            <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
+        </PermissionView>
+    }
 
     <!-- Users -->
     <div class="section-bar mt-4">
@@ -52,7 +68,7 @@ else
             }
             else
             {
-                @foreach (var user in _group.Users)
+                @foreach (var user in PagedUsers)
                 {
                     <tr>
                         <td>
@@ -69,6 +85,8 @@ else
             }
         </tbody>
     </table>
+    <Pagination Skip="_usersSkip" Take="@RelationPageSize" TotalCount="@UsersTotalCount"
+                OnPageChanged="newSkip => { _usersSkip = newSkip; StateHasChanged(); }" />
 
     <!-- Roles -->
     <div class="section-bar mt-4">
@@ -86,7 +104,7 @@ else
             }
             else
             {
-                @foreach (var role in _group.Roles)
+                @foreach (var role in PagedRoles)
                 {
                     <tr>
                         <td>
@@ -103,6 +121,10 @@ else
             }
         </tbody>
     </table>
+    <Pagination Skip="_rolesSkip" Take="@RelationPageSize" TotalCount="@RolesTotalCount"
+                OnPageChanged="newSkip => { _rolesSkip = newSkip; StateHasChanged(); }" />
+
+    <EffectivePermissionsPanel Permissions="_effectivePermissions" />
 }
 
 <EntityPickerModal @ref="_userPickerModal"
@@ -126,12 +148,24 @@ else
     private Group? _group;
     private string _editName = string.Empty;
     private string? _editDescription;
+    private string _originalName = string.Empty;
+    private string? _originalDescription;
+    private bool _isEditing;
+    private List<EffectivePermission>? _effectivePermissions;
     private EntityPickerModal _userPickerModal = null!;
     private EntityPickerModal _rolePickerModal = null!;
     private ConfirmModal _removeUserModal = null!;
     private ConfirmModal _removeRoleModal = null!;
     private HashSet<Guid> _assignedUserIds = [];
     private HashSet<Guid> _assignedRoleIds = [];
+
+    private int _usersSkip;
+    private int _rolesSkip;
+    private const int RelationPageSize = 10;
+    private List<ChildRef> PagedUsers => (_group?.Users ?? []).Skip(_usersSkip).Take(RelationPageSize).ToList();
+    private int UsersTotalCount => _group?.Users?.Count ?? 0;
+    private List<ChildRef> PagedRoles => (_group?.Roles ?? []).Skip(_rolesSkip).Take(RelationPageSize).ToList();
+    private int RolesTotalCount => _group?.Roles?.Count ?? 0;
 
     protected override async Task LoadCoreAsync()
     {
@@ -143,7 +177,22 @@ else
             _editDescription = _group.Description;
             _assignedUserIds = (_group.Users ?? []).Select(u => u.Id).ToHashSet();
             _assignedRoleIds = (_group.Roles ?? []).Select(r => r.Id).ToHashSet();
+            _effectivePermissions = result.EffectivePermissions;
         }
+    }
+
+    private void StartEdit()
+    {
+        _originalName = _editName;
+        _originalDescription = _editDescription;
+        _isEditing = true;
+    }
+
+    private void CancelEdit()
+    {
+        _editName = _originalName;
+        _editDescription = _originalDescription;
+        _isEditing = false;
     }
 
     private async Task<(List<PickerItem>, int)> FetchAvailableUsersAsync(int skip, int take)
@@ -175,7 +224,11 @@ else
         {
             var result = await ModificationService.ModifyGroupAsync(new UpdateGroupRequest(Id, _editName, _editDescription));
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Group updated.", result.Message);
-            await ReloadAsync();
+            if (result.ResultCode == ModifyResultCode.Success)
+            {
+                _isEditing = false;
+                await ReloadAsync();
+            }
         });
     }
 

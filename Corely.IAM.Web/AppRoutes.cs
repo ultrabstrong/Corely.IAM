@@ -8,6 +8,10 @@ public static class AppRoutes
     public const string SignOut = "/signout";
     public const string SelectAccount = "/select-account";
 
+    // Legal (Razor Pages)
+    public const string Privacy = "/privacy";
+    public const string Terms = "/terms";
+
     // Management (Blazor)
     public const string Dashboard = "/";
     public const string Accounts = "/accounts";

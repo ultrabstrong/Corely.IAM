@@ -13,6 +13,7 @@
     <NoWarn></NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Corely.Common" Version="1.2.1" />
     <PackageReference Include="CSharpier.MsBuild" Version="1.2.5">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

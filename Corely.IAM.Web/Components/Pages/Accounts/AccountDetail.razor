@@ -10,7 +10,7 @@
 
 <div class="management-header">
     <h1><i class="bi bi-building me-2"></i>@_accountName <span class="resource-label">Account</span></h1>
-    <a href="@AppRoutes.Accounts" class="btn btn-outline-secondary">Back to List</a>
+    <a href="@AppRoutes.Accounts" class="btn btn-outline-secondary btn-sm">Back to List</a>
 </div>
 
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
@@ -21,11 +21,27 @@
 }
 else
 {
-    <div class="props-grid mb-3">
-        <span class="prop-label">Account Name</span>
-        <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_accountName" /></div>
-    </div>
-    <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
+    @if (_isEditing)
+    {
+        <div class="props-grid mb-3">
+            <span class="prop-label">Account Name</span>
+            <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_accountName" /></div>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
+        </div>
+    }
+    else
+    {
+        <div class="props-grid mb-3">
+            <span class="prop-label">Account Name</span>
+            <span class="prop-value">@_accountName</span>
+        </div>
+        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+            <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
+        </PermissionView>
+    }
 
     <div class="section-bar mt-4">
         <h6>Users</h6>
@@ -41,7 +57,7 @@ else
             {
                 <tr><td colspan="2" class="text-muted text-center">No users</td></tr>
             }
-            @foreach (var user in _users)
+            @foreach (var user in PagedUsers)
             {
                 <tr>
                     <td>
@@ -56,15 +72,27 @@ else
             }
         </tbody>
     </table>
+    <Pagination Skip="_usersSkip" Take="@RelationPageSize" TotalCount="@UsersTotalCount"
+                OnPageChanged="newSkip => { _usersSkip = newSkip; StateHasChanged(); }" />
+
+    <EffectivePermissionsPanel Permissions="_effectivePermissions" />
 }
 
 <ConfirmModal @ref="_confirmModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />
 
 @code {
     private string? _accountName;
+    private string? _originalAccountName;
+    private bool _isEditing;
     private List<ChildRef> _users = [];
     private string? _newUserId;
+    private List<EffectivePermission>? _effectivePermissions;
     private ConfirmModal _confirmModal = null!;
+
+    private int _usersSkip;
+    private const int RelationPageSize = 10;
+    private List<ChildRef> PagedUsers => _users.Skip(_usersSkip).Take(RelationPageSize).ToList();
+    private int UsersTotalCount => _users.Count;
 
     protected override async Task LoadCoreAsync()
     {
@@ -73,11 +101,24 @@ else
         {
             _accountName = result.Item.AccountName;
             _users = result.Item.Users ?? [];
+            _effectivePermissions = result.EffectivePermissions;
         }
         else
         {
             NavigationManager.NavigateTo(AppRoutes.Accounts);
         }
+    }
+
+    private void StartEdit()
+    {
+        _originalAccountName = _accountName;
+        _isEditing = true;
+    }
+
+    private void CancelEdit()
+    {
+        _accountName = _originalAccountName;
+        _isEditing = false;
     }
 
     private async Task SaveAsync()
@@ -87,6 +128,8 @@ else
         {
             var result = await ModificationService.ModifyAccountAsync(new UpdateAccountRequest(Id, _accountName));
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Saved.", result.Message);
+            if (result.ResultCode == ModifyResultCode.Success)
+                _isEditing = false;
         });
     }
 

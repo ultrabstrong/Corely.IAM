@@ -1,0 +1,112 @@
+@if (Permissions != null && Permissions.Count > 0)
+{
+    <div class="section-bar mt-4">
+        <h6>Your Access</h6>
+    </div>
+    <div class="effective-permissions-panel">
+        <div class="d-flex gap-2 mb-3">
+            <span class="permission-badge @(_agg.Create ? "active" : "inactive")">C</span>
+            <span class="permission-badge @(_agg.Read ? "active" : "inactive")">R</span>
+            <span class="permission-badge @(_agg.Update ? "active" : "inactive")">U</span>
+            <span class="permission-badge @(_agg.Delete ? "active" : "inactive")">D</span>
+            <span class="permission-badge @(_agg.Execute ? "active" : "inactive")">X</span>
+        </div>
+
+        <div class="ep-grants">
+            <small class="text-muted d-block mb-1">Granted via:</small>
+            @foreach (var role in _derivations)
+            {
+                <div class="ep-grant-row">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-shield text-muted"></i>
+                        <a href="@AppRoutes.Roles/@role.RoleId" class="text-decoration-none">@role.RoleName</a>
+                        @if (role.IsDirect)
+                        {
+                            <span class="ep-via-badge direct">direct</span>
+                        }
+                        @foreach (var group in role.Groups)
+                        {
+                            <span class="ep-via-badge group">
+                                via <a href="@AppRoutes.Groups/@group.Key" class="text-decoration-none">@group.Value</a>
+                            </span>
+                        }
+                    </div>
+                    <span class="ep-crudx-mini">@role.CrudxLabel</span>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public List<EffectivePermission>? Permissions { get; set; }
+
+    private (bool Create, bool Read, bool Update, bool Delete, bool Execute) _agg;
+    private List<RoleDerivation> _derivations = [];
+
+    protected override void OnParametersSet()
+    {
+        if (Permissions == null || Permissions.Count == 0)
+            return;
+
+        _agg = (
+            Permissions.Any(p => p.Create),
+            Permissions.Any(p => p.Read),
+            Permissions.Any(p => p.Update),
+            Permissions.Any(p => p.Delete),
+            Permissions.Any(p => p.Execute)
+        );
+
+        var roleMap = new Dictionary<Guid, RoleDerivation>();
+        foreach (var perm in Permissions)
+        {
+            foreach (var role in perm.Roles)
+            {
+                if (!roleMap.TryGetValue(role.RoleId, out var derivation))
+                {
+                    derivation = new RoleDerivation(role.RoleId, role.RoleName);
+                    roleMap[role.RoleId] = derivation;
+                }
+                derivation.IsDirect |= role.IsDirect;
+                derivation.Create |= perm.Create;
+                derivation.Read |= perm.Read;
+                derivation.Update |= perm.Update;
+                derivation.Delete |= perm.Delete;
+                derivation.Execute |= perm.Execute;
+                foreach (var group in role.Groups)
+                {
+                    derivation.Groups.TryAdd(group.GroupId, group.GroupName);
+                }
+            }
+        }
+        _derivations = roleMap.Values.OrderBy(r => r.RoleName).ToList();
+    }
+
+    private class RoleDerivation(Guid roleId, string roleName)
+    {
+        public Guid RoleId { get; } = roleId;
+        public string RoleName { get; } = roleName;
+        public bool IsDirect { get; set; }
+        public bool Create { get; set; }
+        public bool Read { get; set; }
+        public bool Update { get; set; }
+        public bool Delete { get; set; }
+        public bool Execute { get; set; }
+        public Dictionary<Guid, string> Groups { get; } = [];
+
+        public string CrudxLabel
+        {
+            get
+            {
+                var parts = new List<string>();
+                if (Create) parts.Add("C");
+                if (Read) parts.Add("R");
+                if (Update) parts.Add("U");
+                if (Delete) parts.Add("D");
+                if (Execute) parts.Add("X");
+                return string.Join(" ", parts);
+            }
+        }
+    }
+}

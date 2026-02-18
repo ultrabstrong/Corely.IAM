@@ -26,23 +26,39 @@ else if (_role == null)
 else
 {
     <!-- Properties -->
-    <div class="props-grid mb-3">
-        <span class="prop-label">Name</span>
-        <div class="prop-value">
-            <input type="text" class="form-control form-control-sm" @bind="_editName" disabled="@_role.IsSystemDefined" />
-            @if (_role.IsSystemDefined)
-            {
-                <span class="sys-badge ms-2">System</span>
-            }
-        </div>
-        <span class="prop-label">Description</span>
-        <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editDescription" placeholder="Optional" disabled="@_role.IsSystemDefined" /></div>
-    </div>
-    @if (!_role.IsSystemDefined)
+    @if (_isEditing)
     {
-        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+        <div class="props-grid mb-3">
+            <span class="prop-label">Name</span>
+            <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editName" /></div>
+            <span class="prop-label">Description</span>
+            <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editDescription" placeholder="Optional" /></div>
+        </div>
+        <div class="d-flex gap-2">
             <button class="btn btn-primary btn-sm" @onclick="SavePropertiesAsync" disabled="@_loading">Save</button>
-        </PermissionView>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
+        </div>
+    }
+    else
+    {
+        <div class="props-grid mb-3">
+            <span class="prop-label">Name</span>
+            <span class="prop-value">
+                @_role.Name
+                @if (_role.IsSystemDefined)
+                {
+                    <span class="sys-badge ms-2">System</span>
+                }
+            </span>
+            <span class="prop-label">Description</span>
+            <span class="prop-value">@(_role.Description ?? "—")</span>
+        </div>
+        @if (!_role.IsSystemDefined)
+        {
+            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
+            </PermissionView>
+        }
     }
 
     <!-- Permissions -->
@@ -61,7 +77,7 @@ else
             }
             else
             {
-                @foreach (var permission in _role.Permissions)
+                @foreach (var permission in PagedPermissions)
                 {
                     <tr>
                         <td>
@@ -78,6 +94,10 @@ else
             }
         </tbody>
     </table>
+    <Pagination Skip="_permissionsSkip" Take="@RelationPageSize" TotalCount="@PermissionsTotalCount"
+                OnPageChanged="newSkip => { _permissionsSkip = newSkip; StateHasChanged(); }" />
+
+    <EffectivePermissionsPanel Permissions="_effectivePermissions" />
 }
 
 <EntityPickerModal @ref="_permissionPickerModal"
@@ -93,9 +113,18 @@ else
     private Role? _role;
     private string _editName = string.Empty;
     private string? _editDescription;
+    private string _originalName = string.Empty;
+    private string? _originalDescription;
+    private bool _isEditing;
     private HashSet<Guid> _assignedPermissionIds = [];
+    private List<EffectivePermission>? _effectivePermissions;
     private EntityPickerModal _permissionPickerModal = null!;
     private ConfirmModal _removePermissionModal = null!;
+
+    private int _permissionsSkip;
+    private const int RelationPageSize = 10;
+    private List<ChildRef> PagedPermissions => (_role?.Permissions ?? []).Skip(_permissionsSkip).Take(RelationPageSize).ToList();
+    private int PermissionsTotalCount => _role?.Permissions?.Count ?? 0;
 
     protected override async Task LoadCoreAsync()
     {
@@ -106,7 +135,22 @@ else
             _editName = _role.Name;
             _editDescription = _role.Description;
             _assignedPermissionIds = (_role.Permissions ?? []).Select(p => p.Id).ToHashSet();
+            _effectivePermissions = result.EffectivePermissions;
         }
+    }
+
+    private void StartEdit()
+    {
+        _originalName = _editName;
+        _originalDescription = _editDescription;
+        _isEditing = true;
+    }
+
+    private void CancelEdit()
+    {
+        _editName = _originalName;
+        _editDescription = _originalDescription;
+        _isEditing = false;
     }
 
     private async Task<(List<PickerItem>, int)> FetchAvailablePermissionsAsync(int skip, int take)
@@ -129,7 +173,11 @@ else
         {
             var result = await ModificationService.ModifyRoleAsync(new UpdateRoleRequest(Id, _editName, _editDescription));
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Role updated.", result.Message);
-            await ReloadAsync();
+            if (result.ResultCode == ModifyResultCode.Success)
+            {
+                _isEditing = false;
+                await ReloadAsync();
+            }
         });
     }
 

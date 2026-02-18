@@ -15,10 +15,20 @@
 }
 
 .auth-card .nav-tabs {
+    display: flex;
     border-bottom: 2px solid #dee2e6;
 }
 
+.auth-card .nav-tabs .nav-item {
+    flex: 1;
+    text-align: center;
+}
+
 .auth-card .nav-tabs .nav-link {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: none;
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
@@ -169,6 +179,41 @@
     display: inline;
 }
 
+/* Sortable table headers */
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s;
+}
+
+th.sortable:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+th.sortable.active {
+    color: #0d6efd;
+}
+
+th.sortable .sort-icon {
+    font-size: 0.7rem;
+    opacity: 0.4;
+    margin-left: 0.25rem;
+}
+
+th.sortable.active .sort-icon {
+    opacity: 1;
+}
+
+.th-search {
+    padding: 0.25rem 0 0;
+}
+
+.th-search .form-control {
+    font-size: 0.78rem;
+    padding: 0.15rem 0.4rem;
+    font-weight: 400;
+}
+
 /* GUID display */
 .guid-text {
     font-size: 0.72rem;
@@ -199,18 +244,75 @@
     color: #adb5bd;
 }
 
-/* System badge */
-.sys-badge {
+/* Managed-by badges */
+.sys-badge,
+.user-badge {
     font-size: 0.65rem;
     font-weight: 600;
     padding: 0.15rem 0.4rem;
     border-radius: 3px;
-    background: #e9ecef;
-    color: #6c757d;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     vertical-align: middle;
     margin-left: 0.4rem;
+}
+
+.sys-badge {
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+.user-badge {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Effective permissions panel */
+.effective-permissions-panel {
+    padding: 0.75rem 0;
+}
+
+.ep-grant-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+}
+
+.ep-grant-row:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.ep-via-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.ep-via-badge.direct {
+    background: #d4edda;
+    color: #155724;
+}
+
+.ep-via-badge.group {
+    background: #e2e3f1;
+    color: #383d6e;
+}
+
+.ep-via-badge.group a {
+    color: inherit;
+}
+
+.ep-crudx-mini {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6c757d;
+    letter-spacing: 0.15em;
+    font-family: monospace;
 }
 
 /* Danger zone */

@@ -28,7 +28,7 @@ internal class UserContextProvider(IAuthenticationProvider authenticationProvide
             return validationResult.ResultCode;
         }
 
-        if (string.IsNullOrEmpty(validationResult.DeviceId))
+        if (string.IsNullOrWhiteSpace(validationResult.DeviceId))
         {
             return UserAuthTokenValidationResultCode.MissingDeviceIdClaim;
         }

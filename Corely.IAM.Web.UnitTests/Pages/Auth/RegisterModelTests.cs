@@ -4,8 +4,6 @@ using Corely.IAM.Services;
 using Corely.IAM.Web.Pages.Authentication;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.UnitTests.Helpers;
-using Corely.Security.Password;
-using Corely.Security.PasswordValidation.Providers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -103,10 +101,11 @@ public class RegisterModelTests
         _model.ConfirmPassword = "weak";
         _mockRegistrationService
             .Setup(s => s.RegisterUserAsync(It.IsAny<RegisterUserRequest>()))
-            .ThrowsAsync(
-                new PasswordValidationException(
-                    new PasswordValidationResult(false, ["Password must be at least 8 characters"]),
-                    "Password validation failed"
+            .ReturnsAsync(
+                new RegisterUserResult(
+                    RegisterUserResultCode.BasicAuthCreationError,
+                    "Password must be at least 8 characters",
+                    Guid.Empty
                 )
             );
 

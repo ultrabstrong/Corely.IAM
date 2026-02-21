@@ -5,7 +5,6 @@ using Corely.IAM.BasicAuths.Mappers;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.Validators;
 using Corely.Security.Hashing.Factories;
-using Corely.Security.Password;
 using Corely.Security.PasswordValidation.Providers;
 using Microsoft.Extensions.Logging;
 
@@ -55,9 +54,10 @@ internal class BasicAuthProcessor(
         );
         if (!passwordValidationResults.IsSuccess)
         {
-            throw new PasswordValidationException(
-                passwordValidationResults,
-                "Password validation failed"
+            return new CreateBasicAuthResult(
+                CreateBasicAuthResultCode.PasswordValidationError,
+                string.Join(" ", passwordValidationResults.ValidationFailures),
+                Guid.Empty
             );
         }
 
@@ -96,9 +96,9 @@ internal class BasicAuthProcessor(
         );
         if (!passwordValidationResults.IsSuccess)
         {
-            throw new PasswordValidationException(
-                passwordValidationResults,
-                "Password validation failed"
+            return new UpdateBasicAuthResult(
+                UpdateBasicAuthResultCode.PasswordValidationError,
+                string.Join(" ", passwordValidationResults.ValidationFailures)
             );
         }
 

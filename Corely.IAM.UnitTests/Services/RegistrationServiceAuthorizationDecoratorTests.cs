@@ -41,8 +41,12 @@ public class RegistrationServiceAuthorizationDecoratorTests
         _mockInnerService.Verify(x => x.RegisterUserAsync(request), Times.Once);
     }
 
+    #endregion
+
+    #region Account-Context-Gated Methods
+
     [Fact]
-    public async Task RegisterUsersWithGroupAsync_DelegatesToInner()
+    public async Task RegisterUsersWithGroupAsync_DelegatesToInner_WhenHasAccountContext()
     {
         var request = new RegisterUsersWithGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -54,6 +58,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
             2,
             []
         );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService
             .Setup(x => x.RegisterUsersWithGroupAsync(request))
             .ReturnsAsync(expectedResult);
@@ -65,7 +70,25 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterRolesWithGroupAsync_DelegatesToInner()
+    public async Task RegisterUsersWithGroupAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    {
+        var request = new RegisterUsersWithGroupRequest(
+            [Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+
+        var result = await _decorator.RegisterUsersWithGroupAsync(request);
+
+        Assert.Equal(AddUsersToGroupResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(
+            x => x.RegisterUsersWithGroupAsync(It.IsAny<RegisterUsersWithGroupRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task RegisterRolesWithGroupAsync_DelegatesToInner_WhenHasAccountContext()
     {
         var request = new RegisterRolesWithGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -77,6 +100,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
             2,
             []
         );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService
             .Setup(x => x.RegisterRolesWithGroupAsync(request))
             .ReturnsAsync(expectedResult);
@@ -88,7 +112,25 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterRolesWithUserAsync_DelegatesToInner()
+    public async Task RegisterRolesWithGroupAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    {
+        var request = new RegisterRolesWithGroupRequest(
+            [Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+
+        var result = await _decorator.RegisterRolesWithGroupAsync(request);
+
+        Assert.Equal(AssignRolesToGroupResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(
+            x => x.RegisterRolesWithGroupAsync(It.IsAny<RegisterRolesWithGroupRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task RegisterRolesWithUserAsync_DelegatesToInner_WhenHasAccountContext()
     {
         var request = new RegisterRolesWithUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -100,6 +142,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
             2,
             []
         );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService
             .Setup(x => x.RegisterRolesWithUserAsync(request))
             .ReturnsAsync(expectedResult);
@@ -111,7 +154,25 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterPermissionsWithRoleAsync_DelegatesToInner()
+    public async Task RegisterRolesWithUserAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    {
+        var request = new RegisterRolesWithUserRequest(
+            [Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+
+        var result = await _decorator.RegisterRolesWithUserAsync(request);
+
+        Assert.Equal(AssignRolesToUserResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(
+            x => x.RegisterRolesWithUserAsync(It.IsAny<RegisterRolesWithUserRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task RegisterPermissionsWithRoleAsync_DelegatesToInner_WhenHasAccountContext()
     {
         var request = new RegisterPermissionsWithRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -123,6 +184,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
             2,
             []
         );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService
             .Setup(x => x.RegisterPermissionsWithRoleAsync(request))
             .ReturnsAsync(expectedResult);
@@ -131,6 +193,24 @@ public class RegistrationServiceAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.RegisterPermissionsWithRoleAsync(request), Times.Once);
+    }
+
+    [Fact]
+    public async Task RegisterPermissionsWithRoleAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    {
+        var request = new RegisterPermissionsWithRoleRequest(
+            [Guid.CreateVersion7()],
+            Guid.CreateVersion7()
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+
+        var result = await _decorator.RegisterPermissionsWithRoleAsync(request);
+
+        Assert.Equal(AssignPermissionsToRoleResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(
+            x => x.RegisterPermissionsWithRoleAsync(It.IsAny<RegisterPermissionsWithRoleRequest>()),
+            Times.Never
+        );
     }
 
     #endregion

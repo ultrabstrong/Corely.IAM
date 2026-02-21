@@ -169,7 +169,7 @@ internal class AuthenticationProvider(
         }
 
         var jti = GetClaimValue(jwtToken, JwtRegisteredClaimNames.Jti);
-        if (string.IsNullOrEmpty(jti))
+        if (string.IsNullOrWhiteSpace(jti))
         {
             _logger.LogInformation("Auth token does not contain jti claim");
             return CreateFailedValidationResult(

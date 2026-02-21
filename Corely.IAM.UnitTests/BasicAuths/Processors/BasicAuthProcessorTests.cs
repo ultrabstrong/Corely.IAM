@@ -4,7 +4,6 @@ using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Validators;
 using Corely.Security.Hashing.Factories;
-using Corely.Security.Password;
 using Corely.Security.PasswordValidation.Providers;
 using Microsoft.Extensions.Logging;
 
@@ -51,19 +50,15 @@ public class BasicAuthProcessorTests
     }
 
     [Fact]
-    public async Task CreateBasicAuthAsync_Throws_WhenPasswordValidationFails()
+    public async Task CreateBasicAuthAsync_ReturnsPasswordValidationError_WhenPasswordIsWeak()
     {
         var request = new CreateBasicAuthRequest(Guid.CreateVersion7(), "password");
 
-        var ex = await Record.ExceptionAsync(() =>
-            _basicAuthProcessor.CreateBasicAuthAsync(request)
-        );
+        var result = await _basicAuthProcessor.CreateBasicAuthAsync(request);
 
-        Assert.NotNull(ex);
-        var pvex = Assert.IsType<PasswordValidationException>(ex);
-        Assert.NotNull(pvex.PasswordValidationResult);
-        Assert.False(pvex.PasswordValidationResult.IsSuccess);
-        Assert.NotEmpty(pvex.PasswordValidationResult.ValidationFailures);
+        Assert.Equal(CreateBasicAuthResultCode.PasswordValidationError, result.ResultCode);
+        Assert.False(string.IsNullOrWhiteSpace(result.Message));
+        Assert.Equal(Guid.Empty, result.CreatedId);
     }
 
     [Fact]
@@ -99,21 +94,16 @@ public class BasicAuthProcessorTests
     }
 
     [Fact]
-    public async Task UpdateBasicAuthAsync_Throws_WhenPasswordValidationFails()
+    public async Task UpdateBasicAuthAsync_ReturnsPasswordValidationError_WhenPasswordIsWeak()
     {
         var createRequest = new CreateBasicAuthRequest(Guid.CreateVersion7(), VALID_PASSWORD);
         await _basicAuthProcessor.CreateBasicAuthAsync(createRequest);
 
         var updateRequest = new UpdateBasicAuthRequest(createRequest.UserId, "password");
+        var result = await _basicAuthProcessor.UpdateBasicAuthAsync(updateRequest);
 
-        var ex = await Record.ExceptionAsync(() =>
-            _basicAuthProcessor.UpdateBasicAuthAsync(updateRequest)
-        );
-
-        Assert.NotNull(ex);
-        var pvex = Assert.IsType<PasswordValidationException>(ex);
-        Assert.NotNull(pvex.PasswordValidationResult);
-        Assert.False(pvex.PasswordValidationResult.IsSuccess);
+        Assert.Equal(UpdateBasicAuthResultCode.PasswordValidationError, result.ResultCode);
+        Assert.False(string.IsNullOrWhiteSpace(result.Message));
     }
 
     [Fact]

@@ -4,6 +4,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Providers;
+using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Services;
 
@@ -67,19 +68,51 @@ internal class RegistrationServiceAuthorizationDecorator(
                 "Unauthorized to add user to account"
             );
 
-    public Task<RegisterUsersWithGroupResult> RegisterUsersWithGroupAsync(
+    public async Task<RegisterUsersWithGroupResult> RegisterUsersWithGroupAsync(
         RegisterUsersWithGroupRequest request
-    ) => _inner.RegisterUsersWithGroupAsync(request);
+    ) =>
+        _authorizationProvider.HasAccountContext()
+            ? await _inner.RegisterUsersWithGroupAsync(request)
+            : new RegisterUsersWithGroupResult(
+                AddUsersToGroupResultCode.UnauthorizedError,
+                "Unauthorized to add users to group",
+                0,
+                []
+            );
 
-    public Task<RegisterRolesWithGroupResult> RegisterRolesWithGroupAsync(
+    public async Task<RegisterRolesWithGroupResult> RegisterRolesWithGroupAsync(
         RegisterRolesWithGroupRequest request
-    ) => _inner.RegisterRolesWithGroupAsync(request);
+    ) =>
+        _authorizationProvider.HasAccountContext()
+            ? await _inner.RegisterRolesWithGroupAsync(request)
+            : new RegisterRolesWithGroupResult(
+                AssignRolesToGroupResultCode.UnauthorizedError,
+                "Unauthorized to assign roles to group",
+                0,
+                []
+            );
 
-    public Task<RegisterRolesWithUserResult> RegisterRolesWithUserAsync(
+    public async Task<RegisterRolesWithUserResult> RegisterRolesWithUserAsync(
         RegisterRolesWithUserRequest request
-    ) => _inner.RegisterRolesWithUserAsync(request);
+    ) =>
+        _authorizationProvider.HasAccountContext()
+            ? await _inner.RegisterRolesWithUserAsync(request)
+            : new RegisterRolesWithUserResult(
+                AssignRolesToUserResultCode.UnauthorizedError,
+                "Unauthorized to assign roles to user",
+                0,
+                []
+            );
 
-    public Task<RegisterPermissionsWithRoleResult> RegisterPermissionsWithRoleAsync(
+    public async Task<RegisterPermissionsWithRoleResult> RegisterPermissionsWithRoleAsync(
         RegisterPermissionsWithRoleRequest request
-    ) => _inner.RegisterPermissionsWithRoleAsync(request);
+    ) =>
+        _authorizationProvider.HasAccountContext()
+            ? await _inner.RegisterPermissionsWithRoleAsync(request)
+            : new RegisterPermissionsWithRoleResult(
+                AssignPermissionsToRoleResultCode.UnauthorizedError,
+                "Unauthorized to assign permissions to role",
+                0,
+                []
+            );
 }

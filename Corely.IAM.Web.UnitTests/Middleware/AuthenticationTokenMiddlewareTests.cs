@@ -14,7 +14,9 @@ public class AuthenticationTokenMiddlewareTests
 {
     private readonly Mock<IUserContextProvider> _mockUserContextProvider;
     private readonly Mock<ILogger<AuthenticationTokenMiddleware>> _mockLogger;
-    private readonly IAuthCookieManager _authCookieManager = new AuthCookieManager();
+    private readonly IAuthCookieManager _authCookieManager = new AuthCookieManager(
+        TimeProvider.System
+    );
     private readonly IUserContextClaimsBuilder _userContextClaimsBuilder =
         new UserContextClaimsBuilder();
 

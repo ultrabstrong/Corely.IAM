@@ -4,7 +4,6 @@ using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Validators;
-using Corely.Security.Password;
 
 namespace Corely.IAM.DevTools.Commands.Registration;
 
@@ -60,10 +59,6 @@ internal partial class Registration : CommandBase
             catch (ValidationException ex)
             {
                 Error(ex.ValidationResult!.Errors!.Select(e => e.Message));
-            }
-            catch (PasswordValidationException ex)
-            {
-                Error(ex.PasswordValidationResult.ValidationFailures);
             }
         }
     }

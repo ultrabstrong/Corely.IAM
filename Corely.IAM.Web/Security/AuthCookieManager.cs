@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Http;
 
 namespace Corely.IAM.Web.Security;
 
-public class AuthCookieManager : IAuthCookieManager
+public class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
 {
+    private readonly TimeProvider _timeProvider = timeProvider;
+
     public void SetAuthCookies(
         IResponseCookies cookies,
         string authToken,
@@ -18,7 +20,7 @@ public class AuthCookieManager : IAuthCookieManager
             Secure = isHttps,
             SameSite = SameSiteMode.Strict,
             Path = "/",
-            Expires = DateTimeOffset.UtcNow.AddSeconds(authTokenTtlSeconds),
+            Expires = _timeProvider.GetUtcNow().AddSeconds(authTokenTtlSeconds),
         };
 
         cookies.Append(AuthenticationConstants.AUTH_TOKEN_COOKIE, authToken, cookieOptions);
@@ -56,7 +58,7 @@ public class AuthCookieManager : IAuthCookieManager
                     Secure = context.Request.IsHttps,
                     SameSite = SameSiteMode.Strict,
                     Path = "/",
-                    Expires = DateTimeOffset.UtcNow.AddDays(90),
+                    Expires = _timeProvider.GetUtcNow().AddDays(90),
                 }
             );
         }

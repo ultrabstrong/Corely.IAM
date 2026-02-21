@@ -21,7 +21,7 @@ public class SelectAccountModel(
     IRetrievalService retrievalService
 ) : PageModel
 {
-    private const int PageSize = 25;
+    private const int PageSize = 10;
 
     private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
 

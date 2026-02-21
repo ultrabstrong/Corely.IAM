@@ -7,6 +7,7 @@ public static class AppRoutes
     public const string Register = "/register";
     public const string SignOut = "/signout";
     public const string SelectAccount = "/select-account";
+    public const string CreateAccount = "/create-account";
 
     // Legal (Razor Pages)
     public const string Privacy = "/privacy";

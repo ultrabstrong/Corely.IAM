@@ -42,9 +42,17 @@ else
             <span class="prop-label">Email</span>
             <span class="prop-value">@_email</span>
         </div>
-        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-            <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
-        </PermissionView>
+        <div class="d-flex gap-2">
+            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
+            </PermissionView>
+            @if (Id == UserContext?.User?.Id)
+            {
+                <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
+                </PermissionView>
+            }
+        </div>
     }
 
     <div class="section-bar mt-4">
@@ -87,6 +95,7 @@ else
                    OnConfirm="AddRolesAsync" />
 
 <ConfirmModal @ref="_confirmModal" Title="Remove Role" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveRoleAsync" />
+<ConfirmModal @ref="_deleteModal" Title="Delete User" Message="@($"Permanently delete user '{_username}'? This cannot be undone.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
     private string? _username;
@@ -99,6 +108,7 @@ else
     private List<EffectivePermission>? _effectivePermissions;
     private EntityPickerModal _rolePickerModal = null!;
     private ConfirmModal _confirmModal = null!;
+    private ConfirmModal _deleteModal = null!;
 
     private int _rolesSkip;
     private const int RelationPageSize = 10;
@@ -166,6 +176,22 @@ else
             var result = await RegistrationService.RegisterRolesWithUserAsync(new RegisterRolesWithUserRequest(roleIds, Id));
             SetResultMessage(result.ResultCode == AssignRolesToUserResultCode.Success, $"{roleIds.Count} role(s) assigned.", result.Message ?? "Failed.");
             await ReloadAsync();
+        });
+    }
+
+    private void ConfirmDelete() => _deleteModal.Show();
+
+    private async Task DeleteAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterUserAsync();
+            if (result.ResultCode == DeregisterUserResultCode.Success)
+            {
+                NavigationManager.NavigateTo(AppRoutes.SignOut, forceLoad: true);
+                return;
+            }
+            SetResultMessage(false, string.Empty, result.Message);
         });
     }
 

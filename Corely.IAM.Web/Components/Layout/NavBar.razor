@@ -1,5 +1,7 @@
 @inject IBlazorUserContextAccessor BlazorUserContextAccessor
 @inject NavigationManager NavigationManager
+@inject IAccountDisplayState AccountDisplayState
+@implements IDisposable
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
@@ -11,9 +13,6 @@
             @if (_isAuthenticated && _hasAccount)
             {
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="@AppRoutes.Accounts">Accounts</a>
-                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="@AppRoutes.Users">Users</a>
                     </li>
@@ -35,10 +34,10 @@
                     {
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-building"></i> @_accountName
+                                <i class="bi bi-building"></i> @DisplayAccountName
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="@AppRoutes.Accounts">Manage Accounts</a></li>
+                                <li><a class="dropdown-item" href="@AppRoutes.Accounts/@_accountId">Manage Account</a></li>
                                 <li><hr class="dropdown-divider" /></li>
                                 <li><a class="dropdown-item" href="@AppRoutes.SelectAccount" data-enhance-nav="false">Switch Account</a></li>
                             </ul>
@@ -47,7 +46,7 @@
                     else if (_accountName != null)
                     {
                         <li class="nav-item">
-                            <a class="nav-link" href="@AppRoutes.Accounts"><i class="bi bi-building"></i> @_accountName</a>
+                            <a class="nav-link" href="@AppRoutes.Accounts/@_accountId"><i class="bi bi-building"></i> @DisplayAccountName</a>
                         </li>
                     }
                     <li class="nav-item">
@@ -69,8 +68,11 @@
     private bool _hasAccount;
     private bool _hasMultipleAccounts;
     private Guid _userId;
+    private Guid _accountId;
     private string? _username;
     private string? _accountName;
+
+    private string? DisplayAccountName => AccountDisplayState.AccountName ?? _accountName;
 
     protected override async Task OnInitializedAsync()
     {
@@ -79,7 +81,19 @@
         _hasAccount = context?.CurrentAccount != null;
         _hasMultipleAccounts = context?.AvailableAccounts.Count > 1;
         _userId = context?.User?.Id ?? Guid.Empty;
+        _accountId = context?.CurrentAccount?.Id ?? Guid.Empty;
         _username = context?.User?.Username;
         _accountName = context?.CurrentAccount?.AccountName;
+        AccountDisplayState.OnChanged += OnAccountNameChanged;
+    }
+
+    private void OnAccountNameChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        AccountDisplayState.OnChanged -= OnAccountNameChanged;
     }
 }

@@ -42,13 +42,11 @@ else
         </span>
     </div>
 
-    <EffectivePermissionsPanel Permissions="_effectivePermissions" />
-
     <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-        <div class="danger-zone">
-            <button class="btn btn-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete Permission</button>
-        </div>
+        <button class="btn btn-outline-danger btn-sm mt-2" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
     </PermissionView>
+
+    <EffectivePermissionsPanel Permissions="_effectivePermissions" />
 }
 
 <ConfirmModal @ref="_confirmModal" Title="Delete Permission" ConfirmText="Delete" OnConfirm="DeleteAsync" />

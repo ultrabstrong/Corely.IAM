@@ -47,9 +47,14 @@ else
             <span class="prop-label">Description</span>
             <span class="prop-value">@(_group.Description ?? "—")</span>
         </div>
-        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-            <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
-        </PermissionView>
+        <div class="d-flex gap-2">
+            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
+            </PermissionView>
+            <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
+            </PermissionView>
+        </div>
     }
 
     <!-- Users -->
@@ -143,6 +148,7 @@ else
 
 <ConfirmModal @ref="_removeUserModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />
 <ConfirmModal @ref="_removeRoleModal" Title="Remove Role" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveRoleAsync" />
+<ConfirmModal @ref="_deleteModal" Title="Delete Group" Message="@($"Permanently delete group '{_group?.Name}'? This cannot be undone.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
     private Group? _group;
@@ -156,6 +162,7 @@ else
     private EntityPickerModal _rolePickerModal = null!;
     private ConfirmModal _removeUserModal = null!;
     private ConfirmModal _removeRoleModal = null!;
+    private ConfirmModal _deleteModal = null!;
     private HashSet<Guid> _assignedUserIds = [];
     private HashSet<Guid> _assignedRoleIds = [];
 
@@ -179,6 +186,22 @@ else
             _assignedRoleIds = (_group.Roles ?? []).Select(r => r.Id).ToHashSet();
             _effectivePermissions = result.EffectivePermissions;
         }
+    }
+
+    private void ConfirmDelete() => _deleteModal.Show();
+
+    private async Task DeleteAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterGroupAsync(new DeregisterGroupRequest(Id));
+            if (result.ResultCode == DeregisterGroupResultCode.Success)
+            {
+                NavigationManager.NavigateTo(AppRoutes.Groups);
+                return;
+            }
+            SetResultMessage(false, string.Empty, result.Message);
+        });
     }
 
     private void StartEdit()

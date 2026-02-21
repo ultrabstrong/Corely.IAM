@@ -33,6 +33,7 @@ public static class IamWebServiceExtensions
     {
         services.AddScoped<IBlazorUserContextAccessor, BlazorUserContextAccessor>();
         services.AddScoped<AuthenticationStateProvider, IamAuthenticationStateProvider>();
+        services.AddScoped<IAccountDisplayState, AccountDisplayState>();
         services.AddCascadingAuthenticationState();
 
         return services;

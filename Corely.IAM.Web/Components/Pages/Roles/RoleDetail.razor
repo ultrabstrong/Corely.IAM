@@ -55,9 +55,14 @@ else
         </div>
         @if (!_role.IsSystemDefined)
         {
-            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
-            </PermissionView>
+            <div class="d-flex gap-2">
+                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
+                </PermissionView>
+                <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
+                </PermissionView>
+            </div>
         }
     }
 
@@ -108,6 +113,7 @@ else
                    OnConfirm="AddPermissionsAsync" />
 
 <ConfirmModal @ref="_removePermissionModal" Title="Remove Permission" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemovePermissionAsync" />
+<ConfirmModal @ref="_deleteModal" Title="Delete Role" Message="@($"Permanently delete role '{_role?.Name}'? This cannot be undone.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
     private Role? _role;
@@ -120,6 +126,7 @@ else
     private List<EffectivePermission>? _effectivePermissions;
     private EntityPickerModal _permissionPickerModal = null!;
     private ConfirmModal _removePermissionModal = null!;
+    private ConfirmModal _deleteModal = null!;
 
     private int _permissionsSkip;
     private const int RelationPageSize = 10;
@@ -137,6 +144,22 @@ else
             _assignedPermissionIds = (_role.Permissions ?? []).Select(p => p.Id).ToHashSet();
             _effectivePermissions = result.EffectivePermissions;
         }
+    }
+
+    private void ConfirmDelete() => _deleteModal.Show();
+
+    private async Task DeleteAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterRoleAsync(new DeregisterRoleRequest(Id));
+            if (result.ResultCode == DeregisterRoleResultCode.Success)
+            {
+                NavigationManager.NavigateTo(AppRoutes.Roles);
+                return;
+            }
+            SetResultMessage(false, string.Empty, result.Message);
+        });
     }
 
     private void StartEdit()

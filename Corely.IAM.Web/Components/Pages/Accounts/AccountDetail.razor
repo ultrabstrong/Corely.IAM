@@ -5,12 +5,13 @@
 @inject IModificationService ModificationService
 @inject IRegistrationService RegistrationService
 @inject IDeregistrationService DeregistrationService
+@inject IAccountDisplayState AccountDisplayState
 
 <PageTitle>@_accountName - Corely IAM</PageTitle>
 
 <div class="management-header">
     <h1><i class="bi bi-building me-2"></i>@_accountName <span class="resource-label">Account</span></h1>
-    <a href="@AppRoutes.Accounts" class="btn btn-outline-secondary btn-sm">Back to List</a>
+    <a href="@AppRoutes.Dashboard" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
 </div>
 
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
@@ -38,9 +39,14 @@ else
             <span class="prop-label">Account Name</span>
             <span class="prop-value">@_accountName</span>
         </div>
-        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-            <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
-        </PermissionView>
+        <div class="d-flex gap-2">
+            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
+            </PermissionView>
+            <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
+            </PermissionView>
+        </div>
     }
 
     <div class="section-bar mt-4">
@@ -78,7 +84,8 @@ else
     <EffectivePermissionsPanel Permissions="_effectivePermissions" />
 }
 
-<ConfirmModal @ref="_confirmModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />
+<ConfirmModal @ref="_removeUserModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />
+<ConfirmModal @ref="_deleteModal" Title="Delete Account" Message="@($"Permanently delete account '{_accountName}'? This cannot be undone.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
     private string? _accountName;
@@ -87,7 +94,8 @@ else
     private List<ChildRef> _users = [];
     private string? _newUserId;
     private List<EffectivePermission>? _effectivePermissions;
-    private ConfirmModal _confirmModal = null!;
+    private ConfirmModal _removeUserModal = null!;
+    private ConfirmModal _deleteModal = null!;
 
     private int _usersSkip;
     private const int RelationPageSize = 10;
@@ -105,7 +113,7 @@ else
         }
         else
         {
-            NavigationManager.NavigateTo(AppRoutes.Accounts);
+            NavigationManager.NavigateTo(AppRoutes.Dashboard);
         }
     }
 
@@ -129,7 +137,26 @@ else
             var result = await ModificationService.ModifyAccountAsync(new UpdateAccountRequest(Id, _accountName));
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Saved.", result.Message);
             if (result.ResultCode == ModifyResultCode.Success)
+            {
                 _isEditing = false;
+                AccountDisplayState.UpdateAccountName(_accountName!);
+            }
+        });
+    }
+
+    private void ConfirmDelete() => _deleteModal.Show();
+
+    private async Task DeleteAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterAccountAsync();
+            if (result.ResultCode == DeregisterAccountResultCode.Success)
+            {
+                NavigationManager.NavigateTo(AppRoutes.Dashboard, forceLoad: true);
+                return;
+            }
+            SetResultMessage(false, string.Empty, result.Message);
         });
     }
 
@@ -145,7 +172,7 @@ else
         });
     }
 
-    private void ConfirmRemoveUser(Guid userId, string name) => ShowConfirmation(_confirmModal, userId, $"Remove user '{name}'?");
+    private void ConfirmRemoveUser(Guid userId, string name) => ShowConfirmation(_removeUserModal, userId, $"Remove user '{name}'?");
 
     private async Task RemoveUserAsync()
     {

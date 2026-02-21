@@ -36,7 +36,7 @@ else if (UserContext?.CurrentAccount != null)
     @* State 2: Account selected — header + entity grid *@
     <div class="dashboard-account-header d-flex align-items-center justify-content-between mb-4">
         <span class="fw-semibold"><i class="bi bi-building me-2"></i>@UserContext.CurrentAccount.AccountName</span>
-        <a href="@AppRoutes.Accounts" class="btn btn-outline-light btn-sm" style="font-size: 0.8rem;">Manage</a>
+        <a href="@AppRoutes.Accounts/@UserContext!.CurrentAccount!.Id" class="btn btn-outline-light btn-sm" style="font-size: 0.8rem;">Manage</a>
     </div>
 
     <div class="row g-3">

@@ -256,6 +256,52 @@ public class UserProcessorListGetTests
     }
 
     [Fact]
+    public async Task GetUserByIdAsync_Hydrate_FiltersGroupsAndRolesToCurrentAccount()
+    {
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+
+        var otherAccountId = Guid.CreateVersion7();
+        var groupCurrentAccount = await CreateGroupEntityAsync("GroupCurrentAccount");
+        var groupOtherAccount = await groupRepo.CreateAsync(
+            new GroupEntity
+            {
+                Id = Guid.CreateVersion7(),
+                Name = "GroupOtherAccount",
+                AccountId = otherAccountId,
+                Users = [],
+                Roles = [],
+            }
+        );
+        var roleCurrentAccount = await CreateRoleEntityAsync("RoleCurrentAccount");
+        var roleOtherAccount = await roleRepo.CreateAsync(
+            new RoleEntity
+            {
+                Id = Guid.CreateVersion7(),
+                Name = "RoleOtherAccount",
+                AccountId = otherAccountId,
+                Groups = [],
+                Users = [],
+                Permissions = [],
+            }
+        );
+        var user = await CreateUserEntityAsync(
+            "crossaccountuser",
+            groups: [groupCurrentAccount, groupOtherAccount],
+            roles: [roleCurrentAccount, roleOtherAccount]
+        );
+
+        var result = await _userProcessor.GetUserByIdAsync(user.Id, hydrate: true);
+
+        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.Data);
+        Assert.Single(result.Data.Groups!);
+        Assert.Equal(groupCurrentAccount.Id, result.Data.Groups![0].Id);
+        Assert.Single(result.Data.Roles!);
+        Assert.Equal(roleCurrentAccount.Id, result.Data.Roles![0].Id);
+    }
+
+    [Fact]
     public async Task GetUserByIdAsync_ReturnsEmptyChildrenWhenHydratedWithNoChildren()
     {
         var user = await CreateUserEntityAsync("emptyuser");

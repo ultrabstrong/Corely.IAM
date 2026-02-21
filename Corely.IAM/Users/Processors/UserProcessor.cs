@@ -468,12 +468,23 @@ internal class UserProcessor(
     {
         UserEntity? userEntity;
 
+        var currentAccountId = hydrate
+            ? _userContextProvider.GetUserContext()?.CurrentAccount?.Id
+            : null;
+
         if (hydrate)
         {
             userEntity = await _userRepo.GetAsync(
                 u => u.Id == userId,
-                include: q =>
-                    q.Include(u => u.Accounts).Include(u => u.Groups).Include(u => u.Roles)
+                // When account context is known, use a filtered include to avoid loading
+                // groups/roles from other accounts at the DB level. The in-memory filter
+                // below acts as a fallback (e.g. for mock repos in tests).
+                include: currentAccountId == null
+                    ? q => q.Include(u => u.Accounts).Include(u => u.Groups).Include(u => u.Roles)
+                    : q =>
+                        q.Include(u => u.Accounts)
+                            .Include(u => u.Groups!.Where(g => g.AccountId == currentAccountId))
+                            .Include(u => u.Roles!.Where(r => r.AccountId == currentAccountId))
             );
         }
         else
@@ -498,8 +509,17 @@ internal class UserProcessor(
             user.Accounts = userEntity
                 .Accounts?.Select(a => new ChildRef(a.Id, a.AccountName))
                 .ToList();
-            user.Groups = userEntity.Groups?.Select(g => new ChildRef(g.Id, g.Name)).ToList();
-            user.Roles = userEntity.Roles?.Select(r => new ChildRef(r.Id, r.Name)).ToList();
+            // Filter to current account — Groups and Roles are account-scoped, so a user in
+            // multiple accounts would otherwise leak data from other accounts.
+            // This also serves as a fallback for environments that don't apply filtered includes.
+            user.Groups = userEntity
+                .Groups?.Where(g => currentAccountId == null || g.AccountId == currentAccountId)
+                .Select(g => new ChildRef(g.Id, g.Name))
+                .ToList();
+            user.Roles = userEntity
+                .Roles?.Where(r => currentAccountId == null || r.AccountId == currentAccountId)
+                .Select(r => new ChildRef(r.Id, r.Name))
+                .ToList();
         }
 
         return new GetResult<User>(RetrieveResultCode.Success, string.Empty, user);

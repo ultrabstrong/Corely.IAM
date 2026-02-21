@@ -56,6 +56,33 @@ else
     }
 
     <div class="section-bar mt-4">
+        <h6>Groups</h6>
+    </div>
+    <table class="table table-sm table-hover mb-0">
+        <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+        <tbody>
+            @if (_groups.Count == 0)
+            {
+                <tr><td colspan="2" class="text-muted text-center">No groups assigned</td></tr>
+            }
+            @foreach (var group in PagedGroups)
+            {
+                <tr>
+                    <td>
+                        @group.Name
+                        <br /><small class="guid-text">@group.Id</small>
+                    </td>
+                    <td class="table-actions">
+                        <a href="@AppRoutes.Groups/@group.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <Pagination Skip="_groupsSkip" Take="@RelationPageSize" TotalCount="@GroupsTotalCount"
+                OnPageChanged="newSkip => { _groupsSkip = newSkip; StateHasChanged(); }" />
+
+    <div class="section-bar mt-4">
         <h6>Roles</h6>
         <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
             <button class="btn btn-primary btn-sm" @onclick="() => _rolePickerModal.ShowAsync()" disabled="@_loading">Add Roles</button>
@@ -107,6 +134,7 @@ else
     private string? _originalUsername;
     private string? _originalEmail;
     private bool _isEditing;
+    private List<ChildRef> _groups = [];
     private List<ChildRef> _roles = [];
     private HashSet<Guid> _assignedRoleIds = [];
     private List<EffectivePermission>? _effectivePermissions;
@@ -114,8 +142,11 @@ else
     private ConfirmModal _confirmModal = null!;
     private ConfirmModal _deleteModal = null!;
 
+    private int _groupsSkip;
     private int _rolesSkip;
     private const int RelationPageSize = 10;
+    private List<ChildRef> PagedGroups => _groups.Skip(_groupsSkip).Take(RelationPageSize).ToList();
+    private int GroupsTotalCount => _groups.Count;
     private List<ChildRef> PagedRoles => _roles.Skip(_rolesSkip).Take(RelationPageSize).ToList();
     private int RolesTotalCount => _roles.Count;
 
@@ -126,6 +157,7 @@ else
         {
             _username = result.Item.Username;
             _email = result.Item.Email;
+            _groups = result.Item.Groups ?? [];
             _roles = result.Item.Roles ?? [];
             _assignedRoleIds = _roles.Select(r => r.Id).ToHashSet();
             _effectivePermissions = result.EffectivePermissions;

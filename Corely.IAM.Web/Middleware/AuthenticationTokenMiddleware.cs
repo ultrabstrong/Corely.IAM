@@ -19,34 +19,38 @@ public class AuthenticationTokenMiddleware(
         var token = context.Request.Cookies[AuthenticationConstants.AUTH_TOKEN_COOKIE];
 
         if (!string.IsNullOrWhiteSpace(token))
-        {
-            try
-            {
-                var result = await userContextProvider.SetUserContextAsync(token);
-                if (result == UserAuthTokenValidationResultCode.Success)
-                {
-                    var userContext = userContextProvider.GetUserContext();
-                    if (userContext != null)
-                    {
-                        context.User = userContextClaimsBuilder.BuildPrincipal(userContext);
-                    }
-                }
-                else
-                {
-                    logger.LogDebug(
-                        "Token validation failed with {ResultCode}, clearing cookies",
-                        result
-                    );
-                    authCookieManager.DeleteAuthCookies(context.Response.Cookies);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Error validating authentication token, clearing cookies");
-                authCookieManager.DeleteAuthCookies(context.Response.Cookies);
-            }
-        }
+            await ValidateAndSetContextAsync(context, userContextProvider, token);
 
         await next(context);
+    }
+
+    private async Task ValidateAndSetContextAsync(
+        HttpContext context,
+        IUserContextProvider userContextProvider,
+        string token
+    )
+    {
+        try
+        {
+            var result = await userContextProvider.SetUserContextAsync(token);
+            if (result != UserAuthTokenValidationResultCode.Success)
+            {
+                logger.LogDebug(
+                    "Token validation failed with {ResultCode}, clearing cookies",
+                    result
+                );
+                authCookieManager.DeleteAuthCookies(context.Response.Cookies);
+                return;
+            }
+
+            var userContext = userContextProvider.GetUserContext();
+            if (userContext != null)
+                context.User = userContextClaimsBuilder.BuildPrincipal(userContext);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Error validating authentication token, clearing cookies");
+            authCookieManager.DeleteAuthCookies(context.Response.Cookies);
+        }
     }
 }

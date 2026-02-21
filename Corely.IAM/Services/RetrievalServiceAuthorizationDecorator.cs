@@ -128,7 +128,7 @@ internal class RetrievalServiceAuthorizationDecorator(
         int skip = 0,
         int take = 25
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasUserContext()
             ? await _inner.ListAccountsAsync(filter, order, skip, take)
             : new RetrieveListResult<Account>(
                 RetrieveResultCode.UnauthorizedError,

@@ -87,22 +87,14 @@ internal class AccountProcessorAuthorizationDecorator(
                 $"Unauthorized to update account {request.AccountId}"
             );
 
-    public async Task<ListResult<Account>> ListAccountsAsync(
+    // No permission check — results are already scoped to the user's own accounts inside
+    // AccountProcessor, and listing accounts is required before any account context exists.
+    public Task<ListResult<Account>> ListAccountsAsync(
         FilterBuilder<Account>? filter,
         OrderBuilder<Account>? order,
         int skip,
         int take
-    ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE
-        )
-            ? await _inner.ListAccountsAsync(filter, order, skip, take)
-            : new ListResult<Account>(
-                RetrieveResultCode.UnauthorizedError,
-                "Unauthorized to list accounts",
-                null
-            );
+    ) => _inner.ListAccountsAsync(filter, order, skip, take);
 
     public async Task<GetResult<Account>> GetAccountByIdAsync(Guid accountId, bool hydrate) =>
         await _authorizationProvider.IsAuthorizedAsync(

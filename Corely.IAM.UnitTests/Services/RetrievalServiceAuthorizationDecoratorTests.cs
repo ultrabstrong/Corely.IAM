@@ -324,14 +324,14 @@ public class RetrievalServiceAuthorizationDecoratorTests
     #region ListAccountsAsync
 
     [Fact]
-    public async Task ListAccountsAsync_Succeeds_WhenHasAccountContext()
+    public async Task ListAccountsAsync_Succeeds_WhenHasUserContext()
     {
         var expectedResult = new RetrieveListResult<Account>(
             RetrieveResultCode.Success,
             "",
             PagedResult<Account>.Empty()
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
         _mockInnerService
             .Setup(x => x.ListAccountsAsync(null, null, 0, 25))
             .ReturnsAsync(expectedResult);
@@ -343,9 +343,9 @@ public class RetrievalServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task ListAccountsAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task ListAccountsAsync_ReturnsUnauthorized_WhenNoUserContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
 
         var result = await _decorator.ListAccountsAsync();
 

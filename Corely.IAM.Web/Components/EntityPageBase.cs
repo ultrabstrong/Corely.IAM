@@ -1,9 +1,14 @@
 using Corely.IAM.Web.Components.Shared;
+using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Web.Components;
 
 public abstract class EntityPageBase : AuthenticatedPageBase
 {
+    [Inject]
+    protected ILogger<EntityPageBase> Logger { get; set; } = null!;
+
     protected string? _message;
     protected AlertType _messageType = AlertType.Info;
     protected bool _loading;
@@ -23,7 +28,8 @@ public abstract class EntityPageBase : AuthenticatedPageBase
         }
         catch (Exception ex)
         {
-            _message = $"An error occurred: {ex.Message}";
+            Logger.LogError(ex, "An error occurred in page component");
+            _message = "An unexpected error occurred. Please try again.";
             _messageType = AlertType.Danger;
         }
         finally
@@ -43,7 +49,8 @@ public abstract class EntityPageBase : AuthenticatedPageBase
         }
         catch (Exception ex)
         {
-            _message = $"An error occurred: {ex.Message}";
+            Logger.LogError(ex, "An error occurred in page component");
+            _message = "An unexpected error occurred. Please try again.";
             _messageType = AlertType.Danger;
         }
         finally

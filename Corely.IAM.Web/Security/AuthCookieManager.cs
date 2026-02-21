@@ -1,10 +1,11 @@
+using Corely.Common.Extensions;
 using Microsoft.AspNetCore.Http;
 
 namespace Corely.IAM.Web.Security;
 
 public class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
 {
-    private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
 
     public void SetAuthCookies(
         IResponseCookies cookies,

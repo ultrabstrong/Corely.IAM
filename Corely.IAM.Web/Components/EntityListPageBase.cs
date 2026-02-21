@@ -2,7 +2,7 @@ using Corely.Common.Filtering.Ordering;
 
 namespace Corely.IAM.Web.Components;
 
-public abstract class EntityListPageBase<TItem> : EntityPageBase
+public abstract class EntityListPageBase<TItem> : EntityPageBase, IAsyncDisposable
 {
     protected List<TItem>? _items;
     protected int _skip;
@@ -67,5 +67,11 @@ public abstract class EntityListPageBase<TItem> : EntityPageBase
     protected string GetSortClass(string column)
     {
         return _sortColumn == column ? "sortable active" : "sortable";
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _debounceCts?.Dispose();
+        return ValueTask.CompletedTask;
     }
 }

@@ -56,20 +56,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.Use(
-    async (context, next) =>
-    {
-        context.Response.Headers["Content-Security-Policy"] =
-            "default-src 'self'; "
-            + "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-            + "style-src 'self' 'unsafe-inline'; "
-            + "img-src 'self' data:; "
-            + "font-src 'self' data:; "
-            + "connect-src 'self' ws: wss:; "
-            + "frame-ancestors 'none'";
-        await next();
-    }
-);
 app.UseIAMWebAuthentication();
 app.UseHttpsRedirection();
 app.UseStaticFiles();

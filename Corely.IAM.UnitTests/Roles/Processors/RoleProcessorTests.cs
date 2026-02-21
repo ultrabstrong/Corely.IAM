@@ -152,14 +152,14 @@ public class RoleProcessorTests
 
         Assert.NotEqual(Guid.Empty, result.OwnerRoleId);
         Assert.NotEqual(Guid.Empty, result.AdminRoleId);
-        Assert.NotEqual(Guid.Empty, result.UserRoleId);
+        Assert.NotEqual(Guid.Empty, result.ReaderRoleId);
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var roles = await roleRepo.ListAsync(r => r.AccountId == ownerAccount.Id);
         Assert.Equal(3, roles.Count);
         Assert.Contains(roles, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
         Assert.Contains(roles, r => r.Name == RoleConstants.ADMIN_ROLE_NAME);
-        Assert.Contains(roles, r => r.Name == RoleConstants.USER_ROLE_NAME);
+        Assert.Contains(roles, r => r.Name == RoleConstants.READER_ROLE_NAME);
     }
 
     [Fact]

@@ -104,12 +104,12 @@ internal class PermissionProcessor(
             r.AccountId == accountId && r.Name == RoleConstants.ADMIN_ROLE_NAME
         );
         var userRole = await _roleRepo.GetAsync(r =>
-            r.AccountId == accountId && r.Name == RoleConstants.USER_ROLE_NAME
+            r.AccountId == accountId && r.Name == RoleConstants.READER_ROLE_NAME
         );
 
         PermissionEntity[] permissionEntities =
         [
-            // Owner: CRUDX on all resources
+            // Owner Role: CRUDX on all resources
             new()
             {
                 Id = Guid.CreateVersion7(),
@@ -121,11 +121,11 @@ internal class PermissionProcessor(
                 Update = true,
                 Delete = true,
                 Execute = true,
-                Description = "Owner - Full access to all resources",
+                Description = "Owner Role - Full access to all resources",
                 IsSystemDefined = true,
                 Roles = ownerRole != null ? [ownerRole] : [],
             },
-            // Admin: CRUdX on all resources
+            // Admin Role: CRUdX on all resources
             new()
             {
                 Id = Guid.CreateVersion7(),
@@ -137,11 +137,11 @@ internal class PermissionProcessor(
                 Update = true,
                 Delete = false,
                 Execute = true,
-                Description = "Admin - Manage all resources",
+                Description = "Admin Role - Manage all resources",
                 IsSystemDefined = true,
                 Roles = adminRole != null ? [adminRole] : [],
             },
-            // User: cRudx on all resources (Read only)
+            // Reader Role: cRudx on all resources (Read only)
             new()
             {
                 Id = Guid.CreateVersion7(),
@@ -153,7 +153,7 @@ internal class PermissionProcessor(
                 Update = false,
                 Delete = false,
                 Execute = false,
-                Description = "User - Read-only access to all resources",
+                Description = "Reader Role - Read-only access to all resources",
                 IsSystemDefined = true,
                 Roles = userRole != null ? [userRole] : [],
             },

@@ -60,7 +60,7 @@ public class PermissionProcessorTests
             new()
             {
                 AccountId = accountId,
-                Name = RoleConstants.USER_ROLE_NAME,
+                Name = RoleConstants.READER_ROLE_NAME,
                 IsSystemDefined = true,
             },
         ];
@@ -207,7 +207,7 @@ public class PermissionProcessorTests
             !p.Create && p.Read && !p.Update && !p.Delete && !p.Execute
         );
         Assert.NotNull(userPermission);
-        Assert.Contains(userPermission.Roles!, r => r.Name == RoleConstants.USER_ROLE_NAME);
+        Assert.Contains(userPermission.Roles!, r => r.Name == RoleConstants.READER_ROLE_NAME);
     }
 
     [Fact]

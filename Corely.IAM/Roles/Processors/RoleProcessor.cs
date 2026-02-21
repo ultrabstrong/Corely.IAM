@@ -98,7 +98,7 @@ internal class RoleProcessor(
         {
             Id = Guid.CreateVersion7(),
             AccountId = ownerAccountId,
-            Name = RoleConstants.USER_ROLE_NAME,
+            Name = RoleConstants.READER_ROLE_NAME,
             IsSystemDefined = true,
         };
 

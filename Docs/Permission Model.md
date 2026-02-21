@@ -26,9 +26,9 @@ This means multiple permission entities **can and should** exist for the same re
 
 | Permission | Resource | C | R | U | D | X | Assigned To |
 |------------|----------|---|---|---|---|---|-------------|
-| "Read-only groups" | `group : *` | | ✓ | | | | Role: User |
-| "Manage groups" | `group : *` | ✓ | ✓ | ✓ | | ✓ | Role: Admin |
-| "Full group access" | `group : *` | ✓ | ✓ | ✓ | ✓ | ✓ | Role: Owner |
+| "Read-only groups" | `group : *` | | ✓ | | | | Role: Reader Role |
+| "Manage groups" | `group : *` | ✓ | ✓ | ✓ | | ✓ | Role: Admin Role |
+| "Full group access" | `group : *` | ✓ | ✓ | ✓ | ✓ | ✓ | Role: Owner Role |
 
 All three coexist for the same resource scope — they differ in their CRUDX flags.
 
@@ -51,7 +51,7 @@ A user may receive the same permission through multiple assignment paths. This i
 
 ```
 Permission "Manage groups" (CR✓U✓X)
-├── Role "Admin"
+├── Role "Admin Role"
 │   ├── Direct (assigned to user)          ← path 1
 │   └── Group "Engineering"                ← path 2
 │       └── (user is member)
@@ -71,14 +71,14 @@ When retrieving a resource, the system returns the caller's effective permission
 ```
 Resource: group (specific or wildcard)
 ├── Permission "Full group access" (CRUDX: ✓✓✓✓✓)
-│   └── Role "Owner"
+│   └── Role "Owner Role"
 │       └── Direct
 ├── Permission "Manage groups" (CRUDX: ✓✓✓✗✓)
-│   └── Role "Admin"
+│   └── Role "Admin Role"
 │       ├── Direct
 │       └── Group "Engineering"
 └── Permission "Read-only groups" (CRUDX: ✗✓✗✗✗)
-    └── Role "User"
+    └── Role "Reader Role"
         └── Group "Everyone"
 ```
 
@@ -107,14 +107,14 @@ Three system-defined permissions are created automatically for each account:
 
 | Permission | Scope | CRUDX | Default Role |
 |------------|-------|-------|-------------|
-| Owner - Full access | `* : *` | ✓✓✓✓✓ | Owner |
-| Admin - Manage | `* : *` | ✓✓✓✗✓ | Admin |
-| User - Read only | `* : *` | ✗✓✗✗✗ | User |
+| Owner Role - Full access | `* : *` | ✓✓✓✓✓ | Owner Role |
+| Admin Role - Manage | `* : *` | ✓✓✓✗✓ | Admin Role |
+| Reader Role - Read only | `* : *` | ✗✓✗✗✗ | Reader Role |
 
 System-defined permissions cannot be deleted (`IsSystemDefined = true`).
 
 ### Protected Assignment
 
-The **Owner permission on the Owner role** is the only protected role-permission assignment. It cannot be removed because doing so would leave the account without an owner, breaking the ownerless-account invariant that underpins authorization checks.
+The **Owner permission on the Owner Role** is the only protected role-permission assignment. It cannot be removed because doing so would leave the account without an owner, breaking the ownerless-account invariant that underpins authorization checks.
 
-All other system permission assignments — including Admin and User — can be removed and replaced with custom permissions. Consumers have full control over which permissions are attached to system-defined roles, with the single exception above.
+All other system permission assignments — including Admin Role and Reader Role — can be removed and replaced with custom permissions. Consumers have full control over which permissions are attached to system-defined roles, with the single exception above.

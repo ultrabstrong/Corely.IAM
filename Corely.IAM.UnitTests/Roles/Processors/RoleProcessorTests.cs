@@ -1,6 +1,7 @@
 ﻿using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
@@ -548,62 +549,152 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_Fails_WhenSystemRoleAndSystemPermission()
+    public async Task RemovePermissionsFromRoleAsync_Succeeds_WhenOwnerRoleAndNonOwnerSystemPermission()
     {
         var account = await CreateAccountAsync();
         await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
-        var systemRole = await roleRepo.GetAsync(r =>
+        var ownerRole = await roleRepo.GetAsync(r =>
             r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
         );
 
+        // System permission with ResourceType "Test" — NOT the owner system permission format
         var permission = await CreatePermissionAsync(account.Id, isSystemDefined: true);
 
-        // Assign system permission to system role
-        systemRole!.Permissions = [permission];
-        await roleRepo.UpdateAsync(systemRole);
+        ownerRole!.Permissions = [permission];
+        await roleRepo.UpdateAsync(ownerRole);
 
-        var request = new RemovePermissionsFromRoleRequest([permission.Id], systemRole.Id);
+        var request = new RemovePermissionsFromRoleRequest([permission.Id], ownerRole.Id);
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
 
-        // System role CANNOT remove system permissions
+        // Non-owner system permissions CAN be removed even from the owner role
+        Assert.Equal(RemovePermissionsFromRoleResultCode.Success, result.ResultCode);
+        Assert.Equal(1, result.RemovedPermissionCount);
+        Assert.Empty(result.SystemPermissionIds);
+    }
+
+    [Fact]
+    public async Task RemovePermissionsFromRoleAsync_Succeeds_WhenOwnerRoleAndMixedNonOwnerPermissions()
+    {
+        var account = await CreateAccountAsync();
+        await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
+
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var ownerRole = await roleRepo.GetAsync(r =>
+            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
+        );
+
+        var nonSystemPermission = await CreatePermissionAsync(account.Id, isSystemDefined: false);
+        // System permission with ResourceType "Test" — NOT the owner system permission format
+        var systemPermission = await CreatePermissionAsync(account.Id, isSystemDefined: true);
+
+        ownerRole!.Permissions = [nonSystemPermission, systemPermission];
+        await roleRepo.UpdateAsync(ownerRole);
+
+        var request = new RemovePermissionsFromRoleRequest(
+            [nonSystemPermission.Id, systemPermission.Id],
+            ownerRole.Id
+        );
+        var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
+
+        // Both should be removed — neither is the owner system permission
+        Assert.Equal(RemovePermissionsFromRoleResultCode.Success, result.ResultCode);
+        Assert.Equal(2, result.RemovedPermissionCount);
+        Assert.Empty(result.SystemPermissionIds);
+    }
+
+    [Fact]
+    public async Task RemovePermissionsFromRoleAsync_Fails_WhenOwnerRoleAndOwnerSystemPermission()
+    {
+        var account = await CreateAccountAsync();
+        await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
+
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var ownerRole = await roleRepo.GetAsync(r =>
+            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
+        );
+
+        // CreateDefaultSystemRolesAsync only creates roles — permissions come from
+        // PermissionProcessor separately. Create a matching owner-format permission directly.
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var ownerPermission = await permissionRepo.CreateAsync(
+            new PermissionEntity
+            {
+                Id = Guid.CreateVersion7(),
+                AccountId = account.Id,
+                Account = new AccountEntity { Id = account.Id },
+                ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
+                ResourceId = Guid.Empty,
+                Create = true,
+                Read = true,
+                Update = true,
+                Delete = true,
+                Execute = true,
+                IsSystemDefined = true,
+                Roles = [new RoleEntity { Id = ownerRole!.Id }],
+            }
+        );
+
+        ownerRole!.Permissions = [ownerPermission];
+        await roleRepo.UpdateAsync(ownerRole);
+
+        var request = new RemovePermissionsFromRoleRequest([ownerPermission.Id], ownerRole.Id);
+        var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
+
+        // The owner system permission CANNOT be removed from the owner role
         Assert.Equal(
             RemovePermissionsFromRoleResultCode.SystemPermissionRemovalError,
             result.ResultCode
         );
         Assert.Equal(0, result.RemovedPermissionCount);
-        Assert.Contains(permission.Id, result.SystemPermissionIds);
+        Assert.Contains(ownerPermission.Id, result.SystemPermissionIds);
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_PartialSuccess_WhenSystemRoleAndMixedPermissions()
+    public async Task RemovePermissionsFromRoleAsync_Succeeds_WhenNonOwnerRoleAndOwnerSystemPermission()
     {
-        var account = await CreateAccountAsync();
-        await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
+        // Use a fresh account so we can create an owner-format permission without uniqueness conflict
+        var account2 = await CreateAccountAsync();
 
-        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
-        var systemRole = await roleRepo.GetAsync(r =>
-            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
+        var (nonOwnerRole, _) = await CreateRoleAsync();
+
+        // Create an owner-format permission (ALL_RESOURCE_TYPES + Guid.Empty + full CRUDX)
+        // for account2 — not the owner role, so removal should be allowed
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var ownerFormatPermission = await permissionRepo.CreateAsync(
+            new PermissionEntity
+            {
+                Id = Guid.CreateVersion7(),
+                AccountId = account2.Id,
+                Account = new AccountEntity { Id = account2.Id },
+                ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
+                ResourceId = Guid.Empty,
+                Create = true,
+                Read = true,
+                Update = true,
+                Delete = true,
+                Execute = true,
+                IsSystemDefined = true,
+                Roles = [new RoleEntity { Id = nonOwnerRole.Id }],
+            }
         );
 
-        var nonSystemPermission = await CreatePermissionAsync(account.Id, isSystemDefined: false);
-        var systemPermission = await CreatePermissionAsync(account.Id, isSystemDefined: true);
-
-        // Assign both permissions to system role
-        systemRole!.Permissions = [nonSystemPermission, systemPermission];
-        await roleRepo.UpdateAsync(systemRole);
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var role = await roleRepo.GetAsync(r => r.Id == nonOwnerRole.Id);
+        role!.Permissions = [ownerFormatPermission];
+        await roleRepo.UpdateAsync(role);
 
         var request = new RemovePermissionsFromRoleRequest(
-            [nonSystemPermission.Id, systemPermission.Id],
-            systemRole.Id
+            [ownerFormatPermission.Id],
+            nonOwnerRole.Id
         );
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
 
-        // Should remove non-system but not system permission
-        Assert.Equal(RemovePermissionsFromRoleResultCode.PartialSuccess, result.ResultCode);
+        // Owner-format permission on a non-owner role CAN be removed
+        Assert.Equal(RemovePermissionsFromRoleResultCode.Success, result.ResultCode);
         Assert.Equal(1, result.RemovedPermissionCount);
-        Assert.Contains(systemPermission.Id, result.SystemPermissionIds);
+        Assert.Empty(result.SystemPermissionIds);
     }
 
     [Fact]

@@ -4,6 +4,7 @@ using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
@@ -317,38 +318,37 @@ internal class RoleProcessor(
             );
         }
 
-        // Permission removal rules:
-        // 1. If role is not system-defined -> allow all permission removal
-        // 2. If role is system-defined -> allow non-system permission removal
-        // 3. If role is system-defined -> disallow system permission removal
+        // Only the owner system permission on the owner role is protected — removing it would
+        // leave the account without an owner, breaking the ownerless-account invariant.
         var blockedSystemPermissionIds = new List<Guid>();
 
-        if (roleEntity.IsSystemDefined)
+        if (roleEntity.IsSystemDefined && roleEntity.Name == RoleConstants.OWNER_ROLE_NAME)
         {
-            var systemPermissions = permissionsToRemove.Where(p => p.IsSystemDefined).ToList();
-            if (systemPermissions.Count > 0)
+            var ownerPermissions = permissionsToRemove.Where(IsOwnerSystemPermission).ToList();
+            if (ownerPermissions.Count > 0)
             {
-                blockedSystemPermissionIds = [.. systemPermissions.Select(p => p.Id)];
+                blockedSystemPermissionIds = [.. ownerPermissions.Select(p => p.Id)];
                 _logger.LogInformation(
-                    "Cannot remove system-defined permissions {@SystemPermissionIds} from system-defined role {RoleId}",
+                    "Cannot remove owner system permission {@OwnerPermissionIds} from owner role {RoleId}",
                     blockedSystemPermissionIds,
                     request.RoleId
                 );
 
-                // If ALL permissions being removed are system permissions, return error
-                if (systemPermissions.Count == permissionsToRemove.Count)
+                if (ownerPermissions.Count == permissionsToRemove.Count)
                 {
                     return new RemovePermissionsFromRoleResult(
                         RemovePermissionsFromRoleResultCode.SystemPermissionRemovalError,
-                        "Cannot remove system-defined permissions from a system-defined role.",
+                        "Cannot remove the owner system permission from the owner role.",
                         0,
                         [],
                         blockedSystemPermissionIds
                     );
                 }
 
-                // Otherwise, remove non-system permissions only
-                permissionsToRemove = [.. permissionsToRemove.Where(p => !p.IsSystemDefined)];
+                permissionsToRemove =
+                [
+                    .. permissionsToRemove.Where(p => !IsOwnerSystemPermission(p)),
+                ];
             }
         }
 
@@ -379,7 +379,7 @@ internal class RoleProcessor(
             return new RemovePermissionsFromRoleResult(
                 RemovePermissionsFromRoleResultCode.PartialSuccess,
                 blockedSystemPermissionIds.Count > 0
-                    ? "Some permissions could not be removed (invalid or system-defined permissions on system role)"
+                    ? "Some permissions could not be removed (invalid ids or owner permission on owner role)"
                     : "Some permission ids are invalid (not found or not assigned to role)",
                 permissionsToRemove.Count,
                 invalidPermissionIds,
@@ -469,4 +469,16 @@ internal class RoleProcessor(
         _logger.LogInformation("Role with Id {RoleId} deleted", roleId);
         return new DeleteRoleResult(DeleteRoleResultCode.Success, string.Empty);
     }
+
+    // The owner permission is identified by full CRUDX on all resource types — removing it
+    // from the owner role would leave the account unable to satisfy ownership checks.
+    private static bool IsOwnerSystemPermission(PermissionEntity permission) =>
+        permission.IsSystemDefined
+        && permission.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
+        && permission.ResourceId == Guid.Empty
+        && permission.Create
+        && permission.Read
+        && permission.Update
+        && permission.Delete
+        && permission.Execute;
 }

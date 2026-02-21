@@ -125,7 +125,7 @@ internal class PermissionProcessor(
                 IsSystemDefined = true,
                 Roles = ownerRole != null ? [ownerRole] : [],
             },
-            // Admin: CRUdX on all resources (no Delete)
+            // Admin: CRUdX on all resources
             new()
             {
                 Id = Guid.CreateVersion7(),
@@ -137,7 +137,7 @@ internal class PermissionProcessor(
                 Update = true,
                 Delete = false,
                 Execute = true,
-                Description = "Admin - Manage all resources (no delete)",
+                Description = "Admin - Manage all resources",
                 IsSystemDefined = true,
                 Roles = adminRole != null ? [adminRole] : [],
             },

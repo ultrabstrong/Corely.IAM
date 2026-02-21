@@ -108,7 +108,13 @@ Three system-defined permissions are created automatically for each account:
 | Permission | Scope | CRUDX | Default Role |
 |------------|-------|-------|-------------|
 | Owner - Full access | `* : *` | ✓✓✓✓✓ | Owner |
-| Admin - Manage (no delete) | `* : *` | ✓✓✓✗✓ | Admin |
+| Admin - Manage | `* : *` | ✓✓✓✗✓ | Admin |
 | User - Read only | `* : *` | ✗✓✗✗✗ | User |
 
 System-defined permissions cannot be deleted (`IsSystemDefined = true`).
+
+### Protected Assignment
+
+The **Owner permission on the Owner role** is the only protected role-permission assignment. It cannot be removed because doing so would leave the account without an owner, breaking the ownerless-account invariant that underpins authorization checks.
+
+All other system permission assignments — including Admin and User — can be removed and replaced with custom permissions. Consumers have full control over which permissions are attached to system-defined roles, with the single exception above.

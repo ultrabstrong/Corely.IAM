@@ -66,4 +66,29 @@ internal class PermissionProcessorTelemetryDecorator(
             () => _inner.DeletePermissionAsync(permissionId),
             logResult: true
         );
+
+    public async Task<List<EffectivePermission>> GetEffectivePermissionsForUserAsync(
+        string resourceType,
+        Guid resourceId,
+        Guid userId,
+        Guid accountId
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(PermissionProcessor),
+            new
+            {
+                resourceType,
+                resourceId,
+                userId,
+                accountId,
+            },
+            () =>
+                _inner.GetEffectivePermissionsForUserAsync(
+                    resourceType,
+                    resourceId,
+                    userId,
+                    accountId
+                ),
+            logResult: true
+        );
 }

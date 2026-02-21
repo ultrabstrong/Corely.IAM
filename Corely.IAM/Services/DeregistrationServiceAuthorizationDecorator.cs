@@ -32,14 +32,36 @@ internal class DeregistrationServiceAuthorizationDecorator(
             );
 
     public Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request) =>
-        _inner.DeregisterGroupAsync(request);
+        _authorizationProvider.HasAccountContext()
+            ? _inner.DeregisterGroupAsync(request)
+            : Task.FromResult(
+                new DeregisterGroupResult(
+                    DeregisterGroupResultCode.UnauthorizedError,
+                    "Unauthorized to delete group"
+                )
+            );
 
     public Task<DeregisterRoleResult> DeregisterRoleAsync(DeregisterRoleRequest request) =>
-        _inner.DeregisterRoleAsync(request);
+        _authorizationProvider.HasAccountContext()
+            ? _inner.DeregisterRoleAsync(request)
+            : Task.FromResult(
+                new DeregisterRoleResult(
+                    DeregisterRoleResultCode.UnauthorizedError,
+                    "Unauthorized to delete role"
+                )
+            );
 
     public Task<DeregisterPermissionResult> DeregisterPermissionAsync(
         DeregisterPermissionRequest request
-    ) => _inner.DeregisterPermissionAsync(request);
+    ) =>
+        _authorizationProvider.HasAccountContext()
+            ? _inner.DeregisterPermissionAsync(request)
+            : Task.FromResult(
+                new DeregisterPermissionResult(
+                    DeregisterPermissionResultCode.UnauthorizedError,
+                    "Unauthorized to delete permission"
+                )
+            );
 
     public async Task<DeregisterUserFromAccountResult> DeregisterUserFromAccountAsync(
         DeregisterUserFromAccountRequest request
@@ -53,17 +75,57 @@ internal class DeregistrationServiceAuthorizationDecorator(
 
     public Task<DeregisterUsersFromGroupResult> DeregisterUsersFromGroupAsync(
         DeregisterUsersFromGroupRequest request
-    ) => _inner.DeregisterUsersFromGroupAsync(request);
+    ) =>
+        _authorizationProvider.HasAccountContext()
+            ? _inner.DeregisterUsersFromGroupAsync(request)
+            : Task.FromResult(
+                new DeregisterUsersFromGroupResult(
+                    DeregisterUsersFromGroupResultCode.UnauthorizedError,
+                    "Unauthorized to remove users from group",
+                    0,
+                    []
+                )
+            );
 
     public Task<DeregisterRolesFromGroupResult> DeregisterRolesFromGroupAsync(
         DeregisterRolesFromGroupRequest request
-    ) => _inner.DeregisterRolesFromGroupAsync(request);
+    ) =>
+        _authorizationProvider.HasAccountContext()
+            ? _inner.DeregisterRolesFromGroupAsync(request)
+            : Task.FromResult(
+                new DeregisterRolesFromGroupResult(
+                    DeregisterRolesFromGroupResultCode.UnauthorizedError,
+                    "Unauthorized to remove roles from group",
+                    0,
+                    []
+                )
+            );
 
     public Task<DeregisterRolesFromUserResult> DeregisterRolesFromUserAsync(
         DeregisterRolesFromUserRequest request
-    ) => _inner.DeregisterRolesFromUserAsync(request);
+    ) =>
+        _authorizationProvider.HasAccountContext()
+            ? _inner.DeregisterRolesFromUserAsync(request)
+            : Task.FromResult(
+                new DeregisterRolesFromUserResult(
+                    DeregisterRolesFromUserResultCode.UnauthorizedError,
+                    "Unauthorized to remove roles from user",
+                    0,
+                    []
+                )
+            );
 
     public Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(
         DeregisterPermissionsFromRoleRequest request
-    ) => _inner.DeregisterPermissionsFromRoleAsync(request);
+    ) =>
+        _authorizationProvider.HasAccountContext()
+            ? _inner.DeregisterPermissionsFromRoleAsync(request)
+            : Task.FromResult(
+                new DeregisterPermissionsFromRoleResult(
+                    DeregisterPermissionsFromRoleResultCode.UnauthorizedError,
+                    "Unauthorized to remove permissions from role",
+                    0,
+                    []
+                )
+            );
 }

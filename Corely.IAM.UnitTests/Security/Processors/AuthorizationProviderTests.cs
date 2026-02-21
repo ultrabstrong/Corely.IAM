@@ -1,6 +1,7 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Groups.Entities;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Roles.Entities;
@@ -389,6 +390,134 @@ public class AuthorizationProviderTests
             resourceIdWithPermission,
             Guid.CreateVersion7(),
             Guid.CreateVersion7()
+        );
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task ClearCache_ForcesPermissionReload_OnNextAuthorization()
+    {
+        var provider = CreateProvider();
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
+        await SetupTestPermissionDataAsync(
+            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceId: Guid.Empty,
+            create: true
+        );
+
+        // Warm up the cache
+        Assert.True(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+
+        // Clear the cache and verify permissions are reloaded (still works with same data)
+        ((IAuthorizationCacheClearer)provider).ClearCache();
+        Assert.True(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+    }
+
+    [Fact]
+    public async Task IsAuthorizedAsync_ReturnsTrue_WhenPermissionGrantedViaGroupMembership()
+    {
+        var provider = CreateProvider();
+        var userId = Guid.CreateVersion7();
+        var accountId = Guid.CreateVersion7();
+        SetUserContext(userId, accountId);
+
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+
+        var account = new AccountEntity { Id = accountId, AccountName = "TestAccount" };
+        await accountRepo.CreateAsync(account);
+
+        var user = new UserEntity
+        {
+            Id = userId,
+            Username = "testuser",
+            Email = "test@test.com",
+        };
+        await userRepo.CreateAsync(user);
+
+        var group = new GroupEntity
+        {
+            Id = Guid.CreateVersion7(),
+            Name = "TestGroup",
+            AccountId = accountId,
+            Users = [user],
+        };
+        await groupRepo.CreateAsync(group);
+
+        var role = new RoleEntity
+        {
+            Id = Guid.CreateVersion7(),
+            Name = "TestRole",
+            AccountId = accountId,
+            Groups = [group],
+            Users = [],
+        };
+        await roleRepo.CreateAsync(role);
+
+        var permission = new PermissionEntity
+        {
+            Id = Guid.CreateVersion7(),
+            AccountId = accountId,
+            ResourceType = PermissionConstants.ROLE_RESOURCE_TYPE,
+            ResourceId = Guid.Empty,
+            Read = true,
+            Roles = [role],
+        };
+        await permissionRepo.CreateAsync(permission);
+
+        // User should be authorized via group membership
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.ROLE_RESOURCE_TYPE
+        );
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task IsAuthorizedAsync_InvalidatesCache_WhenAccountContextChanges()
+    {
+        var provider = CreateProvider();
+        var userId = Guid.CreateVersion7();
+        var account1 = new Account() { Id = Guid.CreateVersion7() };
+        var account2 = new Account() { Id = Guid.CreateVersion7() };
+        SetUserContext(userId, account1, [account1, account2]);
+
+        await SetupTestPermissionDataAsync(
+            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceId: Guid.Empty,
+            create: true
+        );
+
+        // Warm up cache for account1
+        Assert.True(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+
+        // Switch to account2 (no permissions in account2)
+        SetUserContext(userId, account2, [account1, account2]);
+
+        // Cache should be invalidated — account2 has no permissions
+        var result = await provider.IsAuthorizedAsync(
+            AuthAction.Create,
+            PermissionConstants.GROUP_RESOURCE_TYPE
         );
 
         Assert.False(result);

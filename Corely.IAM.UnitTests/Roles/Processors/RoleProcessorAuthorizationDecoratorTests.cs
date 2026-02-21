@@ -299,35 +299,6 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_BypassesAuthorization_WhenFlagSet()
-    {
-        var request = new AssignPermissionsToRoleRequest(
-            [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7(),
-            BypassAuthorization: true
-        );
-        var expectedResult = new AssignPermissionsToRoleResult(
-            AssignPermissionsToRoleResultCode.Success,
-            "",
-            2,
-            []
-        );
-        _mockInnerProcessor
-            .Setup(x => x.AssignPermissionsToRoleAsync(request))
-            .ReturnsAsync(expectedResult);
-
-        var result = await _decorator.AssignPermissionsToRoleAsync(request);
-
-        Assert.Equal(expectedResult, result);
-        _mockAuthorizationProvider.Verify(
-            x =>
-                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
-            Times.Never
-        );
-        _mockInnerProcessor.Verify(x => x.AssignPermissionsToRoleAsync(request), Times.Once);
-    }
-
-    [Fact]
     public async Task RemovePermissionsFromRoleAsync_CallsAuthorizationProvider()
     {
         var request = new RemovePermissionsFromRoleRequest(
@@ -448,35 +419,6 @@ public class RoleProcessorAuthorizationDecoratorTests
             x => x.RemovePermissionsFromRoleAsync(It.IsAny<RemovePermissionsFromRoleRequest>()),
             Times.Never
         );
-    }
-
-    [Fact]
-    public async Task RemovePermissionsFromRoleAsync_BypassesAuthorization_WhenFlagSet()
-    {
-        var request = new RemovePermissionsFromRoleRequest(
-            [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7(),
-            BypassAuthorization: true
-        );
-        var expectedResult = new RemovePermissionsFromRoleResult(
-            RemovePermissionsFromRoleResultCode.Success,
-            "",
-            2,
-            []
-        );
-        _mockInnerProcessor
-            .Setup(x => x.RemovePermissionsFromRoleAsync(request))
-            .ReturnsAsync(expectedResult);
-
-        var result = await _decorator.RemovePermissionsFromRoleAsync(request);
-
-        Assert.Equal(expectedResult, result);
-        _mockAuthorizationProvider.Verify(
-            x =>
-                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
-            Times.Never
-        );
-        _mockInnerProcessor.Verify(x => x.RemovePermissionsFromRoleAsync(request), Times.Once);
     }
 
     [Fact]

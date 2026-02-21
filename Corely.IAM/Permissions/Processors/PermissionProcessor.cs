@@ -212,6 +212,61 @@ internal class PermissionProcessor(
         return new GetResult<Permission>(RetrieveResultCode.Success, string.Empty, permission);
     }
 
+    public async Task<List<EffectivePermission>> GetEffectivePermissionsForUserAsync(
+        string resourceType,
+        Guid resourceId,
+        Guid userId,
+        Guid accountId
+    )
+    {
+        var effectivePermissions = await _permissionRepo.QueryAsync(q =>
+            q.Where(p =>
+                    p.AccountId == accountId
+                    && (
+                        p.ResourceType == resourceType
+                        || p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
+                    )
+                    && (p.ResourceId == resourceId || p.ResourceId == Guid.Empty)
+                    && p.Roles!.Any(r =>
+                        r.Users!.Any(u => u.Id == userId)
+                        || r.Groups!.Any(g => g.Users!.Any(u => u.Id == userId))
+                    )
+                )
+                .Select(p => new EffectivePermission
+                {
+                    PermissionId = p.Id,
+                    Create = p.Create,
+                    Read = p.Read,
+                    Update = p.Update,
+                    Delete = p.Delete,
+                    Execute = p.Execute,
+                    Description = p.Description,
+                    ResourceType = p.ResourceType,
+                    ResourceId = p.ResourceId,
+                    Roles = p.Roles!.Where(r =>
+                            r.Users!.Any(u => u.Id == userId)
+                            || r.Groups!.Any(g => g.Users!.Any(u => u.Id == userId))
+                        )
+                        .Select(r => new EffectiveRole
+                        {
+                            RoleId = r.Id,
+                            RoleName = r.Name,
+                            IsDirect = r.Users!.Any(u => u.Id == userId),
+                            Groups = r.Groups!.Where(g => g.Users!.Any(u => u.Id == userId))
+                                .Select(g => new EffectiveGroup
+                                {
+                                    GroupId = g.Id,
+                                    GroupName = g.Name,
+                                })
+                                .ToList(),
+                        })
+                        .ToList(),
+                })
+        );
+
+        return effectivePermissions.ToList();
+    }
+
     public async Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId)
     {
         var permissionEntity = await _permissionRepo.GetAsync(

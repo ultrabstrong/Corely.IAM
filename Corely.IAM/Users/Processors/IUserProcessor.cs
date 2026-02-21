@@ -12,6 +12,7 @@ internal interface IUserProcessor
     Task<ModifyResult> UpdateUserAsync(UpdateUserRequest request);
     Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(Guid userId);
     Task<AssignRolesToUserResult> AssignRolesToUserAsync(AssignRolesToUserRequest request);
+    Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(Guid roleId, Guid userId);
     Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(RemoveRolesFromUserRequest request);
     Task<DeleteUserResult> DeleteUserAsync(Guid userId);
     Task<ListResult<User>> ListUsersAsync(

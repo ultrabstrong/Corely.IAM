@@ -62,7 +62,7 @@ else
                         <td>@user.Email</td>
                         <td class="table-actions">
                             <a href="@AppRoutes.Users/@user.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                            <button class="icon-btn text-danger" @onclick="() => ConfirmRemove(user.Id, user.Username)" title="Remove"><i class="bi bi-trash"></i></button>
+                            <button class="icon-btn text-danger" @onclick="() => ConfirmRemove(user.Id, user.Username)" title="Remove"><i class="bi bi-person-dash"></i></button>
                         </td>
                     </tr>
                 }

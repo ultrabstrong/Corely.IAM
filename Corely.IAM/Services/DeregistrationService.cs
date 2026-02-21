@@ -21,6 +21,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
 
+// The 6 processor dependencies reflect the full deregistration domain scope (users, accounts,
+// groups, roles, permissions, and auth cache). This is intentional — not a SRP violation.
 internal class DeregistrationService(
     ILogger<DeregistrationService> logger,
     IPermissionProcessor permissionProcessor,

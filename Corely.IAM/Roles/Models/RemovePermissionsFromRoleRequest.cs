@@ -1,7 +1,3 @@
 namespace Corely.IAM.Roles.Models;
 
-internal record RemovePermissionsFromRoleRequest(
-    List<Guid> PermissionIds,
-    Guid RoleId,
-    bool BypassAuthorization = false
-);
+internal record RemovePermissionsFromRoleRequest(List<Guid> PermissionIds, Guid RoleId);

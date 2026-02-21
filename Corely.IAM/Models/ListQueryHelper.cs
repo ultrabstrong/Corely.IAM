@@ -18,6 +18,11 @@ internal static class ListQueryHelper
     )
         where TEntity : class
     {
+        if (skip < 0)
+            throw new ArgumentOutOfRangeException(nameof(skip), "Must be non-negative.");
+        if (take <= 0)
+            throw new ArgumentOutOfRangeException(nameof(take), "Must be positive.");
+
         var filterExpression = filter?.Build();
         Expression<Func<TEntity, bool>> predicate;
         if (filterExpression != null)
@@ -59,8 +64,13 @@ internal static class ListQueryHelper
 
     private static Expression<Func<TEntity, Guid>> BuildDefaultOrderExpression<TEntity>()
     {
+        var idProp =
+            typeof(TEntity).GetProperty("Id")
+            ?? throw new InvalidOperationException(
+                $"Entity type '{typeof(TEntity).Name}' does not have an 'Id' property required for default ordering."
+            );
         var param = Expression.Parameter(typeof(TEntity), "e");
-        var idProperty = Expression.Property(param, "Id");
+        var idProperty = Expression.MakeMemberAccess(param, idProp);
         return Expression.Lambda<Func<TEntity, Guid>>(idProperty, param);
     }
 }

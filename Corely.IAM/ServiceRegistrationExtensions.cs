@@ -129,6 +129,10 @@ public static class ServiceRegistrationExtensions
             sp.GetRequiredService<AuthorizationProvider>()
         );
 
+        // Auth boundary: service decorators check only user/account context (HasUserContext /
+        // HasAccountContext). CRUDX permission checks happen at the processor level via
+        // IsAuthorizedAsync. Service methods that look "unguarded" are protected at the
+        // processor level where the actual domain work is performed.
         serviceCollection.AddScoped<IRegistrationService, RegistrationService>();
         serviceCollection.Decorate<
             IRegistrationService,

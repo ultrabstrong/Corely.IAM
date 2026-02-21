@@ -1,10 +1,8 @@
-using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
@@ -25,7 +23,6 @@ public class RetrievalServiceTests
     private readonly Mock<IRoleProcessor> _mockRoleProcessor = new();
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
     private readonly Mock<IAccountProcessor> _mockAccountProcessor = new();
-    private readonly Mock<IReadonlyRepo<PermissionEntity>> _mockPermissionRepo = new();
     private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly RetrievalService _service;
     private readonly UserContext _userContext;
@@ -47,14 +44,16 @@ public class RetrievalServiceTests
 
         _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(() => _userContext);
 
-        _mockPermissionRepo
+        _mockPermissionProcessor
             .Setup(x =>
-                x.QueryAsync(
-                    It.IsAny<Func<IQueryable<PermissionEntity>, IQueryable<EffectivePermission>>>(),
-                    It.IsAny<CancellationToken>()
+                x.GetEffectivePermissionsForUserAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<Guid>()
                 )
             )
-            .ReturnsAsync(new List<EffectivePermission>());
+            .ReturnsAsync([]);
 
         _service = new RetrievalService(
             _mockPermissionProcessor.Object,
@@ -62,7 +61,6 @@ public class RetrievalServiceTests
             _mockRoleProcessor.Object,
             _mockUserProcessor.Object,
             _mockAccountProcessor.Object,
-            _mockPermissionRepo.Object,
             _mockUserContextProvider.Object
         );
     }
@@ -319,7 +317,6 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
-                _mockPermissionRepo.Object,
                 _mockUserContextProvider.Object
             )
         );
@@ -337,7 +334,6 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
-                _mockPermissionRepo.Object,
                 _mockUserContextProvider.Object
             )
         );
@@ -355,7 +351,6 @@ public class RetrievalServiceTests
                 null!,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
-                _mockPermissionRepo.Object,
                 _mockUserContextProvider.Object
             )
         );
@@ -373,7 +368,6 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 null!,
                 _mockAccountProcessor.Object,
-                _mockPermissionRepo.Object,
                 _mockUserContextProvider.Object
             )
         );
@@ -391,30 +385,11 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 null!,
-                _mockPermissionRepo.Object,
                 _mockUserContextProvider.Object
             )
         );
 
         Assert.Equal("accountProcessor", ex.ParamName);
-    }
-
-    [Fact]
-    public void Constructor_Throws_WithNullPermissionRepo()
-    {
-        var ex = Assert.Throws<ArgumentNullException>(() =>
-            new RetrievalService(
-                _mockPermissionProcessor.Object,
-                _mockGroupProcessor.Object,
-                _mockRoleProcessor.Object,
-                _mockUserProcessor.Object,
-                _mockAccountProcessor.Object,
-                null!,
-                _mockUserContextProvider.Object
-            )
-        );
-
-        Assert.Equal("permissionRepo", ex.ParamName);
     }
 
     [Fact]
@@ -427,7 +402,6 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
-                _mockPermissionRepo.Object,
                 null!
             )
         );

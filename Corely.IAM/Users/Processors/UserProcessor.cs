@@ -254,6 +254,9 @@ internal class UserProcessor(
         );
     }
 
+    public Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(Guid roleId, Guid userId) =>
+        AssignRolesToUserAsync(new([roleId], userId));
+
     public async Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(
         RemoveRolesFromUserRequest request
     )

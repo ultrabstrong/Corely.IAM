@@ -1,14 +1,12 @@
 using Corely.Common.Extensions;
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
-using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
@@ -25,7 +23,6 @@ internal class RetrievalService(
     IRoleProcessor roleProcessor,
     IUserProcessor userProcessor,
     IAccountProcessor accountProcessor,
-    IReadonlyRepo<PermissionEntity> permissionRepo,
     IUserContextProvider userContextProvider
 ) : IRetrievalService
 {
@@ -44,23 +41,16 @@ internal class RetrievalService(
     private readonly IAccountProcessor _accountProcessor = accountProcessor.ThrowIfNull(
         nameof(accountProcessor)
     );
-    private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo.ThrowIfNull(
-        nameof(permissionRepo)
-    );
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
     );
 
-    public async Task<RetrieveListResult<Permission>> ListPermissionsAsync(
+    public Task<RetrieveListResult<Permission>> ListPermissionsAsync(
         FilterBuilder<Permission>? filter = null,
         OrderBuilder<Permission>? order = null,
         int skip = 0,
         int take = 25
-    )
-    {
-        var result = await _permissionProcessor.ListPermissionsAsync(filter, order, skip, take);
-        return new RetrieveListResult<Permission>(result.ResultCode, result.Message, result.Data);
-    }
+    ) => WrapListResultAsync(_permissionProcessor.ListPermissionsAsync(filter, order, skip, take));
 
     public async Task<RetrieveSingleResult<Permission>> GetPermissionAsync(
         Guid permissionId,
@@ -80,16 +70,12 @@ internal class RetrievalService(
         );
     }
 
-    public async Task<RetrieveListResult<Group>> ListGroupsAsync(
+    public Task<RetrieveListResult<Group>> ListGroupsAsync(
         FilterBuilder<Group>? filter = null,
         OrderBuilder<Group>? order = null,
         int skip = 0,
         int take = 25
-    )
-    {
-        var result = await _groupProcessor.ListGroupsAsync(filter, order, skip, take);
-        return new RetrieveListResult<Group>(result.ResultCode, result.Message, result.Data);
-    }
+    ) => WrapListResultAsync(_groupProcessor.ListGroupsAsync(filter, order, skip, take));
 
     public async Task<RetrieveSingleResult<Group>> GetGroupAsync(Guid groupId, bool hydrate = false)
     {
@@ -106,16 +92,12 @@ internal class RetrievalService(
         );
     }
 
-    public async Task<RetrieveListResult<Role>> ListRolesAsync(
+    public Task<RetrieveListResult<Role>> ListRolesAsync(
         FilterBuilder<Role>? filter = null,
         OrderBuilder<Role>? order = null,
         int skip = 0,
         int take = 25
-    )
-    {
-        var result = await _roleProcessor.ListRolesAsync(filter, order, skip, take);
-        return new RetrieveListResult<Role>(result.ResultCode, result.Message, result.Data);
-    }
+    ) => WrapListResultAsync(_roleProcessor.ListRolesAsync(filter, order, skip, take));
 
     public async Task<RetrieveSingleResult<Role>> GetRoleAsync(Guid roleId, bool hydrate = false)
     {
@@ -132,16 +114,12 @@ internal class RetrievalService(
         );
     }
 
-    public async Task<RetrieveListResult<User>> ListUsersAsync(
+    public Task<RetrieveListResult<User>> ListUsersAsync(
         FilterBuilder<User>? filter = null,
         OrderBuilder<User>? order = null,
         int skip = 0,
         int take = 25
-    )
-    {
-        var result = await _userProcessor.ListUsersAsync(filter, order, skip, take);
-        return new RetrieveListResult<User>(result.ResultCode, result.Message, result.Data);
-    }
+    ) => WrapListResultAsync(_userProcessor.ListUsersAsync(filter, order, skip, take));
 
     public async Task<RetrieveSingleResult<User>> GetUserAsync(Guid userId, bool hydrate = false)
     {
@@ -158,16 +136,12 @@ internal class RetrievalService(
         );
     }
 
-    public async Task<RetrieveListResult<Account>> ListAccountsAsync(
+    public Task<RetrieveListResult<Account>> ListAccountsAsync(
         FilterBuilder<Account>? filter = null,
         OrderBuilder<Account>? order = null,
         int skip = 0,
         int take = 25
-    )
-    {
-        var result = await _accountProcessor.ListAccountsAsync(filter, order, skip, take);
-        return new RetrieveListResult<Account>(result.ResultCode, result.Message, result.Data);
-    }
+    ) => WrapListResultAsync(_accountProcessor.ListAccountsAsync(filter, order, skip, take));
 
     public async Task<RetrieveSingleResult<Account>> GetAccountAsync(
         Guid accountId,
@@ -193,54 +167,19 @@ internal class RetrievalService(
     )
     {
         var userContext = _userContextProvider.GetUserContext()!;
-        var accountId = userContext.CurrentAccount!.Id;
-        var userId = userContext.User.Id;
-
-        var effectivePermissions = await _permissionRepo.QueryAsync(q =>
-            q.Where(p =>
-                    p.AccountId == accountId
-                    && (
-                        p.ResourceType == resourceType
-                        || p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
-                    )
-                    && (p.ResourceId == resourceId || p.ResourceId == Guid.Empty)
-                    && p.Roles!.Any(r =>
-                        r.Users!.Any(u => u.Id == userId)
-                        || r.Groups!.Any(g => g.Users!.Any(u => u.Id == userId))
-                    )
-                )
-                .Select(p => new EffectivePermission
-                {
-                    PermissionId = p.Id,
-                    Create = p.Create,
-                    Read = p.Read,
-                    Update = p.Update,
-                    Delete = p.Delete,
-                    Execute = p.Execute,
-                    Description = p.Description,
-                    ResourceType = p.ResourceType,
-                    ResourceId = p.ResourceId,
-                    Roles = p.Roles!.Where(r =>
-                            r.Users!.Any(u => u.Id == userId)
-                            || r.Groups!.Any(g => g.Users!.Any(u => u.Id == userId))
-                        )
-                        .Select(r => new EffectiveRole
-                        {
-                            RoleId = r.Id,
-                            RoleName = r.Name,
-                            IsDirect = r.Users!.Any(u => u.Id == userId),
-                            Groups = r.Groups!.Where(g => g.Users!.Any(u => u.Id == userId))
-                                .Select(g => new EffectiveGroup
-                                {
-                                    GroupId = g.Id,
-                                    GroupName = g.Name,
-                                })
-                                .ToList(),
-                        })
-                        .ToList(),
-                })
+        return await _permissionProcessor.GetEffectivePermissionsForUserAsync(
+            resourceType,
+            resourceId,
+            userContext.User.Id,
+            userContext.CurrentAccount!.Id
         );
+    }
 
-        return effectivePermissions.ToList();
+    private static async Task<RetrieveListResult<T>> WrapListResultAsync<T>(
+        Task<ListResult<T>> resultTask
+    )
+    {
+        var result = await resultTask;
+        return new RetrieveListResult<T>(result.ResultCode, result.Message, result.Data);
     }
 }

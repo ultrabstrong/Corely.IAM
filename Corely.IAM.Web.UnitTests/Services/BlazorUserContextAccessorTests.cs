@@ -5,6 +5,7 @@ using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Web.UnitTests.Services;
 
@@ -12,13 +13,15 @@ public class BlazorUserContextAccessorTests
 {
     private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor = new();
+    private readonly Mock<ILogger<BlazorUserContextAccessor>> _mockLogger = new();
     private readonly BlazorUserContextAccessor _accessor;
 
     public BlazorUserContextAccessorTests()
     {
         _accessor = new BlazorUserContextAccessor(
             _mockUserContextProvider.Object,
-            _mockHttpContextAccessor.Object
+            _mockHttpContextAccessor.Object,
+            _mockLogger.Object
         );
     }
 

@@ -57,7 +57,9 @@ else
 
     <div class="section-bar mt-4">
         <h6>Roles</h6>
-        <button class="btn btn-primary btn-sm" @onclick="() => _rolePickerModal.ShowAsync()" disabled="@_loading">Add Roles</button>
+        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+            <button class="btn btn-primary btn-sm" @onclick="() => _rolePickerModal.ShowAsync()" disabled="@_loading">Add Roles</button>
+        </PermissionView>
     </div>
     <table class="table table-sm table-hover mb-0">
         <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
@@ -75,7 +77,9 @@ else
                     </td>
                     <td class="table-actions">
                         <a href="@AppRoutes.Roles/@role.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                        <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                            <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                        </PermissionView>
                     </td>
                 </tr>
             }

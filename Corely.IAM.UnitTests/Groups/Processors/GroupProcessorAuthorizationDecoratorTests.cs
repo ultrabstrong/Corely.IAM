@@ -554,35 +554,6 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromGroupAsync_BypassesAuthorization_WhenFlagSet()
-    {
-        var request = new RemoveRolesFromGroupRequest(
-            [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7(),
-            BypassAuthorization: true
-        );
-        var expectedResult = new RemoveRolesFromGroupResult(
-            RemoveRolesFromGroupResultCode.Success,
-            "",
-            2,
-            []
-        );
-        _mockInnerProcessor
-            .Setup(x => x.RemoveRolesFromGroupAsync(request))
-            .ReturnsAsync(expectedResult);
-
-        var result = await _decorator.RemoveRolesFromGroupAsync(request);
-
-        Assert.Equal(expectedResult, result);
-        _mockAuthorizationProvider.Verify(
-            x =>
-                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
-            Times.Never
-        );
-        _mockInnerProcessor.Verify(x => x.RemoveRolesFromGroupAsync(request), Times.Once);
-    }
-
-    [Fact]
     public async Task DeleteGroupAsync_CallsAuthorizationProvider()
     {
         var groupId = Guid.CreateVersion7();

@@ -92,18 +92,15 @@ internal class RoleProcessorAuthorizationDecorator(
     public async Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(
         AssignPermissionsToRoleRequest request
     ) =>
-        request.BypassAuthorization
-        || (
-            await _authorizationProvider.IsAuthorizedAsync(
-                AuthAction.Update,
-                PermissionConstants.ROLE_RESOURCE_TYPE,
-                request.RoleId
-            )
-            && await _authorizationProvider.IsAuthorizedAsync(
-                AuthAction.Read,
-                PermissionConstants.PERMISSION_RESOURCE_TYPE,
-                [.. request.PermissionIds]
-            )
+        await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
+            PermissionConstants.ROLE_RESOURCE_TYPE,
+            request.RoleId
+        )
+        && await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.PERMISSION_RESOURCE_TYPE,
+            [.. request.PermissionIds]
         )
             ? await _inner.AssignPermissionsToRoleAsync(request)
             : new AssignPermissionsToRoleResult(
@@ -116,18 +113,15 @@ internal class RoleProcessorAuthorizationDecorator(
     public async Task<RemovePermissionsFromRoleResult> RemovePermissionsFromRoleAsync(
         RemovePermissionsFromRoleRequest request
     ) =>
-        request.BypassAuthorization
-        || (
-            await _authorizationProvider.IsAuthorizedAsync(
-                AuthAction.Update,
-                PermissionConstants.ROLE_RESOURCE_TYPE,
-                request.RoleId
-            )
-            && await _authorizationProvider.IsAuthorizedAsync(
-                AuthAction.Read,
-                PermissionConstants.PERMISSION_RESOURCE_TYPE,
-                [.. request.PermissionIds]
-            )
+        await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
+            PermissionConstants.ROLE_RESOURCE_TYPE,
+            request.RoleId
+        )
+        && await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.PERMISSION_RESOURCE_TYPE,
+            [.. request.PermissionIds]
         )
             ? await _inner.RemovePermissionsFromRoleAsync(request)
             : new RemovePermissionsFromRoleResult(

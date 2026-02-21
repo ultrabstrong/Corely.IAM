@@ -62,6 +62,17 @@ internal class UserProcessorTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(
+        Guid roleId,
+        Guid userId
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(UserProcessor),
+            new { roleId, userId },
+            () => _inner.AssignOwnerRolesToUserAsync(roleId, userId),
+            logResult: true
+        );
+
     public async Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(
         RemoveRolesFromUserRequest request
     ) =>

@@ -270,8 +270,14 @@ internal class AuthenticationProvider(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
+        if (!Guid.TryParse(request.TokenId, out var tokenId))
+        {
+            _logger.LogInformation("Auth token {TokenId} is not a valid GUID", request.TokenId);
+            return false;
+        }
         var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.UserId == request.UserId
+            t.Id == tokenId
+            && t.UserId == request.UserId
             && t.AccountId == request.AccountId
             && t.DeviceId == request.DeviceId
             && t.RevokedUtc == null
@@ -310,23 +316,21 @@ internal class AuthenticationProvider(
             t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > now
         );
 
+        if (activeTokens.Count == 0)
+            return;
+
         foreach (var token in activeTokens)
-        {
             token.RevokedUtc = now;
+
+        foreach (var token in activeTokens)
             await _authTokenRepo.UpdateAsync(token);
-        }
 
-        if (activeTokens.Count > 0)
-        {
-            _logger.LogInformation(
-                "Revoked {Count} auth tokens for user {UserId}",
-                activeTokens.Count,
-                userId
-            );
-        }
+        _logger.LogInformation(
+            "Revoked {Count} auth tokens for user {UserId}",
+            activeTokens.Count,
+            userId
+        );
     }
-
-    #region Private Helpers
 
     private async Task<UserEntity?> GetUserWithKeysAndAccountsAsync(
         System.Linq.Expressions.Expression<Func<UserEntity, bool>> predicate
@@ -456,6 +460,4 @@ internal class AuthenticationProvider(
     private static UserAuthTokenValidationResult CreateFailedValidationResult(
         UserAuthTokenValidationResultCode resultCode
     ) => new(resultCode, null, null, null, []);
-
-    #endregion
 }

@@ -2,12 +2,14 @@ using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Web.Services;
 
 public class BlazorUserContextAccessor(
     IUserContextProvider userContextProvider,
-    IHttpContextAccessor httpContextAccessor
+    IHttpContextAccessor httpContextAccessor,
+    ILogger<BlazorUserContextAccessor> logger
 ) : IBlazorUserContextAccessor
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -55,8 +57,9 @@ public class BlazorUserContextAccessor(
 
             return null;
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogError(ex, "Failed to set user context from auth token");
             return null;
         }
         finally

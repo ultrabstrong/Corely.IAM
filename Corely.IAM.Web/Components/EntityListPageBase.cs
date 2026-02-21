@@ -23,6 +23,7 @@ public abstract class EntityListPageBase<TItem> : EntityPageBase
     protected async Task OnSearchChangedAsync()
     {
         _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
         _debounceCts = new CancellationTokenSource();
         var token = _debounceCts.Token;
 

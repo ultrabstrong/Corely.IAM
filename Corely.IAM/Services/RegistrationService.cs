@@ -159,8 +159,9 @@ internal class RegistrationService(
                 createAccountResult.CreatedId
             );
 
-            var assignRoleResult = await _userProcessor.AssignRolesToUserAsync(
-                new([rolesResult.OwnerRoleId], ownerUserId, BypassAuthorization: true)
+            var assignRoleResult = await _userProcessor.AssignOwnerRolesToUserAsync(
+                rolesResult.OwnerRoleId,
+                ownerUserId
             );
             if (assignRoleResult.ResultCode != AssignRolesToUserResultCode.Success)
             {

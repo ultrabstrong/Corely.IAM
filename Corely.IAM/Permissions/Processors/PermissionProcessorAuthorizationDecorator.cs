@@ -68,6 +68,13 @@ internal class PermissionProcessorAuthorizationDecorator(
                 null
             );
 
+    public Task<List<EffectivePermission>> GetEffectivePermissionsForUserAsync(
+        string resourceType,
+        Guid resourceId,
+        Guid userId,
+        Guid accountId
+    ) => _inner.GetEffectivePermissionsForUserAsync(resourceType, resourceId, userId, accountId);
+
     public async Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,

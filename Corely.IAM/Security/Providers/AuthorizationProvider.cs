@@ -1,3 +1,4 @@
+using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
@@ -14,10 +15,15 @@ internal class AuthorizationProvider(
     ILogger<AuthorizationProvider> logger
 ) : IAuthorizationProvider, IAuthorizationCacheClearer
 {
-    private readonly IUserContextProvider _userContextProvider = userContextProvider;
-    private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo;
-    private readonly ILogger<AuthorizationProvider> _logger = logger;
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
+    );
+    private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo.ThrowIfNull(
+        nameof(permissionRepo)
+    );
+    private readonly ILogger<AuthorizationProvider> _logger = logger.ThrowIfNull(nameof(logger));
     private IReadOnlyList<PermissionEntity>? _cachedPermissions;
+    private Guid? _cachedAccountId;
     private readonly SemaphoreSlim _cacheLock = new(1, 1);
 
     public async Task<bool> IsAuthorizedAsync(
@@ -54,7 +60,7 @@ internal class AuthorizationProvider(
         // If user has wildcard permission, all resources are authorized
         // Otherwise, verify ALL requested resource IDs have a matching permission
         var hasPermission =
-            hasWildcardPermission || resourceIds.Length == 0
+            (hasWildcardPermission || resourceIds.Length == 0)
                 ? relevantPermissions.Count > 0
                 : resourceIds.All(id => relevantPermissions.Any(p => p.ResourceId == id));
 
@@ -126,6 +132,7 @@ internal class AuthorizationProvider(
     public void ClearCache()
     {
         _cachedPermissions = null;
+        _cachedAccountId = null;
     }
 
     private bool TryGetUserContext(out UserContext userContext, string operation)
@@ -147,8 +154,10 @@ internal class AuthorizationProvider(
 
     private async Task<IReadOnlyList<PermissionEntity>> GetPermissionsAsync()
     {
-        // Fast path - cache already populated
-        if (_cachedPermissions is not null)
+        var currentAccountId = _userContextProvider.GetUserContext()?.CurrentAccount?.Id;
+
+        // Fast path - cache already populated for the same account
+        if (_cachedPermissions is not null && _cachedAccountId == currentAccountId)
             return _cachedPermissions;
 
         // Serialize access to prevent concurrent DbContext usage
@@ -156,7 +165,7 @@ internal class AuthorizationProvider(
         try
         {
             // Double-check after acquiring lock
-            if (_cachedPermissions is not null)
+            if (_cachedPermissions is not null && _cachedAccountId == currentAccountId)
                 return _cachedPermissions;
 
             var userContext = _userContextProvider.GetUserContext()!;
@@ -170,6 +179,8 @@ internal class AuthorizationProvider(
                 )
                 && p.AccountId == contextAccountId
             );
+
+            _cachedAccountId = contextAccountId;
 
             return _cachedPermissions;
         }

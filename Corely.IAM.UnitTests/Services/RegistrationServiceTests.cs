@@ -133,6 +133,9 @@ public class RegistrationServiceTests
         mock.Setup(m => m.AssignRolesToUserAsync(It.IsAny<AssignRolesToUserRequest>()))
             .ReturnsAsync(() => _assignRolesToUserResult);
 
+        mock.Setup(m => m.AssignOwnerRolesToUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
+            .ReturnsAsync(() => _assignRolesToUserResult);
+
         return mock;
     }
 
@@ -286,7 +289,7 @@ public class RegistrationServiceTests
             Times.Once
         );
         _userProcessorMock.Verify(
-            m => m.AssignRolesToUserAsync(It.IsAny<AssignRolesToUserRequest>()),
+            m => m.AssignOwnerRolesToUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
             Times.Once
         );
         _unitOfWorkProviderMock.Verify(

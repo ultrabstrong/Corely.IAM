@@ -17,4 +17,10 @@ internal interface IPermissionProcessor
     );
     Task<GetResult<Permission>> GetPermissionByIdAsync(Guid permissionId, bool hydrate);
     Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId);
+    Task<List<EffectivePermission>> GetEffectivePermissionsForUserAsync(
+        string resourceType,
+        Guid resourceId,
+        Guid userId,
+        Guid accountId
+    );
 }

@@ -23,30 +23,38 @@ else if (_permission == null)
 }
 else
 {
-    <div class="props-grid mb-3">
-        <span class="prop-label">Resource Type</span>
-        <span class="prop-value">@_permission.ResourceType</span>
-        <span class="prop-label">Resource ID</span>
-        <span class="prop-value">@(_permission.ResourceId == Guid.Empty ? "all" : _permission.ResourceId)</span>
-        <span class="prop-label">Description</span>
-        <span class="prop-value">@(_permission.Description ?? "—")</span>
-        <span class="prop-label">CRUDX</span>
-        <span class="prop-value">
-            <span class="d-flex gap-2">
-                <span class="permission-badge @(_permission.Create ? "active" : "inactive")">C</span>
-                <span class="permission-badge @(_permission.Read ? "active" : "inactive")">R</span>
-                <span class="permission-badge @(_permission.Update ? "active" : "inactive")">U</span>
-                <span class="permission-badge @(_permission.Delete ? "active" : "inactive")">D</span>
-                <span class="permission-badge @(_permission.Execute ? "active" : "inactive")">X</span>
-            </span>
-        </span>
+    <div class="detail-section">
+
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
+                Details
+                <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
+                </PermissionView>
+            </div>
+            <div class="props-grid">
+                <span class="prop-label">Resource Type</span>
+                <span class="prop-value">@_permission.ResourceType</span>
+                <span class="prop-label">Resource ID</span>
+                <span class="prop-value">@(_permission.ResourceId == Guid.Empty ? "all" : _permission.ResourceId)</span>
+                <span class="prop-label">Description</span>
+                <span class="prop-value">@(_permission.Description ?? "—")</span>
+                <span class="prop-label">CRUDX</span>
+                <span class="prop-value">
+                    <span class="d-flex gap-2">
+                        <span class="permission-badge @(_permission.Create ? "active" : "inactive")">C</span>
+                        <span class="permission-badge @(_permission.Read ? "active" : "inactive")">R</span>
+                        <span class="permission-badge @(_permission.Update ? "active" : "inactive")">U</span>
+                        <span class="permission-badge @(_permission.Delete ? "active" : "inactive")">D</span>
+                        <span class="permission-badge @(_permission.Execute ? "active" : "inactive")">X</span>
+                    </span>
+                </span>
+            </div>
+        </div>
+
+        <EffectivePermissionsPanel Permissions="_effectivePermissions" UseCard="false" />
+
     </div>
-
-    <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-        <button class="btn btn-outline-danger btn-sm mt-2" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
-    </PermissionView>
-
-    <EffectivePermissionsPanel Permissions="_effectivePermissions" />
 }
 
 <ConfirmModal @ref="_confirmModal" Title="Delete Permission" ConfirmText="Delete" OnConfirm="DeleteAsync" />

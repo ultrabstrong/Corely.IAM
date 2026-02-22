@@ -25,111 +25,129 @@ else if (_group == null)
 }
 else
 {
-    <!-- Properties -->
-    @if (_isEditing)
-    {
-        <div class="props-grid mb-3">
-            <span class="prop-label">Name</span>
-            <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editName" /></div>
-            <span class="prop-label">Description</span>
-            <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editDescription" placeholder="Optional" /></div>
-        </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-primary btn-sm" @onclick="SavePropertiesAsync" disabled="@_loading">Save</button>
-            <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
-        </div>
-    }
-    else
-    {
-        <div class="props-grid mb-3">
-            <span class="prop-label">Name</span>
-            <span class="prop-value">@_group.Name</span>
-            <span class="prop-label">Description</span>
-            <span class="prop-value">@(_group.Description ?? "—")</span>
-        </div>
-        <div class="d-flex gap-2">
-            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
-            </PermissionView>
-            <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
-            </PermissionView>
-        </div>
-    }
+    <div class="detail-section">
 
-    <!-- Users -->
-    <div class="section-bar mt-4">
-        <h6>Users</h6>
-        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-            <button class="btn btn-primary btn-sm" @onclick="() => _userPickerModal.ShowAsync()" disabled="@_loading">Add Users</button>
-        </PermissionView>
-    </div>
-    <table class="table table-sm table-hover mb-0">
-        <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
-        <tbody>
-            @if (_group.Users == null || _group.Users.Count == 0)
+        <!-- Properties -->
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
+                Details
+                @if (!_isEditing)
+                {
+                    <div class="d-flex gap-2">
+                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                            <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
+                        </PermissionView>
+                        <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                            <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
+                        </PermissionView>
+                    </div>
+                }
+            </div>
+            @if (_isEditing)
             {
-                <tr><td colspan="2" class="text-muted text-center">No users assigned</td></tr>
+                <div class="props-grid mb-3">
+                    <span class="prop-label">Name</span>
+                    <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editName" /></div>
+                    <span class="prop-label">Description</span>
+                    <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editDescription" placeholder="Optional" /></div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary btn-sm" @onclick="SavePropertiesAsync" disabled="@_loading">Save</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
+                </div>
             }
             else
             {
-                @foreach (var user in PagedUsers)
-                {
-                    <tr>
-                        <td>
-                            @user.Name
-                            <br /><small class="guid-text">@user.Id</small>
-                        </td>
-                        <td class="table-actions">
-                            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                                <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
-                            </PermissionView>
-                        </td>
-                    </tr>
-                }
+                <div class="props-grid">
+                    <span class="prop-label">Name</span>
+                    <span class="prop-value">@_group.Name</span>
+                    <span class="prop-label">Description</span>
+                    <span class="prop-value">@(_group.Description ?? "—")</span>
+                </div>
             }
-        </tbody>
-    </table>
-    <Pagination Skip="_usersSkip" Take="@RelationPageSize" TotalCount="@UsersTotalCount"
-                OnPageChanged="newSkip => { _usersSkip = newSkip; StateHasChanged(); }" />
+        </div>
 
-    <!-- Roles -->
-    <div class="section-bar mt-4">
-        <h6>Roles</h6>
-        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-            <button class="btn btn-primary btn-sm" @onclick="() => _rolePickerModal.ShowAsync()" disabled="@_loading">Add Roles</button>
-        </PermissionView>
+        <!-- Users -->
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
+                Users
+                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-primary btn-sm" @onclick="() => _userPickerModal.ShowAsync()" disabled="@_loading">Add Users</button>
+                </PermissionView>
+            </div>
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+                <tbody>
+                    @if (_group.Users == null || _group.Users.Count == 0)
+                    {
+                        <tr><td colspan="2" class="text-muted text-center">No users assigned</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var user in PagedUsers)
+                        {
+                            <tr>
+                                <td>
+                                    @user.Name
+                                    <br /><small class="guid-text">@user.Id</small>
+                                </td>
+                                <td class="table-actions">
+                                    <a href="@AppRoutes.Users/@user.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                        <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                                    </PermissionView>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+            <Pagination Skip="_usersSkip" Take="@RelationPageSize" TotalCount="@UsersTotalCount"
+                        OnPageChanged="newSkip => { _usersSkip = newSkip; StateHasChanged(); }" />
+        </div>
+
+        <!-- Roles -->
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
+                Roles
+                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-primary btn-sm" @onclick="() => _rolePickerModal.ShowAsync()" disabled="@_loading">Add Roles</button>
+                </PermissionView>
+            </div>
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+                <tbody>
+                    @if (_group.Roles == null || _group.Roles.Count == 0)
+                    {
+                        <tr><td colspan="2" class="text-muted text-center">No roles assigned</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var role in PagedRoles)
+                        {
+                            <tr>
+                                <td>
+                                    @role.Name
+                                    <br /><small class="guid-text">@role.Id</small>
+                                </td>
+                                <td class="table-actions">
+                                    <a href="@AppRoutes.Roles/@role.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                        <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                                    </PermissionView>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+            <Pagination Skip="_rolesSkip" Take="@RelationPageSize" TotalCount="@RolesTotalCount"
+                        OnPageChanged="newSkip => { _rolesSkip = newSkip; StateHasChanged(); }" />
+        </div>
+
+        <EffectivePermissionsPanel Permissions="_effectivePermissions" UseCard="false" />
+
     </div>
-    <table class="table table-sm table-hover mb-0">
-        <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
-        <tbody>
-            @if (_group.Roles == null || _group.Roles.Count == 0)
-            {
-                <tr><td colspan="2" class="text-muted text-center">No roles assigned</td></tr>
-            }
-            else
-            {
-                @foreach (var role in PagedRoles)
-                {
-                    <tr>
-                        <td>
-                            @role.Name
-                            <br /><small class="guid-text">@role.Id</small>
-                        </td>
-                        <td class="table-actions">
-                            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                                <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)" title="Remove"><i class="bi bi-trash"></i></button>
-                            </PermissionView>
-                        </td>
-                    </tr>
-                }
-            }
-        </tbody>
-    </table>
-    <Pagination Skip="_rolesSkip" Take="@RelationPageSize" TotalCount="@RolesTotalCount"
-                OnPageChanged="newSkip => { _rolesSkip = newSkip; StateHasChanged(); }" />
-
-    <EffectivePermissionsPanel Permissions="_effectivePermissions" />
 }
 
 <EntityPickerModal @ref="_userPickerModal"

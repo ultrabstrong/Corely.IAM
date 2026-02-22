@@ -1,46 +1,31 @@
 @if (Permissions != null && Permissions.Count > 0)
 {
-    <div class="section-bar mt-4">
-        <h6>Your Access</h6>
-    </div>
-    <div class="effective-permissions-panel">
-        <div class="d-flex gap-2 mb-3">
-            <span class="permission-badge @(_agg.Create ? "active" : "inactive")">C</span>
-            <span class="permission-badge @(_agg.Read ? "active" : "inactive")">R</span>
-            <span class="permission-badge @(_agg.Update ? "active" : "inactive")">U</span>
-            <span class="permission-badge @(_agg.Delete ? "active" : "inactive")">D</span>
-            <span class="permission-badge @(_agg.Execute ? "active" : "inactive")">X</span>
+    @if (UseCard)
+    {
+        <div class="card mb-3">
+            <div class="card-header">
+                <span class="card-section-title">Your Access</span>
+            </div>
+            <div class="card-body">
+                @RenderContent()
+            </div>
         </div>
-
-        <div class="ep-grants">
-            <small class="text-muted d-block mb-1">Granted via:</small>
-            @foreach (var role in _derivations)
-            {
-                <div class="ep-grant-row">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-shield text-muted"></i>
-                        <a href="@AppRoutes.Roles/@role.RoleId" class="text-decoration-none">@role.RoleName</a>
-                        @if (role.IsDirect)
-                        {
-                            <span class="ep-via-badge direct">direct</span>
-                        }
-                        @foreach (var group in role.Groups)
-                        {
-                            <span class="ep-via-badge group">
-                                via <a href="@AppRoutes.Groups/@group.Key" class="text-decoration-none">@group.Value</a>
-                            </span>
-                        }
-                    </div>
-                    <span class="ep-crudx-mini">@role.CrudxLabel</span>
-                </div>
-            }
+    }
+    else
+    {
+        <div class="section-divider mb-3">
+            <div class="section-divider-label">Your Access</div>
+            @RenderContent()
         </div>
-    </div>
+    }
 }
 
 @code {
     [Parameter]
     public List<EffectivePermission>? Permissions { get; set; }
+
+    [Parameter]
+    public bool UseCard { get; set; } = true;
 
     private (bool Create, bool Read, bool Update, bool Delete, bool Execute) _agg;
     private List<RoleDerivation> _derivations = [];
@@ -82,6 +67,40 @@
         }
         _derivations = roleMap.Values.OrderBy(r => r.RoleName).ToList();
     }
+
+    private RenderFragment RenderContent() =>
+        @<div>
+            <div class="d-flex gap-2 mb-3">
+                <span class="permission-badge @(_agg.Create ? "active" : "inactive")">C</span>
+                <span class="permission-badge @(_agg.Read ? "active" : "inactive")">R</span>
+                <span class="permission-badge @(_agg.Update ? "active" : "inactive")">U</span>
+                <span class="permission-badge @(_agg.Delete ? "active" : "inactive")">D</span>
+                <span class="permission-badge @(_agg.Execute ? "active" : "inactive")">X</span>
+            </div>
+            <div class="ep-grants">
+                <small class="text-muted d-block mb-1">Granted via:</small>
+                @foreach (var role in _derivations)
+                {
+                    <div class="ep-grant-row">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-shield text-muted"></i>
+                            <a href="@AppRoutes.Roles/@role.RoleId" class="text-decoration-none">@role.RoleName</a>
+                            @if (role.IsDirect)
+                            {
+                                <span class="ep-via-badge direct">direct</span>
+                            }
+                            @foreach (var group in role.Groups)
+                            {
+                                <span class="ep-via-badge group">
+                                    via <a href="@AppRoutes.Groups/@group.Key" class="text-decoration-none">@group.Value</a>
+                                </span>
+                            }
+                        </div>
+                        <span class="ep-crudx-mini">@role.CrudxLabel</span>
+                    </div>
+                }
+            </div>
+        </div>;
 
     private class RoleDerivation(Guid roleId, string roleName)
     {

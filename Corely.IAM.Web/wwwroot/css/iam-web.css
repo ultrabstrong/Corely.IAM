@@ -111,6 +111,24 @@
     color: #495057;
 }
 
+/* Detail page section cards */
+.detail-section .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background-color: #f8f9fa;
+}
+
+.detail-section .card-section-title {
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #495057;
+    margin-bottom: 0;
+}
+
 /* Icon action buttons */
 .icon-btn {
     display: inline-flex;
@@ -270,6 +288,49 @@ th.sortable.active .sort-icon {
 /* Effective permissions panel */
 .effective-permissions-panel {
     padding: 0.75rem 0;
+}
+
+.section-divider {
+    padding-top: 0.25rem;
+}
+
+.section-divider + .section-divider {
+    margin-top: 2.5rem;
+}
+
+.section-divider-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #343a40;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.section-divider-label::after {
+    content: "";
+    flex: 1;
+    height: 2px;
+    background: #dee2e6;
+    order: 1;
+}
+
+.section-divider-label > * {
+    order: 2;
+}
+
+.ep-flat-header {
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #495057;
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
 }
 
 .ep-grant-row {

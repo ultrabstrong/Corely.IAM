@@ -20,75 +20,96 @@
 }
 else
 {
-    <div class="props-grid mb-3">
-        <span class="prop-label">Username</span>
-        <span class="prop-value">@_username</span>
-        <span class="prop-label">Email</span>
-        <span class="prop-value">@_email</span>
-    </div>
+    <div class="detail-section">
 
-    <div class="section-bar mt-4">
-        <h6>Groups</h6>
-    </div>
-    <table class="table table-sm table-hover mb-0">
-        <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
-        <tbody>
-            @if (_groups.Count == 0)
-            {
-                <tr><td colspan="2" class="text-muted text-center">No groups assigned</td></tr>
-            }
-            @foreach (var group in PagedGroups)
-            {
-                <tr>
-                    <td>
-                        @group.Name
-                        <br /><small class="guid-text">@group.Id</small>
-                    </td>
-                    <td class="table-actions">
-                        <a href="@AppRoutes.Groups/@group.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    <Pagination Skip="_groupsSkip" Take="@RelationPageSize" TotalCount="@GroupsTotalCount"
-                OnPageChanged="newSkip => { _groupsSkip = newSkip; StateHasChanged(); }" />
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">Details</div>
+            <div class="props-grid">
+                <span class="prop-label">Username</span>
+                <span class="prop-value">@_username</span>
+                <span class="prop-label">Email</span>
+                <span class="prop-value">@_email</span>
+            </div>
+        </div>
 
-    <div class="section-bar mt-4">
-        <h6>Roles</h6>
-        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-            <button class="btn btn-primary btn-sm" @onclick="() => _rolePickerModal.ShowAsync()" disabled="@_loading">Add Roles</button>
-        </PermissionView>
-    </div>
-    <table class="table table-sm table-hover mb-0">
-        <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
-        <tbody>
-            @if (_roles.Count == 0)
-            {
-                <tr><td colspan="2" class="text-muted text-center">No roles assigned</td></tr>
-            }
-            @foreach (var role in PagedRoles)
-            {
-                <tr>
-                    <td>
-                        @role.Name
-                        <br /><small class="guid-text">@role.Id</small>
-                    </td>
-                    <td class="table-actions">
-                        <a href="@AppRoutes.Roles/@role.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                            <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)" title="Remove"><i class="bi bi-trash"></i></button>
-                        </PermissionView>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    <Pagination Skip="_rolesSkip" Take="@RelationPageSize" TotalCount="@RolesTotalCount"
-                OnPageChanged="newSkip => { _rolesSkip = newSkip; StateHasChanged(); }" />
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
+                Groups
+                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-primary btn-sm" @onclick="() => _groupPickerModal.ShowAsync()" disabled="@_loading">Add Groups</button>
+                </PermissionView>
+            </div>
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+                <tbody>
+                    @if (_groups.Count == 0)
+                    {
+                        <tr><td colspan="2" class="text-muted text-center">No groups assigned</td></tr>
+                    }
+                    @foreach (var group in PagedGroups)
+                    {
+                        <tr>
+                            <td>
+                                @group.Name
+                                <br /><small class="guid-text">@group.Id</small>
+                            </td>
+                            <td class="table-actions">
+                                <a href="@AppRoutes.Groups/@group.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <Pagination Skip="_groupsSkip" Take="@RelationPageSize" TotalCount="@GroupsTotalCount"
+                        OnPageChanged="newSkip => { _groupsSkip = newSkip; StateHasChanged(); }" />
+        </div>
 
-    <EffectivePermissionsPanel Permissions="_effectivePermissions" />
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
+                Roles
+                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-primary btn-sm" @onclick="() => _rolePickerModal.ShowAsync()" disabled="@_loading">Add Roles</button>
+                </PermissionView>
+            </div>
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+                <tbody>
+                    @if (_roles.Count == 0)
+                    {
+                        <tr><td colspan="2" class="text-muted text-center">No roles assigned</td></tr>
+                    }
+                    @foreach (var role in PagedRoles)
+                    {
+                        <tr>
+                            <td>
+                                @role.Name
+                                <br /><small class="guid-text">@role.Id</small>
+                            </td>
+                            <td class="table-actions">
+                                <a href="@AppRoutes.Roles/@role.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
+                                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                    <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                                </PermissionView>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <Pagination Skip="_rolesSkip" Take="@RelationPageSize" TotalCount="@RolesTotalCount"
+                        OnPageChanged="newSkip => { _rolesSkip = newSkip; StateHasChanged(); }" />
+        </div>
+
+        <EffectivePermissionsPanel Permissions="_effectivePermissions" UseCard="false" />
+
+    </div>
 }
+
+<EntityPickerModal @ref="_groupPickerModal"
+                   Title="Assign Groups to User"
+                   SearchPlaceholder="Search groups..."
+                   FetchItemsAsync="FetchAvailableGroupsAsync"
+                   ExcludeIds="_assignedGroupIds"
+                   OnConfirm="AddGroupsAsync" />
 
 <EntityPickerModal @ref="_rolePickerModal"
                    Title="Assign Roles to User"
@@ -104,8 +125,10 @@ else
     private string? _email;
     private List<ChildRef> _groups = [];
     private List<ChildRef> _roles = [];
+    private HashSet<Guid> _assignedGroupIds = [];
     private HashSet<Guid> _assignedRoleIds = [];
     private List<EffectivePermission>? _effectivePermissions;
+    private EntityPickerModal _groupPickerModal = null!;
     private EntityPickerModal _rolePickerModal = null!;
     private ConfirmModal _confirmModal = null!;
 
@@ -126,6 +149,7 @@ else
             _email = result.Item.Email;
             _groups = result.Item.Groups ?? [];
             _roles = result.Item.Roles ?? [];
+            _assignedGroupIds = _groups.Select(g => g.Id).ToHashSet();
             _assignedRoleIds = _roles.Select(r => r.Id).ToHashSet();
             _effectivePermissions = result.EffectivePermissions;
         }
@@ -133,6 +157,37 @@ else
         {
             NavigationManager.NavigateTo(AppRoutes.Users);
         }
+    }
+
+    private async Task<(List<PickerItem>, int)> FetchAvailableGroupsAsync(int skip, int take)
+    {
+        var result = await RetrievalService.ListGroupsAsync(skip: skip, take: take);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
+        {
+            var items = result.Data.Items.Select(g => new PickerItem(g.Id, g.Name, g.Description)).ToList();
+            return (items, result.Data.TotalCount);
+        }
+        return ([], 0);
+    }
+
+    private async Task AddGroupsAsync(List<Guid> groupIds)
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            foreach (var groupId in groupIds)
+            {
+                var result = await RegistrationService.RegisterUsersWithGroupAsync(
+                    new RegisterUsersWithGroupRequest([Id], groupId)
+                );
+                if (result.ResultCode != AddUsersToGroupResultCode.Success)
+                {
+                    SetResultMessage(false, string.Empty, result.Message ?? "Failed.");
+                    return;
+                }
+            }
+            SetResultMessage(true, $"{groupIds.Count} group(s) assigned.", null);
+            await ReloadAsync();
+        });
     }
 
     private async Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take)

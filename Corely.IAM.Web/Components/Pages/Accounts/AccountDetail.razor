@@ -22,66 +22,80 @@
 }
 else
 {
-    @if (_isEditing)
-    {
-        <div class="props-grid mb-3">
-            <span class="prop-label">Account Name</span>
-            <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_accountName" /></div>
-        </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
-            <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
-        </div>
-    }
-    else
-    {
-        <div class="props-grid mb-3">
-            <span class="prop-label">Account Name</span>
-            <span class="prop-value">@_accountName</span>
-        </div>
-        <div class="d-flex gap-2">
-            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
-            </PermissionView>
-            <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
-            </PermissionView>
-        </div>
-    }
+    <div class="detail-section">
 
-    <div class="section-bar mt-4">
-        <h6>Users</h6>
-        <div class="d-flex gap-2 align-items-center">
-            <input type="text" class="form-control form-control-sm" style="width: 260px;" @bind="_newUserId" placeholder="User ID (GUID)" />
-            <button class="btn btn-primary btn-sm" @onclick="AddUserAsync" disabled="@_loading">Add User</button>
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
+                Details
+                @if (!_isEditing)
+                {
+                    <div class="d-flex gap-2">
+                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                            <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
+                        </PermissionView>
+                        <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                            <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
+                        </PermissionView>
+                    </div>
+                }
+            </div>
+            @if (_isEditing)
+            {
+                <div class="props-grid mb-3">
+                    <span class="prop-label">Account Name</span>
+                    <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_accountName" /></div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
+                </div>
+            }
+            else
+            {
+                <div class="props-grid">
+                    <span class="prop-label">Account Name</span>
+                    <span class="prop-value">@_accountName</span>
+                </div>
+            }
         </div>
+
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
+                Users
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="text" class="form-control form-control-sm" style="width: 260px;" @bind="_newUserId" placeholder="User ID (GUID)" />
+                    <button class="btn btn-primary btn-sm" @onclick="AddUserAsync" disabled="@_loading">Add User</button>
+                </div>
+            </div>
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+                <tbody>
+                    @if (_users.Count == 0)
+                    {
+                        <tr><td colspan="2" class="text-muted text-center">No users</td></tr>
+                    }
+                    @foreach (var user in PagedUsers)
+                    {
+                        <tr>
+                            <td>
+                                @user.Name
+                                <br /><small class="guid-text">@user.Id</small>
+                            </td>
+                            <td class="table-actions">
+                                <a href="@AppRoutes.Users/@user.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
+                                <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <Pagination Skip="_usersSkip" Take="@RelationPageSize" TotalCount="@UsersTotalCount"
+                        OnPageChanged="newSkip => { _usersSkip = newSkip; StateHasChanged(); }" />
+        </div>
+
+        <EffectivePermissionsPanel Permissions="_effectivePermissions" UseCard="false" />
+
     </div>
-    <table class="table table-sm table-hover mb-0">
-        <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
-        <tbody>
-            @if (_users.Count == 0)
-            {
-                <tr><td colspan="2" class="text-muted text-center">No users</td></tr>
-            }
-            @foreach (var user in PagedUsers)
-            {
-                <tr>
-                    <td>
-                        @user.Name
-                        <br /><small class="guid-text">@user.Id</small>
-                    </td>
-                    <td class="table-actions">
-                        <a href="@AppRoutes.Users/@user.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                        <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    <Pagination Skip="_usersSkip" Take="@RelationPageSize" TotalCount="@UsersTotalCount"
-                OnPageChanged="newSkip => { _usersSkip = newSkip; StateHasChanged(); }" />
-
-    <EffectivePermissionsPanel Permissions="_effectivePermissions" />
 }
 
 <ConfirmModal @ref="_removeUserModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />

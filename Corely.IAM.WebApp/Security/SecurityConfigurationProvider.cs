@@ -2,9 +2,9 @@ using Corely.IAM.Security.Providers;
 using Corely.Security.KeyStore;
 using Microsoft.Extensions.Configuration;
 
-namespace Corely.IAM.Web.Security;
+namespace Corely.IAM.WebApp.Security;
 
-public class SecurityConfigurationProvider(IConfiguration configuration)
+internal class SecurityConfigurationProvider(IConfiguration configuration)
     : ISecurityConfigurationProvider
 {
     private readonly InMemorySymmetricKeyStoreProvider _keyStoreProvider = new(

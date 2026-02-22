@@ -1,9 +1,9 @@
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM;
 using Corely.IAM.Web.Extensions;
-using Corely.IAM.Web.Security;
 using Corely.IAM.WebApp.Components;
 using Corely.IAM.WebApp.DataAccess;
+using Corely.IAM.WebApp.Security;
 using Microsoft.Extensions.Logging;
 using Serilog;
 

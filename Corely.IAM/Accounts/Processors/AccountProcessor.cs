@@ -6,6 +6,7 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Processors;
@@ -436,7 +437,11 @@ internal class AccountProcessor(
             account.Groups = accountEntity.Groups?.Select(g => new ChildRef(g.Id, g.Name)).ToList();
             account.Roles = accountEntity.Roles?.Select(r => new ChildRef(r.Id, r.Name)).ToList();
             account.Permissions = accountEntity
-                .Permissions?.Select(p => new ChildRef(p.Id, p.Description ?? p.ResourceType))
+                .Permissions?.Select(p => new ChildRef(
+                    p.Id,
+                    p.Description
+                        ?? $"{p.ResourceType} - {(p.ResourceId == Guid.Empty ? "all" : p.ResourceId)} {PermissionLabelProvider.GetCrudxLabel(p.Create, p.Read, p.Update, p.Delete, p.Execute)}"
+                ))
                 .ToList();
         }
 

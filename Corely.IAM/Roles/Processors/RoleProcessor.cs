@@ -4,6 +4,7 @@ using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Roles.Constants;
@@ -201,7 +202,11 @@ internal class RoleProcessor(
             role.Groups = roleEntity.Groups?.Select(g => new ChildRef(g.Id, g.Name)).ToList() ?? [];
             role.Permissions =
                 roleEntity
-                    .Permissions?.Select(p => new ChildRef(p.Id, p.Description ?? string.Empty))
+                    .Permissions?.Select(p => new ChildRef(
+                        p.Id,
+                        p.Description
+                            ?? $"{p.ResourceType} - {(p.ResourceId == Guid.Empty ? "all" : p.ResourceId)} {PermissionLabelProvider.GetCrudxLabel(p.Create, p.Read, p.Update, p.Delete, p.Execute)}"
+                    ))
                     .ToList()
                 ?? [];
         }

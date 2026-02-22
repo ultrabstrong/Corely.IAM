@@ -2,7 +2,6 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityDetailPageBase
 @inject IRetrievalService RetrievalService
-@inject IModificationService ModificationService
 @inject IRegistrationService RegistrationService
 @inject IDeregistrationService DeregistrationService
 
@@ -21,39 +20,12 @@
 }
 else
 {
-    @if (_isEditing)
-    {
-        <div class="props-grid mb-3">
-            <span class="prop-label">Username</span>
-            <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_username" /></div>
-            <span class="prop-label">Email</span>
-            <div class="prop-value"><input type="email" class="form-control form-control-sm" @bind="_email" /></div>
-        </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
-            <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
-        </div>
-    }
-    else
-    {
-        <div class="props-grid mb-3">
-            <span class="prop-label">Username</span>
-            <span class="prop-value">@_username</span>
-            <span class="prop-label">Email</span>
-            <span class="prop-value">@_email</span>
-        </div>
-        <div class="d-flex gap-2">
-            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
-            </PermissionView>
-            @if (Id == UserContext?.User?.Id)
-            {
-                <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                    <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
-                </PermissionView>
-            }
-        </div>
-    }
+    <div class="props-grid mb-3">
+        <span class="prop-label">Username</span>
+        <span class="prop-value">@_username</span>
+        <span class="prop-label">Email</span>
+        <span class="prop-value">@_email</span>
+    </div>
 
     <div class="section-bar mt-4">
         <h6>Groups</h6>
@@ -126,21 +98,16 @@ else
                    OnConfirm="AddRolesAsync" />
 
 <ConfirmModal @ref="_confirmModal" Title="Remove Role" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveRoleAsync" />
-<ConfirmModal @ref="_deleteModal" Title="Delete User" Message="@($"Permanently delete user '{_username}'? This cannot be undone.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
     private string? _username;
     private string? _email;
-    private string? _originalUsername;
-    private string? _originalEmail;
-    private bool _isEditing;
     private List<ChildRef> _groups = [];
     private List<ChildRef> _roles = [];
     private HashSet<Guid> _assignedRoleIds = [];
     private List<EffectivePermission>? _effectivePermissions;
     private EntityPickerModal _rolePickerModal = null!;
     private ConfirmModal _confirmModal = null!;
-    private ConfirmModal _deleteModal = null!;
 
     private int _groupsSkip;
     private int _rolesSkip;
@@ -168,20 +135,6 @@ else
         }
     }
 
-    private void StartEdit()
-    {
-        _originalUsername = _username;
-        _originalEmail = _email;
-        _isEditing = true;
-    }
-
-    private void CancelEdit()
-    {
-        _username = _originalUsername;
-        _email = _originalEmail;
-        _isEditing = false;
-    }
-
     private async Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take)
     {
         var result = await RetrievalService.ListRolesAsync(skip: skip, take: take);
@@ -193,18 +146,6 @@ else
         return ([], 0);
     }
 
-    private async Task SaveAsync()
-    {
-        if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_email)) return;
-        await ExecuteSafeAsync(async () =>
-        {
-            var result = await ModificationService.ModifyUserAsync(new UpdateUserRequest(Id, _username, _email));
-            SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Saved.", result.Message);
-            if (result.ResultCode == ModifyResultCode.Success)
-                _isEditing = false;
-        });
-    }
-
     private async Task AddRolesAsync(List<Guid> roleIds)
     {
         await ExecuteSafeAsync(async () =>
@@ -212,22 +153,6 @@ else
             var result = await RegistrationService.RegisterRolesWithUserAsync(new RegisterRolesWithUserRequest(roleIds, Id));
             SetResultMessage(result.ResultCode == AssignRolesToUserResultCode.Success, $"{roleIds.Count} role(s) assigned.", result.Message ?? "Failed.");
             await ReloadAsync();
-        });
-    }
-
-    private void ConfirmDelete() => _deleteModal.Show();
-
-    private async Task DeleteAsync()
-    {
-        await ExecuteSafeAsync(async () =>
-        {
-            var result = await DeregistrationService.DeregisterUserAsync();
-            if (result.ResultCode == DeregisterUserResultCode.Success)
-            {
-                NavigationManager.NavigateTo(AppRoutes.SignOut, forceLoad: true);
-                return;
-            }
-            SetResultMessage(false, string.Empty, result.Message);
         });
     }
 

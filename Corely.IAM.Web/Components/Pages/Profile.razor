@@ -1,0 +1,123 @@
+@page "/profile"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits EntityPageBase
+@inject IRetrievalService RetrievalService
+@inject IModificationService ModificationService
+@inject IDeregistrationService DeregistrationService
+
+<PageTitle>Profile - Corely IAM</PageTitle>
+
+<div class="management-header">
+    <h1><i class="bi bi-person me-2"></i>Profile</h1>
+    @if (UserContext?.CurrentAccount != null)
+    {
+        <a href="@AppRoutes.Dashboard" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+    }
+</div>
+
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+@if (_loading && _username == null)
+{
+    <LoadingSpinner />
+}
+else
+{
+    @if (_isEditing)
+    {
+        <div class="props-grid mb-3">
+            <span class="prop-label">Username</span>
+            <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_username" /></div>
+            <span class="prop-label">Email</span>
+            <div class="prop-value"><input type="email" class="form-control form-control-sm" @bind="_email" /></div>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
+        </div>
+    }
+    else
+    {
+        <div class="props-grid mb-3">
+            <span class="prop-label">Username</span>
+            <span class="prop-value">@_username</span>
+            <span class="prop-label">Email</span>
+            <span class="prop-value">@_email</span>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
+            <button class="btn btn-outline-danger btn-sm" @onclick="() => _deleteModal.Show()" disabled="@_loading">Delete Account</button>
+        </div>
+    }
+}
+
+<ConfirmModal @ref="_deleteModal"
+              Title="Delete Account"
+              Message="@($"Permanently delete your account '{_username}'? This cannot be undone.")"
+              ConfirmText="Delete"
+              OnConfirm="DeleteAsync" />
+
+@code {
+    private string? _username;
+    private string? _email;
+    private string? _originalUsername;
+    private string? _originalEmail;
+    private bool _isEditing;
+    private ConfirmModal _deleteModal = null!;
+
+    protected override async Task LoadCoreAsync()
+    {
+        var result = await RetrievalService.GetUserAsync(UserContext!.User!.Id, hydrate: false);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
+        {
+            _username = result.Item.Username;
+            _email = result.Item.Email;
+        }
+        else
+        {
+            NavigationManager.NavigateTo(AppRoutes.SignIn, forceLoad: true);
+        }
+    }
+
+    private void StartEdit()
+    {
+        _originalUsername = _username;
+        _originalEmail = _email;
+        _isEditing = true;
+    }
+
+    private void CancelEdit()
+    {
+        _username = _originalUsername;
+        _email = _originalEmail;
+        _isEditing = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_email)) return;
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await ModificationService.ModifyUserAsync(
+                new UpdateUserRequest(UserContext!.User!.Id, _username, _email)
+            );
+            SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Saved.", result.Message);
+            if (result.ResultCode == ModifyResultCode.Success)
+                _isEditing = false;
+        });
+    }
+
+    private async Task DeleteAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterUserAsync();
+            if (result.ResultCode == DeregisterUserResultCode.Success)
+            {
+                NavigationManager.NavigateTo(AppRoutes.SignOut, forceLoad: true);
+                return;
+            }
+            SetResultMessage(false, string.Empty, result.Message);
+        });
+    }
+}

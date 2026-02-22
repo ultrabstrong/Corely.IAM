@@ -29,7 +29,7 @@
             }
             @if (_isAuthenticated)
             {
-                <ul class="navbar-nav">
+                <ul class="navbar-nav ms-auto">
                     @if (_hasAccount)
                     {
                         <li class="nav-item dropdown">
@@ -50,12 +50,22 @@
                     }
                     else
                     {
-                        <li class="nav-item">
-                            <a class="nav-link" href="@AppRoutes.CreateAccount" data-enhance-nav="false"><i class="bi bi-plus-circle"></i> Create Account</a>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-building"></i> Accounts
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                @if (_hasAnyAccounts)
+                                {
+                                    <li><a class="dropdown-item" href="@AppRoutes.SelectAccount" data-enhance-nav="false">Select Account</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                }
+                                <li><a class="dropdown-item" href="@AppRoutes.CreateAccount" data-enhance-nav="false"><i class="bi bi-plus-circle"></i> Create Account</a></li>
+                            </ul>
                         </li>
                     }
                     <li class="nav-item">
-                        <a class="nav-link" href="@AppRoutes.Users/@_userId"><i class="bi bi-person"></i> @_username</a>
+                        <a class="nav-link" href="@AppRoutes.Profile"><i class="bi bi-person"></i> @_username</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="@AppRoutes.SignOut" data-enhance-nav="false">
@@ -71,6 +81,7 @@
 @code {
     private bool _isAuthenticated;
     private bool _hasAccount;
+    private bool _hasAnyAccounts;
     private bool _hasMultipleAccounts;
     private Guid _userId;
     private Guid _accountId;
@@ -84,6 +95,7 @@
         var context = await BlazorUserContextAccessor.GetUserContextAsync();
         _isAuthenticated = context?.User != null;
         _hasAccount = context?.CurrentAccount != null;
+        _hasAnyAccounts = context?.AvailableAccounts.Count > 0;
         _hasMultipleAccounts = context?.AvailableAccounts.Count > 1;
         _userId = context?.User?.Id ?? Guid.Empty;
         _accountId = context?.CurrentAccount?.Id ?? Guid.Empty;

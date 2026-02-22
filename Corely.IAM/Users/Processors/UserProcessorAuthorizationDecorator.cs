@@ -127,14 +127,17 @@ internal class UserProcessorAuthorizationDecorator(
                 null
             );
 
-    public Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate) =>
+    public async Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate) =>
         _authorizationProvider.IsAuthorizedForOwnUser(userId)
-            ? _inner.GetUserByIdAsync(userId, hydrate)
-            : Task.FromResult(
-                new GetResult<User>(
-                    RetrieveResultCode.UnauthorizedError,
-                    $"Unauthorized to read user {userId}",
-                    null
-                )
+        || await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.USER_RESOURCE_TYPE,
+            userId
+        )
+            ? await _inner.GetUserByIdAsync(userId, hydrate)
+            : new GetResult<User>(
+                RetrieveResultCode.UnauthorizedError,
+                $"Unauthorized to read user {userId}",
+                null
             );
 }

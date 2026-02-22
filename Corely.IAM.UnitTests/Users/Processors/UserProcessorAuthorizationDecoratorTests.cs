@@ -469,6 +469,77 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
+    public async Task GetUserByIdAsync_Succeeds_WhenIsOwnUser()
+    {
+        var userId = Guid.CreateVersion7();
+        var expectedResult = new GetResult<User>(
+            RetrieveResultCode.Success,
+            "",
+            new User { Id = userId }
+        );
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(userId, It.IsAny<bool>()))
+            .Returns(true);
+        _mockInnerProcessor
+            .Setup(x => x.GetUserByIdAsync(userId, false))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetUserByIdAsync(userId, false);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerProcessor.Verify(x => x.GetUserByIdAsync(userId, false), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetUserByIdAsync_Succeeds_WhenAuthorizedViaPermission()
+    {
+        var userId = Guid.CreateVersion7();
+        var expectedResult = new GetResult<User>(
+            RetrieveResultCode.Success,
+            "",
+            new User { Id = userId }
+        );
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(userId, It.IsAny<bool>()))
+            .Returns(false);
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, userId)
+            )
+            .ReturnsAsync(true);
+        _mockInnerProcessor
+            .Setup(x => x.GetUserByIdAsync(userId, false))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetUserByIdAsync(userId, false);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerProcessor.Verify(x => x.GetUserByIdAsync(userId, false), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetUserByIdAsync_ReturnsUnauthorized_WhenNotOwnUserAndNoPermission()
+    {
+        var userId = Guid.CreateVersion7();
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(userId, It.IsAny<bool>()))
+            .Returns(false);
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, userId)
+            )
+            .ReturnsAsync(false);
+
+        var result = await _decorator.GetUserByIdAsync(userId, false);
+
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerProcessor.Verify(
+            x => x.GetUserByIdAsync(It.IsAny<Guid>(), It.IsAny<bool>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
             new UserProcessorAuthorizationDecorator(null!, _mockAuthorizationProvider.Object)

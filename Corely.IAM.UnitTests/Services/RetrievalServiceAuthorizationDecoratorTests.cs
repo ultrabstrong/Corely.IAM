@@ -287,7 +287,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     #region GetUserAsync
 
     [Fact]
-    public async Task GetUserAsync_Succeeds_WhenHasAccountContext()
+    public async Task GetUserAsync_Succeeds_WhenHasUserContext()
     {
         var userId = Guid.CreateVersion7();
         var expectedResult = new RetrieveSingleResult<User>(
@@ -296,7 +296,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
             null,
             null
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
         _mockInnerService.Setup(x => x.GetUserAsync(userId, false)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetUserAsync(userId);
@@ -306,9 +306,9 @@ public class RetrievalServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetUserAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task GetUserAsync_ReturnsUnauthorized_WhenNoUserContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
 
         var result = await _decorator.GetUserAsync(Guid.CreateVersion7());
 

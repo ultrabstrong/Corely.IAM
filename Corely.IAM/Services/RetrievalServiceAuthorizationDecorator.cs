@@ -113,7 +113,7 @@ internal class RetrievalServiceAuthorizationDecorator(
             );
 
     public async Task<RetrieveSingleResult<User>> GetUserAsync(Guid userId, bool hydrate = false) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasUserContext()
             ? await _inner.GetUserAsync(userId, hydrate)
             : new RetrieveSingleResult<User>(
                 RetrieveResultCode.UnauthorizedError,

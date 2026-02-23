@@ -1,0 +1,19 @@
+@inject IBlazorUserContextAccessor BlazorUserContextAccessor
+
+@if (_currentAccount != null)
+{
+    <div class="dashboard-account-header d-flex align-items-center justify-content-between mb-4">
+        <span class="fw-semibold"><i class="bi bi-building me-2"></i>@_currentAccount.AccountName</span>
+        <a href="@AppRoutes.Accounts/@_currentAccount.Id" class="btn btn-outline-light btn-sm" style="font-size: 0.8rem;">Manage</a>
+    </div>
+}
+
+@code {
+    private Account? _currentAccount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userContext = await BlazorUserContextAccessor.GetUserContextAsync();
+        _currentAccount = userContext?.CurrentAccount;
+    }
+}

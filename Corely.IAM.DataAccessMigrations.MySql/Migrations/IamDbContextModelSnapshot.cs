@@ -267,6 +267,61 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.ToTable("Groups", (string)null);
                 });
 
+            modelBuilder.Entity("Corely.IAM.Invitations.Entities.InvitationEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("AcceptedByUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("AcceptedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TIMESTAMP")
+                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("varchar(254)");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
+
+                    b.Property<DateTime?>("RevokedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.ToTable("Invitations", (string)null);
+                });
+
             modelBuilder.Entity("Corely.IAM.Permissions.Entities.PermissionEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -642,6 +697,17 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("Corely.IAM.Invitations.Entities.InvitationEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.Accounts.Entities.AccountEntity", "Account")
+                        .WithMany("Invitations")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+                });
+
             modelBuilder.Entity("Corely.IAM.Permissions.Entities.PermissionEntity", b =>
                 {
                     b.HasOne("Corely.IAM.Accounts.Entities.AccountEntity", "Account")
@@ -698,6 +764,8 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Navigation("AsymmetricKeys");
 
                     b.Navigation("Groups");
+
+                    b.Navigation("Invitations");
 
                     b.Navigation("Permissions");
 

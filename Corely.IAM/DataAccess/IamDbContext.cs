@@ -1,6 +1,7 @@
 ﻿using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.BasicAuths.Entities;
+using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Users.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +23,7 @@ internal class IamDbContext(IEFConfiguration efConfiguration) : DbContext
     public DbSet<UserEntity> Users { get; set; } = null!;
     public DbSet<BasicAuthEntity> BasicAuths { get; set; } = null!;
     public DbSet<UserAuthTokenEntity> UserAuthTokens { get; set; } = null!;
+    public DbSet<InvitationEntity> Invitations { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

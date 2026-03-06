@@ -49,6 +49,7 @@ public interface IRetrievalService
     );
 
     Task<RetrieveSingleResult<User>> GetUserAsync(Guid userId, bool hydrate = false);
+    Task<RetrieveSingleResult<User>> GetUserByEmailAsync(string email);
 
     Task<RetrieveListResult<Account>> ListAccountsAsync(
         FilterBuilder<Account>? filter = null,

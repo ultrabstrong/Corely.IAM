@@ -61,9 +61,64 @@ else
 
         <div class="section-divider mb-4">
             <div class="section-divider-label">
+                Invitations
+                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-primary btn-sm" @onclick="ShowCreateInvitation" disabled="@_loading">Create Invitation</button>
+                </PermissionView>
+            </div>
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>Email</th><th>Description</th><th>Status</th><th>Created</th><th>Expires</th><th class="table-actions">Actions</th></tr></thead>
+                <tbody>
+                    @if (_invitations.Count == 0)
+                    {
+                        <tr><td colspan="6" class="text-muted text-center">No invitations</td></tr>
+                    }
+                    @foreach (var inv in PagedInvitations)
+                    {
+                        <tr>
+                            <td>@inv.Email</td>
+                            <td>@(inv.Description ?? "")</td>
+                            <td>
+                                @if (inv.IsAccepted)
+                                {
+                                    <span class="badge bg-info">Accepted</span>
+                                }
+                                else if (inv.IsRevoked)
+                                {
+                                    <span class="badge bg-danger">Revoked</span>
+                                }
+                                else if (inv.IsExpired(DateTime.UtcNow))
+                                {
+                                    <span class="badge bg-secondary">Expired</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Pending</span>
+                                }
+                            </td>
+                            <td><small>@inv.CreatedUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
+                            <td><small>@inv.ExpiresUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
+                            <td class="table-actions">
+                                @if (inv.IsPending(DateTime.UtcNow))
+                                {
+                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                        <button class="icon-btn text-danger" @onclick="() => ConfirmRevokeInvitation(inv.Id, inv.Email)" title="Revoke"><i class="bi bi-x-circle"></i></button>
+                                    </PermissionView>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <Pagination Skip="_invitationsSkip" Take="@RelationPageSize" TotalCount="@InvitationsTotalCount"
+                        OnPageChanged="newSkip => { _invitationsSkip = newSkip; StateHasChanged(); }" />
+        </div>
+
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
                 Users
                 <div class="d-flex gap-2 align-items-center">
-                    <input type="text" class="form-control form-control-sm" style="width: 260px;" @bind="_newUserId" placeholder="User ID (GUID)" />
+                    <input type="text" class="form-control form-control-sm" style="width: 260px;" @bind="_newUserInput" placeholder="User ID (GUID) or Email" />
                     <button class="btn btn-primary btn-sm" @onclick="AddUserAsync" disabled="@_loading">Add User</button>
                 </div>
             </div>
@@ -100,21 +155,78 @@ else
 
 <ConfirmModal @ref="_removeUserModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />
 <ConfirmModal @ref="_deleteModal" Title="Delete Account" Message="@($"Permanently delete account '{_accountName}'? This cannot be undone.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
+<ConfirmModal @ref="_revokeInvitationModal" Title="Revoke Invitation" Message="@_confirmMessage" ConfirmText="Revoke" OnConfirm="RevokeInvitationAsync" />
+
+<FormModal @ref="_createInvitationModal" Title="Create Invitation" ConfirmText="Create" OnConfirm="CreateInvitationAsync">
+    <div class="mb-3">
+        <label class="form-label">Email <span class="text-danger">*</span></label>
+        <input type="email" class="form-control form-control-sm" @bind="_inviteEmail" placeholder="recipient@example.com" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <input type="text" class="form-control form-control-sm" @bind="_inviteDescription" placeholder="Optional note" maxlength="200" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Expires In</label>
+        <select class="form-select form-select-sm" @bind="_inviteExpirySeconds">
+            <option value="3600">1 hour</option>
+            <option value="86400">1 day</option>
+            <option value="604800">7 days</option>
+            <option value="2592000">30 days</option>
+        </select>
+    </div>
+</FormModal>
+
+@if (_createdToken != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _createdToken = null">
+        <div class="modal-dialog" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Invitation Created</h5>
+                    <button type="button" class="btn-close" @onclick="() => _createdToken = null"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success mb-0">
+                        <strong>Copy this token</strong> — it will not be shown again.
+                        <div class="input-group mt-2">
+                            <input type="text" class="form-control form-control-sm font-monospace" readonly value="@_createdToken" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _createdToken = null">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     private string? _accountName;
     private string? _originalAccountName;
     private bool _isEditing;
     private List<ChildRef> _users = [];
-    private string? _newUserId;
+    private string? _newUserInput;
     private List<EffectivePermission>? _effectivePermissions;
     private ConfirmModal _removeUserModal = null!;
     private ConfirmModal _deleteModal = null!;
+    private ConfirmModal _revokeInvitationModal = null!;
+    private FormModal _createInvitationModal = null!;
+
+    private List<Invitation> _invitations = [];
+    private string? _inviteEmail;
+    private string? _inviteDescription;
+    private int _inviteExpirySeconds = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
+    private string? _createdToken;
 
     private int _usersSkip;
+    private int _invitationsSkip;
     private const int RelationPageSize = 10;
     private List<ChildRef> PagedUsers => _users.Skip(_usersSkip).Take(RelationPageSize).ToList();
     private int UsersTotalCount => _users.Count;
+    private List<Invitation> PagedInvitations => _invitations.Skip(_invitationsSkip).Take(RelationPageSize).ToList();
+    private int InvitationsTotalCount => _invitations.Count;
 
     protected override async Task LoadCoreAsync()
     {
@@ -128,6 +240,13 @@ else
         else
         {
             NavigationManager.NavigateTo(AppRoutes.Dashboard);
+            return;
+        }
+
+        var invResult = await RegistrationService.ListInvitationsAsync(Id, 0, 100);
+        if (invResult.ResultCode == RetrieveResultCode.Success && invResult.Data != null)
+        {
+            _invitations = invResult.Data.Items.ToList();
         }
     }
 
@@ -176,12 +295,41 @@ else
 
     private async Task AddUserAsync()
     {
-        if (!TryParseGuid(_newUserId, out var userId)) return;
+        if (string.IsNullOrWhiteSpace(_newUserInput))
+        {
+            _message = "Enter a User ID or email.";
+            _messageType = AlertType.Danger;
+            return;
+        }
+
         await ExecuteSafeAsync(async () =>
         {
+            Guid userId;
+            if (Guid.TryParse(_newUserInput, out userId))
+            {
+                // Input is a GUID — use directly
+            }
+            else if (_newUserInput.Contains('@'))
+            {
+                // Input looks like an email — resolve to user ID
+                var lookup = await RetrievalService.GetUserByEmailAsync(_newUserInput.Trim());
+                if (lookup.ResultCode != RetrieveResultCode.Success || lookup.Item == null)
+                {
+                    SetResultMessage(false, string.Empty, lookup.Message ?? "User not found for that email.");
+                    return;
+                }
+                userId = lookup.Item.Id;
+            }
+            else
+            {
+                _message = "Enter a valid GUID or email address.";
+                _messageType = AlertType.Danger;
+                return;
+            }
+
             var result = await RegistrationService.RegisterUserWithAccountAsync(new RegisterUserWithAccountRequest(userId));
             SetResultMessage(result.ResultCode == RegisterUserWithAccountResultCode.Success, "User added.", result.Message ?? "Failed.");
-            _newUserId = string.Empty;
+            _newUserInput = string.Empty;
             await ReloadAsync();
         });
     }
@@ -194,6 +342,47 @@ else
         {
             var result = await DeregistrationService.DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(_confirmItemId));
             SetResultMessage(result.ResultCode == DeregisterUserFromAccountResultCode.Success, "User removed.", result.Message ?? "Failed.");
+            await ReloadAsync();
+        });
+    }
+
+    private void ShowCreateInvitation()
+    {
+        _inviteEmail = string.Empty;
+        _inviteDescription = string.Empty;
+        _inviteExpirySeconds = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
+        _createdToken = null;
+        _createInvitationModal.Show();
+    }
+
+    private async Task CreateInvitationAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var request = new CreateInvitationRequest(Id, _inviteEmail!, _inviteDescription, _inviteExpirySeconds);
+            var result = await RegistrationService.CreateInvitationAsync(request);
+            if (result.ResultCode == CreateInvitationResultCode.Success)
+            {
+                _createdToken = result.Token;
+                SetResultMessage(true, "Invitation created.");
+                await ReloadAsync();
+            }
+            else
+            {
+                SetResultMessage(false, string.Empty, result.Message);
+            }
+        });
+    }
+
+    private void ConfirmRevokeInvitation(Guid invitationId, string email) =>
+        ShowConfirmation(_revokeInvitationModal, invitationId, $"Revoke invitation for '{email}'?");
+
+    private async Task RevokeInvitationAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.RevokeInvitationAsync(_confirmItemId);
+            SetResultMessage(result.ResultCode == RevokeInvitationResultCode.Success, "Invitation revoked.", result.Message);
             await ReloadAsync();
         });
     }

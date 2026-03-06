@@ -1,5 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Extensions;
+using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
 using Microsoft.Extensions.Logging;
 
@@ -104,6 +105,46 @@ internal class RegistrationServiceTelemetryDecorator(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterPermissionsWithRoleAsync(request),
+            logResult: true
+        );
+
+    public async Task<CreateInvitationResult> CreateInvitationAsync(
+        CreateInvitationRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            request,
+            () => _inner.CreateInvitationAsync(request),
+            logResult: true
+        );
+
+    public async Task<AcceptInvitationResult> AcceptInvitationAsync(
+        AcceptInvitationRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            request,
+            () => _inner.AcceptInvitationAsync(request),
+            logResult: true
+        );
+
+    public async Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            invitationId,
+            () => _inner.RevokeInvitationAsync(invitationId),
+            logResult: true
+        );
+
+    public async Task<RetrieveListResult<Invitation>> ListInvitationsAsync(
+        Guid accountId,
+        int skip,
+        int take
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            accountId,
+            () => _inner.ListInvitationsAsync(accountId, skip, take),
             logResult: true
         );
 }

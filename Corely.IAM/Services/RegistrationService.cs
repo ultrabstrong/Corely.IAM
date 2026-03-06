@@ -7,6 +7,8 @@ using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
+using Corely.IAM.Invitations.Models;
+using Corely.IAM.Invitations.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
@@ -27,6 +29,7 @@ internal class RegistrationService(
     IGroupProcessor groupProcessor,
     IRoleProcessor roleProcessor,
     IPermissionProcessor permissionProcessor,
+    IInvitationProcessor invitationProcessor,
     IUserContextProvider userContextProvider,
     IUserContextSetter userContextSetter,
     IUnitOfWorkProvider uowProvider
@@ -50,6 +53,9 @@ internal class RegistrationService(
     );
     private readonly IPermissionProcessor _permissionProcessor = permissionProcessor.ThrowIfNull(
         nameof(permissionProcessor)
+    );
+    private readonly IInvitationProcessor _invitationProcessor = invitationProcessor.ThrowIfNull(
+        nameof(invitationProcessor)
     );
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
@@ -550,5 +556,24 @@ internal class RegistrationService(
             result.AddedPermissionCount,
             result.InvalidPermissionIds
         );
+    }
+
+    public Task<CreateInvitationResult> CreateInvitationAsync(CreateInvitationRequest request) =>
+        _invitationProcessor.CreateInvitationAsync(request);
+
+    public Task<AcceptInvitationResult> AcceptInvitationAsync(AcceptInvitationRequest request) =>
+        _invitationProcessor.AcceptInvitationAsync(request);
+
+    public Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId) =>
+        _invitationProcessor.RevokeInvitationAsync(invitationId);
+
+    public async Task<RetrieveListResult<Invitation>> ListInvitationsAsync(
+        Guid accountId,
+        int skip,
+        int take
+    )
+    {
+        var result = await _invitationProcessor.ListInvitationsAsync(accountId, skip, take);
+        return new RetrieveListResult<Invitation>(result.ResultCode, result.Message, result.Data);
     }
 }

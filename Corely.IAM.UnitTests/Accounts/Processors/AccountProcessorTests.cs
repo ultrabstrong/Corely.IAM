@@ -4,6 +4,7 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Groups.Entities;
+using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Providers;
@@ -29,10 +30,12 @@ public class AccountProcessorTests
         _accountProcessor = new AccountProcessor(
             _serviceFactory.GetRequiredService<IRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>(),
+            _serviceFactory.GetRequiredService<IRepo<InvitationEntity>>(),
             _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
+            _serviceFactory.GetRequiredService<TimeProvider>(),
             _serviceFactory.GetRequiredService<ILogger<AccountProcessor>>()
         );
     }

@@ -122,6 +122,16 @@ internal class RetrievalServiceAuthorizationDecorator(
                 null
             );
 
+    public async Task<RetrieveSingleResult<User>> GetUserByEmailAsync(string email) =>
+        _authorizationProvider.HasAccountContext()
+            ? await _inner.GetUserByEmailAsync(email)
+            : new RetrieveSingleResult<User>(
+                RetrieveResultCode.UnauthorizedError,
+                "Unauthorized to search users by email",
+                default,
+                null
+            );
+
     public async Task<RetrieveListResult<Account>> ListAccountsAsync(
         FilterBuilder<Account>? filter = null,
         OrderBuilder<Account>? order = null,

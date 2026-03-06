@@ -524,4 +524,25 @@ internal class UserProcessor(
 
         return new GetResult<User>(RetrieveResultCode.Success, string.Empty, user);
     }
+
+    public async Task<GetResult<User>> GetUserByEmailAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return new GetResult<User>(RetrieveResultCode.NotFoundError, "Email is required", null);
+        }
+
+        var userEntity = await _userRepo.GetAsync(u => u.Email == email);
+        if (userEntity == null)
+        {
+            _logger.LogInformation("User with email {Email} not found", email);
+            return new GetResult<User>(
+                RetrieveResultCode.NotFoundError,
+                $"User with email {email} not found",
+                null
+            );
+        }
+
+        return new GetResult<User>(RetrieveResultCode.Success, string.Empty, userEntity.ToModel());
+    }
 }

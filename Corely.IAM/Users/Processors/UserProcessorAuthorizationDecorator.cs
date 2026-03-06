@@ -140,4 +140,16 @@ internal class UserProcessorAuthorizationDecorator(
                 $"Unauthorized to read user {userId}",
                 null
             );
+
+    public async Task<GetResult<User>> GetUserByEmailAsync(string email) =>
+        await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.USER_RESOURCE_TYPE
+        )
+            ? await _inner.GetUserByEmailAsync(email)
+            : new GetResult<User>(
+                RetrieveResultCode.UnauthorizedError,
+                "Unauthorized to search users by email",
+                null
+            );
 }

@@ -1,8 +1,7 @@
-﻿using AutoFixture;
+using AutoFixture;
 using Corely.IAM.Validators.FluentValidators;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
-using CorelyValidationException = Corely.IAM.Validators.ValidationException;
 using FluentValidationFailure = FluentValidation.Results.ValidationFailure;
 using FluentValidationResult = FluentValidation.Results.ValidationResult;
 
@@ -69,10 +68,9 @@ public class FluentValidationProviderTests
     [Theory]
     [InlineData(INVALID_STRING)]
     [InlineData(null)]
-    public void ThrowIfInvalid_Throws_WhenValidationFails(string? value)
+    public void ValidateAndLog_ReturnsInvalid_WhenValidationFails(string? value)
     {
-        var ex = Record.Exception(() => _provider.ThrowIfInvalid(value));
-        Assert.NotNull(ex);
-        Assert.IsType<CorelyValidationException>(ex);
+        var result = _provider.ValidateAndLog(value);
+        Assert.False(result.IsValid);
     }
 }

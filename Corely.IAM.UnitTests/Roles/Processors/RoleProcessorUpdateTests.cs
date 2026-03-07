@@ -119,13 +119,13 @@ public class RoleProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateRoleAsync_ThrowsValidation_WhenNameEmpty()
+    public async Task UpdateRoleAsync_ReturnsValidationError_WhenNameEmpty()
     {
         var created = await CreateRoleEntityAsync();
         var request = new UpdateRoleRequest(created.Id, "", null);
 
-        await Assert.ThrowsAsync<ValidationException>(() =>
-            _roleProcessor.UpdateRoleAsync(request)
-        );
+        var result = await _roleProcessor.UpdateRoleAsync(request);
+
+        Assert.Equal(ModifyResultCode.ValidationError, result.ResultCode);
     }
 }

@@ -49,13 +49,4 @@ internal sealed class FluentValidationProvider(
         }
         return result;
     }
-
-    public void ThrowIfInvalid<T>(T model)
-    {
-        var result = ValidateAndLog(model);
-        if (!result.IsValid)
-        {
-            throw new ValidationException(result.Message) { ValidationResult = result };
-        }
-    }
 }

@@ -48,7 +48,15 @@ internal class UserProcessor(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
         var user = request.ToUser();
-        _validationProvider.ThrowIfInvalid(user);
+        var validation = _validationProvider.ValidateAndLog(user);
+        if (!validation.IsValid)
+        {
+            return new CreateUserResult(
+                CreateUserResultCode.ValidationError,
+                validation.Message,
+                Guid.Empty
+            );
+        }
 
         var existingUser = await _userRepo.GetAsync(u =>
             u.Username == request.Username || u.Email == request.Email
@@ -118,7 +126,11 @@ internal class UserProcessor(
     public async Task<ModifyResult> UpdateUserAsync(UpdateUserRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _validationProvider.ThrowIfInvalid(request);
+        var validation = _validationProvider.ValidateAndLog(request);
+        if (!validation.IsValid)
+        {
+            return new ModifyResult(ModifyResultCode.ValidationError, validation.Message);
+        }
 
         var entity = await _userRepo.GetAsync(u => u.Id == request.UserId);
         if (entity == null)

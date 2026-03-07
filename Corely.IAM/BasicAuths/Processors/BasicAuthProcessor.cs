@@ -47,7 +47,15 @@ internal class BasicAuthProcessor(
         }
 
         var basicAuth = request.ToBasicAuth(_hashProviderFactory);
-        _validationProvider.ThrowIfInvalid(basicAuth);
+        var validation = _validationProvider.ValidateAndLog(basicAuth);
+        if (!validation.IsValid)
+        {
+            return new CreateBasicAuthResult(
+                CreateBasicAuthResultCode.ValidationError,
+                validation.Message,
+                Guid.Empty
+            );
+        }
 
         var passwordValidationResults = _passwordValidationProvider.ValidatePassword(
             request.Password
@@ -89,7 +97,14 @@ internal class BasicAuthProcessor(
 
         var basicAuth = request.ToBasicAuth(_hashProviderFactory);
         basicAuth.Id = existingAuth.Id;
-        _validationProvider.ThrowIfInvalid(basicAuth);
+        var validation = _validationProvider.ValidateAndLog(basicAuth);
+        if (!validation.IsValid)
+        {
+            return new UpdateBasicAuthResult(
+                UpdateBasicAuthResultCode.ValidationError,
+                validation.Message
+            );
+        }
 
         var passwordValidationResults = _passwordValidationProvider.ValidatePassword(
             request.Password

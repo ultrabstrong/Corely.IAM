@@ -3,7 +3,6 @@ using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
-using Corely.IAM.Validators;
 
 namespace Corely.IAM.DevTools.Commands.Invitation;
 
@@ -38,24 +37,15 @@ internal partial class Invitation : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            try
-            {
-                var result = await _registrationService.RevokeInvitationAsync(
-                    Guid.Parse(InvitationId)
-                );
+            var result = await _registrationService.RevokeInvitationAsync(Guid.Parse(InvitationId));
 
-                if (result.ResultCode == RevokeInvitationResultCode.Success)
-                {
-                    Success("Invitation revoked successfully");
-                }
-                else
-                {
-                    Error($"{result.ResultCode}: {result.Message}");
-                }
-            }
-            catch (ValidationException ex)
+            if (result.ResultCode == RevokeInvitationResultCode.Success)
             {
-                Error(ex.ValidationResult!.Errors!.Select(e => e.Message));
+                Success("Invitation revoked successfully");
+            }
+            else
+            {
+                Error($"{result.ResultCode}: {result.Message}");
             }
         }
     }

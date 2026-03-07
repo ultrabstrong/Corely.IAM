@@ -4,7 +4,6 @@ using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
-using Corely.IAM.Validators;
 
 namespace Corely.IAM.DevTools.Commands.Authentication;
 
@@ -54,28 +53,21 @@ internal partial class Authentication : CommandBase
                 return;
             }
 
-            try
-            {
-                var request = new SwitchAccountRequest(AccountId);
-                var result = await _authenticationService.SwitchAccountAsync(request);
+            var request = new SwitchAccountRequest(AccountId);
+            var result = await _authenticationService.SwitchAccountAsync(request);
 
-                if (result.ResultCode == SignInResultCode.Success)
-                {
-                    await WriteAuthTokenToFileAsync(result);
-                    Success($"Switched to account {AccountId}. Auth token updated.");
-                }
-                else
-                {
-                    Error($"Switch account failed: {result.ResultCode}");
-                    if (!string.IsNullOrEmpty(result.Message))
-                    {
-                        Info(result.Message);
-                    }
-                }
-            }
-            catch (ValidationException ex)
+            if (result.ResultCode == SignInResultCode.Success)
             {
-                Error(ex.ValidationResult!.Errors!.Select(e => e.Message));
+                await WriteAuthTokenToFileAsync(result);
+                Success($"Switched to account {AccountId}. Auth token updated.");
+            }
+            else
+            {
+                Error($"Switch account failed: {result.ResultCode}");
+                if (!string.IsNullOrEmpty(result.Message))
+                {
+                    Info(result.Message);
+                }
             }
         }
 

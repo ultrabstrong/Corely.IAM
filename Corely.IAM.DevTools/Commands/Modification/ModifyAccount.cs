@@ -4,7 +4,6 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
-using Corely.IAM.Validators;
 
 namespace Corely.IAM.DevTools.Commands.Modification;
 
@@ -60,17 +59,10 @@ internal partial class Modification : CommandBase
             if (requests == null)
                 return;
 
-            try
+            foreach (var request in requests)
             {
-                foreach (var request in requests)
-                {
-                    var result = await _modificationService.ModifyAccountAsync(request);
-                    Console.WriteLine(JsonSerializer.Serialize(result));
-                }
-            }
-            catch (ValidationException ex)
-            {
-                Error(ex.ValidationResult!.Errors!.Select(e => e.Message));
+                var result = await _modificationService.ModifyAccountAsync(request);
+                Console.WriteLine(JsonSerializer.Serialize(result));
             }
         }
     }

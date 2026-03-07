@@ -88,24 +88,24 @@ public class UserProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateUserAsync_ThrowsValidation_WhenUsernameEmpty()
+    public async Task UpdateUserAsync_ReturnsValidationError_WhenUsernameEmpty()
     {
         var created = await CreateUserEntityAsync();
         var request = new UpdateUserRequest(created.Id, "", "valid@test.com");
 
-        await Assert.ThrowsAsync<ValidationException>(() =>
-            _userProcessor.UpdateUserAsync(request)
-        );
+        var result = await _userProcessor.UpdateUserAsync(request);
+
+        Assert.Equal(ModifyResultCode.ValidationError, result.ResultCode);
     }
 
     [Fact]
-    public async Task UpdateUserAsync_ThrowsValidation_WhenEmailInvalid()
+    public async Task UpdateUserAsync_ReturnsValidationError_WhenEmailInvalid()
     {
         var created = await CreateUserEntityAsync();
         var request = new UpdateUserRequest(created.Id, "validuser", "not-an-email");
 
-        await Assert.ThrowsAsync<ValidationException>(() =>
-            _userProcessor.UpdateUserAsync(request)
-        );
+        var result = await _userProcessor.UpdateUserAsync(request);
+
+        Assert.Equal(ModifyResultCode.ValidationError, result.ResultCode);
     }
 }

@@ -2,7 +2,6 @@ using System.Text.Json;
 using Corely.Common.Extensions;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
-using Corely.IAM.Validators;
 
 namespace Corely.IAM.DevTools.Commands.Authentication;
 
@@ -27,22 +26,15 @@ internal partial class Authentication : CommandBase
 
         protected override async Task ExecuteAsync()
         {
-            try
-            {
-                var currentContext = _userContextProvider.GetUserContext();
+            var currentContext = _userContextProvider.GetUserContext();
 
-                await _authenticationService.SignOutAllAsync();
+            await _authenticationService.SignOutAllAsync();
 
-                var output = new { Success = true };
-                Console.WriteLine(JsonSerializer.Serialize(output));
-                Success($"All sessions for user {currentContext!.User.Id} signed out successfully");
+            var output = new { Success = true };
+            Console.WriteLine(JsonSerializer.Serialize(output));
+            Success($"All sessions for user {currentContext!.User.Id} signed out successfully");
 
-                ClearAuthTokenFile();
-            }
-            catch (ValidationException ex)
-            {
-                Error(ex.ValidationResult!.Errors!.Select(e => e.Message));
-            }
+            ClearAuthTokenFile();
         }
     }
 }

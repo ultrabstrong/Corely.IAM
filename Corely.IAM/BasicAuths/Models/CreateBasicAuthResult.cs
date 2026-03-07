@@ -5,6 +5,7 @@ public enum CreateBasicAuthResultCode
     Success,
     BasicAuthExistsError,
     PasswordValidationError,
+    ValidationError,
 }
 
 internal record CreateBasicAuthResult(

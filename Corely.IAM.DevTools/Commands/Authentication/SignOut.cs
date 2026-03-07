@@ -4,7 +4,6 @@ using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
-using Corely.IAM.Validators;
 
 namespace Corely.IAM.DevTools.Commands.Authentication;
 
@@ -32,35 +31,28 @@ internal partial class Authentication : CommandBase
 
         protected override async Task ExecuteAsync()
         {
-            try
+            var request = new SignOutRequest(TokenId);
+            var result = await _authenticationService.SignOutAsync(request);
+
+            var context = _userContextProvider.GetUserContext();
+            var output = new
             {
-                var request = new SignOutRequest(TokenId);
-                var result = await _authenticationService.SignOutAsync(request);
+                context?.User,
+                TokenId,
+                context?.DeviceId,
+                context?.CurrentAccount,
+                Success = result,
+            };
+            Console.WriteLine(JsonSerializer.Serialize(output));
 
-                var context = _userContextProvider.GetUserContext();
-                var output = new
-                {
-                    context?.User,
-                    TokenId,
-                    context?.DeviceId,
-                    context?.CurrentAccount,
-                    Success = result,
-                };
-                Console.WriteLine(JsonSerializer.Serialize(output));
-
-                if (result)
-                {
-                    Success($"User {context?.User} signed out successfully");
-                    ClearAuthTokenFile();
-                }
-                else
-                {
-                    Warn($"Failed to sign out with token {TokenId}");
-                }
+            if (result)
+            {
+                Success($"User {context?.User} signed out successfully");
+                ClearAuthTokenFile();
             }
-            catch (ValidationException ex)
+            else
             {
-                Error(ex.ValidationResult!.Errors!.Select(e => e.Message));
+                Warn($"Failed to sign out with token {TokenId}");
             }
         }
     }

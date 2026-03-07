@@ -97,13 +97,13 @@ public class AccountProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateAccountAsync_ThrowsValidation_WhenNameEmpty()
+    public async Task UpdateAccountAsync_ReturnsValidationError_WhenNameEmpty()
     {
         await CreateAccountEntityAsync("TestAccount");
 
         var request = new UpdateAccountRequest(_accountId, "");
-        await Assert.ThrowsAsync<ValidationException>(() =>
-            _accountProcessor.UpdateAccountAsync(request)
-        );
+        var result = await _accountProcessor.UpdateAccountAsync(request);
+
+        Assert.Equal(ModifyResultCode.ValidationError, result.ResultCode);
     }
 }

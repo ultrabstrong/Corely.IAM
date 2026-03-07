@@ -44,7 +44,15 @@ internal class PermissionProcessor(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
         var permission = request.ToPermission();
-        _validationProvider.ThrowIfInvalid(permission);
+        var validation = _validationProvider.ValidateAndLog(permission);
+        if (!validation.IsValid)
+        {
+            return new CreatePermissionResult(
+                CreatePermissionResultCode.ValidationError,
+                validation.Message,
+                Guid.Empty
+            );
+        }
 
         var accountEntity = await _accountRepo.GetAsync(a => a.Id == permission.AccountId);
         if (accountEntity == null)

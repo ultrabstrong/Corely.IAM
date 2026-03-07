@@ -48,7 +48,15 @@ internal class GroupProcessor(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
         var group = request.ToGroup();
-        _validationProvider.ThrowIfInvalid(group);
+        var validation = _validationProvider.ValidateAndLog(group);
+        if (!validation.IsValid)
+        {
+            return new CreateGroupResult(
+                CreateGroupResultCode.ValidationError,
+                validation.Message,
+                Guid.Empty
+            );
+        }
 
         var accountEntity = await _accountRepo.GetAsync(a => a.Id == group.AccountId);
         if (accountEntity == null)
@@ -441,7 +449,11 @@ internal class GroupProcessor(
     public async Task<ModifyResult> UpdateGroupAsync(UpdateGroupRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _validationProvider.ThrowIfInvalid(request);
+        var validation = _validationProvider.ValidateAndLog(request);
+        if (!validation.IsValid)
+        {
+            return new ModifyResult(ModifyResultCode.ValidationError, validation.Message);
+        }
 
         var accountId = _userContextProvider.GetUserContext()?.CurrentAccount?.Id;
         var entity = await _groupRepo.GetAsync(e =>

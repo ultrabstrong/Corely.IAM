@@ -47,7 +47,15 @@ internal class RoleProcessor(
         ArgumentNullException.ThrowIfNull(createRoleRequest, nameof(createRoleRequest));
 
         var role = createRoleRequest.ToRole();
-        _validationProvider.ThrowIfInvalid(role);
+        var validation = _validationProvider.ValidateAndLog(role);
+        if (!validation.IsValid)
+        {
+            return new CreateRoleResult(
+                CreateRoleResultCode.ValidationError,
+                validation.Message,
+                Guid.Empty
+            );
+        }
 
         var accountEntity = await _accountRepo.GetAsync(a => a.Id == role.AccountId);
         if (accountEntity == null)
@@ -398,7 +406,11 @@ internal class RoleProcessor(
     public async Task<ModifyResult> UpdateRoleAsync(UpdateRoleRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _validationProvider.ThrowIfInvalid(request);
+        var validation = _validationProvider.ValidateAndLog(request);
+        if (!validation.IsValid)
+        {
+            return new ModifyResult(ModifyResultCode.ValidationError, validation.Message);
+        }
 
         var accountId = _userContextProvider.GetUserContext()?.CurrentAccount?.Id;
         var entity = await _roleRepo.GetAsync(e =>

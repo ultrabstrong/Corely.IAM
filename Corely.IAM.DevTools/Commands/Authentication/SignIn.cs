@@ -3,7 +3,6 @@ using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
-using Corely.IAM.Validators;
 
 namespace Corely.IAM.DevTools.Commands.Authentication;
 
@@ -53,23 +52,16 @@ internal partial class Authentication : CommandBase
             if (request == null)
                 return;
 
-            try
-            {
-                var result = await _authenticationService.SignInAsync(request);
+            var result = await _authenticationService.SignInAsync(request);
 
-                if (result.ResultCode == SignInResultCode.Success)
-                {
-                    await WriteAuthTokenToFileAsync(result);
-                    Success("Sign in successful. Auth token saved.");
-                }
-                else
-                {
-                    Warn($"Sign in failed: {result.ResultCode}");
-                }
-            }
-            catch (ValidationException ex)
+            if (result.ResultCode == SignInResultCode.Success)
             {
-                Error(ex.ValidationResult!.Errors!.Select(e => e.Message));
+                await WriteAuthTokenToFileAsync(result);
+                Success("Sign in successful. Auth token saved.");
+            }
+            else
+            {
+                Warn($"Sign in failed: {result.ResultCode}");
             }
         }
 

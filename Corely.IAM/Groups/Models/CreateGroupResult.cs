@@ -6,6 +6,7 @@ public enum CreateGroupResultCode
     GroupExistsError,
     AccountNotFoundError,
     UnauthorizedError,
+    ValidationError,
 }
 
 internal record CreateGroupResult(CreateGroupResultCode ResultCode, string Message, Guid CreatedId);

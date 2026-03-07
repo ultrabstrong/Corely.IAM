@@ -6,6 +6,7 @@ public enum CreateRoleResultCode
     RoleExistsError,
     AccountNotFoundError,
     UnauthorizedError,
+    ValidationError,
 }
 
 internal record CreateRoleResult(CreateRoleResultCode ResultCode, string Message, Guid CreatedId);

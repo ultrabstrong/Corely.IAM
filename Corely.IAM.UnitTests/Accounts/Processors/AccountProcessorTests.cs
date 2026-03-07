@@ -208,13 +208,12 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task CreateAccount_Throws_WithNullAccountName()
+    public async Task CreateAccount_ReturnsValidationError_WithNullAccountName()
     {
         var request = new CreateAccountRequest(null!, Guid.Empty);
-        var ex = await Record.ExceptionAsync(() => _accountProcessor.CreateAccountAsync(request));
+        var result = await _accountProcessor.CreateAccountAsync(request);
 
-        Assert.NotNull(ex);
-        Assert.IsType<ValidationException>(ex);
+        Assert.Equal(CreateAccountResultCode.ValidationError, result.ResultCode);
     }
 
     [Fact]

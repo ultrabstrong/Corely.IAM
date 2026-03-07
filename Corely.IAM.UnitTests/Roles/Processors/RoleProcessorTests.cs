@@ -132,15 +132,14 @@ public class RoleProcessorTests
     }
 
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]
-    public async Task CreateRoleAsync_Throws_WhenRoleNameInvalid(string roleName)
+    public async Task CreateRoleAsync_ReturnsValidationError_WhenRoleNameInvalid(string roleName)
     {
         var ownerAccount = await CreateAccountAsync();
         var request = new CreateRoleRequest(roleName, ownerAccount.Id);
 
-        var ex = Record.ExceptionAsync(() => _roleProcessor.CreateRoleAsync(request));
+        var result = await _roleProcessor.CreateRoleAsync(request);
 
-        Assert.NotNull(ex);
-        Assert.IsType<ValidationException>(await ex);
+        Assert.Equal(CreateRoleResultCode.ValidationError, result.ResultCode);
     }
 
     [Fact]

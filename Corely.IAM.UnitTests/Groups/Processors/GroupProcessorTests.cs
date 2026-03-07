@@ -169,15 +169,14 @@ public class GroupProcessorTests
     }
 
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]
-    public async Task CreateGroupAsync_Throws_WithInvalidGroupName(string groupName)
+    public async Task CreateGroupAsync_ReturnsValidationError_WithInvalidGroupName(string groupName)
     {
         var account = await CreateAccountAsync();
         var request = new CreateGroupRequest(groupName, account.Id);
 
-        var ex = await Record.ExceptionAsync(() => _groupProcessor.CreateGroupAsync(request));
+        var result = await _groupProcessor.CreateGroupAsync(request);
 
-        Assert.NotNull(ex);
-        Assert.IsType<ValidationException>(ex);
+        Assert.Equal(CreateGroupResultCode.ValidationError, result.ResultCode);
     }
 
     [Fact]

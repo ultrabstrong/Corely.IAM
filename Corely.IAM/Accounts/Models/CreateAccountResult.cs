@@ -5,6 +5,7 @@ public enum CreateAccountResultCode
     Success,
     AccountExistsError,
     UserOwnerNotFoundError,
+    ValidationError,
 }
 
 internal record CreateAccountResult(

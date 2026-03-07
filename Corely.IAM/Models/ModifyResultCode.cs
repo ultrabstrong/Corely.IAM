@@ -6,4 +6,5 @@ public enum ModifyResultCode
     NotFoundError,
     UnauthorizedError,
     SystemDefinedError,
+    ValidationError,
 }

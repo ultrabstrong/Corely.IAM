@@ -5,7 +5,6 @@ using Corely.IAM.Invitations.Constants;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
-using Corely.IAM.Validators;
 
 namespace Corely.IAM.DevTools.Commands.Invitation;
 
@@ -55,31 +54,24 @@ internal partial class Invitation : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            try
+            var request = new CreateInvitationRequest(
+                Guid.Parse(AccountId),
+                Email,
+                InvitationDescription,
+                ExpiresInSeconds
+            );
+
+            var result = await _registrationService.CreateInvitationAsync(request);
+
+            if (result.ResultCode == CreateInvitationResultCode.Success)
             {
-                var request = new CreateInvitationRequest(
-                    Guid.Parse(AccountId),
-                    Email,
-                    InvitationDescription,
-                    ExpiresInSeconds
-                );
-
-                var result = await _registrationService.CreateInvitationAsync(request);
-
-                if (result.ResultCode == CreateInvitationResultCode.Success)
-                {
-                    Success($"Invitation created successfully");
-                    Info($"  Invitation ID: {result.InvitationId}");
-                    Info($"  Token: {result.Token}");
-                }
-                else
-                {
-                    Error($"{result.ResultCode}: {result.Message}");
-                }
+                Success($"Invitation created successfully");
+                Info($"  Invitation ID: {result.InvitationId}");
+                Info($"  Token: {result.Token}");
             }
-            catch (ValidationException ex)
+            else
             {
-                Error(ex.ValidationResult!.Errors!.Select(e => e.Message));
+                Error($"{result.ResultCode}: {result.Message}");
             }
         }
     }

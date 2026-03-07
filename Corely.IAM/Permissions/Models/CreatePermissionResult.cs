@@ -6,6 +6,7 @@ public enum CreatePermissionResultCode
     PermissionExistsError,
     AccountNotFoundError,
     UnauthorizedError,
+    ValidationError,
 }
 
 internal record CreatePermissionResult(

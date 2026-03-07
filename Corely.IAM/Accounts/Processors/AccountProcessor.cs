@@ -54,7 +54,15 @@ internal class AccountProcessor(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
         var account = request.ToAccount();
-        _validationProvider.ThrowIfInvalid(account);
+        var validation = _validationProvider.ValidateAndLog(account);
+        if (!validation.IsValid)
+        {
+            return new CreateAccountResult(
+                CreateAccountResultCode.ValidationError,
+                validation.Message,
+                Guid.Empty
+            );
+        }
 
         var userEntity = await _userRepo.GetAsync(u => u.Id == request.OwnerUserId);
         if (userEntity == null)
@@ -118,7 +126,11 @@ internal class AccountProcessor(
     public async Task<ModifyResult> UpdateAccountAsync(UpdateAccountRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _validationProvider.ThrowIfInvalid(request);
+        var validation = _validationProvider.ValidateAndLog(request);
+        if (!validation.IsValid)
+        {
+            return new ModifyResult(ModifyResultCode.ValidationError, validation.Message);
+        }
 
         var userAccountIds = _userContextProvider
             .GetUserContext()!

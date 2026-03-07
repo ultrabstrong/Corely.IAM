@@ -2,7 +2,6 @@ using System.Text.Json;
 using Corely.Common.Extensions;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
-using Corely.IAM.Validators;
 
 namespace Corely.IAM.DevTools.Commands.Deregistration;
 
@@ -30,17 +29,10 @@ internal partial class Deregistration : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            try
-            {
-                var result = await _deregistrationService.DeregisterAccountAsync();
-                Console.WriteLine(JsonSerializer.Serialize(result));
+            var result = await _deregistrationService.DeregisterAccountAsync();
+            Console.WriteLine(JsonSerializer.Serialize(result));
 
-                ClearAuthTokenFile();
-            }
-            catch (ValidationException ex)
-            {
-                Error(ex.ValidationResult!.Errors!.Select(e => e.Message));
-            }
+            ClearAuthTokenFile();
         }
     }
 }

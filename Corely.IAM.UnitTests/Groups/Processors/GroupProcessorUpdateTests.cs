@@ -102,13 +102,13 @@ public class GroupProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateGroupAsync_ThrowsValidation_WhenNameEmpty()
+    public async Task UpdateGroupAsync_ReturnsValidationError_WhenNameEmpty()
     {
         var group = await CreateGroupEntityAsync("TestGroup");
 
         var request = new UpdateGroupRequest(group.Id, "", null);
-        await Assert.ThrowsAsync<ValidationException>(() =>
-            _groupProcessor.UpdateGroupAsync(request)
-        );
+        var result = await _groupProcessor.UpdateGroupAsync(request);
+
+        Assert.Equal(ModifyResultCode.ValidationError, result.ResultCode);
     }
 }

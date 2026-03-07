@@ -68,7 +68,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task CreatePermissionAsync_Fails_WhenAccountDoesNotExist()
+    public async Task CreatePermission_Fails_WhenAccountDoesNotExist()
     {
         var request = new CreatePermissionRequest(
             Guid.CreateVersion7(),
@@ -83,7 +83,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task CreatePermissionAsync_Fails_WhenPermissionExists()
+    public async Task CreatePermission_Fails_WhenPermissionExists()
     {
         var account = await CreateAccountAsync();
         var request = new CreatePermissionRequest(
@@ -100,7 +100,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task CreatePermissionAsync_ReturnsCreatePermissionResult()
+    public async Task CreatePermission_ReturnsCreatePermissionResult()
     {
         var account = await CreateAccountAsync();
         var request = new CreatePermissionRequest(
@@ -125,7 +125,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemPermissionsAsync_CreatesThreePermissions()
+    public async Task CreateDefaultSystemPermissions_CreatesThreePermissions()
     {
         var account = await CreateAccountAsync();
         await CreateDefaultRolesAsync(account.Id);
@@ -148,7 +148,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemPermissionsAsync_CreatesOwnerPermission_WithFullAccess()
+    public async Task CreateDefaultSystemPermissions_CreatesOwnerPermission_WithFullAccess()
     {
         var account = await CreateAccountAsync();
         await CreateDefaultRolesAsync(account.Id);
@@ -169,7 +169,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemPermissionsAsync_CreatesAdminPermission_WithoutDelete()
+    public async Task CreateDefaultSystemPermissions_CreatesAdminPermission_WithoutDelete()
     {
         var account = await CreateAccountAsync();
         await CreateDefaultRolesAsync(account.Id);
@@ -190,7 +190,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemPermissionsAsync_CreatesUserPermission_ReadOnly()
+    public async Task CreateDefaultSystemPermissions_CreatesUserPermission_ReadOnly()
     {
         var account = await CreateAccountAsync();
         await CreateDefaultRolesAsync(account.Id);
@@ -211,7 +211,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task DeletePermissionAsync_ReturnsSuccess_WhenPermissionExists()
+    public async Task DeletePermission_ReturnsSuccess_WhenPermissionExists()
     {
         var account = await CreateAccountAsync();
         var createRequest = new CreatePermissionRequest(
@@ -232,7 +232,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task DeletePermissionAsync_ReturnsNotFound_WhenPermissionDoesNotExist()
+    public async Task DeletePermission_ReturnsNotFound_WhenPermissionDoesNotExist()
     {
         var result = await _permissionProcessor.DeletePermissionAsync(Guid.CreateVersion7());
 
@@ -240,7 +240,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task DeletePermissionAsync_ReturnsSystemDefinedPermissionError_WhenPermissionIsSystemDefined()
+    public async Task DeletePermission_ReturnsSystemDefinedPermissionError_WhenPermissionIsSystemDefined()
     {
         var account = await CreateAccountAsync();
         await CreateDefaultRolesAsync(account.Id);
@@ -262,7 +262,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task DeletePermissionAsync_ReturnsSystemDefinedPermissionError_ForAllSystemDefinedPermissions()
+    public async Task DeletePermission_ReturnsSystemDefinedPermissionError_ForAllSystemDefinedPermissions()
     {
         var account = await CreateAccountAsync();
         await CreateDefaultRolesAsync(account.Id);

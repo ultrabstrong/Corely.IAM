@@ -22,7 +22,7 @@ public class UserProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task CreateUserAsync_DelegatesToInnerAndLogsResult()
+    public async Task CreateUser_DelegatesToInnerAndLogsResult()
     {
         var request = new CreateUserRequest("testuser", "test@example.com");
         var expectedResult = new CreateUserResult(
@@ -40,7 +40,7 @@ public class UserProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task GetUserAsyncById_DelegatesToInnerAndLogsResult()
+    public async Task GetUserById_DelegatesToInnerAndLogsResult()
     {
         var userId = Guid.CreateVersion7();
         var expectedResult = new GetUserResult(
@@ -58,7 +58,7 @@ public class UserProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task UpdateUserAsync_DelegatesToInnerAndLogsResult()
+    public async Task UpdateUser_DelegatesToInnerAndLogsResult()
     {
         var request = new UpdateUserRequest(Guid.CreateVersion7(), "testuser", "test@test.com");
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
@@ -72,7 +72,7 @@ public class UserProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task GetAsymmetricSignatureVerificationKeyAsync_DelegatesToInnerAndLogsResult()
+    public async Task GetAsymmetricSignatureVerificationKey_DelegatesToInnerAndLogsResult()
     {
         var userId = Guid.CreateVersion7();
         var expectedResult = new GetAsymmetricKeyResult(
@@ -95,7 +95,7 @@ public class UserProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task AssignRolesToUserAsync_DelegatesToInnerAndLogsResult()
+    public async Task AssignRolesToUser_DelegatesToInnerAndLogsResult()
     {
         var request = new AssignRolesToUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -119,7 +119,7 @@ public class UserProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromUserAsync_DelegatesToInnerAndLogsResult()
+    public async Task RemoveRolesFromUser_DelegatesToInnerAndLogsResult()
     {
         var request = new RemoveRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -143,7 +143,7 @@ public class UserProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_DelegatesToInnerAndLogsResult()
+    public async Task DeleteUser_DelegatesToInnerAndLogsResult()
     {
         var userId = Guid.CreateVersion7();
         var expectedResult = new DeleteUserResult(DeleteUserResultCode.Success, string.Empty);

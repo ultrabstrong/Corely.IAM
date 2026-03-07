@@ -38,7 +38,7 @@ internal class BasicAuthProcessor(
         var existingAuth = await _basicAuthRepo.GetAsync(e => e.UserId == request.UserId);
         if (existingAuth != null)
         {
-            _logger.LogInformation("Basic auth already exists for UserId {UserId}", request.UserId);
+            _logger.LogWarning("Basic auth already exists for UserId {UserId}", request.UserId);
             return new CreateBasicAuthResult(
                 CreateBasicAuthResultCode.BasicAuthExistsError,
                 $"Basic auth already exists for UserId {request.UserId}",
@@ -88,7 +88,7 @@ internal class BasicAuthProcessor(
         var existingAuth = await _basicAuthRepo.GetAsync(e => e.UserId == request.UserId);
         if (existingAuth == null)
         {
-            _logger.LogInformation("No basic auth found for UserId {UserId}", request.UserId);
+            _logger.LogWarning("No basic auth found for UserId {UserId}", request.UserId);
             return new UpdateBasicAuthResult(
                 UpdateBasicAuthResultCode.BasicAuthNotFoundError,
                 $"No basic auth found for UserId {request.UserId}"

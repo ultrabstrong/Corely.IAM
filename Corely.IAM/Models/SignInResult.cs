@@ -13,7 +13,7 @@ public enum SignInResultCode
 
 public record SignInResult(
     SignInResultCode ResultCode,
-    string? Message,
+    string Message,
     string? AuthToken,
     Guid? AuthTokenId
 );

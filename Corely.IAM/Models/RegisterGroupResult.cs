@@ -4,6 +4,6 @@ namespace Corely.IAM.Models;
 
 public record RegisterGroupResult(
     CreateGroupResultCode ResultCode,
-    string? Message,
+    string Message,
     Guid CreatedGroupId
 );

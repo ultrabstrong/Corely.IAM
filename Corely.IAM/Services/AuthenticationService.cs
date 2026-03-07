@@ -275,15 +275,15 @@ internal class AuthenticationService(
     ) =>
         resultCode switch
         {
-            UserAuthTokenResultCode.UserNotFound => (
+            UserAuthTokenResultCode.UserNotFoundError => (
                 SignInResultCode.UserNotFoundError,
                 "User not found"
             ),
-            UserAuthTokenResultCode.SignatureKeyNotFound => (
+            UserAuthTokenResultCode.SignatureKeyNotFoundError => (
                 SignInResultCode.SignatureKeyNotFoundError,
                 "User signature key not found"
             ),
-            UserAuthTokenResultCode.AccountNotFound => (
+            UserAuthTokenResultCode.AccountNotFoundError => (
                 SignInResultCode.AccountNotFoundError,
                 $"Account {accountId} not found for user"
             ),

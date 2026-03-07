@@ -37,7 +37,7 @@ public class SwitchAccountModelTests
     }
 
     [Fact]
-    public async Task OnGetAsync_WithoutAccountId_RedirectsToDashboard()
+    public async Task OnGet_WithoutAccountId_RedirectsToDashboard()
     {
         var result = await _model.OnGetAsync();
 
@@ -46,7 +46,7 @@ public class SwitchAccountModelTests
     }
 
     [Fact]
-    public async Task OnGetAsync_WithAccountId_SwitchesAndRedirectsToReturnUrl()
+    public async Task OnGet_WithAccountId_SwitchesAndRedirectsToReturnUrl()
     {
         var accountId = Guid.CreateVersion7();
         var tokenId = Guid.CreateVersion7();
@@ -75,7 +75,7 @@ public class SwitchAccountModelTests
     }
 
     [Fact]
-    public async Task OnGetAsync_WithAccountId_SwitchFails_RedirectsToSelectAccount()
+    public async Task OnGet_WithAccountId_SwitchFails_RedirectsToSelectAccount()
     {
         var accountId = Guid.CreateVersion7();
 
@@ -92,7 +92,7 @@ public class SwitchAccountModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_Success_WithLocalReturnUrl_RedirectsToReturnUrl()
+    public async Task OnPost_Success_WithLocalReturnUrl_RedirectsToReturnUrl()
     {
         var accountId = Guid.CreateVersion7();
         var tokenId = Guid.CreateVersion7();
@@ -110,7 +110,7 @@ public class SwitchAccountModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_Success_WithNonLocalReturnUrl_RedirectsToDashboard()
+    public async Task OnPost_Success_WithNonLocalReturnUrl_RedirectsToDashboard()
     {
         var accountId = Guid.CreateVersion7();
         var tokenId = Guid.CreateVersion7();
@@ -126,7 +126,7 @@ public class SwitchAccountModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_Success_WithNullReturnUrl_RedirectsToDashboard()
+    public async Task OnPost_Success_WithNullReturnUrl_RedirectsToDashboard()
     {
         var accountId = Guid.CreateVersion7();
         var tokenId = Guid.CreateVersion7();
@@ -142,7 +142,7 @@ public class SwitchAccountModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_Failure_RedirectsToSelectAccount()
+    public async Task OnPost_Failure_RedirectsToSelectAccount()
     {
         var accountId = Guid.CreateVersion7();
 

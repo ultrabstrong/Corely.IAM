@@ -20,7 +20,7 @@ public class IamAuthenticationStateProviderTests
     }
 
     [Fact]
-    public async Task GetAuthenticationStateAsync_AuthenticatedUser_ReturnsAuthenticatedState()
+    public async Task GetAuthenticationState_AuthenticatedUser_ReturnsAuthenticatedState()
     {
         var userId = Guid.CreateVersion7();
         var accountId = Guid.CreateVersion7();
@@ -53,7 +53,7 @@ public class IamAuthenticationStateProviderTests
     }
 
     [Fact]
-    public async Task GetAuthenticationStateAsync_NullUserContext_ReturnsUnauthenticatedState()
+    public async Task GetAuthenticationState_NullUserContext_ReturnsUnauthenticatedState()
     {
         _mockAccessor.Setup(a => a.GetUserContextAsync()).ReturnsAsync((UserContext?)null);
 

@@ -221,7 +221,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterUserAsync_Succeeds_WhenAllServicesSucceed()
+    public async Task RegisterUser_Succeeds_WhenAllServicesSucceed()
     {
         var request = _fixture.Create<RegisterUserRequest>();
 
@@ -236,7 +236,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterUserAsync_Fails_WhenUserProcessorFails()
+    public async Task RegisterUser_Fails_WhenUserProcessorFails()
     {
         _createUserResultCode = CreateUserResultCode.UserExistsError;
         var request = _fixture.Create<RegisterUserRequest>();
@@ -255,7 +255,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterUserAsync_Fails_WhenBasicAuthProcessorFails()
+    public async Task RegisterUser_Fails_WhenBasicAuthProcessorFails()
     {
         _createBasicAuthResultCode = CreateBasicAuthResultCode.BasicAuthExistsError;
         var request = _fixture.Create<RegisterUserRequest>();
@@ -270,7 +270,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterUserAsync_Throws_WithNullRequest()
+    public async Task RegisterUser_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _registrationService.RegisterUserAsync(null!));
 
@@ -279,7 +279,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterAccountAsync_Succeeds_WhenAllServicesSucceed()
+    public async Task RegisterAccount_Succeeds_WhenAllServicesSucceed()
     {
         var request = _fixture.Create<RegisterAccountRequest>();
 
@@ -301,7 +301,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterAccountAsync_Fails_WhenAccountProcessorFails()
+    public async Task RegisterAccount_Fails_WhenAccountProcessorFails()
     {
         _createAccountResultCode = CreateAccountResultCode.AccountExistsError;
         var request = _fixture.Create<RegisterAccountRequest>();
@@ -316,7 +316,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterAccountAsync_Fails_WhenAssignOwnerRoleFails()
+    public async Task RegisterAccount_Fails_WhenAssignOwnerRoleFails()
     {
         _assignRolesToUserResult = new(
             AssignRolesToUserResultCode.UserNotFoundError,
@@ -335,7 +335,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterAccountAsync_Throws_WithNullRequest()
+    public async Task RegisterAccount_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() =>
             _registrationService.RegisterAccountAsync(null!)
@@ -346,7 +346,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterUserWithAccountAsync_Succeeds_WhenAllServicesSucceed()
+    public async Task RegisterUserWithAccount_Succeeds_WhenAllServicesSucceed()
     {
         var request = _fixture.Create<RegisterUserWithAccountRequest>();
 
@@ -363,7 +363,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterUserWithAccountAsync_Fails_WhenUserNotFound()
+    public async Task RegisterUserWithAccount_Fails_WhenUserNotFound()
     {
         _addUserToAccountResultCode = AddUserToAccountResultCode.UserNotFoundError;
         var request = _fixture.Create<RegisterUserWithAccountRequest>();
@@ -374,7 +374,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterUserWithAccountAsync_Fails_WhenAccountNotFound()
+    public async Task RegisterUserWithAccount_Fails_WhenAccountNotFound()
     {
         _addUserToAccountResultCode = AddUserToAccountResultCode.AccountNotFoundError;
         var request = _fixture.Create<RegisterUserWithAccountRequest>();
@@ -385,7 +385,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterUserWithAccountAsync_Fails_WhenUserAlreadyInAccount()
+    public async Task RegisterUserWithAccount_Fails_WhenUserAlreadyInAccount()
     {
         _addUserToAccountResultCode = AddUserToAccountResultCode.UserAlreadyInAccountError;
         var request = _fixture.Create<RegisterUserWithAccountRequest>();
@@ -399,7 +399,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterUserWithAccountAsync_Throws_WithNullRequest()
+    public async Task RegisterUserWithAccount_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() =>
             _registrationService.RegisterUserWithAccountAsync(null!)
@@ -410,7 +410,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterGroupAsync_Succeeds_WhenAllServicesSucceed()
+    public async Task RegisterGroup_Succeeds_WhenAllServicesSucceed()
     {
         var request = _fixture.Create<RegisterGroupRequest>();
         var result = await _registrationService.RegisterGroupAsync(request);
@@ -420,7 +420,7 @@ public class RegistrationServiceTests
     [Theory]
     [InlineData(CreateGroupResultCode.GroupExistsError)]
     [InlineData(CreateGroupResultCode.AccountNotFoundError)]
-    public async Task RegisterGroupAsync_Fails_WhenGroupProcessorFails(
+    public async Task RegisterGroup_Fails_WhenGroupProcessorFails(
         CreateGroupResultCode createGroupResultCode
     )
     {
@@ -433,7 +433,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterGroupAsync_Throws_WithNullRequest()
+    public async Task RegisterGroup_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _registrationService.RegisterGroupAsync(null!));
         Assert.NotNull(ex);
@@ -441,7 +441,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterRoleAsync_Succeeds_WhenAllServicesSucceed()
+    public async Task RegisterRole_Succeeds_WhenAllServicesSucceed()
     {
         var request = _fixture.Create<RegisterRoleRequest>();
         var result = await _registrationService.RegisterRoleAsync(request);
@@ -451,7 +451,7 @@ public class RegistrationServiceTests
     [Theory]
     [InlineData(CreateRoleResultCode.RoleExistsError)]
     [InlineData(CreateRoleResultCode.AccountNotFoundError)]
-    public async Task RegisterRoleAsync_Fails_WhenRoleProcessorFails(
+    public async Task RegisterRole_Fails_WhenRoleProcessorFails(
         CreateRoleResultCode createRoleResultCode
     )
     {
@@ -462,7 +462,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterRoleAsync_Throws_WithNullRequest()
+    public async Task RegisterRole_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _registrationService.RegisterRoleAsync(null!));
         Assert.NotNull(ex);
@@ -470,7 +470,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterPermissionAsync_Succeeds_WhenAllServicesSucceed()
+    public async Task RegisterPermission_Succeeds_WhenAllServicesSucceed()
     {
         var request = _fixture.Create<RegisterPermissionRequest>();
         var result = await _registrationService.RegisterPermissionAsync(request);
@@ -480,7 +480,7 @@ public class RegistrationServiceTests
     [Theory]
     [InlineData(CreatePermissionResultCode.PermissionExistsError)]
     [InlineData(CreatePermissionResultCode.AccountNotFoundError)]
-    public async Task RegisterPermissionAsync_Fails_WhenPermissionProcessorFails(
+    public async Task RegisterPermission_Fails_WhenPermissionProcessorFails(
         CreatePermissionResultCode createPermissionResultCode
     )
     {
@@ -491,7 +491,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterPermissionAsync_Throws_WithNullRequest()
+    public async Task RegisterPermission_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() =>
             _registrationService.RegisterPermissionAsync(null!)
@@ -501,7 +501,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterUsersWithGroupAsync_Throws_WithNullRequest()
+    public async Task RegisterUsersWithGroup_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() =>
             _registrationService.RegisterUsersWithGroupAsync(null!)
@@ -511,7 +511,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterUsersWithGroupAsync_Succeeds_WhenAllServicesSucceed()
+    public async Task RegisterUsersWithGroup_Succeeds_WhenAllServicesSucceed()
     {
         var request = _fixture.Create<RegisterUsersWithGroupRequest>();
         _addUsersToGroupResult = _fixture.Create<AddUsersToGroupResult>() with
@@ -528,7 +528,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterUsersWithGroupAsync_Fails_WhenGroupProcessorFails()
+    public async Task RegisterUsersWithGroup_Fails_WhenGroupProcessorFails()
     {
         var request = _fixture.Create<RegisterUsersWithGroupRequest>();
         _addUsersToGroupResult = _fixture.Create<AddUsersToGroupResult>() with

@@ -13,13 +13,14 @@ using Microsoft.Extensions.Logging;
 namespace Corely.IAM.Services;
 
 internal class ModificationService(
+    ILogger<ModificationService> logger,
     IAccountProcessor accountProcessor,
     IUserProcessor userProcessor,
     IGroupProcessor groupProcessor,
-    IRoleProcessor roleProcessor,
-    ILogger<ModificationService> logger
+    IRoleProcessor roleProcessor
 ) : IModificationService
 {
+    private readonly ILogger<ModificationService> _logger = logger.ThrowIfNull(nameof(logger));
     private readonly IAccountProcessor _accountProcessor = accountProcessor.ThrowIfNull(
         nameof(accountProcessor)
     );
@@ -32,32 +33,31 @@ internal class ModificationService(
     private readonly IRoleProcessor _roleProcessor = roleProcessor.ThrowIfNull(
         nameof(roleProcessor)
     );
-    private readonly ILogger<ModificationService> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<ModifyResult> ModifyAccountAsync(UpdateAccountRequest request)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Modifying account {AccountId}", request.AccountId);
         return await _accountProcessor.UpdateAccountAsync(request);
     }
 
     public async Task<ModifyResult> ModifyUserAsync(UpdateUserRequest request)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Modifying user {UserId}", request.UserId);
         return await _userProcessor.UpdateUserAsync(request);
     }
 
     public async Task<ModifyResult> ModifyGroupAsync(UpdateGroupRequest request)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Modifying group {GroupId}", request.GroupId);
         return await _groupProcessor.UpdateGroupAsync(request);
     }
 
     public async Task<ModifyResult> ModifyRoleAsync(UpdateRoleRequest request)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Modifying role {RoleId}", request.RoleId);
         return await _roleProcessor.UpdateRoleAsync(request);
     }

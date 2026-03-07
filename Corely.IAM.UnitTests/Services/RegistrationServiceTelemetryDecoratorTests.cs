@@ -25,7 +25,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterUserAsync_DelegatesToInnerAndLogsResult()
+    public async Task RegisterUser_DelegatesToInnerAndLogsResult()
     {
         var request = new RegisterUserRequest("testuser", "test@example.com", "password123");
         var expectedResult = new RegisterUserResult(
@@ -43,7 +43,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterAccountAsync_DelegatesToInnerAndLogsResult()
+    public async Task RegisterAccount_DelegatesToInnerAndLogsResult()
     {
         var request = new RegisterAccountRequest("testaccount");
         var expectedResult = new RegisterAccountResult(
@@ -61,7 +61,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterGroupAsync_DelegatesToInnerAndLogsResult()
+    public async Task RegisterGroup_DelegatesToInnerAndLogsResult()
     {
         var request = new RegisterGroupRequest("testgroup");
         var expectedResult = new RegisterGroupResult(
@@ -79,7 +79,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterRoleAsync_DelegatesToInnerAndLogsResult()
+    public async Task RegisterRole_DelegatesToInnerAndLogsResult()
     {
         var request = new RegisterRoleRequest("testrole");
         var expectedResult = new RegisterRoleResult(
@@ -97,7 +97,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterPermissionAsync_DelegatesToInnerAndLogsResult()
+    public async Task RegisterPermission_DelegatesToInnerAndLogsResult()
     {
         var request = new RegisterPermissionRequest(
             "Resource",
@@ -126,7 +126,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterUserWithAccountAsync_DelegatesToInnerAndLogsResult()
+    public async Task RegisterUserWithAccount_DelegatesToInnerAndLogsResult()
     {
         var request = new RegisterUserWithAccountRequest(Guid.CreateVersion7());
         var expectedResult = new RegisterUserWithAccountResult(
@@ -145,7 +145,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterUsersWithGroupAsync_DelegatesToInnerAndLogsResult()
+    public async Task RegisterUsersWithGroup_DelegatesToInnerAndLogsResult()
     {
         var request = new RegisterUsersWithGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -169,7 +169,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterRolesWithGroupAsync_DelegatesToInnerAndLogsResult()
+    public async Task RegisterRolesWithGroup_DelegatesToInnerAndLogsResult()
     {
         var request = new RegisterRolesWithGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -193,7 +193,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterRolesWithUserAsync_DelegatesToInnerAndLogsResult()
+    public async Task RegisterRolesWithUser_DelegatesToInnerAndLogsResult()
     {
         var request = new RegisterRolesWithUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -217,7 +217,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterPermissionsWithRoleAsync_DelegatesToInnerAndLogsResult()
+    public async Task RegisterPermissionsWithRole_DelegatesToInnerAndLogsResult()
     {
         var request = new RegisterPermissionsWithRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],

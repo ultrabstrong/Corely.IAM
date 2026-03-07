@@ -125,7 +125,7 @@ public class RoleProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListRolesAsync_ReturnsPaginatedResults()
+    public async Task ListRoles_ReturnsPaginatedResults()
     {
         await CreateRoleAsync("Role1");
 
@@ -138,7 +138,7 @@ public class RoleProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListRolesAsync_ScopesToAccount()
+    public async Task ListRoles_ScopesToAccount()
     {
         await CreateRoleAsync("ScopedRole");
 
@@ -168,7 +168,7 @@ public class RoleProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListRolesAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task ListRoles_ReturnsUnauthorized_WhenNoAccountContext()
     {
         _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((UserContext?)null);
 
@@ -179,7 +179,7 @@ public class RoleProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetRoleByIdAsync_ReturnsRole_WhenFound()
+    public async Task GetRoleById_ReturnsRole_WhenFound()
     {
         var (role, _) = await CreateRoleAsync();
 
@@ -195,7 +195,7 @@ public class RoleProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetRoleByIdAsync_ReturnsNotFoundError_WhenNotFound()
+    public async Task GetRoleById_ReturnsNotFoundError_WhenNotFound()
     {
         var result = await _roleProcessor.GetRoleByIdAsync(Guid.CreateVersion7(), hydrate: false);
 
@@ -204,7 +204,7 @@ public class RoleProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetRoleByIdAsync_HydratesUsersGroupsAndPermissions_WhenHydrateTrue()
+    public async Task GetRoleById_HydratesUsersGroupsAndPermissions_WhenHydrateTrue()
     {
         var role = await CreateRoleWithChildrenAsync();
 

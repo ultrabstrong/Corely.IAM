@@ -68,12 +68,12 @@ internal class UserProcessor(
             bool emailExists = existingUser.Email == request.Email;
 
             if (usernameExists)
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "User already exists with Username {ExistingUsername}",
                     existingUser.Username
                 );
             if (emailExists)
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "User already exists with Email {ExistingEmail}",
                     existingUser.Email
                 );
@@ -135,7 +135,7 @@ internal class UserProcessor(
         var entity = await _userRepo.GetAsync(u => u.Id == request.UserId);
         if (entity == null)
         {
-            _logger.LogInformation("User with Id {UserId} not found", request.UserId);
+            _logger.LogWarning("User with Id {UserId} not found", request.UserId);
             return new ModifyResult(
                 ModifyResultCode.NotFoundError,
                 $"User with Id {request.UserId} not found"
@@ -159,7 +159,7 @@ internal class UserProcessor(
 
         if (userEntity == null)
         {
-            _logger.LogWarning("User with Id {UserId} not found", userId);
+            _logger.LogInformation("User with Id {UserId} not found", userId);
             return new GetAsymmetricKeyResult(
                 GetAsymmetricKeyResultCode.UserNotFoundError,
                 $"User with Id {userId} not found",
@@ -221,7 +221,7 @@ internal class UserProcessor(
 
         if (roleEntities.Count == 0)
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "All role ids are invalid (not found, already assigned to user, or from different account) : {@InvalidRoleIds}",
                 request.RoleIds
             );
@@ -294,7 +294,7 @@ internal class UserProcessor(
 
         if (rolesToRemove.Count == 0)
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "All role ids are invalid (not found or not assigned to user) : {@InvalidRoleIds}",
                 request.RoleIds
             );
@@ -423,7 +423,7 @@ internal class UserProcessor(
                 );
                 if (soleOwnerResult.IsSoleOwner)
                 {
-                    _logger.LogInformation(
+                    _logger.LogWarning(
                         "User with Id {UserId} is the sole owner of account {AccountId} and cannot be deleted",
                         userId,
                         account.Id

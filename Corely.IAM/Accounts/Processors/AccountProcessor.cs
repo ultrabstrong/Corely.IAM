@@ -80,7 +80,7 @@ internal class AccountProcessor(
         );
         if (existingAccount != null)
         {
-            _logger.LogInformation("Account {Account} already exists", request.AccountName);
+            _logger.LogWarning("Account {Account} already exists", request.AccountName);
             return new CreateAccountResult(
                 CreateAccountResultCode.AccountExistsError,
                 $"Account {request.AccountName} already exists",
@@ -139,7 +139,7 @@ internal class AccountProcessor(
 
         if (!userAccountIds.Contains(request.AccountId))
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "Account with Id {AccountId} not found or not accessible",
                 request.AccountId
             );
@@ -267,7 +267,7 @@ internal class AccountProcessor(
         var userEntity = await _userRepo.GetAsync(u => u.Id == request.UserId);
         if (userEntity == null)
         {
-            _logger.LogInformation("User with Id {UserId} not found", request.UserId);
+            _logger.LogWarning("User with Id {UserId} not found", request.UserId);
             return new AddUserToAccountResult(
                 AddUserToAccountResultCode.UserNotFoundError,
                 $"User with Id {request.UserId} not found"
@@ -276,7 +276,7 @@ internal class AccountProcessor(
 
         if (accountEntity.Users?.Any(u => u.Id == request.UserId) == true)
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "User with Id {UserId} is already in account {AccountId}",
                 request.UserId,
                 request.AccountId
@@ -325,7 +325,7 @@ internal class AccountProcessor(
         var userEntity = await _userRepo.GetAsync(u => u.Id == request.UserId);
         if (userEntity == null)
         {
-            _logger.LogInformation("User with Id {UserId} not found", request.UserId);
+            _logger.LogWarning("User with Id {UserId} not found", request.UserId);
             return new RemoveUserFromAccountResult(
                 RemoveUserFromAccountResultCode.UserNotFoundError,
                 $"User with Id {request.UserId} not found"
@@ -351,7 +351,7 @@ internal class AccountProcessor(
         );
         if (soleOwnerResult.IsSoleOwner)
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "User with Id {UserId} is the sole owner of account {AccountId} and cannot be removed",
                 request.UserId,
                 request.AccountId

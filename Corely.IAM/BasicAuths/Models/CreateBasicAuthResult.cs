@@ -10,6 +10,6 @@ public enum CreateBasicAuthResultCode
 
 internal record CreateBasicAuthResult(
     CreateBasicAuthResultCode ResultCode,
-    string? Message,
+    string Message,
     Guid CreatedId
 );

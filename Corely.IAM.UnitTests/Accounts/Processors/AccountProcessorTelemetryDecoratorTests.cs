@@ -21,7 +21,7 @@ public class AccountProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task CreateAccountAsync_DelegatesToInnerAndLogsResult()
+    public async Task CreateAccount_DelegatesToInnerAndLogsResult()
     {
         var request = new CreateAccountRequest("testaccount", Guid.CreateVersion7());
         var expectedResult = new CreateAccountResult(
@@ -39,7 +39,7 @@ public class AccountProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task GetAccountAsyncById_DelegatesToInnerAndLogsResult()
+    public async Task GetAccountById_DelegatesToInnerAndLogsResult()
     {
         var accountId = Guid.CreateVersion7();
         var expectedResult = new GetAccountResult(
@@ -57,7 +57,7 @@ public class AccountProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_DelegatesToInnerAndLogsResult()
+    public async Task RemoveUserFromAccount_DelegatesToInnerAndLogsResult()
     {
         var request = new RemoveUserFromAccountRequest(
             Guid.CreateVersion7(),

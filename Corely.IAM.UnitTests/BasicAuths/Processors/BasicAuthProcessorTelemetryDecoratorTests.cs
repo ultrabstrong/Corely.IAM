@@ -21,7 +21,7 @@ public class BasicAuthProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task CreateBasicAuthAsync_DelegatesToInnerAndLogsResult()
+    public async Task CreateBasicAuth_DelegatesToInnerAndLogsResult()
     {
         var request = new CreateBasicAuthRequest(Guid.CreateVersion7(), "password");
         var expectedResult = new CreateBasicAuthResult(
@@ -41,7 +41,7 @@ public class BasicAuthProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task UpdateBasicAuthAsync_DelegatesToInnerAndLogsResult()
+    public async Task UpdateBasicAuth_DelegatesToInnerAndLogsResult()
     {
         var request = new UpdateBasicAuthRequest(Guid.CreateVersion7(), "password");
         var expectedResult = new UpdateBasicAuthResult(
@@ -60,7 +60,7 @@ public class BasicAuthProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task VerifyBasicAuthAsync_DelegatesToInnerAndLogsResult()
+    public async Task VerifyBasicAuth_DelegatesToInnerAndLogsResult()
     {
         var request = new VerifyBasicAuthRequest(Guid.CreateVersion7(), "password");
         var expectedResult = new VerifyBasicAuthResult(

@@ -62,7 +62,7 @@ public class UserProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateUserAsync_UpdatesUsernameAndEmail()
+    public async Task UpdateUser_UpdatesUsernameAndEmail()
     {
         var created = await CreateUserEntityAsync();
 
@@ -78,7 +78,7 @@ public class UserProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateUserAsync_ReturnsNotFound_WhenUserDoesNotExist()
+    public async Task UpdateUser_ReturnsNotFound_WhenUserDoesNotExist()
     {
         var request = new UpdateUserRequest(Guid.CreateVersion7(), "nouser", "no@test.com");
 
@@ -88,7 +88,7 @@ public class UserProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateUserAsync_ReturnsValidationError_WhenUsernameEmpty()
+    public async Task UpdateUser_ReturnsValidationError_WhenUsernameEmpty()
     {
         var created = await CreateUserEntityAsync();
         var request = new UpdateUserRequest(created.Id, "", "valid@test.com");
@@ -99,7 +99,7 @@ public class UserProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateUserAsync_ReturnsValidationError_WhenEmailInvalid()
+    public async Task UpdateUser_ReturnsValidationError_WhenEmailInvalid()
     {
         var created = await CreateUserEntityAsync();
         var request = new UpdateUserRequest(created.Id, "validuser", "not-an-email");

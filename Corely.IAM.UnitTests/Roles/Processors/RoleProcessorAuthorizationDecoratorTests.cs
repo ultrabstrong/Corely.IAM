@@ -21,7 +21,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreateRoleAsync_CallsAuthorizationProvider()
+    public async Task CreateRole_CallsAuthorizationProvider()
     {
         var request = new CreateRoleRequest("TestRole", Guid.CreateVersion7());
         var expectedResult = new CreateRoleResult(
@@ -47,7 +47,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreateRoleAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task CreateRole_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new CreateRoleRequest("TestRole", Guid.CreateVersion7());
         _mockAuthorizationProvider
@@ -66,7 +66,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemRolesAsync_BypassesAuthorization()
+    public async Task CreateDefaultSystemRoles_BypassesAuthorization()
     {
         var accountId = Guid.CreateVersion7();
 
@@ -81,7 +81,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetRoleAsyncById_CallsAuthorizationProviderWithResourceId()
+    public async Task GetRoleById_CallsAuthorizationProviderWithResourceId()
     {
         var roleId = Guid.CreateVersion7();
         var expectedResult = new GetRoleResult(
@@ -111,7 +111,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetRoleAsyncById_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task GetRoleById_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var roleId = Guid.CreateVersion7();
         _mockAuthorizationProvider
@@ -128,7 +128,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetRoleAsyncByName_CallsAuthorizationProvider()
+    public async Task GetRoleByName_CallsAuthorizationProvider()
     {
         var roleName = "TestRole";
         var accountId = Guid.CreateVersion7();
@@ -156,7 +156,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetRoleAsyncByName_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task GetRoleByName_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var roleName = "TestRole";
         var accountId = Guid.CreateVersion7();
@@ -177,7 +177,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_CallsAuthorizationProvider()
+    public async Task AssignPermissionsToRole_CallsAuthorizationProvider()
     {
         var request = new AssignPermissionsToRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -237,7 +237,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task AssignPermissionsToRole_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new AssignPermissionsToRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -263,7 +263,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadPermissions()
+    public async Task AssignPermissionsToRole_ReturnsUnauthorized_WhenNotAuthorizedToReadPermissions()
     {
         var request = new AssignPermissionsToRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -299,7 +299,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_CallsAuthorizationProvider()
+    public async Task RemovePermissionsFromRole_CallsAuthorizationProvider()
     {
         var request = new RemovePermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -360,7 +360,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task RemovePermissionsFromRole_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new RemovePermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -386,7 +386,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadPermissions()
+    public async Task RemovePermissionsFromRole_ReturnsUnauthorized_WhenNotAuthorizedToReadPermissions()
     {
         var request = new RemovePermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -422,7 +422,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteRoleAsync_CallsAuthorizationProvider()
+    public async Task DeleteRole_CallsAuthorizationProvider()
     {
         var roleId = Guid.CreateVersion7();
         var expectedResult = new DeleteRoleResult(DeleteRoleResultCode.Success, "");
@@ -453,7 +453,7 @@ public class RoleProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteRoleAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task DeleteRole_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var roleId = Guid.CreateVersion7();
         _mockAuthorizationProvider

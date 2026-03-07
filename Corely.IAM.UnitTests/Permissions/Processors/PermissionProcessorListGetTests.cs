@@ -76,7 +76,7 @@ public class PermissionProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListPermissionsAsync_ReturnsPagedResults()
+    public async Task ListPermissions_ReturnsPagedResults()
     {
         await CreatePermissionEntityAsync(PermissionConstants.GROUP_RESOURCE_TYPE);
         await CreatePermissionEntityAsync(PermissionConstants.ROLE_RESOURCE_TYPE);
@@ -91,7 +91,7 @@ public class PermissionProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListPermissionsAsync_ScopesToAccount()
+    public async Task ListPermissions_ScopesToAccount()
     {
         var otherAccountId = Guid.CreateVersion7();
         await CreatePermissionEntityAsync(PermissionConstants.GROUP_RESOURCE_TYPE);
@@ -110,7 +110,7 @@ public class PermissionProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListPermissionsAsync_AppliesPaging()
+    public async Task ListPermissions_AppliesPaging()
     {
         await CreatePermissionEntityAsync(PermissionConstants.GROUP_RESOURCE_TYPE);
         await CreatePermissionEntityAsync(PermissionConstants.ROLE_RESOURCE_TYPE);
@@ -126,7 +126,7 @@ public class PermissionProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListPermissionsAsync_ReturnsEmptyWhenNoPermissions()
+    public async Task ListPermissions_ReturnsEmptyWhenNoPermissions()
     {
         var result = await _permissionProcessor.ListPermissionsAsync(new(Take: 10));
 
@@ -137,7 +137,7 @@ public class PermissionProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetPermissionByIdAsync_ReturnsPermissionWhenFound()
+    public async Task GetPermissionById_ReturnsPermissionWhenFound()
     {
         var permission = await CreatePermissionEntityAsync(PermissionConstants.GROUP_RESOURCE_TYPE);
 
@@ -154,7 +154,7 @@ public class PermissionProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetPermissionByIdAsync_ReturnsNotFoundWhenPermissionDoesNotExist()
+    public async Task GetPermissionById_ReturnsNotFoundWhenPermissionDoesNotExist()
     {
         var result = await _permissionProcessor.GetPermissionByIdAsync(
             Guid.CreateVersion7(),
@@ -166,7 +166,7 @@ public class PermissionProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetPermissionByIdAsync_HydratesRoles()
+    public async Task GetPermissionById_HydratesRoles()
     {
         var role = await CreateRoleEntityAsync("TestRole");
         var permission = await CreatePermissionEntityAsync(
@@ -190,7 +190,7 @@ public class PermissionProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetPermissionByIdAsync_ReturnsEmptyRolesWhenHydratedWithNoRoles()
+    public async Task GetPermissionById_ReturnsEmptyRolesWhenHydratedWithNoRoles()
     {
         var permission = await CreatePermissionEntityAsync(PermissionConstants.GROUP_RESOURCE_TYPE);
 

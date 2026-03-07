@@ -133,7 +133,7 @@ public class AccountProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListAccountsAsync_ReturnsPagedResults()
+    public async Task ListAccounts_ReturnsPagedResults()
     {
         await CreateAccountEntityAsync("TestAccount");
 
@@ -146,7 +146,7 @@ public class AccountProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListAccountsAsync_ScopesToUserAccounts()
+    public async Task ListAccounts_ScopesToUserAccounts()
     {
         var otherAccountId = Guid.CreateVersion7();
         await CreateAccountEntityAsync("MyAccount");
@@ -162,7 +162,7 @@ public class AccountProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListAccountsAsync_AppliesPaging()
+    public async Task ListAccounts_AppliesPaging()
     {
         // Set up user context with multiple accounts
         var accountId2 = Guid.CreateVersion7();
@@ -195,7 +195,7 @@ public class AccountProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListAccountsAsync_ReturnsEmptyWhenNoAccounts()
+    public async Task ListAccounts_ReturnsEmptyWhenNoAccounts()
     {
         // User context has _accountId but no entity created for it
         // Need a fresh service factory with no accounts
@@ -232,7 +232,7 @@ public class AccountProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetAccountByIdAsync_ReturnsAccountWhenFound()
+    public async Task GetAccountById_ReturnsAccountWhenFound()
     {
         await CreateAccountEntityAsync("TestAccount");
 
@@ -249,7 +249,7 @@ public class AccountProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetAccountByIdAsync_ReturnsNotFoundWhenAccountDoesNotExist()
+    public async Task GetAccountById_ReturnsNotFoundWhenAccountDoesNotExist()
     {
         var result = await _accountProcessor.GetAccountByIdAsync(
             Guid.CreateVersion7(),
@@ -261,7 +261,7 @@ public class AccountProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetAccountByIdAsync_ReturnsNotFoundWhenUserLacksAccess()
+    public async Task GetAccountById_ReturnsNotFoundWhenUserLacksAccess()
     {
         var otherAccountId = Guid.CreateVersion7();
         await CreateAccountEntityAsync("OtherAccount", otherAccountId);
@@ -273,7 +273,7 @@ public class AccountProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetAccountByIdAsync_HydratesChildren()
+    public async Task GetAccountById_HydratesChildren()
     {
         var user = await CreateUserEntityAsync("testuser1");
         var group = await CreateGroupEntityAsync("TestGroup");
@@ -316,7 +316,7 @@ public class AccountProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetAccountByIdAsync_ReturnsEmptyChildrenWhenHydratedWithNoChildren()
+    public async Task GetAccountById_ReturnsEmptyChildrenWhenHydratedWithNoChildren()
     {
         await CreateAccountEntityAsync("EmptyAccount");
 

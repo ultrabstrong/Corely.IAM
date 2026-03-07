@@ -209,7 +209,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task CreateUserAsync_Fails_WhenUserExists()
+    public async Task CreateUser_Fails_WhenUserExists()
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         await _userProcessor.CreateUserAsync(request);
@@ -238,7 +238,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task GetUserByUseridAsync_ReturnsNull_WhenUserNotFound()
+    public async Task GetUserByUserid_ReturnsNull_WhenUserNotFound()
     {
         var result = await _userProcessor.GetUserAsync(Guid.CreateVersion7());
         Assert.Equal(GetUserResultCode.UserNotFoundError, result.ResultCode);
@@ -246,7 +246,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task GetUserByUseridAsync_ReturnsUser_WhenUserExists()
+    public async Task GetUserByUserid_ReturnsUser_WhenUserExists()
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         var createResult = await _userProcessor.CreateUserAsync(request);
@@ -259,7 +259,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task UpdateUserAsync_UpdatesUser()
+    public async Task UpdateUser_UpdatesUser()
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         var createUserResult = await _userProcessor.CreateUserAsync(request);
@@ -278,7 +278,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task GetAsymmetricSignatureVerificationKeyAsync_ReturnsKey()
+    public async Task GetAsymmetricSignatureVerificationKey_ReturnsKey()
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         var result = await _userProcessor.CreateUserAsync(request);
@@ -292,7 +292,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task GetAsymmetricSignatureVerificationKeyAsync_ReturnsUserNotFound_WhenUserDNE()
+    public async Task GetAsymmetricSignatureVerificationKey_ReturnsUserNotFound_WhenUserDNE()
     {
         var result = await _userProcessor.GetAsymmetricSignatureVerificationKeyAsync(
             Guid.CreateVersion7()
@@ -303,7 +303,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task GetAsymmetricSignatureVerificationKeyAsync_ReturnsKeyNotFound_WhenSignatureKeyDNE()
+    public async Task GetAsymmetricSignatureVerificationKey_ReturnsKeyNotFound_WhenSignatureKeyDNE()
     {
         var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
         var createResult = await _userProcessor.CreateUserAsync(request);
@@ -322,7 +322,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task AssignRolesToUserAsync_Fails_WhenUserDoesNotExist()
+    public async Task AssignRolesToUser_Fails_WhenUserDoesNotExist()
     {
         var request = new AssignRolesToUserRequest([], Guid.CreateVersion7());
         var result = await _userProcessor.AssignRolesToUserAsync(request);
@@ -330,7 +330,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task AssignRolesToUserAsync_Fails_WhenRolesNotProvided()
+    public async Task AssignRolesToUser_Fails_WhenRolesNotProvided()
     {
         var (user, _) = await CreateUserAsync();
         var request = new AssignRolesToUserRequest([], user.Id);
@@ -341,7 +341,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task AssignRolesToUserAsync_Succeeds_WhenRolesAssigned()
+    public async Task AssignRolesToUser_Succeeds_WhenRolesAssigned()
     {
         var (user, account) = await CreateUserAsync();
         var role = await CreateRoleAsync(account.Id);
@@ -363,7 +363,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_ReturnsSuccess_WhenUserExistsAndNotOwner()
+    public async Task DeleteUser_ReturnsSuccess_WhenUserExistsAndNotOwner()
     {
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var user = new UserEntity
@@ -384,7 +384,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_ReturnsNotFound_WhenUserDoesNotExist()
+    public async Task DeleteUser_ReturnsNotFound_WhenUserDoesNotExist()
     {
         var result = await _userProcessor.DeleteUserAsync(Guid.CreateVersion7());
 
@@ -392,7 +392,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_ReturnsSoleOwnerError_WhenUserIsSoleOwner()
+    public async Task DeleteUser_ReturnsSoleOwnerError_WhenUserIsSoleOwner()
     {
         var (user, account) = await CreateUserAsync();
         await CreateOwnerRoleAsync(account.Id, user.Id);
@@ -404,7 +404,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_ReturnsSuccess_WhenOtherOwnerExistsDirectly()
+    public async Task DeleteUser_ReturnsSuccess_WhenOtherOwnerExistsDirectly()
     {
         var account = await CreateAccountAsync();
         var user1 = await CreateUserInAccountAsync(account.Id);
@@ -418,7 +418,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_ReturnsSuccess_WhenOtherOwnerExistsViaGroup()
+    public async Task DeleteUser_ReturnsSuccess_WhenOtherOwnerExistsViaGroup()
     {
         var account = await CreateAccountAsync();
         var user1 = await CreateUserInAccountAsync(account.Id);
@@ -436,7 +436,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromUserAsync_Fails_WhenUserDoesNotExist()
+    public async Task RemoveRolesFromUser_Fails_WhenUserDoesNotExist()
     {
         var request = new RemoveRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -449,7 +449,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromUserAsync_Succeeds_WhenNonOwnerRoleRemoved()
+    public async Task RemoveRolesFromUser_Succeeds_WhenNonOwnerRoleRemoved()
     {
         var (user, account) = await CreateUserAsync();
         var role = await CreateRoleAsync(account.Id, user.Id);
@@ -467,7 +467,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromUserAsync_Succeeds_WhenOwnerRoleRemovedAndUserIsNotSoleOwner()
+    public async Task RemoveRolesFromUser_Succeeds_WhenOwnerRoleRemovedAndUserIsNotSoleOwner()
     {
         var account = await CreateAccountAsync();
         var user1 = await CreateUserInAccountAsync(account.Id);
@@ -493,7 +493,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromUserAsync_Succeeds_WhenOwnerRoleRemovedAndUserHasOwnershipViaGroup()
+    public async Task RemoveRolesFromUser_Succeeds_WhenOwnerRoleRemovedAndUserHasOwnershipViaGroup()
     {
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
@@ -522,7 +522,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromUserAsync_Fails_WhenOwnerRoleRemovedAndUserIsSoleOwner()
+    public async Task RemoveRolesFromUser_Fails_WhenOwnerRoleRemovedAndUserIsSoleOwner()
     {
         var (user, account) = await CreateUserAsync();
         await CreateOwnerRoleAsync(account.Id, user.Id);
@@ -546,7 +546,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromUserAsync_PartialSuccess_WhenMixedOwnerAndNonOwnerRoles()
+    public async Task RemoveRolesFromUser_PartialSuccess_WhenMixedOwnerAndNonOwnerRoles()
     {
         var (user, account) = await CreateUserAsync();
         await CreateOwnerRoleAsync(account.Id, user.Id);
@@ -571,7 +571,7 @@ public class UserProcessorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromUserAsync_Throws_WithNullRequest()
+    public async Task RemoveRolesFromUser_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _userProcessor.RemoveRolesFromUserAsync(null!));
 

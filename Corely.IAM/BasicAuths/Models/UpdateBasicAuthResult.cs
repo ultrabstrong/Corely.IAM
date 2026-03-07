@@ -9,4 +9,4 @@ public enum UpdateBasicAuthResultCode
     ValidationError,
 }
 
-internal record UpdateBasicAuthResult(UpdateBasicAuthResultCode ResultCode, string? Message);
+internal record UpdateBasicAuthResult(UpdateBasicAuthResultCode ResultCode, string Message);

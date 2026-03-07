@@ -48,7 +48,7 @@ internal class AuthenticationProvider(
         if (userEntity == null)
         {
             _logger.LogWarning("User with Id {UserId} not found", request.UserId);
-            return CreateFailedTokenResult(UserAuthTokenResultCode.UserNotFound);
+            return CreateFailedTokenResult(UserAuthTokenResultCode.UserNotFoundError);
         }
 
         var signatureKey = GetSignatureKey(userEntity);
@@ -58,7 +58,7 @@ internal class AuthenticationProvider(
                 "User with Id {UserId} does not have an asymmetric signature key",
                 request.UserId
             );
-            return CreateFailedTokenResult(UserAuthTokenResultCode.SignatureKeyNotFound);
+            return CreateFailedTokenResult(UserAuthTokenResultCode.SignatureKeyNotFoundError);
         }
 
         var accounts = GetAccountModels(userEntity);
@@ -74,7 +74,7 @@ internal class AuthenticationProvider(
                     request.UserId,
                     request.AccountId.Value
                 );
-                return CreateFailedTokenResult(UserAuthTokenResultCode.AccountNotFound);
+                return CreateFailedTokenResult(UserAuthTokenResultCode.AccountNotFoundError);
             }
         }
 

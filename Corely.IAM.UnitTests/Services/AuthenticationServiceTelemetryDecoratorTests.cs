@@ -23,7 +23,7 @@ public class AuthenticationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task SignInAsync_DelegatesToInnerAndLogsResult()
+    public async Task SignIn_DelegatesToInnerAndLogsResult()
     {
         var request = new SignInRequest("testuser", "password123", TEST_DEVICE_ID);
         var expectedResult = new SignInResult(
@@ -42,7 +42,7 @@ public class AuthenticationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task SwitchAccountAsync_DelegatesToInnerAndLogsResult()
+    public async Task SwitchAccount_DelegatesToInnerAndLogsResult()
     {
         var request = new SwitchAccountRequest(Guid.CreateVersion7());
         var expectedResult = new SignInResult(
@@ -61,7 +61,7 @@ public class AuthenticationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task SignOutAsync_DelegatesToInnerAndLogsResult()
+    public async Task SignOut_DelegatesToInnerAndLogsResult()
     {
         var request = new SignOutRequest("token123");
         var expectedResult = true;
@@ -75,7 +75,7 @@ public class AuthenticationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task SignOutAllAsync_DelegatesToInnerAndLogs()
+    public async Task SignOutAll_DelegatesToInnerAndLogs()
     {
         _mockInnerService.Setup(x => x.SignOutAllAsync()).Returns(Task.CompletedTask);
 

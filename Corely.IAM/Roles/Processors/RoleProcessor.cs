@@ -70,7 +70,7 @@ internal class RoleProcessor(
 
         if (await _roleRepo.AnyAsync(r => r.AccountId == role.AccountId && r.Name == role.Name))
         {
-            _logger.LogInformation("Role with name {RoleName} already exists", role.Name);
+            _logger.LogWarning("Role with name {RoleName} already exists", role.Name);
             return new CreateRoleResult(
                 CreateRoleResultCode.RoleExistsError,
                 $"Role with name {role.Name} already exists",
@@ -226,7 +226,7 @@ internal class RoleProcessor(
         var roleEntity = await _roleRepo.GetAsync(r => r.Id == request.RoleId);
         if (roleEntity == null)
         {
-            _logger.LogInformation("Role with Id {RoleId} not found", request.RoleId);
+            _logger.LogWarning("Role with Id {RoleId} not found", request.RoleId);
             return new AssignPermissionsToRoleResult(
                 AssignPermissionsToRoleResultCode.RoleNotFoundError,
                 $"Role with Id {request.RoleId} not found",
@@ -243,7 +243,7 @@ internal class RoleProcessor(
 
         if (permissionEntities.Count == 0)
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "All permission ids are invalid (not found, from different account, or already assigned to role) : {@InvalidPermissionIds}",
                 request.PermissionIds
             );
@@ -300,7 +300,7 @@ internal class RoleProcessor(
         );
         if (roleEntity == null)
         {
-            _logger.LogInformation("Role with Id {RoleId} not found", request.RoleId);
+            _logger.LogWarning("Role with Id {RoleId} not found", request.RoleId);
             return new RemovePermissionsFromRoleResult(
                 RemovePermissionsFromRoleResultCode.RoleNotFoundError,
                 $"Role with Id {request.RoleId} not found",
@@ -314,7 +314,7 @@ internal class RoleProcessor(
 
         if (permissionsToRemove.Count == 0)
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "All permission ids are invalid (not found or not assigned to role) : {@InvalidPermissionIds}",
                 request.PermissionIds
             );
@@ -336,7 +336,7 @@ internal class RoleProcessor(
             if (ownerPermissions.Count > 0)
             {
                 blockedSystemPermissionIds = [.. ownerPermissions.Select(p => p.Id)];
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "Cannot remove owner system permission {@OwnerPermissionIds} from owner role {RoleId}",
                     blockedSystemPermissionIds,
                     request.RoleId
@@ -418,7 +418,7 @@ internal class RoleProcessor(
         );
         if (entity == null)
         {
-            _logger.LogInformation("Role with Id {RoleId} not found", request.RoleId);
+            _logger.LogWarning("Role with Id {RoleId} not found", request.RoleId);
             return new ModifyResult(
                 ModifyResultCode.NotFoundError,
                 $"Role with Id {request.RoleId} not found"
@@ -427,7 +427,7 @@ internal class RoleProcessor(
 
         if (entity.IsSystemDefined)
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "Cannot modify system-defined role {RoleName} with Id {RoleId}",
                 entity.Name,
                 request.RoleId
@@ -452,7 +452,7 @@ internal class RoleProcessor(
         );
         if (roleEntity == null)
         {
-            _logger.LogInformation("Role with Id {RoleId} not found", roleId);
+            _logger.LogWarning("Role with Id {RoleId} not found", roleId);
             return new DeleteRoleResult(
                 DeleteRoleResultCode.RoleNotFoundError,
                 $"Role with Id {roleId} not found"
@@ -461,7 +461,7 @@ internal class RoleProcessor(
 
         if (roleEntity.IsSystemDefined)
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "Cannot delete system-defined role {RoleName} with Id {RoleId}",
                 roleEntity.Name,
                 roleId

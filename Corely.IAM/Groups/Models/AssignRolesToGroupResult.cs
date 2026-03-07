@@ -11,7 +11,7 @@ public enum AssignRolesToGroupResultCode
 
 internal record AssignRolesToGroupResult(
     AssignRolesToGroupResultCode ResultCode,
-    string? Message,
+    string Message,
     int AddedRoleCount,
     List<Guid> InvalidRoleIds = null
 );

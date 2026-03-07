@@ -79,7 +79,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task CreateRoleAsync_Fails_WhenAccountDoesNotExist()
+    public async Task CreateRole_Fails_WhenAccountDoesNotExist()
     {
         var request = new CreateRoleRequest(VALID_ROLE_NAME, Guid.CreateVersion7());
 
@@ -89,7 +89,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task CreateRoleAsync_Fails_WhenRoleExists()
+    public async Task CreateRole_Fails_WhenRoleExists()
     {
         var ownerAccount = await CreateAccountAsync();
         var request = new CreateRoleRequest(VALID_ROLE_NAME, ownerAccount.Id);
@@ -101,7 +101,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task CreateRoleAsync_ReturnsCreateRoleResult()
+    public async Task CreateRole_ReturnsCreateRoleResult()
     {
         var ownerAccount = await CreateAccountAsync();
         var request = new CreateRoleRequest(VALID_ROLE_NAME, ownerAccount.Id);
@@ -123,7 +123,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task CreateRoleAsync_Throws_WithNullRequest()
+    public async Task CreateRole_Throws_WithNullRequest()
     {
         var ex = Record.ExceptionAsync(() => _roleProcessor.CreateRoleAsync(null!));
 
@@ -132,7 +132,7 @@ public class RoleProcessorTests
     }
 
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]
-    public async Task CreateRoleAsync_ReturnsValidationError_WhenRoleNameInvalid(string roleName)
+    public async Task CreateRole_ReturnsValidationError_WhenRoleNameInvalid(string roleName)
     {
         var ownerAccount = await CreateAccountAsync();
         var request = new CreateRoleRequest(roleName, ownerAccount.Id);
@@ -143,7 +143,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemRolesAsync_CreatesDefaultRoles()
+    public async Task CreateDefaultSystemRoles_CreatesDefaultRoles()
     {
         var ownerAccount = await CreateAccountAsync();
 
@@ -162,7 +162,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task GetRoleByRoleIdAsync_ReturnsNull_WhenRoleNotFound()
+    public async Task GetRoleByRoleId_ReturnsNull_WhenRoleNotFound()
     {
         var result = await _roleProcessor.GetRoleAsync(Guid.Empty);
         Assert.Equal(GetRoleResultCode.RoleNotFoundError, result.ResultCode);
@@ -170,7 +170,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task GetRoleByRoleIdAsync_ReturnsRole_WhenRoleExists()
+    public async Task GetRoleByRoleId_ReturnsRole_WhenRoleExists()
     {
         var ownerAccount = await CreateAccountAsync();
         var request = new CreateRoleRequest(VALID_ROLE_NAME, ownerAccount.Id);
@@ -183,7 +183,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task GetRoleByRoleNameAsync_ReturnsNull_WhenRoleNotFound()
+    public async Task GetRoleByRoleName_ReturnsNull_WhenRoleNotFound()
     {
         var result = await _roleProcessor.GetRoleAsync("nonexistent", Guid.Empty);
         Assert.Equal(GetRoleResultCode.RoleNotFoundError, result.ResultCode);
@@ -191,7 +191,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task GetRoleByRoleNameAsync_ReturnsRole_WhenRoleExists()
+    public async Task GetRoleByRoleName_ReturnsRole_WhenRoleExists()
     {
         var ownerAccount = await CreateAccountAsync();
         var request = new CreateRoleRequest(VALID_ROLE_NAME, ownerAccount.Id);
@@ -204,7 +204,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_Fails_WhenRoleDoesNotExist()
+    public async Task AssignPermissionsToRole_Fails_WhenRoleDoesNotExist()
     {
         var request = new AssignPermissionsToRoleRequest([], Guid.CreateVersion7());
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
@@ -212,7 +212,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_Fails_WhenPermissionsNotProvided()
+    public async Task AssignPermissionsToRole_Fails_WhenPermissionsNotProvided()
     {
         var (role, _) = await CreateRoleAsync();
         var request = new AssignPermissionsToRoleRequest([], role.Id);
@@ -230,7 +230,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_Succeeds_WhenPermissionsAssigned()
+    public async Task AssignPermissionsToRole_Succeeds_WhenPermissionsAssigned()
     {
         var (role, account) = await CreateRoleAsync();
         var permission = await CreatePermissionAsync(account.Id);
@@ -252,7 +252,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_PartiallySucceeds_WhenSomePermissionsExistForRole()
+    public async Task AssignPermissionsToRole_PartiallySucceeds_WhenSomePermissionsExistForRole()
     {
         var (role, account) = await CreateRoleAsync();
         var existingPermission = await CreatePermissionAsync(
@@ -283,7 +283,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_PartiallySucceeds_WhenSomePermissionsDoNotExist()
+    public async Task AssignPermissionsToRole_PartiallySucceeds_WhenSomePermissionsDoNotExist()
     {
         var (role, _) = await CreateRoleAsync();
         var permission = await CreatePermissionAsync(role.AccountId);
@@ -302,7 +302,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_PartiallySucceeds_WhenSomePermissionsBelongToDifferentAccount()
+    public async Task AssignPermissionsToRole_PartiallySucceeds_WhenSomePermissionsBelongToDifferentAccount()
     {
         var (role, account) = await CreateRoleAsync();
         var permissionSameAccount = await CreatePermissionAsync(account.Id);
@@ -325,7 +325,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_Fails_WhenAllPermissionsExistForRole()
+    public async Task AssignPermissionsToRole_Fails_WhenAllPermissionsExistForRole()
     {
         var (role, account) = await CreateRoleAsync();
         var permissionIds = new List<Guid>
@@ -350,7 +350,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_Fails_WhenAllRolesDoNotExist()
+    public async Task AssignPermissionsToRole_Fails_WhenAllRolesDoNotExist()
     {
         var (role, _) = await CreateRoleAsync();
         var permissionIds = _fixture.CreateMany<Guid>().ToList();
@@ -371,7 +371,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_Fails_WhenAllPermissionsBelongToDifferentAccount()
+    public async Task AssignPermissionsToRole_Fails_WhenAllPermissionsBelongToDifferentAccount()
     {
         var (role, _) = await CreateRoleAsync();
         var permissionIds = new List<Guid>()
@@ -396,7 +396,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task DeleteRoleAsync_ReturnsSuccess_WhenRoleExists()
+    public async Task DeleteRole_ReturnsSuccess_WhenRoleExists()
     {
         var (role, _) = await CreateRoleAsync();
 
@@ -410,7 +410,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task DeleteRoleAsync_ReturnsNotFound_WhenRoleDoesNotExist()
+    public async Task DeleteRole_ReturnsNotFound_WhenRoleDoesNotExist()
     {
         var result = await _roleProcessor.DeleteRoleAsync(Guid.CreateVersion7());
 
@@ -418,7 +418,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task DeleteRoleAsync_ReturnsSystemDefinedRoleError_WhenRoleIsSystemDefined()
+    public async Task DeleteRole_ReturnsSystemDefinedRoleError_WhenRoleIsSystemDefined()
     {
         var account = await CreateAccountAsync();
         await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
@@ -439,7 +439,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task DeleteRoleAsync_ReturnsSystemDefinedRoleError_ForAllSystemDefinedRoles()
+    public async Task DeleteRole_ReturnsSystemDefinedRoleError_ForAllSystemDefinedRoles()
     {
         var account = await CreateAccountAsync();
         await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
@@ -459,7 +459,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_Fails_WhenRoleDoesNotExist()
+    public async Task RemovePermissionsFromRole_Fails_WhenRoleDoesNotExist()
     {
         var request = new RemovePermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -472,7 +472,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_Fails_WhenPermissionsNotAssignedToRole()
+    public async Task RemovePermissionsFromRole_Fails_WhenPermissionsNotAssignedToRole()
     {
         var (role, _) = await CreateRoleAsync();
         var request = new RemovePermissionsFromRoleRequest([Guid.CreateVersion7()], role.Id);
@@ -486,7 +486,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_Succeeds_WhenNonSystemRoleAndNonSystemPermission()
+    public async Task RemovePermissionsFromRole_Succeeds_WhenNonSystemRoleAndNonSystemPermission()
     {
         var (role, account) = await CreateRoleAsync();
         var permission = await CreatePermissionAsync(account.Id, isSystemDefined: false, role.Id);
@@ -504,7 +504,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_Succeeds_WhenNonSystemRoleAndSystemPermission()
+    public async Task RemovePermissionsFromRole_Succeeds_WhenNonSystemRoleAndSystemPermission()
     {
         var (role, account) = await CreateRoleAsync();
         var permission = await CreatePermissionAsync(account.Id, isSystemDefined: true, role.Id);
@@ -523,7 +523,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_Succeeds_WhenSystemRoleAndNonSystemPermission()
+    public async Task RemovePermissionsFromRole_Succeeds_WhenSystemRoleAndNonSystemPermission()
     {
         var account = await CreateAccountAsync();
         await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
@@ -548,7 +548,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_Succeeds_WhenOwnerRoleAndNonOwnerSystemPermission()
+    public async Task RemovePermissionsFromRole_Succeeds_WhenOwnerRoleAndNonOwnerSystemPermission()
     {
         var account = await CreateAccountAsync();
         await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
@@ -574,7 +574,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_Succeeds_WhenOwnerRoleAndMixedNonOwnerPermissions()
+    public async Task RemovePermissionsFromRole_Succeeds_WhenOwnerRoleAndMixedNonOwnerPermissions()
     {
         var account = await CreateAccountAsync();
         await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
@@ -604,7 +604,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_Fails_WhenOwnerRoleAndOwnerSystemPermission()
+    public async Task RemovePermissionsFromRole_Fails_WhenOwnerRoleAndOwnerSystemPermission()
     {
         var account = await CreateAccountAsync();
         await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
@@ -651,7 +651,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_Succeeds_WhenNonOwnerRoleAndOwnerSystemPermission()
+    public async Task RemovePermissionsFromRole_Succeeds_WhenNonOwnerRoleAndOwnerSystemPermission()
     {
         // Use a fresh account so we can create an owner-format permission without uniqueness conflict
         var account2 = await CreateAccountAsync();
@@ -697,7 +697,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRoleAsync_Throws_WithNullRequest()
+    public async Task RemovePermissionsFromRole_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() =>
             _roleProcessor.RemovePermissionsFromRoleAsync(null!)

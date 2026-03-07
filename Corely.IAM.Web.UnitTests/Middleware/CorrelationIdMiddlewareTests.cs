@@ -8,7 +8,7 @@ public class CorrelationIdMiddlewareTests
     private const string CORRELATION_ID_HEADER = "X-Correlation-ID";
 
     [Fact]
-    public async Task InvokeAsync_NoIncomingHeader_GeneratesNewCorrelationId()
+    public async Task Invoke_NoIncomingHeader_GeneratesNewCorrelationId()
     {
         bool nextCalled = false;
         RequestDelegate next = (ctx) =>
@@ -29,7 +29,7 @@ public class CorrelationIdMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_ExistingHeader_UsesSameCorrelationId()
+    public async Task Invoke_ExistingHeader_UsesSameCorrelationId()
     {
         var expectedId = "my-custom-correlation-id";
         bool nextCalled = false;
@@ -50,7 +50,7 @@ public class CorrelationIdMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_Always_CallsNextDelegate()
+    public async Task Invoke_Always_CallsNextDelegate()
     {
         bool nextCalled = false;
         RequestDelegate next = (ctx) =>

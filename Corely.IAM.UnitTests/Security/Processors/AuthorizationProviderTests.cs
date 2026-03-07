@@ -19,7 +19,7 @@ public class AuthorizationProviderTests
     private readonly ServiceFactory _serviceFactory = new();
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasPermission()
+    public async Task IsAuthorized_ReturnsTrue_WhenUserHasPermission()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
@@ -38,7 +38,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasPermissionForSpecificResource()
+    public async Task IsAuthorized_ReturnsTrue_WhenUserHasPermissionForSpecificResource()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
@@ -59,7 +59,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasWildcardPermission()
+    public async Task IsAuthorized_ReturnsTrue_WhenUserHasWildcardPermission()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
@@ -79,7 +79,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsFalse_WhenNoUserContext()
+    public async Task IsAuthorized_ReturnsFalse_WhenNoUserContext()
     {
         var provider = CreateProvider();
         // Don't set user context
@@ -93,7 +93,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsFalse_WhenNoPermissions()
+    public async Task IsAuthorized_ReturnsFalse_WhenNoPermissions()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
@@ -108,7 +108,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsFalse_WhenWrongAction()
+    public async Task IsAuthorized_ReturnsFalse_WhenWrongAction()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
@@ -127,7 +127,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsFalse_WhenWrongResourceType()
+    public async Task IsAuthorized_ReturnsFalse_WhenWrongResourceType()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
@@ -146,7 +146,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsFalse_WhenWrongResourceId()
+    public async Task IsAuthorized_ReturnsFalse_WhenWrongResourceId()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
@@ -166,7 +166,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasWildcardResourceTypePermission()
+    public async Task IsAuthorized_ReturnsTrue_WhenUserHasWildcardResourceTypePermission()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
@@ -197,7 +197,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_CachesPermissions()
+    public async Task IsAuthorized_CachesPermissions()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
@@ -372,7 +372,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsFalse_WhenUserHasPermissionForOnlyOneOfMultipleResourceIds()
+    public async Task IsAuthorized_ReturnsFalse_WhenUserHasPermissionForOnlyOneOfMultipleResourceIds()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
@@ -425,7 +425,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsTrue_WhenPermissionGrantedViaGroupMembership()
+    public async Task IsAuthorized_ReturnsTrue_WhenPermissionGrantedViaGroupMembership()
     {
         var provider = CreateProvider();
         var userId = Guid.CreateVersion7();
@@ -489,7 +489,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_InvalidatesCache_WhenAccountContextChanges()
+    public async Task IsAuthorized_InvalidatesCache_WhenAccountContextChanges()
     {
         var provider = CreateProvider();
         var userId = Guid.CreateVersion7();
@@ -524,7 +524,7 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorizedAsync_ReturnsTrue_WhenUserHasPermissionForAllOfMultipleResourceIds()
+    public async Task IsAuthorized_ReturnsTrue_WhenUserHasPermissionForAllOfMultipleResourceIds()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());

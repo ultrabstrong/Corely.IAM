@@ -24,18 +24,18 @@ public class ModificationServiceTests
     public ModificationServiceTests()
     {
         _service = new ModificationService(
+            _mockLogger.Object,
             _mockAccountProcessor.Object,
             _mockUserProcessor.Object,
             _mockGroupProcessor.Object,
-            _mockRoleProcessor.Object,
-            _mockLogger.Object
+            _mockRoleProcessor.Object
         );
     }
 
     #region ModifyAccountAsync Tests
 
     [Fact]
-    public async Task ModifyAccountAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task ModifyAccount_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var request = new UpdateAccountRequest(Guid.CreateVersion7(), "Updated Account");
         var processorResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
@@ -50,7 +50,7 @@ public class ModificationServiceTests
     }
 
     [Fact]
-    public async Task ModifyAccountAsync_ReturnsNotFound_WhenProcessorReturnsNotFound()
+    public async Task ModifyAccount_ReturnsNotFound_WhenProcessorReturnsNotFound()
     {
         var request = new UpdateAccountRequest(Guid.CreateVersion7(), "Updated Account");
         var processorResult = new ModifyResult(ModifyResultCode.NotFoundError, "Account not found");
@@ -64,7 +64,7 @@ public class ModificationServiceTests
     }
 
     [Fact]
-    public async Task ModifyAccountAsync_Throws_WithNullRequest()
+    public async Task ModifyAccount_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _service.ModifyAccountAsync(null!));
 
@@ -77,7 +77,7 @@ public class ModificationServiceTests
     #region ModifyUserAsync Tests
 
     [Fact]
-    public async Task ModifyUserAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task ModifyUser_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var request = new UpdateUserRequest(
             Guid.CreateVersion7(),
@@ -96,7 +96,7 @@ public class ModificationServiceTests
     }
 
     [Fact]
-    public async Task ModifyUserAsync_ReturnsNotFound_WhenProcessorReturnsNotFound()
+    public async Task ModifyUser_ReturnsNotFound_WhenProcessorReturnsNotFound()
     {
         var request = new UpdateUserRequest(
             Guid.CreateVersion7(),
@@ -114,7 +114,7 @@ public class ModificationServiceTests
     }
 
     [Fact]
-    public async Task ModifyUserAsync_Throws_WithNullRequest()
+    public async Task ModifyUser_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _service.ModifyUserAsync(null!));
 
@@ -127,7 +127,7 @@ public class ModificationServiceTests
     #region ModifyGroupAsync Tests
 
     [Fact]
-    public async Task ModifyGroupAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task ModifyGroup_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var request = new UpdateGroupRequest(
             Guid.CreateVersion7(),
@@ -146,7 +146,7 @@ public class ModificationServiceTests
     }
 
     [Fact]
-    public async Task ModifyGroupAsync_ReturnsNotFound_WhenProcessorReturnsNotFound()
+    public async Task ModifyGroup_ReturnsNotFound_WhenProcessorReturnsNotFound()
     {
         var request = new UpdateGroupRequest(
             Guid.CreateVersion7(),
@@ -164,7 +164,7 @@ public class ModificationServiceTests
     }
 
     [Fact]
-    public async Task ModifyGroupAsync_Throws_WithNullRequest()
+    public async Task ModifyGroup_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _service.ModifyGroupAsync(null!));
 
@@ -177,7 +177,7 @@ public class ModificationServiceTests
     #region ModifyRoleAsync Tests
 
     [Fact]
-    public async Task ModifyRoleAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task ModifyRole_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var request = new UpdateRoleRequest(
             Guid.CreateVersion7(),
@@ -196,7 +196,7 @@ public class ModificationServiceTests
     }
 
     [Fact]
-    public async Task ModifyRoleAsync_ReturnsNotFound_WhenProcessorReturnsNotFound()
+    public async Task ModifyRole_ReturnsNotFound_WhenProcessorReturnsNotFound()
     {
         var request = new UpdateRoleRequest(
             Guid.CreateVersion7(),
@@ -214,7 +214,7 @@ public class ModificationServiceTests
     }
 
     [Fact]
-    public async Task ModifyRoleAsync_Throws_WithNullRequest()
+    public async Task ModifyRole_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _service.ModifyRoleAsync(null!));
 

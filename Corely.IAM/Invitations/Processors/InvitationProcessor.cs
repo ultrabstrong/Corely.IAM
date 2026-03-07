@@ -126,7 +126,7 @@ internal class InvitationProcessor(
         var invitationEntity = await _invitationRepo.GetAsync(i => i.Token == request.Token);
         if (invitationEntity == null)
         {
-            _logger.LogInformation("Invitation not found for provided token");
+            _logger.LogWarning("Invitation not found for provided token");
             return new AcceptInvitationResult(
                 AcceptInvitationResultCode.InvitationNotFoundError,
                 "Invitation not found",
@@ -221,7 +221,7 @@ internal class InvitationProcessor(
         var invitationEntity = await _invitationRepo.GetAsync(i => i.Id == invitationId);
         if (invitationEntity == null)
         {
-            _logger.LogInformation("Invitation with Id {InvitationId} not found", invitationId);
+            _logger.LogWarning("Invitation with Id {InvitationId} not found", invitationId);
             return new RevokeInvitationResult(
                 RevokeInvitationResultCode.InvitationNotFoundError,
                 $"Invitation with Id {invitationId} not found"

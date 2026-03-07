@@ -68,7 +68,7 @@ public class RetrievalServiceTests
     #region List Methods
 
     [Fact]
-    public async Task ListPermissionsAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task ListPermissions_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var permission = new Permission
         {
@@ -105,7 +105,7 @@ public class RetrievalServiceTests
     }
 
     [Fact]
-    public async Task ListGroupsAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task ListGroups_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var group = new Group { Id = Guid.CreateVersion7(), Name = "TestGroup" };
         var pagedResult = PagedResult<Group>.Create([group], 1, 0, 25);
@@ -137,7 +137,7 @@ public class RetrievalServiceTests
     }
 
     [Fact]
-    public async Task ListRolesAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task ListRoles_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var role = new Role { Id = Guid.CreateVersion7(), Name = "TestRole" };
         var pagedResult = PagedResult<Role>.Create([role], 1, 0, 25);
@@ -169,7 +169,7 @@ public class RetrievalServiceTests
     }
 
     [Fact]
-    public async Task ListUsersAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task ListUsers_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var user = new User
         {
@@ -206,7 +206,7 @@ public class RetrievalServiceTests
     }
 
     [Fact]
-    public async Task ListAccountsAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task ListAccounts_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var account = new Account { Id = Guid.CreateVersion7(), AccountName = "ListAccount" };
         var pagedResult = PagedResult<Account>.Create([account], 1, 0, 25);
@@ -242,7 +242,7 @@ public class RetrievalServiceTests
     #region Get Methods - Success
 
     [Fact]
-    public async Task GetPermissionAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task GetPermission_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var permissionId = Guid.CreateVersion7();
         var permission = new Permission
@@ -269,7 +269,7 @@ public class RetrievalServiceTests
     }
 
     [Fact]
-    public async Task GetGroupAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task GetGroup_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var groupId = Guid.CreateVersion7();
         var group = new Group { Id = groupId, Name = "TestGroup" };
@@ -288,7 +288,7 @@ public class RetrievalServiceTests
     }
 
     [Fact]
-    public async Task GetRoleAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task GetRole_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var roleId = Guid.CreateVersion7();
         var role = new Role { Id = roleId, Name = "TestRole" };
@@ -307,7 +307,7 @@ public class RetrievalServiceTests
     }
 
     [Fact]
-    public async Task GetUserAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task GetUser_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var userId = Guid.CreateVersion7();
         var user = new User
@@ -331,7 +331,7 @@ public class RetrievalServiceTests
     }
 
     [Fact]
-    public async Task GetAccountAsync_ReturnsSuccess_WhenProcessorSucceeds()
+    public async Task GetAccount_ReturnsSuccess_WhenProcessorSucceeds()
     {
         var accountId = Guid.CreateVersion7();
         var account = new Account { Id = accountId, AccountName = "GetAccount" };
@@ -354,7 +354,7 @@ public class RetrievalServiceTests
     #region Get Methods - Not Found
 
     [Fact]
-    public async Task GetPermissionAsync_ReturnsNotFound_WhenProcessorReturnsNotFound()
+    public async Task GetPermission_ReturnsNotFound_WhenProcessorReturnsNotFound()
     {
         var permissionId = Guid.CreateVersion7();
         _mockPermissionProcessor

@@ -10,5 +10,5 @@ internal class BasicAuthEntity : IHasCreatedUtc, IHasModifiedUtc
     public string Password { get; set; } = null!;
     public DateTime CreatedUtc { get; set; }
     public DateTime? ModifiedUtc { get; set; }
-    public UserEntity User { get; set; } = null!;
+    public virtual UserEntity User { get; set; } = null!;
 }

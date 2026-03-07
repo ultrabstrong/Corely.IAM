@@ -12,7 +12,7 @@ public enum RemovePermissionsFromRoleResultCode
 
 public record RemovePermissionsFromRoleResult(
     RemovePermissionsFromRoleResultCode ResultCode,
-    string? Message,
+    string Message,
     int RemovedPermissionCount,
     List<Guid> InvalidPermissionIds,
     List<Guid> SystemPermissionIds = null!

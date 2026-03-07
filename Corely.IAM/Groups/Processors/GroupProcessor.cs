@@ -71,7 +71,7 @@ internal class GroupProcessor(
 
         if (await _groupRepo.AnyAsync(g => g.AccountId == group.AccountId && g.Name == group.Name))
         {
-            _logger.LogInformation("Group with name {GroupName} already exists", group.Name);
+            _logger.LogWarning("Group with name {GroupName} already exists", group.Name);
             return new CreateGroupResult(
                 CreateGroupResultCode.GroupExistsError,
                 $"Group with name {group.Name} already exists",
@@ -93,7 +93,7 @@ internal class GroupProcessor(
         var groupEntity = await _groupRepo.GetAsync(g => g.Id == request.GroupId);
         if (groupEntity == null)
         {
-            _logger.LogInformation("Group with Id {GroupId} not found", request.GroupId);
+            _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
             return new AddUsersToGroupResult(
                 AddUsersToGroupResultCode.GroupNotFoundError,
                 $"Group with Id {request.GroupId} not found",
@@ -110,7 +110,7 @@ internal class GroupProcessor(
 
         if (userEntities.Count == 0)
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "All user ids are invalid (not found, from different account, or already exist in group) : {@InvalidUserIds}",
                 request.UserIds
             );
@@ -165,7 +165,7 @@ internal class GroupProcessor(
         );
         if (groupEntity == null)
         {
-            _logger.LogInformation("Group with Id {GroupId} not found", request.GroupId);
+            _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
             return new RemoveUsersFromGroupResult(
                 RemoveUsersFromGroupResultCode.GroupNotFoundError,
                 $"Group with Id {request.GroupId} not found",
@@ -200,7 +200,7 @@ internal class GroupProcessor(
 
             if (!anyUserHasOwnershipElsewhere)
             {
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "Cannot remove all users from group {GroupId} - it has the owner role and no user has ownership elsewhere",
                     request.GroupId
                 );
@@ -257,7 +257,7 @@ internal class GroupProcessor(
         var groupEntity = await _groupRepo.GetAsync(g => g.Id == request.GroupId);
         if (groupEntity == null)
         {
-            _logger.LogInformation("Group with Id {GroupId} not found", request.GroupId);
+            _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
             return new AssignRolesToGroupResult(
                 AssignRolesToGroupResultCode.GroupNotFoundError,
                 $"Group with Id {request.GroupId} not found",
@@ -274,7 +274,7 @@ internal class GroupProcessor(
 
         if (roleEntities.Count == 0)
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "All role ids are invalid (not found, from different account, or already assigned to group) : {@InvalidRoleIds}",
                 request.RoleIds
             );
@@ -330,7 +330,7 @@ internal class GroupProcessor(
 
         if (groupEntity == null)
         {
-            _logger.LogInformation("Group with Id {GroupId} not found", request.GroupId);
+            _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
             return new RemoveRolesFromGroupResult(
                 RemoveRolesFromGroupResultCode.GroupNotFoundError,
                 $"Group with Id {request.GroupId} not found",
@@ -344,7 +344,7 @@ internal class GroupProcessor(
 
         if (rolesToRemove.Count == 0)
         {
-            _logger.LogInformation(
+            _logger.LogWarning(
                 "All role ids are invalid (not found or not assigned to group) : {@InvalidRoleIds}",
                 request.RoleIds
             );
@@ -379,7 +379,7 @@ internal class GroupProcessor(
             if (!anyUserHasOwnershipElsewhere)
             {
                 blockedOwnerRoleIds.Add(ownerRole.Id);
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "Cannot remove owner role {RoleId} from group {GroupId} - no user has ownership elsewhere",
                     ownerRole.Id,
                     request.GroupId
@@ -461,7 +461,7 @@ internal class GroupProcessor(
         );
         if (entity == null)
         {
-            _logger.LogInformation("Group with Id {GroupId} not found", request.GroupId);
+            _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
             return new ModifyResult(
                 ModifyResultCode.NotFoundError,
                 $"Group with Id {request.GroupId} not found"
@@ -482,7 +482,7 @@ internal class GroupProcessor(
         );
         if (groupEntity == null)
         {
-            _logger.LogInformation("Group with Id {GroupId} not found", groupId);
+            _logger.LogWarning("Group with Id {GroupId} not found", groupId);
             return new DeleteGroupResult(
                 DeleteGroupResultCode.GroupNotFoundError,
                 $"Group with Id {groupId} not found"
@@ -508,7 +508,7 @@ internal class GroupProcessor(
 
             if (!anyUserHasOwnershipElsewhere)
             {
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "Cannot delete group {GroupId} - it has the owner role and no user has ownership elsewhere",
                     groupId
                 );

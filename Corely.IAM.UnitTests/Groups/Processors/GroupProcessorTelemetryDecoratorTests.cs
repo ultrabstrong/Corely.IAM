@@ -21,7 +21,7 @@ public class GroupProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task CreateGroupAsync_DelegatesToInnerAndLogsResult()
+    public async Task CreateGroup_DelegatesToInnerAndLogsResult()
     {
         var request = new CreateGroupRequest("testgroup", Guid.CreateVersion7());
         var expectedResult = new CreateGroupResult(
@@ -39,7 +39,7 @@ public class GroupProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task AddUsersToGroupAsync_DelegatesToInnerAndLogsResult()
+    public async Task AddUsersToGroup_DelegatesToInnerAndLogsResult()
     {
         var request = new AddUsersToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -63,7 +63,7 @@ public class GroupProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveUsersFromGroupAsync_DelegatesToInnerAndLogsResult()
+    public async Task RemoveUsersFromGroup_DelegatesToInnerAndLogsResult()
     {
         var request = new RemoveUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -87,7 +87,7 @@ public class GroupProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task AssignRolesToGroupAsync_DelegatesToInnerAndLogsResult()
+    public async Task AssignRolesToGroup_DelegatesToInnerAndLogsResult()
     {
         var request = new AssignRolesToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],

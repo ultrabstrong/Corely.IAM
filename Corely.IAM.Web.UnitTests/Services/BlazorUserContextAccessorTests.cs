@@ -43,7 +43,7 @@ public class BlazorUserContextAccessorTests
     }
 
     [Fact]
-    public async Task GetUserContextAsync_ProviderAlreadyHasContext_ReturnsExistingContext()
+    public async Task GetUserContext_ProviderAlreadyHasContext_ReturnsExistingContext()
     {
         var expectedContext = CreateTestUserContext();
         _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns(expectedContext);
@@ -58,7 +58,7 @@ public class BlazorUserContextAccessorTests
     }
 
     [Fact]
-    public async Task GetUserContextAsync_NoExistingContext_NoHttpContext_ReturnsNull()
+    public async Task GetUserContext_NoExistingContext_NoHttpContext_ReturnsNull()
     {
         _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns((UserContext?)null);
         _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns((HttpContext?)null);
@@ -69,7 +69,7 @@ public class BlazorUserContextAccessorTests
     }
 
     [Fact]
-    public async Task GetUserContextAsync_NoExistingContext_NoAuthCookie_ReturnsNull()
+    public async Task GetUserContext_NoExistingContext_NoAuthCookie_ReturnsNull()
     {
         _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns((UserContext?)null);
         var httpContext = new DefaultHttpContext();
@@ -81,7 +81,7 @@ public class BlazorUserContextAccessorTests
     }
 
     [Fact]
-    public async Task GetUserContextAsync_ValidCookie_SetUserContextSucceeds_ReturnsContext()
+    public async Task GetUserContext_ValidCookie_SetUserContextSucceeds_ReturnsContext()
     {
         var expectedContext = CreateTestUserContext();
         _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns((UserContext?)null);
@@ -102,7 +102,7 @@ public class BlazorUserContextAccessorTests
     }
 
     [Fact]
-    public async Task GetUserContextAsync_ValidCookie_SetUserContextFails_ReturnsNull()
+    public async Task GetUserContext_ValidCookie_SetUserContextFails_ReturnsNull()
     {
         _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns((UserContext?)null);
         SetupHttpContextWithCookie("bad-token");
@@ -117,7 +117,7 @@ public class BlazorUserContextAccessorTests
     }
 
     [Fact]
-    public async Task GetUserContextAsync_AfterFailedValidation_RetriesOnNextCall()
+    public async Task GetUserContext_AfterFailedValidation_RetriesOnNextCall()
     {
         _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns((UserContext?)null);
         SetupHttpContextWithCookie("bad-token");
@@ -138,7 +138,7 @@ public class BlazorUserContextAccessorTests
     }
 
     [Fact]
-    public async Task GetUserContextAsync_SetUserContextThrows_ReturnsNull()
+    public async Task GetUserContext_SetUserContextThrows_ReturnsNull()
     {
         _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns((UserContext?)null);
         SetupHttpContextWithCookie("error-token");

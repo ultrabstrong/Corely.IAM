@@ -153,7 +153,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task CreateAccountAsync_Fails_WhenAccountExists()
+    public async Task CreateAccount_Fails_WhenAccountExists()
     {
         var ownerUser = await CreateUserAsync();
         var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
@@ -217,7 +217,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task GetAccountByAccountIdAsync_ReturnsNull_WhenAccountDNE()
+    public async Task GetAccountByAccountId_ReturnsNull_WhenAccountDNE()
     {
         var result = await _accountProcessor.GetAccountAsync(Guid.CreateVersion7());
 
@@ -226,7 +226,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task GetAccountByAccountIdAsync_ReturnsAccount_WhenAccountExists()
+    public async Task GetAccountByAccountId_ReturnsAccount_WhenAccountExists()
     {
         var ownerUser = await CreateUserAsync();
         var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
@@ -240,7 +240,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task DeleteAccountAsync_ReturnsSuccess_WhenAccountExists()
+    public async Task DeleteAccount_ReturnsSuccess_WhenAccountExists()
     {
         var ownerUser = await CreateUserAsync();
         var request = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
@@ -256,7 +256,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task DeleteAccountAsync_ReturnsNotFound_WhenAccountDoesNotExist()
+    public async Task DeleteAccount_ReturnsNotFound_WhenAccountDoesNotExist()
     {
         var result = await _accountProcessor.DeleteAccountAsync(Guid.CreateVersion7());
 
@@ -264,7 +264,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task AddUserToAccountAsync_ReturnsSuccess_WhenUserAndAccountExist()
+    public async Task AddUserToAccount_ReturnsSuccess_WhenUserAndAccountExist()
     {
         var ownerUser = await CreateUserAsync();
         var newUser = await CreateUserAsync();
@@ -287,7 +287,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task AddUserToAccountAsync_ReturnsUserNotFound_WhenUserDoesNotExist()
+    public async Task AddUserToAccount_ReturnsUserNotFound_WhenUserDoesNotExist()
     {
         var ownerUser = await CreateUserAsync();
         var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
@@ -303,7 +303,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task AddUserToAccountAsync_ReturnsAccountNotFound_WhenAccountDoesNotExist()
+    public async Task AddUserToAccount_ReturnsAccountNotFound_WhenAccountDoesNotExist()
     {
         var user = await CreateUserAsync();
 
@@ -314,7 +314,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task AddUserToAccountAsync_ReturnsUserAlreadyInAccount_WhenUserAlreadyInAccount()
+    public async Task AddUserToAccount_ReturnsUserAlreadyInAccount_WhenUserAlreadyInAccount()
     {
         var ownerUser = await CreateUserAsync();
         var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
@@ -328,7 +328,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task AddUserToAccountAsync_Throws_WithNullRequest()
+    public async Task AddUserToAccount_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _accountProcessor.AddUserToAccountAsync(null!));
 
@@ -337,7 +337,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_ReturnsSuccess_WhenUserIsNotOwner()
+    public async Task RemoveUserFromAccount_ReturnsSuccess_WhenUserIsNotOwner()
     {
         var ownerUser = await CreateUserAsync();
         var nonOwnerUser = await CreateUserAsync();
@@ -367,7 +367,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_ReturnsUserNotFound_WhenUserDoesNotExist()
+    public async Task RemoveUserFromAccount_ReturnsUserNotFound_WhenUserDoesNotExist()
     {
         var ownerUser = await CreateUserAsync();
         var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
@@ -383,7 +383,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_ReturnsAccountNotFound_WhenAccountDoesNotExist()
+    public async Task RemoveUserFromAccount_ReturnsAccountNotFound_WhenAccountDoesNotExist()
     {
         var user = await CreateUserAsync();
 
@@ -394,7 +394,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_ReturnsUserNotInAccount_WhenUserNotInAccount()
+    public async Task RemoveUserFromAccount_ReturnsUserNotInAccount_WhenUserNotInAccount()
     {
         var ownerUser = await CreateUserAsync();
         var otherUser = await CreateUserAsync();
@@ -408,7 +408,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_Throws_WithNullRequest()
+    public async Task RemoveUserFromAccount_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() =>
             _accountProcessor.RemoveUserFromAccountAsync(null!)
@@ -419,7 +419,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_ReturnsSuccess_WhenOwnerRemovedButOtherOwnersExist()
+    public async Task RemoveUserFromAccount_ReturnsSuccess_WhenOwnerRemovedButOtherOwnersExist()
     {
         var ownerUser1 = await CreateUserAsync();
         var ownerUser2 = await CreateUserAsync();
@@ -442,7 +442,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_ReturnsSoleOwnerError_WhenSoleOwnerRemoved()
+    public async Task RemoveUserFromAccount_ReturnsSoleOwnerError_WhenSoleOwnerRemoved()
     {
         var ownerUser = await CreateUserAsync();
         var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
@@ -457,7 +457,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_ReturnsSuccess_WhenOwnerRemovedButOtherOwnerExistsViaGroup()
+    public async Task RemoveUserFromAccount_ReturnsSuccess_WhenOwnerRemovedButOtherOwnerExistsViaGroup()
     {
         var ownerUser1 = await CreateUserAsync();
         var ownerUser2 = await CreateUserAsync();
@@ -484,7 +484,7 @@ public class AccountProcessorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_ReturnsSoleOwnerError_WhenOwnerViaGroupIsOnlyOwner()
+    public async Task RemoveUserFromAccount_ReturnsSoleOwnerError_WhenOwnerViaGroupIsOnlyOwner()
     {
         var ownerUser = await CreateUserAsync();
         var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);

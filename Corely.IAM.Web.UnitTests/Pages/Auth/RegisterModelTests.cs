@@ -56,7 +56,7 @@ public class RegisterModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_PasswordMismatch_ReturnsPageWithError()
+    public async Task OnPost_PasswordMismatch_ReturnsPageWithError()
     {
         _model.Username = "testuser";
         _model.Email = "test@test.com";
@@ -70,7 +70,7 @@ public class RegisterModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_RegistrationFails_ReturnsPageWithError()
+    public async Task OnPost_RegistrationFails_ReturnsPageWithError()
     {
         _model.Username = "testuser";
         _model.Email = "test@test.com";
@@ -93,7 +93,7 @@ public class RegisterModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_PasswordValidationFails_ReturnsPageWithError()
+    public async Task OnPost_PasswordValidationFails_ReturnsPageWithError()
     {
         _model.Username = "testuser";
         _model.Email = "test@test.com";
@@ -116,7 +116,7 @@ public class RegisterModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_Success_AutoSignsInAndRedirectsToDashboard()
+    public async Task OnPost_Success_AutoSignsInAndRedirectsToDashboard()
     {
         _model.Username = "testuser";
         _model.Email = "test@test.com";
@@ -147,7 +147,7 @@ public class RegisterModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_Success_AutoSignInFails_RedirectsToSignIn()
+    public async Task OnPost_Success_AutoSignInFails_RedirectsToSignIn()
     {
         _model.Username = "testuser";
         _model.Email = "test@test.com";

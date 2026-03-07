@@ -2,7 +2,7 @@ namespace Corely.IAM.Groups.Models;
 
 public record RemoveUsersFromGroupResult(
     RemoveUsersFromGroupResultCode ResultCode,
-    string? Message,
+    string Message,
     int RemovedUserCount,
     List<Guid> InvalidUserIds,
     List<Guid> SoleOwnerUserIds = null!

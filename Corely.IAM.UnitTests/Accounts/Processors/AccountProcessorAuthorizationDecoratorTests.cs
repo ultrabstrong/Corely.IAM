@@ -21,7 +21,7 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreateAccountAsync_BypassesAuthorization()
+    public async Task CreateAccount_BypassesAuthorization()
     {
         var request = new CreateAccountRequest("TestAccount", Guid.Empty);
         var expectedResult = new CreateAccountResult(
@@ -43,7 +43,7 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetAccountAsyncById_CallsAuthorizationProviderWithResourceId()
+    public async Task GetAccountById_CallsAuthorizationProviderWithResourceId()
     {
         var accountId = Guid.CreateVersion7();
         var expectedResult = new GetAccountResult(
@@ -77,7 +77,7 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetAccountAsyncById_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task GetAccountById_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var accountId = Guid.CreateVersion7();
         _mockAuthorizationProvider
@@ -98,7 +98,7 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteAccountAsync_CallsAuthorizationProvider()
+    public async Task DeleteAccount_CallsAuthorizationProvider()
     {
         var accountId = Guid.CreateVersion7();
         var expectedResult = new DeleteAccountResult(DeleteAccountResultCode.Success, "");
@@ -131,7 +131,7 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteAccountAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task DeleteAccount_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var accountId = Guid.CreateVersion7();
         _mockAuthorizationProvider
@@ -151,7 +151,7 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AddUserToAccountAsync_CallsAuthorizationProvider()
+    public async Task AddUserToAccount_CallsAuthorizationProvider()
     {
         var request = new AddUserToAccountRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var expectedResult = new AddUserToAccountResult(AddUserToAccountResultCode.Success, "");
@@ -184,7 +184,7 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AddUserToAccountAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task AddUserToAccount_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new AddUserToAccountRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         _mockAuthorizationProvider
@@ -207,7 +207,7 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_Succeeds_WhenUserIsRemovingThemselves()
+    public async Task RemoveUserFromAccount_Succeeds_WhenUserIsRemovingThemselves()
     {
         var request = new RemoveUserFromAccountRequest(
             Guid.CreateVersion7(),
@@ -238,7 +238,7 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_Succeeds_WhenUserHasAccountUpdatePermission()
+    public async Task RemoveUserFromAccount_Succeeds_WhenUserHasAccountUpdatePermission()
     {
         var request = new RemoveUserFromAccountRequest(
             Guid.CreateVersion7(),
@@ -282,7 +282,7 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveUserFromAccountAsync_ReturnsUnauthorized_WhenNotOwnUserAndNoAccountPermission()
+    public async Task RemoveUserFromAccount_ReturnsUnauthorized_WhenNotOwnUserAndNoAccountPermission()
     {
         var request = new RemoveUserFromAccountRequest(
             Guid.CreateVersion7(),

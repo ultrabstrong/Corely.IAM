@@ -61,7 +61,7 @@ public class AccountProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateAccountAsync_UpdatesAccountName()
+    public async Task UpdateAccount_UpdatesAccountName()
     {
         await CreateAccountEntityAsync("OriginalName");
 
@@ -76,7 +76,7 @@ public class AccountProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateAccountAsync_ReturnsNotFound_WhenAccountDoesNotExist()
+    public async Task UpdateAccount_ReturnsNotFound_WhenAccountDoesNotExist()
     {
         var request = new UpdateAccountRequest(Guid.CreateVersion7(), "SomeName");
         var result = await _accountProcessor.UpdateAccountAsync(request);
@@ -85,7 +85,7 @@ public class AccountProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateAccountAsync_ReturnsNotFound_WhenAccountNotInUserAccounts()
+    public async Task UpdateAccount_ReturnsNotFound_WhenAccountNotInUserAccounts()
     {
         var otherAccountId = Guid.CreateVersion7();
         await CreateAccountEntityAsync("OtherAccount", otherAccountId);
@@ -97,7 +97,7 @@ public class AccountProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateAccountAsync_ReturnsValidationError_WhenNameEmpty()
+    public async Task UpdateAccount_ReturnsValidationError_WhenNameEmpty()
     {
         await CreateAccountEntityAsync("TestAccount");
 

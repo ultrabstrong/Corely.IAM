@@ -21,7 +21,7 @@ public class RoleProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task CreateRoleAsync_DelegatesToInnerAndLogsResult()
+    public async Task CreateRole_DelegatesToInnerAndLogsResult()
     {
         var request = new CreateRoleRequest("testrole", Guid.CreateVersion7());
         var expectedResult = new CreateRoleResult(
@@ -39,7 +39,7 @@ public class RoleProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemRolesAsync_DelegatesToInnerAndLogsResult()
+    public async Task CreateDefaultSystemRoles_DelegatesToInnerAndLogsResult()
     {
         var ownerAccountId = Guid.CreateVersion7();
         var expectedResult = new CreateDefaultSystemRolesResult(
@@ -62,7 +62,7 @@ public class RoleProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task GetRoleAsyncById_DelegatesToInnerAndLogsResult()
+    public async Task GetRoleById_DelegatesToInnerAndLogsResult()
     {
         var roleId = Guid.CreateVersion7();
         var expectedResult = new GetRoleResult(
@@ -80,7 +80,7 @@ public class RoleProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task GetRoleAsyncByNameAndAccount_DelegatesToInnerAndLogsResult()
+    public async Task GetRoleByNameAndAccount_DelegatesToInnerAndLogsResult()
     {
         var roleName = "testrole";
         var ownerAccountId = Guid.CreateVersion7();
@@ -101,7 +101,7 @@ public class RoleProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task AssignPermissionsToRoleAsync_DelegatesToInnerAndLogsResult()
+    public async Task AssignPermissionsToRole_DelegatesToInnerAndLogsResult()
     {
         var request = new AssignPermissionsToRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],

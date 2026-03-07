@@ -25,7 +25,7 @@ public class ModificationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task ModifyAccountAsync_DelegatesToInnerAndLogsResult()
+    public async Task ModifyAccount_DelegatesToInnerAndLogsResult()
     {
         var request = new UpdateAccountRequest(Guid.CreateVersion7(), "TestAccount");
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
@@ -39,7 +39,7 @@ public class ModificationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task ModifyUserAsync_DelegatesToInnerAndLogsResult()
+    public async Task ModifyUser_DelegatesToInnerAndLogsResult()
     {
         var request = new UpdateUserRequest(Guid.CreateVersion7(), "testuser", "test@test.com");
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
@@ -53,7 +53,7 @@ public class ModificationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task ModifyGroupAsync_DelegatesToInnerAndLogsResult()
+    public async Task ModifyGroup_DelegatesToInnerAndLogsResult()
     {
         var request = new UpdateGroupRequest(Guid.CreateVersion7(), "TestGroup", "Description");
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
@@ -67,7 +67,7 @@ public class ModificationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task ModifyRoleAsync_DelegatesToInnerAndLogsResult()
+    public async Task ModifyRole_DelegatesToInnerAndLogsResult()
     {
         var request = new UpdateRoleRequest(Guid.CreateVersion7(), "TestRole", "Description");
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);

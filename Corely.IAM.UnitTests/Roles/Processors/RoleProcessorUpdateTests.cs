@@ -70,7 +70,7 @@ public class RoleProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateRoleAsync_UpdatesRoleNameAndDescription()
+    public async Task UpdateRole_UpdatesRoleNameAndDescription()
     {
         var created = await CreateRoleEntityAsync();
 
@@ -86,7 +86,7 @@ public class RoleProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateRoleAsync_ReturnsNotFound_WhenRoleDoesNotExist()
+    public async Task UpdateRole_ReturnsNotFound_WhenRoleDoesNotExist()
     {
         var request = new UpdateRoleRequest(Guid.CreateVersion7(), "NoRole", null);
 
@@ -96,7 +96,7 @@ public class RoleProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateRoleAsync_ReturnsNotFound_WhenRoleInDifferentAccount()
+    public async Task UpdateRole_ReturnsNotFound_WhenRoleInDifferentAccount()
     {
         var otherAccountId = Guid.CreateVersion7();
         var created = await CreateRoleEntityAsync(accountId: otherAccountId);
@@ -108,7 +108,7 @@ public class RoleProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateRoleAsync_ReturnsSystemDefinedError_WhenRoleIsSystemDefined()
+    public async Task UpdateRole_ReturnsSystemDefinedError_WhenRoleIsSystemDefined()
     {
         var created = await CreateRoleEntityAsync(name: "Owner", isSystemDefined: true);
 
@@ -119,7 +119,7 @@ public class RoleProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateRoleAsync_ReturnsValidationError_WhenNameEmpty()
+    public async Task UpdateRole_ReturnsValidationError_WhenNameEmpty()
     {
         var created = await CreateRoleEntityAsync();
         var request = new UpdateRoleRequest(created.Id, "", null);

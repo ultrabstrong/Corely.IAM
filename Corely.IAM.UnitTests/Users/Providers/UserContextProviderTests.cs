@@ -83,7 +83,7 @@ public class UserContextProviderTests
     }
 
     [Fact]
-    public async Task SetUserContextAsync_ReturnsResultCode_WhenTokenValidationFails()
+    public async Task SetUserContext_ReturnsResultCode_WhenTokenValidationFails()
     {
         var token = "some-token";
         _mockAuthenticationProvider
@@ -105,7 +105,7 @@ public class UserContextProviderTests
     }
 
     [Fact]
-    public async Task SetUserContextAsync_ReturnsSuccess_WhenTokenIsValid()
+    public async Task SetUserContext_ReturnsSuccess_WhenTokenIsValid()
     {
         var token = "valid-token";
         var account = _fixture.Create<Account>();
@@ -135,7 +135,7 @@ public class UserContextProviderTests
     }
 
     [Fact]
-    public async Task SetUserContextAsync_SetsContextWithNullAccountId_WhenNoSignedInAccountClaim()
+    public async Task SetUserContext_SetsContextWithNullAccountId_WhenNoSignedInAccountClaim()
     {
         var token = "valid-token";
         var validationResult = new UserAuthTokenValidationResult(
@@ -164,7 +164,7 @@ public class UserContextProviderTests
     [InlineData(UserAuthTokenValidationResultCode.InvalidTokenFormat)]
     [InlineData(UserAuthTokenValidationResultCode.MissingUserIdClaim)]
     [InlineData(UserAuthTokenValidationResultCode.TokenValidationFailed)]
-    public async Task SetUserContextAsync_ReturnsCorrectResultCode_ForEachFailureType(
+    public async Task SetUserContext_ReturnsCorrectResultCode_ForEachFailureType(
         UserAuthTokenValidationResultCode expectedResultCode
     )
     {
@@ -182,7 +182,7 @@ public class UserContextProviderTests
     }
 
     [Fact]
-    public async Task SetUserContextAsync_ReturnsMissingDeviceIdClaim_WhenDeviceIdIsNull()
+    public async Task SetUserContext_ReturnsMissingDeviceIdClaim_WhenDeviceIdIsNull()
     {
         var token = "valid-token";
         var validationResult = new UserAuthTokenValidationResult(
@@ -204,7 +204,7 @@ public class UserContextProviderTests
     }
 
     [Fact]
-    public async Task SetUserContextAsync_ReturnsMissingDeviceIdClaim_WhenDeviceIdIsEmpty()
+    public async Task SetUserContext_ReturnsMissingDeviceIdClaim_WhenDeviceIdIsEmpty()
     {
         var token = "valid-token";
         var validationResult = new UserAuthTokenValidationResult(

@@ -95,7 +95,7 @@ public class GroupProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListGroupsAsync_ReturnsPagedResults()
+    public async Task ListGroups_ReturnsPagedResults()
     {
         await CreateGroupEntityAsync("Group1");
         await CreateGroupEntityAsync("Group2");
@@ -110,7 +110,7 @@ public class GroupProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListGroupsAsync_ScopesToAccount()
+    public async Task ListGroups_ScopesToAccount()
     {
         var otherAccountId = Guid.CreateVersion7();
         await CreateGroupEntityAsync("MyGroup");
@@ -126,7 +126,7 @@ public class GroupProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListGroupsAsync_AppliesPaging()
+    public async Task ListGroups_AppliesPaging()
     {
         await CreateGroupEntityAsync("Group1");
         await CreateGroupEntityAsync("Group2");
@@ -142,7 +142,7 @@ public class GroupProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListGroupsAsync_ReturnsEmptyWhenNoGroups()
+    public async Task ListGroups_ReturnsEmptyWhenNoGroups()
     {
         var result = await _groupProcessor.ListGroupsAsync(new(Take: 10));
 
@@ -153,7 +153,7 @@ public class GroupProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetGroupByIdAsync_ReturnsGroupWhenFound()
+    public async Task GetGroupById_ReturnsGroupWhenFound()
     {
         var group = await CreateGroupEntityAsync("TestGroup");
 
@@ -168,7 +168,7 @@ public class GroupProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetGroupByIdAsync_ReturnsNotFoundWhenGroupDoesNotExist()
+    public async Task GetGroupById_ReturnsNotFoundWhenGroupDoesNotExist()
     {
         var result = await _groupProcessor.GetGroupByIdAsync(Guid.CreateVersion7(), hydrate: false);
 
@@ -177,7 +177,7 @@ public class GroupProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetGroupByIdAsync_HydratesUsersAndRoles()
+    public async Task GetGroupById_HydratesUsersAndRoles()
     {
         var user = await CreateUserEntityAsync("testuser1");
         var role = await CreateRoleEntityAsync("TestRole");
@@ -201,7 +201,7 @@ public class GroupProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetGroupByIdAsync_ReturnsEmptyChildrenWhenHydratedWithNoChildren()
+    public async Task GetGroupById_ReturnsEmptyChildrenWhenHydratedWithNoChildren()
     {
         var group = await CreateGroupEntityAsync("EmptyGroup");
 

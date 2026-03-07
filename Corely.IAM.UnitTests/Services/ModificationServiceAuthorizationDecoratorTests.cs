@@ -25,7 +25,7 @@ public class ModificationServiceAuthorizationDecoratorTests
     #region ModifyAccountAsync
 
     [Fact]
-    public async Task ModifyAccountAsync_Succeeds_WhenHasAccountContext()
+    public async Task ModifyAccount_Succeeds_WhenHasAccountContext()
     {
         var request = new UpdateAccountRequest(Guid.CreateVersion7(), "TestAccount");
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
@@ -39,7 +39,7 @@ public class ModificationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task ModifyAccountAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task ModifyAccount_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new UpdateAccountRequest(Guid.CreateVersion7(), "TestAccount");
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
@@ -58,7 +58,7 @@ public class ModificationServiceAuthorizationDecoratorTests
     #region ModifyUserAsync
 
     [Fact]
-    public async Task ModifyUserAsync_Succeeds_WhenHasUserContext()
+    public async Task ModifyUser_Succeeds_WhenHasUserContext()
     {
         var request = new UpdateUserRequest(Guid.CreateVersion7(), "testuser", "test@test.com");
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
@@ -72,7 +72,7 @@ public class ModificationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task ModifyUserAsync_ReturnsUnauthorized_WhenNoUserContext()
+    public async Task ModifyUser_ReturnsUnauthorized_WhenNoUserContext()
     {
         var request = new UpdateUserRequest(Guid.CreateVersion7(), "testuser", "test@test.com");
         _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
@@ -91,7 +91,7 @@ public class ModificationServiceAuthorizationDecoratorTests
     #region ModifyGroupAsync
 
     [Fact]
-    public async Task ModifyGroupAsync_Succeeds_WhenHasAccountContext()
+    public async Task ModifyGroup_Succeeds_WhenHasAccountContext()
     {
         var request = new UpdateGroupRequest(Guid.CreateVersion7(), "TestGroup", "Description");
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
@@ -105,7 +105,7 @@ public class ModificationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task ModifyGroupAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task ModifyGroup_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new UpdateGroupRequest(Guid.CreateVersion7(), "TestGroup", "Description");
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
@@ -124,7 +124,7 @@ public class ModificationServiceAuthorizationDecoratorTests
     #region ModifyRoleAsync
 
     [Fact]
-    public async Task ModifyRoleAsync_Succeeds_WhenHasAccountContext()
+    public async Task ModifyRole_Succeeds_WhenHasAccountContext()
     {
         var request = new UpdateRoleRequest(Guid.CreateVersion7(), "TestRole", "Description");
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
@@ -138,7 +138,7 @@ public class ModificationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task ModifyRoleAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task ModifyRole_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new UpdateRoleRequest(Guid.CreateVersion7(), "TestRole", "Description");
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);

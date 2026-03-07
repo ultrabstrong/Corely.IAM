@@ -26,7 +26,7 @@ public class SecurityHeadersMiddlewareTests
     [InlineData("Cross-Origin-Opener-Policy", "same-origin")]
     [InlineData("Cross-Origin-Resource-Policy", "same-origin")]
     [InlineData("X-Permitted-Cross-Domain-Policies", "none")]
-    public async Task InvokeAsync_Always_SetsExpectedHeader(string headerName, string expectedValue)
+    public async Task Invoke_Always_SetsExpectedHeader(string headerName, string expectedValue)
     {
         var middleware = CreateMiddleware();
         var httpContext = new DefaultHttpContext();
@@ -38,7 +38,7 @@ public class SecurityHeadersMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_Always_SetsPermissionsPolicy()
+    public async Task Invoke_Always_SetsPermissionsPolicy()
     {
         var middleware = CreateMiddleware();
         var httpContext = new DefaultHttpContext();
@@ -54,7 +54,7 @@ public class SecurityHeadersMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_Always_SetsContentSecurityPolicy()
+    public async Task Invoke_Always_SetsContentSecurityPolicy()
     {
         var middleware = CreateMiddleware();
         var httpContext = new DefaultHttpContext();
@@ -73,7 +73,7 @@ public class SecurityHeadersMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_InProduction_SetsHsts()
+    public async Task Invoke_InProduction_SetsHsts()
     {
         var middleware = CreateMiddleware(isDevelopment: false);
         var httpContext = new DefaultHttpContext();
@@ -87,7 +87,7 @@ public class SecurityHeadersMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_InDevelopment_DoesNotSetHsts()
+    public async Task Invoke_InDevelopment_DoesNotSetHsts()
     {
         var middleware = CreateMiddleware(isDevelopment: true);
         var httpContext = new DefaultHttpContext();
@@ -98,7 +98,7 @@ public class SecurityHeadersMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_DoesNotSet_DeprecatedXXssProtection()
+    public async Task Invoke_DoesNotSet_DeprecatedXXssProtection()
     {
         var middleware = CreateMiddleware();
         var httpContext = new DefaultHttpContext();
@@ -109,7 +109,7 @@ public class SecurityHeadersMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_Always_CallsNextDelegate()
+    public async Task Invoke_Always_CallsNextDelegate()
     {
         bool nextCalled = false;
         _mockEnv.Setup(e => e.EnvironmentName).Returns(Environments.Production);

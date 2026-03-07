@@ -25,7 +25,7 @@ public class SignOutModelTests
     }
 
     [Fact]
-    public async Task OnGetAsync_SignsOutAndRedirectsToSignIn()
+    public async Task OnGet_SignsOutAndRedirectsToSignIn()
     {
         var result = await _model.OnGetAsync();
 
@@ -38,7 +38,7 @@ public class SignOutModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_WithTokenId_CallsSignOutAndRedirectsToSignIn()
+    public async Task OnPost_WithTokenId_CallsSignOutAndRedirectsToSignIn()
     {
         var tokenId = Guid.CreateVersion7().ToString();
         var httpContext = new DefaultHttpContext();
@@ -66,7 +66,7 @@ public class SignOutModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_WithoutTokenId_SkipsSignOutAndRedirectsToSignIn()
+    public async Task OnPost_WithoutTokenId_SkipsSignOutAndRedirectsToSignIn()
     {
         var result = await _model.OnPostAsync();
 

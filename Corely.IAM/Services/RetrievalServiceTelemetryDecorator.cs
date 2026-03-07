@@ -36,6 +36,7 @@ internal class RetrievalServiceTelemetryDecorator(
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RetrievalService),
+            new { permissionId, hydrate },
             () => _inner.GetPermissionAsync(permissionId, hydrate),
             logResult: true
         );
@@ -54,6 +55,7 @@ internal class RetrievalServiceTelemetryDecorator(
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RetrievalService),
+            new { groupId, hydrate },
             () => _inner.GetGroupAsync(groupId, hydrate),
             logResult: true
         );
@@ -69,6 +71,7 @@ internal class RetrievalServiceTelemetryDecorator(
     public async Task<RetrieveSingleResult<Role>> GetRoleAsync(Guid roleId, bool hydrate = false) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RetrievalService),
+            new { roleId, hydrate },
             () => _inner.GetRoleAsync(roleId, hydrate),
             logResult: true
         );
@@ -84,6 +87,7 @@ internal class RetrievalServiceTelemetryDecorator(
     public async Task<RetrieveSingleResult<User>> GetUserAsync(Guid userId, bool hydrate = false) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RetrievalService),
+            new { userId, hydrate },
             () => _inner.GetUserAsync(userId, hydrate),
             logResult: true
         );
@@ -102,6 +106,7 @@ internal class RetrievalServiceTelemetryDecorator(
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RetrievalService),
+            new { accountId, hydrate },
             () => _inner.GetAccountAsync(accountId, hydrate),
             logResult: true
         );

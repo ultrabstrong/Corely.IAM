@@ -26,7 +26,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     #region ListPermissionsAsync
 
     [Fact]
-    public async Task ListPermissionsAsync_Succeeds_WhenHasAccountContext()
+    public async Task ListPermissions_Succeeds_WhenHasAccountContext()
     {
         var expectedResult = new RetrieveListResult<Permission>(
             RetrieveResultCode.Success,
@@ -48,7 +48,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task ListPermissionsAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task ListPermissions_ReturnsUnauthorized_WhenNoAccountContext()
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
@@ -66,7 +66,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     #region GetPermissionAsync
 
     [Fact]
-    public async Task GetPermissionAsync_Succeeds_WhenHasAccountContext()
+    public async Task GetPermission_Succeeds_WhenHasAccountContext()
     {
         var permissionId = Guid.CreateVersion7();
         var expectedResult = new RetrieveSingleResult<Permission>(
@@ -87,7 +87,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetPermissionAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task GetPermission_ReturnsUnauthorized_WhenNoAccountContext()
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
@@ -105,7 +105,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     #region ListGroupsAsync
 
     [Fact]
-    public async Task ListGroupsAsync_Succeeds_WhenHasAccountContext()
+    public async Task ListGroups_Succeeds_WhenHasAccountContext()
     {
         var expectedResult = new RetrieveListResult<Group>(
             RetrieveResultCode.Success,
@@ -124,7 +124,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task ListGroupsAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task ListGroups_ReturnsUnauthorized_WhenNoAccountContext()
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
@@ -142,7 +142,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     #region GetGroupAsync
 
     [Fact]
-    public async Task GetGroupAsync_Succeeds_WhenHasAccountContext()
+    public async Task GetGroup_Succeeds_WhenHasAccountContext()
     {
         var groupId = Guid.CreateVersion7();
         var expectedResult = new RetrieveSingleResult<Group>(
@@ -161,7 +161,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetGroupAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task GetGroup_ReturnsUnauthorized_WhenNoAccountContext()
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
@@ -179,7 +179,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     #region ListRolesAsync
 
     [Fact]
-    public async Task ListRolesAsync_Succeeds_WhenHasAccountContext()
+    public async Task ListRoles_Succeeds_WhenHasAccountContext()
     {
         var expectedResult = new RetrieveListResult<Role>(
             RetrieveResultCode.Success,
@@ -198,7 +198,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task ListRolesAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task ListRoles_ReturnsUnauthorized_WhenNoAccountContext()
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
@@ -213,7 +213,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     #region GetRoleAsync
 
     [Fact]
-    public async Task GetRoleAsync_Succeeds_WhenHasAccountContext()
+    public async Task GetRole_Succeeds_WhenHasAccountContext()
     {
         var roleId = Guid.CreateVersion7();
         var expectedResult = new RetrieveSingleResult<Role>(
@@ -232,7 +232,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetRoleAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task GetRole_ReturnsUnauthorized_WhenNoAccountContext()
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
@@ -250,7 +250,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     #region ListUsersAsync
 
     [Fact]
-    public async Task ListUsersAsync_Succeeds_WhenHasAccountContext()
+    public async Task ListUsers_Succeeds_WhenHasAccountContext()
     {
         var expectedResult = new RetrieveListResult<User>(
             RetrieveResultCode.Success,
@@ -269,7 +269,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task ListUsersAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task ListUsers_ReturnsUnauthorized_WhenNoAccountContext()
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
@@ -284,7 +284,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     #region GetUserAsync
 
     [Fact]
-    public async Task GetUserAsync_Succeeds_WhenHasUserContext()
+    public async Task GetUser_Succeeds_WhenHasUserContext()
     {
         var userId = Guid.CreateVersion7();
         var expectedResult = new RetrieveSingleResult<User>(
@@ -303,7 +303,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetUserAsync_ReturnsUnauthorized_WhenNoUserContext()
+    public async Task GetUser_ReturnsUnauthorized_WhenNoUserContext()
     {
         _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
 
@@ -321,7 +321,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     #region ListAccountsAsync
 
     [Fact]
-    public async Task ListAccountsAsync_Succeeds_WhenHasUserContext()
+    public async Task ListAccounts_Succeeds_WhenHasUserContext()
     {
         var expectedResult = new RetrieveListResult<Account>(
             RetrieveResultCode.Success,
@@ -343,7 +343,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task ListAccountsAsync_ReturnsUnauthorized_WhenNoUserContext()
+    public async Task ListAccounts_ReturnsUnauthorized_WhenNoUserContext()
     {
         _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
 
@@ -361,7 +361,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     #region GetAccountAsync
 
     [Fact]
-    public async Task GetAccountAsync_Succeeds_WhenHasAccountContext()
+    public async Task GetAccount_Succeeds_WhenHasAccountContext()
     {
         var accountId = Guid.CreateVersion7();
         var expectedResult = new RetrieveSingleResult<Account>(
@@ -382,7 +382,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetAccountAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task GetAccount_ReturnsUnauthorized_WhenNoAccountContext()
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 

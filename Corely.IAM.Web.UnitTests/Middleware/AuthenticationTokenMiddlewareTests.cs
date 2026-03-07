@@ -37,7 +37,7 @@ public class AuthenticationTokenMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_NoCookie_CallsNextWithoutSettingUser()
+    public async Task Invoke_NoCookie_CallsNextWithoutSettingUser()
     {
         bool nextCalled = false;
         RequestDelegate next = (ctx) =>
@@ -59,7 +59,7 @@ public class AuthenticationTokenMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_ValidCookieAndSuccessfulValidation_SetsUserPrincipal()
+    public async Task Invoke_ValidCookieAndSuccessfulValidation_SetsUserPrincipal()
     {
         bool nextCalled = false;
         RequestDelegate next = (ctx) =>
@@ -101,7 +101,7 @@ public class AuthenticationTokenMiddlewareTests
     [InlineData(UserAuthTokenValidationResultCode.InvalidTokenFormat)]
     [InlineData(UserAuthTokenValidationResultCode.MissingUserIdClaim)]
     [InlineData(UserAuthTokenValidationResultCode.MissingDeviceIdClaim)]
-    public async Task InvokeAsync_ValidationFails_DeletesCookieAndCallsNext(
+    public async Task Invoke_ValidationFails_DeletesCookieAndCallsNext(
         UserAuthTokenValidationResultCode resultCode
     )
     {
@@ -131,7 +131,7 @@ public class AuthenticationTokenMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_ExceptionDuringValidation_DeletesCookieAndCallsNext()
+    public async Task Invoke_ExceptionDuringValidation_DeletesCookieAndCallsNext()
     {
         bool nextCalled = false;
         RequestDelegate next = (ctx) =>
@@ -159,7 +159,7 @@ public class AuthenticationTokenMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_SuccessButNullUserContext_DoesNotSetPrincipal()
+    public async Task Invoke_SuccessButNullUserContext_DoesNotSetPrincipal()
     {
         bool nextCalled = false;
         RequestDelegate next = (ctx) =>

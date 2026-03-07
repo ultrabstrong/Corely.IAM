@@ -21,7 +21,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task DeregisterUserAsync_DelegatesToInnerAndLogsResult()
+    public async Task DeregisterUser_DelegatesToInnerAndLogsResult()
     {
         var expectedResult = new DeregisterUserResult(
             DeregisterUserResultCode.Success,
@@ -37,7 +37,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task DeregisterAccountAsync_DelegatesToInnerAndLogsResult()
+    public async Task DeregisterAccount_DelegatesToInnerAndLogsResult()
     {
         var expectedResult = new DeregisterAccountResult(
             DeregisterAccountResultCode.Success,
@@ -53,7 +53,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task DeregisterGroupAsync_DelegatesToInnerAndLogsResult()
+    public async Task DeregisterGroup_DelegatesToInnerAndLogsResult()
     {
         var request = new DeregisterGroupRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterGroupResult(
@@ -70,7 +70,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task DeregisterRoleAsync_DelegatesToInnerAndLogsResult()
+    public async Task DeregisterRole_DelegatesToInnerAndLogsResult()
     {
         var request = new DeregisterRoleRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterRoleResult(
@@ -87,7 +87,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task DeregisterPermissionAsync_DelegatesToInnerAndLogsResult()
+    public async Task DeregisterPermission_DelegatesToInnerAndLogsResult()
     {
         var request = new DeregisterPermissionRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterPermissionResult(
@@ -106,7 +106,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task DeregisterUserFromAccountAsync_DelegatesToInnerAndLogsResult()
+    public async Task DeregisterUserFromAccount_DelegatesToInnerAndLogsResult()
     {
         var request = new DeregisterUserFromAccountRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterUserFromAccountResult(
@@ -125,7 +125,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task DeregisterUsersFromGroupAsync_DelegatesToInnerAndLogsResult()
+    public async Task DeregisterUsersFromGroup_DelegatesToInnerAndLogsResult()
     {
         var request = new DeregisterUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -149,7 +149,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task DeregisterRolesFromGroupAsync_DelegatesToInnerAndLogsResult()
+    public async Task DeregisterRolesFromGroup_DelegatesToInnerAndLogsResult()
     {
         var request = new DeregisterRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -173,7 +173,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task DeregisterRolesFromUserAsync_DelegatesToInnerAndLogsResult()
+    public async Task DeregisterRolesFromUser_DelegatesToInnerAndLogsResult()
     {
         var request = new DeregisterRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -197,7 +197,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task DeregisterPermissionsFromRoleAsync_DelegatesToInnerAndLogsResult()
+    public async Task DeregisterPermissionsFromRole_DelegatesToInnerAndLogsResult()
     {
         var request = new DeregisterPermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -221,7 +221,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task LeaveAccountAsync_DelegatesToInnerAndLogsResult()
+    public async Task LeaveAccount_DelegatesToInnerAndLogsResult()
     {
         var accountId = Guid.CreateVersion7();
         var expectedResult = new DeregisterUserFromAccountResult(

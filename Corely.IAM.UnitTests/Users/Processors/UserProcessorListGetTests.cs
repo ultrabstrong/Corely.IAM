@@ -107,7 +107,7 @@ public class UserProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListUsersAsync_ReturnsPagedResults()
+    public async Task ListUsers_ReturnsPagedResults()
     {
         await CreateUserEntityAsync("user1");
         await CreateUserEntityAsync("user2");
@@ -122,7 +122,7 @@ public class UserProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListUsersAsync_ScopesToAccount()
+    public async Task ListUsers_ScopesToAccount()
     {
         var otherAccountId = Guid.CreateVersion7();
         await CreateUserEntityAsync("myuser");
@@ -141,7 +141,7 @@ public class UserProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListUsersAsync_AppliesPaging()
+    public async Task ListUsers_AppliesPaging()
     {
         await CreateUserEntityAsync("user1");
         await CreateUserEntityAsync("user2");
@@ -157,7 +157,7 @@ public class UserProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListUsersAsync_ReturnsEmptyWhenNoUsers()
+    public async Task ListUsers_ReturnsEmptyWhenNoUsers()
     {
         var result = await _userProcessor.ListUsersAsync(new(Take: 10));
 
@@ -168,7 +168,7 @@ public class UserProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListUsersAsync_ReturnsLimitedFieldsOnly()
+    public async Task ListUsers_ReturnsLimitedFieldsOnly()
     {
         await CreateUserEntityAsync("limiteduser");
 
@@ -196,7 +196,7 @@ public class UserProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetUserByIdAsync_ReturnsUserWhenFound()
+    public async Task GetUserById_ReturnsUserWhenFound()
     {
         var user = await CreateUserEntityAsync("testuser1");
 
@@ -212,7 +212,7 @@ public class UserProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetUserByIdAsync_ReturnsNotFoundWhenUserDoesNotExist()
+    public async Task GetUserById_ReturnsNotFoundWhenUserDoesNotExist()
     {
         var result = await _userProcessor.GetUserByIdAsync(Guid.CreateVersion7(), hydrate: false);
 
@@ -221,7 +221,7 @@ public class UserProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetUserByIdAsync_HydratesAccountsGroupsAndRoles()
+    public async Task GetUserById_HydratesAccountsGroupsAndRoles()
     {
         var group = await CreateGroupEntityAsync("TestGroup");
         var role = await CreateRoleEntityAsync("TestRole");
@@ -256,7 +256,7 @@ public class UserProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetUserByIdAsync_Hydrate_FiltersGroupsAndRolesToCurrentAccount()
+    public async Task GetUserById_Hydrate_FiltersGroupsAndRolesToCurrentAccount()
     {
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
@@ -302,7 +302,7 @@ public class UserProcessorListGetTests
     }
 
     [Fact]
-    public async Task GetUserByIdAsync_ReturnsEmptyChildrenWhenHydratedWithNoChildren()
+    public async Task GetUserById_ReturnsEmptyChildrenWhenHydratedWithNoChildren()
     {
         var user = await CreateUserEntityAsync("emptyuser");
 

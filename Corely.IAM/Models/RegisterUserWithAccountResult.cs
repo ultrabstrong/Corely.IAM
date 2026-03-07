@@ -11,5 +11,5 @@ public enum RegisterUserWithAccountResultCode
 
 public record RegisterUserWithAccountResult(
     RegisterUserWithAccountResultCode ResultCode,
-    string? Message
+    string Message
 );

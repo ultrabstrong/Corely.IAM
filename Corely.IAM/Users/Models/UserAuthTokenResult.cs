@@ -5,9 +5,9 @@ namespace Corely.IAM.Users.Models;
 public enum UserAuthTokenResultCode
 {
     Success,
-    UserNotFound,
-    SignatureKeyNotFound,
-    AccountNotFound,
+    UserNotFoundError,
+    SignatureKeyNotFoundError,
+    AccountNotFoundError,
 }
 
 public record UserAuthTokenResult(

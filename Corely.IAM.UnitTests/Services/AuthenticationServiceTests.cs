@@ -154,7 +154,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignInAsync_SucceedsAndUpdateSuccessfulLogin_WhenUserExistsAndPasswordIsValid()
+    public async Task SignIn_SucceedsAndUpdateSuccessfulLogin_WhenUserExistsAndPasswordIsValid()
     {
         var userEntity = await CreateTestUserAsync();
         var request = new SignInRequest(
@@ -181,7 +181,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignInAsync_Fails_WhenUserDoesNotExist()
+    public async Task SignIn_Fails_WhenUserDoesNotExist()
     {
         var request = new SignInRequest(
             _fixture.Create<string>(),
@@ -197,7 +197,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignInAsync_Fails_WhenUserIsLockedOut()
+    public async Task SignIn_Fails_WhenUserIsLockedOut()
     {
         var now = DateTimeOffset.UtcNow;
         _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(now);
@@ -221,7 +221,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignInAsync_LockedUser_AfterCooldownExpires_AllowsRetry()
+    public async Task SignIn_LockedUser_AfterCooldownExpires_AllowsRetry()
     {
         var now = DateTimeOffset.UtcNow;
         _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(now);
@@ -250,7 +250,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignInAsync_LockedUser_AfterCooldownExpires_FailedAttempt_IncrementsFromZero()
+    public async Task SignIn_LockedUser_AfterCooldownExpires_FailedAttempt_IncrementsFromZero()
     {
         var now = DateTimeOffset.UtcNow;
         _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(now);
@@ -283,7 +283,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignInAsync_FailsAndUpdatedFailedLogins_WhenPasswordIsInvalid()
+    public async Task SignIn_FailsAndUpdatedFailedLogins_WhenPasswordIsInvalid()
     {
         var userEntity = await CreateTestUserAsync();
         var request = new SignInRequest(
@@ -314,7 +314,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignInAsync_Fails_WhenSignatureKeyNotFound()
+    public async Task SignIn_Fails_WhenSignatureKeyNotFound()
     {
         var userEntity = await CreateTestUserAsync();
         var request = new SignInRequest(
@@ -327,7 +327,7 @@ public class AuthenticationServiceTests
             .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<GetUserAuthTokenRequest>()))
             .ReturnsAsync(
                 new UserAuthTokenResult(
-                    UserAuthTokenResultCode.SignatureKeyNotFound,
+                    UserAuthTokenResultCode.SignatureKeyNotFoundError,
                     null,
                     null,
                     null,
@@ -344,7 +344,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignInAsync_Fails_WhenAccountNotFound()
+    public async Task SignIn_Fails_WhenAccountNotFound()
     {
         var userEntity = await CreateTestUserAsync();
         var accountId = Guid.CreateVersion7();
@@ -359,7 +359,7 @@ public class AuthenticationServiceTests
             .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<GetUserAuthTokenRequest>()))
             .ReturnsAsync(
                 new UserAuthTokenResult(
-                    UserAuthTokenResultCode.AccountNotFound,
+                    UserAuthTokenResultCode.AccountNotFoundError,
                     null,
                     null,
                     null,
@@ -376,7 +376,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignInAsync_Succeeds_WithValidAccountId()
+    public async Task SignIn_Succeeds_WithValidAccountId()
     {
         var userEntity = await CreateTestUserAsync();
         var accountEntity = await CreateTestAccountAsync();
@@ -400,7 +400,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignInAsync_Throws_WithNullRequest()
+    public async Task SignIn_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _authenticationService.SignInAsync(null!));
 
@@ -409,7 +409,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SwitchAccountAsync_Succeeds_WhenContextExists()
+    public async Task SwitchAccount_Succeeds_WhenContextExists()
     {
         var accountId = Guid.CreateVersion7();
         var userId = Guid.CreateVersion7();
@@ -438,7 +438,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SwitchAccountAsync_Fails_WhenNoUserContext()
+    public async Task SwitchAccount_Fails_WhenNoUserContext()
     {
         var request = new SwitchAccountRequest(Guid.CreateVersion7());
 
@@ -452,7 +452,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SwitchAccountAsync_Fails_WhenAccountNotFound()
+    public async Task SwitchAccount_Fails_WhenAccountNotFound()
     {
         var accountId = Guid.CreateVersion7();
         var request = new SwitchAccountRequest(accountId);
@@ -467,7 +467,7 @@ public class AuthenticationServiceTests
             .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<GetUserAuthTokenRequest>()))
             .ReturnsAsync(
                 new UserAuthTokenResult(
-                    UserAuthTokenResultCode.AccountNotFound,
+                    UserAuthTokenResultCode.AccountNotFoundError,
                     null,
                     null,
                     null,
@@ -484,7 +484,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SwitchAccountAsync_Fails_WhenSignatureKeyNotFound()
+    public async Task SwitchAccount_Fails_WhenSignatureKeyNotFound()
     {
         var request = new SwitchAccountRequest(Guid.CreateVersion7());
 
@@ -498,7 +498,7 @@ public class AuthenticationServiceTests
             .Setup(m => m.GetUserAuthTokenAsync(It.IsAny<GetUserAuthTokenRequest>()))
             .ReturnsAsync(
                 new UserAuthTokenResult(
-                    UserAuthTokenResultCode.SignatureKeyNotFound,
+                    UserAuthTokenResultCode.SignatureKeyNotFoundError,
                     null,
                     null,
                     null,
@@ -514,7 +514,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SwitchAccountAsync_Throws_WithNullRequest()
+    public async Task SwitchAccount_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() =>
             _authenticationService.SwitchAccountAsync(null!)
@@ -525,7 +525,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignOutAsync_CallsAuthenticationProvider()
+    public async Task SignOut_CallsAuthenticationProvider()
     {
         var userId = Guid.CreateVersion7();
         var tokenId = _fixture.Create<string>();
@@ -568,7 +568,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignOutAsync_ReturnsFalse_WhenNoUserContext()
+    public async Task SignOut_ReturnsFalse_WhenNoUserContext()
     {
         var signOutRequest = new SignOutRequest("token-id");
 
@@ -584,7 +584,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignOutAsync_Throws_WithNullRequest()
+    public async Task SignOut_Throws_WithNullRequest()
     {
         var ex = await Record.ExceptionAsync(() => _authenticationService.SignOutAsync(null!));
 
@@ -593,7 +593,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignOutAllAsync_CallsAuthenticationProvider()
+    public async Task SignOutAll_CallsAuthenticationProvider()
     {
         var userId = Guid.CreateVersion7();
 
@@ -608,7 +608,7 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignOutAllAsync_DoesNothing_WhenNoUserContext()
+    public async Task SignOutAll_DoesNothing_WhenNoUserContext()
     {
         _userContextProviderMock.Setup(m => m.GetUserContext()).Returns((UserContext?)null);
 

@@ -110,7 +110,7 @@ public class InvitationProcessorTests
     // ─────────────────────────────────────────────
 
     [Fact]
-    public async Task CreateInvitationAsync_ReturnsSuccess_WithValidRequest()
+    public async Task CreateInvitation_ReturnsSuccess_WithValidRequest()
     {
         var user = await CreateUserAsync();
         var account = await CreateAccountAsync();
@@ -132,7 +132,7 @@ public class InvitationProcessorTests
     }
 
     [Fact]
-    public async Task CreateInvitationAsync_ReturnsAccountNotFound_WhenAccountDoesNotExist()
+    public async Task CreateInvitation_ReturnsAccountNotFound_WhenAccountDoesNotExist()
     {
         var user = await CreateUserAsync();
         SetUserContext(user);
@@ -156,7 +156,7 @@ public class InvitationProcessorTests
     // ─────────────────────────────────────────────
 
     [Fact]
-    public async Task AcceptInvitationAsync_ReturnsSuccess_AndAddsUserToAccount()
+    public async Task AcceptInvitation_ReturnsSuccess_AndAddsUserToAccount()
     {
         var creator = await CreateUserAsync();
         var acceptor = await CreateUserAsync();
@@ -192,7 +192,7 @@ public class InvitationProcessorTests
     }
 
     [Fact]
-    public async Task AcceptInvitationAsync_ReturnsSuccess_WhenUserAlreadyInAccount()
+    public async Task AcceptInvitation_ReturnsSuccess_WhenUserAlreadyInAccount()
     {
         var user = await CreateUserAsync();
         var account = await CreateAccountAsync();
@@ -227,7 +227,7 @@ public class InvitationProcessorTests
     }
 
     [Fact]
-    public async Task AcceptInvitationAsync_BurnsSiblingInvitations_ForSameAccountAndEmail()
+    public async Task AcceptInvitation_BurnsSiblingInvitations_ForSameAccountAndEmail()
     {
         var creator = await CreateUserAsync();
         var acceptor = await CreateUserAsync();
@@ -271,7 +271,7 @@ public class InvitationProcessorTests
     }
 
     [Fact]
-    public async Task AcceptInvitationAsync_ReturnsNotFound_WhenTokenIsEmpty()
+    public async Task AcceptInvitation_ReturnsNotFound_WhenTokenIsEmpty()
     {
         var result = await _invitationProcessor.AcceptInvitationAsync(
             new AcceptInvitationRequest("")
@@ -281,7 +281,7 @@ public class InvitationProcessorTests
     }
 
     [Fact]
-    public async Task AcceptInvitationAsync_ReturnsNotFound_WhenTokenDoesNotExist()
+    public async Task AcceptInvitation_ReturnsNotFound_WhenTokenDoesNotExist()
     {
         var result = await _invitationProcessor.AcceptInvitationAsync(
             new AcceptInvitationRequest("nonexistent-token")
@@ -291,7 +291,7 @@ public class InvitationProcessorTests
     }
 
     [Fact]
-    public async Task AcceptInvitationAsync_ReturnsExpired_WhenInvitationIsExpired()
+    public async Task AcceptInvitation_ReturnsExpired_WhenInvitationIsExpired()
     {
         var creator = await CreateUserAsync();
         var acceptor = await CreateUserAsync();
@@ -313,7 +313,7 @@ public class InvitationProcessorTests
     }
 
     [Fact]
-    public async Task AcceptInvitationAsync_ReturnsRevoked_WhenInvitationIsRevoked()
+    public async Task AcceptInvitation_ReturnsRevoked_WhenInvitationIsRevoked()
     {
         var creator = await CreateUserAsync();
         var acceptor = await CreateUserAsync();
@@ -335,7 +335,7 @@ public class InvitationProcessorTests
     }
 
     [Fact]
-    public async Task AcceptInvitationAsync_ReturnsAlreadyAccepted_WhenInvitationWasAccepted()
+    public async Task AcceptInvitation_ReturnsAlreadyAccepted_WhenInvitationWasAccepted()
     {
         var creator = await CreateUserAsync();
         var acceptor = await CreateUserAsync();
@@ -362,7 +362,7 @@ public class InvitationProcessorTests
     // ─────────────────────────────────────────────
 
     [Fact]
-    public async Task RevokeInvitationAsync_ReturnsSuccess_WhenInvitationExists()
+    public async Task RevokeInvitation_ReturnsSuccess_WhenInvitationExists()
     {
         var creator = await CreateUserAsync();
         var account = await CreateAccountAsync();
@@ -381,7 +381,7 @@ public class InvitationProcessorTests
     }
 
     [Fact]
-    public async Task RevokeInvitationAsync_ReturnsNotFound_WhenInvitationDoesNotExist()
+    public async Task RevokeInvitation_ReturnsNotFound_WhenInvitationDoesNotExist()
     {
         var result = await _invitationProcessor.RevokeInvitationAsync(Guid.CreateVersion7());
 
@@ -389,7 +389,7 @@ public class InvitationProcessorTests
     }
 
     [Fact]
-    public async Task RevokeInvitationAsync_ReturnsAlreadyAccepted_WhenInvitationWasAccepted()
+    public async Task RevokeInvitation_ReturnsAlreadyAccepted_WhenInvitationWasAccepted()
     {
         var creator = await CreateUserAsync();
         var account = await CreateAccountAsync();
@@ -411,7 +411,7 @@ public class InvitationProcessorTests
     // ─────────────────────────────────────────────
 
     [Fact]
-    public async Task ListInvitationsAsync_ReturnsInvitations_ForAccount()
+    public async Task ListInvitations_ReturnsInvitations_ForAccount()
     {
         var creator = await CreateUserAsync();
         var account = await CreateAccountAsync();

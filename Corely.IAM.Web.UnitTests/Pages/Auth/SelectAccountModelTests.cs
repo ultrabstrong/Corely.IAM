@@ -55,7 +55,7 @@ public class SelectAccountModelTests
     }
 
     [Fact]
-    public async Task OnGetAsync_NoUserContext_RedirectsToSignIn()
+    public async Task OnGet_NoUserContext_RedirectsToSignIn()
     {
         _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns((UserContext?)null);
 
@@ -66,7 +66,7 @@ public class SelectAccountModelTests
     }
 
     [Fact]
-    public async Task OnGetAsync_HasUserContext_ReturnsPageWithAccountsFromService()
+    public async Task OnGet_HasUserContext_ReturnsPageWithAccountsFromService()
     {
         var accounts = new List<Account>
         {
@@ -85,7 +85,7 @@ public class SelectAccountModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_SwitchFails_ReturnsPageWithError()
+    public async Task OnPost_SwitchFails_ReturnsPageWithError()
     {
         var accountId = Guid.CreateVersion7();
         var accounts = new List<Account>
@@ -108,7 +108,7 @@ public class SelectAccountModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_SwitchSucceeds_RedirectsToDashboard()
+    public async Task OnPost_SwitchSucceeds_RedirectsToDashboard()
     {
         var accountId = Guid.CreateVersion7();
         var tokenId = Guid.CreateVersion7();

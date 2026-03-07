@@ -65,7 +65,7 @@ public class GroupProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateGroupAsync_UpdatesGroupNameAndDescription()
+    public async Task UpdateGroup_UpdatesGroupNameAndDescription()
     {
         var group = await CreateGroupEntityAsync("OriginalName", description: "OriginalDesc");
 
@@ -81,7 +81,7 @@ public class GroupProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateGroupAsync_ReturnsNotFound_WhenGroupDoesNotExist()
+    public async Task UpdateGroup_ReturnsNotFound_WhenGroupDoesNotExist()
     {
         var request = new UpdateGroupRequest(Guid.CreateVersion7(), "SomeName", null);
         var result = await _groupProcessor.UpdateGroupAsync(request);
@@ -90,7 +90,7 @@ public class GroupProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateGroupAsync_ReturnsNotFound_WhenGroupInDifferentAccount()
+    public async Task UpdateGroup_ReturnsNotFound_WhenGroupInDifferentAccount()
     {
         var otherAccountId = Guid.CreateVersion7();
         var group = await CreateGroupEntityAsync("OtherGroup", otherAccountId);
@@ -102,7 +102,7 @@ public class GroupProcessorUpdateTests
     }
 
     [Fact]
-    public async Task UpdateGroupAsync_ReturnsValidationError_WhenNameEmpty()
+    public async Task UpdateGroup_ReturnsValidationError_WhenNameEmpty()
     {
         var group = await CreateGroupEntityAsync("TestGroup");
 

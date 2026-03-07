@@ -11,7 +11,7 @@ public enum AssignPermissionsToRoleResultCode
 
 internal record AssignPermissionsToRoleResult(
     AssignPermissionsToRoleResultCode ResultCode,
-    string? Message,
+    string Message,
     int AddedPermissionCount,
     List<Guid> InvalidPermissionIds = null
 );

@@ -12,7 +12,7 @@ public enum RemoveRolesFromGroupResultCode
 
 public record RemoveRolesFromGroupResult(
     RemoveRolesFromGroupResultCode ResultCode,
-    string? Message,
+    string Message,
     int RemovedRoleCount,
     List<Guid> InvalidRoleIds,
     List<Guid> BlockedOwnerRoleIds = null!

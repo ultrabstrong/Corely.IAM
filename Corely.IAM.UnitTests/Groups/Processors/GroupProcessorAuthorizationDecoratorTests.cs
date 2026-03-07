@@ -21,7 +21,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreateGroupAsync_CallsAuthorizationProvider()
+    public async Task CreateGroup_CallsAuthorizationProvider()
     {
         var request = new CreateGroupRequest("TestGroup", Guid.CreateVersion7());
         var expectedResult = new CreateGroupResult(
@@ -47,7 +47,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreateGroupAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task CreateGroup_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new CreateGroupRequest("TestGroup", Guid.CreateVersion7());
         _mockAuthorizationProvider
@@ -66,7 +66,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AddUsersToGroupAsync_CallsAuthorizationProviderWithResourceId()
+    public async Task AddUsersToGroup_CallsAuthorizationProviderWithResourceId()
     {
         var request = new AddUsersToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -126,7 +126,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AddUsersToGroupAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task AddUsersToGroup_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new AddUsersToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -152,7 +152,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AddUsersToGroupAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadUsers()
+    public async Task AddUsersToGroup_ReturnsUnauthorized_WhenNotAuthorizedToReadUsers()
     {
         var request = new AddUsersToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -188,7 +188,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveUsersFromGroupAsync_CallsAuthorizationProviderWithResourceId()
+    public async Task RemoveUsersFromGroup_CallsAuthorizationProviderWithResourceId()
     {
         var request = new RemoveUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -248,7 +248,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveUsersFromGroupAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task RemoveUsersFromGroup_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new RemoveUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -274,7 +274,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveUsersFromGroupAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadUsers()
+    public async Task RemoveUsersFromGroup_ReturnsUnauthorized_WhenNotAuthorizedToReadUsers()
     {
         var request = new RemoveUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -310,7 +310,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AssignRolesToGroupAsync_CallsAuthorizationProviderWithResourceId()
+    public async Task AssignRolesToGroup_CallsAuthorizationProviderWithResourceId()
     {
         var request = new AssignRolesToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -370,7 +370,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AssignRolesToGroupAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task AssignRolesToGroup_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new AssignRolesToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -396,7 +396,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AssignRolesToGroupAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadRoles()
+    public async Task AssignRolesToGroup_ReturnsUnauthorized_WhenNotAuthorizedToReadRoles()
     {
         var request = new AssignRolesToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -432,7 +432,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromGroupAsync_CallsAuthorizationProviderWithResourceId()
+    public async Task RemoveRolesFromGroup_CallsAuthorizationProviderWithResourceId()
     {
         var request = new RemoveRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -492,7 +492,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromGroupAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task RemoveRolesFromGroup_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new RemoveRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -518,7 +518,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromGroupAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadRoles()
+    public async Task RemoveRolesFromGroup_ReturnsUnauthorized_WhenNotAuthorizedToReadRoles()
     {
         var request = new RemoveRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -554,7 +554,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteGroupAsync_CallsAuthorizationProvider()
+    public async Task DeleteGroup_CallsAuthorizationProvider()
     {
         var groupId = Guid.CreateVersion7();
         var expectedResult = new DeleteGroupResult(DeleteGroupResultCode.Success, "");
@@ -585,7 +585,7 @@ public class GroupProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteGroupAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task DeleteGroup_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var groupId = Guid.CreateVersion7();
         _mockAuthorizationProvider

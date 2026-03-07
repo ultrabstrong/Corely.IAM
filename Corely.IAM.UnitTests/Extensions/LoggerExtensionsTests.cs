@@ -13,7 +13,7 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLoggingAsync_LogsEntryAndExit()
+    public async Task ExecuteWithLogging_LogsEntryAndExit()
     {
         // Arrange
         var request = "test-request";
@@ -62,7 +62,7 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLoggingAsync_LogsResult_WhenLogResultIsTrue()
+    public async Task ExecuteWithLogging_LogsResult_WhenLogResultIsTrue()
     {
         // Arrange
         var request = "test-request";
@@ -94,7 +94,7 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLoggingAsync_DoesNotLogResult_WhenLogResultIsFalse()
+    public async Task ExecuteWithLogging_DoesNotLogResult_WhenLogResultIsFalse()
     {
         // Arrange
         var request = "test-request";
@@ -127,7 +127,7 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLoggingAsync_LogsException_WhenOperationThrows()
+    public async Task ExecuteWithLogging_LogsException_WhenOperationThrows()
     {
         // Arrange
         var request = "test-request";
@@ -159,7 +159,7 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLoggingAsync_ThrowsArgumentNullException_WhenRequestIsNull()
+    public async Task ExecuteWithLogging_ThrowsArgumentNullException_WhenRequestIsNull()
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -172,7 +172,7 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLoggingAsync_IncludesElapsedTime()
+    public async Task ExecuteWithLogging_IncludesElapsedTime()
     {
         // Arrange
         var request = "test-request";
@@ -205,7 +205,7 @@ public class LoggerExtensionsTests
     }
 
     [Fact]
-    public async Task ExecuteWithLoggingAsync_UsesCallerMemberName()
+    public async Task ExecuteWithLogging_UsesCallerMemberName()
     {
         // Arrange
         var request = "test-request";

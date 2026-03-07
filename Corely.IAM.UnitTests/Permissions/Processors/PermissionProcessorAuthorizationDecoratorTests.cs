@@ -21,7 +21,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreatePermissionAsync_CallsAuthorizationProvider()
+    public async Task CreatePermission_CallsAuthorizationProvider()
     {
         var request = new CreatePermissionRequest(
             Guid.CreateVersion7(),
@@ -58,7 +58,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreatePermissionAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task CreatePermission_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new CreatePermissionRequest(
             Guid.CreateVersion7(),
@@ -82,7 +82,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemPermissionsAsync_BypassesAuthorization()
+    public async Task CreateDefaultSystemPermissions_BypassesAuthorization()
     {
         var accountId = Guid.CreateVersion7();
 
@@ -100,7 +100,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeletePermissionAsync_CallsAuthorizationProvider()
+    public async Task DeletePermission_CallsAuthorizationProvider()
     {
         var permissionId = Guid.CreateVersion7();
         var expectedResult = new DeletePermissionResult(DeletePermissionResultCode.Success, "");
@@ -133,7 +133,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeletePermissionAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task DeletePermission_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var permissionId = Guid.CreateVersion7();
         _mockAuthorizationProvider

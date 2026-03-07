@@ -25,7 +25,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     #region Passthrough Methods (No Authorization)
 
     [Fact]
-    public async Task RegisterUserAsync_DelegatesToInner()
+    public async Task RegisterUser_DelegatesToInner()
     {
         var request = new RegisterUserRequest("testuser", "test@test.com", "password");
         var expectedResult = new RegisterUserResult(
@@ -46,7 +46,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     #region Account-Context-Gated Methods
 
     [Fact]
-    public async Task RegisterUsersWithGroupAsync_DelegatesToInner_WhenHasAccountContext()
+    public async Task RegisterUsersWithGroup_DelegatesToInner_WhenHasAccountContext()
     {
         var request = new RegisterUsersWithGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -70,7 +70,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterUsersWithGroupAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task RegisterUsersWithGroup_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterUsersWithGroupRequest(
             [Guid.CreateVersion7()],
@@ -88,7 +88,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterRolesWithGroupAsync_DelegatesToInner_WhenHasAccountContext()
+    public async Task RegisterRolesWithGroup_DelegatesToInner_WhenHasAccountContext()
     {
         var request = new RegisterRolesWithGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -112,7 +112,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterRolesWithGroupAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task RegisterRolesWithGroup_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterRolesWithGroupRequest(
             [Guid.CreateVersion7()],
@@ -130,7 +130,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterRolesWithUserAsync_DelegatesToInner_WhenHasAccountContext()
+    public async Task RegisterRolesWithUser_DelegatesToInner_WhenHasAccountContext()
     {
         var request = new RegisterRolesWithUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -154,7 +154,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterRolesWithUserAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task RegisterRolesWithUser_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterRolesWithUserRequest(
             [Guid.CreateVersion7()],
@@ -172,7 +172,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterPermissionsWithRoleAsync_DelegatesToInner_WhenHasAccountContext()
+    public async Task RegisterPermissionsWithRole_DelegatesToInner_WhenHasAccountContext()
     {
         var request = new RegisterPermissionsWithRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -196,7 +196,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterPermissionsWithRoleAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task RegisterPermissionsWithRole_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterPermissionsWithRoleRequest(
             [Guid.CreateVersion7()],
@@ -218,7 +218,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     #region RegisterAccountAsync
 
     [Fact]
-    public async Task RegisterAccountAsync_Succeeds_WhenHasAccountContext()
+    public async Task RegisterAccount_Succeeds_WhenHasAccountContext()
     {
         var request = new RegisterAccountRequest("TestAccount");
         var expectedResult = new RegisterAccountResult(
@@ -236,7 +236,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterAccountAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task RegisterAccount_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterAccountRequest("TestAccount");
         _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
@@ -255,7 +255,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     #region RegisterGroupAsync
 
     [Fact]
-    public async Task RegisterGroupAsync_Succeeds_WhenHasAccountContext()
+    public async Task RegisterGroup_Succeeds_WhenHasAccountContext()
     {
         var request = new RegisterGroupRequest("TestGroup");
         var expectedResult = new RegisterGroupResult(
@@ -273,7 +273,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterGroupAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task RegisterGroup_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterGroupRequest("TestGroup");
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
@@ -292,7 +292,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     #region RegisterRoleAsync
 
     [Fact]
-    public async Task RegisterRoleAsync_Succeeds_WhenHasAccountContext()
+    public async Task RegisterRole_Succeeds_WhenHasAccountContext()
     {
         var request = new RegisterRoleRequest("TestRole");
         var expectedResult = new RegisterRoleResult(
@@ -310,7 +310,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterRoleAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task RegisterRole_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterRoleRequest("TestRole");
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
@@ -329,7 +329,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     #region RegisterPermissionAsync
 
     [Fact]
-    public async Task RegisterPermissionAsync_Succeeds_WhenHasAccountContext()
+    public async Task RegisterPermission_Succeeds_WhenHasAccountContext()
     {
         var request = new RegisterPermissionRequest("resource", Guid.Empty);
         var expectedResult = new RegisterPermissionResult(
@@ -349,7 +349,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterPermissionAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task RegisterPermission_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterPermissionRequest("resource", Guid.Empty);
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
@@ -368,7 +368,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     #region RegisterUserWithAccountAsync
 
     [Fact]
-    public async Task RegisterUserWithAccountAsync_Succeeds_WhenHasAccountContext()
+    public async Task RegisterUserWithAccount_Succeeds_WhenHasAccountContext()
     {
         var request = new RegisterUserWithAccountRequest(Guid.CreateVersion7());
         var expectedResult = new RegisterUserWithAccountResult(
@@ -387,7 +387,7 @@ public class RegistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RegisterUserWithAccountAsync_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task RegisterUserWithAccount_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new RegisterUserWithAccountRequest(Guid.CreateVersion7());
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);

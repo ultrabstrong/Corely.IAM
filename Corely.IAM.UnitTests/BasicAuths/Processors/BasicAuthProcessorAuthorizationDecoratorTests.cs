@@ -20,7 +20,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreateBasicAuthAsync_BypassesAuthorization_AndDelegatesToInner()
+    public async Task CreateBasicAuth_BypassesAuthorization_AndDelegatesToInner()
     {
         var request = new CreateBasicAuthRequest(Guid.CreateVersion7(), "password");
         var expectedResult = new CreateBasicAuthResult(
@@ -44,7 +44,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task UpdateBasicAuthAsync_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
+    public async Task UpdateBasicAuth_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
     {
         var request = new UpdateBasicAuthRequest(Guid.CreateVersion7(), "password");
         _mockAuthorizationProvider
@@ -61,7 +61,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task UpdateBasicAuthAsync_Succeeds_WhenUserOperatesOnOwnCredentials()
+    public async Task UpdateBasicAuth_Succeeds_WhenUserOperatesOnOwnCredentials()
     {
         var userId = Guid.CreateVersion7();
         var request = new UpdateBasicAuthRequest(userId, "password");
@@ -80,7 +80,7 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task VerifyBasicAuthAsync_BypassesAuthorization_AndDelegatesToInner()
+    public async Task VerifyBasicAuth_BypassesAuthorization_AndDelegatesToInner()
     {
         var request = new VerifyBasicAuthRequest(Guid.CreateVersion7(), "password");
         var expectedResult = new VerifyBasicAuthResult(

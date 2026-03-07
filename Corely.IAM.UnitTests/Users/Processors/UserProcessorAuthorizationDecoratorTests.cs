@@ -22,7 +22,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreateUserAsync_BypassesAuthorization()
+    public async Task CreateUser_BypassesAuthorization()
     {
         var request = new CreateUserRequest("testuser", "test@test.com");
         var expectedResult = new CreateUserResult(
@@ -38,7 +38,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetUserAsyncById_CallsAuthorizationProviderWithResourceId()
+    public async Task GetUserById_CallsAuthorizationProviderWithResourceId()
     {
         var userId = Guid.CreateVersion7();
         var expectedResult = new GetUserResult(
@@ -68,7 +68,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetUserAsyncById_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task GetUserById_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var userId = Guid.CreateVersion7();
         _mockAuthorizationProvider
@@ -85,7 +85,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task UpdateUserAsync_Succeeds_WhenUserUpdatesOwnAccount()
+    public async Task UpdateUser_Succeeds_WhenUserUpdatesOwnAccount()
     {
         var userId = Guid.CreateVersion7();
         var request = new UpdateUserRequest(userId, "testuser", "test@test.com");
@@ -102,7 +102,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task UpdateUserAsync_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
+    public async Task UpdateUser_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
     {
         var request = new UpdateUserRequest(Guid.CreateVersion7(), "testuser", "test@test.com");
         _mockAuthorizationProvider
@@ -119,7 +119,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetAsymmetricSignatureVerificationKeyAsync_CallsAuthorizationProviderWithResourceId()
+    public async Task GetAsymmetricSignatureVerificationKey_CallsAuthorizationProviderWithResourceId()
     {
         var userId = Guid.CreateVersion7();
         var expectedResult = new GetAsymmetricKeyResult(
@@ -151,7 +151,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetAsymmetricSignatureVerificationKeyAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task GetAsymmetricSignatureVerificationKey_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var userId = Guid.CreateVersion7();
         _mockAuthorizationProvider
@@ -171,7 +171,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
+    public async Task DeleteUser_ReturnsUnauthorized_WhenNotAuthorizedForOwnUser()
     {
         var userId = Guid.CreateVersion7();
         _mockAuthorizationProvider
@@ -185,7 +185,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeleteUserAsync_Succeeds_WhenUserDeletesOwnAccount()
+    public async Task DeleteUser_Succeeds_WhenUserDeletesOwnAccount()
     {
         var userId = Guid.CreateVersion7();
         var expectedResult = new DeleteUserResult(DeleteUserResultCode.Success, "");
@@ -201,7 +201,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AssignRolesToUserAsync_CallsAuthorizationProvider()
+    public async Task AssignRolesToUser_CallsAuthorizationProvider()
     {
         var request = new AssignRolesToUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -261,7 +261,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AssignRolesToUserAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task AssignRolesToUser_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new AssignRolesToUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -287,7 +287,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AssignRolesToUserAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadRoles()
+    public async Task AssignRolesToUser_ReturnsUnauthorized_WhenNotAuthorizedToReadRoles()
     {
         var request = new AssignRolesToUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -322,7 +322,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AssignOwnerRolesToUserAsync_DelegatesWithoutAuthCheck()
+    public async Task AssignOwnerRolesToUser_DelegatesWithoutAuthCheck()
     {
         var roleId = Guid.CreateVersion7();
         var userId = Guid.CreateVersion7();
@@ -348,7 +348,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromUserAsync_CallsAuthorizationProvider()
+    public async Task RemoveRolesFromUser_CallsAuthorizationProvider()
     {
         var request = new RemoveRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -408,7 +408,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromUserAsync_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task RemoveRolesFromUser_ReturnsUnauthorized_WhenNotAuthorized()
     {
         var request = new RemoveRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -434,7 +434,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RemoveRolesFromUserAsync_ReturnsUnauthorized_WhenNotAuthorizedToReadRoles()
+    public async Task RemoveRolesFromUser_ReturnsUnauthorized_WhenNotAuthorizedToReadRoles()
     {
         var request = new RemoveRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
@@ -469,7 +469,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetUserByIdAsync_Succeeds_WhenIsOwnUser()
+    public async Task GetUserById_Succeeds_WhenIsOwnUser()
     {
         var userId = Guid.CreateVersion7();
         var expectedResult = new GetResult<User>(
@@ -491,7 +491,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetUserByIdAsync_Succeeds_WhenAuthorizedViaPermission()
+    public async Task GetUserById_Succeeds_WhenAuthorizedViaPermission()
     {
         var userId = Guid.CreateVersion7();
         var expectedResult = new GetResult<User>(
@@ -518,7 +518,7 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetUserByIdAsync_ReturnsUnauthorized_WhenNotOwnUserAndNoPermission()
+    public async Task GetUserById_ReturnsUnauthorized_WhenNotOwnUserAndNoPermission()
     {
         var userId = Guid.CreateVersion7();
         _mockAuthorizationProvider

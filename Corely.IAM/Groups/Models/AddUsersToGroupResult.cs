@@ -11,7 +11,7 @@ public enum AddUsersToGroupResultCode
 
 internal record AddUsersToGroupResult(
     AddUsersToGroupResultCode ResultCode,
-    string? Message,
+    string Message,
     int AddedUserCount,
     List<Guid> InvalidUserIds = null
 );

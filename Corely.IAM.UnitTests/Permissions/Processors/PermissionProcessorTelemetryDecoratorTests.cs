@@ -21,7 +21,7 @@ public class PermissionProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task CreatePermissionAsync_DelegatesToInnerAndLogsResult()
+    public async Task CreatePermission_DelegatesToInnerAndLogsResult()
     {
         var request = new CreatePermissionRequest(
             Guid.CreateVersion7(),
@@ -46,7 +46,7 @@ public class PermissionProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemPermissionsAsync_DelegatesToInner()
+    public async Task CreateDefaultSystemPermissions_DelegatesToInner()
     {
         var accountId = Guid.CreateVersion7();
         _mockInnerProcessor

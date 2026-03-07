@@ -59,7 +59,7 @@ public class SignInModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_WithEmptyCredentials_ReturnsPageWithError()
+    public async Task OnPost_WithEmptyCredentials_ReturnsPageWithError()
     {
         _model.Username = "";
         _model.Password = "";
@@ -71,7 +71,7 @@ public class SignInModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_WithInvalidCredentials_ReturnsPageWithError()
+    public async Task OnPost_WithInvalidCredentials_ReturnsPageWithError()
     {
         _model.Username = "testuser";
         _model.Password = "wrongpass";
@@ -88,7 +88,7 @@ public class SignInModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_WithValidCredentials_NoAccounts_RedirectsToDashboard()
+    public async Task OnPost_WithValidCredentials_NoAccounts_RedirectsToDashboard()
     {
         _model.Username = "testuser";
         _model.Password = "goodpass";
@@ -119,7 +119,7 @@ public class SignInModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_WithValidCredentials_OneAccount_AutoSwitchesAndRedirectsToDashboard()
+    public async Task OnPost_WithValidCredentials_OneAccount_AutoSwitchesAndRedirectsToDashboard()
     {
         _model.Username = "testuser";
         _model.Password = "goodpass";
@@ -164,7 +164,7 @@ public class SignInModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_WithValidCredentials_MultipleAccounts_RedirectsToSelectAccount()
+    public async Task OnPost_WithValidCredentials_MultipleAccounts_RedirectsToSelectAccount()
     {
         _model.Username = "testuser";
         _model.Password = "goodpass";
@@ -198,7 +198,7 @@ public class SignInModelTests
     }
 
     [Fact]
-    public async Task OnPostAsync_WithValidCredentials_OneAccount_SwitchFails_RedirectsToSelectAccount()
+    public async Task OnPost_WithValidCredentials_OneAccount_SwitchFails_RedirectsToSelectAccount()
     {
         _model.Username = "testuser";
         _model.Password = "goodpass";

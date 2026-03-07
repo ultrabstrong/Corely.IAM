@@ -26,7 +26,7 @@ public class RetrievalServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task ListPermissionsAsync_DelegatesToInnerAndLogsResult()
+    public async Task ListPermissions_DelegatesToInnerAndLogsResult()
     {
         var expectedResult = new RetrieveListResult<Permission>(
             RetrieveResultCode.Success,
@@ -48,7 +48,7 @@ public class RetrievalServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task GetPermissionAsync_DelegatesToInnerAndLogsResult()
+    public async Task GetPermission_DelegatesToInnerAndLogsResult()
     {
         var permissionId = Guid.CreateVersion7();
         var expectedResult = new RetrieveSingleResult<Permission>(
@@ -69,7 +69,7 @@ public class RetrievalServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task ListGroupsAsync_DelegatesToInnerAndLogsResult()
+    public async Task ListGroups_DelegatesToInnerAndLogsResult()
     {
         var expectedResult = new RetrieveListResult<Group>(
             RetrieveResultCode.Success,
@@ -88,7 +88,7 @@ public class RetrievalServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task GetGroupAsync_DelegatesToInnerAndLogsResult()
+    public async Task GetGroup_DelegatesToInnerAndLogsResult()
     {
         var groupId = Guid.CreateVersion7();
         var expectedResult = new RetrieveSingleResult<Group>(
@@ -107,7 +107,7 @@ public class RetrievalServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task ListRolesAsync_DelegatesToInnerAndLogsResult()
+    public async Task ListRoles_DelegatesToInnerAndLogsResult()
     {
         var expectedResult = new RetrieveListResult<Role>(
             RetrieveResultCode.Success,
@@ -126,7 +126,7 @@ public class RetrievalServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task GetRoleAsync_DelegatesToInnerAndLogsResult()
+    public async Task GetRole_DelegatesToInnerAndLogsResult()
     {
         var roleId = Guid.CreateVersion7();
         var expectedResult = new RetrieveSingleResult<Role>(
@@ -145,7 +145,7 @@ public class RetrievalServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task ListUsersAsync_DelegatesToInnerAndLogsResult()
+    public async Task ListUsers_DelegatesToInnerAndLogsResult()
     {
         var expectedResult = new RetrieveListResult<User>(
             RetrieveResultCode.Success,
@@ -164,7 +164,7 @@ public class RetrievalServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task GetUserAsync_DelegatesToInnerAndLogsResult()
+    public async Task GetUser_DelegatesToInnerAndLogsResult()
     {
         var userId = Guid.CreateVersion7();
         var expectedResult = new RetrieveSingleResult<User>(
@@ -183,7 +183,7 @@ public class RetrievalServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task ListAccountsAsync_DelegatesToInnerAndLogsResult()
+    public async Task ListAccounts_DelegatesToInnerAndLogsResult()
     {
         var expectedResult = new RetrieveListResult<Account>(
             RetrieveResultCode.Success,
@@ -205,7 +205,7 @@ public class RetrievalServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task GetAccountAsync_DelegatesToInnerAndLogsResult()
+    public async Task GetAccount_DelegatesToInnerAndLogsResult()
     {
         var accountId = Guid.CreateVersion7();
         var expectedResult = new RetrieveSingleResult<Account>(

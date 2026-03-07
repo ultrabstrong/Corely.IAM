@@ -112,7 +112,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task IsSoleOwnerOfAccountAsync_ReturnsFalse_WhenUserDoesNotHaveOwnerRole()
+    public async Task IsSoleOwnerOfAccount_ReturnsFalse_WhenUserDoesNotHaveOwnerRole()
     {
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
@@ -125,7 +125,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task IsSoleOwnerOfAccountAsync_ReturnsFalse_WhenUserHasOwnerRoleButNotInAccount()
+    public async Task IsSoleOwnerOfAccount_ReturnsFalse_WhenUserHasOwnerRoleButNotInAccount()
     {
         var account = await CreateAccountAsync();
         var otherAccount = await CreateAccountAsync();
@@ -141,7 +141,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task IsSoleOwnerOfAccountAsync_ReturnsTrue_WhenUserIsSoleOwnerDirectly()
+    public async Task IsSoleOwnerOfAccount_ReturnsTrue_WhenUserIsSoleOwnerDirectly()
     {
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
@@ -155,7 +155,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task IsSoleOwnerOfAccountAsync_ReturnsTrue_WhenUserIsSoleOwnerViaGroup()
+    public async Task IsSoleOwnerOfAccount_ReturnsTrue_WhenUserIsSoleOwnerViaGroup()
     {
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
@@ -169,7 +169,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task IsSoleOwnerOfAccountAsync_ReturnsFalse_WhenOtherOwnerExistsDirectly()
+    public async Task IsSoleOwnerOfAccount_ReturnsFalse_WhenOtherOwnerExistsDirectly()
     {
         var account = await CreateAccountAsync();
         var user1 = await CreateUserInAccountAsync(account.Id);
@@ -188,7 +188,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task IsSoleOwnerOfAccountAsync_ReturnsFalse_WhenOtherOwnerExistsViaGroup()
+    public async Task IsSoleOwnerOfAccount_ReturnsFalse_WhenOtherOwnerExistsViaGroup()
     {
         var account = await CreateAccountAsync();
         var user1 = await CreateUserInAccountAsync(account.Id);
@@ -203,7 +203,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task IsSoleOwnerOfAccountAsync_ReturnsFalse_WhenUserHasOwnerViaGroupAndOtherOwnerExistsDirectly()
+    public async Task IsSoleOwnerOfAccount_ReturnsFalse_WhenUserHasOwnerViaGroupAndOtherOwnerExistsDirectly()
     {
         var account = await CreateAccountAsync();
         var user1 = await CreateUserInAccountAsync(account.Id);
@@ -218,7 +218,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task IsSoleOwnerOfAccountAsync_ReturnsTrue_WhenOtherOwnerExistsButNotInAccount()
+    public async Task IsSoleOwnerOfAccount_ReturnsTrue_WhenOtherOwnerExistsButNotInAccount()
     {
         var account = await CreateAccountAsync();
         var otherAccount = await CreateAccountAsync();
@@ -247,7 +247,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task IsSoleOwnerOfAccountAsync_ReturnsFalse_WhenNoOwnerRoleExistsForAccount()
+    public async Task IsSoleOwnerOfAccount_ReturnsFalse_WhenNoOwnerRoleExistsForAccount()
     {
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
@@ -274,7 +274,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task HasOwnershipOutsideGroupAsync_ReturnsTrue_WhenUserHasDirectOwnership()
+    public async Task HasOwnershipOutsideGroup_ReturnsTrue_WhenUserHasDirectOwnership()
     {
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
@@ -304,7 +304,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task HasOwnershipOutsideGroupAsync_ReturnsTrue_WhenUserHasOwnershipViaOtherGroup()
+    public async Task HasOwnershipOutsideGroup_ReturnsTrue_WhenUserHasOwnershipViaOtherGroup()
     {
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
@@ -357,7 +357,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task HasOwnershipOutsideGroupAsync_ReturnsFalse_WhenOwnershipOnlyViaExcludedGroup()
+    public async Task HasOwnershipOutsideGroup_ReturnsFalse_WhenOwnershipOnlyViaExcludedGroup()
     {
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
@@ -400,7 +400,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task HasOwnershipOutsideGroupAsync_ReturnsFalse_WhenUserHasNoOwnerRole()
+    public async Task HasOwnershipOutsideGroup_ReturnsFalse_WhenUserHasNoOwnerRole()
     {
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
@@ -427,7 +427,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task HasOwnershipOutsideGroupAsync_ReturnsTrue_WhenUserHasBothDirectAndGroupOwnership()
+    public async Task HasOwnershipOutsideGroup_ReturnsTrue_WhenUserHasBothDirectAndGroupOwnership()
     {
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
@@ -470,7 +470,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task AnyUserHasOwnershipOutsideGroupAsync_ReturnsTrue_WhenOneUserHasDirectOwnership()
+    public async Task AnyUserHasOwnershipOutsideGroup_ReturnsTrue_WhenOneUserHasDirectOwnership()
     {
         var account = await CreateAccountAsync();
         var user1 = await CreateUserInAccountAsync(account.Id);
@@ -501,7 +501,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task AnyUserHasOwnershipOutsideGroupAsync_ReturnsFalse_WhenNoUserHasOwnershipElsewhere()
+    public async Task AnyUserHasOwnershipOutsideGroup_ReturnsFalse_WhenNoUserHasOwnershipElsewhere()
     {
         var account = await CreateAccountAsync();
         var user1 = await CreateUserInAccountAsync(account.Id);
@@ -545,7 +545,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task AnyUserHasOwnershipOutsideGroupAsync_ReturnsFalse_WhenEmptyUserList()
+    public async Task AnyUserHasOwnershipOutsideGroup_ReturnsFalse_WhenEmptyUserList()
     {
         var account = await CreateAccountAsync();
 
@@ -570,7 +570,7 @@ public class UserOwnershipProcessorTests
     }
 
     [Fact]
-    public async Task AnyUserHasOwnershipOutsideGroupAsync_ReturnsTrue_WhenLastUserInListHasOwnership()
+    public async Task AnyUserHasOwnershipOutsideGroup_ReturnsTrue_WhenLastUserInListHasOwnership()
     {
         var account = await CreateAccountAsync();
         var user1 = await CreateUserInAccountAsync(account.Id);

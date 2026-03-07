@@ -16,6 +16,6 @@ internal interface IInvitationProcessor
         OrderBuilder<Invitation>? order,
         int skip,
         int take,
-        string? statusFilter = null
+        InvitationStatus? statusFilter = null
     );
 }

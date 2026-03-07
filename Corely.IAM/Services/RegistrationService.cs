@@ -575,7 +575,7 @@ internal class RegistrationService(
         OrderBuilder<Invitation>? order = null,
         int skip = 0,
         int take = 25,
-        string? statusFilter = null
+        InvitationStatus? statusFilter = null
     )
     {
         var result = await _invitationProcessor.ListInvitationsAsync(

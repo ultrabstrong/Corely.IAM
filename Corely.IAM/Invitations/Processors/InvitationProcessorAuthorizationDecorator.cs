@@ -62,7 +62,7 @@ internal class InvitationProcessorAuthorizationDecorator(
         OrderBuilder<Invitation>? order,
         int skip,
         int take,
-        string? statusFilter = null
+        InvitationStatus? statusFilter = null
     ) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,

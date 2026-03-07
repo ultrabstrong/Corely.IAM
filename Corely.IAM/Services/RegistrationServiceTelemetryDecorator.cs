@@ -144,7 +144,7 @@ internal class RegistrationServiceTelemetryDecorator(
         OrderBuilder<Invitation>? order = null,
         int skip = 0,
         int take = 25,
-        string? statusFilter = null
+        InvitationStatus? statusFilter = null
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),

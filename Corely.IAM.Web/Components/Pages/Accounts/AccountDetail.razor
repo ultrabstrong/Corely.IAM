@@ -94,10 +94,10 @@ else
                             <div class="th-search" @onclick:stopPropagation="true">
                                 <select class="form-select form-select-sm" @bind="_invStatusFilter" @bind:after="OnInvStatusChangedAsync">
                                     <option value="">All</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Accepted">Accepted</option>
-                                    <option value="Revoked">Revoked</option>
-                                    <option value="Expired">Expired</option>
+                                    @foreach (var status in Enum.GetValues<InvitationStatus>())
+                                    {
+                                        <option value="@status">@status</option>
+                                    }
                                 </select>
                             </div>
                         </th>
@@ -262,7 +262,7 @@ else
     private int _invitationsTotalCount;
     private string _invSearchEmail = string.Empty;
     private string _invSearchDescription = string.Empty;
-    private string _invStatusFilter = string.Empty;
+    private InvitationStatus? _invStatusFilter;
     private string? _invSortColumn;
     private SortDirection? _invSortDirection;
     private string? _inviteEmail;
@@ -325,15 +325,13 @@ else
             };
         }
 
-        var status = string.IsNullOrWhiteSpace(_invStatusFilter) ? null : _invStatusFilter;
-
         var invResult = await RegistrationService.ListInvitationsAsync(
             Id,
             filter: filter,
             order: order,
             skip: _invitationsSkip,
             take: InvitationPageSize,
-            statusFilter: status
+            statusFilter: _invStatusFilter
         );
         if (invResult.ResultCode == RetrieveResultCode.Success && invResult.Data != null)
         {

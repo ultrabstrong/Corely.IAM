@@ -156,7 +156,7 @@ internal class RegistrationServiceAuthorizationDecorator(
         OrderBuilder<Invitation>? order = null,
         int skip = 0,
         int take = 25,
-        string? statusFilter = null
+        InvitationStatus? statusFilter = null
     ) =>
         _authorizationProvider.HasAccountContext()
             ? await _inner.ListInvitationsAsync(accountId, filter, order, skip, take, statusFilter)

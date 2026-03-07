@@ -277,21 +277,22 @@ internal class InvitationProcessor(
         OrderBuilder<Invitation>? order,
         int skip,
         int take,
-        string? statusFilter = null
+        InvitationStatus? statusFilter = null
     )
     {
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         Expression<Func<InvitationEntity, bool>> scopePredicate = statusFilter switch
         {
-            "Pending" => i =>
+            InvitationStatus.Pending => i =>
                 i.AccountId == accountId
                 && i.AcceptedByUserId == null
                 && i.RevokedUtc == null
                 && i.ExpiresUtc >= utcNow,
-            "Accepted" => i => i.AccountId == accountId && i.AcceptedByUserId != null,
-            "Revoked" => i => i.AccountId == accountId && i.RevokedUtc != null,
-            "Expired" => i =>
+            InvitationStatus.Accepted => i =>
+                i.AccountId == accountId && i.AcceptedByUserId != null,
+            InvitationStatus.Revoked => i => i.AccountId == accountId && i.RevokedUtc != null,
+            InvitationStatus.Expired => i =>
                 i.AccountId == accountId
                 && i.AcceptedByUserId == null
                 && i.RevokedUtc == null

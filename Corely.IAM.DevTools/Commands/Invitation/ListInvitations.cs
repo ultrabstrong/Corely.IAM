@@ -8,7 +8,7 @@ namespace Corely.IAM.DevTools.Commands.Invitation;
 
 internal partial class Invitation : CommandBase
 {
-    internal class List : CommandBase
+    internal class ListInvitations : CommandBase
     {
         private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
@@ -24,7 +24,7 @@ internal partial class Invitation : CommandBase
         private readonly IRegistrationService _registrationService;
         private readonly IUserContextProvider _userContextProvider;
 
-        public List(
+        public ListInvitations(
             IRegistrationService registrationService,
             IUserContextProvider userContextProvider
         )

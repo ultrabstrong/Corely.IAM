@@ -9,19 +9,19 @@ namespace Corely.IAM.DevTools.Commands.Invitation;
 
 internal partial class Invitation : CommandBase
 {
-    internal class Revoke : CommandBase
+    internal class AcceptInvitation : CommandBase
     {
-        [Option("-i", "--invitation-id", Description = "Invitation ID (GUID)")]
-        private string InvitationId { get; init; } = null!;
+        [Option("-t", "--token", Description = "Invitation token")]
+        private string Token { get; init; } = null!;
 
         private readonly IRegistrationService _registrationService;
         private readonly IUserContextProvider _userContextProvider;
 
-        public Revoke(
+        public AcceptInvitation(
             IRegistrationService registrationService,
             IUserContextProvider userContextProvider
         )
-            : base("revoke", "Revoke an invitation")
+            : base("accept", "Accept an invitation")
         {
             _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
@@ -29,9 +29,9 @@ internal partial class Invitation : CommandBase
 
         protected override async Task ExecuteAsync()
         {
-            if (string.IsNullOrWhiteSpace(InvitationId))
+            if (string.IsNullOrWhiteSpace(Token))
             {
-                ShowHelp("--invitation-id is required");
+                ShowHelp("--token is required");
                 return;
             }
 
@@ -40,13 +40,13 @@ internal partial class Invitation : CommandBase
 
             try
             {
-                var result = await _registrationService.RevokeInvitationAsync(
-                    Guid.Parse(InvitationId)
-                );
+                var request = new AcceptInvitationRequest(Token);
+                var result = await _registrationService.AcceptInvitationAsync(request);
 
-                if (result.ResultCode == RevokeInvitationResultCode.Success)
+                if (result.ResultCode == AcceptInvitationResultCode.Success)
                 {
-                    Success("Invitation revoked successfully");
+                    Success($"Invitation accepted successfully");
+                    Info($"  Account ID: {result.AccountId}");
                 }
                 else
                 {

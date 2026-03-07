@@ -11,7 +11,7 @@ namespace Corely.IAM.DevTools.Commands.Invitation;
 
 internal partial class Invitation : CommandBase
 {
-    internal class Create : CommandBase
+    internal class CreateInvitation : CommandBase
     {
         [Option("-a", "--account-id", Description = "Account ID (GUID)")]
         private string AccountId { get; init; } = null!;
@@ -28,7 +28,7 @@ internal partial class Invitation : CommandBase
         private readonly IRegistrationService _registrationService;
         private readonly IUserContextProvider _userContextProvider;
 
-        public Create(
+        public CreateInvitation(
             IRegistrationService registrationService,
             IUserContextProvider userContextProvider
         )

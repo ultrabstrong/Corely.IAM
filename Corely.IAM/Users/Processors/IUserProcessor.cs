@@ -22,5 +22,4 @@ internal interface IUserProcessor
         int take
     );
     Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate);
-    Task<GetResult<User>> GetUserByEmailAsync(string email);
 }

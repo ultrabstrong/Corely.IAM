@@ -110,12 +110,4 @@ internal class UserProcessorTelemetryDecorator(
             () => _inner.GetUserByIdAsync(userId, hydrate),
             logResult: true
         );
-
-    public async Task<GetResult<User>> GetUserByEmailAsync(string email) =>
-        await _logger.ExecuteWithLoggingAsync(
-            nameof(UserProcessor),
-            email,
-            () => _inner.GetUserByEmailAsync(email),
-            logResult: true
-        );
 }

@@ -136,12 +136,6 @@ internal class RetrievalService(
         );
     }
 
-    public async Task<RetrieveSingleResult<User>> GetUserByEmailAsync(string email)
-    {
-        var result = await _userProcessor.GetUserByEmailAsync(email);
-        return new RetrieveSingleResult<User>(result.ResultCode, result.Message, result.Data, null);
-    }
-
     public Task<RetrieveListResult<Account>> ListAccountsAsync(
         FilterBuilder<Account>? filter = null,
         OrderBuilder<Account>? order = null,

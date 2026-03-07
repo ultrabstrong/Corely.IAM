@@ -104,14 +104,6 @@ internal class RetrievalServiceTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<RetrieveSingleResult<User>> GetUserByEmailAsync(string email) =>
-        await _logger.ExecuteWithLoggingAsync(
-            nameof(RetrievalService),
-            email,
-            () => _inner.GetUserByEmailAsync(email),
-            logResult: true
-        );
-
     public async Task<RetrieveListResult<Account>> ListAccountsAsync(
         FilterBuilder<Account>? filter = null,
         OrderBuilder<Account>? order = null,

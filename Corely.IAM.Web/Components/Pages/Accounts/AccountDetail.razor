@@ -118,7 +118,7 @@ else
             <div class="section-divider-label">
                 Users
                 <div class="d-flex gap-2 align-items-center">
-                    <input type="text" class="form-control form-control-sm" style="width: 260px;" @bind="_newUserInput" placeholder="User ID (GUID) or Email" />
+                    <input type="text" class="form-control form-control-sm" style="width: 260px;" @bind="_newUserInput" placeholder="User ID (GUID)" />
                     <button class="btn btn-primary btn-sm" @onclick="AddUserAsync" disabled="@_loading">Add User</button>
                 </div>
             </div>
@@ -295,38 +295,9 @@ else
 
     private async Task AddUserAsync()
     {
-        if (string.IsNullOrWhiteSpace(_newUserInput))
-        {
-            _message = "Enter a User ID or email.";
-            _messageType = AlertType.Danger;
-            return;
-        }
-
+        if (!TryParseGuid(_newUserInput, out var userId)) return;
         await ExecuteSafeAsync(async () =>
         {
-            Guid userId;
-            if (Guid.TryParse(_newUserInput, out userId))
-            {
-                // Input is a GUID — use directly
-            }
-            else if (_newUserInput.Contains('@'))
-            {
-                // Input looks like an email — resolve to user ID
-                var lookup = await RetrievalService.GetUserByEmailAsync(_newUserInput.Trim());
-                if (lookup.ResultCode != RetrieveResultCode.Success || lookup.Item == null)
-                {
-                    SetResultMessage(false, string.Empty, lookup.Message ?? "User not found for that email.");
-                    return;
-                }
-                userId = lookup.Item.Id;
-            }
-            else
-            {
-                _message = "Enter a valid GUID or email address.";
-                _messageType = AlertType.Danger;
-                return;
-            }
-
             var result = await RegistrationService.RegisterUserWithAccountAsync(new RegisterUserWithAccountRequest(userId));
             SetResultMessage(result.ResultCode == RegisterUserWithAccountResultCode.Success, "User added.", result.Message ?? "Failed.");
             _newUserInput = string.Empty;

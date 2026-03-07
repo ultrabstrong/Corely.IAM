@@ -289,6 +289,10 @@ internal class AccountProcessor(
         return new AddUserToAccountResult(AddUserToAccountResultCode.Success, string.Empty);
     }
 
+    public Task<AddUserToAccountResult> AddUserToAccountForInvitationAsync(
+        AddUserToAccountRequest request
+    ) => AddUserToAccountAsync(request);
+
     public async Task<RemoveUserFromAccountResult> RemoveUserFromAccountAsync(
         RemoveUserFromAccountRequest request
     )

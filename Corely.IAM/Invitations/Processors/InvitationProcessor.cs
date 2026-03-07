@@ -5,15 +5,15 @@ using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Accounts.Models;
+using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Invitations.Constants;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Invitations.Mappers;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Invitations.Processors;
@@ -21,7 +21,7 @@ namespace Corely.IAM.Invitations.Processors;
 internal class InvitationProcessor(
     IRepo<InvitationEntity> invitationRepo,
     IRepo<AccountEntity> accountRepo,
-    IReadonlyRepo<UserEntity> userRepo,
+    IAccountProcessor accountProcessor,
     IUserContextProvider userContextProvider,
     IValidationProvider validationProvider,
     TimeProvider timeProvider,
@@ -34,7 +34,9 @@ internal class InvitationProcessor(
     private readonly IRepo<AccountEntity> _accountRepo = accountRepo.ThrowIfNull(
         nameof(accountRepo)
     );
-    private readonly IReadonlyRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
+    private readonly IAccountProcessor _accountProcessor = accountProcessor.ThrowIfNull(
+        nameof(accountProcessor)
+    );
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
     );
@@ -166,12 +168,29 @@ internal class InvitationProcessor(
 
         var userId = _userContextProvider.GetUserContext()!.User.Id;
 
+        // Add user to account (handles already-in-account case)
+        var addResult = await _accountProcessor.AddUserToAccountForInvitationAsync(
+            new AddUserToAccountRequest(userId, invitationEntity.AccountId)
+        );
+
+        if (
+            addResult.ResultCode != AddUserToAccountResultCode.Success
+            && addResult.ResultCode != AddUserToAccountResultCode.UserAlreadyInAccountError
+        )
+        {
+            return new AcceptInvitationResult(
+                AcceptInvitationResultCode.AddToAccountError,
+                addResult.Message,
+                null
+            );
+        }
+
         // Mark this invitation as accepted
         invitationEntity.AcceptedByUserId = userId;
         invitationEntity.AcceptedUtc = utcNow;
         await _invitationRepo.UpdateAsync(invitationEntity);
 
-        // Bulk-burn sibling invitations for same account + email
+        // Burn sibling invitations for same account + email
         var siblingInvitations = await _invitationRepo.ListAsync(i =>
             i.AccountId == invitationEntity.AccountId
             && i.Email == invitationEntity.Email
@@ -186,55 +205,11 @@ internal class InvitationProcessor(
             await _invitationRepo.UpdateAsync(sibling);
         }
 
-        // Check if user is already in the account
-        var accountEntity = await _accountRepo.GetAsync(
-            a => a.Id == invitationEntity.AccountId,
-            include: q => q.Include(a => a.Users)
-        );
-
-        if (accountEntity == null)
-        {
-            return new AcceptInvitationResult(
-                AcceptInvitationResultCode.InvitationNotFoundError,
-                "Account no longer exists",
-                null
-            );
-        }
-
-        if (accountEntity.Users?.Any(u => u.Id == userId) == true)
-        {
-            _logger.LogInformation(
-                "User {UserId} already in account {AccountId}, invitation burned",
-                userId,
-                invitationEntity.AccountId
-            );
-            return new AcceptInvitationResult(
-                AcceptInvitationResultCode.Success,
-                string.Empty,
-                invitationEntity.AccountId
-            );
-        }
-
-        // Add user to account directly (bypasses AccountProcessor auth)
-        var userEntity = await _userRepo.GetAsync(u => u.Id == userId);
-        if (userEntity == null)
-        {
-            return new AcceptInvitationResult(
-                AcceptInvitationResultCode.InvitationNotFoundError,
-                "User not found",
-                null
-            );
-        }
-
-        accountEntity.Users ??= [];
-        accountEntity.Users.Add(userEntity);
-        await _accountRepo.UpdateAsync(accountEntity);
-
         _logger.LogInformation(
-            "User {UserId} added to account {AccountId} via invitation {InvitationId}",
+            "User {UserId} accepted invitation {InvitationId} for account {AccountId}",
             userId,
-            invitationEntity.AccountId,
-            invitationEntity.Id
+            invitationEntity.Id,
+            invitationEntity.AccountId
         );
 
         return new AcceptInvitationResult(

@@ -1,6 +1,7 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Invitations.Constants;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Invitations.Models;
@@ -24,7 +25,7 @@ public class InvitationProcessorTests
         _invitationProcessor = new InvitationProcessor(
             _serviceFactory.GetRequiredService<IRepo<InvitationEntity>>(),
             _serviceFactory.GetRequiredService<IRepo<AccountEntity>>(),
-            _serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>(),
+            _serviceFactory.GetRequiredService<IAccountProcessor>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<TimeProvider>(),

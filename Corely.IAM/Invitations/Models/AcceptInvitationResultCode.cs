@@ -7,5 +7,6 @@ public enum AcceptInvitationResultCode
     InvitationExpiredError,
     InvitationRevokedError,
     InvitationAlreadyAcceptedError,
+    AddToAccountError,
     UnauthorizedError,
 }

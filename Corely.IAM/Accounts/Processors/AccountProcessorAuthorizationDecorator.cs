@@ -72,6 +72,11 @@ internal class AccountProcessorAuthorizationDecorator(
                 $"Unauthorized to update account {request.AccountId}"
             );
 
+    // Auth bypass — invitation token was already validated by InvitationProcessor
+    public Task<AddUserToAccountResult> AddUserToAccountForInvitationAsync(
+        AddUserToAccountRequest request
+    ) => _inner.AddUserToAccountForInvitationAsync(request);
+
     public async Task<RemoveUserFromAccountResult> RemoveUserFromAccountAsync(
         RemoveUserFromAccountRequest request
     ) =>

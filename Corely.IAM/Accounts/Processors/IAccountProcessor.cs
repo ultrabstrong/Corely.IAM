@@ -11,6 +11,9 @@ internal interface IAccountProcessor
     Task<GetAccountResult> GetAccountAsync(Guid accountId);
     Task<ModifyResult> UpdateAccountAsync(UpdateAccountRequest request);
     Task<AddUserToAccountResult> AddUserToAccountAsync(AddUserToAccountRequest request);
+    Task<AddUserToAccountResult> AddUserToAccountForInvitationAsync(
+        AddUserToAccountRequest request
+    );
     Task<RemoveUserFromAccountResult> RemoveUserFromAccountAsync(
         RemoveUserFromAccountRequest request
     );

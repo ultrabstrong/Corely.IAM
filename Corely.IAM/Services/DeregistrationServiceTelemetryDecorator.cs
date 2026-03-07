@@ -65,6 +65,14 @@ internal class DeregistrationServiceTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<DeregisterUserFromAccountResult> LeaveAccountAsync(Guid accountId) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(DeregistrationService),
+            accountId,
+            () => _inner.LeaveAccountAsync(accountId),
+            logResult: true
+        );
+
     public async Task<DeregisterUsersFromGroupResult> DeregisterUsersFromGroupAsync(
         DeregisterUsersFromGroupRequest request
     ) =>

@@ -67,13 +67,55 @@ else
                 </PermissionView>
             </div>
             <table class="table table-sm table-hover mb-0">
-                <thead><tr><th>Email</th><th>Description</th><th>Status</th><th>Created</th><th>Expires</th><th class="table-actions">Actions</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th class="@GetInvSortClass(nameof(Invitation.Email))" @onclick="() => CycleInvSortAsync(nameof(Invitation.Email))">
+                            <span>Email <i class="bi @(GetInvSortIcon(nameof(Invitation.Email))) sort-icon"></i></span>
+                            <div class="th-search" @onclick:stopPropagation="true">
+                                <input type="text" class="form-control"
+                                       placeholder="Search..."
+                                       @bind="_invSearchEmail"
+                                       @bind:event="oninput"
+                                       @bind:after="OnInvSearchChangedAsync" />
+                            </div>
+                        </th>
+                        <th class="@GetInvSortClass(nameof(Invitation.Description))" @onclick="() => CycleInvSortAsync(nameof(Invitation.Description))">
+                            <span>Description <i class="bi @(GetInvSortIcon(nameof(Invitation.Description))) sort-icon"></i></span>
+                            <div class="th-search" @onclick:stopPropagation="true">
+                                <input type="text" class="form-control"
+                                       placeholder="Search..."
+                                       @bind="_invSearchDescription"
+                                       @bind:event="oninput"
+                                       @bind:after="OnInvSearchChangedAsync" />
+                            </div>
+                        </th>
+                        <th>
+                            <span>Status</span>
+                            <div class="th-search" @onclick:stopPropagation="true">
+                                <select class="form-select form-select-sm" @bind="_invStatusFilter" @bind:after="OnInvStatusChangedAsync">
+                                    <option value="">All</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Accepted">Accepted</option>
+                                    <option value="Revoked">Revoked</option>
+                                    <option value="Expired">Expired</option>
+                                </select>
+                            </div>
+                        </th>
+                        <th class="@GetInvSortClass(nameof(Invitation.CreatedUtc))" @onclick="() => CycleInvSortAsync(nameof(Invitation.CreatedUtc))">
+                            <span>Created <i class="bi @(GetInvSortIcon(nameof(Invitation.CreatedUtc))) sort-icon"></i></span>
+                        </th>
+                        <th class="@GetInvSortClass(nameof(Invitation.ExpiresUtc))" @onclick="() => CycleInvSortAsync(nameof(Invitation.ExpiresUtc))">
+                            <span>Expires <i class="bi @(GetInvSortIcon(nameof(Invitation.ExpiresUtc))) sort-icon"></i></span>
+                        </th>
+                        <th class="table-actions">Actions</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @if (_invitations.Count == 0)
                     {
                         <tr><td colspan="6" class="text-muted text-center">No invitations</td></tr>
                     }
-                    @foreach (var inv in PagedInvitations)
+                    @foreach (var inv in _invitations)
                     {
                         <tr>
                             <td>@inv.Email</td>
@@ -110,8 +152,8 @@ else
                     }
                 </tbody>
             </table>
-            <Pagination Skip="_invitationsSkip" Take="@RelationPageSize" TotalCount="@InvitationsTotalCount"
-                        OnPageChanged="newSkip => { _invitationsSkip = newSkip; StateHasChanged(); }" />
+            <Pagination Skip="_invitationsSkip" Take="@InvitationPageSize" TotalCount="@_invitationsTotalCount"
+                        OnPageChanged="OnInvitationPageChangedAsync" />
         </div>
 
         <div class="section-divider mb-4">
@@ -138,7 +180,9 @@ else
                             </td>
                             <td class="table-actions">
                                 <a href="@AppRoutes.Users/@user.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                                <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                    <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                                </PermissionView>
                             </td>
                         </tr>
                     }
@@ -215,18 +259,24 @@ else
     private FormModal _createInvitationModal = null!;
 
     private List<Invitation> _invitations = [];
+    private int _invitationsTotalCount;
+    private string _invSearchEmail = string.Empty;
+    private string _invSearchDescription = string.Empty;
+    private string _invStatusFilter = string.Empty;
+    private string? _invSortColumn;
+    private SortDirection? _invSortDirection;
     private string? _inviteEmail;
     private string? _inviteDescription;
     private int _inviteExpirySeconds = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
     private string? _createdToken;
+    private CancellationTokenSource? _invSearchCts;
 
     private int _usersSkip;
     private int _invitationsSkip;
     private const int RelationPageSize = 10;
+    private const int InvitationPageSize = 10;
     private List<ChildRef> PagedUsers => _users.Skip(_usersSkip).Take(RelationPageSize).ToList();
     private int UsersTotalCount => _users.Count;
-    private List<Invitation> PagedInvitations => _invitations.Skip(_invitationsSkip).Take(RelationPageSize).ToList();
-    private int InvitationsTotalCount => _invitations.Count;
 
     protected override async Task LoadCoreAsync()
     {
@@ -243,11 +293,116 @@ else
             return;
         }
 
-        var invResult = await RegistrationService.ListInvitationsAsync(Id, 0, 100);
+        await LoadInvitationsAsync();
+    }
+
+    private async Task LoadInvitationsAsync()
+    {
+        var filterBuilder = Filter.For<Invitation>();
+        var hasFilter = false;
+        if (!string.IsNullOrWhiteSpace(_invSearchEmail))
+        {
+            filterBuilder.Where(i => i.Email, StringFilter.Contains(_invSearchEmail.Trim()));
+            hasFilter = true;
+        }
+        if (!string.IsNullOrWhiteSpace(_invSearchDescription))
+        {
+            filterBuilder.Where(i => i.Description!, StringFilter.Contains(_invSearchDescription.Trim()));
+            hasFilter = true;
+        }
+        var filter = hasFilter ? filterBuilder : null;
+
+        OrderBuilder<Invitation>? order = null;
+        if (_invSortColumn != null && _invSortDirection != null)
+        {
+            order = _invSortColumn switch
+            {
+                nameof(Invitation.Email) => Order.For<Invitation>().By(i => i.Email, _invSortDirection.Value),
+                nameof(Invitation.Description) => Order.For<Invitation>().By(i => i.Description, _invSortDirection.Value),
+                nameof(Invitation.CreatedUtc) => Order.For<Invitation>().By(i => i.CreatedUtc, _invSortDirection.Value),
+                nameof(Invitation.ExpiresUtc) => Order.For<Invitation>().By(i => i.ExpiresUtc, _invSortDirection.Value),
+                _ => null
+            };
+        }
+
+        var status = string.IsNullOrWhiteSpace(_invStatusFilter) ? null : _invStatusFilter;
+
+        var invResult = await RegistrationService.ListInvitationsAsync(
+            Id,
+            filter: filter,
+            order: order,
+            skip: _invitationsSkip,
+            take: InvitationPageSize,
+            statusFilter: status
+        );
         if (invResult.ResultCode == RetrieveResultCode.Success && invResult.Data != null)
         {
             _invitations = invResult.Data.Items.ToList();
+            _invitationsTotalCount = invResult.Data.TotalCount;
         }
+    }
+
+    private async Task OnInvitationPageChangedAsync(int newSkip)
+    {
+        _invitationsSkip = newSkip;
+        await LoadInvitationsAsync();
+        StateHasChanged();
+    }
+
+    private async Task OnInvSearchChangedAsync()
+    {
+        _invSearchCts?.Cancel();
+        _invSearchCts?.Dispose();
+        _invSearchCts = new CancellationTokenSource();
+        var token = _invSearchCts.Token;
+
+        try
+        {
+            await Task.Delay(300, token);
+            _invitationsSkip = 0;
+            await LoadInvitationsAsync();
+            StateHasChanged();
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private async Task OnInvStatusChangedAsync()
+    {
+        _invitationsSkip = 0;
+        await LoadInvitationsAsync();
+        StateHasChanged();
+    }
+
+    private async Task CycleInvSortAsync(string column)
+    {
+        if (_invSortColumn != column)
+        {
+            _invSortColumn = column;
+            _invSortDirection = SortDirection.Ascending;
+        }
+        else if (_invSortDirection == SortDirection.Ascending)
+        {
+            _invSortDirection = SortDirection.Descending;
+        }
+        else
+        {
+            _invSortColumn = null;
+            _invSortDirection = null;
+        }
+        _invitationsSkip = 0;
+        await LoadInvitationsAsync();
+        StateHasChanged();
+    }
+
+    private string GetInvSortIcon(string column)
+    {
+        if (_invSortColumn != column) return "bi-chevron-expand";
+        return _invSortDirection == SortDirection.Ascending ? "bi-chevron-up" : "bi-chevron-down";
+    }
+
+    private string GetInvSortClass(string column)
+    {
+        return _invSortColumn == column ? "sortable active" : "sortable";
     }
 
     private void StartEdit()
@@ -311,7 +466,14 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(_confirmItemId));
+            var removedUserId = _confirmItemId;
+            var result = await DeregistrationService.DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(removedUserId));
+            if (result.ResultCode == DeregisterUserFromAccountResultCode.Success
+                && removedUserId == UserContext?.User.Id)
+            {
+                NavigationManager.NavigateTo(AppRoutes.SelectAccount, forceLoad: true);
+                return;
+            }
             SetResultMessage(result.ResultCode == DeregisterUserFromAccountResultCode.Success, "User removed.", result.Message ?? "Failed.");
             await ReloadAsync();
         });

@@ -1,4 +1,6 @@
 using Corely.Common.Extensions;
+using Corely.Common.Filtering;
+using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
@@ -56,15 +58,18 @@ internal class InvitationProcessorAuthorizationDecorator(
 
     public async Task<ListResult<Invitation>> ListInvitationsAsync(
         Guid accountId,
+        FilterBuilder<Invitation>? filter,
+        OrderBuilder<Invitation>? order,
         int skip,
-        int take
+        int take,
+        string? statusFilter = null
     ) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
             accountId
         )
-            ? await _inner.ListInvitationsAsync(accountId, skip, take)
+            ? await _inner.ListInvitationsAsync(accountId, filter, order, skip, take, statusFilter)
             : new ListResult<Invitation>(
                 RetrieveResultCode.UnauthorizedError,
                 $"Unauthorized to list invitations for account {accountId}",

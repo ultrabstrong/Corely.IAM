@@ -49,6 +49,33 @@ else
             <button class="btn btn-outline-danger btn-sm" @onclick="() => _deleteModal.Show()" disabled="@_loading">Delete Account</button>
         </div>
     }
+
+    @if (UserContext?.AvailableAccounts.Count > 0)
+    {
+        <div class="section-divider mb-4 mt-4">
+            <div class="section-divider-label">Accounts</div>
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+                <tbody>
+                    @foreach (var account in PagedAccounts)
+                    {
+                        <tr>
+                            <td>
+                                @account.AccountName
+                                <br /><small class="guid-text">@account.Id</small>
+                            </td>
+                            <td class="table-actions">
+                                <a href="@AppRoutes.Accounts/@account.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
+                                <button class="icon-btn text-danger" @onclick="() => ConfirmLeaveAccount(account.Id, account.AccountName)" title="Leave"><i class="bi bi-box-arrow-right"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <Pagination Skip="_accountsSkip" Take="@AccountPageSize" TotalCount="@AccountsTotalCount"
+                        OnPageChanged="newSkip => { _accountsSkip = newSkip; StateHasChanged(); }" />
+        </div>
+    }
 }
 
 <ConfirmModal @ref="_deleteModal"
@@ -56,6 +83,11 @@ else
               Message="@($"Permanently delete your account '{_username}'? This cannot be undone.")"
               ConfirmText="Delete"
               OnConfirm="DeleteAsync" />
+<ConfirmModal @ref="_leaveAccountModal"
+              Title="Leave Account"
+              Message="@_leaveAccountMessage"
+              ConfirmText="Leave"
+              OnConfirm="LeaveAccountAsync" />
 
 @code {
     private string? _username;
@@ -64,6 +96,13 @@ else
     private string? _originalEmail;
     private bool _isEditing;
     private ConfirmModal _deleteModal = null!;
+    private ConfirmModal _leaveAccountModal = null!;
+    private Guid _leaveAccountId;
+    private string _leaveAccountMessage = "";
+    private int _accountsSkip;
+    private const int AccountPageSize = 10;
+    private List<Account> PagedAccounts => (UserContext?.AvailableAccounts ?? []).Skip(_accountsSkip).Take(AccountPageSize).ToList();
+    private int AccountsTotalCount => UserContext?.AvailableAccounts.Count ?? 0;
 
     protected override async Task LoadCoreAsync()
     {
@@ -118,6 +157,27 @@ else
                 return;
             }
             SetResultMessage(false, string.Empty, result.Message);
+        });
+    }
+
+    private void ConfirmLeaveAccount(Guid accountId, string name)
+    {
+        _leaveAccountId = accountId;
+        _leaveAccountMessage = $"Leave account '{name}'? You will lose access to all resources in this account.";
+        _leaveAccountModal.Show();
+    }
+
+    private async Task LeaveAccountAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.LeaveAccountAsync(_leaveAccountId);
+            if (result.ResultCode == DeregisterUserFromAccountResultCode.Success)
+            {
+                NavigationManager.NavigateTo(AppRoutes.SelectAccount, forceLoad: true);
+                return;
+            }
+            SetResultMessage(false, string.Empty, result.Message ?? "Failed.");
         });
     }
 }

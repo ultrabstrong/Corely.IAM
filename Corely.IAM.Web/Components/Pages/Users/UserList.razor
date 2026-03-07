@@ -65,7 +65,9 @@ else
                         <td>@user.Email</td>
                         <td class="table-actions">
                             <a href="@AppRoutes.Users/@user.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                            <button class="icon-btn text-danger" @onclick="() => ConfirmRemove(user.Id, user.Username)" title="Remove"><i class="bi bi-person-dash"></i></button>
+                            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE">
+                                <button class="icon-btn text-danger" @onclick="() => ConfirmRemove(user.Id, user.Username)" title="Remove"><i class="bi bi-person-dash"></i></button>
+                            </PermissionView>
                         </td>
                     </tr>
                 }
@@ -121,7 +123,14 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(_confirmItemId));
+            var removedUserId = _confirmItemId;
+            var result = await DeregistrationService.DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(removedUserId));
+            if (result.ResultCode == DeregisterUserFromAccountResultCode.Success
+                && removedUserId == UserContext?.User.Id)
+            {
+                NavigationManager.NavigateTo(AppRoutes.SelectAccount, forceLoad: true);
+                return;
+            }
             SetResultMessage(result.ResultCode == DeregisterUserFromAccountResultCode.Success, "Removed.", result.Message ?? "Failed.");
             await ReloadAsync();
         });

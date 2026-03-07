@@ -1,5 +1,8 @@
+using System.Linq.Expressions;
 using System.Security.Cryptography;
 using Corely.Common.Extensions;
+using Corely.Common.Filtering;
+using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Invitations.Constants;
@@ -44,7 +47,20 @@ internal class InvitationProcessor(
     public async Task<CreateInvitationResult> CreateInvitationAsync(CreateInvitationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        _validationProvider.ThrowIfInvalid(request);
+
+        try
+        {
+            _validationProvider.ThrowIfInvalid(request);
+        }
+        catch (IAM.Validators.ValidationException ex)
+        {
+            return new CreateInvitationResult(
+                CreateInvitationResultCode.ValidationError,
+                ex.Message,
+                null,
+                null
+            );
+        }
 
         var accountEntity = await _accountRepo.GetAsync(a => a.Id == request.AccountId);
         if (accountEntity == null)
@@ -257,15 +273,37 @@ internal class InvitationProcessor(
 
     public async Task<ListResult<Invitation>> ListInvitationsAsync(
         Guid accountId,
+        FilterBuilder<Invitation>? filter,
+        OrderBuilder<Invitation>? order,
         int skip,
-        int take
+        int take,
+        string? statusFilter = null
     )
     {
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+
+        Expression<Func<InvitationEntity, bool>> scopePredicate = statusFilter switch
+        {
+            "Pending" => i =>
+                i.AccountId == accountId
+                && i.AcceptedByUserId == null
+                && i.RevokedUtc == null
+                && i.ExpiresUtc >= utcNow,
+            "Accepted" => i => i.AccountId == accountId && i.AcceptedByUserId != null,
+            "Revoked" => i => i.AccountId == accountId && i.RevokedUtc != null,
+            "Expired" => i =>
+                i.AccountId == accountId
+                && i.AcceptedByUserId == null
+                && i.RevokedUtc == null
+                && i.ExpiresUtc < utcNow,
+            _ => i => i.AccountId == accountId,
+        };
+
         return await ListQueryHelper.ExecuteListAsync(
             _invitationRepo,
-            i => i.AccountId == accountId,
-            filter: null,
-            order: null,
+            scopePredicate,
+            filter,
+            order,
             skip,
             take,
             e => e.ToModel()

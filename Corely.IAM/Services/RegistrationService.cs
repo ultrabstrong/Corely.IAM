@@ -1,4 +1,6 @@
 ﻿using Corely.Common.Extensions;
+using Corely.Common.Filtering;
+using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.UnitOfWork;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Models.Extensions;
@@ -569,11 +571,21 @@ internal class RegistrationService(
 
     public async Task<RetrieveListResult<Invitation>> ListInvitationsAsync(
         Guid accountId,
-        int skip,
-        int take
+        FilterBuilder<Invitation>? filter = null,
+        OrderBuilder<Invitation>? order = null,
+        int skip = 0,
+        int take = 25,
+        string? statusFilter = null
     )
     {
-        var result = await _invitationProcessor.ListInvitationsAsync(accountId, skip, take);
+        var result = await _invitationProcessor.ListInvitationsAsync(
+            accountId,
+            filter,
+            order,
+            skip,
+            take,
+            statusFilter
+        );
         return new RetrieveListResult<Invitation>(result.ResultCode, result.Message, result.Data);
     }
 }

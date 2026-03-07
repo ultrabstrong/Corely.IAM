@@ -47,8 +47,8 @@ internal partial class Invitation : CommandBase
 
             var result = await _registrationService.ListInvitationsAsync(
                 Guid.Parse(AccountId),
-                Skip,
-                Take
+                skip: Skip,
+                take: Take
             );
 
             Console.WriteLine(JsonSerializer.Serialize(result, _jsonOptions));

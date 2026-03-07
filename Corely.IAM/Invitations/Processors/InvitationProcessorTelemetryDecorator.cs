@@ -1,4 +1,6 @@
 using Corely.Common.Extensions;
+using Corely.Common.Filtering;
+using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Extensions;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
@@ -46,13 +48,16 @@ internal class InvitationProcessorTelemetryDecorator(
 
     public async Task<ListResult<Invitation>> ListInvitationsAsync(
         Guid accountId,
+        FilterBuilder<Invitation>? filter,
+        OrderBuilder<Invitation>? order,
         int skip,
-        int take
+        int take,
+        string? statusFilter = null
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(InvitationProcessor),
             accountId,
-            () => _inner.ListInvitationsAsync(accountId, skip, take),
+            () => _inner.ListInvitationsAsync(accountId, filter, order, skip, take, statusFilter),
             logResult: true
         );
 }

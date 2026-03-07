@@ -50,15 +50,12 @@ internal class InvitationProcessor(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        try
-        {
-            _validationProvider.ThrowIfInvalid(request);
-        }
-        catch (IAM.Validators.ValidationException ex)
+        var validation = _validationProvider.ValidateAndLog(request);
+        if (!validation.IsValid)
         {
             return new CreateInvitationResult(
                 CreateInvitationResultCode.ValidationError,
-                ex.Message,
+                validation.Message,
                 null,
                 null
             );

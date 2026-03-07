@@ -70,15 +70,15 @@
 
     private RenderFragment RenderContent() =>
         @<div>
-            <div class="d-flex gap-2 mb-3">
+            <div class="d-flex align-items-center gap-2 mb-2">
                 <span class="permission-badge @(_agg.Create ? "active" : "inactive")">C</span>
                 <span class="permission-badge @(_agg.Read ? "active" : "inactive")">R</span>
                 <span class="permission-badge @(_agg.Update ? "active" : "inactive")">U</span>
                 <span class="permission-badge @(_agg.Delete ? "active" : "inactive")">D</span>
                 <span class="permission-badge @(_agg.Execute ? "active" : "inactive")">X</span>
+                <small class="text-muted ms-2">Granted via:</small>
             </div>
             <div class="ep-grants">
-                <small class="text-muted d-block mb-1">Granted via:</small>
                 @foreach (var role in _derivations)
                 {
                     <div class="ep-grant-row">

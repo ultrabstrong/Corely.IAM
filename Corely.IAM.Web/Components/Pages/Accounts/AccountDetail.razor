@@ -326,12 +326,7 @@ else
         }
 
         var invResult = await RegistrationService.ListInvitationsAsync(
-            Id,
-            filter: filter,
-            order: order,
-            skip: _invitationsSkip,
-            take: InvitationPageSize,
-            statusFilter: _invStatusFilter
+            new ListInvitationsRequest(Id, filter, order, _invitationsSkip, InvitationPageSize, _invStatusFilter)
         );
         if (invResult.ResultCode == RetrieveResultCode.Success && invResult.Data != null)
         {

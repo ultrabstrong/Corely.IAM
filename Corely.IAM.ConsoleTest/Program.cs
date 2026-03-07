@@ -312,9 +312,7 @@ internal class Program
 
             // List invitations for the account (shows accepted status)
             var listInvitationsResult = await registrationService.ListInvitationsAsync(
-                registerAccountResult.CreatedAccountId,
-                skip: 0,
-                take: 10
+                new ListInvitationsRequest(registerAccountResult.CreatedAccountId)
             );
             Console.WriteLine(
                 $"List Invitations (after accept): {JsonSerializer.Serialize(listInvitationsResult)}"
@@ -343,9 +341,7 @@ internal class Program
 
             // List invitations again (shows one accepted, one revoked)
             listInvitationsResult = await registrationService.ListInvitationsAsync(
-                registerAccountResult.CreatedAccountId,
-                skip: 0,
-                take: 10
+                new ListInvitationsRequest(registerAccountResult.CreatedAccountId)
             );
             Console.WriteLine(
                 $"List Invitations (final): {JsonSerializer.Serialize(listInvitationsResult)}"

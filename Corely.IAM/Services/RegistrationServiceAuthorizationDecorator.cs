@@ -151,15 +151,10 @@ internal class RegistrationServiceAuthorizationDecorator(
             );
 
     public async Task<RetrieveListResult<Invitation>> ListInvitationsAsync(
-        Guid accountId,
-        FilterBuilder<Invitation>? filter = null,
-        OrderBuilder<Invitation>? order = null,
-        int skip = 0,
-        int take = 25,
-        InvitationStatus? statusFilter = null
+        ListInvitationsRequest request
     ) =>
         _authorizationProvider.HasAccountContext()
-            ? await _inner.ListInvitationsAsync(accountId, filter, order, skip, take, statusFilter)
+            ? await _inner.ListInvitationsAsync(request)
             : new RetrieveListResult<Invitation>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list invitations",

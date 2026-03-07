@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
+using Corely.IAM.Invitations.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 
@@ -46,9 +47,7 @@ internal partial class Invitation : CommandBase
                 return;
 
             var result = await _registrationService.ListInvitationsAsync(
-                Guid.Parse(AccountId),
-                skip: Skip,
-                take: Take
+                new ListInvitationsRequest(Guid.Parse(AccountId), Skip: Skip, Take: Take)
             );
 
             Console.WriteLine(JsonSerializer.Serialize(result, _jsonOptions));

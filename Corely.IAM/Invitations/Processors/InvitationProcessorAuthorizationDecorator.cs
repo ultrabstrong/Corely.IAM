@@ -57,22 +57,17 @@ internal class InvitationProcessorAuthorizationDecorator(
     }
 
     public async Task<ListResult<Invitation>> ListInvitationsAsync(
-        Guid accountId,
-        FilterBuilder<Invitation>? filter,
-        OrderBuilder<Invitation>? order,
-        int skip,
-        int take,
-        InvitationStatus? statusFilter = null
+        ListInvitationsRequest request
     ) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
-            accountId
+            request.AccountId
         )
-            ? await _inner.ListInvitationsAsync(accountId, filter, order, skip, take, statusFilter)
+            ? await _inner.ListInvitationsAsync(request)
             : new ListResult<Invitation>(
                 RetrieveResultCode.UnauthorizedError,
-                $"Unauthorized to list invitations for account {accountId}",
+                $"Unauthorized to list invitations for account {request.AccountId}",
                 null
             );
 }

@@ -570,22 +570,10 @@ internal class RegistrationService(
         _invitationProcessor.RevokeInvitationAsync(invitationId);
 
     public async Task<RetrieveListResult<Invitation>> ListInvitationsAsync(
-        Guid accountId,
-        FilterBuilder<Invitation>? filter = null,
-        OrderBuilder<Invitation>? order = null,
-        int skip = 0,
-        int take = 25,
-        InvitationStatus? statusFilter = null
+        ListInvitationsRequest request
     )
     {
-        var result = await _invitationProcessor.ListInvitationsAsync(
-            accountId,
-            filter,
-            order,
-            skip,
-            take,
-            statusFilter
-        );
+        var result = await _invitationProcessor.ListInvitationsAsync(request);
         return new RetrieveListResult<Invitation>(result.ResultCode, result.Message, result.Data);
     }
 }

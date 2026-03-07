@@ -47,17 +47,12 @@ internal class InvitationProcessorTelemetryDecorator(
         );
 
     public async Task<ListResult<Invitation>> ListInvitationsAsync(
-        Guid accountId,
-        FilterBuilder<Invitation>? filter,
-        OrderBuilder<Invitation>? order,
-        int skip,
-        int take,
-        InvitationStatus? statusFilter = null
+        ListInvitationsRequest request
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(InvitationProcessor),
-            accountId,
-            () => _inner.ListInvitationsAsync(accountId, filter, order, skip, take, statusFilter),
+            request,
+            () => _inner.ListInvitationsAsync(request),
             logResult: true
         );
 }

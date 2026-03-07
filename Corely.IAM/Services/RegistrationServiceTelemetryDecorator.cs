@@ -139,17 +139,12 @@ internal class RegistrationServiceTelemetryDecorator(
         );
 
     public async Task<RetrieveListResult<Invitation>> ListInvitationsAsync(
-        Guid accountId,
-        FilterBuilder<Invitation>? filter = null,
-        OrderBuilder<Invitation>? order = null,
-        int skip = 0,
-        int take = 25,
-        InvitationStatus? statusFilter = null
+        ListInvitationsRequest request
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),
-            accountId,
-            () => _inner.ListInvitationsAsync(accountId, filter, order, skip, take, statusFilter),
+            request,
+            () => _inner.ListInvitationsAsync(request),
             logResult: true
         );
 }

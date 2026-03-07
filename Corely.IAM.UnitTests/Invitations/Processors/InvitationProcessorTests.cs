@@ -434,7 +434,9 @@ public class InvitationProcessorTests
             )
         );
 
-        var result = await _invitationProcessor.ListInvitationsAsync(account.Id, null, null, 0, 10);
+        var result = await _invitationProcessor.ListInvitationsAsync(
+            new ListInvitationsRequest(account.Id, Skip: 0, Take: 10)
+        );
 
         Assert.NotNull(result.Data);
         Assert.Equal(2, result.Data.Items.Count);

@@ -243,42 +243,38 @@ internal class InvitationProcessor(
         return new RevokeInvitationResult(RevokeInvitationResultCode.Success, string.Empty);
     }
 
-    public async Task<ListResult<Invitation>> ListInvitationsAsync(
-        Guid accountId,
-        FilterBuilder<Invitation>? filter,
-        OrderBuilder<Invitation>? order,
-        int skip,
-        int take,
-        InvitationStatus? statusFilter = null
-    )
+    public async Task<ListResult<Invitation>> ListInvitationsAsync(ListInvitationsRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
-        Expression<Func<InvitationEntity, bool>> scopePredicate = statusFilter switch
+        Expression<Func<InvitationEntity, bool>> scopePredicate = request.StatusFilter switch
         {
             InvitationStatus.Pending => i =>
-                i.AccountId == accountId
+                i.AccountId == request.AccountId
                 && i.AcceptedByUserId == null
                 && i.RevokedUtc == null
                 && i.ExpiresUtc >= utcNow,
             InvitationStatus.Accepted => i =>
-                i.AccountId == accountId && i.AcceptedByUserId != null,
-            InvitationStatus.Revoked => i => i.AccountId == accountId && i.RevokedUtc != null,
+                i.AccountId == request.AccountId && i.AcceptedByUserId != null,
+            InvitationStatus.Revoked => i =>
+                i.AccountId == request.AccountId && i.RevokedUtc != null,
             InvitationStatus.Expired => i =>
-                i.AccountId == accountId
+                i.AccountId == request.AccountId
                 && i.AcceptedByUserId == null
                 && i.RevokedUtc == null
                 && i.ExpiresUtc < utcNow,
-            _ => i => i.AccountId == accountId,
+            _ => i => i.AccountId == request.AccountId,
         };
 
         return await ListQueryHelper.ExecuteListAsync(
             _invitationRepo,
             scopePredicate,
-            filter,
-            order,
-            skip,
-            take,
+            request.Filter,
+            request.Order,
+            request.Skip,
+            request.Take,
             e => e.ToModel()
         );
     }

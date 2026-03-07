@@ -34,27 +34,28 @@ internal sealed class FluentValidationProvider(
         return corelyResult;
     }
 
+    public ValidationResult ValidateAndLog<T>(T model)
+    {
+        var result = Validate(model);
+        if (!result.IsValid)
+        {
+            var state = new Dictionary<string, object?> { { "@ValidationResult", result } };
+            using var scope = _logger.BeginScope(state);
+            _logger.LogWarning(
+                "Validation failed for {ModelType}: {Message}",
+                typeof(T).Name,
+                result.Message
+            );
+        }
+        return result;
+    }
+
     public void ThrowIfInvalid<T>(T model)
     {
-        try
+        var result = ValidateAndLog(model);
+        if (!result.IsValid)
         {
-            Validate(model).ThrowIfInvalid();
-        }
-        catch (Exception ex)
-        {
-            var state = new Dictionary<string, object?>();
-
-            if (
-                ex is ValidationException validationException
-                && validationException.ValidationResult != null
-            )
-            {
-                state.Add("@ValidationResult", validationException.ValidationResult);
-            }
-
-            using var scope = _logger.BeginScope(state);
-            _logger.LogWarning(ex, "Validation failed for {ModelType}", model?.GetType()?.Name);
-            throw;
+            throw new ValidationException(result.Message) { ValidationResult = result };
         }
     }
 }

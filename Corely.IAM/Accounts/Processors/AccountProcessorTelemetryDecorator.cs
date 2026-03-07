@@ -60,6 +60,16 @@ internal class AccountProcessorTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<AddUserToAccountResult> AddUserToAccountForInvitationAsync(
+        AddUserToAccountRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(AccountProcessor),
+            request,
+            () => _inner.AddUserToAccountForInvitationAsync(request),
+            logResult: true
+        );
+
     public async Task<RemoveUserFromAccountResult> RemoveUserFromAccountAsync(
         RemoveUserFromAccountRequest request
     ) =>

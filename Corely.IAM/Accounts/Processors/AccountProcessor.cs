@@ -5,6 +5,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions;
 using Corely.IAM.Security.Providers;
@@ -20,10 +21,12 @@ namespace Corely.IAM.Accounts.Processors;
 internal class AccountProcessor(
     IRepo<AccountEntity> accountRepo,
     IReadonlyRepo<UserEntity> userRepo,
+    IRepo<InvitationEntity> invitationRepo,
     IUserOwnershipProcessor userOwnershipProcessor,
     ISecurityProvider securityService,
     IUserContextProvider userContextProvider,
     IValidationProvider validationProvider,
+    TimeProvider timeProvider,
     ILogger<AccountProcessor> logger
 ) : IAccountProcessor
 {
@@ -31,6 +34,9 @@ internal class AccountProcessor(
         nameof(accountRepo)
     );
     private readonly IReadonlyRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
+    private readonly IRepo<InvitationEntity> _invitationRepo = invitationRepo.ThrowIfNull(
+        nameof(invitationRepo)
+    );
     private readonly IUserOwnershipProcessor _userOwnershipProcessor =
         userOwnershipProcessor.ThrowIfNull(nameof(userOwnershipProcessor));
     private readonly ISecurityProvider _securityService = securityService.ThrowIfNull(
@@ -42,6 +48,7 @@ internal class AccountProcessor(
     private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
         nameof(validationProvider)
     );
+    private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
     private readonly ILogger<AccountProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<CreateAccountResult> CreateAccountAsync(CreateAccountRequest request)
@@ -282,6 +289,10 @@ internal class AccountProcessor(
         return new AddUserToAccountResult(AddUserToAccountResultCode.Success, string.Empty);
     }
 
+    public Task<AddUserToAccountResult> AddUserToAccountForInvitationAsync(
+        AddUserToAccountRequest request
+    ) => AddUserToAccountAsync(request);
+
     public async Task<RemoveUserFromAccountResult> RemoveUserFromAccountAsync(
         RemoveUserFromAccountRequest request
     )
@@ -344,6 +355,29 @@ internal class AccountProcessor(
         var userToRemove = accountEntity.Users!.First(u => u.Id == request.UserId);
         accountEntity.Users!.Remove(userToRemove);
         await _accountRepo.UpdateAsync(accountEntity);
+
+        // Bulk-revoke pending invitations created by the removed user
+        var pendingInvitations = await _invitationRepo.ListAsync(i =>
+            i.AccountId == request.AccountId
+            && i.CreatedByUserId == request.UserId
+            && i.AcceptedByUserId == null
+            && i.RevokedUtc == null
+        );
+        if (pendingInvitations.Count > 0)
+        {
+            var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+            foreach (var invitation in pendingInvitations)
+            {
+                invitation.RevokedUtc = utcNow;
+                await _invitationRepo.UpdateAsync(invitation);
+            }
+            _logger.LogInformation(
+                "Revoked {Count} pending invitations created by user {UserId} for account {AccountId}",
+                pendingInvitations.Count,
+                request.UserId,
+                request.AccountId
+            );
+        }
 
         _logger.LogInformation(
             "User with Id {UserId} removed from account {AccountId}",

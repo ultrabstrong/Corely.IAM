@@ -1,5 +1,8 @@
 using Corely.Common.Extensions;
+using Corely.Common.Filtering;
+using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Groups.Models;
+using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
@@ -114,5 +117,47 @@ internal class RegistrationServiceAuthorizationDecorator(
                 "Unauthorized to assign permissions to role",
                 0,
                 []
+            );
+
+    public async Task<CreateInvitationResult> CreateInvitationAsync(
+        CreateInvitationRequest request
+    ) =>
+        _authorizationProvider.HasAccountContext()
+            ? await _inner.CreateInvitationAsync(request)
+            : new CreateInvitationResult(
+                CreateInvitationResultCode.UnauthorizedError,
+                "Unauthorized to create invitation",
+                null,
+                null
+            );
+
+    public async Task<AcceptInvitationResult> AcceptInvitationAsync(
+        AcceptInvitationRequest request
+    ) =>
+        _authorizationProvider.HasUserContext()
+            ? await _inner.AcceptInvitationAsync(request)
+            : new AcceptInvitationResult(
+                AcceptInvitationResultCode.UnauthorizedError,
+                "Unauthorized to accept invitation",
+                null
+            );
+
+    public async Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId) =>
+        _authorizationProvider.HasAccountContext()
+            ? await _inner.RevokeInvitationAsync(invitationId)
+            : new RevokeInvitationResult(
+                RevokeInvitationResultCode.UnauthorizedError,
+                "Unauthorized to revoke invitation"
+            );
+
+    public async Task<RetrieveListResult<Invitation>> ListInvitationsAsync(
+        ListInvitationsRequest request
+    ) =>
+        _authorizationProvider.HasAccountContext()
+            ? await _inner.ListInvitationsAsync(request)
+            : new RetrieveListResult<Invitation>(
+                RetrieveResultCode.UnauthorizedError,
+                "Unauthorized to list invitations",
+                null
             );
 }

@@ -2,6 +2,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
@@ -34,10 +35,12 @@ public class AccountProcessorUpdateTests
         _accountProcessor = new AccountProcessor(
             _serviceFactory.GetRequiredService<IRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>(),
+            _serviceFactory.GetRequiredService<IRepo<InvitationEntity>>(),
             _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
+            _serviceFactory.GetRequiredService<TimeProvider>(),
             _serviceFactory.GetRequiredService<ILogger<AccountProcessor>>()
         );
     }

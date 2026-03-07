@@ -61,9 +61,106 @@ else
 
         <div class="section-divider mb-4">
             <div class="section-divider-label">
+                Invitations
+                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-primary btn-sm" @onclick="ShowCreateInvitation" disabled="@_loading">Create Invitation</button>
+                </PermissionView>
+            </div>
+            <table class="table table-sm table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="@GetInvSortClass(nameof(Invitation.Email))" @onclick="() => CycleInvSortAsync(nameof(Invitation.Email))">
+                            <span>Email <i class="bi @(GetInvSortIcon(nameof(Invitation.Email))) sort-icon"></i></span>
+                            <div class="th-search" @onclick:stopPropagation="true">
+                                <input type="text" class="form-control"
+                                       placeholder="Search..."
+                                       @bind="_invSearchEmail"
+                                       @bind:event="oninput"
+                                       @bind:after="OnInvSearchChangedAsync" />
+                            </div>
+                        </th>
+                        <th class="@GetInvSortClass(nameof(Invitation.Description))" @onclick="() => CycleInvSortAsync(nameof(Invitation.Description))">
+                            <span>Description <i class="bi @(GetInvSortIcon(nameof(Invitation.Description))) sort-icon"></i></span>
+                            <div class="th-search" @onclick:stopPropagation="true">
+                                <input type="text" class="form-control"
+                                       placeholder="Search..."
+                                       @bind="_invSearchDescription"
+                                       @bind:event="oninput"
+                                       @bind:after="OnInvSearchChangedAsync" />
+                            </div>
+                        </th>
+                        <th>
+                            <span>Status</span>
+                            <div class="th-search" @onclick:stopPropagation="true">
+                                <select class="form-select form-select-sm" @bind="_invStatusFilter" @bind:after="OnInvStatusChangedAsync">
+                                    <option value="">All</option>
+                                    @foreach (var status in Enum.GetValues<InvitationStatus>())
+                                    {
+                                        <option value="@status">@status</option>
+                                    }
+                                </select>
+                            </div>
+                        </th>
+                        <th class="@GetInvSortClass(nameof(Invitation.CreatedUtc))" @onclick="() => CycleInvSortAsync(nameof(Invitation.CreatedUtc))">
+                            <span>Created <i class="bi @(GetInvSortIcon(nameof(Invitation.CreatedUtc))) sort-icon"></i></span>
+                        </th>
+                        <th class="@GetInvSortClass(nameof(Invitation.ExpiresUtc))" @onclick="() => CycleInvSortAsync(nameof(Invitation.ExpiresUtc))">
+                            <span>Expires <i class="bi @(GetInvSortIcon(nameof(Invitation.ExpiresUtc))) sort-icon"></i></span>
+                        </th>
+                        <th class="table-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_invitations.Count == 0)
+                    {
+                        <tr><td colspan="6" class="text-muted text-center">No invitations</td></tr>
+                    }
+                    @foreach (var inv in _invitations)
+                    {
+                        <tr>
+                            <td>@inv.Email</td>
+                            <td>@(inv.Description ?? "")</td>
+                            <td>
+                                @if (inv.IsAccepted)
+                                {
+                                    <span class="badge bg-info">Accepted</span>
+                                }
+                                else if (inv.IsRevoked)
+                                {
+                                    <span class="badge bg-danger">Revoked</span>
+                                }
+                                else if (inv.IsExpired(DateTime.UtcNow))
+                                {
+                                    <span class="badge bg-secondary">Expired</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Pending</span>
+                                }
+                            </td>
+                            <td><small>@inv.CreatedUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
+                            <td><small>@inv.ExpiresUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
+                            <td class="table-actions">
+                                @if (inv.IsPending(DateTime.UtcNow))
+                                {
+                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                        <button class="icon-btn text-danger" @onclick="() => ConfirmRevokeInvitation(inv.Id, inv.Email)" title="Revoke"><i class="bi bi-x-circle"></i></button>
+                                    </PermissionView>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <Pagination Skip="_invitationsSkip" Take="@InvitationPageSize" TotalCount="@_invitationsTotalCount"
+                        OnPageChanged="OnInvitationPageChangedAsync" />
+        </div>
+
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
                 Users
                 <div class="d-flex gap-2 align-items-center">
-                    <input type="text" class="form-control form-control-sm" style="width: 260px;" @bind="_newUserId" placeholder="User ID (GUID)" />
+                    <input type="text" class="form-control form-control-sm" style="width: 260px;" @bind="_newUserInput" placeholder="User ID (GUID)" />
                     <button class="btn btn-primary btn-sm" @onclick="AddUserAsync" disabled="@_loading">Add User</button>
                 </div>
             </div>
@@ -83,7 +180,9 @@ else
                             </td>
                             <td class="table-actions">
                                 <a href="@AppRoutes.Users/@user.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                                <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                    <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                                </PermissionView>
                             </td>
                         </tr>
                     }
@@ -100,19 +199,82 @@ else
 
 <ConfirmModal @ref="_removeUserModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />
 <ConfirmModal @ref="_deleteModal" Title="Delete Account" Message="@($"Permanently delete account '{_accountName}'? This cannot be undone.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
+<ConfirmModal @ref="_revokeInvitationModal" Title="Revoke Invitation" Message="@_confirmMessage" ConfirmText="Revoke" OnConfirm="RevokeInvitationAsync" />
+
+<FormModal @ref="_createInvitationModal" Title="Create Invitation" ConfirmText="Create" OnConfirm="CreateInvitationAsync">
+    <div class="mb-3">
+        <label class="form-label">Email <span class="text-danger">*</span></label>
+        <input type="email" class="form-control form-control-sm" @bind="_inviteEmail" placeholder="recipient@example.com" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Description</label>
+        <input type="text" class="form-control form-control-sm" @bind="_inviteDescription" placeholder="Optional note" maxlength="200" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Expires In</label>
+        <select class="form-select form-select-sm" @bind="_inviteExpirySeconds">
+            <option value="3600">1 hour</option>
+            <option value="86400">1 day</option>
+            <option value="604800">7 days</option>
+            <option value="2592000">30 days</option>
+        </select>
+    </div>
+</FormModal>
+
+@if (_createdToken != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _createdToken = null">
+        <div class="modal-dialog" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Invitation Created</h5>
+                    <button type="button" class="btn-close" @onclick="() => _createdToken = null"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success mb-0">
+                        <strong>Copy this token</strong> — it will not be shown again.
+                        <div class="input-group mt-2">
+                            <input type="text" class="form-control form-control-sm font-monospace" readonly value="@_createdToken" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _createdToken = null">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     private string? _accountName;
     private string? _originalAccountName;
     private bool _isEditing;
     private List<ChildRef> _users = [];
-    private string? _newUserId;
+    private string? _newUserInput;
     private List<EffectivePermission>? _effectivePermissions;
     private ConfirmModal _removeUserModal = null!;
     private ConfirmModal _deleteModal = null!;
+    private ConfirmModal _revokeInvitationModal = null!;
+    private FormModal _createInvitationModal = null!;
+
+    private List<Invitation> _invitations = [];
+    private int _invitationsTotalCount;
+    private string _invSearchEmail = string.Empty;
+    private string _invSearchDescription = string.Empty;
+    private InvitationStatus? _invStatusFilter;
+    private string? _invSortColumn;
+    private SortDirection? _invSortDirection;
+    private string? _inviteEmail;
+    private string? _inviteDescription;
+    private int _inviteExpirySeconds = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
+    private string? _createdToken;
+    private CancellationTokenSource? _invSearchCts;
 
     private int _usersSkip;
+    private int _invitationsSkip;
     private const int RelationPageSize = 10;
+    private const int InvitationPageSize = 10;
     private List<ChildRef> PagedUsers => _users.Skip(_usersSkip).Take(RelationPageSize).ToList();
     private int UsersTotalCount => _users.Count;
 
@@ -128,7 +290,112 @@ else
         else
         {
             NavigationManager.NavigateTo(AppRoutes.Dashboard);
+            return;
         }
+
+        await LoadInvitationsAsync();
+    }
+
+    private async Task LoadInvitationsAsync()
+    {
+        var filterBuilder = Filter.For<Invitation>();
+        var hasFilter = false;
+        if (!string.IsNullOrWhiteSpace(_invSearchEmail))
+        {
+            filterBuilder.Where(i => i.Email, StringFilter.Contains(_invSearchEmail.Trim()));
+            hasFilter = true;
+        }
+        if (!string.IsNullOrWhiteSpace(_invSearchDescription))
+        {
+            filterBuilder.Where(i => i.Description!, StringFilter.Contains(_invSearchDescription.Trim()));
+            hasFilter = true;
+        }
+        var filter = hasFilter ? filterBuilder : null;
+
+        OrderBuilder<Invitation>? order = null;
+        if (_invSortColumn != null && _invSortDirection != null)
+        {
+            order = _invSortColumn switch
+            {
+                nameof(Invitation.Email) => Order.For<Invitation>().By(i => i.Email, _invSortDirection.Value),
+                nameof(Invitation.Description) => Order.For<Invitation>().By(i => i.Description, _invSortDirection.Value),
+                nameof(Invitation.CreatedUtc) => Order.For<Invitation>().By(i => i.CreatedUtc, _invSortDirection.Value),
+                nameof(Invitation.ExpiresUtc) => Order.For<Invitation>().By(i => i.ExpiresUtc, _invSortDirection.Value),
+                _ => null
+            };
+        }
+
+        var invResult = await RegistrationService.ListInvitationsAsync(
+            new ListInvitationsRequest(Id, filter, order, _invitationsSkip, InvitationPageSize, _invStatusFilter)
+        );
+        if (invResult.ResultCode == RetrieveResultCode.Success && invResult.Data != null)
+        {
+            _invitations = invResult.Data.Items.ToList();
+            _invitationsTotalCount = invResult.Data.TotalCount;
+        }
+    }
+
+    private async Task OnInvitationPageChangedAsync(int newSkip)
+    {
+        _invitationsSkip = newSkip;
+        await LoadInvitationsAsync();
+        StateHasChanged();
+    }
+
+    private async Task OnInvSearchChangedAsync()
+    {
+        _invSearchCts?.Cancel();
+        _invSearchCts?.Dispose();
+        _invSearchCts = new CancellationTokenSource();
+        var token = _invSearchCts.Token;
+
+        try
+        {
+            await Task.Delay(300, token);
+            _invitationsSkip = 0;
+            await LoadInvitationsAsync();
+            StateHasChanged();
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private async Task OnInvStatusChangedAsync()
+    {
+        _invitationsSkip = 0;
+        await LoadInvitationsAsync();
+        StateHasChanged();
+    }
+
+    private async Task CycleInvSortAsync(string column)
+    {
+        if (_invSortColumn != column)
+        {
+            _invSortColumn = column;
+            _invSortDirection = SortDirection.Ascending;
+        }
+        else if (_invSortDirection == SortDirection.Ascending)
+        {
+            _invSortDirection = SortDirection.Descending;
+        }
+        else
+        {
+            _invSortColumn = null;
+            _invSortDirection = null;
+        }
+        _invitationsSkip = 0;
+        await LoadInvitationsAsync();
+        StateHasChanged();
+    }
+
+    private string GetInvSortIcon(string column)
+    {
+        if (_invSortColumn != column) return "bi-chevron-expand";
+        return _invSortDirection == SortDirection.Ascending ? "bi-chevron-up" : "bi-chevron-down";
+    }
+
+    private string GetInvSortClass(string column)
+    {
+        return _invSortColumn == column ? "sortable active" : "sortable";
     }
 
     private void StartEdit()
@@ -176,12 +443,12 @@ else
 
     private async Task AddUserAsync()
     {
-        if (!TryParseGuid(_newUserId, out var userId)) return;
+        if (!TryParseGuid(_newUserInput, out var userId)) return;
         await ExecuteSafeAsync(async () =>
         {
             var result = await RegistrationService.RegisterUserWithAccountAsync(new RegisterUserWithAccountRequest(userId));
             SetResultMessage(result.ResultCode == RegisterUserWithAccountResultCode.Success, "User added.", result.Message ?? "Failed.");
-            _newUserId = string.Empty;
+            _newUserInput = string.Empty;
             await ReloadAsync();
         });
     }
@@ -192,8 +459,56 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(_confirmItemId));
+            var removedUserId = _confirmItemId;
+            var result = await DeregistrationService.DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(removedUserId));
+            if (result.ResultCode == DeregisterUserFromAccountResultCode.Success
+                && removedUserId == UserContext?.User.Id)
+            {
+                NavigationManager.NavigateTo(AppRoutes.SelectAccount, forceLoad: true);
+                return;
+            }
             SetResultMessage(result.ResultCode == DeregisterUserFromAccountResultCode.Success, "User removed.", result.Message ?? "Failed.");
+            await ReloadAsync();
+        });
+    }
+
+    private void ShowCreateInvitation()
+    {
+        _inviteEmail = string.Empty;
+        _inviteDescription = string.Empty;
+        _inviteExpirySeconds = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
+        _createdToken = null;
+        _createInvitationModal.Show();
+    }
+
+    private async Task CreateInvitationAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var request = new CreateInvitationRequest(Id, _inviteEmail!, _inviteDescription, _inviteExpirySeconds);
+            var result = await RegistrationService.CreateInvitationAsync(request);
+            if (result.ResultCode == CreateInvitationResultCode.Success)
+            {
+                _createdToken = result.Token;
+                SetResultMessage(true, "Invitation created.");
+                await ReloadAsync();
+            }
+            else
+            {
+                SetResultMessage(false, string.Empty, result.Message);
+            }
+        });
+    }
+
+    private void ConfirmRevokeInvitation(Guid invitationId, string email) =>
+        ShowConfirmation(_revokeInvitationModal, invitationId, $"Revoke invitation for '{email}'?");
+
+    private async Task RevokeInvitationAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.RevokeInvitationAsync(_confirmItemId);
+            SetResultMessage(result.ResultCode == RevokeInvitationResultCode.Success, "Invitation revoked.", result.Message);
             await ReloadAsync();
         });
     }

@@ -4,6 +4,8 @@ using Corely.Common.Providers.Redaction;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.ConsoleApp.SerilogCustomization;
 using Corely.IAM.Groups.Models;
+using Corely.IAM.Invitations.Constants;
+using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Services;
@@ -281,6 +283,69 @@ internal class Program
                 )
             );
             Console.WriteLine($"Modify Role: {JsonSerializer.Serialize(modifyRoleResult)}");
+
+            // ========= INVITATION LIFECYCLE ==========
+
+            // Create an invitation for the current account
+            var createInvitationResult = await registrationService.CreateInvitationAsync(
+                new CreateInvitationRequest(
+                    registerAccountResult.CreatedAccountId,
+                    "test@example.com",
+                    "Test invitation",
+                    InvitationConstants.DEFAULT_EXPIRY_SECONDS
+                )
+            );
+            Console.WriteLine(
+                $"Create Invitation: {JsonSerializer.Serialize(createInvitationResult)}"
+            );
+            Console.WriteLine(
+                $"  Token: {createInvitationResult.Token}, InvitationId: {createInvitationResult.InvitationId}"
+            );
+
+            // Accept the invitation (idempotent — user is already in account from account creation)
+            var acceptInvitationResult = await registrationService.AcceptInvitationAsync(
+                new AcceptInvitationRequest(createInvitationResult.Token!)
+            );
+            Console.WriteLine(
+                $"Accept Invitation: {JsonSerializer.Serialize(acceptInvitationResult)}"
+            );
+
+            // List invitations for the account (shows accepted status)
+            var listInvitationsResult = await registrationService.ListInvitationsAsync(
+                new ListInvitationsRequest(registerAccountResult.CreatedAccountId)
+            );
+            Console.WriteLine(
+                $"List Invitations (after accept): {JsonSerializer.Serialize(listInvitationsResult)}"
+            );
+
+            // Create a second invitation that will be revoked
+            var createInvitation2Result = await registrationService.CreateInvitationAsync(
+                new CreateInvitationRequest(
+                    registerAccountResult.CreatedAccountId,
+                    "test2@example.com",
+                    "Will be revoked",
+                    InvitationConstants.DEFAULT_EXPIRY_SECONDS
+                )
+            );
+            Console.WriteLine(
+                $"Create Invitation 2: {JsonSerializer.Serialize(createInvitation2Result)}"
+            );
+
+            // Revoke the second invitation
+            var revokeInvitationResult = await registrationService.RevokeInvitationAsync(
+                createInvitation2Result.InvitationId!.Value
+            );
+            Console.WriteLine(
+                $"Revoke Invitation: {JsonSerializer.Serialize(revokeInvitationResult)}"
+            );
+
+            // List invitations again (shows one accepted, one revoked)
+            listInvitationsResult = await registrationService.ListInvitationsAsync(
+                new ListInvitationsRequest(registerAccountResult.CreatedAccountId)
+            );
+            Console.WriteLine(
+                $"List Invitations (final): {JsonSerializer.Serialize(listInvitationsResult)}"
+            );
 
             // ========= DEREGISTERING ==========
             // Deregister roles from group example

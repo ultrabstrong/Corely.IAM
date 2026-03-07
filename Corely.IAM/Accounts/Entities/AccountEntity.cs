@@ -1,5 +1,6 @@
 ﻿using Corely.DataAccess.Interfaces.Entities;
 using Corely.IAM.Groups.Entities;
+using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Users.Entities;
@@ -16,6 +17,7 @@ internal class AccountEntity : IHasCreatedUtc, IHasModifiedUtc
     public virtual ICollection<GroupEntity>? Groups { get; set; }
     public virtual ICollection<RoleEntity>? Roles { get; set; }
     public virtual ICollection<PermissionEntity>? Permissions { get; set; }
+    public virtual ICollection<InvitationEntity>? Invitations { get; set; }
     public virtual ICollection<AccountSymmetricKeyEntity>? SymmetricKeys { get; init; }
     public virtual ICollection<AccountAsymmetricKeyEntity>? AsymmetricKeys { get; init; }
 }

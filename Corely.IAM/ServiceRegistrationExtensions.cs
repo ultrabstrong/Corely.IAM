@@ -4,6 +4,7 @@ using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.DataAccess;
 using Corely.IAM.Groups.Processors;
+using Corely.IAM.Invitations.Processors;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Models;
@@ -191,5 +192,12 @@ public static class ServiceRegistrationExtensions
             PermissionProcessorAuthorizationDecorator
         >();
         serviceCollection.Decorate<IPermissionProcessor, PermissionProcessorTelemetryDecorator>();
+
+        serviceCollection.AddScoped<IInvitationProcessor, InvitationProcessor>();
+        serviceCollection.Decorate<
+            IInvitationProcessor,
+            InvitationProcessorAuthorizationDecorator
+        >();
+        serviceCollection.Decorate<IInvitationProcessor, InvitationProcessorTelemetryDecorator>();
     }
 }

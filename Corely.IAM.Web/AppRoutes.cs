@@ -15,6 +15,7 @@ public static class AppRoutes
 
     // Management (Blazor)
     public const string Dashboard = "/";
+    public const string AcceptInvitation = "/accept-invitation";
     public const string Profile = "/profile";
     public const string Accounts = "/accounts";
     public const string Users = "/users";

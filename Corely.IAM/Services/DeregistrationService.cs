@@ -187,7 +187,8 @@ internal class DeregistrationService(
     )
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
+        var context = _userContextProvider.GetUserContext()!;
+        var accountId = context.CurrentAccount!.Id;
         _logger.LogInformation(
             "Deregistering user {UserId} from account {AccountId}",
             request.UserId,
@@ -211,11 +212,54 @@ internal class DeregistrationService(
             );
         }
 
+        // If the removed user is the current user, clear account context
+        if (request.UserId == context.User.Id)
+        {
+            context.AvailableAccounts.RemoveAll(a => a.Id == accountId);
+            _userContextSetter.SetUserContext(context with { CurrentAccount = null });
+            _authorizationCacheClearer.ClearCache();
+        }
+
         _logger.LogInformation(
             "User {UserId} deregistered from account {AccountId}",
             request.UserId,
             accountId
         );
+        return new DeregisterUserFromAccountResult(
+            DeregisterUserFromAccountResultCode.Success,
+            string.Empty
+        );
+    }
+
+    public async Task<DeregisterUserFromAccountResult> LeaveAccountAsync(Guid accountId)
+    {
+        var context = _userContextProvider.GetUserContext()!;
+        var userId = context.User.Id;
+        _logger.LogInformation("User {UserId} leaving account {AccountId}", userId, accountId);
+
+        var result = await _accountProcessor.RemoveUserFromAccountAsync(new(userId, accountId));
+
+        if (result.ResultCode != RemoveUserFromAccountResultCode.Success)
+        {
+            _logger.LogInformation(
+                "User {UserId} leaving account {AccountId} failed",
+                userId,
+                accountId
+            );
+            return new DeregisterUserFromAccountResult(
+                result.ResultCode.ToDeregisterUserFromAccountResultCode(),
+                result.Message
+            );
+        }
+
+        context.AvailableAccounts.RemoveAll(a => a.Id == accountId);
+        if (context.CurrentAccount?.Id == accountId)
+        {
+            _userContextSetter.SetUserContext(context with { CurrentAccount = null });
+        }
+        _authorizationCacheClearer.ClearCache();
+
+        _logger.LogInformation("User {UserId} left account {AccountId}", userId, accountId);
         return new DeregisterUserFromAccountResult(
             DeregisterUserFromAccountResultCode.Success,
             string.Empty

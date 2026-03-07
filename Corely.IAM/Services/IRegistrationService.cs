@@ -1,4 +1,5 @@
-﻿using Corely.IAM.Models;
+﻿using Corely.IAM.Invitations.Models;
+using Corely.IAM.Models;
 
 namespace Corely.IAM.Services;
 
@@ -24,4 +25,8 @@ public interface IRegistrationService
     Task<RegisterPermissionsWithRoleResult> RegisterPermissionsWithRoleAsync(
         RegisterPermissionsWithRoleRequest request
     );
+    Task<CreateInvitationResult> CreateInvitationAsync(CreateInvitationRequest request);
+    Task<AcceptInvitationResult> AcceptInvitationAsync(AcceptInvitationRequest request);
+    Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId);
+    Task<RetrieveListResult<Invitation>> ListInvitationsAsync(ListInvitationsRequest request);
 }

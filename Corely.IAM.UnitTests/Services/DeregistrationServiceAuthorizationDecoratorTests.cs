@@ -391,6 +391,39 @@ public class DeregistrationServiceAuthorizationDecoratorTests
 
     #endregion
 
+    #region LeaveAccountAsync
+
+    [Fact]
+    public async Task LeaveAccountAsync_DelegatesToInner_WhenHasUserContext()
+    {
+        var accountId = Guid.CreateVersion7();
+        var expectedResult = new DeregisterUserFromAccountResult(
+            DeregisterUserFromAccountResultCode.Success,
+            string.Empty
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockInnerService.Setup(x => x.LeaveAccountAsync(accountId)).ReturnsAsync(expectedResult);
+
+        var result = await _decorator.LeaveAccountAsync(accountId);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.LeaveAccountAsync(accountId), Times.Once);
+    }
+
+    [Fact]
+    public async Task LeaveAccountAsync_ReturnsUnauthorized_WhenNoUserContext()
+    {
+        var accountId = Guid.CreateVersion7();
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+
+        var result = await _decorator.LeaveAccountAsync(accountId);
+
+        Assert.Equal(DeregisterUserFromAccountResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(x => x.LeaveAccountAsync(It.IsAny<Guid>()), Times.Never);
+    }
+
+    #endregion
+
     #region Constructor Validation
 
     [Fact]

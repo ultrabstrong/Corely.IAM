@@ -1,0 +1,86 @@
+@page "/accept-invitation"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits AuthenticatedPageBase
+@inject IRegistrationService RegistrationService
+
+<PageTitle>Accept Invitation - Corely IAM</PageTitle>
+
+<div class="d-flex justify-content-center align-items-center mt-5">
+    <div class="card border-0 shadow" style="max-width: 500px; width: 100%;">
+        <div class="card-body p-4 text-center">
+            <i class="bi bi-envelope-open fs-1 text-primary"></i>
+            <h3 class="mt-3">Accept Invitation</h3>
+            <p class="text-muted">Paste your invitation token below to join an account.</p>
+
+            <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+            <div class="input-group mt-3">
+                <input type="text" class="form-control" @bind="_token" placeholder="Invitation token" disabled="@_loading" />
+                <button class="btn btn-primary" @onclick="AcceptAsync" disabled="@(_loading || string.IsNullOrWhiteSpace(_token))">
+                    @if (_loading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                    }
+                    Accept
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? _token;
+    private string? _message;
+    private AlertType _messageType = AlertType.Info;
+    private bool _loading;
+
+    [SupplyParameterFromQuery(Name = "token")]
+    public string? TokenParam { get; set; }
+
+    protected override Task OnInitializedAuthenticatedAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(TokenParam))
+        {
+            _token = TokenParam;
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task AcceptAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_token)) return;
+        _loading = true;
+        _message = null;
+        try
+        {
+            var result = await RegistrationService.AcceptInvitationAsync(new AcceptInvitationRequest(_token.Trim()));
+            if (result.ResultCode == AcceptInvitationResultCode.Success && result.AccountId != null)
+            {
+                NavigationManager.NavigateTo(
+                    $"/switch-account?accountId={result.AccountId}&returnUrl=/",
+                    forceLoad: true
+                );
+                return;
+            }
+
+            _message = result.ResultCode switch
+            {
+                AcceptInvitationResultCode.InvitationExpiredError => "This invitation has expired.",
+                AcceptInvitationResultCode.InvitationRevokedError => "This invitation has been revoked.",
+                AcceptInvitationResultCode.InvitationAlreadyAcceptedError => "This invitation has already been used.",
+                AcceptInvitationResultCode.InvitationNotFoundError => "Invitation not found. Check the token and try again.",
+                _ => result.Message
+            };
+            _messageType = AlertType.Danger;
+        }
+        catch
+        {
+            _message = "An unexpected error occurred. Please try again.";
+            _messageType = AlertType.Danger;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

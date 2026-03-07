@@ -21,7 +21,7 @@
             <div class="card-body p-4 text-center">
                 <i class="bi bi-building-add fs-1 text-primary"></i>
                 <h3 class="mt-3">Welcome to Corely IAM</h3>
-                <p class="text-muted">Create your first account to get started.</p>
+                <p class="text-muted">Create your first account or accept an invitation to get started.</p>
 
                 <Alert Message="@_message" Type="_messageType" OnDismissed="() => _message = null" />
 
@@ -34,6 +34,13 @@
                         }
                         Create Account
                     </button>
+                </div>
+
+                <div class="mt-3 pt-3 border-top">
+                    <p class="text-muted mb-2"><small>Have an invitation token?</small></p>
+                    <a href="@AppRoutes.AcceptInvitation" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-envelope-open me-1"></i>Accept Invitation
+                    </a>
                 </div>
             </div>
         </div>

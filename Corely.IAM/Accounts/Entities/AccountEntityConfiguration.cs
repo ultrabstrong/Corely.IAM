@@ -1,6 +1,7 @@
 ﻿using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.Accounts.Constants;
+using Corely.IAM.Invitations.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -37,6 +38,12 @@ internal sealed class AccountEntityConfiguration : EntityConfigurationBase<Accou
 
         builder
             .HasMany(e => e.Permissions)
+            .WithOne(e => e.Account)
+            .HasForeignKey(p => p.AccountId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .HasMany(e => e.Invitations)
             .WithOne(e => e.Account)
             .HasForeignKey(p => p.AccountId)
             .OnDelete(DeleteBehavior.Cascade);

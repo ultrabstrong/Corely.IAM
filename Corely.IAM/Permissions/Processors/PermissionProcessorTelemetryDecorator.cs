@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Extensions;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
@@ -36,15 +34,12 @@ internal class PermissionProcessorTelemetryDecorator(
         );
 
     public async Task<ListResult<Permission>> ListPermissionsAsync(
-        FilterBuilder<Permission>? filter,
-        OrderBuilder<Permission>? order,
-        int skip,
-        int take
+        ListPermissionsRequest request
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(PermissionProcessor),
-            new { skip, take },
-            () => _inner.ListPermissionsAsync(filter, order, skip, take),
+            request,
+            () => _inner.ListPermissionsAsync(request),
             logResult: true
         );
 

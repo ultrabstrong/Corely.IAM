@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Models;
@@ -162,21 +160,16 @@ internal class PermissionProcessor(
         await _permissionRepo.CreateAsync(permissionEntities);
     }
 
-    public async Task<ListResult<Permission>> ListPermissionsAsync(
-        FilterBuilder<Permission>? filter,
-        OrderBuilder<Permission>? order,
-        int skip,
-        int take
-    )
+    public async Task<ListResult<Permission>> ListPermissionsAsync(ListPermissionsRequest request)
     {
         var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
         return await ListQueryHelper.ExecuteListAsync(
             _permissionRepo,
             p => p.AccountId == accountId,
-            filter,
-            order,
-            skip,
-            take,
+            request.Filter,
+            request.Order,
+            request.Skip,
+            request.Take,
             e => e.ToModel()
         );
     }

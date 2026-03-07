@@ -35,13 +35,16 @@ public class RetrievalServiceAuthorizationDecoratorTests
         );
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService
-            .Setup(x => x.ListPermissionsAsync(null, null, 0, 25))
+            .Setup(x => x.ListPermissionsAsync(It.IsAny<ListPermissionsRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListPermissionsAsync();
+        var result = await _decorator.ListPermissionsAsync(new ListPermissionsRequest());
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.ListPermissionsAsync(null, null, 0, 25), Times.Once);
+        _mockInnerService.Verify(
+            x => x.ListPermissionsAsync(It.IsAny<ListPermissionsRequest>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -49,11 +52,11 @@ public class RetrievalServiceAuthorizationDecoratorTests
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
-        var result = await _decorator.ListPermissionsAsync();
+        var result = await _decorator.ListPermissionsAsync(new ListPermissionsRequest());
 
         Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerService.Verify(
-            x => x.ListPermissionsAsync(null, null, It.IsAny<int>(), It.IsAny<int>()),
+            x => x.ListPermissionsAsync(It.IsAny<ListPermissionsRequest>()),
             Times.Never
         );
     }
@@ -111,13 +114,13 @@ public class RetrievalServiceAuthorizationDecoratorTests
         );
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService
-            .Setup(x => x.ListGroupsAsync(null, null, 0, 25))
+            .Setup(x => x.ListGroupsAsync(It.IsAny<ListGroupsRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListGroupsAsync();
+        var result = await _decorator.ListGroupsAsync(new ListGroupsRequest());
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.ListGroupsAsync(null, null, 0, 25), Times.Once);
+        _mockInnerService.Verify(x => x.ListGroupsAsync(It.IsAny<ListGroupsRequest>()), Times.Once);
     }
 
     [Fact]
@@ -125,11 +128,11 @@ public class RetrievalServiceAuthorizationDecoratorTests
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
-        var result = await _decorator.ListGroupsAsync();
+        var result = await _decorator.ListGroupsAsync(new ListGroupsRequest());
 
         Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerService.Verify(
-            x => x.ListGroupsAsync(null, null, It.IsAny<int>(), It.IsAny<int>()),
+            x => x.ListGroupsAsync(It.IsAny<ListGroupsRequest>()),
             Times.Never
         );
     }
@@ -185,13 +188,13 @@ public class RetrievalServiceAuthorizationDecoratorTests
         );
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService
-            .Setup(x => x.ListRolesAsync(null, null, 0, 25))
+            .Setup(x => x.ListRolesAsync(It.IsAny<ListRolesRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListRolesAsync();
+        var result = await _decorator.ListRolesAsync(new ListRolesRequest());
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.ListRolesAsync(null, null, 0, 25), Times.Once);
+        _mockInnerService.Verify(x => x.ListRolesAsync(It.IsAny<ListRolesRequest>()), Times.Once);
     }
 
     [Fact]
@@ -199,13 +202,10 @@ public class RetrievalServiceAuthorizationDecoratorTests
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
-        var result = await _decorator.ListRolesAsync();
+        var result = await _decorator.ListRolesAsync(new ListRolesRequest());
 
         Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerService.Verify(
-            x => x.ListRolesAsync(null, null, It.IsAny<int>(), It.IsAny<int>()),
-            Times.Never
-        );
+        _mockInnerService.Verify(x => x.ListRolesAsync(It.IsAny<ListRolesRequest>()), Times.Never);
     }
 
     #endregion
@@ -259,13 +259,13 @@ public class RetrievalServiceAuthorizationDecoratorTests
         );
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
         _mockInnerService
-            .Setup(x => x.ListUsersAsync(null, null, 0, 25))
+            .Setup(x => x.ListUsersAsync(It.IsAny<ListUsersRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListUsersAsync();
+        var result = await _decorator.ListUsersAsync(new ListUsersRequest());
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.ListUsersAsync(null, null, 0, 25), Times.Once);
+        _mockInnerService.Verify(x => x.ListUsersAsync(It.IsAny<ListUsersRequest>()), Times.Once);
     }
 
     [Fact]
@@ -273,13 +273,10 @@ public class RetrievalServiceAuthorizationDecoratorTests
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
 
-        var result = await _decorator.ListUsersAsync();
+        var result = await _decorator.ListUsersAsync(new ListUsersRequest());
 
         Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerService.Verify(
-            x => x.ListUsersAsync(null, null, It.IsAny<int>(), It.IsAny<int>()),
-            Times.Never
-        );
+        _mockInnerService.Verify(x => x.ListUsersAsync(It.IsAny<ListUsersRequest>()), Times.Never);
     }
 
     #endregion
@@ -333,13 +330,16 @@ public class RetrievalServiceAuthorizationDecoratorTests
         );
         _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
         _mockInnerService
-            .Setup(x => x.ListAccountsAsync(null, null, 0, 25))
+            .Setup(x => x.ListAccountsAsync(It.IsAny<ListAccountsRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListAccountsAsync();
+        var result = await _decorator.ListAccountsAsync(new ListAccountsRequest());
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.ListAccountsAsync(null, null, 0, 25), Times.Once);
+        _mockInnerService.Verify(
+            x => x.ListAccountsAsync(It.IsAny<ListAccountsRequest>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -347,11 +347,11 @@ public class RetrievalServiceAuthorizationDecoratorTests
     {
         _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
 
-        var result = await _decorator.ListAccountsAsync();
+        var result = await _decorator.ListAccountsAsync(new ListAccountsRequest());
 
         Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerService.Verify(
-            x => x.ListAccountsAsync(null, null, It.IsAny<int>(), It.IsAny<int>()),
+            x => x.ListAccountsAsync(It.IsAny<ListAccountsRequest>()),
             Times.Never
         );
     }

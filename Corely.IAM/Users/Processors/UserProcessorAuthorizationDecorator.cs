@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
@@ -110,17 +108,12 @@ internal class UserProcessorAuthorizationDecorator(
                 $"Unauthorized to delete user {userId}"
             );
 
-    public async Task<ListResult<User>> ListUsersAsync(
-        FilterBuilder<User>? filter,
-        OrderBuilder<User>? order,
-        int skip,
-        int take
-    ) =>
+    public async Task<ListResult<User>> ListUsersAsync(ListUsersRequest request) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.USER_RESOURCE_TYPE
         )
-            ? await _inner.ListUsersAsync(filter, order, skip, take)
+            ? await _inner.ListUsersAsync(request)
             : new ListResult<User>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list users",

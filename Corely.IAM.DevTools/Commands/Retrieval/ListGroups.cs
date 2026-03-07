@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 
@@ -36,7 +37,9 @@ internal partial class Retrieval : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            var result = await _retrievalService.ListGroupsAsync(null, null, Skip, Take);
+            var result = await _retrievalService.ListGroupsAsync(
+                new ListGroupsRequest(Skip: Skip, Take: Take)
+            );
             Console.WriteLine(JsonSerializer.Serialize(result, _jsonOptions));
         }
     }

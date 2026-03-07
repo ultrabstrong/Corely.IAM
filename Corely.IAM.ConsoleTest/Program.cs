@@ -7,6 +7,7 @@ using Corely.IAM.Groups.Models;
 using Corely.IAM.Invitations.Constants;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
@@ -195,25 +196,29 @@ internal class Program
             // ========= RETRIEVAL SERVICE ========== //
 
             // List all groups
-            var listGroupsResult = await retrievalService.ListGroupsAsync();
+            var listGroupsResult = await retrievalService.ListGroupsAsync(new ListGroupsRequest());
             Console.WriteLine($"List Groups: {JsonSerializer.Serialize(listGroupsResult)}");
 
             // List all roles
-            var listRolesResult = await retrievalService.ListRolesAsync();
+            var listRolesResult = await retrievalService.ListRolesAsync(new ListRolesRequest());
             Console.WriteLine($"List Roles: {JsonSerializer.Serialize(listRolesResult)}");
 
             // List all permissions
-            var listPermissionsResult = await retrievalService.ListPermissionsAsync();
+            var listPermissionsResult = await retrievalService.ListPermissionsAsync(
+                new ListPermissionsRequest()
+            );
             Console.WriteLine(
                 $"List Permissions: {JsonSerializer.Serialize(listPermissionsResult)}"
             );
 
             // List all users
-            var listUsersResult = await retrievalService.ListUsersAsync();
+            var listUsersResult = await retrievalService.ListUsersAsync(new ListUsersRequest());
             Console.WriteLine($"List Users: {JsonSerializer.Serialize(listUsersResult)}");
 
             // List all accounts
-            var listAccountsResult = await retrievalService.ListAccountsAsync();
+            var listAccountsResult = await retrievalService.ListAccountsAsync(
+                new ListAccountsRequest()
+            );
             Console.WriteLine($"List Accounts: {JsonSerializer.Serialize(listAccountsResult)}");
 
             // Get group by ID with hydration

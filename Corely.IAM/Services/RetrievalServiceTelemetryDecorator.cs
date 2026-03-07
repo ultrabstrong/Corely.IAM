@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Extensions;
 using Corely.IAM.Groups.Models;
@@ -23,14 +21,12 @@ internal class RetrievalServiceTelemetryDecorator(
     );
 
     public async Task<RetrieveListResult<Permission>> ListPermissionsAsync(
-        FilterBuilder<Permission>? filter = null,
-        OrderBuilder<Permission>? order = null,
-        int skip = 0,
-        int take = 25
+        ListPermissionsRequest request
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RetrievalService),
-            () => _inner.ListPermissionsAsync(filter, order, skip, take),
+            request,
+            () => _inner.ListPermissionsAsync(request),
             logResult: true
         );
 
@@ -44,15 +40,11 @@ internal class RetrievalServiceTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<RetrieveListResult<Group>> ListGroupsAsync(
-        FilterBuilder<Group>? filter = null,
-        OrderBuilder<Group>? order = null,
-        int skip = 0,
-        int take = 25
-    ) =>
+    public async Task<RetrieveListResult<Group>> ListGroupsAsync(ListGroupsRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RetrievalService),
-            () => _inner.ListGroupsAsync(filter, order, skip, take),
+            request,
+            () => _inner.ListGroupsAsync(request),
             logResult: true
         );
 
@@ -66,15 +58,11 @@ internal class RetrievalServiceTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<RetrieveListResult<Role>> ListRolesAsync(
-        FilterBuilder<Role>? filter = null,
-        OrderBuilder<Role>? order = null,
-        int skip = 0,
-        int take = 25
-    ) =>
+    public async Task<RetrieveListResult<Role>> ListRolesAsync(ListRolesRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RetrievalService),
-            () => _inner.ListRolesAsync(filter, order, skip, take),
+            request,
+            () => _inner.ListRolesAsync(request),
             logResult: true
         );
 
@@ -85,15 +73,11 @@ internal class RetrievalServiceTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<RetrieveListResult<User>> ListUsersAsync(
-        FilterBuilder<User>? filter = null,
-        OrderBuilder<User>? order = null,
-        int skip = 0,
-        int take = 25
-    ) =>
+    public async Task<RetrieveListResult<User>> ListUsersAsync(ListUsersRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RetrievalService),
-            () => _inner.ListUsersAsync(filter, order, skip, take),
+            request,
+            () => _inner.ListUsersAsync(request),
             logResult: true
         );
 
@@ -104,15 +88,11 @@ internal class RetrievalServiceTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<RetrieveListResult<Account>> ListAccountsAsync(
-        FilterBuilder<Account>? filter = null,
-        OrderBuilder<Account>? order = null,
-        int skip = 0,
-        int take = 25
-    ) =>
+    public async Task<RetrieveListResult<Account>> ListAccountsAsync(ListAccountsRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RetrievalService),
-            () => _inner.ListAccountsAsync(filter, order, skip, take),
+            request,
+            () => _inner.ListAccountsAsync(request),
             logResult: true
         );
 

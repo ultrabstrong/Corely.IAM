@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Entities;
@@ -520,21 +518,16 @@ internal class GroupProcessor(
         return new DeleteGroupResult(DeleteGroupResultCode.Success, string.Empty);
     }
 
-    public async Task<ListResult<Group>> ListGroupsAsync(
-        FilterBuilder<Group>? filter,
-        OrderBuilder<Group>? order,
-        int skip,
-        int take
-    )
+    public async Task<ListResult<Group>> ListGroupsAsync(ListGroupsRequest request)
     {
         var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
         return await ListQueryHelper.ExecuteListAsync(
             _groupRepo,
             g => g.AccountId == accountId,
-            filter,
-            order,
-            skip,
-            take,
+            request.Filter,
+            request.Order,
+            request.Skip,
+            request.Take,
             e => e.ToModel()
         );
     }

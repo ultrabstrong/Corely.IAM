@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
@@ -136,17 +134,12 @@ internal class GroupProcessorAuthorizationDecorator(
                 $"Unauthorized to delete group {groupId}"
             );
 
-    public async Task<ListResult<Group>> ListGroupsAsync(
-        FilterBuilder<Group>? filter,
-        OrderBuilder<Group>? order,
-        int skip,
-        int take
-    ) =>
+    public async Task<ListResult<Group>> ListGroupsAsync(ListGroupsRequest request) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.GROUP_RESOURCE_TYPE
         )
-            ? await _inner.ListGroupsAsync(filter, order, skip, take)
+            ? await _inner.ListGroupsAsync(request)
             : new ListResult<Group>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list groups",

@@ -44,14 +44,7 @@ public class SelectAccountModelTests
     {
         var pagedResult = PagedResult<Account>.Create(accounts, accounts.Count, 0, 25);
         _mockRetrievalService
-            .Setup(s =>
-                s.ListAccountsAsync(
-                    It.IsAny<Corely.Common.Filtering.FilterBuilder<Account>?>(),
-                    It.IsAny<Corely.Common.Filtering.Ordering.OrderBuilder<Account>?>(),
-                    It.IsAny<int>(),
-                    It.IsAny<int>()
-                )
-            )
+            .Setup(s => s.ListAccountsAsync(It.IsAny<ListAccountsRequest>()))
             .ReturnsAsync(
                 new RetrieveListResult<Account>(
                     RetrieveResultCode.Success,

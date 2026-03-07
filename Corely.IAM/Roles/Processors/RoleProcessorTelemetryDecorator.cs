@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Extensions;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Models;
@@ -52,16 +50,11 @@ internal class RoleProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<ListResult<Role>> ListRolesAsync(
-        FilterBuilder<Role>? filter,
-        OrderBuilder<Role>? order,
-        int skip,
-        int take
-    ) =>
+    public async Task<ListResult<Role>> ListRolesAsync(ListRolesRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
-            new { skip, take },
-            () => _inner.ListRolesAsync(filter, order, skip, take),
+            request,
+            () => _inner.ListRolesAsync(request),
             logResult: true
         );
 

@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Mappers;
@@ -390,12 +388,7 @@ internal class AccountProcessor(
         );
     }
 
-    public async Task<ListResult<Account>> ListAccountsAsync(
-        FilterBuilder<Account>? filter,
-        OrderBuilder<Account>? order,
-        int skip,
-        int take
-    )
+    public async Task<ListResult<Account>> ListAccountsAsync(ListAccountsRequest request)
     {
         var userAccountIds = _userContextProvider
             .GetUserContext()!
@@ -405,10 +398,10 @@ internal class AccountProcessor(
         return await ListQueryHelper.ExecuteListAsync(
             _accountRepo,
             a => userAccountIds.Contains(a.Id),
-            filter,
-            order,
-            skip,
-            take,
+            request.Filter,
+            request.Order,
+            request.Skip,
+            request.Take,
             e => e.ToModel()
         );
     }

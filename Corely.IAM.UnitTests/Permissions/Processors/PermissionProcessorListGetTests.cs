@@ -4,6 +4,7 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Users.Models;
@@ -81,7 +82,7 @@ public class PermissionProcessorListGetTests
         await CreatePermissionEntityAsync(PermissionConstants.ROLE_RESOURCE_TYPE);
         await CreatePermissionEntityAsync(PermissionConstants.USER_RESOURCE_TYPE);
 
-        var result = await _permissionProcessor.ListPermissionsAsync(null, null, 0, 10);
+        var result = await _permissionProcessor.ListPermissionsAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -99,7 +100,7 @@ public class PermissionProcessorListGetTests
             accountId: otherAccountId
         );
 
-        var result = await _permissionProcessor.ListPermissionsAsync(null, null, 0, 10);
+        var result = await _permissionProcessor.ListPermissionsAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -115,7 +116,7 @@ public class PermissionProcessorListGetTests
         await CreatePermissionEntityAsync(PermissionConstants.ROLE_RESOURCE_TYPE);
         await CreatePermissionEntityAsync(PermissionConstants.USER_RESOURCE_TYPE);
 
-        var result = await _permissionProcessor.ListPermissionsAsync(null, null, 0, 2);
+        var result = await _permissionProcessor.ListPermissionsAsync(new(Take: 2));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -127,7 +128,7 @@ public class PermissionProcessorListGetTests
     [Fact]
     public async Task ListPermissionsAsync_ReturnsEmptyWhenNoPermissions()
     {
-        var result = await _permissionProcessor.ListPermissionsAsync(null, null, 0, 10);
+        var result = await _permissionProcessor.ListPermissionsAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);

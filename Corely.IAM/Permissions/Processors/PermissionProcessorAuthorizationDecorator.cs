@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
@@ -36,16 +34,13 @@ internal class PermissionProcessorAuthorizationDecorator(
         _inner.CreateDefaultSystemPermissionsAsync(accountId);
 
     public async Task<ListResult<Permission>> ListPermissionsAsync(
-        FilterBuilder<Permission>? filter,
-        OrderBuilder<Permission>? order,
-        int skip,
-        int take
+        ListPermissionsRequest request
     ) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.PERMISSION_RESOURCE_TYPE
         )
-            ? await _inner.ListPermissionsAsync(filter, order, skip, take)
+            ? await _inner.ListPermissionsAsync(request)
             : new ListResult<Permission>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list permissions",

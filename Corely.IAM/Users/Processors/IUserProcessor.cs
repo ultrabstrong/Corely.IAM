@@ -1,5 +1,3 @@
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Models;
 using Corely.IAM.Users.Models;
 
@@ -15,11 +13,6 @@ internal interface IUserProcessor
     Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(Guid roleId, Guid userId);
     Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(RemoveRolesFromUserRequest request);
     Task<DeleteUserResult> DeleteUserAsync(Guid userId);
-    Task<ListResult<User>> ListUsersAsync(
-        FilterBuilder<User>? filter,
-        OrderBuilder<User>? order,
-        int skip,
-        int take
-    );
+    Task<ListResult<User>> ListUsersAsync(ListUsersRequest request);
     Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate);
 }

@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Extensions;
 using Corely.IAM.Models;
@@ -80,15 +78,11 @@ internal class AccountProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<ListResult<Account>> ListAccountsAsync(
-        FilterBuilder<Account>? filter,
-        OrderBuilder<Account>? order,
-        int skip,
-        int take
-    ) =>
+    public async Task<ListResult<Account>> ListAccountsAsync(ListAccountsRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AccountProcessor),
-            () => _inner.ListAccountsAsync(filter, order, skip, take),
+            request,
+            () => _inner.ListAccountsAsync(request),
             logResult: true
         );
 

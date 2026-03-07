@@ -78,16 +78,30 @@ public class RetrievalServiceTests
         };
         var pagedResult = PagedResult<Permission>.Create([permission], 1, 0, 25);
         _mockPermissionProcessor
-            .Setup(x => x.ListPermissionsAsync(null, null, 0, 25))
+            .Setup(x =>
+                x.ListPermissionsAsync(
+                    It.Is<ListPermissionsRequest>(r =>
+                        r.Filter == null && r.Order == null && r.Skip == 0 && r.Take == 25
+                    )
+                )
+            )
             .ReturnsAsync(new ListResult<Permission>(RetrieveResultCode.Success, "", pagedResult));
 
-        var result = await _service.ListPermissionsAsync();
+        var result = await _service.ListPermissionsAsync(new ListPermissionsRequest());
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
         Assert.Single(result.Data.Items);
         Assert.Equal(permission.Id, result.Data.Items[0].Id);
-        _mockPermissionProcessor.Verify(x => x.ListPermissionsAsync(null, null, 0, 25), Times.Once);
+        _mockPermissionProcessor.Verify(
+            x =>
+                x.ListPermissionsAsync(
+                    It.Is<ListPermissionsRequest>(r =>
+                        r.Filter == null && r.Order == null && r.Skip == 0 && r.Take == 25
+                    )
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -96,16 +110,30 @@ public class RetrievalServiceTests
         var group = new Group { Id = Guid.CreateVersion7(), Name = "TestGroup" };
         var pagedResult = PagedResult<Group>.Create([group], 1, 0, 25);
         _mockGroupProcessor
-            .Setup(x => x.ListGroupsAsync(null, null, 0, 25))
+            .Setup(x =>
+                x.ListGroupsAsync(
+                    It.Is<ListGroupsRequest>(r =>
+                        r.Filter == null && r.Order == null && r.Skip == 0 && r.Take == 25
+                    )
+                )
+            )
             .ReturnsAsync(new ListResult<Group>(RetrieveResultCode.Success, "", pagedResult));
 
-        var result = await _service.ListGroupsAsync();
+        var result = await _service.ListGroupsAsync(new ListGroupsRequest());
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
         Assert.Single(result.Data.Items);
         Assert.Equal(group.Id, result.Data.Items[0].Id);
-        _mockGroupProcessor.Verify(x => x.ListGroupsAsync(null, null, 0, 25), Times.Once);
+        _mockGroupProcessor.Verify(
+            x =>
+                x.ListGroupsAsync(
+                    It.Is<ListGroupsRequest>(r =>
+                        r.Filter == null && r.Order == null && r.Skip == 0 && r.Take == 25
+                    )
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -114,16 +142,30 @@ public class RetrievalServiceTests
         var role = new Role { Id = Guid.CreateVersion7(), Name = "TestRole" };
         var pagedResult = PagedResult<Role>.Create([role], 1, 0, 25);
         _mockRoleProcessor
-            .Setup(x => x.ListRolesAsync(null, null, 0, 25))
+            .Setup(x =>
+                x.ListRolesAsync(
+                    It.Is<ListRolesRequest>(r =>
+                        r.Filter == null && r.Order == null && r.Skip == 0 && r.Take == 25
+                    )
+                )
+            )
             .ReturnsAsync(new ListResult<Role>(RetrieveResultCode.Success, "", pagedResult));
 
-        var result = await _service.ListRolesAsync();
+        var result = await _service.ListRolesAsync(new ListRolesRequest());
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
         Assert.Single(result.Data.Items);
         Assert.Equal(role.Id, result.Data.Items[0].Id);
-        _mockRoleProcessor.Verify(x => x.ListRolesAsync(null, null, 0, 25), Times.Once);
+        _mockRoleProcessor.Verify(
+            x =>
+                x.ListRolesAsync(
+                    It.Is<ListRolesRequest>(r =>
+                        r.Filter == null && r.Order == null && r.Skip == 0 && r.Take == 25
+                    )
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -137,16 +179,30 @@ public class RetrievalServiceTests
         };
         var pagedResult = PagedResult<User>.Create([user], 1, 0, 25);
         _mockUserProcessor
-            .Setup(x => x.ListUsersAsync(null, null, 0, 25))
+            .Setup(x =>
+                x.ListUsersAsync(
+                    It.Is<ListUsersRequest>(r =>
+                        r.Filter == null && r.Order == null && r.Skip == 0 && r.Take == 25
+                    )
+                )
+            )
             .ReturnsAsync(new ListResult<User>(RetrieveResultCode.Success, "", pagedResult));
 
-        var result = await _service.ListUsersAsync();
+        var result = await _service.ListUsersAsync(new ListUsersRequest());
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
         Assert.Single(result.Data.Items);
         Assert.Equal(user.Id, result.Data.Items[0].Id);
-        _mockUserProcessor.Verify(x => x.ListUsersAsync(null, null, 0, 25), Times.Once);
+        _mockUserProcessor.Verify(
+            x =>
+                x.ListUsersAsync(
+                    It.Is<ListUsersRequest>(r =>
+                        r.Filter == null && r.Order == null && r.Skip == 0 && r.Take == 25
+                    )
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -155,16 +211,30 @@ public class RetrievalServiceTests
         var account = new Account { Id = Guid.CreateVersion7(), AccountName = "ListAccount" };
         var pagedResult = PagedResult<Account>.Create([account], 1, 0, 25);
         _mockAccountProcessor
-            .Setup(x => x.ListAccountsAsync(null, null, 0, 25))
+            .Setup(x =>
+                x.ListAccountsAsync(
+                    It.Is<ListAccountsRequest>(r =>
+                        r.Filter == null && r.Order == null && r.Skip == 0 && r.Take == 25
+                    )
+                )
+            )
             .ReturnsAsync(new ListResult<Account>(RetrieveResultCode.Success, "", pagedResult));
 
-        var result = await _service.ListAccountsAsync();
+        var result = await _service.ListAccountsAsync(new ListAccountsRequest());
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
         Assert.Single(result.Data.Items);
         Assert.Equal(account.Id, result.Data.Items[0].Id);
-        _mockAccountProcessor.Verify(x => x.ListAccountsAsync(null, null, 0, 25), Times.Once);
+        _mockAccountProcessor.Verify(
+            x =>
+                x.ListAccountsAsync(
+                    It.Is<ListAccountsRequest>(r =>
+                        r.Filter == null && r.Order == null && r.Skip == 0 && r.Take == 25
+                    )
+                ),
+            Times.Once
+        );
     }
 
     #endregion

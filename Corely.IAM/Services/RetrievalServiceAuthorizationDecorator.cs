@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
@@ -21,13 +19,10 @@ internal class RetrievalServiceAuthorizationDecorator(
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
     public async Task<RetrieveListResult<Permission>> ListPermissionsAsync(
-        FilterBuilder<Permission>? filter = null,
-        OrderBuilder<Permission>? order = null,
-        int skip = 0,
-        int take = 25
+        ListPermissionsRequest request
     ) =>
         _authorizationProvider.HasAccountContext()
-            ? await _inner.ListPermissionsAsync(filter, order, skip, take)
+            ? await _inner.ListPermissionsAsync(request)
             : new RetrieveListResult<Permission>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list permissions",
@@ -47,14 +42,9 @@ internal class RetrievalServiceAuthorizationDecorator(
                 null
             );
 
-    public async Task<RetrieveListResult<Group>> ListGroupsAsync(
-        FilterBuilder<Group>? filter = null,
-        OrderBuilder<Group>? order = null,
-        int skip = 0,
-        int take = 25
-    ) =>
+    public async Task<RetrieveListResult<Group>> ListGroupsAsync(ListGroupsRequest request) =>
         _authorizationProvider.HasAccountContext()
-            ? await _inner.ListGroupsAsync(filter, order, skip, take)
+            ? await _inner.ListGroupsAsync(request)
             : new RetrieveListResult<Group>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list groups",
@@ -74,14 +64,9 @@ internal class RetrievalServiceAuthorizationDecorator(
                 null
             );
 
-    public async Task<RetrieveListResult<Role>> ListRolesAsync(
-        FilterBuilder<Role>? filter = null,
-        OrderBuilder<Role>? order = null,
-        int skip = 0,
-        int take = 25
-    ) =>
+    public async Task<RetrieveListResult<Role>> ListRolesAsync(ListRolesRequest request) =>
         _authorizationProvider.HasAccountContext()
-            ? await _inner.ListRolesAsync(filter, order, skip, take)
+            ? await _inner.ListRolesAsync(request)
             : new RetrieveListResult<Role>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list roles",
@@ -98,14 +83,9 @@ internal class RetrievalServiceAuthorizationDecorator(
                 null
             );
 
-    public async Task<RetrieveListResult<User>> ListUsersAsync(
-        FilterBuilder<User>? filter = null,
-        OrderBuilder<User>? order = null,
-        int skip = 0,
-        int take = 25
-    ) =>
+    public async Task<RetrieveListResult<User>> ListUsersAsync(ListUsersRequest request) =>
         _authorizationProvider.HasAccountContext()
-            ? await _inner.ListUsersAsync(filter, order, skip, take)
+            ? await _inner.ListUsersAsync(request)
             : new RetrieveListResult<User>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list users",
@@ -122,14 +102,9 @@ internal class RetrievalServiceAuthorizationDecorator(
                 null
             );
 
-    public async Task<RetrieveListResult<Account>> ListAccountsAsync(
-        FilterBuilder<Account>? filter = null,
-        OrderBuilder<Account>? order = null,
-        int skip = 0,
-        int take = 25
-    ) =>
+    public async Task<RetrieveListResult<Account>> ListAccountsAsync(ListAccountsRequest request) =>
         _authorizationProvider.HasUserContext()
-            ? await _inner.ListAccountsAsync(filter, order, skip, take)
+            ? await _inner.ListAccountsAsync(request)
             : new RetrieveListResult<Account>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list accounts",

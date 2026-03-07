@@ -1,5 +1,3 @@
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Models;
 
@@ -11,12 +9,7 @@ internal interface IRoleProcessor
     Task<CreateDefaultSystemRolesResult> CreateDefaultSystemRolesAsync(Guid ownerAccountId);
     Task<GetRoleResult> GetRoleAsync(Guid roleId);
     Task<GetRoleResult> GetRoleAsync(string roleName, Guid ownerAccountId);
-    Task<ListResult<Role>> ListRolesAsync(
-        FilterBuilder<Role>? filter,
-        OrderBuilder<Role>? order,
-        int skip,
-        int take
-    );
+    Task<ListResult<Role>> ListRolesAsync(ListRolesRequest request);
     Task<GetResult<Role>> GetRoleByIdAsync(Guid roleId, bool hydrate);
     Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(
         AssignPermissionsToRoleRequest request

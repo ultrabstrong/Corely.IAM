@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
@@ -94,12 +92,8 @@ internal class AccountProcessorAuthorizationDecorator(
 
     // No permission check — results are already scoped to the user's own accounts inside
     // AccountProcessor, and listing accounts is required before any account context exists.
-    public Task<ListResult<Account>> ListAccountsAsync(
-        FilterBuilder<Account>? filter,
-        OrderBuilder<Account>? order,
-        int skip,
-        int take
-    ) => _inner.ListAccountsAsync(filter, order, skip, take);
+    public Task<ListResult<Account>> ListAccountsAsync(ListAccountsRequest request) =>
+        _inner.ListAccountsAsync(request);
 
     public async Task<GetResult<Account>> GetAccountByIdAsync(Guid accountId, bool hydrate) =>
         await _authorizationProvider.IsAuthorizedAsync(

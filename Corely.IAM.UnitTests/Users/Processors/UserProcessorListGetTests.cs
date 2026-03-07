@@ -113,7 +113,7 @@ public class UserProcessorListGetTests
         await CreateUserEntityAsync("user2");
         await CreateUserEntityAsync("user3");
 
-        var result = await _userProcessor.ListUsersAsync(null, null, 0, 10);
+        var result = await _userProcessor.ListUsersAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -131,7 +131,7 @@ public class UserProcessorListGetTests
             accounts: [new AccountEntity { Id = otherAccountId, AccountName = "OtherAccount" }]
         );
 
-        var result = await _userProcessor.ListUsersAsync(null, null, 0, 10);
+        var result = await _userProcessor.ListUsersAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -147,7 +147,7 @@ public class UserProcessorListGetTests
         await CreateUserEntityAsync("user2");
         await CreateUserEntityAsync("user3");
 
-        var result = await _userProcessor.ListUsersAsync(null, null, 0, 2);
+        var result = await _userProcessor.ListUsersAsync(new(Take: 2));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -159,7 +159,7 @@ public class UserProcessorListGetTests
     [Fact]
     public async Task ListUsersAsync_ReturnsEmptyWhenNoUsers()
     {
-        var result = await _userProcessor.ListUsersAsync(null, null, 0, 10);
+        var result = await _userProcessor.ListUsersAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -172,7 +172,7 @@ public class UserProcessorListGetTests
     {
         await CreateUserEntityAsync("limiteduser");
 
-        var result = await _userProcessor.ListUsersAsync(null, null, 0, 10);
+        var result = await _userProcessor.ListUsersAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         var user = Assert.Single(result.Data!.Items);

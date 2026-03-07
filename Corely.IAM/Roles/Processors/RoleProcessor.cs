@@ -144,12 +144,7 @@ internal class RoleProcessor(
         return new GetRoleResult(GetRoleResultCode.Success, string.Empty, roleEntity.ToModel());
     }
 
-    public async Task<ListResult<Role>> ListRolesAsync(
-        FilterBuilder<Role>? filter,
-        OrderBuilder<Role>? order,
-        int skip,
-        int take
-    )
+    public async Task<ListResult<Role>> ListRolesAsync(ListRolesRequest request)
     {
         var accountId = _userContextProvider.GetUserContext()?.CurrentAccount?.Id;
         if (accountId == null)
@@ -165,10 +160,10 @@ internal class RoleProcessor(
         return await ListQueryHelper.ExecuteListAsync(
             _roleRepo,
             r => r.AccountId == accountId.Value,
-            filter,
-            order,
-            skip,
-            take,
+            request.Filter,
+            request.Order,
+            request.Skip,
+            request.Take,
             e => e.ToModel()
         );
     }

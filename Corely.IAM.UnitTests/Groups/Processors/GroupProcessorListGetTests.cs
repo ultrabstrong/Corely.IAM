@@ -101,7 +101,7 @@ public class GroupProcessorListGetTests
         await CreateGroupEntityAsync("Group2");
         await CreateGroupEntityAsync("Group3");
 
-        var result = await _groupProcessor.ListGroupsAsync(null, null, 0, 10);
+        var result = await _groupProcessor.ListGroupsAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -116,7 +116,7 @@ public class GroupProcessorListGetTests
         await CreateGroupEntityAsync("MyGroup");
         await CreateGroupEntityAsync("OtherGroup", otherAccountId);
 
-        var result = await _groupProcessor.ListGroupsAsync(null, null, 0, 10);
+        var result = await _groupProcessor.ListGroupsAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -132,7 +132,7 @@ public class GroupProcessorListGetTests
         await CreateGroupEntityAsync("Group2");
         await CreateGroupEntityAsync("Group3");
 
-        var result = await _groupProcessor.ListGroupsAsync(null, null, 0, 2);
+        var result = await _groupProcessor.ListGroupsAsync(new(Take: 2));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -144,7 +144,7 @@ public class GroupProcessorListGetTests
     [Fact]
     public async Task ListGroupsAsync_ReturnsEmptyWhenNoGroups()
     {
-        var result = await _groupProcessor.ListGroupsAsync(null, null, 0, 10);
+        var result = await _groupProcessor.ListGroupsAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);

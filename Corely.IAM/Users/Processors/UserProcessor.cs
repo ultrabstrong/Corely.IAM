@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Constants;
@@ -437,21 +435,16 @@ internal class UserProcessor(
         return new DeleteUserResult(DeleteUserResultCode.Success, string.Empty);
     }
 
-    public async Task<ListResult<User>> ListUsersAsync(
-        FilterBuilder<User>? filter,
-        OrderBuilder<User>? order,
-        int skip,
-        int take
-    )
+    public async Task<ListResult<User>> ListUsersAsync(ListUsersRequest request)
     {
         var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
         return await ListQueryHelper.ExecuteListAsync(
             _userRepo,
             u => u.Accounts!.Any(a => a.Id == accountId),
-            filter,
-            order,
-            skip,
-            take,
+            request.Filter,
+            request.Order,
+            request.Skip,
+            request.Take,
             e => new User
             {
                 Id = e.Id,

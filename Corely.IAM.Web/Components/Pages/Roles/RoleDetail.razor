@@ -189,7 +189,7 @@ else
 
     private async Task<(List<PickerItem>, int)> FetchAvailablePermissionsAsync(int skip, int take)
     {
-        var result = await RetrievalService.ListPermissionsAsync(skip: skip, take: take);
+        var result = await RetrievalService.ListPermissionsAsync(new ListPermissionsRequest(Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             var items = result.Data.Items

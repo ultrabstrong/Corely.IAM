@@ -238,7 +238,7 @@ else
 
     private async Task<(List<PickerItem>, int)> FetchAvailableUsersAsync(int skip, int take)
     {
-        var result = await RetrievalService.ListUsersAsync(skip: skip, take: take);
+        var result = await RetrievalService.ListUsersAsync(new ListUsersRequest(Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             var items = result.Data.Items.Select(u => new PickerItem(u.Id, u.Username, u.Email)).ToList();
@@ -249,7 +249,7 @@ else
 
     private async Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take)
     {
-        var result = await RetrievalService.ListRolesAsync(skip: skip, take: take);
+        var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             var items = result.Data.Items.Select(r => new PickerItem(r.Id, r.Name, r.Description)).ToList();

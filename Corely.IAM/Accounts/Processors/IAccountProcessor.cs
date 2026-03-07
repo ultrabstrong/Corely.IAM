@@ -1,5 +1,3 @@
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
 
@@ -18,11 +16,6 @@ internal interface IAccountProcessor
         RemoveUserFromAccountRequest request
     );
     Task<DeleteAccountResult> DeleteAccountAsync(Guid accountId);
-    Task<ListResult<Account>> ListAccountsAsync(
-        FilterBuilder<Account>? filter,
-        OrderBuilder<Account>? order,
-        int skip,
-        int take
-    );
+    Task<ListResult<Account>> ListAccountsAsync(ListAccountsRequest request);
     Task<GetResult<Account>> GetAccountByIdAsync(Guid accountId, bool hydrate);
 }

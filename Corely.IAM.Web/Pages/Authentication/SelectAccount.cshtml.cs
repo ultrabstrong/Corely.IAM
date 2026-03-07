@@ -88,10 +88,7 @@ public class SelectAccountModel(
         var order = Order.For<Account>().By(a => a.AccountName, SortDirection.Ascending);
 
         var result = await retrievalService.ListAccountsAsync(
-            filter,
-            order,
-            skip: (PageNumber - 1) * PageSize,
-            take: PageSize
+            new ListAccountsRequest(filter, order, (PageNumber - 1) * PageSize, PageSize)
         );
 
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)

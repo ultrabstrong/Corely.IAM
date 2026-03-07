@@ -34,13 +34,16 @@ public class RetrievalServiceTelemetryDecoratorTests
             PagedResult<Permission>.Empty()
         );
         _mockInnerService
-            .Setup(x => x.ListPermissionsAsync(null, null, 0, 25))
+            .Setup(x => x.ListPermissionsAsync(It.IsAny<ListPermissionsRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListPermissionsAsync();
+        var result = await _decorator.ListPermissionsAsync(new ListPermissionsRequest());
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.ListPermissionsAsync(null, null, 0, 25), Times.Once);
+        _mockInnerService.Verify(
+            x => x.ListPermissionsAsync(It.IsAny<ListPermissionsRequest>()),
+            Times.Once
+        );
         VerifyLoggedWithResult();
     }
 
@@ -74,13 +77,13 @@ public class RetrievalServiceTelemetryDecoratorTests
             PagedResult<Group>.Empty()
         );
         _mockInnerService
-            .Setup(x => x.ListGroupsAsync(null, null, 0, 25))
+            .Setup(x => x.ListGroupsAsync(It.IsAny<ListGroupsRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListGroupsAsync();
+        var result = await _decorator.ListGroupsAsync(new ListGroupsRequest());
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.ListGroupsAsync(null, null, 0, 25), Times.Once);
+        _mockInnerService.Verify(x => x.ListGroupsAsync(It.IsAny<ListGroupsRequest>()), Times.Once);
         VerifyLoggedWithResult();
     }
 
@@ -112,13 +115,13 @@ public class RetrievalServiceTelemetryDecoratorTests
             PagedResult<Role>.Empty()
         );
         _mockInnerService
-            .Setup(x => x.ListRolesAsync(null, null, 0, 25))
+            .Setup(x => x.ListRolesAsync(It.IsAny<ListRolesRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListRolesAsync();
+        var result = await _decorator.ListRolesAsync(new ListRolesRequest());
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.ListRolesAsync(null, null, 0, 25), Times.Once);
+        _mockInnerService.Verify(x => x.ListRolesAsync(It.IsAny<ListRolesRequest>()), Times.Once);
         VerifyLoggedWithResult();
     }
 
@@ -150,13 +153,13 @@ public class RetrievalServiceTelemetryDecoratorTests
             PagedResult<User>.Empty()
         );
         _mockInnerService
-            .Setup(x => x.ListUsersAsync(null, null, 0, 25))
+            .Setup(x => x.ListUsersAsync(It.IsAny<ListUsersRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListUsersAsync();
+        var result = await _decorator.ListUsersAsync(new ListUsersRequest());
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.ListUsersAsync(null, null, 0, 25), Times.Once);
+        _mockInnerService.Verify(x => x.ListUsersAsync(It.IsAny<ListUsersRequest>()), Times.Once);
         VerifyLoggedWithResult();
     }
 
@@ -188,13 +191,16 @@ public class RetrievalServiceTelemetryDecoratorTests
             PagedResult<Account>.Empty()
         );
         _mockInnerService
-            .Setup(x => x.ListAccountsAsync(null, null, 0, 25))
+            .Setup(x => x.ListAccountsAsync(It.IsAny<ListAccountsRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListAccountsAsync();
+        var result = await _decorator.ListAccountsAsync(new ListAccountsRequest());
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.ListAccountsAsync(null, null, 0, 25), Times.Once);
+        _mockInnerService.Verify(
+            x => x.ListAccountsAsync(It.IsAny<ListAccountsRequest>()),
+            Times.Once
+        );
         VerifyLoggedWithResult();
     }
 

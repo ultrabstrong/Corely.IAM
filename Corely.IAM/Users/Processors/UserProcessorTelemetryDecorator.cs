@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Extensions;
 using Corely.IAM.Models;
 using Corely.IAM.Users.Models;
@@ -91,15 +89,11 @@ internal class UserProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<ListResult<User>> ListUsersAsync(
-        FilterBuilder<User>? filter,
-        OrderBuilder<User>? order,
-        int skip,
-        int take
-    ) =>
+    public async Task<ListResult<User>> ListUsersAsync(ListUsersRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),
-            () => _inner.ListUsersAsync(filter, order, skip, take),
+            request,
+            () => _inner.ListUsersAsync(request),
             logResult: true
         );
 

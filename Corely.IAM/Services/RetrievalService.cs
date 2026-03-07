@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Groups.Models;
@@ -46,11 +44,8 @@ internal class RetrievalService(
     );
 
     public Task<RetrieveListResult<Permission>> ListPermissionsAsync(
-        FilterBuilder<Permission>? filter = null,
-        OrderBuilder<Permission>? order = null,
-        int skip = 0,
-        int take = 25
-    ) => WrapListResultAsync(_permissionProcessor.ListPermissionsAsync(filter, order, skip, take));
+        ListPermissionsRequest request
+    ) => WrapListResultAsync(_permissionProcessor.ListPermissionsAsync(request));
 
     public async Task<RetrieveSingleResult<Permission>> GetPermissionAsync(
         Guid permissionId,
@@ -70,12 +65,8 @@ internal class RetrievalService(
         );
     }
 
-    public Task<RetrieveListResult<Group>> ListGroupsAsync(
-        FilterBuilder<Group>? filter = null,
-        OrderBuilder<Group>? order = null,
-        int skip = 0,
-        int take = 25
-    ) => WrapListResultAsync(_groupProcessor.ListGroupsAsync(filter, order, skip, take));
+    public Task<RetrieveListResult<Group>> ListGroupsAsync(ListGroupsRequest request) =>
+        WrapListResultAsync(_groupProcessor.ListGroupsAsync(request));
 
     public async Task<RetrieveSingleResult<Group>> GetGroupAsync(Guid groupId, bool hydrate = false)
     {
@@ -92,12 +83,8 @@ internal class RetrievalService(
         );
     }
 
-    public Task<RetrieveListResult<Role>> ListRolesAsync(
-        FilterBuilder<Role>? filter = null,
-        OrderBuilder<Role>? order = null,
-        int skip = 0,
-        int take = 25
-    ) => WrapListResultAsync(_roleProcessor.ListRolesAsync(filter, order, skip, take));
+    public Task<RetrieveListResult<Role>> ListRolesAsync(ListRolesRequest request) =>
+        WrapListResultAsync(_roleProcessor.ListRolesAsync(request));
 
     public async Task<RetrieveSingleResult<Role>> GetRoleAsync(Guid roleId, bool hydrate = false)
     {
@@ -114,12 +101,8 @@ internal class RetrievalService(
         );
     }
 
-    public Task<RetrieveListResult<User>> ListUsersAsync(
-        FilterBuilder<User>? filter = null,
-        OrderBuilder<User>? order = null,
-        int skip = 0,
-        int take = 25
-    ) => WrapListResultAsync(_userProcessor.ListUsersAsync(filter, order, skip, take));
+    public Task<RetrieveListResult<User>> ListUsersAsync(ListUsersRequest request) =>
+        WrapListResultAsync(_userProcessor.ListUsersAsync(request));
 
     public async Task<RetrieveSingleResult<User>> GetUserAsync(Guid userId, bool hydrate = false)
     {
@@ -136,12 +119,8 @@ internal class RetrievalService(
         );
     }
 
-    public Task<RetrieveListResult<Account>> ListAccountsAsync(
-        FilterBuilder<Account>? filter = null,
-        OrderBuilder<Account>? order = null,
-        int skip = 0,
-        int take = 25
-    ) => WrapListResultAsync(_accountProcessor.ListAccountsAsync(filter, order, skip, take));
+    public Task<RetrieveListResult<Account>> ListAccountsAsync(ListAccountsRequest request) =>
+        WrapListResultAsync(_accountProcessor.ListAccountsAsync(request));
 
     public async Task<RetrieveSingleResult<Account>> GetAccountAsync(
         Guid accountId,

@@ -150,7 +150,7 @@ else
                 _ => null
             };
         }
-        var result = await RetrievalService.ListPermissionsAsync(filter: filter, order: order, skip: _skip, take: _take);
+        var result = await RetrievalService.ListPermissionsAsync(new ListPermissionsRequest(filter, order, _skip, _take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             _items = result.Data.Items;

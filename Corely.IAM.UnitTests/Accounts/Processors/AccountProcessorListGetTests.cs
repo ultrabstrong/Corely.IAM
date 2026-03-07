@@ -137,7 +137,7 @@ public class AccountProcessorListGetTests
     {
         await CreateAccountEntityAsync("TestAccount");
 
-        var result = await _accountProcessor.ListAccountsAsync(null, null, 0, 10);
+        var result = await _accountProcessor.ListAccountsAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -152,7 +152,7 @@ public class AccountProcessorListGetTests
         await CreateAccountEntityAsync("MyAccount");
         await CreateAccountEntityAsync("OtherAccount", otherAccountId);
 
-        var result = await _accountProcessor.ListAccountsAsync(null, null, 0, 10);
+        var result = await _accountProcessor.ListAccountsAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -185,7 +185,7 @@ public class AccountProcessorListGetTests
         await CreateAccountEntityAsync("Account2", accountId2);
         await CreateAccountEntityAsync("Account3", accountId3);
 
-        var result = await _accountProcessor.ListAccountsAsync(null, null, 0, 2);
+        var result = await _accountProcessor.ListAccountsAsync(new(Take: 2));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -223,7 +223,7 @@ public class AccountProcessorListGetTests
             serviceFactory.GetRequiredService<ILogger<AccountProcessor>>()
         );
 
-        var result = await processor.ListAccountsAsync(null, null, 0, 10);
+        var result = await processor.ListAccountsAsync(new(Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);

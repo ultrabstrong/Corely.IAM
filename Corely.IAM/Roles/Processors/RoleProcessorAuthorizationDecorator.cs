@@ -1,6 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.Common.Filtering;
-using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Roles.Models;
@@ -59,17 +57,12 @@ internal class RoleProcessorAuthorizationDecorator(
                 null
             );
 
-    public async Task<ListResult<Role>> ListRolesAsync(
-        FilterBuilder<Role>? filter,
-        OrderBuilder<Role>? order,
-        int skip,
-        int take
-    ) =>
+    public async Task<ListResult<Role>> ListRolesAsync(ListRolesRequest request) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.ROLE_RESOURCE_TYPE
         )
-            ? await _inner.ListRolesAsync(filter, order, skip, take)
+            ? await _inner.ListRolesAsync(request)
             : new ListResult<Role>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list roles",

@@ -81,11 +81,11 @@ Remove Admin and Reader from the default system setup. Simplify the creation met
 
 ## Todos
 
-- [ ] Remove `ADMIN_ROLE_NAME` / `READER_ROLE_NAME` from `RoleConstants.cs`
-- [ ] Simplify `CreateDefaultSystemRolesResult` to single `OwnerRoleId`
-- [ ] Update `RoleProcessor.CreateDefaultSystemRolesAsync` — owner role only
-- [ ] Update `PermissionProcessor.CreateDefaultSystemPermissionsAsync` — owner permission only
-- [ ] Update `RoleProcessorTests` — expect 1 default role
-- [ ] Update `PermissionProcessorTests` — expect 1 default permission, remove admin/reader tests
-- [ ] Update `RegistrationServiceTests` mock — single-ID result
-- [ ] Run `.\RebuildAndTest.ps1` to verify
+- [x] Remove `ADMIN_ROLE_NAME` / `READER_ROLE_NAME` from `RoleConstants.cs`
+- [x] Simplify `CreateDefaultSystemRolesResult` to single `OwnerRoleId`
+- [x] Update `RoleProcessor.CreateDefaultSystemRolesAsync` — owner role only
+- [x] Update `PermissionProcessor.CreateDefaultSystemPermissionsAsync` — owner permission only
+- [x] Update `RoleProcessorTests` — expect 1 default role
+- [x] Update `PermissionProcessorTests` — expect 1 default permission, remove admin/reader tests
+- [x] Update `RegistrationServiceTests` mock — single-ID result
+- [x] Run `.\RebuildAndTest.ps1` to verify

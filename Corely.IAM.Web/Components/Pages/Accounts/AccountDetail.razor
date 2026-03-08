@@ -482,6 +482,10 @@ else
                 SetResultMessage(true, "Invitation created.");
                 await ReloadAsync();
             }
+            else if (result.ResultCode == CreateInvitationResultCode.UserAlreadyInAccountError)
+            {
+                SetResultMessage(false, string.Empty, $"{result.Message} User ID: {result.ExistingUserId}");
+            }
             else
             {
                 SetResultMessage(false, string.Empty, result.Message);

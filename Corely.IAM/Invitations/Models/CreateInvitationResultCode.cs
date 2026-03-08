@@ -6,4 +6,5 @@ public enum CreateInvitationResultCode
     AccountNotFoundError,
     ValidationError,
     UnauthorizedError,
+    UserAlreadyInAccountError,
 }

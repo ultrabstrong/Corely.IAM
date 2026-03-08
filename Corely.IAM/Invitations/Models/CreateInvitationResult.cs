@@ -4,5 +4,6 @@ public record CreateInvitationResult(
     CreateInvitationResultCode ResultCode,
     string Message,
     string? Token,
-    Guid? InvitationId
+    Guid? InvitationId,
+    Guid? ExistingUserId = null
 );

@@ -14,6 +14,7 @@ using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Invitations.Processors;
@@ -61,8 +62,19 @@ internal class InvitationProcessor(
             );
         }
 
-        var accountEntity = await _accountRepo.GetAsync(a => a.Id == request.AccountId);
-        if (accountEntity == null)
+        var accountCheck = await _accountRepo.EvaluateAsync(
+            async (q, ct) =>
+                await q.Where(a => a.Id == request.AccountId)
+                    .Select(a => new
+                    {
+                        ExistingMemberId = a.Users!.Where(u => u.Email == request.Email)
+                            .Select(u => (Guid?)u.Id)
+                            .FirstOrDefault(),
+                    })
+                    .FirstOrDefaultAsync(ct)
+        );
+
+        if (accountCheck == null)
         {
             _logger.LogWarning("Account with Id {AccountId} not found", request.AccountId);
             return new CreateInvitationResult(
@@ -70,6 +82,23 @@ internal class InvitationProcessor(
                 $"Account with Id {request.AccountId} not found",
                 null,
                 null
+            );
+        }
+
+        if (accountCheck.ExistingMemberId != null)
+        {
+            _logger.LogWarning(
+                "User {UserId} with email {Email} is already a member of account {AccountId}",
+                accountCheck.ExistingMemberId,
+                request.Email,
+                request.AccountId
+            );
+            return new CreateInvitationResult(
+                CreateInvitationResultCode.UserAlreadyInAccountError,
+                $"A user with email '{request.Email}' is already a member of this account.",
+                null,
+                null,
+                accountCheck.ExistingMemberId
             );
         }
 

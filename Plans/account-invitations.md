@@ -627,5 +627,188 @@ Separate page where an authenticated user can accept an invitation token to join
 - [ ] Web UI — Create Invitation modal displays token on success
 - [ ] Web UI — Accept Invitation page works with and without query param pre-fill
 - [ ] Web UI — Accept Invitation redirects to account on success
-- [ ] Web UI — Add user by email resolves and registers correctly
-- [ ] Web UI — Add user input handles both GUID and email formats
+
+---
+
+## Follow-up: Remove Direct Add-User by GUID
+
+### Context
+
+The Account detail page (`AccountDetail.razor`) has a "Users" section header with a GUID input field + "Add User" button that calls `RegisterUserWithAccountAsync` directly. This mechanism was added before the invitations system existed as a placeholder admin shortcut.
+
+Now that invitations are fully implemented, the direct-add-by-GUID flow is **unnecessary and an attack vector**: it lets any account owner enumerate whether arbitrary GUIDs correspond to real users, bypassing the privacy model. The invitations system is the correct and only way to bring a user into an account.
+
+**Note:** The "Add user by email" variant described in Phase 9 of this plan was **never implemented** (the decision was correctly reversed — email lookup has the same privacy problem as GUID lookup). No backend changes are needed for that.
+
+The Phase 9 checklist items "Add user by email resolves and registers correctly" and "Add user input handles both GUID and email formats" were from that discarded direction and are dropped.
+
+### Scope
+
+**Single file change — Web UI only:**
+
+`Corely.IAM.Web/Components/Pages/Accounts/AccountDetail.razor`
+- Remove the GUID `<input>` and "Add User" `<button>` from the Users section header (lines 162–165)
+- Remove the `_newUserInput` field declaration
+- Remove the `AddUserAsync()` method
+
+**No backend changes.** `IRegistrationService.RegisterUserWithAccountAsync` is intentionally kept — it has valid uses in programmatic/admin/test flows (DevTools, ConsoleTest) and is part of the public library surface. Only the web UI entry point is removed.
+
+### What Changes
+
+| Location | Change |
+|----------|--------|
+| `AccountDetail.razor` markup | ~~Remove GUID input + Add User button from Users section header~~ ✅ |
+| `AccountDetail.razor` @code | ~~Remove `private string? _newUserInput` field~~ ✅ |
+| `AccountDetail.razor` @code | ~~Remove `AddUserAsync()` method~~ ✅ |
+
+### After This Change
+
+Users can only be added to an account via the invitation flow:
+1. Account owner creates an invitation (email + optional description + expiry) → receives a token
+2. Invited user navigates to `/accept-invitation`, pastes the token, and is added to the account
+
+---
+
+## Follow-up: Invitation Token Modal — Select All + Copy to Clipboard
+
+### Context
+
+The "Invitation Created" modal (`AccountDetail.razor` lines 220–243) displays the token in a readonly text input with only a Close button in the footer. The user must manually select and copy the token. The screenshot shows the token is already visually selected but there's no programmatic copy button.
+
+### Changes
+
+**`Corely.IAM.Web/Components/Pages/Accounts/AccountDetail.razor`**
+
+1. Auto-select the token text when the modal renders — add `@ref="_tokenInput"` to the input and call `_tokenInput.FocusAsync()` + JS `select()` via `JSRuntime` after the modal appears, OR use the simpler `onclick="this.select()"` HTML attribute on the input.
+2. Add a **"Copy to Clipboard"** button in the modal footer, left of the existing Close button. On click, call `JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", _createdToken)`. Show brief visual feedback (button text changes to "Copied!" for ~1.5s).
+
+**New field:**
+```csharp
+private bool _tokenCopied;
+```
+
+**Updated modal footer:**
+```razor
+<div class="modal-footer">
+    <button type="button" class="btn btn-primary btn-sm" @onclick="CopyTokenAsync">
+        @(_tokenCopied ? "Copied!" : "Copy to Clipboard")
+    </button>
+    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => { _createdToken = null; _tokenCopied = false; }">Close</button>
+</div>
+```
+
+**Updated input** (auto-selects on click):
+```razor
+<input type="text" class="form-control form-control-sm font-monospace" readonly value="@_createdToken" onclick="this.select()" />
+```
+
+**New method:**
+```csharp
+private async Task CopyTokenAsync()
+{
+    await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", _createdToken);
+    _tokenCopied = true;
+    StateHasChanged();
+    await Task.Delay(1500);
+    _tokenCopied = false;
+    StateHasChanged();
+}
+```
+
+**Requires:** inject `IJSRuntime JSRuntime` at the top of the component.
+
+### Files
+
+| File | Change |
+|------|--------|
+| `AccountDetail.razor` | Add `_tokenCopied` field, `CopyTokenAsync` method, update modal footer and token input |
+
+---
+
+## Follow-up: Prevent Creating Invitation for User Already in Account
+
+### Context
+
+`InvitationProcessor.CreateInvitationAsync` does not check whether the provided email already belongs to a user who is a member of the account. This means an owner can create (and send) an invitation for someone who is already in the account — confusing for both parties.
+
+The check should happen at invitation **creation** time, not acceptance time.
+
+### Backend Changes
+
+**`Corely.IAM/Invitations/Models/CreateInvitationResultCode.cs`**
+
+Add new result code:
+```csharp
+UserAlreadyInAccountError,
+```
+
+**`Corely.IAM/Invitations/Models/CreateInvitationResult.cs`**
+
+Add `Guid? ExistingUserId` to the result (populated only on `UserAlreadyInAccountError`):
+```csharp
+public record CreateInvitationResult(
+    CreateInvitationResultCode ResultCode,
+    string Message,
+    string? Token,
+    Guid? InvitationId,
+    Guid? ExistingUserId
+);
+```
+
+**`Corely.IAM/Invitations/Processors/InvitationProcessor.cs`**
+
+After the account existence check, add:
+```csharp
+// Check if a user with this email is already a member of the account
+var existingUser = await _userRepo.GetAsync(u =>
+    u.Email == request.Email
+    && u.Accounts!.Any(a => a.Id == request.AccountId));
+
+if (existingUser != null)
+{
+    _logger.LogWarning(
+        "User {UserId} with email {Email} is already a member of account {AccountId}",
+        existingUser.Id, request.Email, request.AccountId);
+    return new CreateInvitationResult(
+        CreateInvitationResultCode.UserAlreadyInAccountError,
+        $"A user with email {request.Email} is already a member of this account.",
+        null,
+        null,
+        existingUser.Id);
+}
+```
+
+`InvitationProcessor` already has access to `IReadonlyRepo<UserEntity>` (or it needs to be injected — confirm during implementation).
+
+All existing `CreateInvitationResult` call sites need the new `ExistingUserId` argument added (pass `null`).
+
+**`Corely.IAM.UnitTests/Invitations/Processors/InvitationProcessorTests.cs`**
+
+Add test: `CreateInvitation_ReturnsUserAlreadyInAccountError_WhenEmailBelongsToExistingMember`
+
+### Web Changes
+
+**`Corely.IAM.Web/Components/Pages/Accounts/AccountDetail.razor`**
+
+In `CreateInvitationAsync`, handle the new result code:
+```csharp
+if (result.ResultCode == CreateInvitationResultCode.UserAlreadyInAccountError)
+{
+    SetResultMessage(false, string.Empty,
+        $"That email belongs to a user already in this account (ID: {result.ExistingUserId}).");
+    return;
+}
+```
+
+Show the error in the existing `Alert` component inside the create invitation modal — no new UI needed.
+
+### Files
+
+| File | Change |
+|------|--------|
+| `CreateInvitationResultCode.cs` | Add `UserAlreadyInAccountError` |
+| `CreateInvitationResult.cs` | Add `Guid? ExistingUserId` parameter |
+| `InvitationProcessor.cs` | Add email-in-account check after account existence check; inject `IReadonlyRepo<UserEntity>` if not already present |
+| All `CreateInvitationResult(...)` call sites | Add `null` for new `ExistingUserId` parameter |
+| `InvitationProcessorTests.cs` | Add test for new error code |
+| `AccountDetail.razor` | Handle `UserAlreadyInAccountError` in `CreateInvitationAsync` |

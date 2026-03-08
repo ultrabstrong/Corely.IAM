@@ -33,17 +33,46 @@ public class InvitationProcessorTests
         );
     }
 
-    private async Task<UserEntity> CreateUserAsync()
+    private async Task<UserEntity> CreateUserAsync(string? email = null)
     {
         var user = new UserEntity
         {
             Id = Guid.CreateVersion7(),
+            Username = "testuser",
+            Email = email ?? "default@test.com",
             Accounts = [],
             Groups = [],
             Roles = [],
         };
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         return await userRepo.CreateAsync(user);
+    }
+
+    private async Task<UserEntity> CreateUserInAccountAsync(AccountEntity account, string email)
+    {
+        var user = new UserEntity
+        {
+            Id = Guid.CreateVersion7(),
+            Username = "member",
+            Email = email,
+            Accounts = [account],
+            Groups = [],
+            Roles = [],
+        };
+        var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
+        var created = await userRepo.CreateAsync(user);
+
+        // Also update the account's Users collection so EvaluateAsync queries via _accountRepo find the member
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var accountEntity = await accountRepo.GetAsync(
+            a => a.Id == account.Id,
+            include: q => q.Include(a => a.Users)
+        );
+        accountEntity!.Users ??= [];
+        accountEntity.Users.Add(created);
+        await accountRepo.UpdateAsync(accountEntity);
+
+        return created;
     }
 
     private async Task<AccountEntity> CreateAccountAsync()
@@ -147,6 +176,32 @@ public class InvitationProcessorTests
         var result = await _invitationProcessor.CreateInvitationAsync(request);
 
         Assert.Equal(CreateInvitationResultCode.AccountNotFoundError, result.ResultCode);
+        Assert.Null(result.Token);
+        Assert.Null(result.InvitationId);
+    }
+
+    [Fact]
+    public async Task CreateInvitationAsync_ReturnsUserAlreadyInAccountError_WhenEmailBelongsToExistingMember()
+    {
+        var owner = await CreateUserAsync();
+        var account = await CreateAccountAsync();
+        SetUserContext(owner, account);
+
+        const string memberEmail = "already-member@example.com";
+        await CreateUserInAccountAsync(account, memberEmail);
+
+        var request = new CreateInvitationRequest(
+            account.Id,
+            memberEmail,
+            null,
+            InvitationConstants.MIN_EXPIRY_SECONDS
+        );
+
+        var result = await _invitationProcessor.CreateInvitationAsync(request);
+
+        Assert.Equal(CreateInvitationResultCode.UserAlreadyInAccountError, result.ResultCode);
+        Assert.NotNull(result.ExistingUserId);
+        Assert.NotEqual(Guid.Empty, result.ExistingUserId!.Value);
         Assert.Null(result.Token);
         Assert.Null(result.InvitationId);
     }

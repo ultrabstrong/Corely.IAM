@@ -1,3 +1,4 @@
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Entities;
 using Corely.Security.Encryption.Factories;
@@ -21,8 +22,43 @@ internal static class SymmetricKeyMapper
         };
     }
 
+    public static AccountSymmetricKeyEntity ToAccountEntity(
+        this SymmetricKey symmetricKey,
+        Guid accountId
+    )
+    {
+        return new AccountSymmetricKeyEntity
+        {
+            Id = symmetricKey.Id,
+            AccountId = accountId,
+            KeyUsedFor = symmetricKey.KeyUsedFor,
+            ProviderTypeCode = symmetricKey.ProviderTypeCode,
+            Version = symmetricKey.Version,
+            EncryptedKey = symmetricKey.Key.ToEncryptedString()!,
+            CreatedUtc = symmetricKey.CreatedUtc,
+            ModifiedUtc = symmetricKey.ModifiedUtc,
+        };
+    }
+
     public static SymmetricKey ToModel(
         this UserSymmetricKeyEntity entity,
+        ISymmetricEncryptionProviderFactory encryptionProviderFactory
+    )
+    {
+        return new SymmetricKey
+        {
+            Id = entity.Id,
+            KeyUsedFor = entity.KeyUsedFor,
+            ProviderTypeCode = entity.ProviderTypeCode,
+            Version = entity.Version,
+            Key = entity.EncryptedKey.ToEncryptedValue(encryptionProviderFactory),
+            CreatedUtc = entity.CreatedUtc,
+            ModifiedUtc = entity.ModifiedUtc,
+        };
+    }
+
+    public static SymmetricKey ToModel(
+        this AccountSymmetricKeyEntity entity,
         ISymmetricEncryptionProviderFactory encryptionProviderFactory
     )
     {

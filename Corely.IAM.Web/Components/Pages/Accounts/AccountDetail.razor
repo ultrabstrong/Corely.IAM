@@ -6,6 +6,7 @@
 @inject IRegistrationService RegistrationService
 @inject IDeregistrationService DeregistrationService
 @inject IAccountDisplayState AccountDisplayState
+@inject IJSRuntime JSRuntime
 
 <PageTitle>@_accountName - Corely IAM</PageTitle>
 
@@ -230,12 +231,15 @@ else
                     <div class="alert alert-success mb-0">
                         <strong>Copy this token</strong> — it will not be shown again.
                         <div class="input-group mt-2">
-                            <input type="text" class="form-control form-control-sm font-monospace" readonly value="@_createdToken" />
+                            <input type="text" class="form-control form-control-sm font-monospace" readonly value="@_createdToken" onclick="this.select()" />
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => _createdToken = null">Close</button>
+                    <button type="button" class="btn btn-primary btn-sm" @onclick="CopyTokenAsync">
+                        @(_tokenCopied ? "Copied!" : "Copy to Clipboard")
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => { _createdToken = null; _tokenCopied = false; }">Close</button>
                 </div>
             </div>
         </div>
@@ -264,6 +268,7 @@ else
     private string? _inviteDescription;
     private int _inviteExpirySeconds = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
     private string? _createdToken;
+    private bool _tokenCopied;
     private CancellationTokenSource? _invSearchCts;
 
     private int _usersSkip;
@@ -461,6 +466,7 @@ else
         _inviteDescription = string.Empty;
         _inviteExpirySeconds = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
         _createdToken = null;
+        _tokenCopied = false;
         _createInvitationModal.Show();
     }
 
@@ -481,6 +487,16 @@ else
                 SetResultMessage(false, string.Empty, result.Message);
             }
         });
+    }
+
+    private async Task CopyTokenAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", _createdToken);
+        _tokenCopied = true;
+        StateHasChanged();
+        await Task.Delay(1500);
+        _tokenCopied = false;
+        StateHasChanged();
     }
 
     private void ConfirmRevokeInvitation(Guid invitationId, string email) =>

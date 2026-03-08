@@ -363,6 +363,107 @@ public class UserProcessorTests
     }
 
     [Fact]
+    public async Task AssignRolesToUserAsync_PartiallySucceeds_WhenSomeRolesExistForUser()
+    {
+        var (user, account) = await CreateUserAsync();
+        var existingRole = await CreateRoleAsync(account.Id, user.Id);
+        var newRole = await CreateRoleAsync(account.Id);
+        var request = new AssignRolesToUserRequest([existingRole.Id, newRole.Id], user.Id);
+
+        var result = await _userProcessor.AssignRolesToUserAsync(request);
+
+        Assert.Equal(AssignRolesToUserResultCode.PartialSuccess, result.ResultCode);
+        Assert.Equal(1, result.AddedRoleCount);
+        Assert.NotEmpty(result.InvalidRoleIds);
+        Assert.Contains(existingRole.Id, result.InvalidRoleIds);
+    }
+
+    [Fact]
+    public async Task AssignRolesToUserAsync_PartiallySucceeds_WhenSomeRolesDoNotExist()
+    {
+        var (user, account) = await CreateUserAsync();
+        var role = await CreateRoleAsync(account.Id);
+        var invalidRoleId = Guid.CreateVersion7();
+        var request = new AssignRolesToUserRequest([role.Id, invalidRoleId], user.Id);
+
+        var result = await _userProcessor.AssignRolesToUserAsync(request);
+
+        Assert.Equal(AssignRolesToUserResultCode.PartialSuccess, result.ResultCode);
+        Assert.Equal(1, result.AddedRoleCount);
+        Assert.NotEmpty(result.InvalidRoleIds);
+        Assert.Contains(invalidRoleId, result.InvalidRoleIds);
+    }
+
+    [Fact]
+    public async Task AssignRolesToUserAsync_PartiallySucceeds_WhenSomeRolesBelongToDifferentAccount()
+    {
+        var (user, account) = await CreateUserAsync();
+        var roleSameAccount = await CreateRoleAsync(account.Id);
+        var roleDifferentAccount = await CreateRoleAsync(Guid.CreateVersion7());
+        var request = new AssignRolesToUserRequest(
+            [roleSameAccount.Id, roleDifferentAccount.Id],
+            user.Id
+        );
+
+        var result = await _userProcessor.AssignRolesToUserAsync(request);
+
+        Assert.Equal(AssignRolesToUserResultCode.PartialSuccess, result.ResultCode);
+        Assert.Equal(1, result.AddedRoleCount);
+        Assert.NotEmpty(result.InvalidRoleIds);
+        Assert.Contains(roleDifferentAccount.Id, result.InvalidRoleIds);
+    }
+
+    [Fact]
+    public async Task AssignRolesToUserAsync_Fails_WhenAllRolesExistForUser()
+    {
+        var (user, account) = await CreateUserAsync();
+        var roleIds = new List<Guid>
+        {
+            (await CreateRoleAsync(account.Id, user.Id)).Id,
+            (await CreateRoleAsync(account.Id, user.Id)).Id,
+        };
+        var request = new AssignRolesToUserRequest(roleIds, user.Id);
+
+        var result = await _userProcessor.AssignRolesToUserAsync(request);
+
+        Assert.Equal(AssignRolesToUserResultCode.InvalidRoleIdsError, result.ResultCode);
+        Assert.Equal(0, result.AddedRoleCount);
+        Assert.Equal(roleIds, result.InvalidRoleIds);
+    }
+
+    [Fact]
+    public async Task AssignRolesToUserAsync_Fails_WhenAllRolesDoNotExist()
+    {
+        var (user, _) = await CreateUserAsync();
+        var roleIds = _fixture.CreateMany<Guid>().ToList();
+        var request = new AssignRolesToUserRequest(roleIds, user.Id);
+
+        var result = await _userProcessor.AssignRolesToUserAsync(request);
+
+        Assert.Equal(AssignRolesToUserResultCode.InvalidRoleIdsError, result.ResultCode);
+        Assert.Equal(0, result.AddedRoleCount);
+        Assert.Equal(roleIds, result.InvalidRoleIds);
+    }
+
+    [Fact]
+    public async Task AssignRolesToUserAsync_Fails_WhenAllRolesBelongToDifferentAccount()
+    {
+        var (user, _) = await CreateUserAsync();
+        var roleIds = new List<Guid>
+        {
+            (await CreateRoleAsync(Guid.CreateVersion7())).Id,
+            (await CreateRoleAsync(Guid.CreateVersion7())).Id,
+        };
+        var request = new AssignRolesToUserRequest(roleIds, user.Id);
+
+        var result = await _userProcessor.AssignRolesToUserAsync(request);
+
+        Assert.Equal(AssignRolesToUserResultCode.InvalidRoleIdsError, result.ResultCode);
+        Assert.Equal(0, result.AddedRoleCount);
+        Assert.Equal(roleIds, result.InvalidRoleIds);
+    }
+
+    [Fact]
     public async Task DeleteUserAsync_ReturnsSuccess_WhenUserExistsAndNotOwner()
     {
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();

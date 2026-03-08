@@ -185,13 +185,7 @@ public class RegistrationServiceTests
             );
 
         mock.Setup(m => m.CreateDefaultSystemRolesAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(() =>
-                new CreateDefaultSystemRolesResult(
-                    _fixture.Create<Guid>(),
-                    _fixture.Create<Guid>(),
-                    _fixture.Create<Guid>()
-                )
-            );
+            .ReturnsAsync(() => new CreateDefaultSystemRolesResult(_fixture.Create<Guid>()));
 
         mock.Setup(m => m.GetRoleAsync(It.IsAny<string>(), It.IsAny<Guid>()))
             .ReturnsAsync(() =>

@@ -106,12 +106,6 @@ internal class PermissionProcessor(
         var ownerRole = await _roleRepo.GetAsync(r =>
             r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
         );
-        var adminRole = await _roleRepo.GetAsync(r =>
-            r.AccountId == accountId && r.Name == RoleConstants.ADMIN_ROLE_NAME
-        );
-        var userRole = await _roleRepo.GetAsync(r =>
-            r.AccountId == accountId && r.Name == RoleConstants.READER_ROLE_NAME
-        );
 
         PermissionEntity[] permissionEntities =
         [
@@ -130,38 +124,6 @@ internal class PermissionProcessor(
                 Description = "Owner Role - Full access to all resources",
                 IsSystemDefined = true,
                 Roles = ownerRole != null ? [ownerRole] : [],
-            },
-            // Admin Role: CRUdX on all resources
-            new()
-            {
-                Id = Guid.CreateVersion7(),
-                AccountId = accountId,
-                ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
-                ResourceId = Guid.Empty,
-                Create = true,
-                Read = true,
-                Update = true,
-                Delete = false,
-                Execute = true,
-                Description = "Admin Role - Manage all resources",
-                IsSystemDefined = true,
-                Roles = adminRole != null ? [adminRole] : [],
-            },
-            // Reader Role: cRudx on all resources (Read only)
-            new()
-            {
-                Id = Guid.CreateVersion7(),
-                AccountId = accountId,
-                ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
-                ResourceId = Guid.Empty,
-                Create = false,
-                Read = true,
-                Update = false,
-                Delete = false,
-                Execute = false,
-                Description = "Reader Role - Read-only access to all resources",
-                IsSystemDefined = true,
-                Roles = userRole != null ? [userRole] : [],
             },
         ];
 

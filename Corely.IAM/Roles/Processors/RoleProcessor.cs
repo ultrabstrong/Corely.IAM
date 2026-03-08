@@ -96,24 +96,10 @@ internal class RoleProcessor(
             Name = RoleConstants.OWNER_ROLE_NAME,
             IsSystemDefined = true,
         };
-        var adminRole = new RoleEntity
-        {
-            Id = Guid.CreateVersion7(),
-            AccountId = ownerAccountId,
-            Name = RoleConstants.ADMIN_ROLE_NAME,
-            IsSystemDefined = true,
-        };
-        var userRole = new RoleEntity
-        {
-            Id = Guid.CreateVersion7(),
-            AccountId = ownerAccountId,
-            Name = RoleConstants.READER_ROLE_NAME,
-            IsSystemDefined = true,
-        };
 
-        await _roleRepo.CreateAsync([ownerRole, adminRole, userRole]);
+        await _roleRepo.CreateAsync(ownerRole);
 
-        return new CreateDefaultSystemRolesResult(ownerRole.Id, adminRole.Id, userRole.Id);
+        return new CreateDefaultSystemRolesResult(ownerRole.Id);
     }
 
     public async Task<GetRoleResult> GetRoleAsync(Guid roleId)

@@ -43,28 +43,14 @@ public class PermissionProcessorTests
     private async Task CreateDefaultRolesAsync(Guid accountId)
     {
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
-        RoleEntity[] roles =
-        [
-            new()
+        await roleRepo.CreateAsync(
+            new RoleEntity
             {
                 AccountId = accountId,
                 Name = RoleConstants.OWNER_ROLE_NAME,
                 IsSystemDefined = true,
-            },
-            new()
-            {
-                AccountId = accountId,
-                Name = RoleConstants.ADMIN_ROLE_NAME,
-                IsSystemDefined = true,
-            },
-            new()
-            {
-                AccountId = accountId,
-                Name = RoleConstants.READER_ROLE_NAME,
-                IsSystemDefined = true,
-            },
-        ];
-        await roleRepo.CreateAsync(roles);
+            }
+        );
     }
 
     [Fact]
@@ -125,7 +111,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemPermissions_CreatesThreePermissions()
+    public async Task CreateDefaultSystemPermissions_CreatesOnePermission()
     {
         var account = await CreateAccountAsync();
         await CreateDefaultRolesAsync(account.Id);
@@ -134,7 +120,7 @@ public class PermissionProcessorTests
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var permissions = await permissionRepo.ListAsync(p => p.AccountId == account.Id);
-        Assert.Equal(3, permissions.Count);
+        Assert.Single(permissions);
         Assert.All(
             permissions,
             p =>
@@ -166,48 +152,6 @@ public class PermissionProcessorTests
         );
         Assert.NotNull(ownerPermission);
         Assert.Contains(ownerPermission.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
-    }
-
-    [Fact]
-    public async Task CreateDefaultSystemPermissions_CreatesAdminPermission_WithoutDelete()
-    {
-        var account = await CreateAccountAsync();
-        await CreateDefaultRolesAsync(account.Id);
-
-        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(account.Id);
-
-        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
-        var permissions = await permissionRepo.ListAsync(
-            p => p.AccountId == account.Id,
-            include: q => q.Include(p => p.Roles)
-        );
-
-        var adminPermission = permissions.Single(p =>
-            p.Create && p.Read && p.Update && !p.Delete && p.Execute
-        );
-        Assert.NotNull(adminPermission);
-        Assert.Contains(adminPermission.Roles!, r => r.Name == RoleConstants.ADMIN_ROLE_NAME);
-    }
-
-    [Fact]
-    public async Task CreateDefaultSystemPermissions_CreatesUserPermission_ReadOnly()
-    {
-        var account = await CreateAccountAsync();
-        await CreateDefaultRolesAsync(account.Id);
-
-        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(account.Id);
-
-        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
-        var permissions = await permissionRepo.ListAsync(
-            p => p.AccountId == account.Id,
-            include: q => q.Include(p => p.Roles)
-        );
-
-        var userPermission = permissions.Single(p =>
-            !p.Create && p.Read && !p.Update && !p.Delete && !p.Execute
-        );
-        Assert.NotNull(userPermission);
-        Assert.Contains(userPermission.Roles!, r => r.Name == RoleConstants.READER_ROLE_NAME);
     }
 
     [Fact]
@@ -273,7 +217,7 @@ public class PermissionProcessorTests
             p.AccountId == account.Id && p.IsSystemDefined
         );
 
-        Assert.Equal(3, systemPermissions.Count);
+        Assert.Single(systemPermissions);
 
         foreach (var permission in systemPermissions)
         {

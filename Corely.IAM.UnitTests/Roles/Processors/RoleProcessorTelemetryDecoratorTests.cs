@@ -42,11 +42,7 @@ public class RoleProcessorTelemetryDecoratorTests
     public async Task CreateDefaultSystemRoles_DelegatesToInnerAndLogsResult()
     {
         var ownerAccountId = Guid.CreateVersion7();
-        var expectedResult = new CreateDefaultSystemRolesResult(
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7()
-        );
+        var expectedResult = new CreateDefaultSystemRolesResult(Guid.CreateVersion7());
         _mockInnerProcessor
             .Setup(x => x.CreateDefaultSystemRolesAsync(ownerAccountId))
             .ReturnsAsync(expectedResult);

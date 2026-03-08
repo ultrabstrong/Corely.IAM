@@ -404,3 +404,5 @@ appsettings.json
 migrationsettings.json
 corely-iam-db-migration-settings.json
 corely-iam-devtool-settings.json
+AzuriteConfig
+__azurite_db_table__.json

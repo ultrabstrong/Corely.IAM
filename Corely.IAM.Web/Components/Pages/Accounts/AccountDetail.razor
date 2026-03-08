@@ -159,10 +159,6 @@ else
         <div class="section-divider mb-4">
             <div class="section-divider-label">
                 Users
-                <div class="d-flex gap-2 align-items-center">
-                    <input type="text" class="form-control form-control-sm" style="width: 260px;" @bind="_newUserInput" placeholder="User ID (GUID)" />
-                    <button class="btn btn-primary btn-sm" @onclick="AddUserAsync" disabled="@_loading">Add User</button>
-                </div>
             </div>
             <table class="table table-sm table-hover mb-0">
                 <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
@@ -251,7 +247,6 @@ else
     private string? _originalAccountName;
     private bool _isEditing;
     private List<ChildRef> _users = [];
-    private string? _newUserInput;
     private List<EffectivePermission>? _effectivePermissions;
     private ConfirmModal _removeUserModal = null!;
     private ConfirmModal _deleteModal = null!;
@@ -438,18 +433,6 @@ else
                 return;
             }
             SetResultMessage(false, string.Empty, result.Message);
-        });
-    }
-
-    private async Task AddUserAsync()
-    {
-        if (!TryParseGuid(_newUserInput, out var userId)) return;
-        await ExecuteSafeAsync(async () =>
-        {
-            var result = await RegistrationService.RegisterUserWithAccountAsync(new RegisterUserWithAccountRequest(userId));
-            SetResultMessage(result.ResultCode == RegisterUserWithAccountResultCode.Success, "User added.", result.Message ?? "Failed.");
-            _newUserInput = string.Empty;
-            await ReloadAsync();
         });
     }
 

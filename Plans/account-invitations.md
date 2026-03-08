@@ -627,5 +627,42 @@ Separate page where an authenticated user can accept an invitation token to join
 - [ ] Web UI — Create Invitation modal displays token on success
 - [ ] Web UI — Accept Invitation page works with and without query param pre-fill
 - [ ] Web UI — Accept Invitation redirects to account on success
-- [ ] Web UI — Add user by email resolves and registers correctly
-- [ ] Web UI — Add user input handles both GUID and email formats
+
+---
+
+## Follow-up: Remove Direct Add-User by GUID
+
+### Context
+
+The Account detail page (`AccountDetail.razor`) has a "Users" section header with a GUID input field + "Add User" button that calls `RegisterUserWithAccountAsync` directly. This mechanism was added before the invitations system existed as a placeholder admin shortcut.
+
+Now that invitations are fully implemented, the direct-add-by-GUID flow is **unnecessary and an attack vector**: it lets any account owner enumerate whether arbitrary GUIDs correspond to real users, bypassing the privacy model. The invitations system is the correct and only way to bring a user into an account.
+
+**Note:** The "Add user by email" variant described in Phase 9 of this plan was **never implemented** (the decision was correctly reversed — email lookup has the same privacy problem as GUID lookup). No backend changes are needed for that.
+
+The Phase 9 checklist items "Add user by email resolves and registers correctly" and "Add user input handles both GUID and email formats" were from that discarded direction and are dropped.
+
+### Scope
+
+**Single file change — Web UI only:**
+
+`Corely.IAM.Web/Components/Pages/Accounts/AccountDetail.razor`
+- Remove the GUID `<input>` and "Add User" `<button>` from the Users section header (lines 162–165)
+- Remove the `_newUserInput` field declaration
+- Remove the `AddUserAsync()` method
+
+**No backend changes.** `IRegistrationService.RegisterUserWithAccountAsync` is intentionally kept — it has valid uses in programmatic/admin/test flows (DevTools, ConsoleTest) and is part of the public library surface. Only the web UI entry point is removed.
+
+### What Changes
+
+| Location | Change |
+|----------|--------|
+| `AccountDetail.razor` markup | ~~Remove GUID input + Add User button from Users section header~~ ✅ |
+| `AccountDetail.razor` @code | ~~Remove `private string? _newUserInput` field~~ ✅ |
+| `AccountDetail.razor` @code | ~~Remove `AddUserAsync()` method~~ ✅ |
+
+### After This Change
+
+Users can only be added to an account via the invitation flow:
+1. Account owner creates an invitation (email + optional description + expiry) → receives a token
+2. Invited user navigates to `/accept-invitation`, pastes the token, and is added to the account

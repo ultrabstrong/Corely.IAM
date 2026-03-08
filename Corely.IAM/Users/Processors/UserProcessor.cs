@@ -210,14 +210,12 @@ internal class UserProcessor(
                 request.RoleIds
             );
         }
+        var accountIds = userEntity.Accounts?.Select(a => a.Id).ToList() ?? [];
         var roleEntities = await _roleRepo.ListAsync(r =>
-            request.RoleIds.Contains(r.Id) && !r.Users!.Any(u => u.Id == userEntity.Id)
+            request.RoleIds.Contains(r.Id)
+            && !r.Users!.Any(u => u.Id == request.UserId)
+            && accountIds.Contains(r.AccountId)
         );
-
-        roleEntities =
-        [
-            .. roleEntities.Where(r => userEntity.Accounts?.Any(a => a.Id == r.AccountId) ?? false),
-        ];
 
         if (roleEntities.Count == 0)
         {

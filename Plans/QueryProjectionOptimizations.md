@@ -28,45 +28,53 @@ var check = await _accountRepo.EvaluateAsync(async (q, ct) =>
 // null → account not found; check.RoleNameExists → duplicate
 ```
 
+> **Note on mock repos:** In-memory mock repos don't auto-link entities across separate stores,
+> so tests must manually populate the account's navigation collection (e.g. `account.Roles`)
+> after creating child entities. See the `AddXxxToAccountAsync` helpers in each test class.
+
 ---
 
 ## Easy Wins
 
-These are straightforward drop-in replacements — same logic, no structural changes needed.
+### ✅ 1. `RoleProcessor.CreateRoleAsync`
 
-### 1. `RoleProcessor.CreateRoleAsync` (~line 45)
-
-**Current:** GetAsync(account) → AnyAsync(role name in account)  
-**Change:** Single `EvaluateAsync` on `_accountRepo` projecting `{ RoleNameExists }`.  
+**Was:** GetAsync(account) → AnyAsync(role name in account) — 2 round trips  
+**Now:** Single `EvaluateAsync` on `_accountRepo` projecting `{ RoleNameExists }`.  
 `null` result = account not found; `RoleNameExists == true` = duplicate name.
 
-### 2. `PermissionProcessor.CreatePermissionAsync` (~line 44)
+### ✅ 2. `PermissionProcessor.CreatePermissionAsync`
 
-**Current:** GetAsync(account) → AnyAsync(permission name in account)  
-**Change:** Same pattern as above — single `EvaluateAsync` on `_accountRepo` projecting
-`{ PermissionNameExists }`.
+**Was:** GetAsync(account) → AnyAsync(permission exists in account) — 2 round trips  
+**Now:** Single `EvaluateAsync` on `_accountRepo` projecting `{ PermissionExists }`.
 
-### 3. `GroupProcessor.AddUsersToGroupAsync` (~line 83)
+### ✅ 3. `GroupProcessor.CreateGroupAsync` *(bonus — same pattern)*
 
-**Current:** GetAsync(group) → ListAsync(users filtered by group membership and account)  
-**Change:** `EvaluateAsync` on `_groupRepo` projecting group metadata (account ID, group ID)
-plus the list of valid user IDs in one query. Then use those IDs for the update.
+**Was:** GetAsync(account) → AnyAsync(group name in account) — 2 round trips  
+**Now:** Single `EvaluateAsync` on `_accountRepo` projecting `{ GroupNameExists }`.
 
-### 4. `GroupProcessor.AssignRolesToGroupAsync` (~line 245)
+### ✅ 4. `UserProcessor.AssignRolesToUserAsync`
 
-**Current:** GetAsync(group) → ListAsync(roles not yet in group and in same account)  
-**Change:** Same projection pattern — one `EvaluateAsync` from `_groupRepo` to get group data
-and available roles together.
+**Was:** GetAsync(user, Include(Accounts)) → ListAsync(roles) → client-side account filter  
+**Now:** GetAsync(user, Include(Accounts)) → extract account IDs as `List<Guid>` → ListAsync
+with `accountIds.Contains(r.AccountId)` pushed into the SQL `IN` clause. Eliminates
+the client-side `Where` step; SQL fetches only roles from the user's own accounts.
 
-### 5. `RoleProcessor.AssignPermissionsToRoleAsync` (~line 217)
+### ⏭️ 5. `GroupProcessor.AddUsersToGroupAsync`
 
-**Current:** GetAsync(role) → ListAsync(permissions not yet on role and in same account)  
-**Change:** `EvaluateAsync` from `_roleRepo` projecting role data + available permissions.
+**Was:** GetAsync(group) → ListAsync(users filtered by group membership and account)  
+**Skipped:** Mutation requires tracked `UserEntity` objects; reducing to one query would need
+entity tracking in anonymous-type projections — unreliable with mock repos without significant
+test infrastructure changes.
 
-### 6. `UserProcessor.AssignRolesToUserAsync` (~line 183)
+### ⏭️ 6. `GroupProcessor.AssignRolesToGroupAsync`
 
-**Current:** GetAsync(user with accounts) → ListAsync(roles not yet on user and in user's accounts)  
-**Change:** `EvaluateAsync` from `_userRepo` projecting user account IDs + available roles.
+**Was:** GetAsync(group) → ListAsync(roles not yet in group and in same account)  
+**Skipped:** Same reason as #5 — tracked entities required for M:M mutation.
+
+### ⏭️ 7. `RoleProcessor.AssignPermissionsToRoleAsync`
+
+**Was:** GetAsync(role) → ListAsync(permissions not yet on role and in same account)  
+**Skipped:** Same reason as #5 — tracked entities required for M:M mutation.
 
 ---
 

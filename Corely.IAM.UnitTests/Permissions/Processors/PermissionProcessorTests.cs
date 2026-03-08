@@ -34,10 +34,21 @@ public class PermissionProcessorTests
 
     private async Task<AccountEntity> CreateAccountAsync()
     {
-        var account = new AccountEntity { Id = Guid.CreateVersion7() };
+        var account = new AccountEntity { Id = Guid.CreateVersion7(), Permissions = [] };
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var created = await accountRepo.CreateAsync(account);
         return created;
+    }
+
+    private async Task AddPermissionToAccountAsync(Guid permissionId, Guid accountId)
+    {
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var account = await accountRepo.GetAsync(a => a.Id == accountId);
+        var permission = await permissionRepo.GetAsync(p => p.Id == permissionId);
+        account!.Permissions ??= [];
+        account.Permissions.Add(permission!);
+        await accountRepo.UpdateAsync(account);
     }
 
     private async Task CreateDefaultRolesAsync(Guid accountId)
@@ -78,7 +89,8 @@ public class PermissionProcessorTests
             Guid.Empty,
             Read: true
         );
-        await _permissionProcessor.CreatePermissionAsync(request);
+        var firstResult = await _permissionProcessor.CreatePermissionAsync(request);
+        await AddPermissionToAccountAsync(firstResult.CreatedId, account.Id);
 
         var result = await _permissionProcessor.CreatePermissionAsync(request);
 

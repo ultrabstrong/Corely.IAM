@@ -40,10 +40,21 @@ public class GroupProcessorTests
 
     private async Task<AccountEntity> CreateAccountAsync()
     {
-        var account = new AccountEntity { Id = Guid.CreateVersion7() };
+        var account = new AccountEntity { Id = Guid.CreateVersion7(), Groups = [] };
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var created = await accountRepo.CreateAsync(account);
         return created;
+    }
+
+    private async Task AddGroupToAccountAsync(Guid groupId, Guid accountId)
+    {
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
+        var account = await accountRepo.GetAsync(a => a.Id == accountId);
+        var group = await groupRepo.GetAsync(g => g.Id == groupId);
+        account!.Groups ??= [];
+        account.Groups.Add(group!);
+        await accountRepo.UpdateAsync(account);
     }
 
     private async Task<UserEntity> CreateUserAsync(Guid accountId, params Guid[] groupIds)
@@ -130,7 +141,8 @@ public class GroupProcessorTests
     {
         var account = await CreateAccountAsync();
         var request = new CreateGroupRequest(VALID_GROUP_NAME, account.Id);
-        await _groupProcessor.CreateGroupAsync(request);
+        var firstResult = await _groupProcessor.CreateGroupAsync(request);
+        await AddGroupToAccountAsync(firstResult.CreatedId, account.Id);
 
         var result = await _groupProcessor.CreateGroupAsync(request);
 

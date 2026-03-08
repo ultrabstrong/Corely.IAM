@@ -37,10 +37,26 @@ public class RoleProcessorTests
 
     private async Task<AccountEntity> CreateAccountAsync()
     {
-        var account = new AccountEntity { Id = Guid.CreateVersion7() };
+        var account = new AccountEntity
+        {
+            Id = Guid.CreateVersion7(),
+            Roles = [],
+            Permissions = [],
+        };
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var created = await accountRepo.CreateAsync(account);
         return created;
+    }
+
+    private async Task AddRoleToAccountAsync(Guid roleId, Guid accountId)
+    {
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var account = await accountRepo.GetAsync(a => a.Id == accountId);
+        var role = await roleRepo.GetAsync(r => r.Id == roleId);
+        account!.Roles ??= [];
+        account.Roles.Add(role!);
+        await accountRepo.UpdateAsync(account);
     }
 
     private async Task<PermissionEntity> CreatePermissionAsync(
@@ -93,7 +109,8 @@ public class RoleProcessorTests
     {
         var ownerAccount = await CreateAccountAsync();
         var request = new CreateRoleRequest(VALID_ROLE_NAME, ownerAccount.Id);
-        await _roleProcessor.CreateRoleAsync(request);
+        var firstResult = await _roleProcessor.CreateRoleAsync(request);
+        await AddRoleToAccountAsync(firstResult.CreatedId, ownerAccount.Id);
 
         var result = await _roleProcessor.CreateRoleAsync(request);
 

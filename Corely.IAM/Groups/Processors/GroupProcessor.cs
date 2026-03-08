@@ -58,8 +58,13 @@ internal class GroupProcessor(
             );
         }
 
-        var accountEntity = await _accountRepo.GetAsync(a => a.Id == group.AccountId);
-        if (accountEntity == null)
+        var check = await _accountRepo.EvaluateAsync(
+            async (q, ct) =>
+                await q.Where(a => a.Id == group.AccountId)
+                    .Select(a => new { GroupNameExists = a.Groups!.Any(g => g.Name == group.Name) })
+                    .FirstOrDefaultAsync(ct)
+        );
+        if (check == null)
         {
             _logger.LogWarning("Account with Id {AccountId} not found", group.AccountId);
             return new CreateGroupResult(
@@ -69,7 +74,7 @@ internal class GroupProcessor(
             );
         }
 
-        if (await _groupRepo.AnyAsync(g => g.AccountId == group.AccountId && g.Name == group.Name))
+        if (check.GroupNameExists)
         {
             _logger.LogWarning("Group with name {GroupName} already exists", group.Name);
             return new CreateGroupResult(

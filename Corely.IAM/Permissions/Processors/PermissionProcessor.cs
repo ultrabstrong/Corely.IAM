@@ -54,8 +54,24 @@ internal class PermissionProcessor(
             );
         }
 
-        var accountEntity = await _accountRepo.GetAsync(a => a.Id == permission.AccountId);
-        if (accountEntity == null)
+        var check = await _accountRepo.EvaluateAsync(
+            async (q, ct) =>
+                await q.Where(a => a.Id == permission.AccountId)
+                    .Select(a => new
+                    {
+                        PermissionExists = a.Permissions!.Any(p =>
+                            p.ResourceType == permission.ResourceType
+                            && p.ResourceId == permission.ResourceId
+                            && p.Create == permission.Create
+                            && p.Read == permission.Read
+                            && p.Update == permission.Update
+                            && p.Delete == permission.Delete
+                            && p.Execute == permission.Execute
+                        ),
+                    })
+                    .FirstOrDefaultAsync(ct)
+        );
+        if (check == null)
         {
             _logger.LogWarning("Account with Id {AccountId} not found", permission.AccountId);
             return new CreatePermissionResult(
@@ -65,18 +81,7 @@ internal class PermissionProcessor(
             );
         }
 
-        if (
-            await _permissionRepo.AnyAsync(p =>
-                p.AccountId == permission.AccountId
-                && p.ResourceType == permission.ResourceType
-                && p.ResourceId == permission.ResourceId
-                && p.Create == permission.Create
-                && p.Read == permission.Read
-                && p.Update == permission.Update
-                && p.Delete == permission.Delete
-                && p.Execute == permission.Execute
-            )
-        )
+        if (check.PermissionExists)
         {
             _logger.LogWarning(
                 "Permission already exists for {ResourceType} - {ResourceId}",

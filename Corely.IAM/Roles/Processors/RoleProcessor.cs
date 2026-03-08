@@ -57,8 +57,13 @@ internal class RoleProcessor(
             );
         }
 
-        var accountEntity = await _accountRepo.GetAsync(a => a.Id == role.AccountId);
-        if (accountEntity == null)
+        var check = await _accountRepo.EvaluateAsync(
+            async (q, ct) =>
+                await q.Where(a => a.Id == role.AccountId)
+                    .Select(a => new { RoleNameExists = a.Roles!.Any(r => r.Name == role.Name) })
+                    .FirstOrDefaultAsync(ct)
+        );
+        if (check == null)
         {
             _logger.LogWarning("Account with Id {AccountId} not found", role.AccountId);
             return new CreateRoleResult(
@@ -68,7 +73,7 @@ internal class RoleProcessor(
             );
         }
 
-        if (await _roleRepo.AnyAsync(r => r.AccountId == role.AccountId && r.Name == role.Name))
+        if (check.RoleNameExists)
         {
             _logger.LogWarning("Role with name {RoleName} already exists", role.Name);
             return new CreateRoleResult(

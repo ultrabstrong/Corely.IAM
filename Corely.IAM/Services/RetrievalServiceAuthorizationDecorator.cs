@@ -4,6 +4,7 @@ using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 
@@ -120,6 +121,42 @@ internal class RetrievalServiceAuthorizationDecorator(
             : new RetrieveSingleResult<Account>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to get account",
+                default,
+                null
+            );
+
+    public async Task<
+        RetrieveSingleResult<IIamSymmetricEncryptionProvider>
+    > GetAccountSymmetricEncryptionProviderAsync(Guid accountId) =>
+        _authorizationProvider.HasAccountContext()
+            ? await _inner.GetAccountSymmetricEncryptionProviderAsync(accountId)
+            : new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
+                RetrieveResultCode.UnauthorizedError,
+                "Unauthorized to get account encryption provider",
+                default,
+                null
+            );
+
+    public async Task<
+        RetrieveSingleResult<IIamAsymmetricEncryptionProvider>
+    > GetAccountAsymmetricEncryptionProviderAsync(Guid accountId) =>
+        _authorizationProvider.HasAccountContext()
+            ? await _inner.GetAccountAsymmetricEncryptionProviderAsync(accountId)
+            : new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
+                RetrieveResultCode.UnauthorizedError,
+                "Unauthorized to get account encryption provider",
+                default,
+                null
+            );
+
+    public async Task<
+        RetrieveSingleResult<IIamAsymmetricSignatureProvider>
+    > GetAccountAsymmetricSignatureProviderAsync(Guid accountId) =>
+        _authorizationProvider.HasAccountContext()
+            ? await _inner.GetAccountAsymmetricSignatureProviderAsync(accountId)
+            : new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
+                RetrieveResultCode.UnauthorizedError,
+                "Unauthorized to get account signature provider",
                 default,
                 null
             );

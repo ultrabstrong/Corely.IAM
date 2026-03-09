@@ -1,4 +1,5 @@
 using Corely.Common.Extensions;
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
@@ -103,6 +104,19 @@ internal class AccountProcessorAuthorizationDecorator(
         )
             ? await _inner.GetAccountByIdAsync(accountId, hydrate)
             : new GetResult<Account>(
+                RetrieveResultCode.UnauthorizedError,
+                $"Unauthorized to read account {accountId}",
+                null
+            );
+
+    public async Task<GetResult<AccountEntity>> GetAccountKeysAsync(Guid accountId) =>
+        await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Read,
+            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            accountId
+        )
+            ? await _inner.GetAccountKeysAsync(accountId)
+            : new GetResult<AccountEntity>(
                 RetrieveResultCode.UnauthorizedError,
                 $"Unauthorized to read account {accountId}",
                 null

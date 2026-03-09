@@ -3,6 +3,7 @@ using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
@@ -391,6 +392,138 @@ public class RetrievalServiceAuthorizationDecoratorTests
         Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerService.Verify(
             x => x.GetAccountAsync(It.IsAny<Guid>(), It.IsAny<bool>()),
+            Times.Never
+        );
+    }
+
+    #endregion
+
+    #region GetAccountSymmetricEncryptionProviderAsync
+
+    [Fact]
+    public async Task GetAccountSymmetricEncryptionProvider_Succeeds_WhenHasAccountContext()
+    {
+        var accountId = Guid.CreateVersion7();
+        var expectedResult = new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
+            RetrieveResultCode.Success,
+            "",
+            null,
+            null
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockInnerService
+            .Setup(x => x.GetAccountSymmetricEncryptionProviderAsync(accountId))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetAccountSymmetricEncryptionProviderAsync(accountId);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(
+            x => x.GetAccountSymmetricEncryptionProviderAsync(accountId),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task GetAccountSymmetricEncryptionProvider_ReturnsUnauthorized_WhenNoAccountContext()
+    {
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+
+        var result = await _decorator.GetAccountSymmetricEncryptionProviderAsync(
+            Guid.CreateVersion7()
+        );
+
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(
+            x => x.GetAccountSymmetricEncryptionProviderAsync(It.IsAny<Guid>()),
+            Times.Never
+        );
+    }
+
+    #endregion
+
+    #region GetAccountAsymmetricEncryptionProviderAsync
+
+    [Fact]
+    public async Task GetAccountAsymmetricEncryptionProvider_Succeeds_WhenHasAccountContext()
+    {
+        var accountId = Guid.CreateVersion7();
+        var expectedResult = new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
+            RetrieveResultCode.Success,
+            "",
+            null,
+            null
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockInnerService
+            .Setup(x => x.GetAccountAsymmetricEncryptionProviderAsync(accountId))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetAccountAsymmetricEncryptionProviderAsync(accountId);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(
+            x => x.GetAccountAsymmetricEncryptionProviderAsync(accountId),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task GetAccountAsymmetricEncryptionProvider_ReturnsUnauthorized_WhenNoAccountContext()
+    {
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+
+        var result = await _decorator.GetAccountAsymmetricEncryptionProviderAsync(
+            Guid.CreateVersion7()
+        );
+
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(
+            x => x.GetAccountAsymmetricEncryptionProviderAsync(It.IsAny<Guid>()),
+            Times.Never
+        );
+    }
+
+    #endregion
+
+    #region GetAccountAsymmetricSignatureProviderAsync
+
+    [Fact]
+    public async Task GetAccountAsymmetricSignatureProvider_Succeeds_WhenHasAccountContext()
+    {
+        var accountId = Guid.CreateVersion7();
+        var expectedResult = new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
+            RetrieveResultCode.Success,
+            "",
+            null,
+            null
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockInnerService
+            .Setup(x => x.GetAccountAsymmetricSignatureProviderAsync(accountId))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetAccountAsymmetricSignatureProviderAsync(accountId);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(
+            x => x.GetAccountAsymmetricSignatureProviderAsync(accountId),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task GetAccountAsymmetricSignatureProvider_ReturnsUnauthorized_WhenNoAccountContext()
+    {
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+
+        var result = await _decorator.GetAccountAsymmetricSignatureProviderAsync(
+            Guid.CreateVersion7()
+        );
+
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(
+            x => x.GetAccountAsymmetricSignatureProviderAsync(It.IsAny<Guid>()),
             Times.Never
         );
     }

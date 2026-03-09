@@ -1,5 +1,7 @@
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Accounts.Processors;
@@ -75,6 +77,26 @@ public class AccountProcessorTelemetryDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.RemoveUserFromAccountAsync(request), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public async Task GetAccountKeys_DelegatesToInnerAndLogsResult()
+    {
+        var accountId = Guid.CreateVersion7();
+        var expectedResult = new GetResult<AccountEntity>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            new AccountEntity { Id = accountId, AccountName = "test" }
+        );
+        _mockInnerProcessor
+            .Setup(x => x.GetAccountKeysAsync(accountId))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetAccountKeysAsync(accountId);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerProcessor.Verify(x => x.GetAccountKeysAsync(accountId), Times.Once);
         VerifyLoggedWithResult();
     }
 

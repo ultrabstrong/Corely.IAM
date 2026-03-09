@@ -5,6 +5,7 @@ using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
 
@@ -108,6 +109,36 @@ internal class RetrievalServiceTelemetryDecorator(
             nameof(RetrievalService),
             new { accountId, hydrate },
             () => _inner.GetAccountAsync(accountId, hydrate),
+            logResult: true
+        );
+
+    public async Task<
+        RetrieveSingleResult<IIamSymmetricEncryptionProvider>
+    > GetAccountSymmetricEncryptionProviderAsync(Guid accountId) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            new { accountId },
+            () => _inner.GetAccountSymmetricEncryptionProviderAsync(accountId),
+            logResult: true
+        );
+
+    public async Task<
+        RetrieveSingleResult<IIamAsymmetricEncryptionProvider>
+    > GetAccountAsymmetricEncryptionProviderAsync(Guid accountId) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            new { accountId },
+            () => _inner.GetAccountAsymmetricEncryptionProviderAsync(accountId),
+            logResult: true
+        );
+
+    public async Task<
+        RetrieveSingleResult<IIamAsymmetricSignatureProvider>
+    > GetAccountAsymmetricSignatureProviderAsync(Guid accountId) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            new { accountId },
+            () => _inner.GetAccountAsymmetricSignatureProviderAsync(accountId),
             logResult: true
         );
 }

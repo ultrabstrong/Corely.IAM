@@ -3,6 +3,7 @@ using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Services;
@@ -31,4 +32,16 @@ public interface IRetrievalService
     Task<RetrieveListResult<Account>> ListAccountsAsync(ListAccountsRequest request);
 
     Task<RetrieveSingleResult<Account>> GetAccountAsync(Guid accountId, bool hydrate = false);
+
+    Task<
+        RetrieveSingleResult<IIamSymmetricEncryptionProvider>
+    > GetAccountSymmetricEncryptionProviderAsync(Guid accountId);
+
+    Task<
+        RetrieveSingleResult<IIamAsymmetricEncryptionProvider>
+    > GetAccountAsymmetricEncryptionProviderAsync(Guid accountId);
+
+    Task<
+        RetrieveSingleResult<IIamAsymmetricSignatureProvider>
+    > GetAccountAsymmetricSignatureProviderAsync(Guid accountId);
 }

@@ -1,3 +1,4 @@
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Groups.Models;
@@ -7,10 +8,15 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
+using Corely.Security.Encryption.Factories;
+using Corely.Security.Encryption.Providers;
 
 namespace Corely.IAM.UnitTests.Services;
 
@@ -23,6 +29,9 @@ public class RetrievalServiceTests
     private readonly Mock<IRoleProcessor> _mockRoleProcessor = new();
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
     private readonly Mock<IAccountProcessor> _mockAccountProcessor = new();
+    private readonly Mock<ISecurityProvider> _mockSecurityProvider = new();
+    private readonly Mock<ISymmetricEncryptionProviderFactory> _mockSymmetricEncryptionProviderFactory =
+        new();
     private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly RetrievalService _service;
     private readonly UserContext _userContext;
@@ -61,6 +70,8 @@ public class RetrievalServiceTests
             _mockRoleProcessor.Object,
             _mockUserProcessor.Object,
             _mockAccountProcessor.Object,
+            _mockSecurityProvider.Object,
+            _mockSymmetricEncryptionProviderFactory.Object,
             _mockUserContextProvider.Object
         );
     }
@@ -375,6 +386,192 @@ public class RetrievalServiceTests
 
     #endregion
 
+    #region GetAccount Provider Methods - Success
+
+    [Fact]
+    public async Task GetAccountSymmetricEncryptionProvider_ReturnsSuccess_WhenKeyFound()
+    {
+        var accountId = _userContext.CurrentAccount!.Id;
+        var accountEntity = CreateAccountEntityWithKeys(accountId);
+        SetupAccountKeysSuccess(accountId, accountEntity);
+        SetupSymmetricEncryptionFactory();
+        var mockIamProvider = new Mock<IIamSymmetricEncryptionProvider>();
+        _mockSecurityProvider
+            .Setup(x => x.BuildSymmetricEncryptionProvider(It.IsAny<SymmetricKey>()))
+            .Returns(mockIamProvider.Object);
+
+        var result = await _service.GetAccountSymmetricEncryptionProviderAsync(accountId);
+
+        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.Item);
+        _mockAccountProcessor.Verify(x => x.GetAccountKeysAsync(accountId), Times.Once);
+        _mockSecurityProvider.Verify(
+            x => x.BuildSymmetricEncryptionProvider(It.IsAny<SymmetricKey>()),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task GetAccountAsymmetricEncryptionProvider_ReturnsSuccess_WhenKeyFound()
+    {
+        var accountId = _userContext.CurrentAccount!.Id;
+        var accountEntity = CreateAccountEntityWithKeys(accountId);
+        SetupAccountKeysSuccess(accountId, accountEntity);
+        SetupSymmetricEncryptionFactory();
+        var mockIamProvider = new Mock<IIamAsymmetricEncryptionProvider>();
+        _mockSecurityProvider
+            .Setup(x => x.BuildAsymmetricEncryptionProvider(It.IsAny<AsymmetricKey>()))
+            .Returns(mockIamProvider.Object);
+
+        var result = await _service.GetAccountAsymmetricEncryptionProviderAsync(accountId);
+
+        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.Item);
+        _mockAccountProcessor.Verify(x => x.GetAccountKeysAsync(accountId), Times.Once);
+        _mockSecurityProvider.Verify(
+            x => x.BuildAsymmetricEncryptionProvider(It.IsAny<AsymmetricKey>()),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task GetAccountAsymmetricSignatureProvider_ReturnsSuccess_WhenKeyFound()
+    {
+        var accountId = _userContext.CurrentAccount!.Id;
+        var accountEntity = CreateAccountEntityWithKeys(accountId);
+        SetupAccountKeysSuccess(accountId, accountEntity);
+        SetupSymmetricEncryptionFactory();
+        var mockIamProvider = new Mock<IIamAsymmetricSignatureProvider>();
+        _mockSecurityProvider
+            .Setup(x => x.BuildAsymmetricSignatureProvider(It.IsAny<AsymmetricKey>()))
+            .Returns(mockIamProvider.Object);
+
+        var result = await _service.GetAccountAsymmetricSignatureProviderAsync(accountId);
+
+        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.Item);
+        _mockAccountProcessor.Verify(x => x.GetAccountKeysAsync(accountId), Times.Once);
+        _mockSecurityProvider.Verify(
+            x => x.BuildAsymmetricSignatureProvider(It.IsAny<AsymmetricKey>()),
+            Times.Once
+        );
+    }
+
+    #endregion
+
+    #region GetAccount Provider Methods - Account Not Found
+
+    [Fact]
+    public async Task GetAccountSymmetricEncryptionProvider_ReturnsNotFound_WhenAccountNotFound()
+    {
+        var accountId = Guid.CreateVersion7();
+        _mockAccountProcessor
+            .Setup(x => x.GetAccountKeysAsync(accountId))
+            .ReturnsAsync(
+                new GetResult<AccountEntity>(RetrieveResultCode.NotFoundError, "Not found", null)
+            );
+
+        var result = await _service.GetAccountSymmetricEncryptionProviderAsync(accountId);
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Item);
+    }
+
+    [Fact]
+    public async Task GetAccountAsymmetricEncryptionProvider_ReturnsNotFound_WhenAccountNotFound()
+    {
+        var accountId = Guid.CreateVersion7();
+        _mockAccountProcessor
+            .Setup(x => x.GetAccountKeysAsync(accountId))
+            .ReturnsAsync(
+                new GetResult<AccountEntity>(RetrieveResultCode.NotFoundError, "Not found", null)
+            );
+
+        var result = await _service.GetAccountAsymmetricEncryptionProviderAsync(accountId);
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Item);
+    }
+
+    [Fact]
+    public async Task GetAccountAsymmetricSignatureProvider_ReturnsNotFound_WhenAccountNotFound()
+    {
+        var accountId = Guid.CreateVersion7();
+        _mockAccountProcessor
+            .Setup(x => x.GetAccountKeysAsync(accountId))
+            .ReturnsAsync(
+                new GetResult<AccountEntity>(RetrieveResultCode.NotFoundError, "Not found", null)
+            );
+
+        var result = await _service.GetAccountAsymmetricSignatureProviderAsync(accountId);
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Item);
+    }
+
+    #endregion
+
+    #region GetAccount Provider Methods - Key Not Found
+
+    [Fact]
+    public async Task GetAccountSymmetricEncryptionProvider_ReturnsNotFound_WhenKeyNotFound()
+    {
+        var accountId = _userContext.CurrentAccount!.Id;
+        var accountEntity = new AccountEntity
+        {
+            Id = accountId,
+            AccountName = "TestAccount",
+            SymmetricKeys = [],
+            AsymmetricKeys = [],
+        };
+        SetupAccountKeysSuccess(accountId, accountEntity);
+
+        var result = await _service.GetAccountSymmetricEncryptionProviderAsync(accountId);
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Item);
+    }
+
+    [Fact]
+    public async Task GetAccountAsymmetricEncryptionProvider_ReturnsNotFound_WhenKeyNotFound()
+    {
+        var accountId = _userContext.CurrentAccount!.Id;
+        var accountEntity = new AccountEntity
+        {
+            Id = accountId,
+            AccountName = "TestAccount",
+            SymmetricKeys = [],
+            AsymmetricKeys = [],
+        };
+        SetupAccountKeysSuccess(accountId, accountEntity);
+
+        var result = await _service.GetAccountAsymmetricEncryptionProviderAsync(accountId);
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Item);
+    }
+
+    [Fact]
+    public async Task GetAccountAsymmetricSignatureProvider_ReturnsNotFound_WhenKeyNotFound()
+    {
+        var accountId = _userContext.CurrentAccount!.Id;
+        var accountEntity = new AccountEntity
+        {
+            Id = accountId,
+            AccountName = "TestAccount",
+            SymmetricKeys = [],
+            AsymmetricKeys = [],
+        };
+        SetupAccountKeysSuccess(accountId, accountEntity);
+
+        var result = await _service.GetAccountAsymmetricSignatureProviderAsync(accountId);
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Item);
+    }
+
+    #endregion
+
     #region Constructor Null Arguments
 
     [Fact]
@@ -387,6 +584,8 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
+                _mockSecurityProvider.Object,
+                _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
             )
         );
@@ -404,6 +603,8 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
+                _mockSecurityProvider.Object,
+                _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
             )
         );
@@ -421,6 +622,8 @@ public class RetrievalServiceTests
                 null!,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
+                _mockSecurityProvider.Object,
+                _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
             )
         );
@@ -438,6 +641,8 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 null!,
                 _mockAccountProcessor.Object,
+                _mockSecurityProvider.Object,
+                _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
             )
         );
@@ -455,11 +660,51 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 null!,
+                _mockSecurityProvider.Object,
+                _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
             )
         );
 
         Assert.Equal("accountProcessor", ex.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_Throws_WithNullSecurityProvider()
+    {
+        var ex = Assert.Throws<ArgumentNullException>(() =>
+            new RetrievalService(
+                _mockPermissionProcessor.Object,
+                _mockGroupProcessor.Object,
+                _mockRoleProcessor.Object,
+                _mockUserProcessor.Object,
+                _mockAccountProcessor.Object,
+                null!,
+                _mockSymmetricEncryptionProviderFactory.Object,
+                _mockUserContextProvider.Object
+            )
+        );
+
+        Assert.Equal("securityProvider", ex.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_Throws_WithNullSymmetricEncryptionProviderFactory()
+    {
+        var ex = Assert.Throws<ArgumentNullException>(() =>
+            new RetrievalService(
+                _mockPermissionProcessor.Object,
+                _mockGroupProcessor.Object,
+                _mockRoleProcessor.Object,
+                _mockUserProcessor.Object,
+                _mockAccountProcessor.Object,
+                _mockSecurityProvider.Object,
+                null!,
+                _mockUserContextProvider.Object
+            )
+        );
+
+        Assert.Equal("symmetricEncryptionProviderFactory", ex.ParamName);
     }
 
     [Fact]
@@ -472,11 +717,77 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
+                _mockSecurityProvider.Object,
+                _mockSymmetricEncryptionProviderFactory.Object,
                 null!
             )
         );
 
         Assert.Equal("userContextProvider", ex.ParamName);
+    }
+
+    #endregion
+
+    #region Helpers
+
+    private static AccountEntity CreateAccountEntityWithKeys(Guid accountId) =>
+        new()
+        {
+            Id = accountId,
+            AccountName = "TestAccount",
+            SymmetricKeys =
+            [
+                new AccountSymmetricKeyEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    AccountId = accountId,
+                    KeyUsedFor = KeyUsedFor.Encryption,
+                    ProviderTypeCode = "00",
+                    Version = 0,
+                    EncryptedKey = "00:0:testkey",
+                    CreatedUtc = DateTime.UtcNow,
+                },
+            ],
+            AsymmetricKeys =
+            [
+                new AccountAsymmetricKeyEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    AccountId = accountId,
+                    KeyUsedFor = KeyUsedFor.Encryption,
+                    ProviderTypeCode = "00",
+                    Version = 0,
+                    PublicKey = "public-key",
+                    EncryptedPrivateKey = "00:0:private-key",
+                    CreatedUtc = DateTime.UtcNow,
+                },
+                new AccountAsymmetricKeyEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    AccountId = accountId,
+                    KeyUsedFor = KeyUsedFor.Signature,
+                    ProviderTypeCode = "00",
+                    Version = 0,
+                    PublicKey = "sig-public-key",
+                    EncryptedPrivateKey = "00:0:sig-private-key",
+                    CreatedUtc = DateTime.UtcNow,
+                },
+            ],
+        };
+
+    private void SetupAccountKeysSuccess(Guid accountId, AccountEntity accountEntity) =>
+        _mockAccountProcessor
+            .Setup(x => x.GetAccountKeysAsync(accountId))
+            .ReturnsAsync(
+                new GetResult<AccountEntity>(RetrieveResultCode.Success, "", accountEntity)
+            );
+
+    private void SetupSymmetricEncryptionFactory()
+    {
+        var mockEncryptionProvider = new Mock<ISymmetricEncryptionProvider>();
+        _mockSymmetricEncryptionProviderFactory
+            .Setup(x => x.GetProviderForDecrypting(It.IsAny<string>()))
+            .Returns(mockEncryptionProvider.Object);
     }
 
     #endregion

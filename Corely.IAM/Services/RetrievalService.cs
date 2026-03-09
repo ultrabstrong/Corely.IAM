@@ -9,9 +9,14 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Mappers;
+using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
+using Corely.Security.Encryption.Factories;
 
 namespace Corely.IAM.Services;
 
@@ -21,6 +26,8 @@ internal class RetrievalService(
     IRoleProcessor roleProcessor,
     IUserProcessor userProcessor,
     IAccountProcessor accountProcessor,
+    ISecurityProvider securityProvider,
+    ISymmetricEncryptionProviderFactory symmetricEncryptionProviderFactory,
     IUserContextProvider userContextProvider
 ) : IRetrievalService
 {
@@ -39,6 +46,11 @@ internal class RetrievalService(
     private readonly IAccountProcessor _accountProcessor = accountProcessor.ThrowIfNull(
         nameof(accountProcessor)
     );
+    private readonly ISecurityProvider _securityProvider = securityProvider.ThrowIfNull(
+        nameof(securityProvider)
+    );
+    private readonly ISymmetricEncryptionProviderFactory _symmetricEncryptionProviderFactory =
+        symmetricEncryptionProviderFactory.ThrowIfNull(nameof(symmetricEncryptionProviderFactory));
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
     );
@@ -163,5 +175,119 @@ internal class RetrievalService(
     {
         var result = await resultTask;
         return new RetrieveListResult<T>(result.ResultCode, result.Message, result.Data);
+    }
+
+    public async Task<
+        RetrieveSingleResult<IIamSymmetricEncryptionProvider>
+    > GetAccountSymmetricEncryptionProviderAsync(Guid accountId)
+    {
+        var keysResult = await _accountProcessor.GetAccountKeysAsync(accountId);
+        if (keysResult.ResultCode != RetrieveResultCode.Success || keysResult.Data == null)
+        {
+            return new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
+                keysResult.ResultCode,
+                keysResult.Message,
+                null,
+                null
+            );
+        }
+
+        var symmetricKeyEntity = keysResult.Data.SymmetricKeys?.FirstOrDefault(k =>
+            k.KeyUsedFor == KeyUsedFor.Encryption
+        );
+        if (symmetricKeyEntity == null)
+        {
+            return new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
+                RetrieveResultCode.NotFoundError,
+                "Symmetric encryption key not found for account",
+                null,
+                null
+            );
+        }
+
+        var symmetricKey = symmetricKeyEntity.ToModel(_symmetricEncryptionProviderFactory);
+        var provider = _securityProvider.BuildSymmetricEncryptionProvider(symmetricKey);
+        return new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            provider,
+            null
+        );
+    }
+
+    public async Task<
+        RetrieveSingleResult<IIamAsymmetricEncryptionProvider>
+    > GetAccountAsymmetricEncryptionProviderAsync(Guid accountId)
+    {
+        var keysResult = await _accountProcessor.GetAccountKeysAsync(accountId);
+        if (keysResult.ResultCode != RetrieveResultCode.Success || keysResult.Data == null)
+        {
+            return new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
+                keysResult.ResultCode,
+                keysResult.Message,
+                null,
+                null
+            );
+        }
+
+        var asymmetricKeyEntity = keysResult.Data.AsymmetricKeys?.FirstOrDefault(k =>
+            k.KeyUsedFor == KeyUsedFor.Encryption
+        );
+        if (asymmetricKeyEntity == null)
+        {
+            return new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
+                RetrieveResultCode.NotFoundError,
+                "Asymmetric encryption key not found for account",
+                null,
+                null
+            );
+        }
+
+        var asymmetricKey = asymmetricKeyEntity.ToModel(_symmetricEncryptionProviderFactory);
+        var provider = _securityProvider.BuildAsymmetricEncryptionProvider(asymmetricKey);
+        return new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            provider,
+            null
+        );
+    }
+
+    public async Task<
+        RetrieveSingleResult<IIamAsymmetricSignatureProvider>
+    > GetAccountAsymmetricSignatureProviderAsync(Guid accountId)
+    {
+        var keysResult = await _accountProcessor.GetAccountKeysAsync(accountId);
+        if (keysResult.ResultCode != RetrieveResultCode.Success || keysResult.Data == null)
+        {
+            return new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
+                keysResult.ResultCode,
+                keysResult.Message,
+                null,
+                null
+            );
+        }
+
+        var asymmetricKeyEntity = keysResult.Data.AsymmetricKeys?.FirstOrDefault(k =>
+            k.KeyUsedFor == KeyUsedFor.Signature
+        );
+        if (asymmetricKeyEntity == null)
+        {
+            return new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
+                RetrieveResultCode.NotFoundError,
+                "Asymmetric signature key not found for account",
+                null,
+                null
+            );
+        }
+
+        var asymmetricKey = asymmetricKeyEntity.ToModel(_symmetricEncryptionProviderFactory);
+        var provider = _securityProvider.BuildAsymmetricSignatureProvider(asymmetricKey);
+        return new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            provider,
+            null
+        );
     }
 }

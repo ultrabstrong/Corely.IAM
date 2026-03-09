@@ -3,6 +3,7 @@ using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.Security.Encryption.Factories;
 using Corely.Security.Encryption.Models;
+using Corely.Security.KeyStore;
 using Corely.Security.Signature.Factories;
 using Microsoft.IdentityModel.Tokens;
 
@@ -133,5 +134,53 @@ internal class SecurityProvider(
             providerTypeCode
         );
         return asymmetricSignatureProvider.GetSigningCredentials(key, isKeyPrivate);
+    }
+
+    public IIamSymmetricEncryptionProvider BuildSymmetricEncryptionProvider(
+        SymmetricKey symmetricKey
+    )
+    {
+        var decryptedKey = DecryptWithSystemKey(symmetricKey.Key.Secret!);
+        var keyStore = new InMemorySymmetricKeyStoreProvider(decryptedKey);
+        // Key material is algorithm-specific — must use the provider that matches
+        // the algorithm used to generate the key, not the current default
+        var provider = _symmetricEncryptionProviderFactory.GetProvider(
+            symmetricKey.ProviderTypeCode
+        );
+        return new IamSymmetricEncryptionProvider(provider, keyStore);
+    }
+
+    public IIamAsymmetricEncryptionProvider BuildAsymmetricEncryptionProvider(
+        AsymmetricKey asymmetricKey
+    )
+    {
+        var decryptedPrivateKey = DecryptWithSystemKey(asymmetricKey.PrivateKey.Secret!);
+        var keyStore = new InMemoryAsymmetricKeyStoreProvider(
+            asymmetricKey.PublicKey,
+            decryptedPrivateKey
+        );
+        // Key material is algorithm-specific — must use the provider that matches
+        // the algorithm used to generate the key, not the current default
+        var provider = _asymmetricEncryptionProviderFactory.GetProvider(
+            asymmetricKey.ProviderTypeCode
+        );
+        return new IamAsymmetricEncryptionProvider(provider, keyStore);
+    }
+
+    public IIamAsymmetricSignatureProvider BuildAsymmetricSignatureProvider(
+        AsymmetricKey asymmetricKey
+    )
+    {
+        var decryptedPrivateKey = DecryptWithSystemKey(asymmetricKey.PrivateKey.Secret!);
+        var keyStore = new InMemoryAsymmetricKeyStoreProvider(
+            asymmetricKey.PublicKey,
+            decryptedPrivateKey
+        );
+        // Key material is algorithm-specific — must use the provider that matches
+        // the algorithm used to generate the key, not the current default
+        var provider = _asymmetricSignatureProviderFactory.GetProvider(
+            asymmetricKey.ProviderTypeCode
+        );
+        return new IamAsymmetricSignatureProvider(provider, keyStore);
     }
 }

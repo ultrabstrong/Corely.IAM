@@ -1,5 +1,7 @@
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
@@ -310,6 +312,64 @@ public class AccountProcessorAuthorizationDecoratorTests
             x => x.RemoveUserFromAccountAsync(It.IsAny<RemoveUserFromAccountRequest>()),
             Times.Never
         );
+    }
+
+    [Fact]
+    public async Task GetAccountKeys_CallsAuthorizationProvider()
+    {
+        var accountId = Guid.CreateVersion7();
+        var expectedResult = new GetResult<AccountEntity>(
+            RetrieveResultCode.Success,
+            "",
+            new AccountEntity { Id = accountId, AccountName = "Test" }
+        );
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Read,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    accountId
+                )
+            )
+            .ReturnsAsync(true);
+        _mockInnerProcessor
+            .Setup(x => x.GetAccountKeysAsync(accountId))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetAccountKeysAsync(accountId);
+
+        Assert.Equal(expectedResult, result);
+        _mockAuthorizationProvider.Verify(
+            x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Read,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    accountId
+                ),
+            Times.Once
+        );
+        _mockInnerProcessor.Verify(x => x.GetAccountKeysAsync(accountId), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAccountKeys_ReturnsUnauthorized_WhenNotAuthorized()
+    {
+        var accountId = Guid.CreateVersion7();
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Read,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    accountId
+                )
+            )
+            .ReturnsAsync(false);
+
+        var result = await _decorator.GetAccountKeysAsync(accountId);
+
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
+        Assert.Null(result.Data);
+        _mockInnerProcessor.Verify(x => x.GetAccountKeysAsync(It.IsAny<Guid>()), Times.Never);
     }
 
     [Fact]

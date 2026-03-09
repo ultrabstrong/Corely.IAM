@@ -1,4 +1,5 @@
 using Corely.Common.Extensions;
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Extensions;
 using Corely.IAM.Models;
@@ -91,6 +92,14 @@ internal class AccountProcessorTelemetryDecorator(
             nameof(AccountProcessor),
             accountId,
             () => _inner.GetAccountByIdAsync(accountId, hydrate),
+            logResult: true
+        );
+
+    public async Task<GetResult<AccountEntity>> GetAccountKeysAsync(Guid accountId) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(AccountProcessor),
+            accountId,
+            () => _inner.GetAccountKeysAsync(accountId),
             logResult: true
         );
 }

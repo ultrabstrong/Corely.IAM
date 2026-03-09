@@ -3,6 +3,7 @@ using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
@@ -222,6 +223,78 @@ public class RetrievalServiceTelemetryDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.GetAccountAsync(accountId, false), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public async Task GetAccountSymmetricEncryptionProvider_DelegatesToInnerAndLogsResult()
+    {
+        var accountId = Guid.CreateVersion7();
+        var expectedResult = new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
+            RetrieveResultCode.Success,
+            "",
+            null,
+            null
+        );
+        _mockInnerService
+            .Setup(x => x.GetAccountSymmetricEncryptionProviderAsync(accountId))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetAccountSymmetricEncryptionProviderAsync(accountId);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(
+            x => x.GetAccountSymmetricEncryptionProviderAsync(accountId),
+            Times.Once
+        );
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public async Task GetAccountAsymmetricEncryptionProvider_DelegatesToInnerAndLogsResult()
+    {
+        var accountId = Guid.CreateVersion7();
+        var expectedResult = new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
+            RetrieveResultCode.Success,
+            "",
+            null,
+            null
+        );
+        _mockInnerService
+            .Setup(x => x.GetAccountAsymmetricEncryptionProviderAsync(accountId))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetAccountAsymmetricEncryptionProviderAsync(accountId);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(
+            x => x.GetAccountAsymmetricEncryptionProviderAsync(accountId),
+            Times.Once
+        );
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public async Task GetAccountAsymmetricSignatureProvider_DelegatesToInnerAndLogsResult()
+    {
+        var accountId = Guid.CreateVersion7();
+        var expectedResult = new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
+            RetrieveResultCode.Success,
+            "",
+            null,
+            null
+        );
+        _mockInnerService
+            .Setup(x => x.GetAccountAsymmetricSignatureProviderAsync(accountId))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetAccountAsymmetricSignatureProviderAsync(accountId);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(
+            x => x.GetAccountAsymmetricSignatureProviderAsync(accountId),
+            Times.Once
+        );
         VerifyLoggedWithResult();
     }
 

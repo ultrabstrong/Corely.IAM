@@ -486,4 +486,46 @@ internal class AccountProcessor(
 
         return new GetResult<Account>(RetrieveResultCode.Success, string.Empty, account);
     }
+
+    public async Task<GetResult<AccountEntity>> GetAccountKeysAsync(Guid accountId)
+    {
+        var userAccountIds = _userContextProvider
+            .GetUserContext()!
+            .AvailableAccounts.Select(a => a.Id)
+            .ToHashSet();
+
+        if (!userAccountIds.Contains(accountId))
+        {
+            _logger.LogInformation(
+                "Account with Id {AccountId} not found or not accessible",
+                accountId
+            );
+            return new GetResult<AccountEntity>(
+                RetrieveResultCode.NotFoundError,
+                $"Account with Id {accountId} not found",
+                null
+            );
+        }
+
+        var accountEntity = await _accountRepo.GetAsync(
+            a => a.Id == accountId,
+            include: q => q.Include(a => a.SymmetricKeys).Include(a => a.AsymmetricKeys)
+        );
+
+        if (accountEntity == null)
+        {
+            _logger.LogInformation("Account with Id {AccountId} not found", accountId);
+            return new GetResult<AccountEntity>(
+                RetrieveResultCode.NotFoundError,
+                $"Account with Id {accountId} not found",
+                null
+            );
+        }
+
+        return new GetResult<AccountEntity>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            accountEntity
+        );
+    }
 }

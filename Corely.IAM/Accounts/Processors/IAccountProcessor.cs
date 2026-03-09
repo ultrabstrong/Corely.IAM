@@ -1,3 +1,4 @@
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
 
@@ -18,4 +19,5 @@ internal interface IAccountProcessor
     Task<DeleteAccountResult> DeleteAccountAsync(Guid accountId);
     Task<ListResult<Account>> ListAccountsAsync(ListAccountsRequest request);
     Task<GetResult<Account>> GetAccountByIdAsync(Guid accountId, bool hydrate);
+    Task<GetResult<AccountEntity>> GetAccountKeysAsync(Guid accountId);
 }

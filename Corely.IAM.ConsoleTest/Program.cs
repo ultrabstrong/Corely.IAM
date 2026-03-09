@@ -251,6 +251,63 @@ internal class Program
                 $"Get Account (hydrated): {JsonSerializer.Serialize(getAccountResult)}"
             );
 
+            // ========= ACCOUNT KEY PROVIDERS ========== //
+
+            // Get account symmetric encryption provider and encrypt/decrypt
+            var symProviderResult =
+                await retrievalService.GetAccountSymmetricEncryptionProviderAsync(
+                    registerAccountResult.CreatedAccountId
+                );
+            Console.WriteLine(
+                $"Get Symmetric Encryption Provider: ResultCode={symProviderResult.ResultCode}"
+            );
+            if (symProviderResult.Item != null)
+            {
+                var plaintext = "Hello from ConsoleTest!";
+                var encrypted = symProviderResult.Item.Encrypt(plaintext);
+                var decrypted = symProviderResult.Item.Decrypt(encrypted);
+                Console.WriteLine($"  Symmetric Encrypt: {plaintext} -> {encrypted}");
+                Console.WriteLine($"  Symmetric Decrypt: {encrypted} -> {decrypted}");
+                Console.WriteLine($"  Round-trip match: {plaintext == decrypted}");
+            }
+
+            // Get account asymmetric encryption provider and encrypt/decrypt
+            var asymEncProviderResult =
+                await retrievalService.GetAccountAsymmetricEncryptionProviderAsync(
+                    registerAccountResult.CreatedAccountId
+                );
+            Console.WriteLine(
+                $"Get Asymmetric Encryption Provider: ResultCode={asymEncProviderResult.ResultCode}"
+            );
+            if (asymEncProviderResult.Item != null)
+            {
+                var plaintext = "Asymmetric encryption test";
+                var encrypted = asymEncProviderResult.Item.Encrypt(plaintext);
+                var decrypted = asymEncProviderResult.Item.Decrypt(encrypted);
+                Console.WriteLine($"  Asymmetric Encrypt: {plaintext} -> {encrypted}");
+                Console.WriteLine($"  Asymmetric Decrypt: {encrypted} -> {decrypted}");
+                Console.WriteLine($"  Round-trip match: {plaintext == decrypted}");
+            }
+
+            // Get account asymmetric signature provider and sign/verify
+            var sigProviderResult =
+                await retrievalService.GetAccountAsymmetricSignatureProviderAsync(
+                    registerAccountResult.CreatedAccountId
+                );
+            Console.WriteLine(
+                $"Get Asymmetric Signature Provider: ResultCode={sigProviderResult.ResultCode}"
+            );
+            if (sigProviderResult.Item != null)
+            {
+                var payload = "Sign this payload";
+                var signature = sigProviderResult.Item.Sign(payload);
+                var isValid = sigProviderResult.Item.Verify(payload, signature);
+                var isTampered = sigProviderResult.Item.Verify("tampered", signature);
+                Console.WriteLine($"  Sign: {payload} -> {signature}");
+                Console.WriteLine($"  Verify original: {isValid}");
+                Console.WriteLine($"  Verify tampered: {isTampered}");
+            }
+
             // ========= MODIFICATION SERVICE ========== //
 
             // Update account name

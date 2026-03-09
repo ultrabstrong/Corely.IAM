@@ -137,7 +137,7 @@ Rationale:
 
 - **Key rotation** — adding new key versions, re-encrypting with new keys, version management
 - **Key generation** — creating additional keys beyond what account registration already provides
-- **Web UI** — key info panel in AccountDetail.razor or DevTools account-specific commands
+- **Web UI** — key info panel in AccountDetail.razor
 
 These can be layered on after the core retrieval and usage pattern is established.
 
@@ -255,3 +255,30 @@ respective provider/key store types.
 **RetrievalService decorator tests (9 new tests):**
 - Authorization decorator: 6 tests (auth pass/fail for each provider method)
 - Telemetry decorator: 3 tests (delegation + logging for each provider method)
+
+## Phase 2: ConsoleTest Usage Example & DevTools Commands ✅ Implemented
+
+### ConsoleTest Additions
+
+Added a new `ACCOUNT KEY PROVIDERS` section to `Program.cs` after the existing retrieval demos.
+Demonstrates full round-trip operations for all three provider types:
+
+- **Symmetric encryption**: Encrypt a plaintext string, decrypt it back, verify round-trip match
+- **Asymmetric encryption**: Same encrypt/decrypt/verify pattern with the RSA key pair
+- **Asymmetric signature**: Sign a payload, verify the signature, verify a tampered payload is rejected
+
+### DevTools Commands
+
+Three new subcommands under the `retrieval` command group:
+
+| Command | Description | Flags |
+|---------|-------------|-------|
+| `retrieval account-sym-encrypt <accountId>` | Symmetric encryption using account key | `-e` encrypt, `-d` decrypt, `-r` re-encrypt |
+| `retrieval account-asym-encrypt <accountId>` | Asymmetric encryption using account key | `-e` encrypt, `-d` decrypt, `-r` re-encrypt |
+| `retrieval account-asym-sign <accountId>` | Asymmetric signature using account key | `-s` sign, `-v` verify (requires `--signature`) |
+
+All commands:
+- Require authentication (reads token from auth token file via `SetUserContextFromAuthTokenFileAsync`)
+- Show help with a warning if no operation flag is provided
+- Display error message if provider retrieval fails (account not found, key not found, etc.)
+- Follow the existing `Retrieval` partial class / nested class pattern for auto-discovery

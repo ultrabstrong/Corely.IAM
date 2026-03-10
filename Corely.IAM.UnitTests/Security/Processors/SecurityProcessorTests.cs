@@ -53,7 +53,7 @@ public class SecurityProcessorTests
         Assert.NotNull(result.Key);
         Assert.True(result.Version > -1);
         Assert.Equal(KeyUsedFor.Encryption, result.KeyUsedFor);
-        Assert.Equal(_symmetricEncryptionProvider.EncryptionTypeCode, result.ProviderTypeCode);
+        Assert.Equal(_symmetricEncryptionProvider.ProviderName, result.ProviderName);
 
         var decryptedKey = _securityProcessor.DecryptWithSystemKey(result.Key.Secret);
 
@@ -73,7 +73,7 @@ public class SecurityProcessorTests
         Assert.NotNull(result.PrivateKey);
         Assert.True(result.Version > -1);
         Assert.Equal(KeyUsedFor.Encryption, result.KeyUsedFor);
-        Assert.Equal(_asymmetricEncryptionProvider.EncryptionTypeCode, result.ProviderTypeCode);
+        Assert.Equal(_asymmetricEncryptionProvider.ProviderName, result.ProviderName);
 
         var decryptedPrivateKey = _securityProcessor.DecryptWithSystemKey(result.PrivateKey.Secret);
 
@@ -95,7 +95,7 @@ public class SecurityProcessorTests
         Assert.NotNull(result.PrivateKey);
         Assert.True(result.Version > -1);
         Assert.Equal(KeyUsedFor.Signature, result.KeyUsedFor);
-        Assert.Equal(_asymmetricSignatureProvider.SignatureTypeCode, result.ProviderTypeCode);
+        Assert.Equal(_asymmetricSignatureProvider.ProviderName, result.ProviderName);
 
         var decryptedPrivateKey = _securityProcessor.DecryptWithSystemKey(result.PrivateKey.Secret);
 
@@ -134,7 +134,7 @@ public class SecurityProcessorTests
         var privateKey = _securityProcessor.DecryptWithSystemKey(asymmetricKey.PrivateKey.Secret);
 
         var credentials = _securityProcessor.GetAsymmetricSigningCredentials(
-            asymmetricKey.ProviderTypeCode,
+            asymmetricKey.ProviderName,
             privateKey,
             true
         );
@@ -149,7 +149,7 @@ public class SecurityProcessorTests
         var publicKey = asymmetricKey.PublicKey;
 
         var credentials = _securityProcessor.GetAsymmetricSigningCredentials(
-            asymmetricKey.ProviderTypeCode,
+            asymmetricKey.ProviderName,
             publicKey,
             false
         );

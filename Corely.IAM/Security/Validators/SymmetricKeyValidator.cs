@@ -17,6 +17,6 @@ internal class SymmetricKeyValidator : AbstractValidator<SymmetricKey>
 
         RuleFor(m => m.Version).GreaterThanOrEqualTo(SymmetricKeyConstants.VERSION_MIN_VALUE);
 
-        RuleFor(m => m.ProviderTypeCode).NotEmpty();
+        RuleFor(m => m.ProviderName).NotEmpty();
     }
 }

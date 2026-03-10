@@ -27,7 +27,7 @@ public class AsymmetricKeyMapperTests
             Id = Guid.CreateVersion7(),
             UserId = Guid.CreateVersion7(),
             KeyUsedFor = KeyUsedFor.Signature,
-            ProviderTypeCode = "RSA",
+            ProviderName = "RSA",
             Version = 1,
             PublicKey = "public_key_data",
             EncryptedPrivateKey = "encrypted_private_key",
@@ -40,7 +40,7 @@ public class AsymmetricKeyMapperTests
         Assert.NotNull(result);
         Assert.Equal(entity.Id, result.Id);
         Assert.Equal(entity.KeyUsedFor, result.KeyUsedFor);
-        Assert.Equal(entity.ProviderTypeCode, result.ProviderTypeCode);
+        Assert.Equal(entity.ProviderName, result.ProviderName);
         Assert.Equal(entity.Version, result.Version);
         Assert.Equal(entity.PublicKey, result.PublicKey);
         Assert.Equal(entity.EncryptedPrivateKey, result.PrivateKey.Secret);

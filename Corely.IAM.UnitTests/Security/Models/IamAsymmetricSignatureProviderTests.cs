@@ -14,7 +14,9 @@ public class IamAsymmetricSignatureProviderTests
     {
         _iamProvider = new IamAsymmetricSignatureProvider(
             _mockProvider.Object,
-            _mockKeyStore.Object
+            _mockKeyStore.Object,
+            "ECDSA_SHA256",
+            "test-public-key"
         );
     }
 

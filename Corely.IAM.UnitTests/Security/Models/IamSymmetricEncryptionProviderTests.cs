@@ -14,7 +14,8 @@ public class IamSymmetricEncryptionProviderTests
     {
         _iamProvider = new IamSymmetricEncryptionProvider(
             _mockProvider.Object,
-            _mockKeyStore.Object
+            _mockKeyStore.Object,
+            "AES"
         );
     }
 

@@ -27,7 +27,7 @@ public class SymmetricKeyMapperTests
             Id = Guid.CreateVersion7(),
             UserId = Guid.CreateVersion7(),
             KeyUsedFor = KeyUsedFor.Encryption,
-            ProviderTypeCode = "AES",
+            ProviderName = "AES",
             Version = 1,
             EncryptedKey = "encrypted_key",
             CreatedUtc = DateTime.UtcNow.AddDays(-1),
@@ -39,7 +39,7 @@ public class SymmetricKeyMapperTests
         Assert.NotNull(result);
         Assert.Equal(entity.Id, result.Id);
         Assert.Equal(entity.KeyUsedFor, result.KeyUsedFor);
-        Assert.Equal(entity.ProviderTypeCode, result.ProviderTypeCode);
+        Assert.Equal(entity.ProviderName, result.ProviderName);
         Assert.Equal(entity.Version, result.Version);
         Assert.Equal(entity.EncryptedKey, result.Key.Secret);
         Assert.Equal(entity.CreatedUtc, result.CreatedUtc);

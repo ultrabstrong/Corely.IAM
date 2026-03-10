@@ -14,7 +14,9 @@ public class IamAsymmetricEncryptionProviderTests
     {
         _iamProvider = new IamAsymmetricEncryptionProvider(
             _mockProvider.Object,
-            _mockKeyStore.Object
+            _mockKeyStore.Object,
+            "RSA",
+            "test-public-key"
         );
     }
 

@@ -54,12 +54,12 @@ public class SymmetricKeyValidatorTests
     }
 
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]
-    public void SymmetricKeyValidator_HasValidationError_WhenProviderTypeCodeInvalid(
-        string providerTypeCode
+    public void SymmetricKeyValidator_HasValidationError_WhenProviderNameInvalid(
+        string providerName
     )
     {
-        var symmetricKey = new SymmetricKey { ProviderTypeCode = providerTypeCode };
+        var symmetricKey = new SymmetricKey { ProviderName = providerName };
         var result = _validator.TestValidate(symmetricKey);
-        result.ShouldHaveValidationErrorFor(x => x.ProviderTypeCode);
+        result.ShouldHaveValidationErrorFor(x => x.ProviderName);
     }
 }

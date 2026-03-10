@@ -63,7 +63,7 @@ public class AuthenticationProviderTests
                 new UserAsymmetricKeyEntity
                 {
                     KeyUsedFor = KeyUsedFor.Signature,
-                    ProviderTypeCode = signatureKey.ProviderTypeCode,
+                    ProviderName = signatureKey.ProviderName,
                     PublicKey = signatureKey.PublicKey,
                     EncryptedPrivateKey = signatureKey.PrivateKey.Secret,
                 },

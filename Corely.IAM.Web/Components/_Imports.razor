@@ -15,6 +15,7 @@
 @using Corely.IAM.Groups.Models
 @using Corely.IAM.Roles.Models
 @using Corely.IAM.Permissions.Models
+@using Corely.IAM.Security.Models
 @using Corely.IAM.Security.Providers
 @using Corely.IAM.Security.Constants
 @using Corely.IAM.Invitations.Models
@@ -23,3 +24,4 @@
 @using Corely.Common.Filtering
 @using Corely.Common.Filtering.Filters
 @using Corely.Common.Filtering.Ordering
+@attribute [Authorize]

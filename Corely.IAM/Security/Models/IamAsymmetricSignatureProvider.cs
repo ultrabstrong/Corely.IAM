@@ -5,9 +5,16 @@ namespace Corely.IAM.Security.Models;
 
 public class IamAsymmetricSignatureProvider(
     IAsymmetricSignatureProvider provider,
-    IAsymmetricKeyStoreProvider keyStore
+    IAsymmetricKeyStoreProvider keyStore,
+    string providerName,
+    string publicKey
 ) : IIamAsymmetricSignatureProvider
 {
+    public string ProviderName => providerName;
+    public string ProviderDescription => provider.ProviderDescription;
+
+    public string PublicKey => publicKey;
+
     public string Sign(string payload) => provider.Sign(payload, keyStore);
 
     public bool Verify(string payload, string signature) =>

@@ -23,7 +23,7 @@ internal class AsymmetricEncryption : CommandBase
         "Code for encryption type to use (hint: use -l to list codes. default used if code not provided)",
         false
     )]
-    private string EncryptionTypeCode { get; init; } = DEFAULT_ENCRYPTION_TYPE;
+    private string ProviderName { get; init; } = DEFAULT_ENCRYPTION_TYPE;
 
     [Option("-l", "--list", Description = "List asymmetric encryption providers")]
     private bool List { get; init; }
@@ -120,9 +120,7 @@ internal class AsymmetricEncryption : CommandBase
 
     private void CreateKeys()
     {
-        var asymmetricEncryptionProvider = _encryptionProviderFactory.GetProvider(
-            EncryptionTypeCode
-        );
+        var asymmetricEncryptionProvider = _encryptionProviderFactory.GetProvider(ProviderName);
         var (publicKey, privateKey) = asymmetricEncryptionProvider
             .GetAsymmetricKeyProvider()
             .CreateKeys();
@@ -132,9 +130,7 @@ internal class AsymmetricEncryption : CommandBase
 
     private void ValidateKey()
     {
-        var asymmetricEncryptionProvider = _encryptionProviderFactory.GetProvider(
-            EncryptionTypeCode
-        );
+        var asymmetricEncryptionProvider = _encryptionProviderFactory.GetProvider(ProviderName);
         var (publicKey, privateKey) = ReadKeysFromFile();
         var isValid = asymmetricEncryptionProvider
             .GetAsymmetricKeyProvider()
@@ -147,7 +143,7 @@ internal class AsymmetricEncryption : CommandBase
         var (publicKey, privateKey) = ReadKeysFromFile();
         var keyProvider = new InMemoryAsymmetricKeyStoreProvider(publicKey, privateKey);
         var encrypted = _encryptionProviderFactory
-            .GetProvider(EncryptionTypeCode)
+            .GetProvider(ProviderName)
             .Encrypt(ToEncrypt, keyProvider);
         Console.WriteLine(encrypted);
     }
@@ -157,7 +153,7 @@ internal class AsymmetricEncryption : CommandBase
         var (publicKey, privateKey) = ReadKeysFromFile();
         var keyProvider = new InMemoryAsymmetricKeyStoreProvider(publicKey, privateKey);
         var decrypted = _encryptionProviderFactory
-            .GetProvider(EncryptionTypeCode)
+            .GetProvider(ProviderName)
             .Decrypt(ToDecrypt, keyProvider);
         Console.WriteLine(decrypted);
     }

@@ -137,7 +137,6 @@ Rationale:
 
 - **Key rotation** — adding new key versions, re-encrypting with new keys, version management
 - **Key generation** — creating additional keys beyond what account registration already provides
-- **Web UI** — key info panel in AccountDetail.razor
 
 These can be layered on after the core retrieval and usage pattern is established.
 
@@ -168,6 +167,7 @@ New interfaces in `Security/Models/` — reusable for both account and user keys
 ```csharp
 public interface IIamSymmetricEncryptionProvider
 {
+    string ProviderTypeCode { get; }
     string Encrypt(string plaintext);
     string Decrypt(string ciphertext);
     string ReEncrypt(string ciphertext);
@@ -175,6 +175,8 @@ public interface IIamSymmetricEncryptionProvider
 
 public interface IIamAsymmetricEncryptionProvider
 {
+    string ProviderTypeCode { get; }
+    string PublicKey { get; }
     string Encrypt(string plaintext);
     string Decrypt(string ciphertext);
     string ReEncrypt(string ciphertext);
@@ -182,26 +184,32 @@ public interface IIamAsymmetricEncryptionProvider
 
 public interface IIamAsymmetricSignatureProvider
 {
+    string ProviderTypeCode { get; }
+    string PublicKey { get; }
     string Sign(string payload);
     bool Verify(string payload, string signature);
 }
 ```
 
-Implementations bind the key store to the provider at construction time:
+All interfaces expose `ProviderTypeCode` (the algorithm identifier, e.g., "AES", "RSA",
+"ECDSA_SHA256"). Asymmetric interfaces also expose `PublicKey` for external use.
+
+Implementations bind the key store to the provider at construction time and expose metadata:
 
 ```csharp
 public class IamSymmetricEncryptionProvider(
     ISymmetricEncryptionProvider provider,
-    ISymmetricKeyStoreProvider keyStore) : IIamSymmetricEncryptionProvider
+    ISymmetricKeyStoreProvider keyStore,
+    string providerTypeCode) : IIamSymmetricEncryptionProvider
 {
+    public string ProviderTypeCode => providerTypeCode;
     public string Encrypt(string plaintext) => provider.Encrypt(plaintext, keyStore);
     public string Decrypt(string ciphertext) => provider.Decrypt(ciphertext, keyStore);
     public string ReEncrypt(string ciphertext) => provider.ReEncrypt(ciphertext, keyStore);
 }
 ```
 
-Asymmetric encryption and signature implementations follow the same pattern with their
-respective provider/key store types.
+Asymmetric implementations additionally accept and expose `publicKey`.
 
 ### Layer-by-Layer Implementation
 
@@ -212,11 +220,12 @@ respective provider/key store types.
 - Telemetry decorator: standard `ExecuteWithLoggingAsync` wrapper
 
 **2. SecurityProvider** — three `Build*Provider` methods:
-- Take key models, decrypt private keys via `DecryptWithSystemKey`
+- Take key models, decrypt private keys using `ISymmetricEncryptedValue.GetDecrypted(systemKeyStore)`
+  (uses the model's built-in decryption rather than the standalone `DecryptWithSystemKey` method)
 - Hydrate `InMemorySymmetricKeyStoreProvider` / `InMemoryAsymmetricKeyStoreProvider`
 - Use `GetProvider(key.ProviderTypeCode)` (not `GetDefaultProvider()`) because key material is
   algorithm-specific — the provider must match the algorithm that generated the key
-- Return `IIam*Provider` wrappers binding provider + key store
+- Return `IIam*Provider` wrappers binding provider + key store + metadata (type code, public key)
 
 **3. RetrievalService** — three `GetAccount*ProviderAsync` methods:
 - Call `AccountProcessor.GetAccountKeysAsync` to load keys
@@ -282,3 +291,153 @@ All commands:
 - Show help with a warning if no operation flag is provided
 - Display error message if provider retrieval fails (account not found, key not found, etc.)
 - Follow the existing `Retrieval` partial class / nested class pattern for auto-discovery
+
+## Phase 3: Web UI — Account Encryption & Signing ✅ Implemented
+
+### AccountDetail.razor — Encryption & Signing Section
+
+Added a new "Encryption & Signing" section to the account detail page between the Users section
+and EffectivePermissionsPanel. Uses Blazor-managed tabs (no Bootstrap JS dependency) for three
+operation types:
+
+| Tab | Operations | UI Pattern |
+|-----|------------|------------|
+| Symmetric Encryption | Encrypt, Decrypt, Re-encrypt | Algorithm badge → input → buttons → output |
+| Asymmetric Encryption | Encrypt, Decrypt, Re-encrypt | Algorithm badge → public key display → input → buttons → output |
+| Digital Signature | Sign, Verify | Algorithm badge → public key display → payload + signature → buttons → result alert |
+
+Each tab shows:
+- **Algorithm badge** (e.g., `AES-256-CBC-PKCS7`) via `ProviderName` from the `IIam*` interface
+- **Public key** (asymmetric tabs only) in a readonly textarea for external use
+- **Input/output** forms for the crypto operations
+
+### IIam* Interface Enhancements
+
+All three interfaces expose `ProviderName` for algorithm identification.
+Asymmetric interfaces additionally expose `PublicKey`:
+
+- `IIamSymmetricEncryptionProvider` — added `string ProviderName { get; }`
+- `IIamAsymmetricEncryptionProvider` — added `string ProviderName { get; }`, `string PublicKey { get; }`
+- `IIamAsymmetricSignatureProvider` — added `string ProviderName { get; }`, `string PublicKey { get; }`
+
+### Key Decryption Refactor
+
+`SecurityProvider.Build*Provider` methods now use the model's built-in decryption
+(`ISymmetricEncryptedValue.GetDecrypted(systemKeyStore)`) instead of calling the standalone
+`DecryptWithSystemKey` method. This uses the API as designed rather than reimplementing the
+same logic separately.
+
+**Key design decisions:**
+
+- **Permission-gated**: Entire section wrapped in `PermissionView` requiring `Read` on
+  `ACCOUNT_RESOURCE_TYPE` — same permission that `GetAccountKeysAsync` enforces
+- **Eager provider loading**: Providers fetched in `LoadCoreAsync` at page init and cached.
+  All three providers load sequentially (EF Core DbContext cannot run concurrent queries)
+  so the algorithm badge and description show immediately without requiring a user action.
+- **Isolated error handling**: Key operation errors use per-tab error state (`_symError`,
+  `_asymError`, `_sigError`) instead of the page-level `_message` to avoid interfering with
+  other page operations (edit, delete, invitations, etc.)
+- **Decrypt/verify wrapped in try-catch**: Invalid ciphertext or signature inputs show friendly
+  error messages instead of crashing the page
+- **Signature flow**: Sign populates the signature textarea; Verify requires both payload and
+  signature. Result uses color-coded alerts (green = valid, red = invalid).
+
+### _Imports.razor
+
+Added `@using Corely.IAM.Security.Models` to make `IIam*Provider` interfaces available to all
+Blazor components without per-file imports.
+
+---
+
+## Corely.Security 1.0.2 Package Update ✅ Implemented
+
+Upgraded `Corely.Security` from 1.0.1 → 1.0.2 across all four projects that reference it.
+
+### Breaking API Changes
+
+`ProviderTypeCode` was removed from all Corely.Security provider interfaces and replaced with
+`ProviderName` (a human-readable algorithm string, e.g., `"AES-256-CBC-PKCS7"`). A new
+`ProviderDescription` virtual property (defaulting to `GetType().Name`) was also added.
+
+All references migrated across:
+- IAM models, entities, interfaces (`SymmetricKey`, `AsymmetricKey`, `IIam*Provider`)
+- Concrete IAM provider implementations (`IamSymmetricEncryptionProvider`, etc.)
+- `SecurityProvider` and `AuthenticationProvider`
+- Entity configurations and validators
+- Mappers (`SymmetricKeyMapper`, `AsymmetricKeyMapper`)
+- DevTools commands (`sym-encrypt`, `asym-encrypt`, `sym-sign`, `asym-sign`, `hash`)
+- Web UI (`AccountDetail.razor`)
+- All affected unit tests
+
+### EF Core Migrations
+
+Added `RenameProviderTypeCodeToProviderName` migration across all three DB providers
+(MySQL, MariaDB, SQL Server). Uses EF's `RenameColumn` — safe, no data loss.
+
+### ProviderDescription Added to IIam* Interfaces
+
+`ProviderDescription` exposed through all three IAM provider interfaces and delegated to
+the underlying Corely.Security provider at the concrete implementation level:
+
+```csharp
+public string ProviderDescription => provider.ProviderDescription;
+```
+
+---
+
+## Auth Bug Fix ✅ Implemented
+
+### Problem
+
+Unauthenticated users navigating to `/` saw the "Select an Account" dashboard block instead
+of being redirected to sign-in. `Home.razor` was missing `@attribute [Authorize]`, so
+`AuthorizeRouteView` allowed unauthenticated rendering. When `_userContext` was null, the
+`null == 0` condition evaluated to `false`, falling through to the else block.
+
+### Fix
+
+- Added `@attribute [Authorize]` to `Corely.IAM.WebApp/Components/Pages/Home.razor`
+- Added `@attribute [Authorize]` to `Corely.IAM.Web/Components/_Imports.razor` — applies
+  globally to all 11 Blazor pages in the Web component library
+- Removed the now-unreachable State 3 else block from `Home.razor`
+
+---
+
+## Phase 3 Follow-Up: UI Polish ✅ Implemented
+
+Additional UI improvements to `AccountDetail.razor` after initial Phase 3 delivery.
+
+### Provider Info on Page Load
+
+Previously the algorithm badge only appeared after the user clicked Encrypt/Sign/etc. (lazy
+load). Providers are now loaded eagerly in `LoadCoreAsync`, so the badge and description show
+immediately when the page opens. Sequential `await` calls required (not `Task.WhenAll`)
+due to EF Core's single-operation-per-DbContext constraint.
+
+### ProviderDescription Display
+
+Added `ProviderDescription` as subtle muted text next to each algorithm badge:
+
+```razor
+<span class="badge bg-secondary">@_symProvider.ProviderName</span>
+<small class="text-muted ms-2">@_symProvider.ProviderDescription</small>
+```
+
+### Auto-Sizing Read-Only Textareas
+
+Public key boxes and output boxes use `field-sizing: content` (CSS) with `rows="1"` so they
+start compact and grow to fit their content without a scrollbar. `resize: none` prevents
+manual resizing on display-only fields.
+
+### Click-to-Select-All
+
+All readonly textareas have `onfocus="this.select()"` — clicking or tabbing into a public key
+or output box immediately selects all text for easy copying.
+
+### Copy Buttons
+
+Each readonly box (public keys + outputs) has an inline copy button (`bi-copy` icon) that:
+- Copies text to the clipboard via `navigator.clipboard.writeText`
+- Briefly shows a green `bi-check` for 1.5 s then reverts to `bi-copy`
+- Implemented via a shared `CopyWithFeedbackAsync` helper to avoid repetition
+

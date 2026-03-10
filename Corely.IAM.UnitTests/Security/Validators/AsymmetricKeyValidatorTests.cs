@@ -64,8 +64,8 @@ public class AsymmetricKeyValidatorTests
     }
 
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]
-    public void AsymmetricKeyValidator_HasValidationError_WhenProviderTypeCodeInvalid(
-        string providerTypeCode
+    public void AsymmetricKeyValidator_HasValidationError_WhenProviderNameInvalid(
+        string providerName
     )
     {
         var asymmetricKey = new AsymmetricKey
@@ -76,9 +76,9 @@ public class AsymmetricKeyValidatorTests
             {
                 Secret = "private key",
             },
-            ProviderTypeCode = providerTypeCode,
+            ProviderName = providerName,
         };
         var result = _validator.TestValidate(asymmetricKey);
-        result.ShouldHaveValidationErrorFor(x => x.ProviderTypeCode);
+        result.ShouldHaveValidationErrorFor(x => x.ProviderName);
     }
 }

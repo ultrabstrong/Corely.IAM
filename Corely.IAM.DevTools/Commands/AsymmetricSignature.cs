@@ -26,7 +26,7 @@ internal class AsymmetricSignature : CommandBase
         "Code for signature type to use (hint: use -l to list codes. default used if code not provided)",
         false
     )]
-    private string SignatureTypeCode { get; init; } = DEFAULT_SIGNATURE_TYPE;
+    private string ProviderName { get; init; } = DEFAULT_SIGNATURE_TYPE;
 
     [Option("-l", "--list", Description = "List asymmetric signature providers")]
     private bool List { get; init; }
@@ -109,7 +109,7 @@ internal class AsymmetricSignature : CommandBase
 
     private void CreateKeys()
     {
-        var asymmetricEncryptionProvider = _signatureProviderFactory.GetProvider(SignatureTypeCode);
+        var asymmetricEncryptionProvider = _signatureProviderFactory.GetProvider(ProviderName);
         var (publicKey, privateKey) = asymmetricEncryptionProvider
             .GetAsymmetricKeyProvider()
             .CreateKeys();
@@ -119,7 +119,7 @@ internal class AsymmetricSignature : CommandBase
 
     private void ValidateKey()
     {
-        var asymmetricEncryptionProvider = _signatureProviderFactory.GetProvider(SignatureTypeCode);
+        var asymmetricEncryptionProvider = _signatureProviderFactory.GetProvider(ProviderName);
         var (publicKey, privateKey) = ReadKeysFromFile();
         var isValid = asymmetricEncryptionProvider
             .GetAsymmetricKeyProvider()
@@ -132,7 +132,7 @@ internal class AsymmetricSignature : CommandBase
         var (publicKey, privateKey) = ReadKeysFromFile();
         var keyProvider = new InMemoryAsymmetricKeyStoreProvider(publicKey, privateKey);
         var signature = _signatureProviderFactory
-            .GetProvider(SignatureTypeCode)
+            .GetProvider(ProviderName)
             .Sign(Message, keyProvider);
         Console.WriteLine(signature);
     }
@@ -142,7 +142,7 @@ internal class AsymmetricSignature : CommandBase
         var (publicKey, privateKey) = ReadKeysFromFile();
         var keyProvider = new InMemoryAsymmetricKeyStoreProvider(publicKey, privateKey);
         var isValid = _signatureProviderFactory
-            .GetProvider(SignatureTypeCode)
+            .GetProvider(ProviderName)
             .Verify(Message, Signature, keyProvider);
         Console.WriteLine(isValid ? "Signature is valid" : "Signature is not valid");
     }

@@ -16,6 +16,6 @@ internal class AsymmetricKeyValidator : AbstractValidator<AsymmetricKey>
 
         RuleFor(m => m.Version).GreaterThanOrEqualTo(AsymmetricKeyConstants.VERSION_MIN_VALUE);
 
-        RuleFor(m => m.ProviderTypeCode).NotEmpty();
+        RuleFor(m => m.ProviderName).NotEmpty();
     }
 }

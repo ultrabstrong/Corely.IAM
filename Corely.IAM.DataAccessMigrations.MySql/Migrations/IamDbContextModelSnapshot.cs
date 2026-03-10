@@ -46,7 +46,7 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("TIMESTAMP");
 
-                    b.Property<string>("ProviderTypeCode")
+                    b.Property<string>("ProviderName")
                         .IsRequired()
                         .HasColumnType("longtext");
 
@@ -116,7 +116,7 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("TIMESTAMP");
 
-                    b.Property<string>("ProviderTypeCode")
+                    b.Property<string>("ProviderName")
                         .IsRequired()
                         .HasColumnType("longtext");
 
@@ -430,7 +430,7 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("TIMESTAMP");
 
-                    b.Property<string>("ProviderTypeCode")
+                    b.Property<string>("ProviderName")
                         .IsRequired()
                         .HasColumnType("longtext");
 
@@ -564,7 +564,7 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("TIMESTAMP");
 
-                    b.Property<string>("ProviderTypeCode")
+                    b.Property<string>("ProviderName")
                         .IsRequired()
                         .HasColumnType("longtext");
 

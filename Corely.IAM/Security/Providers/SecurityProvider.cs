@@ -42,7 +42,7 @@ internal class SecurityProvider(
         {
             Id = Guid.CreateVersion7(),
             KeyUsedFor = KeyUsedFor.Encryption,
-            ProviderTypeCode = symmetricEncryptionProvider.EncryptionTypeCode,
+            ProviderName = symmetricEncryptionProvider.ProviderName,
             Version = systemKeyStoreProvider.GetCurrentVersion(),
             Key = new SymmetricEncryptedValue(symmetricEncryptionProvider)
             {
@@ -71,7 +71,7 @@ internal class SecurityProvider(
         {
             Id = Guid.CreateVersion7(),
             KeyUsedFor = KeyUsedFor.Encryption,
-            ProviderTypeCode = asymmetricEncryptionProvider.EncryptionTypeCode,
+            ProviderName = asymmetricEncryptionProvider.ProviderName,
             Version = systemKeyStoreProvider.GetCurrentVersion(),
             PublicKey = publickey,
             PrivateKey = new SymmetricEncryptedValue(symmetricEncryptionProvider)
@@ -100,7 +100,7 @@ internal class SecurityProvider(
         {
             Id = Guid.CreateVersion7(),
             KeyUsedFor = KeyUsedFor.Signature,
-            ProviderTypeCode = asymmetricSignatureProvider.SignatureTypeCode,
+            ProviderName = asymmetricSignatureProvider.ProviderName,
             Version = systemKeyStoreProvider.GetCurrentVersion(),
             PublicKey = publickey,
             PrivateKey = new SymmetricEncryptedValue(symmetricEncryptionProvider)
@@ -125,13 +125,13 @@ internal class SecurityProvider(
     }
 
     public SigningCredentials GetAsymmetricSigningCredentials(
-        string providerTypeCode,
+        string providerName,
         string key,
         bool isKeyPrivate
     )
     {
         var asymmetricSignatureProvider = _asymmetricSignatureProviderFactory.GetProvider(
-            providerTypeCode
+            providerName
         );
         return asymmetricSignatureProvider.GetSigningCredentials(key, isKeyPrivate);
     }
@@ -140,47 +140,54 @@ internal class SecurityProvider(
         SymmetricKey symmetricKey
     )
     {
-        var decryptedKey = DecryptWithSystemKey(symmetricKey.Key.Secret!);
+        var systemKeyStore = _securityConfigurationProvider.GetSystemSymmetricKey();
+        var decryptedKey = symmetricKey.Key.GetDecrypted(systemKeyStore);
         var keyStore = new InMemorySymmetricKeyStoreProvider(decryptedKey);
         // Key material is algorithm-specific — must use the provider that matches
         // the algorithm used to generate the key, not the current default
-        var provider = _symmetricEncryptionProviderFactory.GetProvider(
-            symmetricKey.ProviderTypeCode
-        );
-        return new IamSymmetricEncryptionProvider(provider, keyStore);
+        var provider = _symmetricEncryptionProviderFactory.GetProvider(symmetricKey.ProviderName);
+        return new IamSymmetricEncryptionProvider(provider, keyStore, symmetricKey.ProviderName);
     }
 
     public IIamAsymmetricEncryptionProvider BuildAsymmetricEncryptionProvider(
         AsymmetricKey asymmetricKey
     )
     {
-        var decryptedPrivateKey = DecryptWithSystemKey(asymmetricKey.PrivateKey.Secret!);
+        var systemKeyStore = _securityConfigurationProvider.GetSystemSymmetricKey();
+        var decryptedPrivateKey = asymmetricKey.PrivateKey.GetDecrypted(systemKeyStore);
         var keyStore = new InMemoryAsymmetricKeyStoreProvider(
             asymmetricKey.PublicKey,
             decryptedPrivateKey
         );
         // Key material is algorithm-specific — must use the provider that matches
         // the algorithm used to generate the key, not the current default
-        var provider = _asymmetricEncryptionProviderFactory.GetProvider(
-            asymmetricKey.ProviderTypeCode
+        var provider = _asymmetricEncryptionProviderFactory.GetProvider(asymmetricKey.ProviderName);
+        return new IamAsymmetricEncryptionProvider(
+            provider,
+            keyStore,
+            asymmetricKey.ProviderName,
+            asymmetricKey.PublicKey
         );
-        return new IamAsymmetricEncryptionProvider(provider, keyStore);
     }
 
     public IIamAsymmetricSignatureProvider BuildAsymmetricSignatureProvider(
         AsymmetricKey asymmetricKey
     )
     {
-        var decryptedPrivateKey = DecryptWithSystemKey(asymmetricKey.PrivateKey.Secret!);
+        var systemKeyStore = _securityConfigurationProvider.GetSystemSymmetricKey();
+        var decryptedPrivateKey = asymmetricKey.PrivateKey.GetDecrypted(systemKeyStore);
         var keyStore = new InMemoryAsymmetricKeyStoreProvider(
             asymmetricKey.PublicKey,
             decryptedPrivateKey
         );
         // Key material is algorithm-specific — must use the provider that matches
         // the algorithm used to generate the key, not the current default
-        var provider = _asymmetricSignatureProviderFactory.GetProvider(
-            asymmetricKey.ProviderTypeCode
+        var provider = _asymmetricSignatureProviderFactory.GetProvider(asymmetricKey.ProviderName);
+        return new IamAsymmetricSignatureProvider(
+            provider,
+            keyStore,
+            asymmetricKey.ProviderName,
+            asymmetricKey.PublicKey
         );
-        return new IamAsymmetricSignatureProvider(provider, keyStore);
     }
 }

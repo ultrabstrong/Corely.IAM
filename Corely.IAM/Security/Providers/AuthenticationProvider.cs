@@ -80,7 +80,7 @@ internal class AuthenticationProvider(
 
         var privateKey = _securityProcessor.DecryptWithSystemKey(signatureKey.EncryptedPrivateKey);
         var credentials = _securityProcessor.GetAsymmetricSigningCredentials(
-            signatureKey.ProviderTypeCode,
+            signatureKey.ProviderName,
             privateKey,
             true
         );
@@ -215,7 +215,7 @@ internal class AuthenticationProvider(
         }
 
         var credentials = _securityProcessor.GetAsymmetricSigningCredentials(
-            signatureKey.ProviderTypeCode,
+            signatureKey.ProviderName,
             signatureKey.PublicKey,
             false
         );

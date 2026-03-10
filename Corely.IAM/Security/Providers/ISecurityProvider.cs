@@ -10,7 +10,7 @@ internal interface ISecurityProvider
     AsymmetricKey GetAsymmetricSignatureKeyEncryptedWithSystemKey();
     string DecryptWithSystemKey(string encryptedValue);
     SigningCredentials GetAsymmetricSigningCredentials(
-        string providerTypeCode,
+        string providerName,
         string key,
         bool isKeyPrivate
     );

@@ -5,9 +5,16 @@ namespace Corely.IAM.Security.Models;
 
 public class IamAsymmetricEncryptionProvider(
     IAsymmetricEncryptionProvider provider,
-    IAsymmetricKeyStoreProvider keyStore
+    IAsymmetricKeyStoreProvider keyStore,
+    string providerName,
+    string publicKey
 ) : IIamAsymmetricEncryptionProvider
 {
+    public string ProviderName => providerName;
+    public string ProviderDescription => provider.ProviderDescription;
+
+    public string PublicKey => publicKey;
+
     public string Encrypt(string plaintext) => provider.Encrypt(plaintext, keyStore);
 
     public string Decrypt(string ciphertext) => provider.Decrypt(ciphertext, keyStore);

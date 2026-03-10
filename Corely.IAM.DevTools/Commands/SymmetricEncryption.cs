@@ -23,7 +23,7 @@ internal class SymmetricEncryption : CommandBase
         "Code for encryption type to use (hint: use -l to list codes. default used if code not provided)",
         false
     )]
-    private string EncryptionTypeCode { get; init; } = DEFAULT_ENCRYPTION_TYPE;
+    private string ProviderName { get; init; } = DEFAULT_ENCRYPTION_TYPE;
 
     [Option("-l", "--list", Description = "List asymmetric encryption providers")]
     private bool List { get; init; }
@@ -95,14 +95,14 @@ internal class SymmetricEncryption : CommandBase
 
     private void CreateKey()
     {
-        var encryptionProvider = _encryptionProviderFactory.GetProvider(EncryptionTypeCode);
+        var encryptionProvider = _encryptionProviderFactory.GetProvider(ProviderName);
         var key = encryptionProvider.GetSymmetricKeyProvider().CreateKey();
         Console.WriteLine(key);
     }
 
     private void ValidateKey()
     {
-        var encryptionProvider = _encryptionProviderFactory.GetProvider(EncryptionTypeCode);
+        var encryptionProvider = _encryptionProviderFactory.GetProvider(ProviderName);
         var isValid = encryptionProvider.GetSymmetricKeyProvider().IsKeyValid(Key);
         Console.WriteLine($"Key is {(isValid ? "valid" : "invalid")}");
     }
@@ -111,7 +111,7 @@ internal class SymmetricEncryption : CommandBase
     {
         var keyProvider = new InMemorySymmetricKeyStoreProvider(Key);
         var encrypted = _encryptionProviderFactory
-            .GetProvider(EncryptionTypeCode)
+            .GetProvider(ProviderName)
             .Encrypt(ToEncrypt, keyProvider);
         Console.WriteLine(encrypted);
     }
@@ -120,7 +120,7 @@ internal class SymmetricEncryption : CommandBase
     {
         var keyProvider = new InMemorySymmetricKeyStoreProvider(Key);
         var decrypted = _encryptionProviderFactory
-            .GetProvider(EncryptionTypeCode)
+            .GetProvider(ProviderName)
             .Decrypt(ToDecrypt, keyProvider);
         Console.WriteLine(decrypted);
     }

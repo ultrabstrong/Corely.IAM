@@ -26,7 +26,7 @@ internal class SymmetricSignature : CommandBase
         "Code for signature type to use (hint: use -l to list codes. default used if code not provided)",
         false
     )]
-    private string SignatureTypeCode { get; init; } = DEFAULT_SIGNATURE_TYPE;
+    private string ProviderName { get; init; } = DEFAULT_SIGNATURE_TYPE;
 
     [Option("-l", "--list", Description = "List symmetric signature providers")]
     private bool List { get; init; }
@@ -98,14 +98,14 @@ internal class SymmetricSignature : CommandBase
 
     private void CreateKey()
     {
-        var signatureProvider = _signatureProviderFactory.GetProvider(SignatureTypeCode);
+        var signatureProvider = _signatureProviderFactory.GetProvider(ProviderName);
         var key = signatureProvider.GetSymmetricKeyProvider().CreateKey();
         Console.WriteLine(key);
     }
 
     private void ValidateKey()
     {
-        var signatureProvider = _signatureProviderFactory.GetProvider(SignatureTypeCode);
+        var signatureProvider = _signatureProviderFactory.GetProvider(ProviderName);
         var isValid = signatureProvider.GetSymmetricKeyProvider().IsKeyValid(Key);
         Console.WriteLine($"Key is {(isValid ? "valid" : "invalid")}");
     }
@@ -114,7 +114,7 @@ internal class SymmetricSignature : CommandBase
     {
         var keyProvider = new InMemorySymmetricKeyStoreProvider(Key);
         var signature = _signatureProviderFactory
-            .GetProvider(SignatureTypeCode)
+            .GetProvider(ProviderName)
             .Sign(Message, keyProvider);
         Console.WriteLine(signature);
     }
@@ -123,7 +123,7 @@ internal class SymmetricSignature : CommandBase
     {
         var keyProvider = new InMemorySymmetricKeyStoreProvider(Key);
         var isValid = _signatureProviderFactory
-            .GetProvider(SignatureTypeCode)
+            .GetProvider(ProviderName)
             .Verify(Message, Signature, keyProvider);
         Console.WriteLine($"Signature is {(isValid ? "valid" : "invalid")} for message");
     }

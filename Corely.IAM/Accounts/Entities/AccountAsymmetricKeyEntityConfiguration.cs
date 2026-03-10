@@ -19,7 +19,7 @@ internal class AccountAsymmetricKeyEntityConfiguration
 
         builder.Property(e => e.KeyUsedFor).HasConversion<string>();
 
-        builder.Property(e => e.ProviderTypeCode).IsRequired();
+        builder.Property(e => e.ProviderName).IsRequired();
 
         builder.Property(e => e.Version).IsRequired();
 

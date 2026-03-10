@@ -1,4 +1,5 @@
 using Corely.IAM.Models;
+using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Microsoft.Extensions.Logging;
@@ -153,6 +154,28 @@ public class UserProcessorTelemetryDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.DeleteUserAsync(userId), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public async Task GetCurrentUserKeys_DelegatesToInnerAndLogsResult()
+    {
+        var expectedResult = new GetResult<UserEntity>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            new UserEntity
+            {
+                Id = Guid.CreateVersion7(),
+                Username = "test",
+                Email = "test@test.com",
+            }
+        );
+        _mockInnerProcessor.Setup(x => x.GetCurrentUserKeysAsync()).ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetCurrentUserKeysAsync();
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerProcessor.Verify(x => x.GetCurrentUserKeysAsync(), Times.Once);
         VerifyLoggedWithResult();
     }
 

@@ -1,6 +1,7 @@
 using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Constants;
@@ -319,6 +320,49 @@ public class UserProcessorTests
 
         Assert.Equal(GetAsymmetricKeyResultCode.KeyNotFoundError, result.ResultCode);
         Assert.Null(result.PublicKey);
+    }
+
+    [Fact]
+    public async Task GetCurrentUserKeys_ReturnsKeys()
+    {
+        var request = new CreateUserRequest(VALID_USERNAME, VALID_EMAIL);
+        var result = await _userProcessor.CreateUserAsync(request);
+
+        var userContextSetter = _serviceFactory.GetRequiredService<IUserContextSetter>();
+        var user = new User
+        {
+            Id = result.CreatedId,
+            Username = VALID_USERNAME,
+            Email = VALID_EMAIL,
+        };
+        var account = new Account { Id = Guid.CreateVersion7(), AccountName = "TestAccount" };
+        userContextSetter.SetUserContext(new UserContext(user, account, "device1", [account]));
+
+        var keysResult = await _userProcessor.GetCurrentUserKeysAsync();
+
+        Assert.Equal(RetrieveResultCode.Success, keysResult.ResultCode);
+        Assert.NotNull(keysResult.Data);
+        Assert.NotNull(keysResult.Data.SymmetricKeys);
+        Assert.NotNull(keysResult.Data.AsymmetricKeys);
+    }
+
+    [Fact]
+    public async Task GetCurrentUserKeys_ReturnsNotFound_WhenUserDNE()
+    {
+        var userContextSetter = _serviceFactory.GetRequiredService<IUserContextSetter>();
+        var user = new User
+        {
+            Id = Guid.CreateVersion7(),
+            Username = "fake",
+            Email = "fake@test.com",
+        };
+        var account = new Account { Id = Guid.CreateVersion7(), AccountName = "TestAccount" };
+        userContextSetter.SetUserContext(new UserContext(user, account, "device1", [account]));
+
+        var result = await _userProcessor.GetCurrentUserKeysAsync();
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Data);
     }
 
     [Fact]

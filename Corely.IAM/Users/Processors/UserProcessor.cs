@@ -190,6 +190,27 @@ internal class UserProcessor(
         );
     }
 
+    public async Task<GetResult<UserEntity>> GetCurrentUserKeysAsync()
+    {
+        var userId = _userContextProvider.GetUserContext()!.User.Id;
+        var userEntity = await _userRepo.GetAsync(
+            u => u.Id == userId,
+            include: q => q.Include(u => u.SymmetricKeys).Include(u => u.AsymmetricKeys)
+        );
+
+        if (userEntity == null)
+        {
+            _logger.LogInformation("User with Id {UserId} not found", userId);
+            return new GetResult<UserEntity>(
+                RetrieveResultCode.NotFoundError,
+                $"User with Id {userId} not found",
+                null
+            );
+        }
+
+        return new GetResult<UserEntity>(RetrieveResultCode.Success, string.Empty, userEntity);
+    }
+
     public async Task<AssignRolesToUserResult> AssignRolesToUserAsync(
         AssignRolesToUserRequest request
     )

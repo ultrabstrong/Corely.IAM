@@ -530,6 +530,111 @@ public class RetrievalServiceAuthorizationDecoratorTests
 
     #endregion
 
+    #region GetUserSymmetricEncryptionProviderAsync
+
+    [Fact]
+    public async Task GetUserSymmetricEncryptionProvider_Succeeds_WhenHasUserContext()
+    {
+        var expectedResult = new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
+            RetrieveResultCode.Success,
+            "",
+            null,
+            null
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockInnerService
+            .Setup(x => x.GetUserSymmetricEncryptionProviderAsync())
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetUserSymmetricEncryptionProviderAsync();
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.GetUserSymmetricEncryptionProviderAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetUserSymmetricEncryptionProvider_ReturnsUnauthorized_WhenNoUserContext()
+    {
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+
+        var result = await _decorator.GetUserSymmetricEncryptionProviderAsync();
+
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(x => x.GetUserSymmetricEncryptionProviderAsync(), Times.Never);
+    }
+
+    #endregion
+
+    #region GetUserAsymmetricEncryptionProviderAsync
+
+    [Fact]
+    public async Task GetUserAsymmetricEncryptionProvider_Succeeds_WhenHasUserContext()
+    {
+        var expectedResult = new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
+            RetrieveResultCode.Success,
+            "",
+            null,
+            null
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockInnerService
+            .Setup(x => x.GetUserAsymmetricEncryptionProviderAsync())
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetUserAsymmetricEncryptionProviderAsync();
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.GetUserAsymmetricEncryptionProviderAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetUserAsymmetricEncryptionProvider_ReturnsUnauthorized_WhenNoUserContext()
+    {
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+
+        var result = await _decorator.GetUserAsymmetricEncryptionProviderAsync();
+
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(x => x.GetUserAsymmetricEncryptionProviderAsync(), Times.Never);
+    }
+
+    #endregion
+
+    #region GetUserAsymmetricSignatureProviderAsync
+
+    [Fact]
+    public async Task GetUserAsymmetricSignatureProvider_Succeeds_WhenHasUserContext()
+    {
+        var expectedResult = new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
+            RetrieveResultCode.Success,
+            "",
+            null,
+            null
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockInnerService
+            .Setup(x => x.GetUserAsymmetricSignatureProviderAsync())
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetUserAsymmetricSignatureProviderAsync();
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.GetUserAsymmetricSignatureProviderAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetUserAsymmetricSignatureProvider_ReturnsUnauthorized_WhenNoUserContext()
+    {
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+
+        var result = await _decorator.GetUserAsymmetricSignatureProviderAsync();
+
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(x => x.GetUserAsymmetricSignatureProviderAsync(), Times.Never);
+    }
+
+    #endregion
+
     #region Constructor Validation
 
     [Fact]

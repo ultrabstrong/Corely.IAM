@@ -308,6 +308,57 @@ internal class Program
                 Console.WriteLine($"  Verify tampered: {isTampered}");
             }
 
+            // ========= USER KEY PROVIDERS ========== //
+
+            // Get user symmetric encryption provider and encrypt/decrypt
+            var userSymProviderResult =
+                await retrievalService.GetUserSymmetricEncryptionProviderAsync();
+            Console.WriteLine(
+                $"Get User Symmetric Encryption Provider: ResultCode={userSymProviderResult.ResultCode}"
+            );
+            if (userSymProviderResult.Item != null)
+            {
+                var plaintext = "Hello from user key!";
+                var encrypted = userSymProviderResult.Item.Encrypt(plaintext);
+                var decrypted = userSymProviderResult.Item.Decrypt(encrypted);
+                Console.WriteLine($"  User Symmetric Encrypt: {plaintext} -> {encrypted}");
+                Console.WriteLine($"  User Symmetric Decrypt: {encrypted} -> {decrypted}");
+                Console.WriteLine($"  Round-trip match: {plaintext == decrypted}");
+            }
+
+            // Get user asymmetric encryption provider and encrypt/decrypt
+            var userAsymEncProviderResult =
+                await retrievalService.GetUserAsymmetricEncryptionProviderAsync();
+            Console.WriteLine(
+                $"Get User Asymmetric Encryption Provider: ResultCode={userAsymEncProviderResult.ResultCode}"
+            );
+            if (userAsymEncProviderResult.Item != null)
+            {
+                var plaintext = "User asymmetric encryption test";
+                var encrypted = userAsymEncProviderResult.Item.Encrypt(plaintext);
+                var decrypted = userAsymEncProviderResult.Item.Decrypt(encrypted);
+                Console.WriteLine($"  User Asymmetric Encrypt: {plaintext} -> {encrypted}");
+                Console.WriteLine($"  User Asymmetric Decrypt: {encrypted} -> {decrypted}");
+                Console.WriteLine($"  Round-trip match: {plaintext == decrypted}");
+            }
+
+            // Get user asymmetric signature provider and sign/verify
+            var userSigProviderResult =
+                await retrievalService.GetUserAsymmetricSignatureProviderAsync();
+            Console.WriteLine(
+                $"Get User Asymmetric Signature Provider: ResultCode={userSigProviderResult.ResultCode}"
+            );
+            if (userSigProviderResult.Item != null)
+            {
+                var payload = "Sign this user payload";
+                var signature = userSigProviderResult.Item.Sign(payload);
+                var isValid = userSigProviderResult.Item.Verify(payload, signature);
+                var isTampered = userSigProviderResult.Item.Verify("tampered", signature);
+                Console.WriteLine($"  Sign: {payload} -> {signature}");
+                Console.WriteLine($"  Verify original: {isValid}");
+                Console.WriteLine($"  Verify tampered: {isTampered}");
+            }
+
             // ========= MODIFICATION SERVICE ========== //
 
             // Update account name

@@ -1,4 +1,5 @@
 using Corely.IAM.Models;
+using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Users.Processors;
@@ -9,6 +10,7 @@ internal interface IUserProcessor
     Task<GetUserResult> GetUserAsync(Guid userId);
     Task<ModifyResult> UpdateUserAsync(UpdateUserRequest request);
     Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(Guid userId);
+    Task<GetResult<UserEntity>> GetCurrentUserKeysAsync();
     Task<AssignRolesToUserResult> AssignRolesToUserAsync(AssignRolesToUserRequest request);
     Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(Guid roleId, Guid userId);
     Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(RemoveRolesFromUserRequest request);

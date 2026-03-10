@@ -12,6 +12,7 @@ using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
@@ -572,6 +573,186 @@ public class RetrievalServiceTests
 
     #endregion
 
+    #region GetUser Provider Methods - Success
+
+    [Fact]
+    public async Task GetUserSymmetricEncryptionProvider_ReturnsSuccess_WhenKeyFound()
+    {
+        var userEntity = CreateUserEntityWithKeys(_userContext.User.Id);
+        SetupUserKeysSuccess(userEntity);
+        SetupSymmetricEncryptionFactory();
+        var mockIamProvider = new Mock<IIamSymmetricEncryptionProvider>();
+        _mockSecurityProvider
+            .Setup(x => x.BuildSymmetricEncryptionProvider(It.IsAny<SymmetricKey>()))
+            .Returns(mockIamProvider.Object);
+
+        var result = await _service.GetUserSymmetricEncryptionProviderAsync();
+
+        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.Item);
+        _mockUserProcessor.Verify(x => x.GetCurrentUserKeysAsync(), Times.Once);
+        _mockSecurityProvider.Verify(
+            x => x.BuildSymmetricEncryptionProvider(It.IsAny<SymmetricKey>()),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task GetUserAsymmetricEncryptionProvider_ReturnsSuccess_WhenKeyFound()
+    {
+        var userEntity = CreateUserEntityWithKeys(_userContext.User.Id);
+        SetupUserKeysSuccess(userEntity);
+        SetupSymmetricEncryptionFactory();
+        var mockIamProvider = new Mock<IIamAsymmetricEncryptionProvider>();
+        _mockSecurityProvider
+            .Setup(x => x.BuildAsymmetricEncryptionProvider(It.IsAny<AsymmetricKey>()))
+            .Returns(mockIamProvider.Object);
+
+        var result = await _service.GetUserAsymmetricEncryptionProviderAsync();
+
+        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.Item);
+        _mockUserProcessor.Verify(x => x.GetCurrentUserKeysAsync(), Times.Once);
+        _mockSecurityProvider.Verify(
+            x => x.BuildAsymmetricEncryptionProvider(It.IsAny<AsymmetricKey>()),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task GetUserAsymmetricSignatureProvider_ReturnsSuccess_WhenKeyFound()
+    {
+        var userEntity = CreateUserEntityWithKeys(_userContext.User.Id);
+        SetupUserKeysSuccess(userEntity);
+        SetupSymmetricEncryptionFactory();
+        var mockIamProvider = new Mock<IIamAsymmetricSignatureProvider>();
+        _mockSecurityProvider
+            .Setup(x => x.BuildAsymmetricSignatureProvider(It.IsAny<AsymmetricKey>()))
+            .Returns(mockIamProvider.Object);
+
+        var result = await _service.GetUserAsymmetricSignatureProviderAsync();
+
+        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.Item);
+        _mockUserProcessor.Verify(x => x.GetCurrentUserKeysAsync(), Times.Once);
+        _mockSecurityProvider.Verify(
+            x => x.BuildAsymmetricSignatureProvider(It.IsAny<AsymmetricKey>()),
+            Times.Once
+        );
+    }
+
+    #endregion
+
+    #region GetUser Provider Methods - User Not Found
+
+    [Fact]
+    public async Task GetUserSymmetricEncryptionProvider_ReturnsNotFound_WhenUserNotFound()
+    {
+        _mockUserProcessor
+            .Setup(x => x.GetCurrentUserKeysAsync())
+            .ReturnsAsync(
+                new GetResult<UserEntity>(RetrieveResultCode.NotFoundError, "Not found", null)
+            );
+
+        var result = await _service.GetUserSymmetricEncryptionProviderAsync();
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Item);
+    }
+
+    [Fact]
+    public async Task GetUserAsymmetricEncryptionProvider_ReturnsNotFound_WhenUserNotFound()
+    {
+        _mockUserProcessor
+            .Setup(x => x.GetCurrentUserKeysAsync())
+            .ReturnsAsync(
+                new GetResult<UserEntity>(RetrieveResultCode.NotFoundError, "Not found", null)
+            );
+
+        var result = await _service.GetUserAsymmetricEncryptionProviderAsync();
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Item);
+    }
+
+    [Fact]
+    public async Task GetUserAsymmetricSignatureProvider_ReturnsNotFound_WhenUserNotFound()
+    {
+        _mockUserProcessor
+            .Setup(x => x.GetCurrentUserKeysAsync())
+            .ReturnsAsync(
+                new GetResult<UserEntity>(RetrieveResultCode.NotFoundError, "Not found", null)
+            );
+
+        var result = await _service.GetUserAsymmetricSignatureProviderAsync();
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Item);
+    }
+
+    #endregion
+
+    #region GetUser Provider Methods - Key Not Found
+
+    [Fact]
+    public async Task GetUserSymmetricEncryptionProvider_ReturnsNotFound_WhenKeyNotFound()
+    {
+        var userEntity = new UserEntity
+        {
+            Id = _userContext.User.Id,
+            Username = "testuser",
+            Email = "test@test.com",
+            SymmetricKeys = [],
+            AsymmetricKeys = [],
+        };
+        SetupUserKeysSuccess(userEntity);
+
+        var result = await _service.GetUserSymmetricEncryptionProviderAsync();
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Item);
+    }
+
+    [Fact]
+    public async Task GetUserAsymmetricEncryptionProvider_ReturnsNotFound_WhenKeyNotFound()
+    {
+        var userEntity = new UserEntity
+        {
+            Id = _userContext.User.Id,
+            Username = "testuser",
+            Email = "test@test.com",
+            SymmetricKeys = [],
+            AsymmetricKeys = [],
+        };
+        SetupUserKeysSuccess(userEntity);
+
+        var result = await _service.GetUserAsymmetricEncryptionProviderAsync();
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Item);
+    }
+
+    [Fact]
+    public async Task GetUserAsymmetricSignatureProvider_ReturnsNotFound_WhenKeyNotFound()
+    {
+        var userEntity = new UserEntity
+        {
+            Id = _userContext.User.Id,
+            Username = "testuser",
+            Email = "test@test.com",
+            SymmetricKeys = [],
+            AsymmetricKeys = [],
+        };
+        SetupUserKeysSuccess(userEntity);
+
+        var result = await _service.GetUserAsymmetricSignatureProviderAsync();
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Item);
+    }
+
+    #endregion
+
     #region Constructor Null Arguments
 
     [Fact]
@@ -789,6 +970,57 @@ public class RetrievalServiceTests
             .Setup(x => x.GetProviderForDecrypting(It.IsAny<string>()))
             .Returns(mockEncryptionProvider.Object);
     }
+
+    private static UserEntity CreateUserEntityWithKeys(Guid userId) =>
+        new()
+        {
+            Id = userId,
+            Username = "testuser",
+            Email = "test@test.com",
+            SymmetricKeys =
+            [
+                new UserSymmetricKeyEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    UserId = userId,
+                    KeyUsedFor = KeyUsedFor.Encryption,
+                    ProviderName = "00",
+                    Version = 0,
+                    EncryptedKey = "00:0:testkey",
+                    CreatedUtc = DateTime.UtcNow,
+                },
+            ],
+            AsymmetricKeys =
+            [
+                new UserAsymmetricKeyEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    UserId = userId,
+                    KeyUsedFor = KeyUsedFor.Encryption,
+                    ProviderName = "00",
+                    Version = 0,
+                    PublicKey = "public-key",
+                    EncryptedPrivateKey = "00:0:private-key",
+                    CreatedUtc = DateTime.UtcNow,
+                },
+                new UserAsymmetricKeyEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    UserId = userId,
+                    KeyUsedFor = KeyUsedFor.Signature,
+                    ProviderName = "00",
+                    Version = 0,
+                    PublicKey = "sig-public-key",
+                    EncryptedPrivateKey = "00:0:sig-private-key",
+                    CreatedUtc = DateTime.UtcNow,
+                },
+            ],
+        };
+
+    private void SetupUserKeysSuccess(UserEntity userEntity) =>
+        _mockUserProcessor
+            .Setup(x => x.GetCurrentUserKeysAsync())
+            .ReturnsAsync(new GetResult<UserEntity>(RetrieveResultCode.Success, "", userEntity));
 
     #endregion
 }

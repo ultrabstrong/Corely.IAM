@@ -3,6 +3,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
+using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Users.Processors;
@@ -52,6 +53,15 @@ internal class UserProcessorAuthorizationDecorator(
             : new GetAsymmetricKeyResult(
                 GetAsymmetricKeyResultCode.UnauthorizedError,
                 $"Unauthorized to read user {userId}",
+                null
+            );
+
+    public async Task<GetResult<UserEntity>> GetCurrentUserKeysAsync() =>
+        _authorizationProvider.HasUserContext()
+            ? await _inner.GetCurrentUserKeysAsync()
+            : new GetResult<UserEntity>(
+                RetrieveResultCode.UnauthorizedError,
+                "Unauthorized to get user keys",
                 null
             );
 

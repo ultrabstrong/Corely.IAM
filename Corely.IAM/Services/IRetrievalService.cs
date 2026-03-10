@@ -44,4 +44,16 @@ public interface IRetrievalService
     Task<
         RetrieveSingleResult<IIamAsymmetricSignatureProvider>
     > GetAccountAsymmetricSignatureProviderAsync(Guid accountId);
+
+    Task<
+        RetrieveSingleResult<IIamSymmetricEncryptionProvider>
+    > GetUserSymmetricEncryptionProviderAsync();
+
+    Task<
+        RetrieveSingleResult<IIamAsymmetricEncryptionProvider>
+    > GetUserAsymmetricEncryptionProviderAsync();
+
+    Task<
+        RetrieveSingleResult<IIamAsymmetricSignatureProvider>
+    > GetUserAsymmetricSignatureProviderAsync();
 }

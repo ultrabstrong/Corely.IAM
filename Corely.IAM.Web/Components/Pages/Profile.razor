@@ -76,6 +76,8 @@ else
                         OnPageChanged="newSkip => { _accountsSkip = newSkip; StateHasChanged(); }" />
         </div>
     }
+
+    <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider" />
 }
 
 <ConfirmModal @ref="_deleteModal"
@@ -104,6 +106,10 @@ else
     private List<Account> PagedAccounts => (UserContext?.AvailableAccounts ?? []).Skip(_accountsSkip).Take(AccountPageSize).ToList();
     private int AccountsTotalCount => UserContext?.AvailableAccounts.Count ?? 0;
 
+    private IIamSymmetricEncryptionProvider? _symProvider;
+    private IIamAsymmetricEncryptionProvider? _asymProvider;
+    private IIamAsymmetricSignatureProvider? _sigProvider;
+
     protected override async Task LoadCoreAsync()
     {
         var result = await RetrievalService.GetUserAsync(UserContext!.User!.Id, hydrate: false);
@@ -115,7 +121,25 @@ else
         else
         {
             NavigationManager.NavigateTo(AppRoutes.SignIn, forceLoad: true);
+            return;
         }
+
+        await LoadKeyProvidersAsync();
+    }
+
+    private async Task LoadKeyProvidersAsync()
+    {
+        var symResult = await RetrievalService.GetUserSymmetricEncryptionProviderAsync();
+        if (symResult.ResultCode == RetrieveResultCode.Success)
+            _symProvider = symResult.Item;
+
+        var asymResult = await RetrievalService.GetUserAsymmetricEncryptionProviderAsync();
+        if (asymResult.ResultCode == RetrieveResultCode.Success)
+            _asymProvider = asymResult.Item;
+
+        var sigResult = await RetrievalService.GetUserAsymmetricSignatureProviderAsync();
+        if (sigResult.ResultCode == RetrieveResultCode.Success)
+            _sigProvider = sigResult.Item;
     }
 
     private void StartEdit()

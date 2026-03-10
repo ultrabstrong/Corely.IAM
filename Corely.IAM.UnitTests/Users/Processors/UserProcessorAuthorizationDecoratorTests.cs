@@ -2,6 +2,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
+using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 
@@ -538,6 +539,44 @@ public class UserProcessorAuthorizationDecoratorTests
             Times.Never
         );
     }
+
+    #region GetCurrentUserKeysAsync
+
+    [Fact]
+    public async Task GetCurrentUserKeys_CallsInner_WhenHasUserContext()
+    {
+        var expectedResult = new GetResult<UserEntity>(
+            RetrieveResultCode.Success,
+            "",
+            new UserEntity
+            {
+                Id = Guid.CreateVersion7(),
+                Username = "test",
+                Email = "test@test.com",
+            }
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockInnerProcessor.Setup(x => x.GetCurrentUserKeysAsync()).ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetCurrentUserKeysAsync();
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerProcessor.Verify(x => x.GetCurrentUserKeysAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetCurrentUserKeys_ReturnsUnauthorized_WhenNoUserContext()
+    {
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+
+        var result = await _decorator.GetCurrentUserKeysAsync();
+
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
+        Assert.Null(result.Data);
+        _mockInnerProcessor.Verify(x => x.GetCurrentUserKeysAsync(), Times.Never);
+    }
+
+    #endregion
 
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>

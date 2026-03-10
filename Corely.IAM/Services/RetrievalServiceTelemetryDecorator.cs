@@ -141,4 +141,34 @@ internal class RetrievalServiceTelemetryDecorator(
             () => _inner.GetAccountAsymmetricSignatureProviderAsync(accountId),
             logResult: true
         );
+
+    public async Task<
+        RetrieveSingleResult<IIamSymmetricEncryptionProvider>
+    > GetUserSymmetricEncryptionProviderAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            new { },
+            () => _inner.GetUserSymmetricEncryptionProviderAsync(),
+            logResult: true
+        );
+
+    public async Task<
+        RetrieveSingleResult<IIamAsymmetricEncryptionProvider>
+    > GetUserAsymmetricEncryptionProviderAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            new { },
+            () => _inner.GetUserAsymmetricEncryptionProviderAsync(),
+            logResult: true
+        );
+
+    public async Task<
+        RetrieveSingleResult<IIamAsymmetricSignatureProvider>
+    > GetUserAsymmetricSignatureProviderAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            new { },
+            () => _inner.GetUserAsymmetricSignatureProviderAsync(),
+            logResult: true
+        );
 }

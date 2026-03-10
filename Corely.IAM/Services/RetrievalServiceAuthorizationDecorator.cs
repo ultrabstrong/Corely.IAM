@@ -160,4 +160,40 @@ internal class RetrievalServiceAuthorizationDecorator(
                 default,
                 null
             );
+
+    public async Task<
+        RetrieveSingleResult<IIamSymmetricEncryptionProvider>
+    > GetUserSymmetricEncryptionProviderAsync() =>
+        _authorizationProvider.HasUserContext()
+            ? await _inner.GetUserSymmetricEncryptionProviderAsync()
+            : new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
+                RetrieveResultCode.UnauthorizedError,
+                "Unauthorized to get user encryption provider",
+                default,
+                null
+            );
+
+    public async Task<
+        RetrieveSingleResult<IIamAsymmetricEncryptionProvider>
+    > GetUserAsymmetricEncryptionProviderAsync() =>
+        _authorizationProvider.HasUserContext()
+            ? await _inner.GetUserAsymmetricEncryptionProviderAsync()
+            : new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
+                RetrieveResultCode.UnauthorizedError,
+                "Unauthorized to get user encryption provider",
+                default,
+                null
+            );
+
+    public async Task<
+        RetrieveSingleResult<IIamAsymmetricSignatureProvider>
+    > GetUserAsymmetricSignatureProviderAsync() =>
+        _authorizationProvider.HasUserContext()
+            ? await _inner.GetUserAsymmetricSignatureProviderAsync()
+            : new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
+                RetrieveResultCode.UnauthorizedError,
+                "Unauthorized to get user signature provider",
+                default,
+                null
+            );
 }

@@ -299,6 +299,66 @@ public class RetrievalServiceTelemetryDecoratorTests
     }
 
     [Fact]
+    public async Task GetUserSymmetricEncryptionProvider_DelegatesToInnerAndLogsResult()
+    {
+        var expectedResult = new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
+            RetrieveResultCode.Success,
+            "",
+            null,
+            null
+        );
+        _mockInnerService
+            .Setup(x => x.GetUserSymmetricEncryptionProviderAsync())
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetUserSymmetricEncryptionProviderAsync();
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.GetUserSymmetricEncryptionProviderAsync(), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public async Task GetUserAsymmetricEncryptionProvider_DelegatesToInnerAndLogsResult()
+    {
+        var expectedResult = new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
+            RetrieveResultCode.Success,
+            "",
+            null,
+            null
+        );
+        _mockInnerService
+            .Setup(x => x.GetUserAsymmetricEncryptionProviderAsync())
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetUserAsymmetricEncryptionProviderAsync();
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.GetUserAsymmetricEncryptionProviderAsync(), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public async Task GetUserAsymmetricSignatureProvider_DelegatesToInnerAndLogsResult()
+    {
+        var expectedResult = new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
+            RetrieveResultCode.Success,
+            "",
+            null,
+            null
+        );
+        _mockInnerService
+            .Setup(x => x.GetUserAsymmetricSignatureProviderAsync())
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.GetUserAsymmetricSignatureProviderAsync();
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.GetUserAsymmetricSignatureProviderAsync(), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
     public void Constructor_ThrowsOnNullInnerService() =>
         Assert.Throws<ArgumentNullException>(() =>
             new RetrievalServiceTelemetryDecorator(null!, _mockLogger.Object)

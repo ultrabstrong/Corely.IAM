@@ -290,4 +290,118 @@ internal class RetrievalService(
             null
         );
     }
+
+    public async Task<
+        RetrieveSingleResult<IIamSymmetricEncryptionProvider>
+    > GetUserSymmetricEncryptionProviderAsync()
+    {
+        var keysResult = await _userProcessor.GetCurrentUserKeysAsync();
+        if (keysResult.ResultCode != RetrieveResultCode.Success || keysResult.Data == null)
+        {
+            return new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
+                keysResult.ResultCode,
+                keysResult.Message,
+                null,
+                null
+            );
+        }
+
+        var symmetricKeyEntity = keysResult.Data.SymmetricKeys?.FirstOrDefault(k =>
+            k.KeyUsedFor == KeyUsedFor.Encryption
+        );
+        if (symmetricKeyEntity == null)
+        {
+            return new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
+                RetrieveResultCode.NotFoundError,
+                "Symmetric encryption key not found for user",
+                null,
+                null
+            );
+        }
+
+        var symmetricKey = symmetricKeyEntity.ToModel(_symmetricEncryptionProviderFactory);
+        var provider = _securityProvider.BuildSymmetricEncryptionProvider(symmetricKey);
+        return new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            provider,
+            null
+        );
+    }
+
+    public async Task<
+        RetrieveSingleResult<IIamAsymmetricEncryptionProvider>
+    > GetUserAsymmetricEncryptionProviderAsync()
+    {
+        var keysResult = await _userProcessor.GetCurrentUserKeysAsync();
+        if (keysResult.ResultCode != RetrieveResultCode.Success || keysResult.Data == null)
+        {
+            return new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
+                keysResult.ResultCode,
+                keysResult.Message,
+                null,
+                null
+            );
+        }
+
+        var asymmetricKeyEntity = keysResult.Data.AsymmetricKeys?.FirstOrDefault(k =>
+            k.KeyUsedFor == KeyUsedFor.Encryption
+        );
+        if (asymmetricKeyEntity == null)
+        {
+            return new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
+                RetrieveResultCode.NotFoundError,
+                "Asymmetric encryption key not found for user",
+                null,
+                null
+            );
+        }
+
+        var asymmetricKey = asymmetricKeyEntity.ToModel(_symmetricEncryptionProviderFactory);
+        var provider = _securityProvider.BuildAsymmetricEncryptionProvider(asymmetricKey);
+        return new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            provider,
+            null
+        );
+    }
+
+    public async Task<
+        RetrieveSingleResult<IIamAsymmetricSignatureProvider>
+    > GetUserAsymmetricSignatureProviderAsync()
+    {
+        var keysResult = await _userProcessor.GetCurrentUserKeysAsync();
+        if (keysResult.ResultCode != RetrieveResultCode.Success || keysResult.Data == null)
+        {
+            return new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
+                keysResult.ResultCode,
+                keysResult.Message,
+                null,
+                null
+            );
+        }
+
+        var asymmetricKeyEntity = keysResult.Data.AsymmetricKeys?.FirstOrDefault(k =>
+            k.KeyUsedFor == KeyUsedFor.Signature
+        );
+        if (asymmetricKeyEntity == null)
+        {
+            return new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
+                RetrieveResultCode.NotFoundError,
+                "Asymmetric signature key not found for user",
+                null,
+                null
+            );
+        }
+
+        var asymmetricKey = asymmetricKeyEntity.ToModel(_symmetricEncryptionProviderFactory);
+        var provider = _securityProvider.BuildAsymmetricSignatureProvider(asymmetricKey);
+        return new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            provider,
+            null
+        );
+    }
 }

@@ -1,6 +1,7 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Extensions;
 using Corely.IAM.Models;
+using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
 
@@ -47,6 +48,14 @@ internal class UserProcessorTelemetryDecorator(
             nameof(UserProcessor),
             userId,
             () => _inner.GetAsymmetricSignatureVerificationKeyAsync(userId),
+            logResult: true
+        );
+
+    public async Task<GetResult<UserEntity>> GetCurrentUserKeysAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(UserProcessor),
+            new { },
+            () => _inner.GetCurrentUserKeysAsync(),
             logResult: true
         );
 

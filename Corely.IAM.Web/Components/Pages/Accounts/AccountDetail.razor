@@ -190,151 +190,7 @@ else
         </div>
 
         <PermissionView Action="AuthAction.Read" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-            <div class="section-divider mb-4">
-                <div class="section-divider-label">Encryption &amp; Signing</div>
-                <ul class="nav nav-tabs">
-                    <li class="nav-item">
-                        <button class="nav-link @(_activeKeyTab == 0 ? "active" : "")" @onclick="() => _activeKeyTab = 0">
-                            <i class="bi bi-key me-1"></i>Symmetric Encryption
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link @(_activeKeyTab == 1 ? "active" : "")" @onclick="() => _activeKeyTab = 1">
-                            <i class="bi bi-shield-lock me-1"></i>Asymmetric Encryption
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link @(_activeKeyTab == 2 ? "active" : "")" @onclick="() => _activeKeyTab = 2">
-                            <i class="bi bi-pen me-1"></i>Digital Signature
-                        </button>
-                    </li>
-                </ul>
-                <div class="tab-content pt-3">
-                    @if (_activeKeyTab == 0)
-                    {
-                        @if (_symProvider != null)
-                        {
-                            <div class="mb-3">
-                                <span class="badge bg-secondary">@_symProvider.ProviderName</span>
-                                <small class="text-muted ms-2">@_symProvider.ProviderDescription</small>
-                            </div>
-                        }
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Input</label>
-                            <textarea class="form-control form-control-sm" rows="2" @bind="_symInput"
-                                      placeholder="Plaintext to encrypt, or ciphertext to decrypt"></textarea>
-                        </div>
-                        <div class="d-flex gap-2 mb-3">
-                            <button class="btn btn-primary btn-sm" @onclick="SymEncryptAsync" disabled="@(_loading || string.IsNullOrWhiteSpace(_symInput))">Encrypt</button>
-                            <button class="btn btn-outline-primary btn-sm" @onclick="SymDecryptAsync" disabled="@(_loading || string.IsNullOrWhiteSpace(_symInput))">Decrypt</button>
-                            <button class="btn btn-outline-secondary btn-sm" @onclick="SymReEncryptAsync" disabled="@(_loading || string.IsNullOrWhiteSpace(_symInput))">Re-encrypt</button>
-                        </div>
-                        @if (_symOutput != null)
-                        {
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Output</label>
-                                <div class="d-flex align-items-start gap-1">
-                                    <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@_symOutput</textarea>
-                                    <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopySymOutputAsync" title="Copy">
-                                        <i class="bi @(_symOutputCopied ? "bi-check text-success" : "bi-copy")"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        }
-                        @if (_symError != null)
-                        {
-                            <div class="alert alert-danger py-2">@_symError</div>
-                        }
-                    }
-                    else if (_activeKeyTab == 1)
-                    {
-                        @if (_asymProvider != null)
-                        {
-                            <div class="mb-3">
-                                <span class="badge bg-secondary">@_asymProvider.ProviderName</span>
-                                <small class="text-muted ms-2">@_asymProvider.ProviderDescription</small>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Public Key</label>
-                                <div class="d-flex align-items-start gap-1">
-                                    <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@_asymProvider.PublicKey</textarea>
-                                    <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopyAsymPublicKeyAsync" title="Copy">
-                                        <i class="bi @(_asymPublicKeyCopied ? "bi-check text-success" : "bi-copy")"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        }
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Input</label>
-                            <textarea class="form-control form-control-sm" rows="2" @bind="_asymInput"
-                                      placeholder="Plaintext to encrypt, or ciphertext to decrypt"></textarea>
-                        </div>
-                        <div class="d-flex gap-2 mb-3">
-                            <button class="btn btn-primary btn-sm" @onclick="AsymEncryptAsync" disabled="@(_loading || string.IsNullOrWhiteSpace(_asymInput))">Encrypt</button>
-                            <button class="btn btn-outline-primary btn-sm" @onclick="AsymDecryptAsync" disabled="@(_loading || string.IsNullOrWhiteSpace(_asymInput))">Decrypt</button>
-                            <button class="btn btn-outline-secondary btn-sm" @onclick="AsymReEncryptAsync" disabled="@(_loading || string.IsNullOrWhiteSpace(_asymInput))">Re-encrypt</button>
-                        </div>
-                        @if (_asymOutput != null)
-                        {
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Output</label>
-                                <div class="d-flex align-items-start gap-1">
-                                    <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@_asymOutput</textarea>
-                                    <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopyAsymOutputAsync" title="Copy">
-                                        <i class="bi @(_asymOutputCopied ? "bi-check text-success" : "bi-copy")"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        }
-                        @if (_asymError != null)
-                        {
-                            <div class="alert alert-danger py-2">@_asymError</div>
-                        }
-                    }
-                    else
-                    {
-                        @if (_sigProvider != null)
-                        {
-                            <div class="mb-3">
-                                <span class="badge bg-secondary">@_sigProvider.ProviderName</span>
-                                <small class="text-muted ms-2">@_sigProvider.ProviderDescription</small>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Public Key</label>
-                                <div class="d-flex align-items-start gap-1">
-                                    <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@_sigProvider.PublicKey</textarea>
-                                    <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopySigPublicKeyAsync" title="Copy">
-                                        <i class="bi @(_sigPublicKeyCopied ? "bi-check text-success" : "bi-copy")"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        }
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Payload</label>
-                            <textarea class="form-control form-control-sm" rows="2" @bind="_sigPayload"
-                                      placeholder="Text to sign or verify"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Signature</label>
-                            <textarea class="form-control form-control-sm font-monospace" rows="2" @bind="_sigSignature"
-                                      placeholder="Signature value (populated by Sign, required for Verify)"></textarea>
-                        </div>
-                        <div class="d-flex gap-2 mb-3">
-                            <button class="btn btn-primary btn-sm" @onclick="SignAsync" disabled="@(_loading || string.IsNullOrWhiteSpace(_sigPayload))">Sign</button>
-                            <button class="btn btn-outline-primary btn-sm" @onclick="VerifyAsync"
-                                    disabled="@(_loading || string.IsNullOrWhiteSpace(_sigPayload) || string.IsNullOrWhiteSpace(_sigSignature))">Verify</button>
-                        </div>
-                        @if (_sigResult != null)
-                        {
-                            <div class="alert @(_sigResultIsValid == true ? "alert-success" : _sigResultIsValid == false ? "alert-danger" : "alert-info") py-2">@_sigResult</div>
-                        }
-                        @if (_sigError != null)
-                        {
-                            <div class="alert alert-danger py-2">@_sigError</div>
-                        }
-                    }
-                </div>
-            </div>
+            <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider" />
         </PermissionView>
 
         <EffectivePermissionsPanel Permissions="_effectivePermissions" UseCard="false" />
@@ -417,10 +273,6 @@ else
     private int _inviteExpirySeconds = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
     private string? _createdToken;
     private bool _tokenCopied;
-    private bool _symOutputCopied;
-    private bool _asymPublicKeyCopied;
-    private bool _asymOutputCopied;
-    private bool _sigPublicKeyCopied;
     private CancellationTokenSource? _invSearchCts;
 
     private int _usersSkip;
@@ -430,22 +282,9 @@ else
     private List<ChildRef> PagedUsers => _users.Skip(_usersSkip).Take(RelationPageSize).ToList();
     private int UsersTotalCount => _users.Count;
 
-    // Key operations state
-    private int _activeKeyTab;
     private IIamSymmetricEncryptionProvider? _symProvider;
     private IIamAsymmetricEncryptionProvider? _asymProvider;
     private IIamAsymmetricSignatureProvider? _sigProvider;
-    private string _symInput = string.Empty;
-    private string? _symOutput;
-    private string? _symError;
-    private string _asymInput = string.Empty;
-    private string? _asymOutput;
-    private string? _asymError;
-    private string _sigPayload = string.Empty;
-    private string _sigSignature = string.Empty;
-    private string? _sigResult;
-    private bool? _sigResultIsValid;
-    private string? _sigError;
 
     protected override async Task LoadCoreAsync()
     {
@@ -463,9 +302,7 @@ else
         }
 
         await LoadInvitationsAsync();
-        await GetSymProviderAsync();
-        await GetAsymProviderAsync();
-        await GetSigProviderAsync();
+        await LoadKeyProvidersAsync();
     }
 
     private async Task LoadInvitationsAsync()
@@ -675,25 +512,6 @@ else
         StateHasChanged();
     }
 
-    private async Task CopySymOutputAsync() => await CopyWithFeedbackAsync(_symOutput, v => _symOutputCopied = v);
-
-    private async Task CopyAsymPublicKeyAsync() => await CopyWithFeedbackAsync(_asymProvider?.PublicKey, v => _asymPublicKeyCopied = v);
-
-    private async Task CopyAsymOutputAsync() => await CopyWithFeedbackAsync(_asymOutput, v => _asymOutputCopied = v);
-
-    private async Task CopySigPublicKeyAsync() => await CopyWithFeedbackAsync(_sigProvider?.PublicKey, v => _sigPublicKeyCopied = v);
-
-    private async Task CopyWithFeedbackAsync(string? text, Action<bool> setFlag)
-    {
-        if (string.IsNullOrEmpty(text)) return;
-        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
-        setFlag(true);
-        StateHasChanged();
-        await Task.Delay(1500);
-        setFlag(false);
-        StateHasChanged();
-    }
-
     private void ConfirmRevokeInvitation(Guid invitationId, string email) =>
         ShowConfirmation(_revokeInvitationModal, invitationId, $"Revoke invitation for '{email}'?");
 
@@ -707,196 +525,18 @@ else
         });
     }
 
-    private async Task<IIamSymmetricEncryptionProvider?> GetSymProviderAsync()
+    private async Task LoadKeyProvidersAsync()
     {
-        if (_symProvider != null)
-            return _symProvider;
+        var symResult = await RetrievalService.GetAccountSymmetricEncryptionProviderAsync(Id);
+        if (symResult.ResultCode == RetrieveResultCode.Success)
+            _symProvider = symResult.Item;
 
-        var result = await RetrievalService.GetAccountSymmetricEncryptionProviderAsync(Id);
-        if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
-        {
-            _symProvider = result.Item;
-            return _symProvider;
-        }
-        _symError = result.Message ?? "Failed to load symmetric encryption provider.";
-        return null;
-    }
+        var asymResult = await RetrievalService.GetAccountAsymmetricEncryptionProviderAsync(Id);
+        if (asymResult.ResultCode == RetrieveResultCode.Success)
+            _asymProvider = asymResult.Item;
 
-    private async Task SymEncryptAsync()
-    {
-        _symOutput = null;
-        _symError = null;
-        await ExecuteSafeAsync(async () =>
-        {
-            var provider = await GetSymProviderAsync();
-            if (provider != null)
-                _symOutput = provider.Encrypt(_symInput);
-        });
-    }
-
-    private async Task SymDecryptAsync()
-    {
-        _symOutput = null;
-        _symError = null;
-        await ExecuteSafeAsync(async () =>
-        {
-            var provider = await GetSymProviderAsync();
-            if (provider == null)
-                return;
-
-            try
-            {
-                _symOutput = provider.Decrypt(_symInput);
-            }
-            catch (Exception ex)
-            {
-                _symError = $"Decryption failed: {ex.Message}";
-            }
-        });
-    }
-
-    private async Task SymReEncryptAsync()
-    {
-        _symOutput = null;
-        _symError = null;
-        await ExecuteSafeAsync(async () =>
-        {
-            var provider = await GetSymProviderAsync();
-            if (provider == null)
-                return;
-
-            try
-            {
-                _symOutput = provider.ReEncrypt(_symInput);
-            }
-            catch (Exception ex)
-            {
-                _symError = $"Re-encryption failed: {ex.Message}";
-            }
-        });
-    }
-
-    private async Task<IIamAsymmetricEncryptionProvider?> GetAsymProviderAsync()
-    {
-        if (_asymProvider != null)
-            return _asymProvider;
-
-        var result = await RetrievalService.GetAccountAsymmetricEncryptionProviderAsync(Id);
-        if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
-        {
-            _asymProvider = result.Item;
-            return _asymProvider;
-        }
-        _asymError = result.Message ?? "Failed to load asymmetric encryption provider.";
-        return null;
-    }
-
-    private async Task AsymEncryptAsync()
-    {
-        _asymOutput = null;
-        _asymError = null;
-        await ExecuteSafeAsync(async () =>
-        {
-            var provider = await GetAsymProviderAsync();
-            if (provider != null)
-                _asymOutput = provider.Encrypt(_asymInput);
-        });
-    }
-
-    private async Task AsymDecryptAsync()
-    {
-        _asymOutput = null;
-        _asymError = null;
-        await ExecuteSafeAsync(async () =>
-        {
-            var provider = await GetAsymProviderAsync();
-            if (provider == null)
-                return;
-
-            try
-            {
-                _asymOutput = provider.Decrypt(_asymInput);
-            }
-            catch (Exception ex)
-            {
-                _asymError = $"Decryption failed: {ex.Message}";
-            }
-        });
-    }
-
-    private async Task AsymReEncryptAsync()
-    {
-        _asymOutput = null;
-        _asymError = null;
-        await ExecuteSafeAsync(async () =>
-        {
-            var provider = await GetAsymProviderAsync();
-            if (provider == null)
-                return;
-
-            try
-            {
-                _asymOutput = provider.ReEncrypt(_asymInput);
-            }
-            catch (Exception ex)
-            {
-                _asymError = $"Re-encryption failed: {ex.Message}";
-            }
-        });
-    }
-
-    private async Task<IIamAsymmetricSignatureProvider?> GetSigProviderAsync()
-    {
-        if (_sigProvider != null)
-            return _sigProvider;
-
-        var result = await RetrievalService.GetAccountAsymmetricSignatureProviderAsync(Id);
-        if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
-        {
-            _sigProvider = result.Item;
-            return _sigProvider;
-        }
-        _sigError = result.Message ?? "Failed to load signature provider.";
-        return null;
-    }
-
-    private async Task SignAsync()
-    {
-        _sigResult = null;
-        _sigResultIsValid = null;
-        _sigError = null;
-        await ExecuteSafeAsync(async () =>
-        {
-            var provider = await GetSigProviderAsync();
-            if (provider != null)
-            {
-                _sigSignature = provider.Sign(_sigPayload);
-                _sigResult = "Payload signed. Signature populated below.";
-            }
-        });
-    }
-
-    private async Task VerifyAsync()
-    {
-        _sigResult = null;
-        _sigResultIsValid = null;
-        _sigError = null;
-        await ExecuteSafeAsync(async () =>
-        {
-            var provider = await GetSigProviderAsync();
-            if (provider == null)
-                return;
-
-            try
-            {
-                var isValid = provider.Verify(_sigPayload, _sigSignature);
-                _sigResultIsValid = isValid;
-                _sigResult = isValid ? "Signature is valid." : "Signature is invalid.";
-            }
-            catch (Exception ex)
-            {
-                _sigError = $"Verification failed: {ex.Message}";
-            }
-        });
+        var sigResult = await RetrievalService.GetAccountAsymmetricSignatureProviderAsync(Id);
+        if (sigResult.ResultCode == RetrieveResultCode.Success)
+            _sigProvider = sigResult.Item;
     }
 }

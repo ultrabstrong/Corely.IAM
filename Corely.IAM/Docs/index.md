@@ -63,6 +63,11 @@ graph LR
 - [Architecture](architecture.md)
 - [Result Codes](result-codes.md)
 
+### Tools
+
+- [DevTools CLI](../../Corely.IAM.DevTools/Docs/index.md) — crypto operations, IAM service interaction
+- [Migration CLI](../../Corely.IAM.DataAccessMigrations.Cli/Docs/index.md) — database creation, migrations, scripting
+
 ## Quick Start
 
 ```csharp

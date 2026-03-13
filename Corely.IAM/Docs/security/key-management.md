@@ -13,7 +13,7 @@ public interface ISecurityConfigurationProvider
 }
 ```
 
-This key encrypts all stored key material in the database. Generate one with the DevTools CLI:
+This key encrypts all stored key material in the database. Generate one with the [DevTools CLI](../../../Corely.IAM.DevTools/Docs/index.md):
 
 ```bash
 cd Corely.IAM.DevTools

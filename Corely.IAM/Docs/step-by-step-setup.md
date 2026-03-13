@@ -27,7 +27,7 @@ public class SecurityConfigurationProvider(IConfiguration configuration)
 }
 ```
 
-Generate a key with the DevTools CLI:
+Generate a key with the [DevTools CLI](../../Corely.IAM.DevTools/Docs/index.md):
 
 ```bash
 cd Corely.IAM.DevTools
@@ -78,7 +78,7 @@ This single call registers all IAM services, processors, repositories, validator
 
 ## 6) Apply Migrations
 
-Use the migration CLI tool to create the database and apply migrations:
+Use the [Migration CLI](../../Corely.IAM.DataAccessMigrations.Cli/Docs/index.md) to create the database and apply migrations:
 
 ```bash
 cd Corely.IAM.DataAccessMigrations.Cli

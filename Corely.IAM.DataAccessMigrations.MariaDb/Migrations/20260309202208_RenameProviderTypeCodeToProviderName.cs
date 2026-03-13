@@ -13,22 +13,26 @@ namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
             migrationBuilder.RenameColumn(
                 name: "ProviderTypeCode",
                 table: "UserSymmetricKeys",
-                newName: "ProviderName");
+                newName: "ProviderName"
+            );
 
             migrationBuilder.RenameColumn(
                 name: "ProviderTypeCode",
                 table: "UserAsymmetricKeys",
-                newName: "ProviderName");
+                newName: "ProviderName"
+            );
 
             migrationBuilder.RenameColumn(
                 name: "ProviderTypeCode",
                 table: "AccountSymmetricKeys",
-                newName: "ProviderName");
+                newName: "ProviderName"
+            );
 
             migrationBuilder.RenameColumn(
                 name: "ProviderTypeCode",
                 table: "AccountAsymmetricKeys",
-                newName: "ProviderName");
+                newName: "ProviderName"
+            );
         }
 
         /// <inheritdoc />
@@ -37,22 +41,26 @@ namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
             migrationBuilder.RenameColumn(
                 name: "ProviderName",
                 table: "UserSymmetricKeys",
-                newName: "ProviderTypeCode");
+                newName: "ProviderTypeCode"
+            );
 
             migrationBuilder.RenameColumn(
                 name: "ProviderName",
                 table: "UserAsymmetricKeys",
-                newName: "ProviderTypeCode");
+                newName: "ProviderTypeCode"
+            );
 
             migrationBuilder.RenameColumn(
                 name: "ProviderName",
                 table: "AccountSymmetricKeys",
-                newName: "ProviderTypeCode");
+                newName: "ProviderTypeCode"
+            );
 
             migrationBuilder.RenameColumn(
                 name: "ProviderName",
                 table: "AccountAsymmetricKeys",
-                newName: "ProviderTypeCode");
+                newName: "ProviderTypeCode"
+            );
         }
     }
 }

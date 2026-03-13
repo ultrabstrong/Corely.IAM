@@ -93,8 +93,8 @@ public class InvitationProcessorTests
         var user = new User
         {
             Id = userEntity.Id,
-            Username = "testuser",
-            Email = "test@test.com",
+            Username = userEntity.Username,
+            Email = userEntity.Email,
         };
         Account? account =
             accountEntity != null
@@ -214,7 +214,7 @@ public class InvitationProcessorTests
     public async Task AcceptInvitation_ReturnsSuccess_AndAddsUserToAccount()
     {
         var creator = await CreateUserAsync();
-        var acceptor = await CreateUserAsync();
+        var acceptor = await CreateUserAsync("acceptor@test.com");
         var account = await CreateAccountAsync();
         SetUserContext(creator, account);
 
@@ -249,10 +249,18 @@ public class InvitationProcessorTests
     [Fact]
     public async Task AcceptInvitation_ReturnsSuccess_WhenUserAlreadyInAccount()
     {
-        var user = await CreateUserAsync();
+        var creator = await CreateUserAsync();
+        var user = await CreateUserAsync("user@test.com");
         var account = await CreateAccountAsync();
 
-        // Add user to account first
+        // Create invitation before user is in the account
+        var invitation = await CreateInvitationEntityAsync(
+            account.Id,
+            creator.Id,
+            email: "user@test.com"
+        );
+
+        // Then add user to the account
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var accountEntity = await accountRepo.GetAsync(
             a => a.Id == account.Id,
@@ -264,17 +272,8 @@ public class InvitationProcessorTests
 
         SetUserContext(user, account);
 
-        var createResult = await _invitationProcessor.CreateInvitationAsync(
-            new CreateInvitationRequest(
-                account.Id,
-                "user@test.com",
-                null,
-                InvitationConstants.MIN_EXPIRY_SECONDS
-            )
-        );
-
         var result = await _invitationProcessor.AcceptInvitationAsync(
-            new AcceptInvitationRequest(createResult.Token!)
+            new AcceptInvitationRequest(invitation.Token)
         );
 
         Assert.Equal(AcceptInvitationResultCode.Success, result.ResultCode);
@@ -285,7 +284,7 @@ public class InvitationProcessorTests
     public async Task AcceptInvitation_BurnsSiblingInvitations_ForSameAccountAndEmail()
     {
         var creator = await CreateUserAsync();
-        var acceptor = await CreateUserAsync();
+        var acceptor = await CreateUserAsync("sibling@test.com");
         var account = await CreateAccountAsync();
         SetUserContext(creator, account);
 
@@ -323,6 +322,68 @@ public class InvitationProcessorTests
         Assert.NotNull(siblingEntity);
         Assert.NotNull(siblingEntity.AcceptedByUserId);
         Assert.Equal(acceptor.Id, siblingEntity.AcceptedByUserId);
+    }
+
+    [Fact]
+    public async Task AcceptInvitation_ReturnsEmailMismatchError_WhenUserEmailDoesNotMatch()
+    {
+        var creator = await CreateUserAsync();
+        var acceptor = await CreateUserAsync("wrong@test.com");
+        var account = await CreateAccountAsync();
+        SetUserContext(creator, account);
+
+        var createResult = await _invitationProcessor.CreateInvitationAsync(
+            new CreateInvitationRequest(
+                account.Id,
+                "intended@test.com",
+                null,
+                InvitationConstants.MIN_EXPIRY_SECONDS
+            )
+        );
+
+        SetUserContext(acceptor);
+
+        var result = await _invitationProcessor.AcceptInvitationAsync(
+            new AcceptInvitationRequest(createResult.Token!)
+        );
+
+        Assert.Equal(AcceptInvitationResultCode.EmailMismatchError, result.ResultCode);
+        Assert.Null(result.AccountId);
+
+        // Verify user was NOT added to the account
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var accountEntity = await accountRepo.GetAsync(
+            a => a.Id == account.Id,
+            include: q => q.Include(a => a.Users)
+        );
+        Assert.DoesNotContain(accountEntity!.Users!, u => u.Id == acceptor.Id);
+    }
+
+    [Fact]
+    public async Task AcceptInvitation_Succeeds_WhenUserEmailMatchesCaseInsensitive()
+    {
+        var creator = await CreateUserAsync();
+        var acceptor = await CreateUserAsync("Alice@Example.COM");
+        var account = await CreateAccountAsync();
+        SetUserContext(creator, account);
+
+        var createResult = await _invitationProcessor.CreateInvitationAsync(
+            new CreateInvitationRequest(
+                account.Id,
+                "alice@example.com",
+                null,
+                InvitationConstants.MIN_EXPIRY_SECONDS
+            )
+        );
+
+        SetUserContext(acceptor);
+
+        var result = await _invitationProcessor.AcceptInvitationAsync(
+            new AcceptInvitationRequest(createResult.Token!)
+        );
+
+        Assert.Equal(AcceptInvitationResultCode.Success, result.ResultCode);
+        Assert.Equal(account.Id, result.AccountId);
     }
 
     [Fact]

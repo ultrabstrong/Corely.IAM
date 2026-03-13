@@ -8,6 +8,7 @@ public enum AcceptInvitationResultCode
     InvitationRevokedError,
     InvitationAlreadyAcceptedError,
     AddToAccountError,
+    EmailMismatchError,
     UnauthorizedError,
 }
 

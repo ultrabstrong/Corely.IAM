@@ -16,7 +16,7 @@
 
             <div class="input-group mt-3">
                 <input type="text" class="form-control" @bind="_token" placeholder="Invitation token" disabled="@_loading" />
-                <button class="btn btn-primary" @onclick="AcceptAsync" disabled="@(_loading || string.IsNullOrWhiteSpace(_token))">
+                <button class="btn btn-primary" @onclick="AcceptAsync" disabled="@_loading">
                     @if (_loading)
                     {
                         <span class="spinner-border spinner-border-sm me-1" role="status"></span>
@@ -48,7 +48,6 @@
 
     private async Task AcceptAsync()
     {
-        if (string.IsNullOrWhiteSpace(_token)) return;
         _loading = true;
         _message = null;
         try
@@ -69,6 +68,7 @@
                 AcceptInvitationResultCode.InvitationRevokedError => "This invitation has been revoked.",
                 AcceptInvitationResultCode.InvitationAlreadyAcceptedError => "This invitation has already been used.",
                 AcceptInvitationResultCode.InvitationNotFoundError => "Invitation not found. Check the token and try again.",
+                AcceptInvitationResultCode.EmailMismatchError => "This invitation is for a different user.",
                 _ => result.Message
             };
             _messageType = AlertType.Danger;

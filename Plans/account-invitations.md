@@ -812,3 +812,76 @@ Show the error in the existing `Alert` component inside the create invitation mo
 | All `CreateInvitationResult(...)` call sites | Add `null` for new `ExistingUserId` parameter |
 | `InvitationProcessorTests.cs` | Add test for new error code |
 | `AccountDetail.razor` | Handle `UserAlreadyInAccountError` in `CreateInvitationAsync` |
+
+---
+
+## Bugfix: Accepting User Email Not Validated Against Invitation Email
+
+### Problem
+
+`AcceptInvitationAsync` does not verify that the accepting user's email matches the invitation's `Email` field. Any authenticated user who obtains or guesses the token can accept it and add themselves to the account — even if the invitation was created for a completely different person.
+
+**Reproduction:**
+1. Account owner creates invitation for `alice@example.com`
+2. Authenticated user `bob@example.com` navigates to `/accept-invitation`
+3. Bob pastes the token and is added to the account
+
+This defeats the purpose of the email field and allows unintended users to join accounts.
+
+### Root Cause
+
+`InvitationProcessor.AcceptInvitationAsync` (line 195) reads the current user's ID from `UserContext` and calls `AddUserToAccountForInvitationAsync` without ever comparing the user's email against `invitationEntity.Email`.
+
+The original design (Decision #5, Acceptance Flow step 1–8) treated the token as the sole authorization — "the invitation token itself is the authorization." But this was an oversight: the `Email` field was added specifically to identify the intended recipient and enable duplicate-burn logic. It should also gate acceptance.
+
+### Fix (Implemented)
+
+**`Corely.IAM/Invitations/Models/AcceptInvitationResult.cs`**
+
+Added `EmailMismatchError` to the `AcceptInvitationResultCode` enum.
+
+**`Corely.IAM/Invitations/Processors/InvitationProcessor.cs`**
+
+After the existing validation checks (expired/revoked/accepted) and before calling `AddUserToAccountForInvitationAsync`, added a case-insensitive email match check:
+
+```csharp
+var userContext = _userContextProvider.GetUserContext()!;
+var userId = userContext.User.Id;
+
+if (!string.Equals(userContext.User.Email, invitationEntity.Email, StringComparison.OrdinalIgnoreCase))
+{
+    _logger.LogWarning(
+        "User {UserId} attempted to accept invitation {InvitationId} intended for {InvitedEmail}",
+        userId, invitationEntity.Id, invitationEntity.Email);
+    return new AcceptInvitationResult(
+        AcceptInvitationResultCode.EmailMismatchError,
+        "This invitation is for a different user",
+        null);
+}
+```
+
+**Key details:**
+- Case-insensitive comparison (`OrdinalIgnoreCase`) since email addresses are case-insensitive per RFC 5321
+- Log at `LogWarning` — this is a blocked operation that could indicate misuse
+- Error message says "This invitation is for a different user" — does NOT leak the intended email (security: don't confirm who the invitation was for)
+
+**`Corely.IAM.UnitTests/Invitations/Processors/InvitationProcessorTests.cs`**
+
+- Added `AcceptInvitation_ReturnsEmailMismatchError_WhenUserEmailDoesNotMatch` — verifies `EmailMismatchError` returned and user NOT added to account
+- Added `AcceptInvitation_Succeeds_WhenUserEmailMatchesCaseInsensitive` — invitation for `Alice@Example.COM`, user has `alice@example.com`, verifies success
+- Fixed `SetUserContext` to use `userEntity.Email` instead of hardcoded `"test@test.com"` — existing accept tests were updated to create users with matching emails
+- Restructured `AcceptInvitation_ReturnsSuccess_WhenUserAlreadyInAccount` to create the invitation entity directly (via helper) before adding the user to the account, since `CreateInvitationAsync` now blocks invitations for emails already in the account
+
+**`Corely.IAM.Web/Components/Pages/Invitations/AcceptInvitation.razor`**
+
+- Added `EmailMismatchError` case to the result code switch — displays "This invitation is for a different user."
+- Removed `disabled` guard on the Accept button that required non-empty token — button is always enabled (except during loading), empty input is handled by the processor returning `InvitationNotFoundError`
+
+### Files
+
+| File | Change |
+|------|--------|
+| `AcceptInvitationResult.cs` | ✅ Added `EmailMismatchError` to enum |
+| `InvitationProcessor.cs` | ✅ Added email comparison check before `AddUserToAccountForInvitationAsync` |
+| `InvitationProcessorTests.cs` | ✅ Added 2 new tests, fixed `SetUserContext` to use entity email, restructured already-in-account test |
+| `AcceptInvitation.razor` | ✅ Handle `EmailMismatchError` in UI; always-enabled Accept button |

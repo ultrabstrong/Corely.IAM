@@ -192,7 +192,29 @@ internal class InvitationProcessor(
             );
         }
 
-        var userId = _userContextProvider.GetUserContext()!.User.Id;
+        var userContext = _userContextProvider.GetUserContext()!;
+        var userId = userContext.User.Id;
+
+        if (
+            !string.Equals(
+                userContext.User.Email,
+                invitationEntity.Email,
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
+        {
+            _logger.LogWarning(
+                "User {UserId} attempted to accept invitation {InvitationId} intended for {InvitedEmail}",
+                userId,
+                invitationEntity.Id,
+                invitationEntity.Email
+            );
+            return new AcceptInvitationResult(
+                AcceptInvitationResultCode.EmailMismatchError,
+                "This invitation is for a different user",
+                null
+            );
+        }
 
         // Add user to account (handles already-in-account case)
         var addResult = await _accountProcessor.AddUserToAccountForInvitationAsync(

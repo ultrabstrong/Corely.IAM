@@ -1,0 +1,918 @@
+# Plan: MFA (TOTP) and Google Sign-In
+
+## Status: Planned
+
+## Overview
+
+Add multi-factor authentication (TOTP authenticator apps) and Google OAuth sign-in to Corely.IAM. Users can:
+
+- **Enable/disable TOTP MFA** on their account — when enabled, sign-in requires a TOTP code after password
+- **Link/unlink a Google account** — allows sign-in with Google as an alternative to username/password
+- **Use both or either** — a user can have BasicAuth + Google linked simultaneously, or just one
+- **MFA applies to all sign-in methods** — if TOTP is enabled, it's required whether signing in with password or Google
+
+---
+
+## Design Decisions
+
+### Authentication Method Model
+
+A user can have **zero or more** authentication methods:
+
+| Method | Entity | Relationship | Required? |
+|--------|--------|-------------|-----------|
+| Password | `BasicAuthEntity` | 1:1 with User | No (but at least one method must exist) |
+| Google | `GoogleAuthEntity` | 1:1 with User | No |
+
+At least one authentication method must be linked to a user at all times. The UI and service layer prevent unlinking the last method.
+
+### MFA Model
+
+MFA is **per-user, not per-account**. A single `TotpAuthEntity` stores the TOTP secret. When TOTP is enabled:
+
+- Password sign-in returns `MfaRequiredChallenge` instead of a token
+- Google sign-in returns `MfaRequiredChallenge` instead of a token
+- The caller must complete the challenge with `VerifyMfaAsync()`
+- Only then is the JWT issued
+
+### Two-Phase Sign-In Flow
+
+```
+Phase 1: Credential verification
+  SignInAsync(username, password, deviceId)     → Success or MfaRequiredChallenge
+  SignInWithGoogleAsync(idToken, deviceId)      → Success or MfaRequiredChallenge
+
+Phase 2: MFA verification (only if TOTP enabled)
+  VerifyMfaAsync(mfaChallengeToken, totpCode)   → Success (JWT issued)
+```
+
+The `MfaRequiredChallenge` result includes a short-lived, single-use **MFA challenge token** (not a JWT — just a random token stored in the DB) that ties the MFA verification back to the authenticated user. This prevents replay attacks and decouples the two phases.
+
+### Recovery Codes
+
+When TOTP is enabled, 10 single-use recovery codes are generated. Each code can be used exactly once in place of a TOTP code. Users can regenerate codes (invalidates all existing ones).
+
+### Google OAuth Flow (Server-Side)
+
+Corely.IAM does **not** implement the OAuth redirect flow itself — that's the host app's responsibility (or the Web UI's). The library accepts a **Google ID token** (the JWT Google returns after consent) and validates it server-side:
+
+1. Host/Web UI handles the Google OAuth redirect and consent
+2. Google returns an ID token to the callback
+3. Host calls `SignInWithGoogleAsync(googleIdToken, deviceId)`
+4. Corely.IAM validates the ID token (signature, audience, expiry)
+5. Looks up user by Google subject ID
+6. Issues JWT (or MFA challenge if TOTP enabled)
+
+This keeps Corely.IAM host-agnostic — no `HttpContext`, no redirect URLs, no cookie manipulation at the library level.
+
+---
+
+## Database Schema
+
+### New Tables
+
+#### `TotpAuths`
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `Id` | `GUID` | PK, ValueGeneratedNever | UUIDv7 |
+| `UserId` | `GUID` | FK → Users, Unique, Cascade Delete | One TOTP config per user |
+| `EncryptedSecret` | `nvarchar(500)` | Required | TOTP secret encrypted with system key |
+| `IsEnabled` | `bit` | Required, Default: false | Whether TOTP is actively enforced |
+| `CreatedUtc` | `DATETIME2` | Required, Default: SYSUTCDATETIME() | |
+| `ModifiedUtc` | `DATETIME2` | Nullable | |
+
+#### `TotpRecoveryCodes`
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `Id` | `GUID` | PK, ValueGeneratedNever | UUIDv7 |
+| `TotpAuthId` | `GUID` | FK → TotpAuths, Cascade Delete | Parent TOTP config |
+| `CodeHash` | `nvarchar(250)` | Required | Salted hash of the recovery code |
+| `UsedUtc` | `DATETIME2` | Nullable | Null = unused, set when consumed |
+| `CreatedUtc` | `DATETIME2` | Required, Default: SYSUTCDATETIME() | |
+
+#### `GoogleAuths`
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `Id` | `GUID` | PK, ValueGeneratedNever | UUIDv7 |
+| `UserId` | `GUID` | FK → Users, Unique, Cascade Delete | One Google link per user |
+| `GoogleSubjectId` | `nvarchar(255)` | Required, Unique Index | Google `sub` claim (stable user identifier) |
+| `Email` | `nvarchar(254)` | Required | Google email (informational, not used for lookup) |
+| `CreatedUtc` | `DATETIME2` | Required, Default: SYSUTCDATETIME() | |
+| `ModifiedUtc` | `DATETIME2` | Nullable | |
+
+#### `MfaChallenges`
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `Id` | `GUID` | PK, ValueGeneratedNever | UUIDv7 |
+| `UserId` | `GUID` | FK → Users, Cascade Delete | User being challenged |
+| `ChallengeToken` | `nvarchar(128)` | Required, Unique Index | Random token for MFA verification |
+| `DeviceId` | `nvarchar(100)` | Required | Device from original sign-in |
+| `AccountId` | `GUID` | Nullable | Account from original sign-in (if specified) |
+| `ExpiresUtc` | `DATETIME2` | Required | Short-lived (5 minutes default) |
+| `CompletedUtc` | `DATETIME2` | Nullable | Null = pending, set when verified |
+| `CreatedUtc` | `DATETIME2` | Required, Default: SYSUTCDATETIME() | |
+
+Index on `ExpiresUtc` for cleanup queries (same pattern as `UserAuthTokens`).
+
+### Modified Tables
+
+#### `Users` — No schema changes
+
+MFA status is derived from `TotpAuths.IsEnabled`. No denormalization needed.
+
+---
+
+## Domain Structure
+
+### New Domain: `TotpAuths/`
+
+```
+TotpAuths/
+├── Constants/
+│   └── TotpAuthConstants.cs
+├── Entities/
+│   ├── TotpAuthEntity.cs
+│   ├── TotpAuthEntityConfiguration.cs
+│   ├── TotpRecoveryCodeEntity.cs
+│   └── TotpRecoveryCodeEntityConfiguration.cs
+├── Models/
+│   ├── TotpAuth.cs
+│   ├── EnableTotpRequest.cs
+│   ├── EnableTotpResult.cs
+│   ├── DisableTotpRequest.cs
+│   ├── DisableTotpResult.cs
+│   ├── VerifyTotpRequest.cs
+│   ├── VerifyTotpResult.cs
+│   └── RegenerateTotpRecoveryCodesResult.cs
+├── Processors/
+│   ├── ITotpAuthProcessor.cs
+│   ├── TotpAuthProcessor.cs
+│   ├── TotpAuthProcessorAuthorizationDecorator.cs
+│   └── TotpAuthProcessorTelemetryDecorator.cs
+├── Mappers/
+│   └── TotpAuthMapper.cs
+├── Validators/
+│   └── TotpAuthValidator.cs
+└── Providers/
+    ├── ITotpProvider.cs
+    └── TotpProvider.cs          # TOTP generation/validation (RFC 6238)
+```
+
+### New Domain: `GoogleAuths/`
+
+```
+GoogleAuths/
+├── Constants/
+│   └── GoogleAuthConstants.cs
+├── Entities/
+│   ├── GoogleAuthEntity.cs
+│   └── GoogleAuthEntityConfiguration.cs
+├── Models/
+│   ├── GoogleAuth.cs
+│   ├── LinkGoogleAuthRequest.cs
+│   ├── LinkGoogleAuthResult.cs
+│   ├── UnlinkGoogleAuthRequest.cs
+│   ├── UnlinkGoogleAuthResult.cs
+│   └── GoogleIdTokenPayload.cs     # Parsed Google ID token claims
+├── Processors/
+│   ├── IGoogleAuthProcessor.cs
+│   ├── GoogleAuthProcessor.cs
+│   ├── GoogleAuthProcessorAuthorizationDecorator.cs
+│   └── GoogleAuthProcessorTelemetryDecorator.cs
+├── Mappers/
+│   └── GoogleAuthMapper.cs
+├── Validators/
+│   └── GoogleAuthValidator.cs
+└── Providers/
+    ├── IGoogleIdTokenValidator.cs
+    └── GoogleIdTokenValidator.cs   # Validates Google JWT (signature, audience, expiry)
+```
+
+### New Domain: `MfaChallenges/`
+
+```
+MfaChallenges/
+├── Constants/
+│   └── MfaChallengeConstants.cs
+├── Entities/
+│   ├── MfaChallengeEntity.cs
+│   └── MfaChallengeEntityConfiguration.cs
+└── Models/
+    └── MfaChallenge.cs
+```
+
+MFA challenges are simple — no processor needed. Created and consumed by `AuthenticationService` directly.
+
+---
+
+## Service Interface Changes
+
+### `IAuthenticationService` — Extended
+
+```csharp
+public interface IAuthenticationService
+{
+    // Existing
+    Task<SignInResult> SignInAsync(SignInRequest request);
+    Task<SignInResult> SwitchAccountAsync(SwitchAccountRequest request);
+    Task<bool> SignOutAsync(SignOutRequest request);
+    Task SignOutAllAsync();
+
+    // New: Google sign-in
+    Task<SignInResult> SignInWithGoogleAsync(SignInWithGoogleRequest request);
+
+    // New: MFA verification (completes a two-phase sign-in)
+    Task<SignInResult> VerifyMfaAsync(VerifyMfaRequest request);
+}
+```
+
+### New Request/Result Models
+
+```csharp
+// Google sign-in
+public record SignInWithGoogleRequest(
+    string GoogleIdToken,       // JWT from Google OAuth
+    string DeviceId,
+    Guid? AccountId = null
+);
+
+// MFA verification
+public record VerifyMfaRequest(
+    string MfaChallengeToken,   // From MfaRequiredChallenge result
+    string Code                 // TOTP code or recovery code
+);
+```
+
+### `SignInResultCode` — Extended
+
+```csharp
+public enum SignInResultCode
+{
+    Success,
+    MfaRequiredChallenge,       // NEW: credential verified, MFA needed
+    UserNotFoundError,
+    UserLockedError,
+    PasswordMismatchError,
+    SignatureKeyNotFoundError,
+    AccountNotFoundError,
+    InvalidAuthTokenError,
+    GoogleAuthNotLinkedError,   // NEW: no Google link for this Google account
+    InvalidGoogleTokenError,    // NEW: Google ID token validation failed
+    InvalidMfaCodeError,        // NEW: TOTP code or recovery code invalid
+    MfaChallengeExpiredError,   // NEW: challenge token expired or already used
+}
+```
+
+### `SignInResult` — Extended
+
+```csharp
+public record SignInResult(
+    SignInResultCode ResultCode,
+    string? Message,
+    string? AuthToken,
+    Guid? AuthTokenId,
+    string? MfaChallengeToken = null   // NEW: populated when ResultCode == MfaRequiredChallenge
+);
+```
+
+### `IRegistrationService` — Extended
+
+```csharp
+// New methods
+Task<EnableTotpResult> EnableTotpAsync();                           // Generates secret + recovery codes
+Task<DisableTotpResult> DisableTotpAsync(DisableTotpRequest request); // Requires current TOTP code to disable
+Task<RegenerateTotpRecoveryCodesResult> RegenerateTotpRecoveryCodesAsync();
+Task<LinkGoogleAuthResult> LinkGoogleAuthAsync(LinkGoogleAuthRequest request);
+```
+
+### `IDeregistrationService` — Extended
+
+```csharp
+// New methods
+Task<UnlinkGoogleAuthResult> UnlinkGoogleAuthAsync();
+```
+
+### `IRetrievalService` — Extended
+
+```csharp
+// New methods
+Task<GetTotpStatusResult> GetTotpStatusAsync();                    // Is TOTP enabled? How many recovery codes left?
+Task<GetAuthMethodsResult> GetAuthMethodsAsync();                  // Which auth methods are linked?
+```
+
+---
+
+## TOTP Implementation Details
+
+### TOTP Provider (`ITotpProvider`)
+
+```csharp
+internal interface ITotpProvider
+{
+    string GenerateSecret();                           // Random 20-byte base32 secret
+    string GenerateSetupUri(string secret,             // otpauth:// URI for QR code
+        string issuer, string userLabel);
+    bool ValidateCode(string secret, string code);     // RFC 6238 validation (±1 step tolerance)
+}
+```
+
+Implementation uses `System.Security.Cryptography.HMACSHA1` directly (standard .NET BCL). No Corely.Security dependency for TOTP — this is a standalone RFC 6238 implementation:
+
+- **Algorithm**: HMAC-SHA1 (standard for Google Authenticator compatibility)
+- **Digits**: 6
+- **Period**: 30 seconds
+- **Tolerance**: ±1 step (accepts codes from 30 seconds ago and 30 seconds in the future)
+- **Secret**: 20 bytes, base32-encoded for QR code URI
+
+### Secret Storage
+
+TOTP secrets are encrypted with the **system symmetric key** before storage (same pattern as user/account key material). The `EncryptedSecret` column stores the ciphertext. Decryption happens in-memory only during code validation.
+
+### Recovery Codes
+
+- 10 codes generated on enable
+- Each code: 8 alphanumeric characters (e.g., `A1B2-C3D4`)
+- Stored as salted hashes (same hash provider as passwords)
+- Single-use: `UsedUtc` set on consumption
+- Regeneration creates 10 new codes and deletes all existing ones
+
+---
+
+## Google OAuth Implementation Details
+
+### Google ID Token Validation (`IGoogleIdTokenValidator`)
+
+```csharp
+internal interface IGoogleIdTokenValidator
+{
+    Task<GoogleIdTokenPayload?> ValidateAsync(string idToken);
+}
+```
+
+Validates the Google-issued JWT:
+
+1. **Fetch Google's public keys** from `https://www.googleapis.com/oauth2/v3/certs` (cached with expiry)
+2. **Validate JWT signature** using Google's public RSA keys
+3. **Check `iss`**: must be `accounts.google.com` or `https://accounts.google.com`
+4. **Check `aud`**: must match configured `GoogleClientId`
+5. **Check `exp`**: must not be expired
+6. **Extract claims**: `sub` (stable Google user ID), `email`, `email_verified`
+
+Returns `GoogleIdTokenPayload` with the validated claims, or null on failure.
+
+### Google Configuration
+
+Add to `SecurityOptions`:
+
+```csharp
+public class SecurityOptions
+{
+    // Existing
+    public int MaxLoginAttempts { get; set; } = 5;
+    public int LockoutCooldownSeconds { get; set; } = 900;
+    public int AuthTokenTtlSeconds { get; set; } = 3600;
+
+    // New
+    public int MfaChallengeTimeoutSeconds { get; set; } = 300;       // 5 minutes
+    public int TotpRecoveryCodeCount { get; set; } = 10;
+    public string? GoogleClientId { get; set; }                      // Required for Google sign-in
+}
+```
+
+`GoogleClientId` is nullable — Google sign-in is only available when configured. The `GoogleIdTokenValidator` returns an error if called without a configured client ID.
+
+No client secret needed — ID token validation is public-key-based using Google's published JWKS.
+
+### Linking Flow
+
+1. User signs in with existing method (password or already-linked Google)
+2. User navigates to Profile and clicks "Link Google Account"
+3. Host/Web UI handles Google OAuth consent → gets ID token
+4. Calls `LinkGoogleAuthAsync(idToken)` with current user context
+5. Library validates token, extracts `sub` claim, creates `GoogleAuthEntity`
+6. If `sub` is already linked to another user → returns error
+
+### Sign-In Flow
+
+1. Web UI shows "Sign in with Google" button
+2. Google OAuth consent → ID token returned to callback
+3. Calls `SignInWithGoogleAsync(googleIdToken, deviceId)`
+4. Library validates token, looks up user by `GoogleSubjectId`
+5. If user has TOTP enabled → returns `MfaRequiredChallenge`
+6. Otherwise → issues JWT
+
+---
+
+## Authentication Flow Diagrams
+
+### Password Sign-In (with MFA)
+
+```
+Client                          AuthenticationService
+  │                                       │
+  │  SignInAsync(user, pass, device)       │
+  │──────────────────────────────────────►│
+  │                                       │── Verify password (BasicAuthProcessor)
+  │                                       │── Check TOTP enabled (TotpAuthEntity)
+  │                                       │
+  │  ◄─ IF no TOTP: Success + JWT ────────│
+  │                                       │
+  │  ◄─ IF TOTP: MfaRequiredChallenge ────│── Create MfaChallengeEntity (5 min TTL)
+  │     (includes mfaChallengeToken)      │
+  │                                       │
+  │  VerifyMfaAsync(challengeToken, code) │
+  │──────────────────────────────────────►│
+  │                                       │── Validate challenge (not expired, not used)
+  │                                       │── Validate TOTP code OR recovery code
+  │                                       │── Mark challenge completed
+  │                                       │── Issue JWT
+  │  ◄─ Success + JWT ───────────────────│
+```
+
+### Google Sign-In (with MFA)
+
+```
+Client              Web UI / Host            AuthenticationService
+  │                      │                            │
+  │  Click "Google"      │                            │
+  │─────────────────────►│                            │
+  │                      │── Google OAuth redirect ──►│ (Google)
+  │                      │◄── ID token callback ─────│
+  │                      │                            │
+  │                      │  SignInWithGoogleAsync()    │
+  │                      │───────────────────────────►│
+  │                      │                            │── Validate Google ID token
+  │                      │                            │── Lookup user by GoogleSubjectId
+  │                      │                            │── Check TOTP enabled
+  │                      │                            │
+  │                      │  ◄─ MfaRequiredChallenge ──│
+  │                      │                            │
+  │  Enter TOTP code     │                            │
+  │─────────────────────►│                            │
+  │                      │  VerifyMfaAsync()          │
+  │                      │───────────────────────────►│
+  │                      │  ◄─ Success + JWT ─────────│
+```
+
+### Enable TOTP
+
+```
+Client                     Profile Page                   RegistrationService
+  │                              │                               │
+  │  Click "Enable 2FA"         │                               │
+  │─────────────────────────────►│                               │
+  │                              │  EnableTotpAsync()            │
+  │                              │──────────────────────────────►│
+  │                              │                               │── Generate secret
+  │                              │                               │── Encrypt with system key
+  │                              │                               │── Create TotpAuthEntity (IsEnabled=false)
+  │                              │                               │── Generate recovery codes
+  │                              │                               │── Hash and store codes
+  │                              │  ◄─ EnableTotpResult ─────────│
+  │                              │     (secret, setupUri,        │
+  │                              │      recoveryCodes[])         │
+  │                              │                               │
+  │  ◄─ Show QR code + codes ──│                               │
+  │                              │                               │
+  │  Scan QR, enter TOTP code   │                               │
+  │─────────────────────────────►│                               │
+  │                              │  ConfirmTotpAsync(code)       │
+  │                              │──────────────────────────────►│
+  │                              │                               │── Validate code against secret
+  │                              │                               │── Set IsEnabled = true
+  │                              │  ◄─ Success ─────────────────│
+```
+
+Note: `EnableTotpAsync` creates the TOTP record with `IsEnabled = false`. A separate `ConfirmTotpAsync` call validates a code and flips `IsEnabled = true`. This ensures the user has actually configured their authenticator app before enforcement begins.
+
+---
+
+## Service Method Details
+
+### `AuthenticationService.SignInAsync` — Modified
+
+After successful password verification (line 107 in current code), before calling `GenerateAuthTokenAndSetContextAsync`:
+
+```csharp
+// Check if TOTP is enabled for this user
+var totpAuth = await _totpAuthRepo.GetAsync(t => t.UserId == userEntity.Id);
+if (totpAuth is { IsEnabled: true })
+{
+    // Create MFA challenge instead of issuing token
+    var challenge = await CreateMfaChallengeAsync(
+        userEntity.Id, request.DeviceId, request.AccountId);
+    return new SignInResult(
+        SignInResultCode.MfaRequiredChallenge,
+        "MFA verification required",
+        null, null,
+        challenge.ChallengeToken);
+}
+```
+
+### `AuthenticationService.SignInWithGoogleAsync` — New
+
+```
+1. Validate Google ID token via IGoogleIdTokenValidator
+2. If invalid → return InvalidGoogleTokenError
+3. Lookup GoogleAuthEntity by GoogleSubjectId
+4. If not found → return GoogleAuthNotLinkedError
+5. Load UserEntity from GoogleAuthEntity.UserId
+6. Check lockout status (same as password flow)
+7. Update login metrics (TotalSuccessfulLogins, etc.)
+8. Check TOTP → if enabled, return MfaRequiredChallenge
+9. Otherwise → GenerateAuthTokenAndSetContextAsync → return Success
+```
+
+### `AuthenticationService.VerifyMfaAsync` — New
+
+```
+1. Lookup MfaChallengeEntity by ChallengeToken
+2. If not found or expired → return MfaChallengeExpiredError
+3. If already completed → return MfaChallengeExpiredError
+4. Load TotpAuthEntity for challenge.UserId
+5. Try TOTP validation first (ITotpProvider.ValidateCode)
+6. If TOTP fails, try recovery code (hash and compare against unused codes)
+7. If both fail → return InvalidMfaCodeError
+8. Mark challenge as completed (CompletedUtc = now)
+9. If recovery code used → mark code as used (UsedUtc = now)
+10. GenerateAuthTokenAndSetContextAsync with challenge.UserId, challenge.AccountId, challenge.DeviceId
+11. Return Success + JWT
+```
+
+### `RegistrationService.EnableTotpAsync` — New
+
+```
+1. Requires user context (own user only)
+2. Check if TotpAuthEntity already exists for user
+3. If exists and IsEnabled → return AlreadyEnabledError
+4. Generate TOTP secret via ITotpProvider
+5. Encrypt secret with system key
+6. Create TotpAuthEntity (IsEnabled = false)
+7. Generate recovery codes, hash, store as TotpRecoveryCodeEntities
+8. Return EnableTotpResult(secret, setupUri, recoveryCodes[])
+```
+
+### `RegistrationService.ConfirmTotpAsync` — New
+
+```
+1. Requires user context (own user only)
+2. Load TotpAuthEntity
+3. If not found or already enabled → return error
+4. Decrypt secret, validate provided TOTP code
+5. If valid → set IsEnabled = true
+6. Return success
+```
+
+### `RegistrationService.LinkGoogleAuthAsync` — New
+
+```
+1. Requires user context (own user only)
+2. Validate Google ID token
+3. Check GoogleSubjectId not already linked to another user
+4. Create GoogleAuthEntity
+5. Return success
+```
+
+---
+
+## Corely.IAM.Web Changes
+
+### Sign-In Page (`SignIn.cshtml`)
+
+Add "Sign in with Google" button below the password form:
+
+```html
+<hr class="my-3" />
+<form method="post" asp-page-handler="Google">
+    <button type="submit" class="btn btn-outline-dark w-100">
+        <img src="google-icon.svg" width="20" /> Sign in with Google
+    </button>
+</form>
+```
+
+The Google button initiates the OAuth redirect. The callback page handles the token exchange and calls `SignInWithGoogleAsync`.
+
+### New Razor Page: MFA Verification (`VerifyMfa.cshtml`)
+
+Simple form between sign-in and dashboard:
+
+- Title: "Two-Factor Authentication"
+- Single input: 6-digit TOTP code
+- Hidden field: `mfaChallengeToken`
+- Link: "Use a recovery code instead" → toggles to recovery code input
+- POST handler calls `VerifyMfaAsync`
+- On success → set cookies, redirect to dashboard/select-account
+
+### New Razor Page: Google Callback (`GoogleCallback.cshtml`)
+
+Handles the OAuth callback:
+
+1. Receives authorization code from Google
+2. Exchanges code for tokens (via Google's token endpoint)
+3. Calls `SignInWithGoogleAsync(idToken, deviceId)`
+4. Handles `MfaRequiredChallenge` → redirect to `/verify-mfa`
+5. Handles `Success` → set cookies, redirect
+
+### Profile Page (`Profile.razor`) — Extended
+
+Add two new sections:
+
+#### Two-Factor Authentication Section
+
+- **When disabled**: "Enable Two-Factor Authentication" button
+  - Clicking it calls `EnableTotpAsync`
+  - Shows QR code (rendered from `setupUri`) and recovery codes
+  - Requires confirmation code before activation
+- **When enabled**: Shows status, recovery code count, and action buttons:
+  - "Regenerate Recovery Codes" → calls `RegenerateTotpRecoveryCodesAsync`
+  - "Disable Two-Factor Authentication" → requires current TOTP code
+
+#### Linked Accounts Section
+
+- Shows linked Google account (email) if linked
+- "Link Google Account" button (if not linked)
+- "Unlink Google Account" button (if linked, and another auth method exists)
+
+### New `AppRoutes` Constants
+
+```csharp
+public const string VERIFY_MFA = "/verify-mfa";
+public const string GOOGLE_CALLBACK = "/google-callback";
+```
+
+---
+
+## DevTools Changes
+
+### New Auth Commands
+
+```
+auth signin-google <id-token-file> <device-id>     # Sign in with Google ID token from file
+auth verify-mfa <challenge-token> <totp-code>       # Complete MFA verification
+```
+
+### New TOTP Commands
+
+```
+totp enable                     # Enable TOTP, outputs secret + setup URI + recovery codes
+totp confirm <code>             # Confirm TOTP setup with a code from authenticator
+totp disable <code>             # Disable TOTP (requires current code)
+totp status                     # Show TOTP status and remaining recovery codes
+totp regenerate-codes           # Regenerate recovery codes
+totp generate-code <secret>     # (Standalone) Generate a TOTP code from a secret (for testing)
+totp validate-code <secret> <code>  # (Standalone) Validate a TOTP code (for testing)
+```
+
+The last two commands (`generate-code`, `validate-code`) are standalone crypto utilities (no database) — useful for development and testing.
+
+### New Google Commands
+
+```
+google link <id-token-file>     # Link Google account to current user
+google unlink                   # Unlink Google account
+google status                   # Show linked Google account info
+```
+
+---
+
+## ConsoleTest Changes
+
+Add a new demo section after the existing key provider demos:
+
+### Phase: MFA Demo
+
+```csharp
+// Enable TOTP
+var enableResult = await registrationService.EnableTotpAsync();
+// enableResult.Secret, enableResult.SetupUri, enableResult.RecoveryCodes
+
+// Confirm with generated code (use TotpProvider directly for demo)
+var totpProvider = serviceProvider.GetRequiredService<ITotpProvider>();
+var code = totpProvider.GenerateCode(enableResult.Secret);
+await registrationService.ConfirmTotpAsync(new ConfirmTotpRequest(code));
+
+// Sign in — now requires MFA
+var signInResult = await authService.SignInAsync(signInRequest);
+// signInResult.ResultCode == MfaRequiredChallenge
+
+// Verify MFA
+var mfaCode = totpProvider.GenerateCode(enableResult.Secret);
+var mfaResult = await authService.VerifyMfaAsync(
+    new VerifyMfaRequest(signInResult.MfaChallengeToken!, mfaCode));
+// mfaResult.ResultCode == Success, mfaResult.AuthToken != null
+
+// Use a recovery code
+var recoveryResult = await authService.VerifyMfaAsync(
+    new VerifyMfaRequest(challengeToken, enableResult.RecoveryCodes[0]));
+
+// Disable TOTP
+var disableCode = totpProvider.GenerateCode(enableResult.Secret);
+await registrationService.DisableTotpAsync(new DisableTotpRequest(disableCode));
+```
+
+Note: For ConsoleTest, `ITotpProvider` needs to be `public` or the demo needs a wrapper. Consider making `ITotpProvider` public since DevTools also needs it, or expose `GenerateCode` through a service method.
+
+---
+
+## Configuration
+
+### `appsettings.json` additions
+
+```json
+{
+  "SecurityOptions": {
+    "MfaChallengeTimeoutSeconds": 300,
+    "TotpRecoveryCodeCount": 10,
+    "GoogleClientId": "your-google-client-id.apps.googleusercontent.com"
+  }
+}
+```
+
+### `appsettings.template.json` additions
+
+```json
+{
+  "SecurityOptions": {
+    "MfaChallengeTimeoutSeconds": 300,
+    "TotpRecoveryCodeCount": 10,
+    "GoogleClientId": ""
+  }
+}
+```
+
+---
+
+## Test Plan
+
+### Unit Tests (Corely.IAM.UnitTests)
+
+#### TotpProvider Tests
+- `GenerateSecret_ReturnsBase32String_Of20Bytes`
+- `GenerateSetupUri_ReturnsValidOtpauthUri`
+- `ValidateCode_WithCurrentCode_ReturnsTrue`
+- `ValidateCode_WithPreviousStepCode_ReturnsTrue` (tolerance)
+- `ValidateCode_WithNextStepCode_ReturnsTrue` (tolerance)
+- `ValidateCode_WithExpiredCode_ReturnsFalse`
+- `ValidateCode_WithInvalidCode_ReturnsFalse`
+
+#### TotpAuthProcessor Tests
+- `EnableTotpAsync_CreatesEntityWithEncryptedSecret`
+- `EnableTotpAsync_WhenAlreadyEnabled_ReturnsError`
+- `ConfirmTotpAsync_WithValidCode_SetsIsEnabledTrue`
+- `ConfirmTotpAsync_WithInvalidCode_ReturnsError`
+- `DisableTotpAsync_WithValidCode_DeletesEntity`
+- `DisableTotpAsync_WithInvalidCode_ReturnsError`
+- `RegenerateRecoveryCodes_DeletesOldAndCreatesNew`
+
+#### GoogleAuthProcessor Tests
+- `LinkGoogleAuth_WithValidToken_CreatesEntity`
+- `LinkGoogleAuth_WhenAlreadyLinked_ReturnsError`
+- `LinkGoogleAuth_WhenSubjectIdTaken_ReturnsError`
+- `UnlinkGoogleAuth_WhenLastAuthMethod_ReturnsError`
+- `UnlinkGoogleAuth_WithOtherMethodAvailable_DeletesEntity`
+
+#### GoogleIdTokenValidator Tests
+- `ValidateAsync_WithValidToken_ReturnsPayload`
+- `ValidateAsync_WithExpiredToken_ReturnsNull`
+- `ValidateAsync_WithWrongAudience_ReturnsNull`
+- `ValidateAsync_WithNoGoogleClientId_ReturnsNull`
+
+#### AuthenticationService Tests (Extended)
+- `SignInAsync_WithMfaEnabled_ReturnsMfaRequiredChallenge`
+- `SignInAsync_WithMfaDisabled_ReturnsSuccess`
+- `SignInWithGoogleAsync_WithValidToken_ReturnsSuccess`
+- `SignInWithGoogleAsync_WithMfaEnabled_ReturnsMfaRequiredChallenge`
+- `SignInWithGoogleAsync_WithUnlinkedAccount_ReturnsGoogleAuthNotLinkedError`
+- `SignInWithGoogleAsync_WithInvalidToken_ReturnsInvalidGoogleTokenError`
+- `VerifyMfaAsync_WithValidTotpCode_ReturnsSuccess`
+- `VerifyMfaAsync_WithValidRecoveryCode_ReturnsSuccess`
+- `VerifyMfaAsync_WithInvalidCode_ReturnsInvalidMfaCodeError`
+- `VerifyMfaAsync_WithExpiredChallenge_ReturnsMfaChallengeExpiredError`
+- `VerifyMfaAsync_WithUsedChallenge_ReturnsMfaChallengeExpiredError`
+- `VerifyMfaAsync_RecoveryCode_MarksCodeAsUsed`
+
+#### Registration/Deregistration Service Tests (Extended)
+- `EnableTotpAsync_WithoutUserContext_ReturnsUnauthorized`
+- `LinkGoogleAuthAsync_WithoutUserContext_ReturnsUnauthorized`
+- `UnlinkGoogleAuthAsync_WhenOnlyAuthMethod_ReturnsError`
+
+### Web Unit Tests (Corely.IAM.Web.UnitTests)
+
+- `VerifyMfaPage_WithValidCode_RedirectsToDashboard`
+- `VerifyMfaPage_WithInvalidCode_ShowsError`
+- `GoogleCallbackPage_WithValidCode_SignsInUser`
+- `Profile_TotpSection_ShowsEnableWhenDisabled`
+- `Profile_TotpSection_ShowsDisableWhenEnabled`
+
+---
+
+## Documentation
+
+### Corely.IAM/Docs/ — New Files
+
+- **`mfa.md`** — TOTP setup, enable/disable flow, recovery codes, configuration
+- **`google-signin.md`** — Google OAuth setup, linking, sign-in flow, configuration
+
+### Corely.IAM/Docs/ — Updated Files
+
+- **`index.md`** — Add MFA and Google Sign-In to capabilities list and Topics
+- **`authentication.md`** — Add two-phase sign-in flow, MFA challenge flow, Google sign-in flow
+- **`step-by-step-setup.md`** — Add optional step for Google OAuth configuration
+- **`services/registration.md`** — Add EnableTotp, ConfirmTotp, LinkGoogleAuth methods
+- **`services/deregistration.md`** — Add UnlinkGoogleAuth method
+- **`services/retrieval.md`** — Add GetTotpStatus, GetAuthMethods methods
+- **`services/authentication-service.md`** — Add SignInWithGoogleAsync, VerifyMfaAsync methods
+- **`result-codes.md`** — Add new result code enums
+
+### Corely.IAM.Web/Docs/ — Updated Files
+
+- **`index.md`** — Add MFA and Google Sign-In to capabilities
+- **`authentication-flow.md`** — Add MFA verification page, Google callback page, two-phase flow
+- **`pages/index.md`** — Add `/verify-mfa` and `/google-callback` routes
+- **`pages/profile.md`** — Add TOTP section and linked accounts section
+
+### Corely.IAM.DevTools/Docs/ — Updated
+
+- **`index.md`** — Add `totp` and `google` command groups
+
+---
+
+## Implementation Order
+
+### Phase 1: TOTP Provider (Standalone Crypto)
+- `TotpProvider` — RFC 6238 implementation
+- Unit tests for TOTP generation/validation
+- DevTools standalone commands (`totp generate-code`, `totp validate-code`)
+
+### Phase 2: TOTP Domain (Database + Business Logic)
+- Entities: `TotpAuthEntity`, `TotpRecoveryCodeEntity`, `MfaChallengeEntity`
+- Entity configurations
+- Constants, validators, mappers
+- `TotpAuthProcessor` + decorators
+- Migration: `AddTotpAuth`
+- DI registration
+- Unit tests for processor
+
+### Phase 3: MFA Integration into Authentication
+- Modify `SignInAsync` to check TOTP and return `MfaRequiredChallenge`
+- Add `VerifyMfaAsync` to `AuthenticationService`
+- Add `EnableTotpAsync`, `ConfirmTotpAsync`, `DisableTotpAsync`, `RegenerateTotpRecoveryCodesAsync` to `RegistrationService`
+- Add `GetTotpStatusAsync` to `RetrievalService`
+- Extend `SignInResult` and `SignInResultCode`
+- Unit tests for modified auth flow
+
+### Phase 4: Google Auth Domain (Database + Business Logic)
+- `GoogleAuthEntity` + configuration
+- `GoogleIdTokenValidator` — Google JWT validation
+- `GoogleAuthProcessor` + decorators
+- Migration: `AddGoogleAuth`
+- DI registration
+- Unit tests
+
+### Phase 5: Google Sign-In Integration
+- Add `SignInWithGoogleAsync` to `AuthenticationService`
+- Add `LinkGoogleAuthAsync` to `RegistrationService`
+- Add `UnlinkGoogleAuthAsync` to `DeregistrationService`
+- Add `GetAuthMethodsAsync` to `RetrievalService`
+- Extend `SecurityOptions` with `GoogleClientId`
+- Unit tests
+
+### Phase 6: Web UI — MFA
+- `VerifyMfa.cshtml` Razor Page
+- Profile page TOTP section (enable/disable/regenerate)
+- QR code rendering (use a JS library or server-side SVG)
+- Modify `SignIn.cshtml.cs` to handle `MfaRequiredChallenge` redirect
+
+### Phase 7: Web UI — Google Sign-In
+- Google Sign-In button on `SignIn.cshtml`
+- `GoogleCallback.cshtml` Razor Page
+- Profile page linked accounts section
+- Google OAuth JavaScript SDK integration (or server-side redirect)
+
+### Phase 8: DevTools + ConsoleTest
+- DevTools `totp` command group (enable, confirm, disable, status, regenerate)
+- DevTools `google` command group (link, unlink, status)
+- DevTools `auth signin-google` and `auth verify-mfa` commands
+- ConsoleTest MFA demo section
+
+### Phase 9: Documentation
+- New docs: `mfa.md`, `google-signin.md`
+- Update existing docs (authentication, services, pages, result codes)
+- Update DevTools docs
+
+---
+
+## Notes
+
+- **No Corely.Security changes** — TOTP uses standard .NET `HMACSHA1`; Google validation uses `System.IdentityModel.Tokens.Jwt`
+- **No new NuGet packages for TOTP** — pure BCL implementation
+- **Google validation** may need `Microsoft.IdentityModel.Protocols.OpenIdConnect` for JWKS fetching, or implement manually with `HttpClient` + `System.IdentityModel.Tokens.Jwt` (already referenced for JWT auth)
+- **MFA challenge cleanup** — expired challenges should be cleaned up periodically. Consider a background service or lazy cleanup on read.
+- **Rate limiting on MFA verification** — consider limiting attempts per challenge to prevent brute force (6-digit TOTP has only 1M possibilities). Lock challenge after N failed attempts.
+- **TOTP secret display** — the secret and recovery codes are shown exactly once (on enable). The service does not provide a way to retrieve the decrypted secret after initial setup.
+- **Google sign-in without existing account** — Phase 5 only supports linking to existing users. A future enhancement could auto-register new users from Google sign-in (JIT provisioning).
+- **`ITotpProvider` visibility** — needs to be `public` for ConsoleTest demo, or expose code generation through a service method. Making it public is cleaner since DevTools also uses it directly.

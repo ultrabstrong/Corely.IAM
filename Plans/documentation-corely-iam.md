@@ -1,6 +1,6 @@
 # Documentation Plan: Corely.IAM
 
-## Status: Planned
+## Status: Complete
 
 ## Overview
 

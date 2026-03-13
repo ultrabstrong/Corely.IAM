@@ -1,11 +1,13 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Extensions;
+using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Models;
+using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
 
@@ -109,6 +111,20 @@ internal class RetrievalServiceTelemetryDecorator(
             nameof(RetrievalService),
             new { accountId, hydrate },
             () => _inner.GetAccountAsync(accountId, hydrate),
+            logResult: true
+        );
+
+    public async Task<TotpStatusResult> GetTotpStatusAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            _inner.GetTotpStatusAsync,
+            logResult: true
+        );
+
+    public async Task<AuthMethodsResult> GetAuthMethodsAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            _inner.GetAuthMethodsAsync,
             logResult: true
         );
 

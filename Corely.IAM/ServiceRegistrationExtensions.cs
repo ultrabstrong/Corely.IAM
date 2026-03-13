@@ -2,6 +2,8 @@ using Corely.DataAccess.Extensions;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.DataAccess;
+using Corely.IAM.GoogleAuths.Processors;
+using Corely.IAM.GoogleAuths.Providers;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Invitations.Processors;
 using Corely.IAM.Permissions.Processors;
@@ -10,6 +12,8 @@ using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
+using Corely.IAM.TotpAuths.Processors;
+using Corely.IAM.TotpAuths.Providers;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
@@ -174,6 +178,19 @@ public static class ServiceRegistrationExtensions
             InvitationProcessorAuthorizationDecorator
         >();
         serviceCollection.Decorate<IInvitationProcessor, InvitationProcessorTelemetryDecorator>();
+
+        serviceCollection.AddSingleton<ITotpProvider, TotpProvider>();
+        serviceCollection.AddScoped<ITotpAuthProcessor, TotpAuthProcessor>();
+        serviceCollection.Decorate<ITotpAuthProcessor, TotpAuthProcessorAuthorizationDecorator>();
+        serviceCollection.Decorate<ITotpAuthProcessor, TotpAuthProcessorTelemetryDecorator>();
+
+        serviceCollection.AddScoped<IGoogleIdTokenValidator, GoogleIdTokenValidator>();
+        serviceCollection.AddScoped<IGoogleAuthProcessor, GoogleAuthProcessor>();
+        serviceCollection.Decorate<
+            IGoogleAuthProcessor,
+            GoogleAuthProcessorAuthorizationDecorator
+        >();
+        serviceCollection.Decorate<IGoogleAuthProcessor, GoogleAuthProcessorTelemetryDecorator>();
 
         return serviceCollection;
     }

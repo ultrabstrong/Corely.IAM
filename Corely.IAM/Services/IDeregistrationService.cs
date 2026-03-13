@@ -1,4 +1,5 @@
-﻿using Corely.IAM.Models;
+﻿using Corely.IAM.GoogleAuths.Models;
+using Corely.IAM.Models;
 
 namespace Corely.IAM.Services;
 
@@ -25,4 +26,5 @@ public interface IDeregistrationService
     Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(
         DeregisterPermissionsFromRoleRequest request
     );
+    Task<UnlinkGoogleAuthResult> UnlinkGoogleAuthAsync();
 }

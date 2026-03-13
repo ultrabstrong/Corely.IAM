@@ -1,5 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Extensions;
+using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Models;
 using Microsoft.Extensions.Logging;
 
@@ -100,6 +101,13 @@ internal class DeregistrationServiceTelemetryDecorator(
             nameof(DeregistrationService),
             request,
             () => _inner.DeregisterRolesFromUserAsync(request),
+            logResult: true
+        );
+
+    public async Task<UnlinkGoogleAuthResult> UnlinkGoogleAuthAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(DeregistrationService),
+            _inner.UnlinkGoogleAuthAsync,
             logResult: true
         );
 

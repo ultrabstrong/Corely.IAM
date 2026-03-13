@@ -2,8 +2,10 @@ using Corely.Common.Extensions;
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Extensions;
+using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
+using Corely.IAM.TotpAuths.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
@@ -107,6 +109,44 @@ internal class RegistrationServiceTelemetryDecorator(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterPermissionsWithRoleAsync(request),
+            logResult: true
+        );
+
+    public async Task<EnableTotpResult> EnableTotpAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            _inner.EnableTotpAsync,
+            logResult: true
+        );
+
+    public async Task<ConfirmTotpResult> ConfirmTotpAsync(ConfirmTotpRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            request,
+            () => _inner.ConfirmTotpAsync(request),
+            logResult: true
+        );
+
+    public async Task<DisableTotpResult> DisableTotpAsync(DisableTotpRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            request,
+            () => _inner.DisableTotpAsync(request),
+            logResult: true
+        );
+
+    public async Task<RegenerateTotpRecoveryCodesResult> RegenerateTotpRecoveryCodesAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            _inner.RegenerateTotpRecoveryCodesAsync,
+            logResult: true
+        );
+
+    public async Task<LinkGoogleAuthResult> LinkGoogleAuthAsync(LinkGoogleAuthRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            request,
+            () => _inner.LinkGoogleAuthAsync(request),
             logResult: true
         );
 

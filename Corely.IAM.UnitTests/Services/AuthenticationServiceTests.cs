@@ -4,10 +4,14 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.GoogleAuths.Processors;
+using Corely.IAM.GoogleAuths.Providers;
+using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
+using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -57,6 +61,10 @@ public class AuthenticationServiceTests
             _userContextSetterMock.Object,
             _authorizationCacheClearerMock.Object,
             _basicAuthProcessorMock.Object,
+            new Mock<ITotpAuthProcessor>().Object,
+            new Mock<IGoogleAuthProcessor>().Object,
+            new Mock<IGoogleIdTokenValidator>().Object,
+            _serviceFactory.GetRequiredService<IRepo<MfaChallengeEntity>>(),
             Options.Create(
                 new SecurityOptions()
                 {

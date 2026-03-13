@@ -85,12 +85,13 @@ internal class AsymmetricSignature : CommandBase
         }
     }
 
-    private (string publicKey, string privateKey) ReadKeysFromFile()
+    private (string publicKey, string privateKey)? ReadKeysFromFile()
     {
         var keys = File.ReadAllLines(KeyFile);
         if (keys.Length != 2)
         {
-            throw new Exception("Invalid key file format. Must be public<newline>private");
+            Error("Invalid key file format. Must be public<newline>private");
+            return null;
         }
 
         return (keys[0], keys[1]);
@@ -119,8 +120,11 @@ internal class AsymmetricSignature : CommandBase
 
     private void ValidateKey()
     {
+        var keys = ReadKeysFromFile();
+        if (keys is not var (publicKey, privateKey))
+            return;
+
         var asymmetricEncryptionProvider = _signatureProviderFactory.GetProvider(ProviderName);
-        var (publicKey, privateKey) = ReadKeysFromFile();
         var isValid = asymmetricEncryptionProvider
             .GetAsymmetricKeyProvider()
             .IsKeyValid(publicKey, privateKey);
@@ -129,7 +133,10 @@ internal class AsymmetricSignature : CommandBase
 
     private void Sign()
     {
-        var (publicKey, privateKey) = ReadKeysFromFile();
+        var keys = ReadKeysFromFile();
+        if (keys is not var (publicKey, privateKey))
+            return;
+
         var keyProvider = new InMemoryAsymmetricKeyStoreProvider(publicKey, privateKey);
         var signature = _signatureProviderFactory
             .GetProvider(ProviderName)
@@ -139,7 +146,10 @@ internal class AsymmetricSignature : CommandBase
 
     private void Verify()
     {
-        var (publicKey, privateKey) = ReadKeysFromFile();
+        var keys = ReadKeysFromFile();
+        if (keys is not var (publicKey, privateKey))
+            return;
+
         var keyProvider = new InMemoryAsymmetricKeyStoreProvider(publicKey, privateKey);
         var isValid = _signatureProviderFactory
             .GetProvider(ProviderName)

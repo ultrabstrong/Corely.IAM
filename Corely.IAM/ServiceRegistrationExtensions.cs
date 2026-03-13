@@ -1,4 +1,3 @@
-﻿using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.DataAccess.Extensions;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Processors;
@@ -6,6 +5,7 @@ using Corely.IAM.DataAccess;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Invitations.Processors;
 using Corely.IAM.Permissions.Processors;
+using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
@@ -14,13 +14,10 @@ using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Corely.IAM.Validators.FluentValidators;
-using Corely.Security.Encryption;
 using Corely.Security.Encryption.Factories;
-using Corely.Security.Hashing;
 using Corely.Security.Hashing.Factories;
 using Corely.Security.PasswordValidation.Models;
 using Corely.Security.PasswordValidation.Providers;
-using Corely.Security.Signature;
 using Corely.Security.Signature.Factories;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
@@ -30,47 +27,31 @@ namespace Corely.IAM;
 
 public static class ServiceRegistrationExtensions
 {
-    public static IServiceCollection AddIAMServicesWithEF(
+    public static IServiceCollection AddIAMServices(
         this IServiceCollection serviceCollection,
-        IConfiguration configuration,
-        ISecurityConfigurationProvider securityConfigurationProvider,
-        Func<IServiceProvider, IEFConfiguration> efConfigurationFactory
+        IAMOptions options
     )
     {
         ArgumentNullException.ThrowIfNull(serviceCollection);
-        ArgumentNullException.ThrowIfNull(configuration);
-        ArgumentNullException.ThrowIfNull(securityConfigurationProvider);
-        ArgumentNullException.ThrowIfNull(efConfigurationFactory);
+        ArgumentNullException.ThrowIfNull(options);
 
-        serviceCollection.AddScoped(efConfigurationFactory);
-        serviceCollection.AddDbContext<IamDbContext>();
-        serviceCollection.RegisterEntityFrameworkReposAndUoW();
-        serviceCollection.AddIAMServices(configuration, securityConfigurationProvider);
-        return serviceCollection;
-    }
+        if (options.EFConfigurationFactory != null)
+        {
+            serviceCollection.AddScoped(options.EFConfigurationFactory);
+            serviceCollection.AddDbContext<IamDbContext>();
+            serviceCollection.RegisterEntityFrameworkReposAndUoW();
+        }
+        else
+        {
+            serviceCollection.RegisterMockReposAndUoW();
+        }
 
-    public static IServiceCollection AddIAMServicesWithMockDb(
-        this IServiceCollection serviceCollection,
-        IConfiguration configuration,
-        ISecurityConfigurationProvider securityConfigurationProvider
-    )
-    {
-        ArgumentNullException.ThrowIfNull(serviceCollection);
-        ArgumentNullException.ThrowIfNull(configuration);
-        ArgumentNullException.ThrowIfNull(securityConfigurationProvider);
-
-        serviceCollection.RegisterMockReposAndUoW();
-        serviceCollection.AddIAMServices(configuration, securityConfigurationProvider);
-        return serviceCollection;
-    }
-
-    private static void AddIAMServices(
-        this IServiceCollection serviceCollection,
-        IConfiguration configuration,
-        ISecurityConfigurationProvider securityConfigurationProvider
-    )
-    {
         serviceCollection.AddSingleton(TimeProvider.System);
+
+        var registry = new ResourceTypeRegistry();
+        foreach (var (name, description) in options.CustomResourceTypes)
+            registry.Register(name, description);
+        serviceCollection.AddSingleton<IResourceTypeRegistry>(registry);
 
         serviceCollection.AddValidatorsFromAssemblyContaining<FluentValidationProvider>(
             includeInternalTypes: true
@@ -81,37 +62,31 @@ public static class ServiceRegistrationExtensions
         serviceCollection.AddSingleton<
             ISymmetricEncryptionProviderFactory,
             SymmetricEncryptionProviderFactory
-        >(serviceProvider => new SymmetricEncryptionProviderFactory(
-            SymmetricEncryptionConstants.AES_CODE
-        ));
+        >(_ => new SymmetricEncryptionProviderFactory(options.SymmetricEncryptionCode));
 
         serviceCollection.AddSingleton<
             IAsymmetricEncryptionProviderFactory,
             AsymmetricEncryptionProviderFactory
-        >(serviceProvider => new AsymmetricEncryptionProviderFactory(
-            AsymmetricEncryptionConstants.RSA_CODE
-        ));
+        >(_ => new AsymmetricEncryptionProviderFactory(options.AsymmetricEncryptionCode));
 
         serviceCollection.AddSingleton<
             IAsymmetricSignatureProviderFactory,
             AsymmetricSignatureProviderFactory
-        >(serviceProvider => new AsymmetricSignatureProviderFactory(
-            AsymmetricSignatureConstants.ECDSA_SHA256_CODE
-        ));
+        >(_ => new AsymmetricSignatureProviderFactory(options.AsymmetricSignatureCode));
 
         serviceCollection.AddSingleton<IHashProviderFactory, HashProviderFactory>(
-            _ => new HashProviderFactory(HashConstants.SALTED_SHA256_CODE)
+            _ => new HashProviderFactory(options.HashCode)
         );
 
         serviceCollection.AddSingleton<ISecurityProvider, SecurityProvider>();
         serviceCollection.AddScoped<IPasswordValidationProvider, PasswordValidationProvider>();
 
-        serviceCollection.AddSingleton(_ => securityConfigurationProvider);
+        serviceCollection.AddSingleton(_ => options.SecurityConfigurationProvider);
         serviceCollection.Configure<SecurityOptions>(
-            configuration.GetSection(SecurityOptions.NAME)
+            options.Configuration.GetSection(SecurityOptions.NAME)
         );
         serviceCollection.Configure<PasswordValidationOptions>(
-            configuration.GetSection(PasswordValidationOptions.NAME)
+            options.Configuration.GetSection(PasswordValidationOptions.NAME)
         );
 
         serviceCollection.AddScoped<IAuthenticationProvider, AuthenticationProvider>();
@@ -199,5 +174,7 @@ public static class ServiceRegistrationExtensions
             InvitationProcessorAuthorizationDecorator
         >();
         serviceCollection.Decorate<IInvitationProcessor, InvitationProcessorTelemetryDecorator>();
+
+        return serviceCollection;
     }
 }

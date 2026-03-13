@@ -1,13 +1,22 @@
-﻿using Corely.IAM.Permissions.Models;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Permissions.Validators;
 using Corely.IAM.UnitTests.ClassData;
 using FluentValidation.TestHelper;
+using Moq;
 
 namespace Corely.IAM.UnitTests.Permissions.Validators;
 
 public class PermissionValidatorTests
 {
-    private readonly PermissionValidator _validator = new();
+    private readonly Mock<IResourceTypeRegistry> _mockRegistry = new();
+    private readonly PermissionValidator _validator;
+
+    public PermissionValidatorTests()
+    {
+        _mockRegistry.Setup(r => r.Exists(It.IsAny<string>())).Returns(true);
+        _validator = new PermissionValidator(_mockRegistry.Object);
+    }
 
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]
     public void PermissionValidator_HasValidationError_WhenResourceTypeInvalid(string resourceType)
@@ -16,6 +25,30 @@ public class PermissionValidatorTests
 
         var result = _validator.TestValidate(permission);
         result.ShouldHaveValidationErrorFor(x => x.ResourceType);
+    }
+
+    [Fact]
+    public void PermissionValidator_HasValidationError_WhenResourceTypeNotRegistered()
+    {
+        _mockRegistry.Setup(r => r.Exists("unknown")).Returns(false);
+        var permission = new Permission { ResourceType = "unknown", Create = true };
+
+        var result = _validator.TestValidate(permission);
+        result.ShouldHaveValidationErrorFor(x => x.ResourceType);
+    }
+
+    [Fact]
+    public void PermissionValidator_HasNoValidationError_WhenResourceTypeRegistered()
+    {
+        var permission = new Permission
+        {
+            ResourceType = "group",
+            ResourceId = Guid.Empty,
+            Create = true,
+        };
+
+        var result = _validator.TestValidate(permission);
+        result.ShouldNotHaveValidationErrorFor(x => x.ResourceType);
     }
 
     [Fact]

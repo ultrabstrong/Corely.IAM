@@ -19,12 +19,12 @@ public class ServiceFactory
             builder.AddProvider(NullLoggerProvider.Instance);
         });
 
-        var securityConfigurationProvider = new SecurityConfigurationProvider();
-
-        services.AddIAMServicesWithMockDb(
+        var options = IAMOptions.Create(
             new ConfigurationManager(),
             new SecurityConfigurationProvider()
         );
+
+        services.AddIAMServices(options);
 
         _serviceProvider = services.BuildServiceProvider();
     }

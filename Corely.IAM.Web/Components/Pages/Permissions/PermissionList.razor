@@ -4,6 +4,7 @@
 @inject IRetrievalService RetrievalService
 @inject IRegistrationService RegistrationService
 @inject IDeregistrationService DeregistrationService
+@inject Corely.IAM.Permissions.Providers.IResourceTypeRegistry ResourceTypeRegistry
 
 <PageTitle>Permissions - Corely IAM</PageTitle>
 
@@ -59,6 +60,10 @@ else
                     <tr>
                         <td>
                             @perm.ResourceType
+                            @if (!string.IsNullOrWhiteSpace(perm.Description))
+                            {
+                                <small class="text-muted ms-2">@perm.Description</small>
+                            }
                             <br /><small class="guid-text">@perm.Id</small>
                         </td>
                         <td><code>@(perm.ResourceId == Guid.Empty ? "all" : perm.ResourceId)</code></td>
@@ -85,7 +90,13 @@ else
 <FormModal @ref="_createModal" Title="Create Permission" OnConfirm="CreateAsync">
     <div class="mb-3">
         <label class="form-label">Resource Type</label>
-        <input type="text" class="form-control" @bind="_newResourceType" placeholder="e.g. account, user" />
+        <select class="form-select" value="@_newResourceType" @onchange="OnResourceTypeChanged">
+            <option value="">-- Select --</option>
+            @foreach (var rt in _resourceTypes)
+            {
+                <option value="@rt.Name">@rt.Name — @rt.Description</option>
+            }
+        </select>
     </div>
     <div class="mb-3">
         <label class="form-label">Resource ID</label>
@@ -132,9 +143,18 @@ else
     private bool _newExecute;
     private FormModal _createModal = null!;
     private ConfirmModal _confirmModal = null!;
+    private IReadOnlyCollection<ResourceTypeInfo> _resourceTypes = [];
 
     protected override async Task LoadCoreAsync()
     {
+        if (_resourceTypes.Count == 0)
+        {
+            _resourceTypes = ResourceTypeRegistry
+                .GetAll()
+                .Where(rt => rt.Name != PermissionConstants.ALL_RESOURCE_TYPES)
+                .ToList();
+        }
+
         FilterBuilder<Permission>? filter = null;
         if (!string.IsNullOrWhiteSpace(_searchText))
         {
@@ -155,6 +175,20 @@ else
         {
             _items = result.Data.Items;
             _totalCount = result.Data.TotalCount;
+        }
+    }
+
+    private void OnResourceTypeChanged(ChangeEventArgs e)
+    {
+        _newResourceType = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(_newDescription)
+            && !string.IsNullOrWhiteSpace(_newResourceType))
+        {
+            var rt = ResourceTypeRegistry.Get(_newResourceType);
+            if (rt != null)
+            {
+                _newDescription = rt.Description;
+            }
         }
     }
 

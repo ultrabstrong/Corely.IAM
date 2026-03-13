@@ -50,7 +50,8 @@ internal static class ServiceFactory
                 _ => throw new InvalidOperationException($"Unsupported provider: {provider}"),
             };
 
-            services.AddIAMServicesWithEF(configuration, securityConfigurationProvider, efConfig);
+            var options = IAMOptions.Create(configuration, securityConfigurationProvider, efConfig);
+            services.AddIAMServices(options);
         }
 
         return services;

@@ -46,7 +46,8 @@ Func<IServiceProvider, IEFConfiguration> efConfig = providerName.ToLowerInvarian
     _ => throw new InvalidOperationException($"Unsupported database provider: {providerName}"),
 };
 
-builder.Services.AddIAMServicesWithEF(builder.Configuration, securityConfigProvider, efConfig);
+var iamOptions = IAMOptions.Create(builder.Configuration, securityConfigProvider, efConfig);
+builder.Services.AddIAMServices(iamOptions);
 
 var app = builder.Build();
 

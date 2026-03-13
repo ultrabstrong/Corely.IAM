@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Processors;
+using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Processors;
+using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
@@ -23,8 +21,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
-using Xunit;
 
 namespace Corely.IAM.UnitTests;
 
@@ -32,13 +28,21 @@ public class ServiceRegistrationExtensionsTests
 {
     private readonly IConfiguration _configuration;
     private readonly ISecurityConfigurationProvider _securityConfigurationProvider;
+    private readonly IAMOptions _mockDbOptions;
+    private readonly IAMOptions _efOptions;
     private readonly Func<IServiceProvider, IEFConfiguration> _efConfigurationFactory;
 
     public ServiceRegistrationExtensionsTests()
     {
         _configuration = new ConfigurationManager();
         _securityConfigurationProvider = new SecurityConfigurationProvider();
+        _mockDbOptions = IAMOptions.Create(_configuration, _securityConfigurationProvider);
         _efConfigurationFactory = _ => Mock.Of<IEFConfiguration>();
+        _efOptions = IAMOptions.Create(
+            _configuration,
+            _securityConfigurationProvider,
+            _efConfigurationFactory
+        );
     }
 
     private static IServiceCollection CreateServiceCollection()
@@ -52,61 +56,34 @@ public class ServiceRegistrationExtensionsTests
         return services;
     }
 
-    #region AddIAMServicesWithMockDb Tests
-
     [Fact]
-    public void AddIAMServicesWithMockDb_ReturnsServiceCollection()
+    public void AddIAMServices_WithMockDb_ReturnsServiceCollection()
     {
-        // Arrange
         var services = CreateServiceCollection();
 
-        // Act
-        var result = services.AddIAMServicesWithMockDb(
-            _configuration,
-            _securityConfigurationProvider
-        );
+        var result = services.AddIAMServices(_mockDbOptions);
 
-        // Assert
         Assert.Same(services, result);
     }
 
     [Fact]
-    public void AddIAMServicesWithMockDb_WithNullServiceCollection_ThrowsArgumentNullException()
+    public void AddIAMServices_WithNullServiceCollection_ThrowsArgumentNullException()
     {
-        // Arrange
         IServiceCollection services = null!;
 
-        // Act & Assert
         var exception = Assert.Throws<ArgumentNullException>(() =>
-            services.AddIAMServicesWithMockDb(_configuration, _securityConfigurationProvider)
+            services.AddIAMServices(_mockDbOptions)
         );
         Assert.Equal("serviceCollection", exception.ParamName);
     }
 
     [Fact]
-    public void AddIAMServicesWithMockDb_WithNullConfiguration_ThrowsArgumentNullException()
+    public void AddIAMServices_WithNullOptions_ThrowsArgumentNullException()
     {
-        // Arrange
         var services = CreateServiceCollection();
 
-        // Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() =>
-            services.AddIAMServicesWithMockDb(null!, _securityConfigurationProvider)
-        );
-        Assert.Equal("configuration", exception.ParamName);
-    }
-
-    [Fact]
-    public void AddIAMServicesWithMockDb_WithNullSecurityConfigurationProvider_ThrowsArgumentNullException()
-    {
-        // Arrange
-        var services = CreateServiceCollection();
-
-        // Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() =>
-            services.AddIAMServicesWithMockDb(_configuration, null!)
-        );
-        Assert.Equal("securityConfigurationProvider", exception.ParamName);
+        var exception = Assert.Throws<ArgumentNullException>(() => services.AddIAMServices(null!));
+        Assert.Equal("options", exception.ParamName);
     }
 
     [Theory]
@@ -133,34 +110,29 @@ public class ServiceRegistrationExtensionsTests
     [InlineData(typeof(IGroupProcessor))]
     [InlineData(typeof(IRoleProcessor))]
     [InlineData(typeof(IPermissionProcessor))]
-    public void AddIAMServicesWithMockDb_RegistersService(Type serviceType)
+    [InlineData(typeof(IResourceTypeRegistry))]
+    public void AddIAMServices_WithMockDb_RegistersService(Type serviceType)
     {
-        // Arrange
         var services = CreateServiceCollection();
 
-        // Act
-        services.AddIAMServicesWithMockDb(_configuration, _securityConfigurationProvider);
+        services.AddIAMServices(_mockDbOptions);
         var serviceProvider = services.BuildServiceProvider();
 
-        // Assert
         var service = serviceProvider.GetService(serviceType);
         Assert.NotNull(service);
     }
 
     [Fact]
-    public void AddIAMServicesWithMockDb_UserContextProvider_ReturnsSameInstanceForBothInterfaces()
+    public void AddIAMServices_WithMockDb_UserContextProvider_ReturnsSameInstanceForBothInterfaces()
     {
-        // Arrange
         var services = CreateServiceCollection();
-        services.AddIAMServicesWithMockDb(_configuration, _securityConfigurationProvider);
+        services.AddIAMServices(_mockDbOptions);
         var serviceProvider = services.BuildServiceProvider();
 
-        // Act
         using var scope = serviceProvider.CreateScope();
         var userContextProvider = scope.ServiceProvider.GetRequiredService<IUserContextProvider>();
         var userContextSetter = scope.ServiceProvider.GetRequiredService<IUserContextSetter>();
 
-        // Assert
         Assert.Same(userContextProvider, userContextSetter);
     }
 
@@ -170,18 +142,16 @@ public class ServiceRegistrationExtensionsTests
     [InlineData(typeof(IAsymmetricSignatureProviderFactory))]
     [InlineData(typeof(IHashProviderFactory))]
     [InlineData(typeof(ISecurityProvider))]
-    public void AddIAMServicesWithMockDb_SingletonServices_ReturnsSameInstance(Type serviceType)
+    [InlineData(typeof(IResourceTypeRegistry))]
+    public void AddIAMServices_WithMockDb_SingletonServices_ReturnsSameInstance(Type serviceType)
     {
-        // Arrange
         var services = CreateServiceCollection();
-        services.AddIAMServicesWithMockDb(_configuration, _securityConfigurationProvider);
+        services.AddIAMServices(_mockDbOptions);
         var serviceProvider = services.BuildServiceProvider();
 
-        // Act
         var instance1 = serviceProvider.GetService(serviceType);
         var instance2 = serviceProvider.GetService(serviceType);
 
-        // Assert
         Assert.Same(instance1, instance2);
     }
 
@@ -200,16 +170,14 @@ public class ServiceRegistrationExtensionsTests
     [InlineData(typeof(IGroupProcessor))]
     [InlineData(typeof(IRoleProcessor))]
     [InlineData(typeof(IPermissionProcessor))]
-    public void AddIAMServicesWithMockDb_ScopedServices_ReturnsDifferentInstancePerScope(
+    public void AddIAMServices_WithMockDb_ScopedServices_ReturnsDifferentInstancePerScope(
         Type serviceType
     )
     {
-        // Arrange
         var services = CreateServiceCollection();
-        services.AddIAMServicesWithMockDb(_configuration, _securityConfigurationProvider);
+        services.AddIAMServices(_mockDbOptions);
         var serviceProvider = services.BuildServiceProvider();
 
-        // Act
         object instance1;
         object instance2;
         using (var scope1 = serviceProvider.CreateScope())
@@ -221,103 +189,79 @@ public class ServiceRegistrationExtensionsTests
             instance2 = scope2.ServiceProvider.GetService(serviceType)!;
         }
 
-        // Assert
         Assert.NotSame(instance1, instance2);
     }
 
     [Fact]
-    public void AddIAMServicesWithMockDb_CanBuildServiceProvider()
+    public void AddIAMServices_WithMockDb_CanBuildServiceProvider()
     {
-        // Arrange
         var services = CreateServiceCollection();
 
-        // Act
-        services.AddIAMServicesWithMockDb(_configuration, _securityConfigurationProvider);
+        services.AddIAMServices(_mockDbOptions);
         var exception = Record.Exception(() => services.BuildServiceProvider());
 
-        // Assert
         Assert.Null(exception);
     }
 
-    #endregion
-
-    #region AddIAMServicesWithEF Tests
-
     [Fact]
-    public void AddIAMServicesWithEF_ReturnsServiceCollection()
+    public void AddIAMServices_WithMockDb_RegistersIResourceTypeRegistry()
     {
-        // Arrange
         var services = CreateServiceCollection();
 
-        // Act
-        var result = services.AddIAMServicesWithEF(
-            _configuration,
-            _securityConfigurationProvider,
-            _efConfigurationFactory
-        );
+        services.AddIAMServices(_mockDbOptions);
+        var serviceProvider = services.BuildServiceProvider();
 
-        // Assert
+        var registry = serviceProvider.GetService<IResourceTypeRegistry>();
+        Assert.NotNull(registry);
+    }
+
+    [Theory]
+    [InlineData(PermissionConstants.ACCOUNT_RESOURCE_TYPE)]
+    [InlineData(PermissionConstants.USER_RESOURCE_TYPE)]
+    [InlineData(PermissionConstants.GROUP_RESOURCE_TYPE)]
+    [InlineData(PermissionConstants.ROLE_RESOURCE_TYPE)]
+    [InlineData(PermissionConstants.PERMISSION_RESOURCE_TYPE)]
+    [InlineData(PermissionConstants.ALL_RESOURCE_TYPES)]
+    public void AddIAMServices_WithMockDb_ResourceTypeRegistry_ContainsIAMDefinedTypes(
+        string resourceType
+    )
+    {
+        var services = CreateServiceCollection();
+        services.AddIAMServices(_mockDbOptions);
+        var serviceProvider = services.BuildServiceProvider();
+
+        var registry = serviceProvider.GetRequiredService<IResourceTypeRegistry>();
+
+        Assert.True(registry.Exists(resourceType));
+    }
+
+    [Fact]
+    public void AddIAMServices_WithMockDb_ResourceTypeRegistry_ContainsCustomTypes()
+    {
+        var services = CreateServiceCollection();
+        var options = IAMOptions
+            .Create(_configuration, _securityConfigurationProvider)
+            .RegisterResourceType("invoice", "Invoices");
+
+        services.AddIAMServices(options);
+        var serviceProvider = services.BuildServiceProvider();
+        var registry = serviceProvider.GetRequiredService<IResourceTypeRegistry>();
+
+        Assert.True(registry.Exists("invoice"));
+        var info = registry.Get("invoice");
+        Assert.NotNull(info);
+        Assert.Equal("invoice", info.Name);
+        Assert.Equal("Invoices", info.Description);
+    }
+
+    [Fact]
+    public void AddIAMServices_WithEF_ReturnsServiceCollection()
+    {
+        var services = CreateServiceCollection();
+
+        var result = services.AddIAMServices(_efOptions);
+
         Assert.Same(services, result);
-    }
-
-    [Fact]
-    public void AddIAMServicesWithEF_WithNullServiceCollection_ThrowsArgumentNullException()
-    {
-        // Arrange
-        IServiceCollection services = null!;
-
-        // Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() =>
-            services.AddIAMServicesWithEF(
-                _configuration,
-                _securityConfigurationProvider,
-                _efConfigurationFactory
-            )
-        );
-        Assert.Equal("serviceCollection", exception.ParamName);
-    }
-
-    [Fact]
-    public void AddIAMServicesWithEF_WithNullConfiguration_ThrowsArgumentNullException()
-    {
-        // Arrange
-        var services = CreateServiceCollection();
-
-        // Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() =>
-            services.AddIAMServicesWithEF(
-                null!,
-                _securityConfigurationProvider,
-                _efConfigurationFactory
-            )
-        );
-        Assert.Equal("configuration", exception.ParamName);
-    }
-
-    [Fact]
-    public void AddIAMServicesWithEF_WithNullSecurityConfigurationProvider_ThrowsArgumentNullException()
-    {
-        // Arrange
-        var services = CreateServiceCollection();
-
-        // Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() =>
-            services.AddIAMServicesWithEF(_configuration, null!, _efConfigurationFactory)
-        );
-        Assert.Equal("securityConfigurationProvider", exception.ParamName);
-    }
-
-    [Fact]
-    public void AddIAMServicesWithEF_WithNullEfConfigurationFactory_ThrowsArgumentNullException()
-    {
-        // Arrange
-        var services = CreateServiceCollection();
-
-        // Act & Assert
-        var exception = Assert.Throws<ArgumentNullException>(() =>
-            services.AddIAMServicesWithEF(_configuration, _securityConfigurationProvider, null!)
-        );
-        Assert.Equal("efConfigurationFactory", exception.ParamName);
     }
 
     [Theory]
@@ -344,60 +288,37 @@ public class ServiceRegistrationExtensionsTests
     [InlineData(typeof(IGroupProcessor))]
     [InlineData(typeof(IRoleProcessor))]
     [InlineData(typeof(IPermissionProcessor))]
-    public void AddIAMServicesWithEF_RegistersService(Type serviceType)
+    public void AddIAMServices_WithEF_RegistersService(Type serviceType)
     {
-        // Arrange
         var services = CreateServiceCollection();
 
-        // Act
-        services.AddIAMServicesWithEF(
-            _configuration,
-            _securityConfigurationProvider,
-            _efConfigurationFactory
-        );
+        services.AddIAMServices(_efOptions);
         var serviceProvider = services.BuildServiceProvider();
 
-        // Assert
         var service = serviceProvider.GetService(serviceType);
         Assert.NotNull(service);
     }
 
     [Fact]
-    public void AddIAMServicesWithEF_RegistersIEFConfiguration()
+    public void AddIAMServices_WithEF_RegistersIEFConfiguration()
     {
-        // Arrange
         var services = CreateServiceCollection();
 
-        // Act
-        services.AddIAMServicesWithEF(
-            _configuration,
-            _securityConfigurationProvider,
-            _efConfigurationFactory
-        );
+        services.AddIAMServices(_efOptions);
         var serviceProvider = services.BuildServiceProvider();
 
-        // Assert
         var efConfiguration = serviceProvider.GetService<IEFConfiguration>();
         Assert.NotNull(efConfiguration);
     }
 
     [Fact]
-    public void AddIAMServicesWithEF_CanBuildServiceProvider()
+    public void AddIAMServices_WithEF_CanBuildServiceProvider()
     {
-        // Arrange
         var services = CreateServiceCollection();
 
-        // Act
-        services.AddIAMServicesWithEF(
-            _configuration,
-            _securityConfigurationProvider,
-            _efConfigurationFactory
-        );
+        services.AddIAMServices(_efOptions);
         var exception = Record.Exception(() => services.BuildServiceProvider());
 
-        // Assert
         Assert.Null(exception);
     }
-
-    #endregion
 }

@@ -35,7 +35,8 @@ internal static class ServiceFactory
             sp.GetRequiredService<ILoggerFactory>()
         );
 
-        services.AddIAMServicesWithEF(configuration, securityConfigurationProvider, efConfig);
+        var options = IAMOptions.Create(configuration, securityConfigurationProvider, efConfig);
+        services.AddIAMServices(options);
 
         return services;
     }

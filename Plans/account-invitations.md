@@ -238,9 +238,23 @@ Where the invitation processor is exposed depends on context:
 - **Option A:** Add methods to existing `IRegistrationService` — invitations are part of registration flow
 - **Option B:** Create a new `IInvitationService` — cleaner separation
 
-**Decision: Option A** — `IRegistrationService` already handles `RegisterUsersWithAccountAsync` (the creation flow). Invitations are the counterpart for adding external users. Adding `CreateInvitationAsync`, `AcceptInvitationAsync`, `RevokeInvitationAsync`, and `ListInvitationsAsync` to `IRegistrationService` keeps the public API surface cohesive.
+**Original decision: Option A** — methods were added to `IRegistrationService` during initial implementation.
 
-If the service grows too large, it can be split later.
+**Revised decision: Option B** — after adding MFA and Google Auth features (which also got dumped into Registration/Deregistration/Retrieval), the 4-service CRUD split no longer scales cleanly for feature-specific flows. Invitations, MFA, and Google Auth each have their own mini-lifecycles that don't map to CRUD.
+
+The new approach: **feature-specific services for non-CRUD flows**, while keeping the 4 core services for entity CRUD:
+
+| Service | Methods | Rationale |
+|---------|---------|-----------|
+| `IInvitationService` | Create, Accept, Revoke, List | Full invitation lifecycle in one place |
+| `IMfaService` | EnableTotp, ConfirmTotp, DisableTotp, GetTotpStatus, RegenerateRecoveryCodes | MFA configuration (auth *flows* stay on `IAuthenticationService`) |
+| `IGoogleAuthService` | LinkGoogleAuth, UnlinkGoogleAuth, GetAuthMethods | Google account management |
+| `IAuthenticationService` | keeps `SignInWithGoogleAsync`, `VerifyMfaAsync` | These are authentication *actions*, not configuration |
+| `IRegistrationService` | core entity CRUD only (users, accounts, groups, roles, permissions) | Remove invitation/MFA/Google methods |
+| `IDeregistrationService` | core entity CRUD only | Remove `UnlinkGoogleAuthAsync` |
+| `IRetrievalService` | core entity CRUD only | Remove `GetTotpStatusAsync`, `GetAuthMethodsAsync` |
+
+This refactor should be done as a separate branch/PR that moves methods out of the existing services and into the new feature-specific services. Each new service gets its own Authorization + Telemetry decorators following the existing pattern.
 
 ### 12. PermissionConstants
 
@@ -386,11 +400,20 @@ foreach (var invitation in pendingInvitations)
 
 ### Phase 4: Service Wiring
 
+> **Note:** The original implementation wired invitations into `IRegistrationService`. The revised plan (see Design Decision #11) calls for a dedicated `IInvitationService`. This phase describes the target state.
+
+**New files:**
+- `Corely.IAM/Services/IInvitationService.cs` — dedicated invitation service interface
+- `Corely.IAM/Services/InvitationService.cs` — delegates to `IInvitationProcessor`
+- `Corely.IAM/Services/InvitationServiceAuthorizationDecorator.cs` — context guards
+- `Corely.IAM/Services/InvitationServiceTelemetryDecorator.cs` — telemetry wrappers
+
 **Modified files:**
-- `Corely.IAM/Services/IRegistrationService.cs` — add invitation methods to interface
-- `Corely.IAM/Services/RegistrationService.cs` — implement by delegating to `IInvitationProcessor`
-- `Corely.IAM/Services/RegistrationServiceAuthorizationDecorator.cs` — context guards
-- `Corely.IAM/Services/RegistrationServiceTelemetryDecorator.cs` — telemetry wrappers
+- `Corely.IAM/Services/IRegistrationService.cs` — remove invitation methods
+- `Corely.IAM/Services/RegistrationService.cs` — remove invitation implementation
+- `Corely.IAM/Services/RegistrationServiceAuthorizationDecorator.cs` — remove invitation guards
+- `Corely.IAM/Services/RegistrationServiceTelemetryDecorator.cs` — remove invitation wrappers
+- `Corely.IAM/ServiceRegistrationExtensions.cs` — register `IInvitationService` + decorators
 
 **Service-level auth:**
 - `CreateInvitationAsync` — `HasAccountContext()` (processor handles CRUDX)

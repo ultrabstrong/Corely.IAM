@@ -2,7 +2,7 @@
 
 Pre-built Blazor Server UI for Corely.IAM. Provides authentication pages, multi-tenant account management, RBAC visualization, and permission CRUD — all with authorization gating.
 
-- **Complete auth flow** — sign in, register, sign out, account switching (Razor Pages)
+- **Complete auth flow** — sign in, register, sign out, account switching, MFA verification, Google Sign-In (Razor Pages)
 - **Multi-tenant management** — account selection, user/group/role/permission CRUD (Blazor Server)
 - **Authorization gates** — `PermissionView` component hides UI based on CRUDX permissions
 - **Effective permissions** — visualize permission grants through roles and groups

@@ -19,6 +19,18 @@ Self-service user profile page. No permission gates — any authenticated user c
 - **Leave** — confirmation modal, removes user from account, redirects to `/select-account`
 - Only displayed when the user belongs to at least one account
 
+### Two-Factor Authentication Section
+- **Disabled state** — shows "Enable Two-Factor Authentication" button
+- **Setup phase** — QR code (via JS interop with qrcodejs), secret display, recovery codes, confirmation input
+- **Enabled state** — status with remaining recovery codes count, regenerate button, disable with code confirmation
+- Uses `IRegistrationService` for enable/confirm/disable/regenerate and `IRetrievalService` for status
+
+### Linked Accounts Section
+- Shows linked Google email when Google auth is active
+- **Unlink** — confirmation modal, calls `IDeregistrationService.UnlinkGoogleAuthAsync()`
+- Placeholder when no Google account linked
+- Uses `IRetrievalService.GetAuthMethodsAsync()` for status
+
 ### Encryption/Signing Panel
 - User's symmetric encryption provider
 - User's asymmetric encryption provider

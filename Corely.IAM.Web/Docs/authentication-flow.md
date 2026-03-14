@@ -11,6 +11,8 @@ Pre-authentication pages are Razor Pages (server-rendered, no Blazor dependency)
 | `/select-account` | SelectAccount | Account selection with search and pagination |
 | `/create-account` | CreateAccount | New account form |
 | `/signout` | SignOut | Sign out and clear cookies |
+| `/verify-mfa` | VerifyMfa | MFA code entry after sign-in |
+| `/google-callback` | GoogleCallback | Google Identity Services callback |
 
 ## Sign-In Flow
 
@@ -28,6 +30,30 @@ Pre-authentication pages are Razor Pages (server-rendered, no Blazor dependency)
 3. On success: auto sign-in via `IAuthenticationService.SignInAsync()`
 4. Redirect to dashboard
 5. If auto sign-in fails: redirect to `/signin`
+
+## MFA Verification Flow
+
+When TOTP is enabled for a user, sign-in (both password and Google) returns `MfaRequiredChallenge` instead of a JWT:
+
+1. Sign-in succeeds at credential level, but `SignInResult.ResultCode == MfaRequiredChallenge`
+2. The MFA challenge token is stored in `TempData` and the user is redirected to `/verify-mfa`
+3. User enters a 6-digit TOTP code or a recovery code (`XXXX-XXXX` format)
+4. `IAuthenticationService.VerifyMfaAsync()` validates the code
+5. On success: cookies are set and the user proceeds to account selection/dashboard
+6. On expired challenge: redirect back to `/signin`
+7. On invalid code: error message displayed, user can retry
+
+## Google Sign-In Flow
+
+When `GoogleClientId` is configured in `SecurityOptions`, a "Sign in with Google" button appears on the sign-in page:
+
+1. Google Identity Services library loaded on `/signin`
+2. User clicks the Google button and authenticates with Google
+3. Google POSTs the ID token to `/google-callback`
+4. `IAuthenticationService.SignInWithGoogleAsync()` validates the token and finds the linked user
+5. If TOTP is enabled: redirects to `/verify-mfa` (same as password flow)
+6. On success: cookies are set and the user proceeds to account selection/dashboard
+7. If no user is linked: error with instructions to link from Profile page
 
 ## Account Switching
 

@@ -247,6 +247,7 @@ dotnet run -- register user "create-user-request.json"
 | `role` | Register a role in the current account |
 | `permission` | Register a permission in the current account |
 | `permissions-with-role` | Register permissions and assign to a role |
+| `user-with-google` | Register a new user from a Google ID token |
 | `user-with-account` | Register a user and create their account |
 | `users-with-group` | Register users into a group |
 | `roles-with-user` | Assign roles to a user |
@@ -310,6 +311,7 @@ dotnet run -- deregister user-from-account "request.json"
 | `permissions-from-role` | Remove permissions from a role |
 | `roles-from-user` | Unassign roles from a user |
 | `roles-from-group` | Unassign roles from a group |
+| `basic-auth` | Remove password authentication |
 
 ### Modification
 

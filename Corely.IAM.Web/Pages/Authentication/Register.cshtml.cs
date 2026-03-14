@@ -17,6 +17,10 @@ public class RegisterModel(
 {
     private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
 
+    public string? GoogleClientId { get; } = securityOptions.Value.GoogleClientId;
+
+    public string? GoogleCallbackUrl { get; set; }
+
     [BindProperty]
     public string Username { get; set; } = string.Empty;
 
@@ -37,6 +41,13 @@ public class RegisterModel(
         {
             return Redirect(AppRoutes.Dashboard);
         }
+
+        if (!string.IsNullOrWhiteSpace(GoogleClientId))
+        {
+            var request = HttpContext.Request;
+            GoogleCallbackUrl = $"{request.Scheme}://{request.Host}{AppRoutes.GoogleCallback}";
+        }
+
         return Page();
     }
 

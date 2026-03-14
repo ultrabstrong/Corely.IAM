@@ -33,4 +33,5 @@ public interface IRegistrationService
     Task<AcceptInvitationResult> AcceptInvitationAsync(AcceptInvitationRequest request);
     Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId);
     Task<RetrieveListResult<Invitation>> ListInvitationsAsync(ListInvitationsRequest request);
+    Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request);
 }

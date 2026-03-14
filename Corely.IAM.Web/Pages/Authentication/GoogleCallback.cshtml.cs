@@ -45,14 +45,18 @@ public class GoogleCallbackModel(
             return Redirect(AppRoutes.VerifyMfa);
         }
 
+        if (result.ResultCode == SignInResultCode.GoogleAuthNotLinkedError)
+        {
+            TempData["GoogleIdToken"] = credential;
+            return Redirect(AppRoutes.RegisterWithGoogle);
+        }
+
         if (result.ResultCode != SignInResultCode.Success)
         {
             ErrorMessage = result.ResultCode switch
             {
                 SignInResultCode.InvalidGoogleTokenError =>
                     "Google authentication failed. Please try again.",
-                SignInResultCode.GoogleAuthNotLinkedError =>
-                    "No account is linked to this Google account. Sign in with your username and password, then link your Google account from the Profile page.",
                 _ => $"Sign in failed: {result.ResultCode}",
             };
             return Page();

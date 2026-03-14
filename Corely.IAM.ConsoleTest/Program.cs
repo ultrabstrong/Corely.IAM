@@ -77,6 +77,7 @@ internal class Program
             var retrievalService = host.Services.GetRequiredService<IRetrievalService>();
             var modificationService = host.Services.GetRequiredService<IModificationService>();
             var mfaService = host.Services.GetRequiredService<IMfaService>();
+            var googleAuthService = host.Services.GetRequiredService<IGoogleAuthService>();
 
             // ========= REGISTER USER 1 ==========
             var registerUserResult = await registrationService.RegisterUserAsync(
@@ -528,6 +529,22 @@ internal class Program
                 new DisableTotpRequest(disableCode)
             );
             Console.WriteLine($"Disable TOTP: {disableTotpResult.ResultCode}");
+
+            // ========= AUTH METHOD MANAGEMENT ==========
+
+            // Check auth methods (user1 has basic auth only — no Google in ConsoleTest)
+            var authMethods = await googleAuthService.GetAuthMethodsAsync();
+            Console.WriteLine(
+                $"Auth methods: HasBasicAuth={authMethods.HasBasicAuth}, HasGoogleAuth={authMethods.HasGoogleAuth}"
+            );
+
+            // Try to remove basic auth — should fail (last auth method)
+            var deregisterBasicAuthResult = await deregistrationService.DeregisterBasicAuthAsync();
+            Console.WriteLine(
+                $"Deregister basic auth (last method): {deregisterBasicAuthResult.ResultCode}"
+            );
+            // Note: RegisterUserWithGoogleAsync and full Google flows require a real Google
+            // OIDC endpoint and are not demoed here. See DevTools commands for token-based testing.
 
             // ========= DEREGISTERING ==========
             // Deregister roles from group example

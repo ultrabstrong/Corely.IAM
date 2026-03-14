@@ -154,6 +154,44 @@ else
     </div>
 
     <div class="section-divider mb-4 mt-4">
+        <div class="section-divider-label">Password</div>
+        @if (_hasBasicAuth && _hasGoogleAuth)
+        {
+            <p class="text-success mb-2"><i class="bi bi-check-circle me-1"></i>Password is set</p>
+            @if (_showRemovePasswordConfirm)
+            {
+                <p class="text-warning mb-2">Are you sure? You'll only be able to sign in with Google.</p>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-danger btn-sm" @onclick="RemovePasswordAsync" disabled="@_loading">Confirm Remove</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="() => _showRemovePasswordConfirm = false">Cancel</button>
+                </div>
+            }
+            else
+            {
+                <button class="btn btn-outline-danger btn-sm" @onclick="() => _showRemovePasswordConfirm = true" disabled="@_loading">
+                    Remove Password
+                </button>
+            }
+        }
+        else if (_hasBasicAuth)
+        {
+            <p class="text-success mb-2"><i class="bi bi-check-circle me-1"></i>Password is set</p>
+            <p class="text-muted"><small>Add another sign-in method before removing your password.</small></p>
+        }
+        else
+        {
+            <p class="text-muted mb-2">No password set. Add a password to enable username/password sign-in.</p>
+            <div class="d-flex gap-2 align-items-center">
+                <input type="password" class="form-control form-control-sm" style="max-width: 200px;"
+                       @bind="_newPassword" placeholder="New password" />
+                <input type="password" class="form-control form-control-sm" style="max-width: 200px;"
+                       @bind="_confirmPassword" placeholder="Confirm password" />
+                <button class="btn btn-primary btn-sm" @onclick="SetPasswordAsync" disabled="@_loading">Set Password</button>
+            </div>
+        }
+    </div>
+
+    <div class="section-divider mb-4 mt-4">
         <div class="section-divider-label">Linked Accounts</div>
         @if (_hasGoogleAuth)
         {
@@ -221,6 +259,11 @@ else
     private string[]? _regeneratedCodes;
     private int _totpRemainingCodes;
     private bool _pendingQrRender;
+
+    // Password state
+    private bool _showRemovePasswordConfirm;
+    private string _newPassword = "";
+    private string _confirmPassword = "";
 
     // Linked accounts state
     private bool _hasBasicAuth;
@@ -437,6 +480,53 @@ else
                 _disableCode = "";
                 _regeneratedCodes = null;
                 SetResultMessage(true, "Two-factor authentication disabled.");
+            }
+            else
+            {
+                SetResultMessage(false, string.Empty, result.Message);
+            }
+        });
+    }
+
+    private async Task RemovePasswordAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterBasicAuthAsync();
+            if (result.ResultCode == DeregisterBasicAuthResultCode.Success)
+            {
+                _hasBasicAuth = false;
+                _showRemovePasswordConfirm = false;
+                SetResultMessage(true, "Password removed.", string.Empty);
+            }
+            else
+            {
+                SetResultMessage(false, string.Empty, result.Message);
+            }
+        });
+    }
+
+    private async Task SetPasswordAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newPassword))
+        {
+            SetResultMessage(false, string.Empty, "Password is required.");
+            return;
+        }
+        if (_newPassword != _confirmPassword)
+        {
+            SetResultMessage(false, string.Empty, "Passwords do not match.");
+            return;
+        }
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.SetPasswordAsync(new SetPasswordRequest(_newPassword));
+            if (result.ResultCode == SetPasswordResultCode.Success)
+            {
+                _hasBasicAuth = true;
+                _newPassword = "";
+                _confirmPassword = "";
+                SetResultMessage(true, "Password set successfully.", string.Empty);
             }
             else
             {

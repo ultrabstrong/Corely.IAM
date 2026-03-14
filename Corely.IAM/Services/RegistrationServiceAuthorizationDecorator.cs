@@ -165,4 +165,9 @@ internal class RegistrationServiceAuthorizationDecorator(
                 "Unauthorized to list invitations",
                 null
             );
+
+    public async Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request) =>
+        _authorizationProvider.HasUserContext()
+            ? await _inner.SetPasswordAsync(request)
+            : new SetPasswordResult(SetPasswordResultCode.UnauthorizedError, "Unauthorized");
 }

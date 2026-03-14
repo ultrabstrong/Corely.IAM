@@ -27,6 +27,33 @@ var methods = await retrievalService.GetAuthMethodsAsync();
 - Each Google account (by subject ID) can be linked to **one** user
 - At least one auth method must remain linked — cannot unlink Google if no password exists
 
+## Sign Up with Google
+
+New users can register directly with a Google account, bypassing the traditional username/password flow:
+
+```csharp
+var result = await registrationService.RegisterUserWithGoogleAsync(
+    new RegisterUserWithGoogleRequest(googleIdToken));
+
+if (result.ResultCode == RegisterUserWithGoogleResultCode.Success)
+{
+    var userId = result.CreatedUserId;
+    // User is created with Google as their sole auth method — no password set
+}
+```
+
+The flow validates the Google ID token, extracts the email and subject ID, creates a new user, and links the Google account in a single operation. The user can later add a password via `SetPasswordAsync` or sign in exclusively with Google.
+
+### Result Codes
+
+| Code | Meaning |
+|------|---------|
+| `Success` | User created and Google account linked |
+| `InvalidGoogleTokenError` | Google ID token validation failed |
+| `GoogleAccountInUseError` | This Google account is already linked to another user |
+| `UserExistsError` | Username derived from Google email already taken |
+| `ValidationError` | Input validation failed |
+
 ## Signing In with Google
 
 ```csharp

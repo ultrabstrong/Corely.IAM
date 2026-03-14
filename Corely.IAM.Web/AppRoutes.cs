@@ -10,6 +10,7 @@ public static class AppRoutes
     public const string CreateAccount = "/create-account";
     public const string VerifyMfa = "/verify-mfa";
     public const string GoogleCallback = "/google-callback";
+    public const string RegisterWithGoogle = "/register-with-google";
 
     // Legal (Razor Pages)
     public const string Privacy = "/privacy";

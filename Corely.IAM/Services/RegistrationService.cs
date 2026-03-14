@@ -711,6 +711,16 @@ internal class RegistrationService(
         return new RetrieveListResult<Invitation>(result.ResultCode, result.Message, result.Data);
     }
 
+    public async Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        var context = _userContextProvider.GetUserContext();
+        var result = await _basicAuthProcessor.CreateBasicAuthAsync(
+            new(context!.User.Id, request.Password)
+        );
+        return new SetPasswordResult((SetPasswordResultCode)(int)result.ResultCode, result.Message);
+    }
+
     private static string GenerateUsernameFromEmail(string email)
     {
         var atIndex = email.IndexOf('@');

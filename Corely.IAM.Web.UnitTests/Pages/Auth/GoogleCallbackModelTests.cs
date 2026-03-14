@@ -194,11 +194,8 @@ public class GoogleCallbackModelTests
 
         var result = await _model.OnPostAsync();
 
-        Assert.IsType<PageResult>(result);
-        Assert.Equal(
-            "No account is linked to this Google account. Sign in with your username and password, then link your Google account from the Profile page.",
-            _model.ErrorMessage
-        );
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.Equal(AppRoutes.RegisterWithGoogle, redirect.Url);
     }
 
     [Fact]

@@ -21,6 +21,8 @@ Complete reference of all result code enums across Corely.IAM.
 | `UnauthorizedError` | Insufficient permissions |
 | `SystemDefinedError` | Cannot modify system-defined entity |
 | `ValidationError` | Input validation failed |
+| `UsernameExistsError` | Username already taken |
+| `EmailExistsError` | Email already in use |
 
 ## Account Result Codes
 
@@ -272,3 +274,24 @@ Complete reference of all result code enums across Corely.IAM.
 | Code | Meaning |
 |------|---------|
 | `Success` | Auth methods retrieved |
+
+### RegisterUserWithGoogleResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | User created from Google account |
+| `InvalidGoogleTokenError` | Google ID token validation failed |
+| `GoogleAccountInUseError` | This Google account is linked to another user |
+| `UserExistsError` | Username derived from Google email already taken |
+| `ValidationError` | Input validation failed |
+
+## BasicAuth Result Codes
+
+### DeregisterBasicAuthResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | Password authentication removed |
+| `NotFoundError` | User has no basic auth credentials |
+| `LastAuthMethodError` | Cannot remove the only authentication method |
+| `UnauthorizedError` | Insufficient permissions |

@@ -10,6 +10,8 @@ Manages sign-in, sign-out, and account switching. See [Authentication](../authen
 | `SwitchAccountAsync` | `SwitchAccountRequest` | `SignInResult` |
 | `SignOutAsync` | `SignOutRequest` | `bool` |
 | `SignOutAllAsync` | *(none)* | `void` |
+| `SignInWithGoogleAsync` | `SignInWithGoogleRequest` | `SignInResult` |
+| `VerifyMfaAsync` | `VerifyMfaRequest` | `SignInResult` |
 
 ## Usage
 
@@ -46,6 +48,26 @@ var success = await authenticationService.SignOutAsync(
 await authenticationService.SignOutAllAsync();
 ```
 
+### Sign In with Google
+
+```csharp
+var result = await authenticationService.SignInWithGoogleAsync(
+    new SignInWithGoogleRequest(googleIdToken, deviceId));
+```
+
+Returns `Success` or `MfaRequiredChallenge` (if TOTP is enabled). See [Google Sign-In](../google-signin.md) for full flow.
+
+### Verify MFA
+
+Complete a two-phase sign-in when TOTP is enabled:
+
+```csharp
+var result = await authenticationService.VerifyMfaAsync(
+    new VerifyMfaRequest(challengeToken, totpCode));
+```
+
+Accepts either a 6-digit TOTP code or a recovery code in `XXXX-XXXX` format. See [MFA](../mfa.md) for full flow.
+
 ## Result Codes
 
 | Code | Meaning |
@@ -56,6 +78,11 @@ await authenticationService.SignOutAllAsync();
 | `AccountLockedError` | Too many failed attempts |
 | `AccountNotFoundError` | Target account not found (switch) |
 | `AuthorizationError` | Not authorized |
+| `MfaRequiredChallenge` | TOTP enabled — MFA challenge issued |
+| `InvalidMfaCodeError` | TOTP or recovery code invalid |
+| `MfaChallengeExpiredError` | Challenge expired or already used |
+| `InvalidGoogleTokenError` | Google ID token validation failed |
+| `GoogleAuthNotLinkedError` | No user linked to this Google account |
 
 ## Authorization
 

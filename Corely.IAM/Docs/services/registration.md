@@ -20,6 +20,11 @@ Creates entities, establishes relationships between entities, and manages invita
 | `AcceptInvitationAsync` | `AcceptInvitationRequest` | `AcceptInvitationResult` |
 | `RevokeInvitationAsync` | `Guid invitationId` | `RevokeInvitationResult` |
 | `ListInvitationsAsync` | `ListInvitationsRequest` | `RetrieveListResult<Invitation>` |
+| `EnableTotpAsync` | *(none — uses current user context)* | `EnableTotpResult` |
+| `ConfirmTotpAsync` | `ConfirmTotpRequest` | `ConfirmTotpResult` |
+| `DisableTotpAsync` | `DisableTotpRequest` | `DisableTotpResult` |
+| `RegenerateTotpRecoveryCodesAsync` | *(none — uses current user context)* | `RegenerateTotpRecoveryCodesResult` |
+| `LinkGoogleAuthAsync` | `LinkGoogleAuthRequest` | `LinkGoogleAuthResult` |
 
 ## Usage
 

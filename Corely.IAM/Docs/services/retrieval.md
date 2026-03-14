@@ -19,6 +19,13 @@ Queries entities with filtering, ordering, and pagination. Also retrieves encryp
 | `ListAccountsAsync` | `ListAccountsRequest` | `RetrieveListResult<Account>` |
 | `GetAccountAsync` | `Guid accountId, bool hydrate` | `RetrieveSingleResult<Account>` |
 
+### MFA and Auth Methods
+
+| Method | Returns |
+|--------|---------|
+| `GetTotpStatusAsync()` | `TotpStatusResult` |
+| `GetAuthMethodsAsync()` | `AuthMethodsResult` |
+
 ### Key Providers
 
 | Method | Returns |

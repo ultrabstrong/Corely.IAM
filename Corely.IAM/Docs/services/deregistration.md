@@ -17,6 +17,7 @@ Deletes entities and removes relationships between entities.
 | `DeregisterRolesFromGroupAsync` | `DeregisterRolesFromGroupRequest` | `DeregisterRolesFromGroupResult` |
 | `DeregisterRolesFromUserAsync` | `DeregisterRolesFromUserRequest` | `DeregisterRolesFromUserResult` |
 | `DeregisterPermissionsFromRoleAsync` | `DeregisterPermissionsFromRoleRequest` | `DeregisterPermissionsFromRoleResult` |
+| `UnlinkGoogleAuthAsync` | *(none — uses current user context)* | `UnlinkGoogleAuthResult` |
 
 ## Usage
 

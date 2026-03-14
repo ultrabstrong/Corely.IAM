@@ -949,3 +949,42 @@ Completed on branch `feature/mfa-google-signin` across 6 commits.
 - **TOTP secret display** — the secret and recovery codes are shown exactly once (on enable). The service does not provide a way to retrieve the decrypted secret after initial setup.
 - **Google sign-in without existing account** — Phase 5 only supports linking to existing users. A future enhancement could auto-register new users from Google sign-in (JIT provisioning).
 - **`ITotpProvider` visibility** — needs to be `public` for ConsoleTest demo, or expose code generation through a service method. Making it public is cleaner since DevTools also uses it directly.
+
+---
+
+## Follow-up: Service Architecture Refactor
+
+### Context
+
+The original plan wired MFA methods into `IRegistrationService`, `IDeregistrationService`, and `IRetrievalService` — following the existing 4-service CRUD-volatility split. During implementation, it became clear this doesn't scale for feature-specific flows. MFA, Google Auth, and Invitations each have their own mini-lifecycles that span create/read/delete, scattering a single feature's methods across 3-4 services.
+
+### Decision
+
+Create **feature-specific services** for non-CRUD flows, while keeping the 4 core services for entity CRUD (Users, Accounts, Groups, Roles, Permissions):
+
+| New Service | Methods to move | From |
+|-------------|----------------|------|
+| `IMfaService` | `EnableTotpAsync`, `ConfirmTotpAsync`, `DisableTotpAsync`, `GetTotpStatusAsync`, `RegenerateTotpRecoveryCodesAsync` | `IRegistrationService`, `IRetrievalService` |
+| `IGoogleAuthService` | `LinkGoogleAuthAsync`, `UnlinkGoogleAuthAsync`, `GetAuthMethodsAsync` | `IRegistrationService`, `IDeregistrationService`, `IRetrievalService` |
+| `IAuthenticationService` | `SignInWithGoogleAsync`, `VerifyMfaAsync` — **no change** (these are auth actions, not configuration) | Already there |
+
+Each new service gets its own Authorization + Telemetry decorators following the existing Scrutor pattern.
+
+### Rationale
+
+- Core CRUD entities share a lifecycle — the 4-service split works for them
+- Feature flows (MFA, Google, Invitations) have distinct lifecycles that don't map to CRUD
+- Host apps only inject what they need — apps without MFA don't touch `IMfaService`
+- The inconsistency ("why is `CreateGroup` in `IRegistrationService` but `EnableTotp` in `IMfaService`?") is explainable: *core entities use CRUD services, feature flows get their own service*
+
+### Scope
+
+This refactor should be done as a **separate branch/PR** since it touches:
+- `IRegistrationService` / `RegistrationService` + decorators (remove MFA + Google methods)
+- `IDeregistrationService` / `DeregistrationService` + decorators (remove `UnlinkGoogleAuthAsync`)
+- `IRetrievalService` / `RetrievalService` + decorators (remove `GetTotpStatusAsync`, `GetAuthMethodsAsync`)
+- `ServiceRegistrationExtensions.cs` (register new services + decorators)
+- All consumers: DevTools commands, ConsoleTest, Web Profile page, service-level tests
+- Service documentation
+
+See also: `Plans/account-invitations.md` Design Decision #11 — same refactor applies to `IInvitationService`.

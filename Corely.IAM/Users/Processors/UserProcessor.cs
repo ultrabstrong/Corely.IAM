@@ -142,6 +142,27 @@ internal class UserProcessor(
             );
         }
 
+        var collision = await _userRepo.GetAsync(u =>
+            u.Id != request.UserId && (u.Username == request.Username || u.Email == request.Email)
+        );
+
+        if (collision != null)
+        {
+            if (collision.Username == request.Username)
+            {
+                _logger.LogWarning("Username {Username} already exists", request.Username);
+                return new ModifyResult(
+                    ModifyResultCode.UsernameExistsError,
+                    $"Username {request.Username} already exists"
+                );
+            }
+            _logger.LogWarning("Email {Email} already exists", request.Email);
+            return new ModifyResult(
+                ModifyResultCode.EmailExistsError,
+                $"Email {request.Email} already exists"
+            );
+        }
+
         entity.Username = request.Username;
         entity.Email = request.Email;
         await _userRepo.UpdateAsync(entity);

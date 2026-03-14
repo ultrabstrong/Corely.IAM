@@ -1,4 +1,5 @@
-﻿using Corely.Common.Extensions;
+﻿using System.Security.Cryptography;
+using Corely.Common.Extensions;
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.UnitOfWork;
@@ -7,6 +8,9 @@ using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.GoogleAuths.Models;
+using Corely.IAM.GoogleAuths.Processors;
+using Corely.IAM.GoogleAuths.Providers;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Invitations.Models;
@@ -28,6 +32,8 @@ internal class RegistrationService(
     IAccountProcessor accountProcessor,
     IUserProcessor userProcessor,
     IBasicAuthProcessor basicAuthProcessor,
+    IGoogleAuthProcessor googleAuthProcessor,
+    IGoogleIdTokenValidator googleIdTokenValidator,
     IGroupProcessor groupProcessor,
     IRoleProcessor roleProcessor,
     IPermissionProcessor permissionProcessor,
@@ -37,6 +43,8 @@ internal class RegistrationService(
     IUnitOfWorkProvider uowProvider
 ) : IRegistrationService
 {
+    private const int MAX_USERNAME_RETRIES = 10;
+
     private readonly ILogger<RegistrationService> _logger = logger.ThrowIfNull(nameof(logger));
     private readonly IAccountProcessor _accountProcessor = accountProcessor.ThrowIfNull(
         nameof(accountProcessor)
@@ -47,6 +55,11 @@ internal class RegistrationService(
     private readonly IBasicAuthProcessor _basicAuthProcessor = basicAuthProcessor.ThrowIfNull(
         nameof(basicAuthProcessor)
     );
+    private readonly IGoogleAuthProcessor _googleAuthProcessor = googleAuthProcessor.ThrowIfNull(
+        nameof(googleAuthProcessor)
+    );
+    private readonly IGoogleIdTokenValidator _googleIdTokenValidator =
+        googleIdTokenValidator.ThrowIfNull(nameof(googleIdTokenValidator));
     private readonly IGroupProcessor _groupProcessor = groupProcessor.ThrowIfNull(
         nameof(groupProcessor)
     );
@@ -120,6 +133,127 @@ internal class RegistrationService(
             );
             return new RegisterUserResult(
                 RegisterUserResultCode.Success,
+                string.Empty,
+                userResult.CreatedId
+            );
+        }
+        finally
+        {
+            if (!uowSucceeded)
+            {
+                await _uowProvider.RollbackAsync();
+            }
+        }
+    }
+
+    public async Task<RegisterUserWithGoogleResult> RegisterUserWithGoogleAsync(
+        RegisterUserWithGoogleRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation("Registering user with Google");
+
+        var payload = await _googleIdTokenValidator.ValidateAsync(request.GoogleIdToken);
+        if (payload == null)
+        {
+            return new RegisterUserWithGoogleResult(
+                RegisterUserWithGoogleResultCode.InvalidGoogleTokenError,
+                "Invalid Google ID token",
+                Guid.Empty
+            );
+        }
+
+        var existingGoogleUser = await _googleAuthProcessor.GetUserIdByGoogleSubjectAsync(
+            payload.Subject
+        );
+        if (existingGoogleUser != null)
+        {
+            return new RegisterUserWithGoogleResult(
+                RegisterUserWithGoogleResultCode.GoogleAccountInUseError,
+                "This Google account is already linked to another user",
+                Guid.Empty
+            );
+        }
+
+        var uowSucceeded = false;
+        try
+        {
+            await _uowProvider.BeginAsync();
+
+            var username = GenerateUsernameFromEmail(payload.Email);
+            CreateUserResult? userResult = null;
+
+            for (var i = 0; i <= MAX_USERNAME_RETRIES; i++)
+            {
+                var candidateUsername = i == 0 ? username : $"{username}-{GenerateRandomSuffix()}";
+                userResult = await _userProcessor.CreateUserAsync(
+                    new(candidateUsername, payload.Email)
+                );
+
+                if (userResult.ResultCode == CreateUserResultCode.Success)
+                {
+                    break;
+                }
+
+                if (userResult.ResultCode == CreateUserResultCode.ValidationError)
+                {
+                    return new RegisterUserWithGoogleResult(
+                        RegisterUserWithGoogleResultCode.ValidationError,
+                        userResult.Message,
+                        Guid.Empty
+                    );
+                }
+
+                // UserExistsError — if email collision, no point retrying
+                if (userResult.Message.Contains("Email"))
+                {
+                    return new RegisterUserWithGoogleResult(
+                        RegisterUserWithGoogleResultCode.UserExistsError,
+                        userResult.Message,
+                        Guid.Empty
+                    );
+                }
+            }
+
+            if (userResult == null || userResult.ResultCode != CreateUserResultCode.Success)
+            {
+                _logger.LogWarning(
+                    "Failed to generate unique username for Google email {Email}",
+                    payload.Email
+                );
+                return new RegisterUserWithGoogleResult(
+                    RegisterUserWithGoogleResultCode.UserExistsError,
+                    "Unable to generate a unique username",
+                    Guid.Empty
+                );
+            }
+
+            var linkResult = await _googleAuthProcessor.LinkGoogleAuthAsync(
+                userResult.CreatedId,
+                request.GoogleIdToken
+            );
+            if (linkResult.ResultCode != LinkGoogleAuthResultCode.Success)
+            {
+                _logger.LogInformation(
+                    "Linking Google auth failed for user {UserId}",
+                    userResult.CreatedId
+                );
+                return new RegisterUserWithGoogleResult(
+                    RegisterUserWithGoogleResultCode.InvalidGoogleTokenError,
+                    linkResult.Message,
+                    Guid.Empty
+                );
+            }
+
+            await _uowProvider.CommitAsync();
+            uowSucceeded = true;
+
+            _logger.LogInformation(
+                "User registered with Google with Id {UserId}",
+                userResult.CreatedId
+            );
+            return new RegisterUserWithGoogleResult(
+                RegisterUserWithGoogleResultCode.Success,
                 string.Empty,
                 userResult.CreatedId
             );
@@ -575,5 +709,29 @@ internal class RegistrationService(
     {
         var result = await _invitationProcessor.ListInvitationsAsync(request);
         return new RetrieveListResult<Invitation>(result.ResultCode, result.Message, result.Data);
+    }
+
+    private static string GenerateUsernameFromEmail(string email)
+    {
+        var atIndex = email.IndexOf('@');
+        return atIndex > 0 ? email[..atIndex] : email;
+    }
+
+    private static string GenerateRandomSuffix()
+    {
+        const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        return string.Create(
+            5,
+            chars,
+            (span, state) =>
+            {
+                Span<byte> randomBytes = stackalloc byte[5];
+                RandomNumberGenerator.Fill(randomBytes);
+                for (var i = 0; i < span.Length; i++)
+                {
+                    span[i] = state[randomBytes[i] % state.Length];
+                }
+            }
+        );
     }
 }

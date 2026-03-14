@@ -112,4 +112,11 @@ internal class DeregistrationServiceTelemetryDecorator(
             () => _inner.DeregisterPermissionsFromRoleAsync(request),
             logResult: true
         );
+
+    public async Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(DeregistrationService),
+            () => _inner.DeregisterBasicAuthAsync(),
+            logResult: true
+        );
 }

@@ -34,4 +34,12 @@ internal class BasicAuthProcessorAuthorizationDecorator(
         // Users must be able to verify credentials before they have an authenticated context.
         return _inner.VerifyBasicAuthAsync(request);
     }
+
+    public async Task<DeleteBasicAuthResult> DeleteBasicAuthAsync(Guid userId) =>
+        _authorizationProvider.IsAuthorizedForOwnUser(userId)
+            ? await _inner.DeleteBasicAuthAsync(userId)
+            : new DeleteBasicAuthResult(
+                DeleteBasicAuthResultCode.UnauthorizedError,
+                $"Unauthorized to delete basic auth for user {userId}"
+            );
 }

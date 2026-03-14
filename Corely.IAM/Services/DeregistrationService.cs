@@ -2,6 +2,8 @@
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.BasicAuths.Models;
+using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Models.Extensions;
 using Corely.IAM.Groups.Processors;
@@ -28,6 +30,7 @@ internal class DeregistrationService(
     IGroupProcessor groupProcessor,
     IAccountProcessor accountProcessor,
     IUserProcessor userProcessor,
+    IBasicAuthProcessor basicAuthProcessor,
     IUserContextProvider userContextProvider,
     IUserContextSetter userContextSetter,
     IAuthorizationCacheClearer authorizationCacheClearer
@@ -48,6 +51,9 @@ internal class DeregistrationService(
     );
     private readonly IUserProcessor _userProcessor = userProcessor.ThrowIfNull(
         nameof(userProcessor)
+    );
+    private readonly IBasicAuthProcessor _basicAuthProcessor = basicAuthProcessor.ThrowIfNull(
+        nameof(basicAuthProcessor)
     );
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
@@ -579,6 +585,16 @@ internal class DeregistrationService(
             result.RemovedPermissionCount,
             result.InvalidPermissionIds,
             result.SystemPermissionIds
+        );
+    }
+
+    public async Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync()
+    {
+        var context = _userContextProvider.GetUserContext();
+        var result = await _basicAuthProcessor.DeleteBasicAuthAsync(context!.User.Id);
+        return new DeregisterBasicAuthResult(
+            (DeregisterBasicAuthResultCode)(int)result.ResultCode,
+            result.Message
         );
     }
 }

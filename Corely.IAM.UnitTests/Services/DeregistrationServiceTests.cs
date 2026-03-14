@@ -1,5 +1,6 @@
 ﻿using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
@@ -26,6 +27,7 @@ public class DeregistrationServiceTests
     private readonly Mock<IGroupProcessor> _mockGroupProcessor = new();
     private readonly Mock<IAccountProcessor> _mockAccountProcessor = new();
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
+    private readonly Mock<IBasicAuthProcessor> _mockBasicAuthProcessor = new();
     private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly Mock<IUserContextSetter> _mockUserContextSetter = new();
     private readonly Mock<IAuthorizationCacheClearer> _mockAuthorizationCacheClearer = new();
@@ -52,6 +54,7 @@ public class DeregistrationServiceTests
             _mockGroupProcessor.Object,
             _mockAccountProcessor.Object,
             _mockUserProcessor.Object,
+            _mockBasicAuthProcessor.Object,
             _mockUserContextProvider.Object,
             _mockUserContextSetter.Object,
             _mockAuthorizationCacheClearer.Object

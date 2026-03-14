@@ -906,6 +906,39 @@ Note: For ConsoleTest, `ITotpProvider` needs to be `public` or the demo needs a 
 
 ---
 
+## Implementation Notes
+
+Completed on branch `feature/mfa-google-signin` across 6 commits.
+
+### Deviations from plan
+
+- **Phases 1-5 combined into a single commit** (`b263032`) — 73 files, all core library work done together rather than phase-by-phase
+- **DevTools standalone TOTP commands** were placed in Phase 8 (not Phase 1 as planned) — grouped with other DevTools work for cleaner commits
+- **Migration combined** — plan called for separate `AddTotpAuth` and `AddGoogleAuth` migrations; implemented as a single `AddMfaAndGoogleAuth` migration covering all 4 tables
+- **QR code rendering** — used CDN-hosted `qrcodejs` library with JS interop rather than server-side SVG
+- **Google Sign-In** — used Google Identity Services (GIS) `data-login_uri` POST flow rather than JavaScript callback + AJAX
+- **`ITotpProvider`** — interface was already `public`; `TotpProvider` implementation is `internal` but resolved via DI, so no visibility change needed
+- **GoogleIdTokenValidator tests** — only 4 tests (no-client-id and invalid-token cases) since testing valid/expired/wrong-audience requires real Google OIDC infrastructure
+- **Mock repo Include limitation** — `TotpAuthProcessorTests` required a `WireRecoveryCodesNavPropertyAsync` helper to manually link navigation properties, since the mock repo's LINQ-to-Objects doesn't support EF Core `Include`
+
+### Test counts
+
+| Suite | Tests |
+|-------|-------|
+| Corely.IAM.UnitTests | 1,240 |
+| Corely.IAM.Web.UnitTests | 87 |
+| **Total** | **1,327** |
+
+### Commits
+
+| Hash | Description |
+|------|-------------|
+| `b263032` | Phases 1-5: Core library (73 files) |
+| `1693298` | Phases 6-9: Web UI, DevTools, ConsoleTest, processor tests, docs (34 files) |
+| `961eade` | QR code, Google Sign-In web flow, DevTools docs (10 files) |
+| `b065343` | Remaining tests, config templates, service docs (10 files) |
+| `f93b838` | Web docs updates (4 files) |
+
 ## Notes
 
 - **No Corely.Security changes** — TOTP uses standard .NET `HMACSHA1`; Google validation uses `System.IdentityModel.Tokens.Jwt`

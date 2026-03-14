@@ -2,6 +2,7 @@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityPageBase
 @inject IRetrievalService RetrievalService
+@inject IRegistrationService RegistrationService
 @inject IModificationService ModificationService
 @inject IDeregistrationService DeregistrationService
 
@@ -77,6 +78,94 @@ else
         </div>
     }
 
+    <div class="section-divider mb-4 mt-4">
+        <div class="section-divider-label">Two-Factor Authentication</div>
+        @if (_totpSetupPhase)
+        {
+            <div class="alert alert-info">
+                <strong>Setup:</strong> Add this account to your authenticator app using the URI below or enter the secret manually.
+                <div class="mt-2" style="word-break: break-all;"><code>@_totpSetupUri</code></div>
+                <div class="mt-1"><small>Secret: <code>@_totpSecret</code></small></div>
+            </div>
+            <div class="alert alert-warning">
+                <strong>Recovery Codes:</strong> Save these codes in a safe place. Each can only be used once.
+                <div class="mt-2" style="font-family: monospace;">
+                    @foreach (var rc in _totpRecoveryCodes)
+                    {
+                        <div>@rc</div>
+                    }
+                </div>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                <input type="text" class="form-control form-control-sm" style="max-width: 200px;"
+                       @bind="_confirmCode" placeholder="Enter code to confirm" />
+                <button class="btn btn-primary btn-sm" @onclick="ConfirmTotpAsync" disabled="@_loading">Confirm</button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelTotpSetup">Cancel</button>
+            </div>
+        }
+        else if (_totpEnabled)
+        {
+            <p class="text-success mb-2"><i class="bi bi-shield-check me-1"></i>Enabled (@_totpRemainingCodes remaining recovery codes)</p>
+            @if (_regeneratedCodes != null)
+            {
+                <div class="alert alert-warning">
+                    <strong>New Recovery Codes:</strong> Save these codes now. They won't be shown again.
+                    <div class="mt-2" style="font-family: monospace;">
+                        @foreach (var rc in _regeneratedCodes)
+                        {
+                            <div>@rc</div>
+                        }
+                    </div>
+                </div>
+            }
+            @if (_showDisableInput)
+            {
+                <div class="d-flex gap-2 align-items-center mb-2">
+                    <input type="text" class="form-control form-control-sm" style="max-width: 200px;"
+                           @bind="_disableCode" placeholder="Enter current TOTP code" />
+                    <button class="btn btn-danger btn-sm" @onclick="DisableTotpAsync" disabled="@_loading">Confirm Disable</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="() => _showDisableInput = false">Cancel</button>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-warning btn-sm" @onclick="RegenerateCodesAsync" disabled="@_loading">
+                        Regenerate Recovery Codes
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" @onclick="() => _showDisableInput = true" disabled="@_loading">
+                        Disable
+                    </button>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="text-muted mb-2">Protect your account with TOTP-based two-factor authentication.</p>
+            <button class="btn btn-outline-primary btn-sm" @onclick="EnableTotpAsync" disabled="@_loading">
+                Enable Two-Factor Authentication
+            </button>
+        }
+    </div>
+
+    <div class="section-divider mb-4 mt-4">
+        <div class="section-divider-label">Linked Accounts</div>
+        @if (_hasGoogleAuth)
+        {
+            <div class="props-grid mb-2">
+                <span class="prop-label">Google</span>
+                <span class="prop-value">@_googleEmail <i class="bi bi-check-circle text-success"></i></span>
+            </div>
+            <button class="btn btn-outline-danger btn-sm" @onclick="() => _unlinkGoogleModal.Show()" disabled="@_loading">
+                Unlink Google Account
+            </button>
+        }
+        else
+        {
+            <p class="text-muted mb-2">No Google account linked. Use the Google Sign-In flow to link an account.</p>
+        }
+    </div>
+
     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider" />
 }
 
@@ -90,6 +179,11 @@ else
               Message="@_leaveAccountMessage"
               ConfirmText="Leave"
               OnConfirm="LeaveAccountAsync" />
+<ConfirmModal @ref="_unlinkGoogleModal"
+              Title="Unlink Google Account"
+              Message="Remove your linked Google account? You will no longer be able to sign in with Google."
+              ConfirmText="Unlink"
+              OnConfirm="UnlinkGoogleAsync" />
 
 @code {
     private string? _username;
@@ -110,6 +204,24 @@ else
     private IIamAsymmetricEncryptionProvider? _asymProvider;
     private IIamAsymmetricSignatureProvider? _sigProvider;
 
+    // TOTP state
+    private bool _totpEnabled;
+    private bool _totpSetupPhase;
+    private string? _totpSecret;
+    private string? _totpSetupUri;
+    private string[] _totpRecoveryCodes = [];
+    private string _confirmCode = "";
+    private string _disableCode = "";
+    private bool _showDisableInput;
+    private string[]? _regeneratedCodes;
+    private int _totpRemainingCodes;
+
+    // Linked accounts state
+    private bool _hasBasicAuth;
+    private bool _hasGoogleAuth;
+    private string? _googleEmail;
+    private ConfirmModal _unlinkGoogleModal = null!;
+
     protected override async Task LoadCoreAsync()
     {
         var result = await RetrievalService.GetUserAsync(UserContext!.User!.Id, hydrate: false);
@@ -125,6 +237,8 @@ else
         }
 
         await LoadKeyProvidersAsync();
+        await LoadTotpStatusAsync();
+        await LoadAuthMethodsAsync();
     }
 
     private async Task LoadKeyProvidersAsync()
@@ -202,6 +316,134 @@ else
                 return;
             }
             SetResultMessage(false, string.Empty, result.Message ?? "Failed.");
+        });
+    }
+
+    private async Task LoadTotpStatusAsync()
+    {
+        var status = await RetrievalService.GetTotpStatusAsync();
+        if (status.ResultCode == TotpStatusResultCode.Success)
+        {
+            _totpEnabled = status.IsEnabled;
+            _totpRemainingCodes = status.RemainingRecoveryCodes;
+        }
+    }
+
+    private async Task LoadAuthMethodsAsync()
+    {
+        var methods = await RetrievalService.GetAuthMethodsAsync();
+        if (methods.ResultCode == AuthMethodsResultCode.Success)
+        {
+            _hasBasicAuth = methods.HasBasicAuth;
+            _hasGoogleAuth = methods.HasGoogleAuth;
+            _googleEmail = methods.GoogleEmail;
+        }
+    }
+
+    private async Task EnableTotpAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.EnableTotpAsync();
+            if (result.ResultCode == EnableTotpResultCode.Success)
+            {
+                _totpSetupPhase = true;
+                _totpSecret = result.Secret;
+                _totpSetupUri = result.SetupUri;
+                _totpRecoveryCodes = result.RecoveryCodes ?? [];
+                _regeneratedCodes = null;
+            }
+            else
+            {
+                SetResultMessage(false, string.Empty, result.Message);
+            }
+        });
+    }
+
+    private async Task ConfirmTotpAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_confirmCode)) return;
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.ConfirmTotpAsync(new ConfirmTotpRequest(_confirmCode.Trim()));
+            if (result.ResultCode == ConfirmTotpResultCode.Success)
+            {
+                _totpSetupPhase = false;
+                _totpEnabled = true;
+                _confirmCode = "";
+                await LoadTotpStatusAsync();
+                SetResultMessage(true, "Two-factor authentication enabled.");
+            }
+            else
+            {
+                SetResultMessage(false, string.Empty, result.Message);
+            }
+        });
+    }
+
+    private void CancelTotpSetup()
+    {
+        _totpSetupPhase = false;
+        _totpSecret = null;
+        _totpSetupUri = null;
+        _totpRecoveryCodes = [];
+        _confirmCode = "";
+    }
+
+    private async Task RegenerateCodesAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.RegenerateTotpRecoveryCodesAsync();
+            if (result.ResultCode == RegenerateTotpRecoveryCodesResultCode.Success)
+            {
+                _regeneratedCodes = result.RecoveryCodes;
+                await LoadTotpStatusAsync();
+                SetResultMessage(true, "Recovery codes regenerated. Save them now.");
+            }
+            else
+            {
+                SetResultMessage(false, string.Empty, result.Message);
+            }
+        });
+    }
+
+    private async Task DisableTotpAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_disableCode)) return;
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.DisableTotpAsync(new DisableTotpRequest(_disableCode.Trim()));
+            if (result.ResultCode == DisableTotpResultCode.Success)
+            {
+                _totpEnabled = false;
+                _showDisableInput = false;
+                _disableCode = "";
+                _regeneratedCodes = null;
+                SetResultMessage(true, "Two-factor authentication disabled.");
+            }
+            else
+            {
+                SetResultMessage(false, string.Empty, result.Message);
+            }
+        });
+    }
+
+    private async Task UnlinkGoogleAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.UnlinkGoogleAuthAsync();
+            if (result.ResultCode == UnlinkGoogleAuthResultCode.Success)
+            {
+                _hasGoogleAuth = false;
+                _googleEmail = null;
+                SetResultMessage(true, "Google account unlinked.");
+            }
+            else
+            {
+                SetResultMessage(false, string.Empty, result.Message);
+            }
         });
     }
 }

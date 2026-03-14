@@ -1,6 +1,6 @@
 # Plan: MFA (TOTP) and Google Sign-In
 
-## Status: Planned
+## Status: Complete
 
 ## Overview
 

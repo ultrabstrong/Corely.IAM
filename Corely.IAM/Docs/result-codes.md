@@ -155,6 +155,11 @@ Complete reference of all result code enums across Corely.IAM.
 | `SignatureKeyNotFoundError` | User signature key missing |
 | `AccountNotFoundError` | Target account not found |
 | `InvalidAuthTokenError` | Token generation failed |
+| `MfaRequiredChallenge` | TOTP is enabled — MFA challenge issued |
+| `InvalidMfaCodeError` | TOTP or recovery code is invalid |
+| `MfaChallengeExpiredError` | MFA challenge expired or already used |
+| `InvalidGoogleTokenError` | Google ID token validation failed |
+| `GoogleAuthNotLinkedError` | No user linked to this Google account |
 
 ### UserAuthTokenValidationResultCode
 
@@ -193,3 +198,77 @@ Complete reference of all result code enums across Corely.IAM.
 | `AddToAccountError` | Failed to add user to account |
 | `EmailMismatchError` | Email doesn't match authenticated user |
 | `UnauthorizedError` | Insufficient permissions |
+
+## TOTP Result Codes
+
+### EnableTotpResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | TOTP setup initiated, secret and recovery codes returned |
+| `AlreadyEnabledError` | TOTP is already enabled for this user |
+
+### ConfirmTotpResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | TOTP confirmed and enabled |
+| `NotFoundError` | No TOTP setup found |
+| `AlreadyEnabledError` | TOTP is already confirmed |
+| `InvalidCodeError` | TOTP code does not match |
+
+### DisableTotpResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | TOTP disabled and removed |
+| `NotFoundError` | TOTP is not enabled |
+| `InvalidCodeError` | TOTP code does not match |
+
+### TotpStatusResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | Status retrieved |
+
+### RegenerateTotpRecoveryCodesResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | New recovery codes generated |
+| `NotFoundError` | No TOTP setup found |
+| `NotEnabledError` | TOTP is not yet enabled |
+
+### VerifyTotpOrRecoveryCodeResultCode
+
+| Code | Meaning |
+|------|---------|
+| `TotpCodeValid` | TOTP code verified |
+| `RecoveryCodeValid` | Recovery code verified (now consumed) |
+| `NotFoundError` | TOTP is not enabled |
+| `InvalidCodeError` | Neither TOTP nor recovery code matched |
+
+## Google Auth Result Codes
+
+### LinkGoogleAuthResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | Google account linked |
+| `InvalidGoogleTokenError` | Google ID token validation failed |
+| `AlreadyLinkedError` | User already has a linked Google account |
+| `GoogleAccountInUseError` | This Google account is linked to another user |
+
+### UnlinkGoogleAuthResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | Google account unlinked |
+| `NotLinkedError` | No Google account linked |
+| `LastAuthMethodError` | Cannot unlink the only authentication method |
+
+### AuthMethodsResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | Auth methods retrieved |

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Web.Pages.Authentication;
 
-public class SignInModel(
+public class VerifyMfaModel(
     IAuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
     IAuthCookieManager authCookieManager,
@@ -19,44 +19,54 @@ public class SignInModel(
     private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
 
     [BindProperty]
-    public string Username { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
 
     [BindProperty]
-    public string Password { get; set; } = string.Empty;
+    public string MfaChallengeToken { get; set; } = string.Empty;
 
     public string? ErrorMessage { get; set; }
 
     public IActionResult OnGet()
     {
-        if (HttpContext.Request.Cookies.ContainsKey(AuthenticationConstants.AUTH_TOKEN_COOKIE))
+        var token = TempData["MfaChallengeToken"] as string;
+        if (string.IsNullOrWhiteSpace(token))
         {
-            return Redirect(AppRoutes.Dashboard);
+            return Redirect(AppRoutes.SignIn);
         }
+
+        MfaChallengeToken = token;
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+        if (string.IsNullOrWhiteSpace(MfaChallengeToken))
         {
-            ErrorMessage = "Username and password are required.";
+            return Redirect(AppRoutes.SignIn);
+        }
+
+        if (string.IsNullOrWhiteSpace(Code))
+        {
+            ErrorMessage = "Please enter a code.";
             return Page();
         }
 
-        var deviceId = authCookieManager.GetOrCreateDeviceId(HttpContext);
-        var result = await authenticationService.SignInAsync(
-            new SignInRequest(Username, Password, deviceId)
+        var result = await authenticationService.VerifyMfaAsync(
+            new VerifyMfaRequest(MfaChallengeToken, Code.Trim())
         );
 
-        if (result.ResultCode == SignInResultCode.MfaRequiredChallenge)
+        if (result.ResultCode == SignInResultCode.MfaChallengeExpiredError)
         {
-            TempData["MfaChallengeToken"] = result.MfaChallengeToken;
-            return Redirect(AppRoutes.VerifyMfa);
+            TempData["ErrorMessage"] = "Your MFA session has expired. Please sign in again.";
+            return Redirect(AppRoutes.SignIn);
         }
 
         if (result.ResultCode != SignInResultCode.Success)
         {
-            ErrorMessage = "Invalid username or password.";
+            ErrorMessage =
+                result.ResultCode == SignInResultCode.InvalidMfaCodeError
+                    ? "Invalid code. Please try again."
+                    : result.Message ?? "Verification failed.";
             return Page();
         }
 
@@ -76,7 +86,6 @@ public class SignInModel(
 
         if (userContext.AvailableAccounts.Count == 1)
         {
-            // Auto-select the only account
             var switchResult = await authenticationService.SwitchAccountAsync(
                 new SwitchAccountRequest(userContext.AvailableAccounts[0].Id)
             );
@@ -93,11 +102,9 @@ public class SignInModel(
                 return Redirect(AppRoutes.Dashboard);
             }
 
-            // Auto-switch failed — fall through to account selection
             return Redirect(AppRoutes.SelectAccount);
         }
 
-        // Multiple accounts — let user choose
         return Redirect(AppRoutes.SelectAccount);
     }
 }

@@ -4,13 +4,16 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.GoogleAuths.Providers;
+using Corely.IAM.MfaChallenges.Constants;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
+using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
@@ -33,6 +36,9 @@ public class AuthenticationServiceTests
     private readonly Mock<IUserContextSetter> _userContextSetterMock;
     private readonly Mock<IAuthorizationCacheClearer> _authorizationCacheClearerMock;
     private readonly Mock<IBasicAuthProcessor> _basicAuthProcessorMock;
+    private readonly Mock<ITotpAuthProcessor> _totpAuthProcessorMock;
+    private readonly Mock<IGoogleAuthProcessor> _googleAuthProcessorMock;
+    private readonly Mock<IGoogleIdTokenValidator> _googleIdTokenValidatorMock;
     private readonly Mock<TimeProvider> _timeProviderMock;
     private readonly AuthenticationService _authenticationService;
 
@@ -50,6 +56,9 @@ public class AuthenticationServiceTests
         _userContextSetterMock = GetMockUserContextSetter();
         _authorizationCacheClearerMock = new Mock<IAuthorizationCacheClearer>();
         _basicAuthProcessorMock = GetMockBasicAuthProcessor();
+        _totpAuthProcessorMock = new Mock<ITotpAuthProcessor>();
+        _googleAuthProcessorMock = new Mock<IGoogleAuthProcessor>();
+        _googleIdTokenValidatorMock = new Mock<IGoogleIdTokenValidator>();
         _timeProviderMock = new Mock<TimeProvider>();
         _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(DateTimeOffset.UtcNow);
 
@@ -61,9 +70,9 @@ public class AuthenticationServiceTests
             _userContextSetterMock.Object,
             _authorizationCacheClearerMock.Object,
             _basicAuthProcessorMock.Object,
-            new Mock<ITotpAuthProcessor>().Object,
-            new Mock<IGoogleAuthProcessor>().Object,
-            new Mock<IGoogleIdTokenValidator>().Object,
+            _totpAuthProcessorMock.Object,
+            _googleAuthProcessorMock.Object,
+            _googleIdTokenValidatorMock.Object,
             _serviceFactory.GetRequiredService<IRepo<MfaChallengeEntity>>(),
             Options.Create(
                 new SecurityOptions()
@@ -628,4 +637,313 @@ public class AuthenticationServiceTests
         );
         _userContextSetterMock.Verify(m => m.ClearUserContext(It.IsAny<Guid>()), Times.Never);
     }
+
+    #region MFA Flow Tests
+
+    [Fact]
+    public async Task SignIn_ReturnsMfaRequiredChallenge_WhenTotpIsEnabled()
+    {
+        var userEntity = await CreateTestUserAsync();
+        _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(true);
+
+        var request = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
+
+        var result = await _authenticationService.SignInAsync(request);
+
+        Assert.Equal(SignInResultCode.MfaRequiredChallenge, result.ResultCode);
+        Assert.NotNull(result.MfaChallengeToken);
+        Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task SignInWithGoogle_ReturnsSuccess_WhenValidTokenAndNoMfa()
+    {
+        var userEntity = await CreateTestUserAsync();
+        var googleSubject = "google-subject-123";
+
+        _googleIdTokenValidatorMock
+            .Setup(v => v.ValidateAsync("valid-google-token"))
+            .ReturnsAsync(new GoogleIdTokenPayload(googleSubject, "user@gmail.com", true));
+        _googleAuthProcessorMock
+            .Setup(m => m.GetUserIdByGoogleSubjectAsync(googleSubject))
+            .ReturnsAsync(userEntity.Id);
+        _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(false);
+
+        var request = new SignInWithGoogleRequest("valid-google-token", TEST_DEVICE_ID);
+
+        var result = await _authenticationService.SignInWithGoogleAsync(request);
+
+        Assert.Equal(SignInResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task SignInWithGoogle_ReturnsMfaRequiredChallenge_WhenTotpIsEnabled()
+    {
+        var userEntity = await CreateTestUserAsync();
+        var googleSubject = "google-subject-456";
+
+        _googleIdTokenValidatorMock
+            .Setup(v => v.ValidateAsync("valid-google-token"))
+            .ReturnsAsync(new GoogleIdTokenPayload(googleSubject, "user@gmail.com", true));
+        _googleAuthProcessorMock
+            .Setup(m => m.GetUserIdByGoogleSubjectAsync(googleSubject))
+            .ReturnsAsync(userEntity.Id);
+        _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(true);
+
+        var request = new SignInWithGoogleRequest("valid-google-token", TEST_DEVICE_ID);
+
+        var result = await _authenticationService.SignInWithGoogleAsync(request);
+
+        Assert.Equal(SignInResultCode.MfaRequiredChallenge, result.ResultCode);
+        Assert.NotNull(result.MfaChallengeToken);
+        Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task SignInWithGoogle_ReturnsInvalidGoogleTokenError_WhenTokenIsInvalid()
+    {
+        _googleIdTokenValidatorMock
+            .Setup(v => v.ValidateAsync("bad-token"))
+            .ReturnsAsync((GoogleIdTokenPayload?)null);
+
+        var request = new SignInWithGoogleRequest("bad-token", TEST_DEVICE_ID);
+
+        var result = await _authenticationService.SignInWithGoogleAsync(request);
+
+        Assert.Equal(SignInResultCode.InvalidGoogleTokenError, result.ResultCode);
+        Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task VerifyMfa_ReturnsSuccess_WhenTotpCodeIsValid()
+    {
+        var userEntity = await CreateTestUserAsync();
+        _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(true);
+
+        // First sign in to create the MFA challenge
+        var signInRequest = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
+        var signInResult = await _authenticationService.SignInAsync(signInRequest);
+        Assert.Equal(SignInResultCode.MfaRequiredChallenge, signInResult.ResultCode);
+        var challengeToken = signInResult.MfaChallengeToken!;
+
+        // Set up TOTP verification to succeed
+        _totpAuthProcessorMock
+            .Setup(m =>
+                m.VerifyTotpOrRecoveryCodeAsync(
+                    It.Is<VerifyTotpOrRecoveryCodeRequest>(r =>
+                        r.UserId == userEntity.Id && r.Code == "123456"
+                    )
+                )
+            )
+            .ReturnsAsync(
+                new VerifyTotpOrRecoveryCodeResult(
+                    VerifyTotpOrRecoveryCodeResultCode.TotpCodeValid,
+                    string.Empty
+                )
+            );
+
+        var verifyRequest = new VerifyMfaRequest(challengeToken, "123456");
+        var result = await _authenticationService.VerifyMfaAsync(verifyRequest);
+
+        Assert.Equal(SignInResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task VerifyMfa_ReturnsSuccess_WhenRecoveryCodeIsValid()
+    {
+        var userEntity = await CreateTestUserAsync();
+        _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(true);
+
+        // First sign in to create the MFA challenge
+        var signInRequest = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
+        var signInResult = await _authenticationService.SignInAsync(signInRequest);
+        var challengeToken = signInResult.MfaChallengeToken!;
+
+        // Set up recovery code verification to succeed
+        _totpAuthProcessorMock
+            .Setup(m =>
+                m.VerifyTotpOrRecoveryCodeAsync(
+                    It.Is<VerifyTotpOrRecoveryCodeRequest>(r =>
+                        r.UserId == userEntity.Id && r.Code == "ABCD-1234"
+                    )
+                )
+            )
+            .ReturnsAsync(
+                new VerifyTotpOrRecoveryCodeResult(
+                    VerifyTotpOrRecoveryCodeResultCode.RecoveryCodeValid,
+                    string.Empty
+                )
+            );
+
+        var verifyRequest = new VerifyMfaRequest(challengeToken, "ABCD-1234");
+        var result = await _authenticationService.VerifyMfaAsync(verifyRequest);
+
+        Assert.Equal(SignInResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task VerifyMfa_ReturnsInvalidMfaCodeError_WhenCodeIsInvalid()
+    {
+        var userEntity = await CreateTestUserAsync();
+        _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(true);
+
+        // First sign in to create the MFA challenge
+        var signInRequest = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
+        var signInResult = await _authenticationService.SignInAsync(signInRequest);
+        var challengeToken = signInResult.MfaChallengeToken!;
+
+        // Set up TOTP verification to fail
+        _totpAuthProcessorMock
+            .Setup(m =>
+                m.VerifyTotpOrRecoveryCodeAsync(It.IsAny<VerifyTotpOrRecoveryCodeRequest>())
+            )
+            .ReturnsAsync(
+                new VerifyTotpOrRecoveryCodeResult(
+                    VerifyTotpOrRecoveryCodeResultCode.InvalidCodeError,
+                    "Invalid TOTP or recovery code"
+                )
+            );
+
+        var verifyRequest = new VerifyMfaRequest(challengeToken, "000000");
+        var result = await _authenticationService.VerifyMfaAsync(verifyRequest);
+
+        Assert.Equal(SignInResultCode.InvalidMfaCodeError, result.ResultCode);
+        Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task VerifyMfa_ReturnsMfaChallengeExpiredError_WhenChallengeIsExpired()
+    {
+        var now = DateTimeOffset.UtcNow;
+        _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(now);
+
+        var userEntity = await CreateTestUserAsync();
+        _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(true);
+
+        // Sign in to create the MFA challenge
+        var signInRequest = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
+        var signInResult = await _authenticationService.SignInAsync(signInRequest);
+        var challengeToken = signInResult.MfaChallengeToken!;
+
+        // Move time forward past the challenge timeout
+        var expiredTime = now.AddSeconds(301);
+        _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(expiredTime);
+
+        var verifyRequest = new VerifyMfaRequest(challengeToken, "123456");
+        var result = await _authenticationService.VerifyMfaAsync(verifyRequest);
+
+        Assert.Equal(SignInResultCode.MfaChallengeExpiredError, result.ResultCode);
+        Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task VerifyMfa_ReturnsMfaChallengeExpiredError_WhenChallengeTokenNotFound()
+    {
+        var verifyRequest = new VerifyMfaRequest("nonexistent-token", "123456");
+        var result = await _authenticationService.VerifyMfaAsync(verifyRequest);
+
+        Assert.Equal(SignInResultCode.MfaChallengeExpiredError, result.ResultCode);
+        Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task VerifyMfa_ReturnsMfaChallengeExpiredError_WhenChallengeAlreadyCompleted()
+    {
+        var userEntity = await CreateTestUserAsync();
+        _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(true);
+        _totpAuthProcessorMock
+            .Setup(m =>
+                m.VerifyTotpOrRecoveryCodeAsync(It.IsAny<VerifyTotpOrRecoveryCodeRequest>())
+            )
+            .ReturnsAsync(
+                new VerifyTotpOrRecoveryCodeResult(
+                    VerifyTotpOrRecoveryCodeResultCode.TotpCodeValid,
+                    string.Empty
+                )
+            );
+
+        // Sign in to create the MFA challenge
+        var signInRequest = new SignInRequest(
+            userEntity.Username,
+            _fixture.Create<string>(),
+            TEST_DEVICE_ID
+        );
+        var signInResult = await _authenticationService.SignInAsync(signInRequest);
+        var challengeToken = signInResult.MfaChallengeToken!;
+
+        // Complete the challenge
+        var verifyRequest = new VerifyMfaRequest(challengeToken, "123456");
+        await _authenticationService.VerifyMfaAsync(verifyRequest);
+
+        // Try to use the same challenge again
+        var result = await _authenticationService.VerifyMfaAsync(verifyRequest);
+
+        Assert.Equal(SignInResultCode.MfaChallengeExpiredError, result.ResultCode);
+        Assert.Null(result.AuthToken);
+    }
+
+    [Fact]
+    public async Task VerifyMfa_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() => _authenticationService.VerifyMfaAsync(null!));
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    [Fact]
+    public async Task SignInWithGoogle_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() =>
+            _authenticationService.SignInWithGoogleAsync(null!)
+        );
+
+        Assert.NotNull(ex);
+        Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    [Fact]
+    public async Task SignInWithGoogle_ReturnsGoogleAuthNotLinkedError_WhenNoLinkedUser()
+    {
+        var googleSubject = "unlinked-subject";
+
+        _googleIdTokenValidatorMock
+            .Setup(v => v.ValidateAsync("valid-token"))
+            .ReturnsAsync(new GoogleIdTokenPayload(googleSubject, "user@gmail.com", true));
+        _googleAuthProcessorMock
+            .Setup(m => m.GetUserIdByGoogleSubjectAsync(googleSubject))
+            .ReturnsAsync((Guid?)null);
+
+        var request = new SignInWithGoogleRequest("valid-token", TEST_DEVICE_ID);
+
+        var result = await _authenticationService.SignInWithGoogleAsync(request);
+
+        Assert.Equal(SignInResultCode.GoogleAuthNotLinkedError, result.ResultCode);
+        Assert.Null(result.AuthToken);
+    }
+
+    #endregion
 }

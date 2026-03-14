@@ -1119,9 +1119,16 @@ public enum DeregisterBasicAuthResultCode
 - Add `register user-with-google <id-token-file>` command
 - Add `deregister basic-auth` command
 
+#### Bugfix — `UpdateUserAsync` collision check
+- `UserProcessor.UpdateUserAsync` does NOT check for username or email collisions before saving. Both columns have unique indexes (`UserEntityConfiguration` lines 32, 36), so a collision throws an unhandled DB exception instead of returning a clean result code.
+- `CreateUserAsync` already has the correct pattern (lines 61-76) — checks `u.Username == request.Username || u.Email == request.Email` before creating.
+- **Fix:** Add the same collision check to `UpdateUserAsync`. Must exclude the current user from the check (a user "updating" to their own existing username is not a collision). Return a new `ModifyResultCode.UsernameExistsError` or `ModifyResultCode.EmailExistsError`, or reuse `ModifyResultCode.ValidationError` with a descriptive message.
+- **Recommendation:** Add `UsernameExistsError` and `EmailExistsError` to `ModifyResultCode` for explicit handling by callers.
+
 #### Tests
 - `BasicAuthProcessor` — `DeleteBasicAuthAsync` tests (success, not found, last method blocks)
 - `RegistrationService` — `RegisterUserWithGoogleAsync` tests (success, duplicate Google, email collision, username generation)
+- `UserProcessor` — `UpdateUserAsync` collision tests (username taken, email taken, own username unchanged)
 - Web — GoogleCallback page tests for registration prompt flow
 - Web — Profile page password section tests
 

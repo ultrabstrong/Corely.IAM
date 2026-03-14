@@ -1019,52 +1019,67 @@ Give users complete control over their authentication methods, with one constrai
 
 ### New Methods
 
-#### 1. `RegisterUserWithGoogleAsync` — on `IAuthenticationService` (or `IRegistrationService`)
+#### 1. `RegisterUserWithGoogleAsync` — on `IRegistrationService`
 
-Creates a new user from a Google ID token. No password required.
+**Decision:** `IRegistrationService`. The host app explicitly controls whether Google sign-up is allowed. The Web UI chains: try `SignInWithGoogleAsync` → if `GoogleAuthNotLinkedError` → prompt "Create account?" → call `RegisterUserWithGoogleAsync` → then `SignInWithGoogleAsync`. This keeps the library non-opinionated about JIT provisioning.
 
 ```csharp
-public record RegisterUserWithGoogleRequest(
-    string GoogleIdToken,
-    string DeviceId,
-    Guid? AccountId = null
+public record RegisterUserWithGoogleRequest(string GoogleIdToken);
+
+public record RegisterUserWithGoogleResult(
+    RegisterUserWithGoogleResultCode ResultCode,
+    string Message,
+    Guid CreatedUserId
 );
 
-// Returns the same SignInResult — user is signed in immediately after registration
-Task<SignInResult> RegisterUserWithGoogleAsync(RegisterUserWithGoogleRequest request);
+public enum RegisterUserWithGoogleResultCode
+{
+    Success,
+    InvalidGoogleTokenError,
+    GoogleAccountInUseError,    // Google subject already linked to another user
+    UserExistsError,            // Email from Google already exists as a user
+    ValidationError,
+}
+
+Task<RegisterUserWithGoogleResult> RegisterUserWithGoogleAsync(
+    RegisterUserWithGoogleRequest request);
 ```
 
 **Flow:**
 1. Validate Google ID token (same as `SignInWithGoogleAsync`)
 2. Check if Google subject is already linked → `GoogleAccountInUseError`
-3. Create `UserEntity` with username derived from Google email (or a generated value) and email from Google
-4. Create `GoogleAuthEntity` linking the new user to the Google account
-5. **No `BasicAuthEntity` created** — user has Google as their only auth method
-6. Issue JWT and return `SignInResult` (same as normal sign-in)
+3. Check if email already exists as a user → `UserExistsError`
+4. **Generate username** from Google email prefix (e.g., `jdoe` from `jdoe@gmail.com`). If the username collides, append `-[a-zA-Z0-9]{5}` and retry until unique.
+5. Create `UserEntity` with generated username and Google email
+6. Create `GoogleAuthEntity` linking the new user to the Google account
+7. **No `BasicAuthEntity` created** — user has Google as their only auth method
+8. Return `RegisterUserWithGoogleResult` with the new user ID
 
-**Decision point:** Where to put this method?
-- **Option A: `IAuthenticationService`** — it's a sign-in flow that returns a JWT
-- **Option B: `IRegistrationService`** — it's user creation
-- **Recommendation: `IAuthenticationService`** — the caller's intent is "sign in with Google" and the response is a JWT. Whether the user existed or was just created is an implementation detail. This also matches how Google Identity Services works — one button for both sign-in and sign-up.
+**Username change:** Users can already change their username via `IModificationService.ModifyUserAsync(UpdateUserRequest)` which accepts `Username`. No new work needed — Google-registered users can update their auto-assigned username from the Profile page.
 
-Alternatively, keep `SignInWithGoogleAsync` returning `GoogleAuthNotLinkedError` and add a separate `RegisterUserWithGoogleAsync` to `IRegistrationService` that returns `RegisterUserResult`. The Web UI can then chain: try `SignInWithGoogleAsync` → if `GoogleAuthNotLinkedError` → prompt "Create account?" → call `RegisterUserWithGoogleAsync` → then `SignInWithGoogleAsync`. This gives the host app explicit control over whether JIT provisioning is allowed.
+#### 2. `DeleteBasicAuthAsync` — on `IBasicAuthProcessor`, exposed via `IDeregistrationService`
 
-#### 2. `RemoveBasicAuthAsync` — on `IMfaService` (or a new `IBasicAuthService`)
-
-Removes the password from a user's account.
+**Decision:** Processor method is `DeleteBasicAuthAsync` (follows the `Delete*` convention for entity destruction). Service method is `DeregisterBasicAuthAsync` on `IDeregistrationService` (follows the `Deregister*` convention — we are removing a registered authentication method).
 
 ```csharp
-public record RemoveBasicAuthResult(RemoveBasicAuthResultCode ResultCode, string Message);
+// Processor level
+Task<DeleteBasicAuthResult> DeleteBasicAuthAsync(Guid userId);
 
-public enum RemoveBasicAuthResultCode
+// Service level (IDeregistrationService)
+Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync();
+
+public record DeregisterBasicAuthResult(
+    DeregisterBasicAuthResultCode ResultCode,
+    string Message
+);
+
+public enum DeregisterBasicAuthResultCode
 {
     Success,
     NotFoundError,          // User doesn't have basic auth
     LastAuthMethodError,    // Can't remove — no other auth method exists
     UnauthorizedError,
 }
-
-Task<RemoveBasicAuthResult> RemoveBasicAuthAsync();
 ```
 
 **Flow:**
@@ -1073,40 +1088,46 @@ Task<RemoveBasicAuthResult> RemoveBasicAuthAsync();
 3. Delete `BasicAuthEntity`
 4. Return `Success`
 
-**Service placement:** This method manages an authentication method, not MFA specifically. Options:
-- `IMfaService` — doesn't fit semantically (it's not MFA)
-- `IGoogleAuthService` — doesn't fit either (it's not Google)
-- **New `IBasicAuthService`** — most correct, but adds another service for just one method
-- **`IRegistrationService`** — `CreateBasicAuthAsync` is already on the Registration flow (implicitly, through `RegisterUserAsync`)
-
-**Recommendation:** Keep it on the processor level (`IBasicAuthProcessor.RemoveBasicAuthAsync`) and expose it through whichever service makes sense for the host app's flow. Since `CreateBasicAuthAsync` currently lives in `RegistrationService` (called during `RegisterUserAsync`), adding `RemoveBasicAuthAsync` there is pragmatic. Or, create an `IAuthMethodService` that owns all auth method CRUD (create/remove basic auth, link/unlink Google). This is a future consideration.
+`BasicAuthProcessor` needs `IReadonlyRepo<GoogleAuthEntity>` injected for the last-method check (mirrors how `GoogleAuthProcessor` has `IReadonlyRepo<BasicAuthEntity>`).
 
 ### Changes Required
 
-#### Backend
-- `BasicAuthProcessor` — add `RemoveBasicAuthAsync(Guid userId)` with last-method check (needs `IReadonlyRepo<GoogleAuthEntity>`)
+#### Backend — `DeleteBasicAuthAsync`
+- `IBasicAuthProcessor` — add `DeleteBasicAuthAsync(Guid userId)`
+- `BasicAuthProcessor` — implement with last-method check (inject `IReadonlyRepo<GoogleAuthEntity>`)
 - `BasicAuthProcessorAuthorizationDecorator` / `TelemetryDecorator` — add pass-through
-- New models: `RemoveBasicAuthResult`, `RemoveBasicAuthResultCode`
-- `IRegistrationService` or `IAuthenticationService` — add `RegisterUserWithGoogleAsync`
-- `RegistrationService` — implement (create user + Google auth entity, no basic auth)
-- Authorization decorator — `HasUserContext()` not required for registration (unauthenticated flow)
+- New models: `DeleteBasicAuthResult`, `DeleteBasicAuthResultCode`
+- `IDeregistrationService` — add `DeregisterBasicAuthAsync()`
+- `DeregistrationService` + decorators — implement by delegating to processor
+
+#### Backend — `RegisterUserWithGoogleAsync`
+- New models: `RegisterUserWithGoogleRequest`, `RegisterUserWithGoogleResult`, `RegisterUserWithGoogleResultCode`
+- `IRegistrationService` — add `RegisterUserWithGoogleAsync(RegisterUserWithGoogleRequest request)`
+- `RegistrationService` — implement: validate token, check collisions, generate username, create user + Google auth entity (no basic auth)
+- `RegistrationServiceAuthorizationDecorator` — no auth required (unauthenticated registration flow)
+- Username generation helper — extract email prefix, retry with `-[a-zA-Z0-9]{5}` suffix on collision
 
 #### Web UI
-- Sign-In page — when `SignInWithGoogleAsync` returns `GoogleAuthNotLinkedError`, offer "Create account with Google" option (or auto-register based on config)
-- Profile page — add "Remove Password" button in a new "Password" section (conditional on having another auth method)
-- Profile page — add "Set Password" button when user has no basic auth (links to password creation flow)
+- **Sign-In page** — `GoogleCallback.cshtml.cs`: when `GoogleAuthNotLinkedError`, redirect to a registration prompt page (or show inline "No account found — create one?") instead of just showing an error
+- **Register page** — consider adding a "Sign up with Google" button (same GIS integration as sign-in page, but routes to `RegisterUserWithGoogleAsync` instead)
+- **Profile page** — add "Password" section:
+    - If user has basic auth + another method: show "Remove Password" button
+    - If user has basic auth only: show password (no remove option)
+    - If user has no basic auth: show "Set Password" button (links to password creation flow)
 
 #### DevTools
-- Add `auth register-google <id-token-file>` command
-- Add basic auth removal command
+- Add `register user-with-google <id-token-file>` command
+- Add `deregister basic-auth` command
 
 #### Tests
-- `BasicAuthProcessor` — `RemoveBasicAuthAsync` tests (success, not found, last method blocks)
-- Registration — `RegisterUserWithGoogleAsync` tests (success, duplicate Google, MFA flow)
-- Web — profile page password section tests
+- `BasicAuthProcessor` — `DeleteBasicAuthAsync` tests (success, not found, last method blocks)
+- `RegistrationService` — `RegisterUserWithGoogleAsync` tests (success, duplicate Google, email collision, username generation)
+- Web — GoogleCallback page tests for registration prompt flow
+- Web — Profile page password section tests
 
 ### Implementation Notes
 
-- The `GoogleAuthProcessor.UnlinkGoogleAuthAsync` already has the correct pattern — it checks `hasBasicAuth` before allowing removal. `RemoveBasicAuthAsync` is the mirror: check `hasGoogleAuth` before allowing removal.
-- `RegisterUserWithGoogleAsync` needs to handle the case where the email from Google already exists as a user (return `UserExistsError` or auto-link — design decision needed).
-- Consider a `UserEntity` without `BasicAuthEntity` — the existing `DeregisterUserAsync` cascade should handle this, but verify it doesn't assume basic auth exists.
+- `GoogleAuthProcessor.UnlinkGoogleAuthAsync` is the mirror pattern for `DeleteBasicAuthAsync` — it checks `hasBasicAuth` before allowing removal. `DeleteBasicAuthAsync` checks `hasGoogleAuth`.
+- `RegisterUserWithGoogleAsync` returns `UserExistsError` when the Google email matches an existing user. The host app can then suggest the user sign in with their existing credentials and link Google from their profile.
+- Verify that `DeregisterUserAsync` cascade handles users without `BasicAuthEntity` — the user may have only Google auth.
+- Username change is already supported via `IModificationService.ModifyUserAsync(UpdateUserRequest)` — Google-registered users with auto-assigned usernames can change them from the Profile page. No new work needed.

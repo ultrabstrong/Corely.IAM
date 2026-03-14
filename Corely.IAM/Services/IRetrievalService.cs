@@ -1,11 +1,9 @@
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Models;
-using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Services;
@@ -58,7 +56,4 @@ public interface IRetrievalService
     Task<
         RetrieveSingleResult<IIamAsymmetricSignatureProvider>
     > GetUserAsymmetricSignatureProviderAsync();
-
-    Task<TotpStatusResult> GetTotpStatusAsync();
-    Task<AuthMethodsResult> GetAuthMethodsAsync();
 }

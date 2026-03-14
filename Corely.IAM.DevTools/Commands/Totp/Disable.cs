@@ -13,16 +13,13 @@ internal partial class Totp : CommandBase
         [Argument("The TOTP code to confirm disable", true)]
         private string Code { get; init; } = null!;
 
-        private readonly IRegistrationService _registrationService;
+        private readonly IMfaService _mfaService;
         private readonly IUserContextProvider _userContextProvider;
 
-        public Disable(
-            IRegistrationService registrationService,
-            IUserContextProvider userContextProvider
-        )
+        public Disable(IMfaService mfaService, IUserContextProvider userContextProvider)
             : base("disable", "Disable TOTP for the current user")
         {
-            _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
+            _mfaService = mfaService.ThrowIfNull(nameof(mfaService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
@@ -31,7 +28,7 @@ internal partial class Totp : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            var result = await _registrationService.DisableTotpAsync(new DisableTotpRequest(Code));
+            var result = await _mfaService.DisableTotpAsync(new DisableTotpRequest(Code));
 
             if (result.ResultCode == DisableTotpResultCode.Success)
             {

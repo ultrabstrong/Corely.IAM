@@ -1,5 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Providers;
 
@@ -122,14 +121,6 @@ internal class DeregistrationServiceAuthorizationDecorator(
                     0,
                     []
                 )
-            );
-
-    public async Task<UnlinkGoogleAuthResult> UnlinkGoogleAuthAsync() =>
-        _authorizationProvider.HasUserContext()
-            ? await _inner.UnlinkGoogleAuthAsync()
-            : new UnlinkGoogleAuthResult(
-                UnlinkGoogleAuthResultCode.UnauthorizedError,
-                "Unauthorized"
             );
 
     public Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(

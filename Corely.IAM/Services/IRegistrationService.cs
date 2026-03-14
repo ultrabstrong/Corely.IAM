@@ -1,7 +1,5 @@
-﻿using Corely.IAM.GoogleAuths.Models;
-using Corely.IAM.Invitations.Models;
+﻿using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
-using Corely.IAM.TotpAuths.Models;
 
 namespace Corely.IAM.Services;
 
@@ -31,9 +29,4 @@ public interface IRegistrationService
     Task<AcceptInvitationResult> AcceptInvitationAsync(AcceptInvitationRequest request);
     Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId);
     Task<RetrieveListResult<Invitation>> ListInvitationsAsync(ListInvitationsRequest request);
-    Task<EnableTotpResult> EnableTotpAsync();
-    Task<ConfirmTotpResult> ConfirmTotpAsync(ConfirmTotpRequest request);
-    Task<DisableTotpResult> DisableTotpAsync(DisableTotpRequest request);
-    Task<RegenerateTotpRecoveryCodesResult> RegenerateTotpRecoveryCodesAsync();
-    Task<LinkGoogleAuthResult> LinkGoogleAuthAsync(LinkGoogleAuthRequest request);
 }

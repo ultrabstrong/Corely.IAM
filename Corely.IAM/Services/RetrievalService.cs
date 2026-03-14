@@ -1,8 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
-using Corely.IAM.GoogleAuths.Models;
-using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
@@ -15,8 +13,6 @@ using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
-using Corely.IAM.TotpAuths.Models;
-using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
@@ -31,8 +27,6 @@ internal class RetrievalService(
     IUserProcessor userProcessor,
     IAccountProcessor accountProcessor,
     ISecurityProvider securityProvider,
-    ITotpAuthProcessor totpAuthProcessor,
-    IGoogleAuthProcessor googleAuthProcessor,
     ISymmetricEncryptionProviderFactory symmetricEncryptionProviderFactory,
     IUserContextProvider userContextProvider
 ) : IRetrievalService
@@ -54,12 +48,6 @@ internal class RetrievalService(
     );
     private readonly ISecurityProvider _securityProvider = securityProvider.ThrowIfNull(
         nameof(securityProvider)
-    );
-    private readonly ITotpAuthProcessor _totpAuthProcessor = totpAuthProcessor.ThrowIfNull(
-        nameof(totpAuthProcessor)
-    );
-    private readonly IGoogleAuthProcessor _googleAuthProcessor = googleAuthProcessor.ThrowIfNull(
-        nameof(googleAuthProcessor)
     );
     private readonly ISymmetricEncryptionProviderFactory _symmetricEncryptionProviderFactory =
         symmetricEncryptionProviderFactory.ThrowIfNull(nameof(symmetricEncryptionProviderFactory));
@@ -162,18 +150,6 @@ internal class RetrievalService(
             result.Data,
             effectivePermissions
         );
-    }
-
-    public async Task<TotpStatusResult> GetTotpStatusAsync()
-    {
-        var context = _userContextProvider.GetUserContext();
-        return await _totpAuthProcessor.GetTotpStatusAsync(context!.User.Id);
-    }
-
-    public async Task<AuthMethodsResult> GetAuthMethodsAsync()
-    {
-        var context = _userContextProvider.GetUserContext();
-        return await _googleAuthProcessor.GetAuthMethodsAsync(context!.User.Id);
     }
 
     private async Task<List<EffectivePermission>> GetEffectivePermissionsAsync(

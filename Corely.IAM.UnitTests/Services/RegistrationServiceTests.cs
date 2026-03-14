@@ -4,7 +4,6 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Invitations.Processors;
@@ -14,7 +13,6 @@ using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Services;
-using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
@@ -98,8 +96,6 @@ public class RegistrationServiceTests
             _roleProcessorMock.Object,
             _permissionProcessorMock.Object,
             new Mock<IInvitationProcessor>().Object,
-            new Mock<ITotpAuthProcessor>().Object,
-            new Mock<IGoogleAuthProcessor>().Object,
             _userContextProviderMock.Object,
             new Mock<IUserContextSetter>().Object,
             _unitOfWorkProviderMock.Object

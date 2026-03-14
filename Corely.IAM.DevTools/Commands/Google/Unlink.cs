@@ -9,18 +9,16 @@ internal partial class Google : CommandBase
 {
     internal class Unlink : CommandBase
     {
-        private readonly IDeregistrationService _deregistrationService;
+        private readonly IGoogleAuthService _googleAuthService;
         private readonly IUserContextProvider _userContextProvider;
 
         public Unlink(
-            IDeregistrationService deregistrationService,
+            IGoogleAuthService googleAuthService,
             IUserContextProvider userContextProvider
         )
             : base("unlink", "Unlink the Google account from the current user")
         {
-            _deregistrationService = deregistrationService.ThrowIfNull(
-                nameof(deregistrationService)
-            );
+            _googleAuthService = googleAuthService.ThrowIfNull(nameof(googleAuthService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
@@ -29,7 +27,7 @@ internal partial class Google : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            var result = await _deregistrationService.UnlinkGoogleAuthAsync();
+            var result = await _googleAuthService.UnlinkGoogleAuthAsync();
 
             if (result.ResultCode == UnlinkGoogleAuthResultCode.Success)
             {

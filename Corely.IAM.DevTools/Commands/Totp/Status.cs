@@ -9,13 +9,13 @@ internal partial class Totp : CommandBase
 {
     internal class Status : CommandBase
     {
-        private readonly IRetrievalService _retrievalService;
+        private readonly IMfaService _mfaService;
         private readonly IUserContextProvider _userContextProvider;
 
-        public Status(IRetrievalService retrievalService, IUserContextProvider userContextProvider)
+        public Status(IMfaService mfaService, IUserContextProvider userContextProvider)
             : base("status", "Show TOTP status for the current user")
         {
-            _retrievalService = retrievalService.ThrowIfNull(nameof(retrievalService));
+            _mfaService = mfaService.ThrowIfNull(nameof(mfaService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
@@ -24,7 +24,7 @@ internal partial class Totp : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            var result = await _retrievalService.GetTotpStatusAsync();
+            var result = await _mfaService.GetTotpStatusAsync();
 
             if (result.ResultCode == TotpStatusResultCode.Success)
             {

@@ -143,6 +143,14 @@ public static class ServiceRegistrationExtensions
             AuthenticationServiceTelemetryDecorator
         >();
 
+        serviceCollection.AddScoped<IMfaService, MfaService>();
+        serviceCollection.Decorate<IMfaService, MfaServiceAuthorizationDecorator>();
+        serviceCollection.Decorate<IMfaService, MfaServiceTelemetryDecorator>();
+
+        serviceCollection.AddScoped<IGoogleAuthService, GoogleAuthService>();
+        serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceAuthorizationDecorator>();
+        serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceTelemetryDecorator>();
+
         serviceCollection.AddScoped<IUserOwnershipProcessor, UserOwnershipProcessor>();
 
         serviceCollection.AddScoped<IAccountProcessor, AccountProcessor>();

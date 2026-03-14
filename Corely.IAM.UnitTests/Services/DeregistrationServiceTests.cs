@@ -1,6 +1,5 @@
 ﻿using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
-using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
@@ -53,7 +52,6 @@ public class DeregistrationServiceTests
             _mockGroupProcessor.Object,
             _mockAccountProcessor.Object,
             _mockUserProcessor.Object,
-            new Mock<IGoogleAuthProcessor>().Object,
             _mockUserContextProvider.Object,
             _mockUserContextSetter.Object,
             _mockAuthorizationCacheClearer.Object

@@ -1,13 +1,11 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
-using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Services;
@@ -124,27 +122,6 @@ internal class RetrievalServiceAuthorizationDecorator(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to get account",
                 default,
-                null
-            );
-
-    public async Task<TotpStatusResult> GetTotpStatusAsync() =>
-        _authorizationProvider.HasUserContext()
-            ? await _inner.GetTotpStatusAsync()
-            : new TotpStatusResult(
-                TotpStatusResultCode.UnauthorizedError,
-                "Unauthorized",
-                false,
-                0
-            );
-
-    public async Task<AuthMethodsResult> GetAuthMethodsAsync() =>
-        _authorizationProvider.HasUserContext()
-            ? await _inner.GetAuthMethodsAsync()
-            : new AuthMethodsResult(
-                AuthMethodsResultCode.UnauthorizedError,
-                "Unauthorized",
-                false,
-                false,
                 null
             );
 

@@ -9,16 +9,13 @@ internal partial class Totp : CommandBase
 {
     internal class Enable : CommandBase
     {
-        private readonly IRegistrationService _registrationService;
+        private readonly IMfaService _mfaService;
         private readonly IUserContextProvider _userContextProvider;
 
-        public Enable(
-            IRegistrationService registrationService,
-            IUserContextProvider userContextProvider
-        )
+        public Enable(IMfaService mfaService, IUserContextProvider userContextProvider)
             : base("enable", "Enable TOTP setup for the current user")
         {
-            _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
+            _mfaService = mfaService.ThrowIfNull(nameof(mfaService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
@@ -27,7 +24,7 @@ internal partial class Totp : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            var result = await _registrationService.EnableTotpAsync();
+            var result = await _mfaService.EnableTotpAsync();
 
             if (result.ResultCode == EnableTotpResultCode.Success)
             {

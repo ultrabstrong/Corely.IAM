@@ -13,16 +13,13 @@ internal partial class Google : CommandBase
         [Argument("Filepath to a file containing the Google ID token", true)]
         private string IdTokenFile { get; init; } = null!;
 
-        private readonly IRegistrationService _registrationService;
+        private readonly IGoogleAuthService _googleAuthService;
         private readonly IUserContextProvider _userContextProvider;
 
-        public Link(
-            IRegistrationService registrationService,
-            IUserContextProvider userContextProvider
-        )
+        public Link(IGoogleAuthService googleAuthService, IUserContextProvider userContextProvider)
             : base("link", "Link a Google account to the current user")
         {
-            _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
+            _googleAuthService = googleAuthService.ThrowIfNull(nameof(googleAuthService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
@@ -35,7 +32,7 @@ internal partial class Google : CommandBase
                 return;
 
             var idToken = (await File.ReadAllTextAsync(IdTokenFile)).Trim();
-            var result = await _registrationService.LinkGoogleAuthAsync(
+            var result = await _googleAuthService.LinkGoogleAuthAsync(
                 new LinkGoogleAuthRequest(idToken)
             );
 

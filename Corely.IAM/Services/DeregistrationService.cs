@@ -2,8 +2,6 @@
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
-using Corely.IAM.GoogleAuths.Models;
-using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Models.Extensions;
 using Corely.IAM.Groups.Processors;
@@ -23,8 +21,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
 
-// The 6 processor dependencies reflect the full deregistration domain scope (users, accounts,
-// groups, roles, permissions, and auth cache). This is intentional — not a SRP violation.
 internal class DeregistrationService(
     ILogger<DeregistrationService> logger,
     IPermissionProcessor permissionProcessor,
@@ -32,7 +28,6 @@ internal class DeregistrationService(
     IGroupProcessor groupProcessor,
     IAccountProcessor accountProcessor,
     IUserProcessor userProcessor,
-    IGoogleAuthProcessor googleAuthProcessor,
     IUserContextProvider userContextProvider,
     IUserContextSetter userContextSetter,
     IAuthorizationCacheClearer authorizationCacheClearer
@@ -53,9 +48,6 @@ internal class DeregistrationService(
     );
     private readonly IUserProcessor _userProcessor = userProcessor.ThrowIfNull(
         nameof(userProcessor)
-    );
-    private readonly IGoogleAuthProcessor _googleAuthProcessor = googleAuthProcessor.ThrowIfNull(
-        nameof(googleAuthProcessor)
     );
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
@@ -504,12 +496,6 @@ internal class DeregistrationService(
             result.InvalidRoleIds,
             result.BlockedOwnerRoleIds
         );
-    }
-
-    public async Task<UnlinkGoogleAuthResult> UnlinkGoogleAuthAsync()
-    {
-        var context = _userContextProvider.GetUserContext();
-        return await _googleAuthProcessor.UnlinkGoogleAuthAsync(context!.User.Id);
     }
 
     public async Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(

@@ -76,6 +76,7 @@ internal class Program
             var authenticationService = host.Services.GetRequiredService<IAuthenticationService>();
             var retrievalService = host.Services.GetRequiredService<IRetrievalService>();
             var modificationService = host.Services.GetRequiredService<IModificationService>();
+            var mfaService = host.Services.GetRequiredService<IMfaService>();
 
             // ========= REGISTER USER 1 ==========
             var registerUserResult = await registrationService.RegisterUserAsync(
@@ -465,7 +466,7 @@ internal class Program
             // ========= MFA (TOTP) DEMO ==========
 
             // Enable TOTP for user1
-            var enableTotpResult = await registrationService.EnableTotpAsync();
+            var enableTotpResult = await mfaService.EnableTotpAsync();
             Console.WriteLine(
                 $"Enable TOTP: ResultCode={enableTotpResult.ResultCode}, Secret={enableTotpResult.Secret}"
             );
@@ -480,13 +481,13 @@ internal class Program
             // Confirm TOTP with a generated code
             var totpProvider = host.Services.GetRequiredService<ITotpProvider>();
             var totpCode = totpProvider.GenerateCode(enableTotpResult.Secret!);
-            var confirmTotpResult = await registrationService.ConfirmTotpAsync(
+            var confirmTotpResult = await mfaService.ConfirmTotpAsync(
                 new ConfirmTotpRequest(totpCode)
             );
             Console.WriteLine($"Confirm TOTP: {confirmTotpResult.ResultCode}");
 
             // Check TOTP status
-            var totpStatus = await retrievalService.GetTotpStatusAsync();
+            var totpStatus = await mfaService.GetTotpStatusAsync();
             Console.WriteLine(
                 $"TOTP Status: Enabled={totpStatus.IsEnabled}, RemainingCodes={totpStatus.RemainingRecoveryCodes}"
             );
@@ -514,7 +515,7 @@ internal class Program
             );
 
             // Regenerate recovery codes
-            var regenResult = await registrationService.RegenerateTotpRecoveryCodesAsync();
+            var regenResult = await mfaService.RegenerateTotpRecoveryCodesAsync();
             Console.WriteLine($"Regenerate codes: {regenResult.ResultCode}");
             if (regenResult.RecoveryCodes != null)
             {
@@ -523,7 +524,7 @@ internal class Program
 
             // Disable TOTP
             var disableCode = totpProvider.GenerateCode(enableTotpResult.Secret!);
-            var disableTotpResult = await registrationService.DisableTotpAsync(
+            var disableTotpResult = await mfaService.DisableTotpAsync(
                 new DisableTotpRequest(disableCode)
             );
             Console.WriteLine($"Disable TOTP: {disableTotpResult.ResultCode}");

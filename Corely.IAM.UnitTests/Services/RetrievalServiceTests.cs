@@ -1,7 +1,6 @@
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
-using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
@@ -13,7 +12,6 @@ using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
-using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
@@ -33,8 +31,6 @@ public class RetrievalServiceTests
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
     private readonly Mock<IAccountProcessor> _mockAccountProcessor = new();
     private readonly Mock<ISecurityProvider> _mockSecurityProvider = new();
-    private readonly Mock<ITotpAuthProcessor> _mockTotpAuthProcessor = new();
-    private readonly Mock<IGoogleAuthProcessor> _mockGoogleAuthProcessor = new();
     private readonly Mock<ISymmetricEncryptionProviderFactory> _mockSymmetricEncryptionProviderFactory =
         new();
     private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
@@ -76,8 +72,6 @@ public class RetrievalServiceTests
             _mockUserProcessor.Object,
             _mockAccountProcessor.Object,
             _mockSecurityProvider.Object,
-            _mockTotpAuthProcessor.Object,
-            _mockGoogleAuthProcessor.Object,
             _mockSymmetricEncryptionProviderFactory.Object,
             _mockUserContextProvider.Object
         );
@@ -772,8 +766,6 @@ public class RetrievalServiceTests
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
                 _mockSecurityProvider.Object,
-                _mockTotpAuthProcessor.Object,
-                _mockGoogleAuthProcessor.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
             )
@@ -793,8 +785,6 @@ public class RetrievalServiceTests
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
                 _mockSecurityProvider.Object,
-                _mockTotpAuthProcessor.Object,
-                _mockGoogleAuthProcessor.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
             )
@@ -814,8 +804,6 @@ public class RetrievalServiceTests
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
                 _mockSecurityProvider.Object,
-                _mockTotpAuthProcessor.Object,
-                _mockGoogleAuthProcessor.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
             )
@@ -835,8 +823,6 @@ public class RetrievalServiceTests
                 null!,
                 _mockAccountProcessor.Object,
                 _mockSecurityProvider.Object,
-                _mockTotpAuthProcessor.Object,
-                _mockGoogleAuthProcessor.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
             )
@@ -856,8 +842,6 @@ public class RetrievalServiceTests
                 _mockUserProcessor.Object,
                 null!,
                 _mockSecurityProvider.Object,
-                _mockTotpAuthProcessor.Object,
-                _mockGoogleAuthProcessor.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
             )
@@ -877,56 +861,12 @@ public class RetrievalServiceTests
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
                 null!,
-                _mockTotpAuthProcessor.Object,
-                _mockGoogleAuthProcessor.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
             )
         );
 
         Assert.Equal("securityProvider", ex.ParamName);
-    }
-
-    [Fact]
-    public void Constructor_Throws_WithNullTotpAuthProcessor()
-    {
-        var ex = Assert.Throws<ArgumentNullException>(() =>
-            new RetrievalService(
-                _mockPermissionProcessor.Object,
-                _mockGroupProcessor.Object,
-                _mockRoleProcessor.Object,
-                _mockUserProcessor.Object,
-                _mockAccountProcessor.Object,
-                _mockSecurityProvider.Object,
-                null!,
-                _mockGoogleAuthProcessor.Object,
-                _mockSymmetricEncryptionProviderFactory.Object,
-                _mockUserContextProvider.Object
-            )
-        );
-
-        Assert.Equal("totpAuthProcessor", ex.ParamName);
-    }
-
-    [Fact]
-    public void Constructor_Throws_WithNullGoogleAuthProcessor()
-    {
-        var ex = Assert.Throws<ArgumentNullException>(() =>
-            new RetrievalService(
-                _mockPermissionProcessor.Object,
-                _mockGroupProcessor.Object,
-                _mockRoleProcessor.Object,
-                _mockUserProcessor.Object,
-                _mockAccountProcessor.Object,
-                _mockSecurityProvider.Object,
-                _mockTotpAuthProcessor.Object,
-                null!,
-                _mockSymmetricEncryptionProviderFactory.Object,
-                _mockUserContextProvider.Object
-            )
-        );
-
-        Assert.Equal("googleAuthProcessor", ex.ParamName);
     }
 
     [Fact]
@@ -940,8 +880,6 @@ public class RetrievalServiceTests
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
                 _mockSecurityProvider.Object,
-                _mockTotpAuthProcessor.Object,
-                _mockGoogleAuthProcessor.Object,
                 null!,
                 _mockUserContextProvider.Object
             )
@@ -961,8 +899,6 @@ public class RetrievalServiceTests
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
                 _mockSecurityProvider.Object,
-                _mockTotpAuthProcessor.Object,
-                _mockGoogleAuthProcessor.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 null!
             )

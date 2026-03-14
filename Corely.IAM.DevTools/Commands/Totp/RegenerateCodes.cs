@@ -9,16 +9,13 @@ internal partial class Totp : CommandBase
 {
     internal class RegenerateCodes : CommandBase
     {
-        private readonly IRegistrationService _registrationService;
+        private readonly IMfaService _mfaService;
         private readonly IUserContextProvider _userContextProvider;
 
-        public RegenerateCodes(
-            IRegistrationService registrationService,
-            IUserContextProvider userContextProvider
-        )
+        public RegenerateCodes(IMfaService mfaService, IUserContextProvider userContextProvider)
             : base("regenerate-codes", "Regenerate TOTP recovery codes")
         {
-            _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
+            _mfaService = mfaService.ThrowIfNull(nameof(mfaService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
@@ -27,7 +24,7 @@ internal partial class Totp : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            var result = await _registrationService.RegenerateTotpRecoveryCodesAsync();
+            var result = await _mfaService.RegenerateTotpRecoveryCodesAsync();
 
             if (result.ResultCode == RegenerateTotpRecoveryCodesResultCode.Success)
             {

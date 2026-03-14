@@ -7,8 +7,6 @@ using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.GoogleAuths.Models;
-using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Invitations.Models;
@@ -18,8 +16,6 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
-using Corely.IAM.TotpAuths.Models;
-using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
@@ -36,8 +32,6 @@ internal class RegistrationService(
     IRoleProcessor roleProcessor,
     IPermissionProcessor permissionProcessor,
     IInvitationProcessor invitationProcessor,
-    ITotpAuthProcessor totpAuthProcessor,
-    IGoogleAuthProcessor googleAuthProcessor,
     IUserContextProvider userContextProvider,
     IUserContextSetter userContextSetter,
     IUnitOfWorkProvider uowProvider
@@ -64,12 +58,6 @@ internal class RegistrationService(
     );
     private readonly IInvitationProcessor _invitationProcessor = invitationProcessor.ThrowIfNull(
         nameof(invitationProcessor)
-    );
-    private readonly ITotpAuthProcessor _totpAuthProcessor = totpAuthProcessor.ThrowIfNull(
-        nameof(totpAuthProcessor)
-    );
-    private readonly IGoogleAuthProcessor _googleAuthProcessor = googleAuthProcessor.ThrowIfNull(
-        nameof(googleAuthProcessor)
     );
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
@@ -569,46 +557,6 @@ internal class RegistrationService(
             result.Message ?? string.Empty,
             result.AddedPermissionCount,
             result.InvalidPermissionIds
-        );
-    }
-
-    public async Task<EnableTotpResult> EnableTotpAsync()
-    {
-        var context = _userContextProvider.GetUserContext();
-        return await _totpAuthProcessor.EnableTotpAsync(
-            context!.User.Id,
-            "Corely.IAM",
-            context.User.Email
-        );
-    }
-
-    public async Task<ConfirmTotpResult> ConfirmTotpAsync(ConfirmTotpRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var context = _userContextProvider.GetUserContext();
-        return await _totpAuthProcessor.ConfirmTotpAsync(context!.User.Id, request.Code);
-    }
-
-    public async Task<DisableTotpResult> DisableTotpAsync(DisableTotpRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var context = _userContextProvider.GetUserContext();
-        return await _totpAuthProcessor.DisableTotpAsync(context!.User.Id, request.Code);
-    }
-
-    public async Task<RegenerateTotpRecoveryCodesResult> RegenerateTotpRecoveryCodesAsync()
-    {
-        var context = _userContextProvider.GetUserContext();
-        return await _totpAuthProcessor.RegenerateTotpRecoveryCodesAsync(context!.User.Id);
-    }
-
-    public async Task<LinkGoogleAuthResult> LinkGoogleAuthAsync(LinkGoogleAuthRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var context = _userContextProvider.GetUserContext();
-        return await _googleAuthProcessor.LinkGoogleAuthAsync(
-            context!.User.Id,
-            request.GoogleIdToken
         );
     }
 

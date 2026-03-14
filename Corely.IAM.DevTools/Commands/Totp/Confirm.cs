@@ -13,16 +13,13 @@ internal partial class Totp : CommandBase
         [Argument("The TOTP code to confirm setup", true)]
         private string Code { get; init; } = null!;
 
-        private readonly IRegistrationService _registrationService;
+        private readonly IMfaService _mfaService;
         private readonly IUserContextProvider _userContextProvider;
 
-        public Confirm(
-            IRegistrationService registrationService,
-            IUserContextProvider userContextProvider
-        )
+        public Confirm(IMfaService mfaService, IUserContextProvider userContextProvider)
             : base("confirm", "Confirm TOTP setup with a code")
         {
-            _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
+            _mfaService = mfaService.ThrowIfNull(nameof(mfaService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
@@ -31,7 +28,7 @@ internal partial class Totp : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            var result = await _registrationService.ConfirmTotpAsync(new ConfirmTotpRequest(Code));
+            var result = await _mfaService.ConfirmTotpAsync(new ConfirmTotpRequest(Code));
 
             if (result.ResultCode == ConfirmTotpResultCode.Success)
             {

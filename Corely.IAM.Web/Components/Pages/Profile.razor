@@ -5,6 +5,8 @@
 @inject IRegistrationService RegistrationService
 @inject IModificationService ModificationService
 @inject IDeregistrationService DeregistrationService
+@inject IMfaService MfaService
+@inject IGoogleAuthService GoogleAuthService
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Profile - Corely IAM</PageTitle>
@@ -334,7 +336,7 @@ else
 
     private async Task LoadTotpStatusAsync()
     {
-        var status = await RetrievalService.GetTotpStatusAsync();
+        var status = await MfaService.GetTotpStatusAsync();
         if (status.ResultCode == TotpStatusResultCode.Success)
         {
             _totpEnabled = status.IsEnabled;
@@ -344,7 +346,7 @@ else
 
     private async Task LoadAuthMethodsAsync()
     {
-        var methods = await RetrievalService.GetAuthMethodsAsync();
+        var methods = await GoogleAuthService.GetAuthMethodsAsync();
         if (methods.ResultCode == AuthMethodsResultCode.Success)
         {
             _hasBasicAuth = methods.HasBasicAuth;
@@ -357,7 +359,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.EnableTotpAsync();
+            var result = await MfaService.EnableTotpAsync();
             if (result.ResultCode == EnableTotpResultCode.Success)
             {
                 _totpSetupPhase = true;
@@ -379,7 +381,7 @@ else
         if (string.IsNullOrWhiteSpace(_confirmCode)) return;
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.ConfirmTotpAsync(new ConfirmTotpRequest(_confirmCode.Trim()));
+            var result = await MfaService.ConfirmTotpAsync(new ConfirmTotpRequest(_confirmCode.Trim()));
             if (result.ResultCode == ConfirmTotpResultCode.Success)
             {
                 _totpSetupPhase = false;
@@ -408,7 +410,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.RegenerateTotpRecoveryCodesAsync();
+            var result = await MfaService.RegenerateTotpRecoveryCodesAsync();
             if (result.ResultCode == RegenerateTotpRecoveryCodesResultCode.Success)
             {
                 _regeneratedCodes = result.RecoveryCodes;
@@ -427,7 +429,7 @@ else
         if (string.IsNullOrWhiteSpace(_disableCode)) return;
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.DisableTotpAsync(new DisableTotpRequest(_disableCode.Trim()));
+            var result = await MfaService.DisableTotpAsync(new DisableTotpRequest(_disableCode.Trim()));
             if (result.ResultCode == DisableTotpResultCode.Success)
             {
                 _totpEnabled = false;
@@ -447,7 +449,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.UnlinkGoogleAuthAsync();
+            var result = await GoogleAuthService.UnlinkGoogleAuthAsync();
             if (result.ResultCode == UnlinkGoogleAuthResultCode.Success)
             {
                 _hasGoogleAuth = false;

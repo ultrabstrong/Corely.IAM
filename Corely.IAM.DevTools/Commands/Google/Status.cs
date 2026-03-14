@@ -8,13 +8,16 @@ internal partial class Google : CommandBase
 {
     internal class Status : CommandBase
     {
-        private readonly IRetrievalService _retrievalService;
+        private readonly IGoogleAuthService _googleAuthService;
         private readonly IUserContextProvider _userContextProvider;
 
-        public Status(IRetrievalService retrievalService, IUserContextProvider userContextProvider)
+        public Status(
+            IGoogleAuthService googleAuthService,
+            IUserContextProvider userContextProvider
+        )
             : base("status", "Show authentication method status for the current user")
         {
-            _retrievalService = retrievalService.ThrowIfNull(nameof(retrievalService));
+            _googleAuthService = googleAuthService.ThrowIfNull(nameof(googleAuthService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
@@ -23,7 +26,7 @@ internal partial class Google : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            var result = await _retrievalService.GetAuthMethodsAsync();
+            var result = await _googleAuthService.GetAuthMethodsAsync();
 
             Info($"Has basic auth: {result.HasBasicAuth}");
             Info($"Has Google auth: {result.HasGoogleAuth}");

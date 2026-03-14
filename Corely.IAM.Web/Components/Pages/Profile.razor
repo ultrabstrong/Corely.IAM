@@ -5,6 +5,7 @@
 @inject IRegistrationService RegistrationService
 @inject IModificationService ModificationService
 @inject IDeregistrationService DeregistrationService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Profile - Corely IAM</PageTitle>
 
@@ -83,9 +84,11 @@ else
         @if (_totpSetupPhase)
         {
             <div class="alert alert-info">
-                <strong>Setup:</strong> Add this account to your authenticator app using the URI below or enter the secret manually.
-                <div class="mt-2" style="word-break: break-all;"><code>@_totpSetupUri</code></div>
-                <div class="mt-1"><small>Secret: <code>@_totpSecret</code></small></div>
+                <strong>Setup:</strong> Scan the QR code with your authenticator app, or enter the secret manually.
+                <div class="mt-2 d-flex justify-content-center">
+                    <div id="totp-qrcode"></div>
+                </div>
+                <div class="mt-2 text-center"><small>Secret: <code>@_totpSecret</code></small></div>
             </div>
             <div class="alert alert-warning">
                 <strong>Recovery Codes:</strong> Save these codes in a safe place. Each can only be used once.
@@ -215,12 +218,22 @@ else
     private bool _showDisableInput;
     private string[]? _regeneratedCodes;
     private int _totpRemainingCodes;
+    private bool _pendingQrRender;
 
     // Linked accounts state
     private bool _hasBasicAuth;
     private bool _hasGoogleAuth;
     private string? _googleEmail;
     private ConfirmModal _unlinkGoogleModal = null!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pendingQrRender && !string.IsNullOrWhiteSpace(_totpSetupUri))
+        {
+            _pendingQrRender = false;
+            await JSRuntime.InvokeVoidAsync("qrCodeInterop.generate", "totp-qrcode", _totpSetupUri, 200);
+        }
+    }
 
     protected override async Task LoadCoreAsync()
     {
@@ -352,6 +365,7 @@ else
                 _totpSetupUri = result.SetupUri;
                 _totpRecoveryCodes = result.RecoveryCodes ?? [];
                 _regeneratedCodes = null;
+                _pendingQrRender = true;
             }
             else
             {

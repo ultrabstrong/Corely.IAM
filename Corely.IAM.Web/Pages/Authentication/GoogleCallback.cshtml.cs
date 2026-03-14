@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Web.Pages.Authentication;
 
-public class SignInModel(
+public class GoogleCallbackModel(
     IAuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
     IAuthCookieManager authCookieManager,
@@ -18,45 +18,25 @@ public class SignInModel(
 {
     private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
 
-    public string? GoogleClientId { get; } = securityOptions.Value.GoogleClientId;
-
-    public string? GoogleCallbackUrl { get; set; }
-
-    [BindProperty]
-    public string Username { get; set; } = string.Empty;
-
-    [BindProperty]
-    public string Password { get; set; } = string.Empty;
-
     public string? ErrorMessage { get; set; }
 
     public IActionResult OnGet()
     {
-        if (HttpContext.Request.Cookies.ContainsKey(AuthenticationConstants.AUTH_TOKEN_COOKIE))
-        {
-            return Redirect(AppRoutes.Dashboard);
-        }
-
-        if (!string.IsNullOrWhiteSpace(GoogleClientId))
-        {
-            var request = HttpContext.Request;
-            GoogleCallbackUrl = $"{request.Scheme}://{request.Host}{AppRoutes.GoogleCallback}";
-        }
-
-        return Page();
+        return Redirect(AppRoutes.SignIn);
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+        var credential = Request.Form["credential"].ToString();
+        if (string.IsNullOrWhiteSpace(credential))
         {
-            ErrorMessage = "Username and password are required.";
+            ErrorMessage = "No credential received from Google.";
             return Page();
         }
 
         var deviceId = authCookieManager.GetOrCreateDeviceId(HttpContext);
-        var result = await authenticationService.SignInAsync(
-            new SignInRequest(Username, Password, deviceId)
+        var result = await authenticationService.SignInWithGoogleAsync(
+            new SignInWithGoogleRequest(credential, deviceId)
         );
 
         if (result.ResultCode == SignInResultCode.MfaRequiredChallenge)
@@ -67,7 +47,14 @@ public class SignInModel(
 
         if (result.ResultCode != SignInResultCode.Success)
         {
-            ErrorMessage = "Invalid username or password.";
+            ErrorMessage = result.ResultCode switch
+            {
+                SignInResultCode.InvalidGoogleTokenError =>
+                    "Google authentication failed. Please try again.",
+                SignInResultCode.GoogleAuthNotLinkedError =>
+                    "No account is linked to this Google account. Sign in with your username and password, then link your Google account from the Profile page.",
+                _ => $"Sign in failed: {result.ResultCode}",
+            };
             return Page();
         }
 
@@ -87,7 +74,6 @@ public class SignInModel(
 
         if (userContext.AvailableAccounts.Count == 1)
         {
-            // Auto-select the only account
             var switchResult = await authenticationService.SwitchAccountAsync(
                 new SwitchAccountRequest(userContext.AvailableAccounts[0].Id)
             );
@@ -104,11 +90,9 @@ public class SignInModel(
                 return Redirect(AppRoutes.Dashboard);
             }
 
-            // Auto-switch failed — fall through to account selection
             return Redirect(AppRoutes.SelectAccount);
         }
 
-        // Multiple accounts — let user choose
         return Redirect(AppRoutes.SelectAccount);
     }
 }

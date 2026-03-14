@@ -1,0 +1,14 @@
+@page "/google-callback"
+@model Corely.IAM.Web.Pages.Authentication.GoogleCallbackModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Google Sign-In";
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <div class="auth-card">
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+        <a href="@Corely.IAM.Web.AppRoutes.SignIn" class="btn btn-outline-primary w-100">Back to Sign In</a>
+    </div>
+}

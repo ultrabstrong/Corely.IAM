@@ -9,6 +9,7 @@ public static class AppRoutes
     public const string SelectAccount = "/select-account";
     public const string CreateAccount = "/create-account";
     public const string VerifyMfa = "/verify-mfa";
+    public const string GoogleCallback = "/google-callback";
 
     // Legal (Razor Pages)
     public const string Privacy = "/privacy";

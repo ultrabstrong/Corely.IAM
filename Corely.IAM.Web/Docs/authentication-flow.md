@@ -53,7 +53,18 @@ When `GoogleClientId` is configured in `SecurityOptions`, a "Sign in with Google
 4. `IAuthenticationService.SignInWithGoogleAsync()` validates the token and finds the linked user
 5. If TOTP is enabled: redirects to `/verify-mfa` (same as password flow)
 6. On success: cookies are set and the user proceeds to account selection/dashboard
-7. If no user is linked: error with instructions to link from Profile page
+7. If no user is linked: redirects to `/register-with-google` (see below)
+
+## Google Sign-Up Flow
+
+When a user signs in with Google but has no linked account, they are redirected to the registration prompt:
+
+1. `/google-callback` receives `GoogleAuthNotLinkedError` from `SignInWithGoogleAsync`
+2. Stores the Google ID token in `TempData` and redirects to `/register-with-google`
+3. User sees "No account found — create one?" confirmation page
+4. On confirm: `IRegistrationService.RegisterUserWithGoogleAsync()` creates the user (username auto-generated from email)
+5. Auto-signs in via `SignInWithGoogleAsync` → cookies set → dashboard
+6. The same Google button on `/register` follows the same flow via `/google-callback`
 
 ## Account Switching
 

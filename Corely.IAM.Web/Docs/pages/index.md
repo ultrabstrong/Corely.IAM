@@ -13,6 +13,7 @@ Corely.IAM.Web provides two types of pages: **Razor Pages** for pre-authenticati
 | `/signout` | SignOut | Razor Page | Sign out and clear cookies |
 | `/verify-mfa` | VerifyMfa | Razor Page | MFA code entry after sign-in |
 | `/google-callback` | GoogleCallback | Razor Page | Google Identity Services callback |
+| `/register-with-google` | RegisterWithGoogle | Razor Page | Google sign-up confirmation prompt |
 | `/privacy` | Privacy | Razor Page | Privacy policy |
 | `/terms` | Terms | Razor Page | Terms of service |
 | `/` | Dashboard | Blazor | Account overview |
@@ -42,6 +43,7 @@ public static class AppRoutes
     public const string CreateAccount = "/create-account";
     public const string VerifyMfa = "/verify-mfa";
     public const string GoogleCallback = "/google-callback";
+    public const string RegisterWithGoogle = "/register-with-google";
     public const string Dashboard = "/";
     public const string AcceptInvitation = "/accept-invitation";
     public const string Profile = "/profile";

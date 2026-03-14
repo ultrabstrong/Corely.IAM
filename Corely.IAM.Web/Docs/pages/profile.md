@@ -23,7 +23,14 @@ Self-service user profile page. No permission gates — any authenticated user c
 - **Disabled state** — shows "Enable Two-Factor Authentication" button
 - **Setup phase** — QR code (via JS interop with qrcodejs), secret display, recovery codes, confirmation input
 - **Enabled state** — status with remaining recovery codes count, regenerate button, disable with code confirmation
-- Uses `IRegistrationService` for enable/confirm/disable/regenerate and `IRetrievalService` for status
+- Uses `IMfaService` for enable/confirm/disable/regenerate/status
+
+### Password Section
+- **Has password + has Google** — "Password is set" with "Remove Password" button (confirmation toggle)
+- **Has password only** — "Password is set" with note to add another method first
+- **No password (Google only)** — "Set Password" form (new password + confirm)
+- Remove calls `IDeregistrationService.DeregisterBasicAuthAsync()`
+- Set calls `IRegistrationService.SetPasswordAsync()`
 
 ### Linked Accounts Section
 - Shows linked Google email when Google auth is active

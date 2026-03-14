@@ -285,6 +285,16 @@ Complete reference of all result code enums across Corely.IAM.
 | `UserExistsError` | Username derived from Google email already taken |
 | `ValidationError` | Input validation failed |
 
+### SetPasswordResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | Password set |
+| `BasicAuthExistsError` | User already has a password |
+| `PasswordValidationError` | Password doesn't meet requirements |
+| `ValidationError` | Input validation failed |
+| `UnauthorizedError` | Not authorized |
+
 ## BasicAuth Result Codes
 
 ### DeregisterBasicAuthResultCode

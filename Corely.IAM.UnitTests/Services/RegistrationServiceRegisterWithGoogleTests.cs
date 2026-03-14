@@ -118,6 +118,42 @@ public class RegistrationServiceRegisterWithGoogleTests
     }
 
     [Fact]
+    public async Task RegisterUserWithGoogleAsync_GeneratesUniqueUsername_WhenPrefixCollides()
+    {
+        var payload = new GoogleIdTokenPayload("google-sub-new", "testuser@gmail.com", true);
+        _googleIdTokenValidatorMock
+            .Setup(x => x.ValidateAsync(It.IsAny<string>()))
+            .ReturnsAsync(payload);
+
+        _googleAuthProcessorMock
+            .Setup(x => x.GetUserIdByGoogleSubjectAsync(payload.Subject))
+            .ReturnsAsync((Guid?)null);
+
+        var userId = Guid.CreateVersion7();
+        _userProcessorMock
+            .SetupSequence(p => p.CreateUserAsync(It.IsAny<CreateUserRequest>()))
+            .ReturnsAsync(
+                new CreateUserResult(CreateUserResultCode.UserExistsError, "exists", Guid.Empty)
+            )
+            .ReturnsAsync(new CreateUserResult(CreateUserResultCode.Success, "", userId));
+
+        _googleAuthProcessorMock
+            .Setup(x => x.LinkGoogleAuthAsync(userId, It.IsAny<string>()))
+            .ReturnsAsync(new LinkGoogleAuthResult(LinkGoogleAuthResultCode.Success, string.Empty));
+
+        var result = await _registrationService.RegisterUserWithGoogleAsync(
+            new RegisterUserWithGoogleRequest("valid-token")
+        );
+
+        Assert.Equal(RegisterUserWithGoogleResultCode.Success, result.ResultCode);
+        Assert.Equal(userId, result.CreatedUserId);
+        _userProcessorMock.Verify(
+            p => p.CreateUserAsync(It.IsAny<CreateUserRequest>()),
+            Times.AtLeast(2)
+        );
+    }
+
+    [Fact]
     public async Task RegisterUserWithGoogleAsync_ReturnsUserExistsError_WhenEmailAlreadyExists()
     {
         var payload = new GoogleIdTokenPayload("google-sub-new", "taken@gmail.com", true);

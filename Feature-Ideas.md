@@ -19,18 +19,6 @@ Examples of restrictions could be:
 
 - It may be best to implement different types of restrictions as different entities and aggregate them in the IAuthorizationProvider
 
-### OTP / 2FA Support
-- [ ] Add support for One-Time Passwords (OTP) or Two-Factor Authentication (2FA)
-- [ ] Implement OTP generation and validation
-- [ ] Integrate with existing authentication mechanisms
-
-### Log in with External Providers
-Allow log in with external providers like Google, Facebook, etc.
-- [ ] Implement OAuth2 / OpenID Connect support
-- [ ] Add configuration for external providers
-- [ ] Implement user linking and provisioning
-- [ ] Handle token validation and refresh
-
 ### Add ITelemetry
 Add an ITelemetry interface with HandleTelemetry(TelemetryEvent).
 The idea is for consumers of the library to be able to plug in their own telemetry/logging system.
@@ -43,3 +31,14 @@ When authorization passes and an action is performed, audit who did the action a
 ### Add support for managing other users
 An account owner has abilities to manage other user's access to the accounts, but not the actual users.
 It could be beneficial for an account owner to have access to create and manage users as well.
+
+### Signed Key Auth (Service Auth)
+Opt-in auth mechanism for service-to-service communication, following the same pattern as MFA and Google sign-in.
+Primarily useful when IAM is hosted behind an API and consumed by external services (e.g., function apps via a thin API client).
+
+- [ ] Add "enable service auth" flow on a user (like enabling MFA)
+- [ ] Generate an asymmetric key pair on opt-in; display the private key once, store only the public key
+- [ ] Add a new sign-in flow (e.g., `SignInWithSignedToken`) that accepts a client-signed JWT
+- [ ] Validate the client JWT signature against the stored public key, enforce short expiry and replay protection
+- [ ] Issue a standard IAM JWT on success — everything downstream (RBAC, authorization decorators) works unchanged
+- [ ] Support key rotation (disable + re-enable, or multiple active public keys with a grace period)

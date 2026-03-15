@@ -692,10 +692,37 @@ internal class RegistrationService(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         var context = _userContextProvider.GetUserContext();
-        var result = await _basicAuthProcessor.CreateBasicAuthAsync(
+        var createResult = await _basicAuthProcessor.CreateBasicAuthAsync(
             new(context!.User.Id, request.Password)
         );
-        return new SetPasswordResult((SetPasswordResultCode)(int)result.ResultCode, result.Message);
+
+        if (createResult.ResultCode != CreateBasicAuthResultCode.BasicAuthExistsError)
+        {
+            return new SetPasswordResult(
+                (SetPasswordResultCode)(int)createResult.ResultCode,
+                createResult.Message
+            );
+        }
+
+        var updateResult = await _basicAuthProcessor.UpdateBasicAuthAsync(
+            new(context.User.Id, request.Password)
+        );
+        return updateResult.ResultCode switch
+        {
+            UpdateBasicAuthResultCode.Success => new SetPasswordResult(
+                SetPasswordResultCode.Success,
+                updateResult.Message
+            ),
+            UpdateBasicAuthResultCode.PasswordValidationError => new SetPasswordResult(
+                SetPasswordResultCode.PasswordValidationError,
+                updateResult.Message
+            ),
+            UpdateBasicAuthResultCode.ValidationError => new SetPasswordResult(
+                SetPasswordResultCode.ValidationError,
+                updateResult.Message
+            ),
+            _ => new SetPasswordResult(SetPasswordResultCode.ValidationError, updateResult.Message),
+        };
     }
 
     private static string GenerateUsernameFromEmail(string email)

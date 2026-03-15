@@ -2,6 +2,12 @@
 
 <div class="section-divider mb-4 mt-4">
     <div class="section-divider-label">Linked Accounts</div>
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <div class="mt-2">
+            <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+        </div>
+    }
     @if (HasGoogleAuth)
     {
         <div class="props-grid mb-2">
@@ -16,12 +22,8 @@
     {
         <p class="text-muted mb-2">No Google account linked. Use the Google Sign-In flow to link an account.</p>
     }
-</div>
 
-@if (!string.IsNullOrWhiteSpace(_message))
-{
-    <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
-}
+</div>
 
 <ConfirmModal @ref="_unlinkModal"
               Title="Unlink Google Account"

@@ -10,6 +10,8 @@ JWT-based authentication with custom claims, device tracking, and multi-account 
 - **Device tracking** — tokens bound to device IDs for session management
 - **Login metrics** — failed attempt counting and lockout cooldown
 - **Bulk sign-out** — revoke all tokens for a user across all devices
+- **MFA (TOTP)** — optional second factor via authenticator apps (see [mfa.md](mfa.md))
+- **Google Sign-In** — alternative auth method via Google ID tokens (see [google-signin.md](google-signin.md))
 
 ## Sign-In Flow
 

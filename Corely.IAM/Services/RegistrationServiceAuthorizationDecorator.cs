@@ -1,6 +1,7 @@
 using Corely.Common.Extensions;
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
+using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
@@ -22,6 +23,10 @@ internal class RegistrationServiceAuthorizationDecorator(
 
     public Task<RegisterUserResult> RegisterUserAsync(RegisterUserRequest request) =>
         _inner.RegisterUserAsync(request);
+
+    public Task<RegisterUserWithGoogleResult> RegisterUserWithGoogleAsync(
+        RegisterUserWithGoogleRequest request
+    ) => _inner.RegisterUserWithGoogleAsync(request);
 
     public async Task<RegisterAccountResult> RegisterAccountAsync(RegisterAccountRequest request) =>
         _authorizationProvider.HasUserContext()
@@ -160,4 +165,9 @@ internal class RegistrationServiceAuthorizationDecorator(
                 "Unauthorized to list invitations",
                 null
             );
+
+    public async Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request) =>
+        _authorizationProvider.HasUserContext()
+            ? await _inner.SetPasswordAsync(request)
+            : new SetPasswordResult(SetPasswordResultCode.UnauthorizedError, "Unauthorized");
 }

@@ -235,6 +235,43 @@ namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
                     b.ToTable("UserRoles", (string)null);
                 });
 
+            modelBuilder.Entity("Corely.IAM.GoogleAuths.Entities.GoogleAuthEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TIMESTAMP")
+                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("varchar(254)");
+
+                    b.Property<string>("GoogleSubjectId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GoogleSubjectId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("GoogleAuths", (string)null);
+                });
+
             modelBuilder.Entity("Corely.IAM.Groups.Entities.GroupEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -322,6 +359,55 @@ namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
                     b.ToTable("Invitations", (string)null);
                 });
 
+            modelBuilder.Entity("Corely.IAM.MfaChallenges.Entities.MfaChallengeEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ChallengeToken")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<DateTime?>("CompletedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TIMESTAMP")
+                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("FailedAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChallengeToken")
+                        .IsUnique();
+
+                    b.HasIndex("ExpiresUtc");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MfaChallenges", (string)null);
+                });
+
             modelBuilder.Entity("Corely.IAM.Permissions.Entities.PermissionEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -407,6 +493,68 @@ namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
                         .IsUnique();
 
                     b.ToTable("Roles", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.TotpAuths.Entities.TotpAuthEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TIMESTAMP")
+                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+
+                    b.Property<string>("EncryptedSecret")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<bool>("IsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("TotpAuths", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.TotpAuths.Entities.TotpRecoveryCodeEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TIMESTAMP")
+                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+
+                    b.Property<Guid>("TotpAuthId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("UsedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TotpAuthId");
+
+                    b.ToTable("TotpRecoveryCodes", (string)null);
                 });
 
             modelBuilder.Entity("Corely.IAM.Users.Entities.UserAsymmetricKeyEntity", b =>
@@ -686,6 +834,17 @@ namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Corely.IAM.GoogleAuths.Entities.GoogleAuthEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
+                        .WithOne("GoogleAuth")
+                        .HasForeignKey("Corely.IAM.GoogleAuths.Entities.GoogleAuthEntity", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Corely.IAM.Groups.Entities.GroupEntity", b =>
                 {
                     b.HasOne("Corely.IAM.Accounts.Entities.AccountEntity", "Account")
@@ -708,6 +867,17 @@ namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("Corely.IAM.MfaChallenges.Entities.MfaChallengeEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Corely.IAM.Permissions.Entities.PermissionEntity", b =>
                 {
                     b.HasOne("Corely.IAM.Accounts.Entities.AccountEntity", "Account")
@@ -728,6 +898,28 @@ namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
                         .IsRequired();
 
                     b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("Corely.IAM.TotpAuths.Entities.TotpAuthEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
+                        .WithOne("TotpAuth")
+                        .HasForeignKey("Corely.IAM.TotpAuths.Entities.TotpAuthEntity", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Corely.IAM.TotpAuths.Entities.TotpRecoveryCodeEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.TotpAuths.Entities.TotpAuthEntity", "TotpAuth")
+                        .WithMany("RecoveryCodes")
+                        .HasForeignKey("TotpAuthId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TotpAuth");
                 });
 
             modelBuilder.Entity("Corely.IAM.Users.Entities.UserAsymmetricKeyEntity", b =>
@@ -774,6 +966,11 @@ namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
                     b.Navigation("SymmetricKeys");
                 });
 
+            modelBuilder.Entity("Corely.IAM.TotpAuths.Entities.TotpAuthEntity", b =>
+                {
+                    b.Navigation("RecoveryCodes");
+                });
+
             modelBuilder.Entity("Corely.IAM.Users.Entities.UserEntity", b =>
                 {
                     b.Navigation("AsymmetricKeys");
@@ -782,7 +979,11 @@ namespace Corely.IAM.DataAccessMigrations.MariaDb.Migrations
 
                     b.Navigation("BasicAuth");
 
+                    b.Navigation("GoogleAuth");
+
                     b.Navigation("SymmetricKeys");
+
+                    b.Navigation("TotpAuth");
                 });
 #pragma warning restore 612, 618
         }

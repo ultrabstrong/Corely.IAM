@@ -38,4 +38,12 @@ internal class BasicAuthProcessorTelemetryDecorator(
             () => _inner.VerifyBasicAuthAsync(request),
             logResult: true
         );
+
+    public async Task<DeleteBasicAuthResult> DeleteBasicAuthAsync(Guid userId) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(BasicAuthProcessor),
+            new { userId },
+            () => _inner.DeleteBasicAuthAsync(userId),
+            logResult: true
+        );
 }

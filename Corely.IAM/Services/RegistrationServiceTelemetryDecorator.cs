@@ -2,6 +2,7 @@ using Corely.Common.Extensions;
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Extensions;
+using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
 using Microsoft.Extensions.Logging;
@@ -23,6 +24,16 @@ internal class RegistrationServiceTelemetryDecorator(
             nameof(RegistrationService),
             request,
             () => _inner.RegisterUserAsync(request),
+            logResult: true
+        );
+
+    public async Task<RegisterUserWithGoogleResult> RegisterUserWithGoogleAsync(
+        RegisterUserWithGoogleRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            request,
+            () => _inner.RegisterUserWithGoogleAsync(request),
             logResult: true
         );
 
@@ -145,6 +156,14 @@ internal class RegistrationServiceTelemetryDecorator(
             nameof(RegistrationService),
             request,
             () => _inner.ListInvitationsAsync(request),
+            logResult: true
+        );
+
+    public async Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            request,
+            () => _inner.SetPasswordAsync(request),
             logResult: true
         );
 }

@@ -4,6 +4,8 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.GoogleAuths.Processors;
+using Corely.IAM.GoogleAuths.Providers;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Invitations.Processors;
@@ -92,6 +94,8 @@ public class RegistrationServiceTests
             _accountProcessorMock.Object,
             _userProcessorMock.Object,
             _basicAuthProcessorMock.Object,
+            new Mock<IGoogleAuthProcessor>().Object,
+            new Mock<IGoogleIdTokenValidator>().Object,
             _groupProcessorMock.Object,
             _roleProcessorMock.Object,
             _permissionProcessorMock.Object,

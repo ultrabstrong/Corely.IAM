@@ -122,7 +122,25 @@ var accountResult = await registration.RegisterAccountAsync(
     new RegisterAccountRequest("Acme Corp"));
 ```
 
-## 9) Where to Next?
+## 9) (Optional) Configure Google Sign-In
+
+To enable Google Sign-In, set the `GoogleClientId` in `appsettings.json`:
+
+```json
+{
+  "SecurityOptions": {
+    "GoogleClientId": "your-client-id.apps.googleusercontent.com"
+  }
+}
+```
+
+Obtain a client ID from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials). Add your app's domain to the authorized origins and redirect URIs.
+
+When `GoogleClientId` is not set, Google Sign-In is disabled — all Google-related service calls return an error.
+
+See [Google Sign-In](google-signin.md) for full setup details.
+
+## 10) Where to Next?
 
 - [IAMOptions Configuration](iam-options.md) — full builder API reference
 - [Authentication](authentication.md) — sign-in, tokens, account switching

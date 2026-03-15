@@ -1,0 +1,28 @@
+@page "/verify-mfa"
+@model Corely.IAM.Web.Pages.Authentication.VerifyMfaModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Two-Factor Authentication";
+}
+
+<div class="auth-card">
+    <h4 class="mb-3">Two-Factor Authentication</h4>
+    <p class="text-muted mb-3">Enter the code from your authenticator app, or use a recovery code.</p>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="MfaChallengeToken" value="@Model.MfaChallengeToken" />
+        <div class="mb-3">
+            <label for="code" class="form-label">Code</label>
+            <input type="text" class="form-control" id="code" name="Code"
+                   inputmode="numeric" autocomplete="one-time-code"
+                   placeholder="123456 or XXXX-XXXX" required autofocus />
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Verify</button>
+    </form>
+</div>

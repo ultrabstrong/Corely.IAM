@@ -42,4 +42,30 @@
         </div>
         <button type="submit" class="btn btn-primary w-100">Sign Up</button>
     </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.GoogleClientId))
+    {
+        <hr class="my-3" />
+        <div id="g_id_onload"
+             data-client_id="@Model.GoogleClientId"
+             data-login_uri="@Model.GoogleCallbackUrl"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin d-flex justify-content-center"
+             data-type="standard"
+             data-size="large"
+             data-theme="outline"
+             data-text="signup_with"
+             data-shape="rectangular"
+             data-logo_alignment="left"
+             data-width="400">
+        </div>
+    }
 </div>
+
+@section Scripts {
+    @if (!string.IsNullOrWhiteSpace(Model.GoogleClientId))
+    {
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+    }
+}

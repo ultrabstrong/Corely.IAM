@@ -10,6 +10,8 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Services;
+using Corely.IAM.TotpAuths.Models;
+using Corely.IAM.TotpAuths.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Configuration;
@@ -74,6 +76,8 @@ internal class Program
             var authenticationService = host.Services.GetRequiredService<IAuthenticationService>();
             var retrievalService = host.Services.GetRequiredService<IRetrievalService>();
             var modificationService = host.Services.GetRequiredService<IModificationService>();
+            var mfaService = host.Services.GetRequiredService<IMfaService>();
+            var googleAuthService = host.Services.GetRequiredService<IGoogleAuthService>();
 
             // ========= REGISTER USER 1 ==========
             var registerUserResult = await registrationService.RegisterUserAsync(
@@ -459,6 +463,88 @@ internal class Program
             Console.WriteLine(
                 $"List Invitations (final): {JsonSerializer.Serialize(listInvitationsResult)}"
             );
+
+            // ========= MFA (TOTP) DEMO ==========
+
+            // Enable TOTP for user1
+            var enableTotpResult = await mfaService.EnableTotpAsync();
+            Console.WriteLine(
+                $"Enable TOTP: ResultCode={enableTotpResult.ResultCode}, Secret={enableTotpResult.Secret}"
+            );
+            Console.WriteLine($"  Setup URI: {enableTotpResult.SetupUri}");
+            if (enableTotpResult.RecoveryCodes != null)
+            {
+                Console.WriteLine(
+                    $"  Recovery codes: {string.Join(", ", enableTotpResult.RecoveryCodes)}"
+                );
+            }
+
+            // Confirm TOTP with a generated code
+            var totpProvider = host.Services.GetRequiredService<ITotpProvider>();
+            var totpCode = totpProvider.GenerateCode(enableTotpResult.Secret!);
+            var confirmTotpResult = await mfaService.ConfirmTotpAsync(
+                new ConfirmTotpRequest(totpCode)
+            );
+            Console.WriteLine($"Confirm TOTP: {confirmTotpResult.ResultCode}");
+
+            // Check TOTP status
+            var totpStatus = await mfaService.GetTotpStatusAsync();
+            Console.WriteLine(
+                $"TOTP Status: Enabled={totpStatus.IsEnabled}, RemainingCodes={totpStatus.RemainingRecoveryCodes}"
+            );
+
+            // Sign in — now requires MFA
+            var mfaSignInResult = await authenticationService.SignInAsync(
+                new SignInRequest("user1", "admin", TEST_DEVICE_ID)
+            );
+            Console.WriteLine(
+                $"Sign in with MFA: ResultCode={mfaSignInResult.ResultCode}, HasChallenge={mfaSignInResult.MfaChallengeToken != null}"
+            );
+
+            // Verify MFA with a TOTP code
+            var mfaCode = totpProvider.GenerateCode(enableTotpResult.Secret!);
+            var verifyMfaResult = await authenticationService.VerifyMfaAsync(
+                new VerifyMfaRequest(mfaSignInResult.MfaChallengeToken!, mfaCode)
+            );
+            Console.WriteLine(
+                $"Verify MFA: ResultCode={verifyMfaResult.ResultCode}, HasToken={verifyMfaResult.AuthToken != null}"
+            );
+
+            // Switch back to the account context
+            switchAccountResult = await authenticationService.SwitchAccountAsync(
+                new SwitchAccountRequest(registerAccountResult.CreatedAccountId)
+            );
+
+            // Regenerate recovery codes
+            var regenResult = await mfaService.RegenerateTotpRecoveryCodesAsync();
+            Console.WriteLine($"Regenerate codes: {regenResult.ResultCode}");
+            if (regenResult.RecoveryCodes != null)
+            {
+                Console.WriteLine($"  New codes: {string.Join(", ", regenResult.RecoveryCodes)}");
+            }
+
+            // Disable TOTP
+            var disableCode = totpProvider.GenerateCode(enableTotpResult.Secret!);
+            var disableTotpResult = await mfaService.DisableTotpAsync(
+                new DisableTotpRequest(disableCode)
+            );
+            Console.WriteLine($"Disable TOTP: {disableTotpResult.ResultCode}");
+
+            // ========= AUTH METHOD MANAGEMENT ==========
+
+            // Check auth methods (user1 has basic auth only — no Google in ConsoleTest)
+            var authMethods = await googleAuthService.GetAuthMethodsAsync();
+            Console.WriteLine(
+                $"Auth methods: HasBasicAuth={authMethods.HasBasicAuth}, HasGoogleAuth={authMethods.HasGoogleAuth}"
+            );
+
+            // Try to remove basic auth — should fail (last auth method)
+            var deregisterBasicAuthResult = await deregistrationService.DeregisterBasicAuthAsync();
+            Console.WriteLine(
+                $"Deregister basic auth (last method): {deregisterBasicAuthResult.ResultCode}"
+            );
+            // Note: RegisterUserWithGoogleAsync and full Google flows require a real Google
+            // OIDC endpoint and are not demoed here. See DevTools commands for token-based testing.
 
             // ========= DEREGISTERING ==========
             // Deregister roles from group example

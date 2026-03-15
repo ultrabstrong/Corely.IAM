@@ -17,7 +17,9 @@ All commands support `--help` for full argument and option details.
 | `url` | URL encode/decode |
 | `config` | Local settings file management (provider, connection string, system key) |
 | `provider` | Database provider selection |
-| `auth` | Authentication — sign in, sign out, switch accounts |
+| `auth` | Authentication — sign in, sign out, switch accounts, MFA, Google |
+| `totp` | TOTP operations — enable, confirm, disable, status, code generation |
+| `google` | Google auth — link, unlink, status |
 | `register` | Entity registration — users, accounts, groups, roles, permissions |
 | `retrieval` | Entity retrieval — list/get with pagination, hydration, key providers |
 | `deregister` | Entity deregistration — remove entities and relationships |
@@ -175,6 +177,54 @@ dotnet run -- auth signout
 
 # Sign out all sessions
 dotnet run -- auth signout-all
+
+# Sign in with Google ID token
+dotnet run -- auth signin-google "google-id-token.txt"
+
+# Complete MFA verification
+dotnet run -- auth verify-mfa "challenge-token" "123456"
+```
+
+### TOTP (Multi-Factor Authentication)
+
+Manage TOTP-based multi-factor authentication. Most commands require an authenticated session.
+
+```bash
+# Enable TOTP — outputs secret, setup URI, and recovery codes
+dotnet run -- totp enable
+
+# Confirm TOTP setup with a code from your authenticator app
+dotnet run -- totp confirm "123456"
+
+# Check TOTP status
+dotnet run -- totp status
+
+# Regenerate recovery codes
+dotnet run -- totp regenerate-codes
+
+# Disable TOTP (requires a valid code)
+dotnet run -- totp disable "123456"
+
+# Standalone: generate a TOTP code from a secret (no auth needed)
+dotnet run -- totp generate-code "JBSWY3DPEHPK3PXP"
+
+# Standalone: validate a TOTP code against a secret (no auth needed)
+dotnet run -- totp validate-code "JBSWY3DPEHPK3PXP" "123456"
+```
+
+### Google Authentication
+
+Manage Google account linking. Requires an authenticated session.
+
+```bash
+# Link a Google account (reads ID token from file)
+dotnet run -- google link "google-id-token.txt"
+
+# Check linked Google account status
+dotnet run -- google status
+
+# Unlink Google account
+dotnet run -- google unlink
 ```
 
 ### Registration
@@ -197,6 +247,7 @@ dotnet run -- register user "create-user-request.json"
 | `role` | Register a role in the current account |
 | `permission` | Register a permission in the current account |
 | `permissions-with-role` | Register permissions and assign to a role |
+| `user-with-google` | Register a new user from a Google ID token |
 | `user-with-account` | Register a user and create their account |
 | `users-with-group` | Register users into a group |
 | `roles-with-user` | Assign roles to a user |
@@ -260,6 +311,7 @@ dotnet run -- deregister user-from-account "request.json"
 | `permissions-from-role` | Remove permissions from a role |
 | `roles-from-user` | Unassign roles from a user |
 | `roles-from-group` | Unassign roles from a group |
+| `basic-auth` | Remove password authentication |
 
 ### Modification
 

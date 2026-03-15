@@ -1,0 +1,230 @@
+@inject IMfaService MfaService
+@inject IJSRuntime JSRuntime
+
+<div class="section-divider mb-4 mt-4">
+    <div class="section-divider-label">Two-Factor Authentication</div>
+    @if (_setupPhase)
+    {
+        <div class="alert alert-info">
+            <strong>Setup:</strong> Scan the QR code with your authenticator app, or enter the secret manually.
+            <div class="mt-2 d-flex justify-content-center">
+                <div id="totp-qrcode"></div>
+            </div>
+            <div class="mt-2 text-center"><small>Secret: <code>@_secret</code></small></div>
+        </div>
+        <div class="alert alert-warning">
+            <strong>Recovery Codes:</strong> Save these codes in a safe place. Each can only be used once.
+            <div class="mt-2" style="font-family: monospace;">
+                @foreach (var rc in _recoveryCodes)
+                {
+                    <div>@rc</div>
+                }
+            </div>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <input type="text" class="form-control form-control-sm" style="max-width: 200px;"
+                   @bind="_confirmCode" placeholder="Enter code to confirm" />
+            <button class="btn btn-primary btn-sm" @onclick="ConfirmAsync" disabled="@_busy">Confirm</button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="CancelSetup">Cancel</button>
+        </div>
+    }
+    else if (_enabled)
+    {
+        <p class="text-success mb-2"><i class="bi bi-shield-check me-1"></i>Enabled (@_remainingCodes remaining recovery codes)</p>
+        @if (_regeneratedCodes != null)
+        {
+            <div class="alert alert-warning">
+                <strong>New Recovery Codes:</strong> Save these codes now. They won't be shown again.
+                <div class="mt-2" style="font-family: monospace;">
+                    @foreach (var rc in _regeneratedCodes)
+                    {
+                        <div>@rc</div>
+                    }
+                </div>
+            </div>
+        }
+        @if (_showDisableInput)
+        {
+            <div class="d-flex gap-2 align-items-center mb-2">
+                <input type="text" class="form-control form-control-sm" style="max-width: 200px;"
+                       @bind="_disableCode" placeholder="Enter current TOTP code" />
+                <button class="btn btn-danger btn-sm" @onclick="DisableAsync" disabled="@_busy">Confirm Disable</button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="() => _showDisableInput = false">Cancel</button>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-warning btn-sm" @onclick="RegenerateAsync" disabled="@_busy">
+                    Regenerate Recovery Codes
+                </button>
+                <button class="btn btn-outline-danger btn-sm" @onclick="() => _showDisableInput = true" disabled="@_busy">
+                    Disable
+                </button>
+            </div>
+        }
+    }
+    else
+    {
+        <p class="text-muted mb-2">Protect your account with TOTP-based two-factor authentication.</p>
+        <button class="btn btn-outline-primary btn-sm" @onclick="EnableAsync" disabled="@_busy">
+            Enable Two-Factor Authentication
+        </button>
+    }
+</div>
+
+@if (!string.IsNullOrWhiteSpace(_message))
+{
+    <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+}
+
+@code {
+    [Parameter]
+    public EventCallback OnStatusChanged { get; set; }
+
+    private bool _enabled;
+    private bool _setupPhase;
+    private string? _secret;
+    private string? _setupUri;
+    private string[] _recoveryCodes = [];
+    private string _confirmCode = "";
+    private string _disableCode = "";
+    private bool _showDisableInput;
+    private string[]? _regeneratedCodes;
+    private int _remainingCodes;
+    private bool _pendingQrRender;
+    private bool _busy;
+    private string? _message;
+    private AlertType _messageType;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStatusAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pendingQrRender && !string.IsNullOrWhiteSpace(_setupUri))
+        {
+            _pendingQrRender = false;
+            await JSRuntime.InvokeVoidAsync("qrCodeInterop.generate", "totp-qrcode", _setupUri, 200);
+        }
+    }
+
+    private async Task LoadStatusAsync()
+    {
+        var status = await MfaService.GetTotpStatusAsync();
+        if (status.ResultCode == TotpStatusResultCode.Success)
+        {
+            _enabled = status.IsEnabled;
+            _remainingCodes = status.RemainingRecoveryCodes;
+        }
+    }
+
+    private async Task EnableAsync()
+    {
+        await RunSafeAsync(async () =>
+        {
+            var result = await MfaService.EnableTotpAsync();
+            if (result.ResultCode == EnableTotpResultCode.Success)
+            {
+                _setupPhase = true;
+                _secret = result.Secret;
+                _setupUri = result.SetupUri;
+                _recoveryCodes = result.RecoveryCodes ?? [];
+                _regeneratedCodes = null;
+                _pendingQrRender = true;
+            }
+            else
+            {
+                SetMessage(false, result.Message);
+            }
+        });
+    }
+
+    private async Task ConfirmAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_confirmCode)) return;
+        await RunSafeAsync(async () =>
+        {
+            var result = await MfaService.ConfirmTotpAsync(new ConfirmTotpRequest(_confirmCode.Trim()));
+            if (result.ResultCode == ConfirmTotpResultCode.Success)
+            {
+                _setupPhase = false;
+                _enabled = true;
+                _confirmCode = "";
+                await LoadStatusAsync();
+                SetMessage(true, "Two-factor authentication enabled.");
+                await OnStatusChanged.InvokeAsync();
+            }
+            else
+            {
+                SetMessage(false, result.Message);
+            }
+        });
+    }
+
+    private void CancelSetup()
+    {
+        _setupPhase = false;
+        _secret = null;
+        _setupUri = null;
+        _recoveryCodes = [];
+        _confirmCode = "";
+    }
+
+    private async Task RegenerateAsync()
+    {
+        await RunSafeAsync(async () =>
+        {
+            var result = await MfaService.RegenerateTotpRecoveryCodesAsync();
+            if (result.ResultCode == RegenerateTotpRecoveryCodesResultCode.Success)
+            {
+                _regeneratedCodes = result.RecoveryCodes;
+                await LoadStatusAsync();
+                SetMessage(true, "Recovery codes regenerated. Save them now.");
+            }
+            else
+            {
+                SetMessage(false, result.Message);
+            }
+        });
+    }
+
+    private async Task DisableAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_disableCode)) return;
+        await RunSafeAsync(async () =>
+        {
+            var result = await MfaService.DisableTotpAsync(new DisableTotpRequest(_disableCode.Trim()));
+            if (result.ResultCode == DisableTotpResultCode.Success)
+            {
+                _enabled = false;
+                _showDisableInput = false;
+                _disableCode = "";
+                _regeneratedCodes = null;
+                SetMessage(true, "Two-factor authentication disabled.");
+                await OnStatusChanged.InvokeAsync();
+            }
+            else
+            {
+                SetMessage(false, result.Message);
+            }
+        });
+    }
+
+    private async Task RunSafeAsync(Func<Task> action)
+    {
+        if (_busy) return;
+        _busy = true;
+        try { await action(); }
+        catch { SetMessage(false, "An unexpected error occurred."); }
+        finally { _busy = false; }
+    }
+
+    private void SetMessage(bool success, string text)
+    {
+        _message = text;
+        _messageType = success ? AlertType.Success : AlertType.Danger;
+    }
+}

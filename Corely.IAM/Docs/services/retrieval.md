@@ -19,6 +19,8 @@ Queries entities with filtering, ordering, and pagination. Also retrieves encryp
 | `ListAccountsAsync` | `ListAccountsRequest` | `RetrieveListResult<Account>` |
 | `GetAccountAsync` | `Guid accountId, bool hydrate` | `RetrieveSingleResult<Account>` |
 
+> **Note:** `GetTotpStatusAsync` and `GetAuthMethodsAsync` have been moved to dedicated services. See [MFA](../mfa.md) (`IMfaService`) and [Google Sign-In](../google-signin.md) (`IGoogleAuthService`).
+
 ### Key Providers
 
 | Method | Returns |

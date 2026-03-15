@@ -1,0 +1,26 @@
+@page "/register-with-google"
+@model Corely.IAM.Web.Pages.Authentication.RegisterWithGoogleModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Create Account";
+}
+
+<div class="auth-card">
+    <h5 class="mb-3">Create Account with Google</h5>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <p class="text-muted">No account found for your Google account. Would you like to create one?</p>
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-primary w-100">Create Account & Sign In</button>
+    </form>
+
+    <div class="mt-3 text-center">
+        <a href="@Corely.IAM.Web.AppRoutes.SignIn">Back to Sign In</a>
+    </div>
+</div>

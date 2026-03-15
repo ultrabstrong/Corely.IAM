@@ -7,4 +7,6 @@ public enum ModifyResultCode
     UnauthorizedError,
     SystemDefinedError,
     ValidationError,
+    UsernameExistsError,
+    EmailExistsError,
 }

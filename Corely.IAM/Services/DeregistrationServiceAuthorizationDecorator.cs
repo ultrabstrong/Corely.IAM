@@ -136,4 +136,14 @@ internal class DeregistrationServiceAuthorizationDecorator(
                     []
                 )
             );
+
+    public Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync() =>
+        _authorizationProvider.HasUserContext()
+            ? _inner.DeregisterBasicAuthAsync()
+            : Task.FromResult(
+                new DeregisterBasicAuthResult(
+                    DeregisterBasicAuthResultCode.UnauthorizedError,
+                    "Unauthorized"
+                )
+            );
 }

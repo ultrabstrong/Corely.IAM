@@ -1,0 +1,73 @@
+@inject IGoogleAuthService GoogleAuthService
+
+<div class="section-divider mb-4 mt-4">
+    <div class="section-divider-label">Linked Accounts</div>
+    @if (HasGoogleAuth)
+    {
+        <div class="props-grid mb-2">
+            <span class="prop-label">Google</span>
+            <span class="prop-value">@GoogleEmail <i class="bi bi-check-circle text-success"></i></span>
+        </div>
+        <button class="btn btn-outline-danger btn-sm" @onclick="() => _unlinkModal.Show()" disabled="@_busy">
+            Unlink Google Account
+        </button>
+    }
+    else
+    {
+        <p class="text-muted mb-2">No Google account linked. Use the Google Sign-In flow to link an account.</p>
+    }
+</div>
+
+@if (!string.IsNullOrWhiteSpace(_message))
+{
+    <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+}
+
+<ConfirmModal @ref="_unlinkModal"
+              Title="Unlink Google Account"
+              Message="Remove your linked Google account? You will no longer be able to sign in with Google."
+              ConfirmText="Unlink"
+              OnConfirm="UnlinkAsync" />
+
+@code {
+    [Parameter]
+    public bool HasGoogleAuth { get; set; }
+
+    [Parameter]
+    public string? GoogleEmail { get; set; }
+
+    [Parameter]
+    public EventCallback OnStatusChanged { get; set; }
+
+    private ConfirmModal _unlinkModal = null!;
+    private bool _busy;
+    private string? _message;
+    private AlertType _messageType;
+
+    private async Task UnlinkAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var result = await GoogleAuthService.UnlinkGoogleAuthAsync();
+            if (result.ResultCode == UnlinkGoogleAuthResultCode.Success)
+            {
+                SetMessage(true, "Google account unlinked.");
+                await OnStatusChanged.InvokeAsync();
+            }
+            else
+            {
+                SetMessage(false, result.Message);
+            }
+        }
+        catch { SetMessage(false, "An unexpected error occurred."); }
+        finally { _busy = false; }
+    }
+
+    private void SetMessage(bool success, string text)
+    {
+        _message = text;
+        _messageType = success ? AlertType.Success : AlertType.Danger;
+    }
+}

@@ -1,4 +1,5 @@
-﻿using Corely.IAM.Invitations.Models;
+﻿using Corely.IAM.GoogleAuths.Models;
+using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
 
 namespace Corely.IAM.Services;
@@ -6,6 +7,9 @@ namespace Corely.IAM.Services;
 public interface IRegistrationService
 {
     Task<RegisterUserResult> RegisterUserAsync(RegisterUserRequest request);
+    Task<RegisterUserWithGoogleResult> RegisterUserWithGoogleAsync(
+        RegisterUserWithGoogleRequest request
+    );
     Task<RegisterAccountResult> RegisterAccountAsync(RegisterAccountRequest request);
     Task<RegisterGroupResult> RegisterGroupAsync(RegisterGroupRequest request);
     Task<RegisterRoleResult> RegisterRoleAsync(RegisterRoleRequest request);
@@ -29,4 +33,5 @@ public interface IRegistrationService
     Task<AcceptInvitationResult> AcceptInvitationAsync(AcceptInvitationRequest request);
     Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId);
     Task<RetrieveListResult<Invitation>> ListInvitationsAsync(ListInvitationsRequest request);
+    Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request);
 }

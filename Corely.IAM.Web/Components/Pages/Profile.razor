@@ -4,6 +4,7 @@
 @inject IRetrievalService RetrievalService
 @inject IModificationService ModificationService
 @inject IDeregistrationService DeregistrationService
+@inject IGoogleAuthService GoogleAuthService
 
 <PageTitle>Profile - Corely IAM</PageTitle>
 
@@ -77,6 +78,10 @@ else
         </div>
     }
 
+    <TotpSection OnStatusChanged="ReloadAuthMethodsAsync" />
+    <PasswordSection HasBasicAuth="_hasBasicAuth" HasGoogleAuth="_hasGoogleAuth" OnStatusChanged="ReloadAuthMethodsAsync" />
+    <LinkedAccountsSection HasGoogleAuth="_hasGoogleAuth" GoogleEmail="@_googleEmail" OnStatusChanged="ReloadAuthMethodsAsync" />
+
     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider" />
 }
 
@@ -110,6 +115,11 @@ else
     private IIamAsymmetricEncryptionProvider? _asymProvider;
     private IIamAsymmetricSignatureProvider? _sigProvider;
 
+    // Auth method state (passed to child components)
+    private bool _hasBasicAuth;
+    private bool _hasGoogleAuth;
+    private string? _googleEmail;
+
     protected override async Task LoadCoreAsync()
     {
         var result = await RetrievalService.GetUserAsync(UserContext!.User!.Id, hydrate: false);
@@ -125,6 +135,7 @@ else
         }
 
         await LoadKeyProvidersAsync();
+        await LoadAuthMethodsAsync();
     }
 
     private async Task LoadKeyProvidersAsync()
@@ -140,6 +151,23 @@ else
         var sigResult = await RetrievalService.GetUserAsymmetricSignatureProviderAsync();
         if (sigResult.ResultCode == RetrieveResultCode.Success)
             _sigProvider = sigResult.Item;
+    }
+
+    private async Task LoadAuthMethodsAsync()
+    {
+        var methods = await GoogleAuthService.GetAuthMethodsAsync();
+        if (methods.ResultCode == AuthMethodsResultCode.Success)
+        {
+            _hasBasicAuth = methods.HasBasicAuth;
+            _hasGoogleAuth = methods.HasGoogleAuth;
+            _googleEmail = methods.GoogleEmail;
+        }
+    }
+
+    private async Task ReloadAuthMethodsAsync()
+    {
+        await LoadAuthMethodsAsync();
+        StateHasChanged();
     }
 
     private void StartEdit()

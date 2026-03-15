@@ -11,6 +11,8 @@ Pre-authentication pages are Razor Pages (server-rendered, no Blazor dependency)
 | `/select-account` | SelectAccount | Account selection with search and pagination |
 | `/create-account` | CreateAccount | New account form |
 | `/signout` | SignOut | Sign out and clear cookies |
+| `/verify-mfa` | VerifyMfa | MFA code entry after sign-in |
+| `/google-callback` | GoogleCallback | Google Identity Services callback |
 
 ## Sign-In Flow
 
@@ -28,6 +30,41 @@ Pre-authentication pages are Razor Pages (server-rendered, no Blazor dependency)
 3. On success: auto sign-in via `IAuthenticationService.SignInAsync()`
 4. Redirect to dashboard
 5. If auto sign-in fails: redirect to `/signin`
+
+## MFA Verification Flow
+
+When TOTP is enabled for a user, sign-in (both password and Google) returns `MfaRequiredChallenge` instead of a JWT:
+
+1. Sign-in succeeds at credential level, but `SignInResult.ResultCode == MfaRequiredChallenge`
+2. The MFA challenge token is stored in `TempData` and the user is redirected to `/verify-mfa`
+3. User enters a 6-digit TOTP code or a recovery code (`XXXX-XXXX` format)
+4. `IAuthenticationService.VerifyMfaAsync()` validates the code
+5. On success: cookies are set and the user proceeds to account selection/dashboard
+6. On expired challenge: redirect back to `/signin`
+7. On invalid code: error message displayed, user can retry
+
+## Google Sign-In Flow
+
+When `GoogleClientId` is configured in `SecurityOptions`, a "Sign in with Google" button appears on the sign-in page:
+
+1. Google Identity Services library loaded on `/signin`
+2. User clicks the Google button and authenticates with Google
+3. Google POSTs the ID token to `/google-callback`
+4. `IAuthenticationService.SignInWithGoogleAsync()` validates the token and finds the linked user
+5. If TOTP is enabled: redirects to `/verify-mfa` (same as password flow)
+6. On success: cookies are set and the user proceeds to account selection/dashboard
+7. If no user is linked: redirects to `/register-with-google` (see below)
+
+## Google Sign-Up Flow
+
+When a user signs in with Google but has no linked account, they are redirected to the registration prompt:
+
+1. `/google-callback` receives `GoogleAuthNotLinkedError` from `SignInWithGoogleAsync`
+2. Stores the Google ID token in `TempData` and redirects to `/register-with-google`
+3. User sees "No account found — create one?" confirmation page
+4. On confirm: `IRegistrationService.RegisterUserWithGoogleAsync()` creates the user (username auto-generated from email)
+5. Auto-signs in via `SignInWithGoogleAsync` → cookies set → dashboard
+6. The same Google button on `/register` follows the same flow via `/google-callback`
 
 ## Account Switching
 

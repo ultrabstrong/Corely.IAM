@@ -7,4 +7,5 @@ internal interface IBasicAuthProcessor
     Task<CreateBasicAuthResult> CreateBasicAuthAsync(CreateBasicAuthRequest request);
     Task<UpdateBasicAuthResult> UpdateBasicAuthAsync(UpdateBasicAuthRequest request);
     Task<VerifyBasicAuthResult> VerifyBasicAuthAsync(VerifyBasicAuthRequest request);
+    Task<DeleteBasicAuthResult> DeleteBasicAuthAsync(Guid userId);
 }

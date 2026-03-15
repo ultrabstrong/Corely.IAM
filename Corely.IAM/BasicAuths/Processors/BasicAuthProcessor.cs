@@ -3,6 +3,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Mappers;
 using Corely.IAM.BasicAuths.Models;
+using Corely.IAM.GoogleAuths.Entities;
 using Corely.IAM.Validators;
 using Corely.Security.Hashing.Factories;
 using Corely.Security.PasswordValidation.Providers;
@@ -12,6 +13,7 @@ namespace Corely.IAM.BasicAuths.Processors;
 
 internal class BasicAuthProcessor(
     IRepo<BasicAuthEntity> basicAuthRepo,
+    IReadonlyRepo<GoogleAuthEntity> googleAuthRepo,
     IPasswordValidationProvider passwordValidationProvider,
     IHashProviderFactory hashProviderFactory,
     IValidationProvider validationProvider,
@@ -20,6 +22,9 @@ internal class BasicAuthProcessor(
 {
     private readonly IRepo<BasicAuthEntity> _basicAuthRepo = basicAuthRepo.ThrowIfNull(
         nameof(basicAuthRepo)
+    );
+    private readonly IReadonlyRepo<GoogleAuthEntity> _googleAuthRepo = googleAuthRepo.ThrowIfNull(
+        nameof(googleAuthRepo)
     );
     private readonly IPasswordValidationProvider _passwordValidationProvider =
         passwordValidationProvider.ThrowIfNull(nameof(passwordValidationProvider));
@@ -143,5 +148,30 @@ internal class BasicAuthProcessor(
 
         var isValid = basicAuth.Password.Verify(request.Password);
         return new VerifyBasicAuthResult(VerifyBasicAuthResultCode.Success, string.Empty, isValid);
+    }
+
+    public async Task<DeleteBasicAuthResult> DeleteBasicAuthAsync(Guid userId)
+    {
+        var basicAuth = await _basicAuthRepo.GetAsync(e => e.UserId == userId);
+        if (basicAuth == null)
+        {
+            return new DeleteBasicAuthResult(
+                DeleteBasicAuthResultCode.NotFoundError,
+                "No password set for this user"
+            );
+        }
+
+        var hasGoogleAuth = await _googleAuthRepo.GetAsync(e => e.UserId == userId) != null;
+        if (!hasGoogleAuth)
+        {
+            return new DeleteBasicAuthResult(
+                DeleteBasicAuthResultCode.LastAuthMethodError,
+                "Cannot remove the only authentication method"
+            );
+        }
+
+        await _basicAuthRepo.DeleteAsync(basicAuth);
+        _logger.LogDebug("Basic auth deleted for UserId {UserId}", userId);
+        return new DeleteBasicAuthResult(DeleteBasicAuthResultCode.Success, string.Empty);
     }
 }

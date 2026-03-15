@@ -1,6 +1,6 @@
 # Plan: MFA (TOTP) and Google Sign-In
 
-## Status: Planned
+## Status: Complete
 
 ## Overview
 
@@ -906,6 +906,39 @@ Note: For ConsoleTest, `ITotpProvider` needs to be `public` or the demo needs a 
 
 ---
 
+## Implementation Notes
+
+Completed on branch `feature/mfa-google-signin` across 6 commits.
+
+### Deviations from plan
+
+- **Phases 1-5 combined into a single commit** (`b263032`) — 73 files, all core library work done together rather than phase-by-phase
+- **DevTools standalone TOTP commands** were placed in Phase 8 (not Phase 1 as planned) — grouped with other DevTools work for cleaner commits
+- **Migration combined** — plan called for separate `AddTotpAuth` and `AddGoogleAuth` migrations; implemented as a single `AddMfaAndGoogleAuth` migration covering all 4 tables
+- **QR code rendering** — used CDN-hosted `qrcodejs` library with JS interop rather than server-side SVG
+- **Google Sign-In** — used Google Identity Services (GIS) `data-login_uri` POST flow rather than JavaScript callback + AJAX
+- **`ITotpProvider`** — interface was already `public`; `TotpProvider` implementation is `internal` but resolved via DI, so no visibility change needed
+- **GoogleIdTokenValidator tests** — only 4 tests (no-client-id and invalid-token cases) since testing valid/expired/wrong-audience requires real Google OIDC infrastructure
+- **Mock repo Include limitation** — `TotpAuthProcessorTests` required a `WireRecoveryCodesNavPropertyAsync` helper to manually link navigation properties, since the mock repo's LINQ-to-Objects doesn't support EF Core `Include`
+
+### Test counts
+
+| Suite | Tests |
+|-------|-------|
+| Corely.IAM.UnitTests | 1,240 |
+| Corely.IAM.Web.UnitTests | 87 |
+| **Total** | **1,327** |
+
+### Commits
+
+| Hash | Description |
+|------|-------------|
+| `b263032` | Phases 1-5: Core library (73 files) |
+| `1693298` | Phases 6-9: Web UI, DevTools, ConsoleTest, processor tests, docs (34 files) |
+| `961eade` | QR code, Google Sign-In web flow, DevTools docs (10 files) |
+| `b065343` | Remaining tests, config templates, service docs (10 files) |
+| `f93b838` | Web docs updates (4 files) |
+
 ## Notes
 
 - **No Corely.Security changes** — TOTP uses standard .NET `HMACSHA1`; Google validation uses `System.IdentityModel.Tokens.Jwt`
@@ -916,3 +949,323 @@ Note: For ConsoleTest, `ITotpProvider` needs to be `public` or the demo needs a 
 - **TOTP secret display** — the secret and recovery codes are shown exactly once (on enable). The service does not provide a way to retrieve the decrypted secret after initial setup.
 - **Google sign-in without existing account** — Phase 5 only supports linking to existing users. A future enhancement could auto-register new users from Google sign-in (JIT provisioning).
 - **`ITotpProvider` visibility** — needs to be `public` for ConsoleTest demo, or expose code generation through a service method. Making it public is cleaner since DevTools also uses it directly.
+
+---
+
+## Follow-up: Service Architecture Refactor
+
+### Context
+
+The original plan wired MFA methods into `IRegistrationService`, `IDeregistrationService`, and `IRetrievalService` — following the existing 4-service CRUD-volatility split. During implementation, it became clear this doesn't scale for feature-specific flows. MFA, Google Auth, and Invitations each have their own mini-lifecycles that span create/read/delete, scattering a single feature's methods across 3-4 services.
+
+### Decision
+
+Create **feature-specific services** for non-CRUD flows, while keeping the 4 core services for entity CRUD (Users, Accounts, Groups, Roles, Permissions):
+
+| New Service | Methods to move | From |
+|-------------|----------------|------|
+| `IMfaService` | `EnableTotpAsync`, `ConfirmTotpAsync`, `DisableTotpAsync`, `GetTotpStatusAsync`, `RegenerateTotpRecoveryCodesAsync` | `IRegistrationService`, `IRetrievalService` |
+| `IGoogleAuthService` | `LinkGoogleAuthAsync`, `UnlinkGoogleAuthAsync`, `GetAuthMethodsAsync` | `IRegistrationService`, `IDeregistrationService`, `IRetrievalService` |
+| `IAuthenticationService` | `SignInWithGoogleAsync`, `VerifyMfaAsync` — **no change** (these are auth actions, not configuration) | Already there |
+
+Each new service gets its own Authorization + Telemetry decorators following the existing Scrutor pattern.
+
+### Rationale
+
+- Core CRUD entities share a lifecycle — the 4-service split works for them
+- Feature flows (MFA, Google, Invitations) have distinct lifecycles that don't map to CRUD
+- Host apps only inject what they need — apps without MFA don't touch `IMfaService`
+- The inconsistency ("why is `CreateGroup` in `IRegistrationService` but `EnableTotp` in `IMfaService`?") is explainable: *core entities use CRUD services, feature flows get their own service*
+
+### Scope
+
+This refactor should be done as a **separate branch/PR** since it touches:
+- `IRegistrationService` / `RegistrationService` + decorators (remove MFA + Google methods)
+- `IDeregistrationService` / `DeregistrationService` + decorators (remove `UnlinkGoogleAuthAsync`)
+- `IRetrievalService` / `RetrievalService` + decorators (remove `GetTotpStatusAsync`, `GetAuthMethodsAsync`)
+- `ServiceRegistrationExtensions.cs` (register new services + decorators)
+- All consumers: DevTools commands, ConsoleTest, Web Profile page, service-level tests
+- Service documentation
+
+See also: `Plans/account-invitations.md` Design Decision #11 — same refactor applies to `IInvitationService`.
+
+---
+
+## Follow-up: Flexible Authentication Method Management
+
+### Context
+
+The current implementation assumes users always start with a password (`RegisterUserAsync` requires a password). Google is treated as a secondary method that can be linked after registration. This limits user flexibility — there's no way to:
+
+1. **Sign up with Google only** (no password)
+2. **Remove a password** once set (there's no delete method for basic auth)
+3. **Transition between auth methods** freely (e.g., start with Google, add password later, remove Google)
+
+### Goal
+
+Give users complete control over their authentication methods, with one constraint: **at least one method must remain active at all times**.
+
+### Supported Flows (After This Change)
+
+| Flow | Current State | Target State |
+|------|--------------|--------------|
+| Sign up with basic auth | ✅ Works | ✅ No change |
+| Sign up with Google | ❌ Not supported | ✅ New: `RegisterUserWithGoogleAsync` |
+| Sign up with Google → add basic auth | ❌ No Google signup | ✅ New signup + existing `CreateBasicAuthAsync` |
+| Sign up with basic auth → add Google → remove basic auth | ❌ No remove basic auth | ✅ New: `RemoveBasicAuthAsync` (blocks if last method) |
+| Sign up with basic auth → add Google → remove Google | ✅ Works (`UnlinkGoogleAuthAsync` blocks if last method) | ✅ No change |
+| Sign up with Google → add basic auth → remove Google | ❌ No Google signup | ✅ New signup + existing unlink |
+| Sign up with Google → set up MFA | ❌ No Google signup | ✅ New signup + existing MFA flow |
+
+### New Methods
+
+#### 1. `RegisterUserWithGoogleAsync` — on `IRegistrationService`
+
+**Decision:** `IRegistrationService`. The host app explicitly controls whether Google sign-up is allowed. The Web UI chains: try `SignInWithGoogleAsync` → if `GoogleAuthNotLinkedError` → prompt "Create account?" → call `RegisterUserWithGoogleAsync` → then `SignInWithGoogleAsync`. This keeps the library non-opinionated about JIT provisioning.
+
+```csharp
+public record RegisterUserWithGoogleRequest(string GoogleIdToken);
+
+public record RegisterUserWithGoogleResult(
+    RegisterUserWithGoogleResultCode ResultCode,
+    string Message,
+    Guid CreatedUserId
+);
+
+public enum RegisterUserWithGoogleResultCode
+{
+    Success,
+    InvalidGoogleTokenError,
+    GoogleAccountInUseError,    // Google subject already linked to another user
+    UserExistsError,            // Email from Google already exists as a user
+    ValidationError,
+}
+
+Task<RegisterUserWithGoogleResult> RegisterUserWithGoogleAsync(
+    RegisterUserWithGoogleRequest request);
+```
+
+**Flow:**
+1. Validate Google ID token (same as `SignInWithGoogleAsync`)
+2. Check if Google subject is already linked → `GoogleAccountInUseError`
+3. Check if email already exists as a user → `UserExistsError`
+4. **Generate username** from Google email prefix (e.g., `jdoe` from `jdoe@gmail.com`). If the username collides, append `-[a-zA-Z0-9]{5}` and retry until unique.
+5. Create `UserEntity` with generated username and Google email
+6. Create `GoogleAuthEntity` linking the new user to the Google account
+7. **No `BasicAuthEntity` created** — user has Google as their only auth method
+8. Return `RegisterUserWithGoogleResult` with the new user ID
+
+**Username change:** Users can already change their username via `IModificationService.ModifyUserAsync(UpdateUserRequest)` which accepts `Username`. No new work needed — Google-registered users can update their auto-assigned username from the Profile page.
+
+#### 2. `DeleteBasicAuthAsync` — on `IBasicAuthProcessor`, exposed via `IDeregistrationService`
+
+**Decision:** Processor method is `DeleteBasicAuthAsync` (follows the `Delete*` convention for entity destruction). Service method is `DeregisterBasicAuthAsync` on `IDeregistrationService` (follows the `Deregister*` convention — we are removing a registered authentication method).
+
+```csharp
+// Processor level
+Task<DeleteBasicAuthResult> DeleteBasicAuthAsync(Guid userId);
+
+// Service level (IDeregistrationService)
+Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync();
+
+public record DeregisterBasicAuthResult(
+    DeregisterBasicAuthResultCode ResultCode,
+    string Message
+);
+
+public enum DeregisterBasicAuthResultCode
+{
+    Success,
+    NotFoundError,          // User doesn't have basic auth
+    LastAuthMethodError,    // Can't remove — no other auth method exists
+    UnauthorizedError,
+}
+```
+
+**Flow:**
+1. Check if user has basic auth → `NotFoundError` if not
+2. Check if user has another auth method (Google) → `LastAuthMethodError` if not
+3. Delete `BasicAuthEntity`
+4. Return `Success`
+
+`BasicAuthProcessor` needs `IReadonlyRepo<GoogleAuthEntity>` injected for the last-method check (mirrors how `GoogleAuthProcessor` has `IReadonlyRepo<BasicAuthEntity>`).
+
+### Changes Required
+
+#### Backend — `DeleteBasicAuthAsync`
+- `IBasicAuthProcessor` — add `DeleteBasicAuthAsync(Guid userId)`
+- `BasicAuthProcessor` — implement with last-method check (inject `IReadonlyRepo<GoogleAuthEntity>`)
+- `BasicAuthProcessorAuthorizationDecorator` / `TelemetryDecorator` — add pass-through
+- New models: `DeleteBasicAuthResult`, `DeleteBasicAuthResultCode`
+- `IDeregistrationService` — add `DeregisterBasicAuthAsync()`
+- `DeregistrationService` + decorators — implement by delegating to processor
+
+#### Backend — `RegisterUserWithGoogleAsync`
+- New models: `RegisterUserWithGoogleRequest`, `RegisterUserWithGoogleResult`, `RegisterUserWithGoogleResultCode`
+- `IRegistrationService` — add `RegisterUserWithGoogleAsync(RegisterUserWithGoogleRequest request)`
+- `RegistrationService` — implement: validate token, check collisions, generate username, create user + Google auth entity (no basic auth)
+- `RegistrationServiceAuthorizationDecorator` — no auth required (unauthenticated registration flow)
+- Username generation helper — extract email prefix, retry with `-[a-zA-Z0-9]{5}` suffix on collision
+
+#### Web UI
+- **Sign-In page** — `GoogleCallback.cshtml.cs`: when `GoogleAuthNotLinkedError`, redirect to a registration prompt page (or show inline "No account found — create one?") instead of just showing an error
+- **Register page** — consider adding a "Sign up with Google" button (same GIS integration as sign-in page, but routes to `RegisterUserWithGoogleAsync` instead)
+- **Profile page** — add "Password" section:
+    - If user has basic auth + another method: show "Remove Password" button
+    - If user has basic auth only: show password (no remove option)
+    - If user has no basic auth: show "Set Password" button (links to password creation flow)
+
+#### DevTools
+- Add `register user-with-google <id-token-file>` command
+- Add `deregister basic-auth` command
+
+#### Bugfix — `UpdateUserAsync` collision check
+- `UserProcessor.UpdateUserAsync` does NOT check for username or email collisions before saving. Both columns have unique indexes (`UserEntityConfiguration` lines 32, 36), so a collision throws an unhandled DB exception instead of returning a clean result code.
+- `CreateUserAsync` already has the correct pattern (lines 61-76) — checks `u.Username == request.Username || u.Email == request.Email` before creating.
+- **Fix:** Add the same collision check to `UpdateUserAsync`. Must exclude the current user from the check (a user "updating" to their own existing username is not a collision). Return a new `ModifyResultCode.UsernameExistsError` or `ModifyResultCode.EmailExistsError`, or reuse `ModifyResultCode.ValidationError` with a descriptive message.
+- **Recommendation:** Add `UsernameExistsError` and `EmailExistsError` to `ModifyResultCode` for explicit handling by callers.
+
+#### Tests
+- `BasicAuthProcessor` — `DeleteBasicAuthAsync` tests (success, not found, last method blocks)
+- `RegistrationService` — `RegisterUserWithGoogleAsync` tests (success, duplicate Google, email collision, username generation)
+- `UserProcessor` — `UpdateUserAsync` collision tests (username taken, email taken, own username unchanged)
+- Web — GoogleCallback page tests for registration prompt flow
+- Web — Profile page password section tests
+
+### Implementation Notes
+
+- `GoogleAuthProcessor.UnlinkGoogleAuthAsync` is the mirror pattern for `DeleteBasicAuthAsync` — it checks `hasBasicAuth` before allowing removal. `DeleteBasicAuthAsync` checks `hasGoogleAuth`.
+- `RegisterUserWithGoogleAsync` returns `UserExistsError` when the Google email matches an existing user. The host app can then suggest the user sign in with their existing credentials and link Google from their profile.
+- Verify that `DeregisterUserAsync` cascade handles users without `BasicAuthEntity` — the user may have only Google auth.
+- Username change is already supported via `IModificationService.ModifyUserAsync(UpdateUserRequest)` — Google-registered users with auto-assigned usernames can change them from the Profile page. No new work needed.
+
+### Implementation Status
+
+**Backend (done):**
+- ✅ `BasicAuthProcessor.DeleteBasicAuthAsync` + `IDeregistrationService.DeregisterBasicAuthAsync`
+- ✅ `IRegistrationService.RegisterUserWithGoogleAsync` (username generation, UoW transaction)
+- ✅ `UserProcessor.UpdateUserAsync` collision check (UsernameExistsError / EmailExistsError)
+- ✅ Models: `DeleteBasicAuthResult`, `DeregisterBasicAuthResult`, `RegisterUserWithGoogleRequest/Result`
+- ✅ Auth + telemetry decorators for all new methods
+- ✅ Test constructor params updated for new dependencies
+
+**Remaining work (all items below):**
+
+#### Phase A: Unit Tests
+
+**`Corely.IAM.UnitTests/BasicAuths/Processors/BasicAuthProcessorDeleteTests.cs`** (new file):
+- `DeleteBasicAuthAsync_ReturnsSuccess_WhenBasicAuthExistsAndGoogleAuthExists`
+- `DeleteBasicAuthAsync_ReturnsNotFoundError_WhenNoBasicAuth`
+- `DeleteBasicAuthAsync_ReturnsLastAuthMethodError_WhenNoGoogleAuth`
+
+**`Corely.IAM.UnitTests/GoogleAuths/Processors/GoogleAuthRegisterTests.cs`** (new file, or extend existing):
+Tests for `RegisterUserWithGoogleAsync` at the service level — this method lives on `RegistrationService`, not on a processor, so tests go in Services:
+
+**`Corely.IAM.UnitTests/Services/RegistrationServiceRegisterWithGoogleTests.cs`** (new file):
+- `RegisterUserWithGoogleAsync_ReturnsSuccess_WithValidGoogleToken`
+- `RegisterUserWithGoogleAsync_ReturnsInvalidGoogleTokenError_WhenTokenInvalid`
+- `RegisterUserWithGoogleAsync_ReturnsGoogleAccountInUseError_WhenSubjectAlreadyLinked`
+- `RegisterUserWithGoogleAsync_ReturnsUserExistsError_WhenEmailAlreadyExists`
+- `RegisterUserWithGoogleAsync_GeneratesUniqueUsername_WhenPrefixCollides`
+
+**`Corely.IAM.UnitTests/Users/Processors/UserProcessorUpdateCollisionTests.cs`** (new file):
+- `UpdateUserAsync_ReturnsUsernameExistsError_WhenUsernameAlreadyTaken`
+- `UpdateUserAsync_ReturnsEmailExistsError_WhenEmailAlreadyTaken`
+- `UpdateUserAsync_ReturnsSuccess_WhenUpdatingToOwnExistingUsername` (no false collision)
+- `UpdateUserAsync_ReturnsSuccess_WhenUsernameAndEmailAreUnique`
+
+#### Phase B: DevTools Commands
+
+**`Corely.IAM.DevTools/Commands/Registration/RegisterUserWithGoogle.cs`** (new file):
+- Nested inside the existing `Registration` partial class
+- Argument: `IdTokenFile` (string, required) — filepath to Google ID token file
+- Needs `IRegistrationService`
+- Reads ID token from file, calls `RegisterUserWithGoogleAsync`
+- On success: display created user ID and generated username
+
+**`Corely.IAM.DevTools/Commands/Deregistration/DeregisterBasicAuth.cs`** (new file):
+- Nested inside the existing `Deregistration` partial class
+- No arguments (uses current user context)
+- Needs `IDeregistrationService`, `IUserContextProvider`
+- Calls `SetUserContextFromAuthTokenFileAsync` then `DeregisterBasicAuthAsync`
+
+**DevTools docs** (`Corely.IAM.DevTools/Docs/index.md`):
+- Add `register user-with-google <id-token-file>` to Registration table
+- Add `deregister basic-auth` to Deregistration table
+
+#### Phase C: ConsoleTest
+
+**`Corely.IAM.ConsoleTest/Program.cs`** — add a "Google Registration + Auth Method Management" demo section:
+1. Call `RegisterUserWithGoogleAsync` with a mock/test Google token — this will fail in the ConsoleTest since there's no real Google token to validate. **Alternative:** Skip the Google registration demo in ConsoleTest (it requires a real Google OIDC endpoint), but demo the basic auth removal flow:
+    - After the existing MFA demo, before deregistration:
+    - Show `GetAuthMethodsAsync` (has basic auth + no Google)
+    - Note that `DeregisterBasicAuthAsync` would block here (last method)
+    - This demonstrates the guard without needing Google infrastructure
+
+Actually, the ConsoleTest uses mock repos (no real DB), but `GoogleIdTokenValidator` calls Google's real OIDC endpoint. So `RegisterUserWithGoogleAsync` can't work in ConsoleTest without mocking the validator. **Decision:** Skip Google registration in ConsoleTest. Add a comment explaining why. Demo the `DeregisterBasicAuthAsync` guard instead.
+
+#### Phase D: Web UI — Profile Password Section
+
+**`Corely.IAM.Web/Components/Pages/Profile.razor`** — add a "Password" section between "Two-Factor Authentication" and "Linked Accounts":
+
+Three states:
+1. **Has basic auth + has Google auth** → show "Remove Password" button
+    - Clicking calls `DeregistrationService.DeregisterBasicAuthAsync()`
+    - Confirmation modal: "Are you sure? You'll only be able to sign in with Google."
+2. **Has basic auth only (no Google)** → show "Password is set" status, no remove option (would be last method)
+3. **No basic auth (Google only)** → show "Set Password" form
+    - Two password fields (new password + confirm)
+    - Calls `RegistrationService.CreateBasicAuthAsync(...)` — wait, this method doesn't exist on the service. It's on `IBasicAuthProcessor` internally. Need to check if there's a service-level method for creating basic auth independently.
+    - **Problem:** `RegisterUserAsync` creates both user + basic auth together. There's no service method to add basic auth to an existing user. The processor `IBasicAuthProcessor.CreateBasicAuthAsync` is internal.
+    - **Solution:** Expose `CreateBasicAuthAsync` on a service. Options:
+        - Add to `IRegistrationService` — it's registering an auth method
+        - Add to `IMfaService` — doesn't fit
+        - New service — overkill
+    - **Decision:** Add `SetPasswordAsync(SetPasswordRequest)` to `IRegistrationService`. Delegates to `_basicAuthProcessor.CreateBasicAuthAsync`. Requires user context.
+
+**New model:** `SetPasswordRequest(string Password)` — password only, userId comes from context.
+
+**New result:** Reuse `CreateBasicAuthResult` at processor level, map to a public `SetPasswordResult` at service level.
+
+**`Corely.IAM.Web/Components/Pages/Profile.razor`** state variables:
+- `_hasBasicAuth` (already exists from `GetAuthMethodsAsync`)
+- `_hasGoogleAuth` (already exists)
+- `_newPassword`, `_confirmPassword` for the set-password form
+- `_showRemovePasswordConfirm` for the confirmation toggle
+
+**`Corely.IAM.Web/Components/Pages/Profile.razor`** methods:
+- `RemovePasswordAsync()` — calls `DeregistrationService.DeregisterBasicAuthAsync()`
+- `SetPasswordAsync()` — validates passwords match, calls `RegistrationService.SetPasswordAsync(new SetPasswordRequest(_newPassword))`
+
+#### Phase E: Web UI — GoogleCallback Registration Prompt
+
+**`Corely.IAM.Web/Pages/Authentication/GoogleCallback.cshtml.cs`** — currently shows a static error for `GoogleAuthNotLinkedError`. Change to:
+- Store the Google ID token in `TempData["GoogleIdToken"]`
+- Redirect to a new `RegisterWithGoogle` page
+
+**`Corely.IAM.Web/Pages/Authentication/RegisterWithGoogle.cshtml`** (new Razor Page):
+- Shows: "No account found for this Google account. Create one?"
+- Displays the Google email (from TempData or re-validation)
+- "Create Account" button → calls `RegisterUserWithGoogleAsync` → on success, auto sign-in via `SignInWithGoogleAsync` → redirect to dashboard
+- "Cancel" link → back to sign-in
+
+**`Corely.IAM.Web/AppRoutes.cs`** — add `RegisterWithGoogle = "/register-with-google"`
+
+#### Phase F: Web UI — Register Page Google Button
+
+**`Corely.IAM.Web/Pages/Authentication/Register.cshtml`** — add Google sign-up button (same GIS integration as SignIn):
+- Add `GoogleClientId` property to `RegisterModel` (same pattern as `SignInModel`)
+- Add `GoogleCallbackUrl` computed in `OnGet`
+- Add the Google button markup + `@section Scripts` (same as SignIn.cshtml)
+- The GoogleCallback page handles both sign-in and registration (if `GoogleAuthNotLinkedError`, redirects to `RegisterWithGoogle`)
+
+#### Phase G: Documentation
+
+**`Corely.IAM/Docs/services/registration.md`** — add `RegisterUserWithGoogleAsync`, `SetPasswordAsync`
+**`Corely.IAM/Docs/services/deregistration.md`** — add `DeregisterBasicAuthAsync`
+**`Corely.IAM/Docs/result-codes.md`** — add `RegisterUserWithGoogleResultCode`, `DeregisterBasicAuthResultCode`, `ModifyResultCode.UsernameExistsError/EmailExistsError`
+**`Corely.IAM/Docs/google-signin.md`** — add Google sign-up flow
+**`Corely.IAM.Web/Docs/authentication-flow.md`** — add Google registration flow
+**`Corely.IAM.Web/Docs/pages/index.md`** — add `/register-with-google` route
+**`Corely.IAM.Web/Docs/pages/profile.md`** — add Password section
+**`Corely.IAM.DevTools/Docs/index.md`** — add new commands

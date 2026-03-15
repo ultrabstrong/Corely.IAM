@@ -31,6 +31,8 @@ graph LR
 - **Multi-tenant accounts** — users belong to multiple accounts with scoped RBAC
 - **CRUDX permissions** — fine-grained Create/Read/Update/Delete/Execute per resource type
 - **Token-based authentication** — JWT with custom claims, no HttpContext dependency
+- **Multi-factor authentication** — TOTP (authenticator apps) with recovery codes
+- **Google Sign-In** — link Google accounts as an alternative auth method
 - **Invitation system** — token-based onboarding with expiry and revocation
 - **Per-entity encryption keys** — account and user-scoped key pairs, stored encrypted
 - **Pluggable crypto** — configure algorithms via the `IAMOptions` builder
@@ -57,6 +59,10 @@ graph LR
     - [Permissions](domains/permissions.md)
     - [Basic Auths](domains/basic-auths.md)
     - [Invitations](domains/invitations.md)
+    - [TOTP Auth](domains/totp-auths.md)
+    - [Google Auth](domains/google-auths.md)
+- [Multi-Factor Authentication](mfa.md)
+- [Google Sign-In](google-signin.md)
 - [Security](security/index.md)
     - [Key Management](security/key-management.md)
     - [User Context](security/user-context.md)

@@ -1,6 +1,7 @@
 /* App-specific overrides */
 html, body {
     min-height: 100vh;
+    background-color: #f0f9ff;
 }
 
 #blazor-error-ui {

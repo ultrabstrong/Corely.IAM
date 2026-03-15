@@ -13,16 +13,16 @@ internal partial class Invitation : CommandBase
         [Option("-t", "--token", Description = "Invitation token")]
         private string Token { get; init; } = null!;
 
-        private readonly IRegistrationService _registrationService;
+        private readonly IInvitationService _invitationService;
         private readonly IUserContextProvider _userContextProvider;
 
         public AcceptInvitation(
-            IRegistrationService registrationService,
+            IInvitationService invitationService,
             IUserContextProvider userContextProvider
         )
             : base("accept", "Accept an invitation")
         {
-            _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
+            _invitationService = invitationService.ThrowIfNull(nameof(invitationService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
@@ -38,7 +38,7 @@ internal partial class Invitation : CommandBase
                 return;
 
             var request = new AcceptInvitationRequest(Token);
-            var result = await _registrationService.AcceptInvitationAsync(request);
+            var result = await _invitationService.AcceptInvitationAsync(request);
 
             if (result.ResultCode == AcceptInvitationResultCode.Success)
             {

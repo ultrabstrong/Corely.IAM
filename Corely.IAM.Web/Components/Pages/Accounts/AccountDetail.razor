@@ -5,6 +5,7 @@
 @inject IModificationService ModificationService
 @inject IRegistrationService RegistrationService
 @inject IDeregistrationService DeregistrationService
+@inject IInvitationService InvitationService
 @inject IAccountDisplayState AccountDisplayState
 @inject IJSRuntime JSRuntime
 
@@ -334,7 +335,7 @@ else
             };
         }
 
-        var invResult = await RegistrationService.ListInvitationsAsync(
+        var invResult = await InvitationService.ListInvitationsAsync(
             new ListInvitationsRequest(Id, filter, order, _invitationsSkip, InvitationPageSize, _invStatusFilter)
         );
         if (invResult.ResultCode == RetrieveResultCode.Success && invResult.Data != null)
@@ -484,7 +485,7 @@ else
         await ExecuteSafeAsync(async () =>
         {
             var request = new CreateInvitationRequest(Id, _inviteEmail!, _inviteDescription, _inviteExpirySeconds);
-            var result = await RegistrationService.CreateInvitationAsync(request);
+            var result = await InvitationService.CreateInvitationAsync(request);
             if (result.ResultCode == CreateInvitationResultCode.Success)
             {
                 _createdToken = result.Token;
@@ -519,7 +520,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.RevokeInvitationAsync(_confirmItemId);
+            var result = await InvitationService.RevokeInvitationAsync(_confirmItemId);
             SetResultMessage(result.ResultCode == RevokeInvitationResultCode.Success, "Invitation revoked.", result.Message);
             await ReloadAsync();
         });

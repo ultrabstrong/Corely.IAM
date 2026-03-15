@@ -24,16 +24,16 @@ internal partial class Invitation : CommandBase
         [Option("-x", "--expires", Description = "Expiration in seconds")]
         private int ExpiresInSeconds { get; init; } = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
 
-        private readonly IRegistrationService _registrationService;
+        private readonly IInvitationService _invitationService;
         private readonly IUserContextProvider _userContextProvider;
 
         public CreateInvitation(
-            IRegistrationService registrationService,
+            IInvitationService invitationService,
             IUserContextProvider userContextProvider
         )
             : base("create", "Create a new invitation")
         {
-            _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
+            _invitationService = invitationService.ThrowIfNull(nameof(invitationService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
@@ -61,7 +61,7 @@ internal partial class Invitation : CommandBase
                 ExpiresInSeconds
             );
 
-            var result = await _registrationService.CreateInvitationAsync(request);
+            var result = await _invitationService.CreateInvitationAsync(request);
 
             if (result.ResultCode == CreateInvitationResultCode.Success)
             {

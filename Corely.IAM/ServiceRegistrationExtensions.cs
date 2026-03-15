@@ -151,6 +151,10 @@ public static class ServiceRegistrationExtensions
         serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceAuthorizationDecorator>();
         serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceTelemetryDecorator>();
 
+        serviceCollection.AddScoped<IInvitationService, InvitationService>();
+        serviceCollection.Decorate<IInvitationService, InvitationServiceAuthorizationDecorator>();
+        serviceCollection.Decorate<IInvitationService, InvitationServiceTelemetryDecorator>();
+
         serviceCollection.AddScoped<IUserOwnershipProcessor, UserOwnershipProcessor>();
 
         serviceCollection.AddScoped<IAccountProcessor, AccountProcessor>();

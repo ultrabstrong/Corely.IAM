@@ -8,7 +8,6 @@ using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.GoogleAuths.Providers;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
-using Corely.IAM.Invitations.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
@@ -99,7 +98,6 @@ public class RegistrationServiceTests
             _groupProcessorMock.Object,
             _roleProcessorMock.Object,
             _permissionProcessorMock.Object,
-            new Mock<IInvitationProcessor>().Object,
             _userContextProviderMock.Object,
             new Mock<IUserContextSetter>().Object,
             _unitOfWorkProviderMock.Object

@@ -22,16 +22,16 @@ internal partial class Invitation : CommandBase
         [Option("-t", "--take", Description = "Number of records to take")]
         private int Take { get; init; } = 20;
 
-        private readonly IRegistrationService _registrationService;
+        private readonly IInvitationService _invitationService;
         private readonly IUserContextProvider _userContextProvider;
 
         public ListInvitations(
-            IRegistrationService registrationService,
+            IInvitationService invitationService,
             IUserContextProvider userContextProvider
         )
             : base("list", "List invitations for an account")
         {
-            _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
+            _invitationService = invitationService.ThrowIfNull(nameof(invitationService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
@@ -46,7 +46,7 @@ internal partial class Invitation : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            var result = await _registrationService.ListInvitationsAsync(
+            var result = await _invitationService.ListInvitationsAsync(
                 new ListInvitationsRequest(Guid.Parse(AccountId), Skip: Skip, Take: Take)
             );
 

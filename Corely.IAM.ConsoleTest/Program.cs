@@ -78,6 +78,7 @@ internal class Program
             var modificationService = host.Services.GetRequiredService<IModificationService>();
             var mfaService = host.Services.GetRequiredService<IMfaService>();
             var googleAuthService = host.Services.GetRequiredService<IGoogleAuthService>();
+            var invitationService = host.Services.GetRequiredService<IInvitationService>();
 
             // ========= REGISTER USER 1 ==========
             var registerUserResult = await registrationService.RegisterUserAsync(
@@ -404,7 +405,7 @@ internal class Program
             // ========= INVITATION LIFECYCLE ==========
 
             // Create an invitation for the current account
-            var createInvitationResult = await registrationService.CreateInvitationAsync(
+            var createInvitationResult = await invitationService.CreateInvitationAsync(
                 new CreateInvitationRequest(
                     registerAccountResult.CreatedAccountId,
                     "test@example.com",
@@ -420,7 +421,7 @@ internal class Program
             );
 
             // Accept the invitation (idempotent — user is already in account from account creation)
-            var acceptInvitationResult = await registrationService.AcceptInvitationAsync(
+            var acceptInvitationResult = await invitationService.AcceptInvitationAsync(
                 new AcceptInvitationRequest(createInvitationResult.Token!)
             );
             Console.WriteLine(
@@ -428,7 +429,7 @@ internal class Program
             );
 
             // List invitations for the account (shows accepted status)
-            var listInvitationsResult = await registrationService.ListInvitationsAsync(
+            var listInvitationsResult = await invitationService.ListInvitationsAsync(
                 new ListInvitationsRequest(registerAccountResult.CreatedAccountId)
             );
             Console.WriteLine(
@@ -436,7 +437,7 @@ internal class Program
             );
 
             // Create a second invitation that will be revoked
-            var createInvitation2Result = await registrationService.CreateInvitationAsync(
+            var createInvitation2Result = await invitationService.CreateInvitationAsync(
                 new CreateInvitationRequest(
                     registerAccountResult.CreatedAccountId,
                     "test2@example.com",
@@ -449,7 +450,7 @@ internal class Program
             );
 
             // Revoke the second invitation
-            var revokeInvitationResult = await registrationService.RevokeInvitationAsync(
+            var revokeInvitationResult = await invitationService.RevokeInvitationAsync(
                 createInvitation2Result.InvitationId!.Value
             );
             Console.WriteLine(
@@ -457,7 +458,7 @@ internal class Program
             );
 
             // List invitations again (shows one accepted, one revoked)
-            listInvitationsResult = await registrationService.ListInvitationsAsync(
+            listInvitationsResult = await invitationService.ListInvitationsAsync(
                 new ListInvitationsRequest(registerAccountResult.CreatedAccountId)
             );
             Console.WriteLine(

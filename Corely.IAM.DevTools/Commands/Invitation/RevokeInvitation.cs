@@ -13,16 +13,16 @@ internal partial class Invitation : CommandBase
         [Option("-i", "--invitation-id", Description = "Invitation ID (GUID)")]
         private string InvitationId { get; init; } = null!;
 
-        private readonly IRegistrationService _registrationService;
+        private readonly IInvitationService _invitationService;
         private readonly IUserContextProvider _userContextProvider;
 
         public RevokeInvitation(
-            IRegistrationService registrationService,
+            IInvitationService invitationService,
             IUserContextProvider userContextProvider
         )
             : base("revoke", "Revoke an invitation")
         {
-            _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
+            _invitationService = invitationService.ThrowIfNull(nameof(invitationService));
             _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
@@ -37,7 +37,7 @@ internal partial class Invitation : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
                 return;
 
-            var result = await _registrationService.RevokeInvitationAsync(Guid.Parse(InvitationId));
+            var result = await _invitationService.RevokeInvitationAsync(Guid.Parse(InvitationId));
 
             if (result.ResultCode == RevokeInvitationResultCode.Success)
             {

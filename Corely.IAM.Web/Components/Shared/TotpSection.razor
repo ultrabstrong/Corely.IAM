@@ -5,23 +5,28 @@
     <div class="section-divider-label">Two-Factor Authentication</div>
     @if (_setupPhase)
     {
-        <div class="alert alert-info">
-            <strong>Setup:</strong> Scan the QR code with your authenticator app, or enter the secret manually.
-            <div class="mt-2 d-flex justify-content-center">
-                <div id="totp-qrcode"></div>
+        <div class="d-flex gap-4 align-items-start flex-wrap mb-2">
+            <div class="flex-shrink-0" style="min-width: 150px; max-width: 100%;">
+                <div><strong><i class="bi bi-qr-code me-1"></i>QR Code</strong> <span class="text-muted fw-normal" style="font-size: 0.85rem;">Secret: <code class="user-select-all text-danger" style="font-size: 0.85rem;">@_secret</code></span></div>
+                <div class="text-muted mt-1" style="font-size: 0.85rem; white-space: normal; word-break: break-word;">Scan the QR code with your authenticator app, or enter the secret manually.</div>
+                <div class="mt-4 mb-2 text-center">
+                    <div id="totp-qrcode" style="display: inline-block;"></div>
+                </div>
             </div>
-            <div class="mt-2 text-center"><small>Secret: <code>@_secret</code></small></div>
-        </div>
-        <div class="alert alert-warning">
-            <strong>Recovery Codes:</strong> Save these codes in a safe place. Each can only be used once.
-            <div class="mt-2" style="font-family: monospace;">
-                @foreach (var rc in _recoveryCodes)
-                {
-                    <div>@rc</div>
-                }
+            <div class="flex-fill">
+                <div><strong><i class="bi bi-key me-1"></i>Recovery Codes</strong></div>
+                <div class="text-muted mt-1 mb-2" style="font-size: 0.85rem;">Save these, each can only be used once</div>
+                <div class="d-flex justify-content-center justify-content-md-start mt-4">
+                    <div class="d-inline-grid" style="grid-template-columns: repeat(2, auto); column-gap: 1.5rem; row-gap: 0; font-family: monospace; font-size: 0.85rem;">
+                        @foreach (var rc in _recoveryCodes)
+                        {
+                            <div>@rc</div>
+                        }
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="d-flex gap-2 align-items-center">
+        <div class="d-flex gap-2 align-items-center justify-content-center justify-content-md-start mt-4">
             <input type="text" class="form-control form-control-sm" style="max-width: 200px;"
                    @bind="_confirmCode" placeholder="Enter code to confirm" />
             <button class="btn btn-primary btn-sm" @onclick="ConfirmAsync" disabled="@_busy">Confirm</button>
@@ -34,8 +39,8 @@
         @if (_regeneratedCodes != null)
         {
             <div class="alert alert-warning">
-                <strong>New Recovery Codes:</strong> Save these codes now. They won't be shown again.
-                <div class="mt-2" style="font-family: monospace;">
+                <div><strong>New Recovery Codes</strong> <small class="text-muted fw-normal">— save these now, they won't be shown again</small></div>
+                <div class="mt-2 d-inline-grid" style="grid-template-columns: repeat(2, auto); column-gap: 1.5rem; row-gap: 0; font-family: monospace; font-size: 0.85rem;">
                     @foreach (var rc in _regeneratedCodes)
                     {
                         <div>@rc</div>
@@ -107,7 +112,7 @@
         if (_pendingQrRender && !string.IsNullOrWhiteSpace(_setupUri))
         {
             _pendingQrRender = false;
-            await JSRuntime.InvokeVoidAsync("qrCodeInterop.generate", "totp-qrcode", _setupUri, 200);
+            await JSRuntime.InvokeVoidAsync("qrCodeInterop.generate", "totp-qrcode", _setupUri, 150);
         }
     }
 

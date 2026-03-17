@@ -1,0 +1,42 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".github/instructions/copilot-instructions.md" />
+    <File Path=".gitignore" />
+    <File Path="AddMigration.ps1" />
+    <File Path="CONTRIBUTING.md" />
+    <File Path="CopyCorelyTools.ps1" />
+    <File Path="Feature-Ideas.md" />
+    <File Path="LICENSE" />
+    <File Path="ListMigrations.ps1" />
+    <File Path="README.md" />
+    <File Path="RebuildAndTest.ps1" />
+    <File Path="RemoveMigration.ps1" />
+  </Folder>
+  <Folder Name="/Solution Items/Docs/">
+    <File Path="Docs/The IAM Difference.md" />
+  </Folder>
+  <Folder Name="/Solution Items/Plans/">
+    <File Path="DataAccessMigrations-Add-MsSql-Support.md" />
+    <File Path="Plans/CascadeDeleteCleanup.md" />
+    <File Path="Plans/DataAccessMigrations-Add-MariaDb-Support.md" />
+    <File Path="Plans/DataAccessMigrations-CLI-Refactor.md" />
+  </Folder>
+  <Project Path="Corely.IAM.ConsoleTest/Corely.IAM.ConsoleApp.csproj" />
+  <Project Path="Corely.IAM.DataAccessMigrations.Cli/Corely.IAM.DataAccessMigrations.Cli.csproj" />
+  <Project Path="Corely.IAM.DataAccessMigrations.MariaDb/Corely.IAM.DataAccessMigrations.MariaDb.csproj" />
+  <Project Path="Corely.IAM.DataAccessMigrations.MsSql/Corely.IAM.DataAccessMigrations.MsSql.csproj" />
+  <Project Path="Corely.IAM.DataAccessMigrations.MySql/Corely.IAM.DataAccessMigrations.MySql.csproj" />
+  <Project Path="Corely.IAM.DevTools/Corely.IAM.DevTools.csproj" />
+  <Project Path="Corely.IAM.UnitTests/Corely.IAM.UnitTests.csproj" />
+  <Project Path="Corely.IAM.Web.UnitTests/Corely.IAM.Web.UnitTests.csproj" />
+  <Project Path="Corely.IAM.Web/Corely.IAM.Web.csproj" />
+  <Project Path="Corely.IAM.WebApp/Corely.IAM.WebApp.csproj" />
+  <Project Path="Corely.IAM/Corely.IAM.csproj" />
+</Solution>

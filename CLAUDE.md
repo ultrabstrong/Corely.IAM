@@ -13,7 +13,7 @@ Host-agnostic, multi-tenant identity and access management library for .NET appl
 .\RebuildAndTest.ps1
 
 # Build
-dotnet build Corely.IAM.sln
+dotnet build Corely.IAM.slnx
 ```
 
 ## Testing

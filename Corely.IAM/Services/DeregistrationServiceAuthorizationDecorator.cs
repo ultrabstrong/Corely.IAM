@@ -69,18 +69,11 @@ internal class DeregistrationServiceAuthorizationDecorator(
         DeregisterUserFromAccountRequest request
     ) =>
         _authorizationProvider.HasAccountContext(request.AccountId)
+        || _authorizationProvider.IsAuthorizedForOwnUser(request.UserId)
             ? await _inner.DeregisterUserFromAccountAsync(request)
             : new DeregisterUserFromAccountResult(
                 DeregisterUserFromAccountResultCode.UnauthorizedError,
                 "Unauthorized to remove user from account"
-            );
-
-    public async Task<DeregisterUserFromAccountResult> LeaveAccountAsync(Guid accountId) =>
-        _authorizationProvider.IsNonSystemUserContext()
-            ? await _inner.LeaveAccountAsync(accountId)
-            : new DeregisterUserFromAccountResult(
-                DeregisterUserFromAccountResultCode.UnauthorizedError,
-                "Unauthorized to leave account"
             );
 
     public Task<DeregisterUsersFromGroupResult> DeregisterUsersFromGroupAsync(

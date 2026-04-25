@@ -7,12 +7,11 @@ Deletes entities and removes relationships between entities.
 | Method | Parameters | Returns |
 |--------|-----------|---------|
 | `DeregisterUserAsync` | *(none — uses current user context)* | `DeregisterUserResult` |
-| `DeregisterAccountAsync` | *(none — uses current account context)* | `DeregisterAccountResult` |
+| `DeregisterAccountAsync` | `DeregisterAccountRequest` | `DeregisterAccountResult` |
 | `DeregisterGroupAsync` | `DeregisterGroupRequest` | `DeregisterGroupResult` |
 | `DeregisterRoleAsync` | `DeregisterRoleRequest` | `DeregisterRoleResult` |
 | `DeregisterPermissionAsync` | `DeregisterPermissionRequest` | `DeregisterPermissionResult` |
 | `DeregisterUserFromAccountAsync` | `DeregisterUserFromAccountRequest` | `DeregisterUserFromAccountResult` |
-| `LeaveAccountAsync` | `Guid accountId` | `DeregisterUserFromAccountResult` |
 | `DeregisterUsersFromGroupAsync` | `DeregisterUsersFromGroupRequest` | `DeregisterUsersFromGroupResult` |
 | `DeregisterRolesFromGroupAsync` | `DeregisterRolesFromGroupRequest` | `DeregisterRolesFromGroupResult` |
 | `DeregisterRolesFromUserAsync` | `DeregisterRolesFromUserRequest` | `DeregisterRolesFromUserResult` |
@@ -34,10 +33,11 @@ Operates on the authenticated user — no user ID parameter needed.
 ### Delete the Current Account
 
 ```csharp
-var result = await deregistrationService.DeregisterAccountAsync();
+var result = await deregistrationService.DeregisterAccountAsync(
+    new DeregisterAccountRequest(accountId));
 ```
 
-Operates on the current account context.
+Deletes the specified account after service-level account-context validation.
 
 ### Remove Users from a Group
 
@@ -46,21 +46,22 @@ var result = await deregistrationService.DeregisterUsersFromGroupAsync(
     new DeregisterUsersFromGroupRequest(groupId, [userId1, userId2]));
 ```
 
-### Leave an Account
+### Remove a User from an Account
 
 ```csharp
-var result = await deregistrationService.LeaveAccountAsync(accountId);
+var result = await deregistrationService.DeregisterUserFromAccountAsync(
+    new DeregisterUserFromAccountRequest(userId, accountId));
 ```
 
-Removes the current user from the specified account. Different from `DeregisterUserFromAccountAsync` which removes another user (requires admin permissions).
+Removes the specified user from the specified account. The same API supports both self-service removal and admin removal — self-removal passes the current user's ID, while admin removal targets another user in the account.
 
 ## Authorization
 
-- **Service level**: requires user context for user/account deletion; requires account context for relationship methods
+- **Service level**: requires user context for user deletion; requires account context for account-scoped relationship methods; `DeregisterUserFromAccountAsync` also allows the current user to remove themselves
 - **Processor level**: CRUDX Delete permission checks on the target resource type
 
 ## Notes
 
 - Entity deletion manually clears M:M relationship collections before deleting (SQL Server constraint: no cascade deletes on M:M)
 - `DeregisterUserAsync` and `DeregisterAccountAsync` use the current context — they cannot target arbitrary users/accounts
-- `LeaveAccountAsync` is the self-service variant; `DeregisterUserFromAccountAsync` is the admin variant
+- `DeregisterUserFromAccountAsync` is the single account-removal API for both self-service and admin flows

@@ -223,7 +223,9 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.LeaveAccountAsync(_leaveAccountId);
+            var result = await DeregistrationService.DeregisterUserFromAccountAsync(
+                new DeregisterUserFromAccountRequest(UserContext!.User!.Id, _leaveAccountId)
+            );
             if (result.ResultCode == DeregisterUserFromAccountResultCode.Success)
             {
                 NavigationManager.NavigateTo(AppRoutes.SelectAccount, forceLoad: true);

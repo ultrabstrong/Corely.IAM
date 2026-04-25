@@ -46,6 +46,6 @@ Self-service user profile page. No permission gates — any authenticated user c
 **Behavior:**
 - No authorization gates — this is a self-service page
 - Deleting user calls `DeregisterUserAsync()` and redirects to sign-out
-- Leaving account calls `LeaveAccountAsync(accountId)` and redirects to account selection
+- Leaving account calls `DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(UserContext.User.Id, accountId))` and redirects to account selection
 - Key providers loaded asynchronously from `IRetrievalService`
 - Dashboard button only shown when `UserContext?.CurrentAccount != null`

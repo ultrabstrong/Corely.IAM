@@ -235,23 +235,6 @@ public class DeregistrationServiceTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task LeaveAccount_DelegatesToInnerAndLogsResult()
-    {
-        var accountId = Guid.CreateVersion7();
-        var expectedResult = new DeregisterUserFromAccountResult(
-            DeregisterUserFromAccountResultCode.Success,
-            string.Empty
-        );
-        _mockInnerService.Setup(x => x.LeaveAccountAsync(accountId)).ReturnsAsync(expectedResult);
-
-        var result = await _decorator.LeaveAccountAsync(accountId);
-
-        Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.LeaveAccountAsync(accountId), Times.Once);
-        VerifyLoggedWithResult();
-    }
-
-    [Fact]
     public void Constructor_ThrowsOnNullInnerService() =>
         Assert.Throws<ArgumentNullException>(() =>
             new DeregistrationServiceTelemetryDecorator(null!, _mockLogger.Object)

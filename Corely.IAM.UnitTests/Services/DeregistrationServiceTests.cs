@@ -505,6 +505,61 @@ public class DeregistrationServiceTests
     }
 
     [Fact]
+    public async Task DeregisterUserFromAccount_ClearsCurrentAccountAndAuthorizationCache_WhenCurrentUserRemovesSelf()
+    {
+        var request = new DeregisterUserFromAccountRequest(
+            _userContext.User!.Id,
+            _userContext.CurrentAccount!.Id
+        );
+        var processorResult = new RemoveUserFromAccountResult(
+            RemoveUserFromAccountResultCode.Success,
+            string.Empty
+        );
+        _mockAccountProcessor
+            .Setup(x => x.RemoveUserFromAccountAsync(It.IsAny<RemoveUserFromAccountRequest>()))
+            .ReturnsAsync(processorResult);
+
+        var result = await _service.DeregisterUserFromAccountAsync(request);
+
+        Assert.Equal(DeregisterUserFromAccountResultCode.Success, result.ResultCode);
+        _mockUserContextSetter.Verify(
+            x =>
+                x.SetUserContext(
+                    It.Is<UserContext>(c =>
+                        c.User!.Id == _userContext.User!.Id
+                        && c.CurrentAccount == null
+                        && c.AvailableAccounts.Count == 1
+                        && c.AvailableAccounts.All(a => a.Id != request.AccountId)
+                    )
+                ),
+            Times.Once
+        );
+        _mockAuthorizationCacheClearer.Verify(x => x.ClearCache(), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeregisterUserFromAccount_DoesNotMutateContext_WhenRemovingDifferentUser()
+    {
+        var request = new DeregisterUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            _userContext.CurrentAccount!.Id
+        );
+        var processorResult = new RemoveUserFromAccountResult(
+            RemoveUserFromAccountResultCode.Success,
+            string.Empty
+        );
+        _mockAccountProcessor
+            .Setup(x => x.RemoveUserFromAccountAsync(It.IsAny<RemoveUserFromAccountRequest>()))
+            .ReturnsAsync(processorResult);
+
+        var result = await _service.DeregisterUserFromAccountAsync(request);
+
+        Assert.Equal(DeregisterUserFromAccountResultCode.Success, result.ResultCode);
+        _mockUserContextSetter.Verify(x => x.SetUserContext(It.IsAny<UserContext>()), Times.Never);
+        _mockAuthorizationCacheClearer.Verify(x => x.ClearCache(), Times.Never);
+    }
+
+    [Fact]
     public async Task DeregisterUserFromAccount_ReturnsUserNotFound_WhenUserDoesNotExist()
     {
         var request = new DeregisterUserFromAccountRequest(

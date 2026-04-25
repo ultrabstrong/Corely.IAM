@@ -393,13 +393,41 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task DeregisterUserFromAccount_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task DeregisterUserFromAccount_Succeeds_WhenAuthorizedForOwnUser()
+    {
+        var request = new DeregisterUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
+        var expectedResult = new DeregisterUserFromAccountResult(
+            DeregisterUserFromAccountResultCode.Success,
+            string.Empty
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId, true))
+            .Returns(true);
+        _mockInnerService
+            .Setup(x => x.DeregisterUserFromAccountAsync(request))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.DeregisterUserFromAccountAsync(request);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.DeregisterUserFromAccountAsync(request), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeregisterUserFromAccount_ReturnsUnauthorized_WhenNoAccountContextAndNotOwnUser()
     {
         var request = new DeregisterUserFromAccountRequest(
             Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(request.UserId, true))
+            .Returns(false);
 
         var result = await _decorator.DeregisterUserFromAccountAsync(request);
 
@@ -408,39 +436,6 @@ public class DeregistrationServiceAuthorizationDecoratorTests
             x => x.DeregisterUserFromAccountAsync(It.IsAny<DeregisterUserFromAccountRequest>()),
             Times.Never
         );
-    }
-
-    #endregion
-
-    #region LeaveAccountAsync
-
-    [Fact]
-    public async Task LeaveAccount_DelegatesToInner_WhenHasUserContext()
-    {
-        var accountId = Guid.CreateVersion7();
-        var expectedResult = new DeregisterUserFromAccountResult(
-            DeregisterUserFromAccountResultCode.Success,
-            string.Empty
-        );
-        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(true);
-        _mockInnerService.Setup(x => x.LeaveAccountAsync(accountId)).ReturnsAsync(expectedResult);
-
-        var result = await _decorator.LeaveAccountAsync(accountId);
-
-        Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.LeaveAccountAsync(accountId), Times.Once);
-    }
-
-    [Fact]
-    public async Task LeaveAccount_ReturnsUnauthorized_WhenNoUserContext()
-    {
-        var accountId = Guid.CreateVersion7();
-        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(false);
-
-        var result = await _decorator.LeaveAccountAsync(accountId);
-
-        Assert.Equal(DeregisterUserFromAccountResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerService.Verify(x => x.LeaveAccountAsync(It.IsAny<Guid>()), Times.Never);
     }
 
     #endregion

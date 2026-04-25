@@ -12,7 +12,6 @@ public interface IDeregistrationService
     Task<DeregisterUserFromAccountResult> DeregisterUserFromAccountAsync(
         DeregisterUserFromAccountRequest request
     );
-    Task<DeregisterUserFromAccountResult> LeaveAccountAsync(Guid accountId);
     Task<DeregisterUsersFromGroupResult> DeregisterUsersFromGroupAsync(
         DeregisterUsersFromGroupRequest request
     );

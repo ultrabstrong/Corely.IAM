@@ -90,7 +90,7 @@ All auth cookies use `Path=/`. The `device_id` cookie is created on first visit 
 `AuthenticationTokenMiddleware` runs on every request:
 
 1. Reads `auth_token` cookie
-2. Calls `IUserContextProvider.SetUserContextAsync(token)` to validate the JWT
+2. Calls `IAuthenticationService.AuthenticateWithTokenAsync(token)` to validate the JWT
 3. On success: builds `ClaimsPrincipal` via `IUserContextClaimsBuilder` and sets `HttpContext.User`
 4. On failure: clears all auth cookies
 

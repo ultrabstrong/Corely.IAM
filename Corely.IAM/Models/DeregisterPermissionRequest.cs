@@ -1,3 +1,3 @@
 namespace Corely.IAM.Models;
 
-public record DeregisterPermissionRequest(Guid PermissionId);
+public record DeregisterPermissionRequest(Guid PermissionId, Guid AccountId);

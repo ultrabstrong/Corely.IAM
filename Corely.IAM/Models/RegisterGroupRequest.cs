@@ -1,3 +1,3 @@
 ﻿namespace Corely.IAM.Models;
 
-public record RegisterGroupRequest(string GroupName);
+public record RegisterGroupRequest(string GroupName, Guid AccountId);

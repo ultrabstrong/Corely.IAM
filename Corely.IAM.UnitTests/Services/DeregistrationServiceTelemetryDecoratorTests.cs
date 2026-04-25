@@ -43,19 +43,26 @@ public class DeregistrationServiceTelemetryDecoratorTests
             DeregisterAccountResultCode.Success,
             string.Empty
         );
-        _mockInnerService.Setup(x => x.DeregisterAccountAsync()).ReturnsAsync(expectedResult);
+        _mockInnerService
+            .Setup(x => x.DeregisterAccountAsync(It.IsAny<DeregisterAccountRequest>()))
+            .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.DeregisterAccountAsync();
+        var result = await _decorator.DeregisterAccountAsync(
+            new DeregisterAccountRequest(Guid.CreateVersion7())
+        );
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.DeregisterAccountAsync(), Times.Once);
+        _mockInnerService.Verify(
+            x => x.DeregisterAccountAsync(It.IsAny<DeregisterAccountRequest>()),
+            Times.Once
+        );
         VerifyLoggedWithResult();
     }
 
     [Fact]
     public async Task DeregisterGroup_DelegatesToInnerAndLogsResult()
     {
-        var request = new DeregisterGroupRequest(Guid.CreateVersion7());
+        var request = new DeregisterGroupRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var expectedResult = new DeregisterGroupResult(
             DeregisterGroupResultCode.Success,
             string.Empty
@@ -72,7 +79,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     [Fact]
     public async Task DeregisterRole_DelegatesToInnerAndLogsResult()
     {
-        var request = new DeregisterRoleRequest(Guid.CreateVersion7());
+        var request = new DeregisterRoleRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var expectedResult = new DeregisterRoleResult(
             DeregisterRoleResultCode.Success,
             string.Empty
@@ -89,7 +96,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     [Fact]
     public async Task DeregisterPermission_DelegatesToInnerAndLogsResult()
     {
-        var request = new DeregisterPermissionRequest(Guid.CreateVersion7());
+        var request = new DeregisterPermissionRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var expectedResult = new DeregisterPermissionResult(
             DeregisterPermissionResultCode.Success,
             string.Empty
@@ -108,7 +115,10 @@ public class DeregistrationServiceTelemetryDecoratorTests
     [Fact]
     public async Task DeregisterUserFromAccount_DelegatesToInnerAndLogsResult()
     {
-        var request = new DeregisterUserFromAccountRequest(Guid.CreateVersion7());
+        var request = new DeregisterUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         var expectedResult = new DeregisterUserFromAccountResult(
             DeregisterUserFromAccountResultCode.Success,
             string.Empty
@@ -129,6 +139,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     {
         var request = new DeregisterUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var expectedResult = new DeregisterUsersFromGroupResult(
@@ -153,6 +164,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     {
         var request = new DeregisterRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var expectedResult = new DeregisterRolesFromGroupResult(
@@ -177,6 +189,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     {
         var request = new DeregisterRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var expectedResult = new DeregisterRolesFromUserResult(
@@ -201,6 +214,7 @@ public class DeregistrationServiceTelemetryDecoratorTests
     {
         var request = new DeregisterPermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var expectedResult = new DeregisterPermissionsFromRoleResult(

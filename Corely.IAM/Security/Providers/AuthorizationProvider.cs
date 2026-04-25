@@ -42,6 +42,9 @@ internal class AuthorizationProvider(
         )
             return false;
 
+        if (userContext.IsSystemContext)
+            return true;
+
         var permissions = await GetPermissionsAsync();
 
         var relevantPermissions = permissions
@@ -78,12 +81,24 @@ internal class AuthorizationProvider(
         return hasPermission;
     }
 
+    public bool IsNonSystemUserContext()
+    {
+        if (!TryGetUserContext(out var userContext, "perform self-operation"))
+            return false;
+
+        return !userContext.IsSystemContext;
+    }
+
     public bool IsAuthorizedForOwnUser(Guid requestUserId, bool suppressLog = true)
     {
         if (!TryGetUserContext(out var userContext, $"act on user {requestUserId}"))
             return false;
 
-        var isAuthorized = userContext.User.Id == requestUserId;
+        // System context is NOT a user — cannot perform self-operations
+        if (userContext.IsSystemContext)
+            return false;
+
+        var isAuthorized = userContext.User!.Id == requestUserId;
 
         if (!isAuthorized && !suppressLog)
         {
@@ -99,34 +114,36 @@ internal class AuthorizationProvider(
 
     public bool HasUserContext() => _userContextProvider.GetUserContext() != null;
 
-    public bool HasAccountContext()
+    public bool HasAccountContext(Guid accountId)
     {
-        if (!TryGetUserContext(out var userContext, "check account context"))
+        if (!TryGetUserContext(out var userContext, $"check account context for {accountId}"))
             return false;
 
-        if (userContext.CurrentAccount == null)
+        if (userContext.IsSystemContext)
+            return true;
+
+        if (userContext.CurrentAccount == null || userContext.CurrentAccount.Id != accountId)
         {
             _logger.LogInformation(
-                "Authorization denied: User {UserId} is not signed in to an account",
-                userContext.User.Id
+                "Authorization denied: User {UserId} is not signed in to account {AccountId}",
+                userContext.User!.Id,
+                accountId
             );
             return false;
         }
 
-        var hasAccountContext = userContext.AvailableAccounts.Any(a =>
-            a.Id == userContext.CurrentAccount.Id
-        );
+        var hasAccountAccess = userContext.AvailableAccounts.Any(a => a.Id == accountId);
 
-        if (!hasAccountContext)
+        if (!hasAccountAccess)
         {
             _logger.LogInformation(
                 "Authorization denied: User {UserId} does not have access to account {AccountId}",
-                userContext.User.Id,
-                userContext.CurrentAccount?.Id
+                userContext.User!.Id,
+                accountId
             );
         }
 
-        return hasAccountContext;
+        return hasAccountAccess;
     }
 
     public void ClearCache()
@@ -154,7 +171,14 @@ internal class AuthorizationProvider(
 
     private async Task<IReadOnlyList<PermissionEntity>> GetPermissionsAsync()
     {
-        var currentAccountId = _userContextProvider.GetUserContext()?.CurrentAccount?.Id;
+        var userContext = _userContextProvider.GetUserContext();
+
+        // System context bypasses at IsAuthorizedAsync level, so this shouldn't be called
+        // but return empty as a safe fallback
+        if (userContext?.IsSystemContext == true)
+            return [];
+
+        var currentAccountId = userContext?.CurrentAccount?.Id;
 
         // Fast path - cache already populated for the same account
         if (_cachedPermissions is not null && _cachedAccountId == currentAccountId)
@@ -168,8 +192,7 @@ internal class AuthorizationProvider(
             if (_cachedPermissions is not null && _cachedAccountId == currentAccountId)
                 return _cachedPermissions;
 
-            var userContext = _userContextProvider.GetUserContext()!;
-            var contextUserId = userContext.User.Id;
+            var contextUserId = userContext!.User!.Id;
             var contextAccountId = userContext.CurrentAccount?.Id;
 
             _cachedPermissions = await _permissionRepo.ListAsync(p =>

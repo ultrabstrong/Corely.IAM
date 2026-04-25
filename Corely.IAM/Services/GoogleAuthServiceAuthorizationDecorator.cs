@@ -14,12 +14,12 @@ internal class GoogleAuthServiceAuthorizationDecorator(
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
     public async Task<LinkGoogleAuthResult> LinkGoogleAuthAsync(LinkGoogleAuthRequest request) =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.LinkGoogleAuthAsync(request)
             : new LinkGoogleAuthResult(LinkGoogleAuthResultCode.UnauthorizedError, "Unauthorized");
 
     public async Task<UnlinkGoogleAuthResult> UnlinkGoogleAuthAsync() =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.UnlinkGoogleAuthAsync()
             : new UnlinkGoogleAuthResult(
                 UnlinkGoogleAuthResultCode.UnauthorizedError,
@@ -27,7 +27,7 @@ internal class GoogleAuthServiceAuthorizationDecorator(
             );
 
     public async Task<AuthMethodsResult> GetAuthMethodsAsync() =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.GetAuthMethodsAsync()
             : new AuthMethodsResult(
                 AuthMethodsResultCode.UnauthorizedError,

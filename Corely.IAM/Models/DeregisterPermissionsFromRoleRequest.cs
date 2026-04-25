@@ -1,3 +1,7 @@
 namespace Corely.IAM.Models;
 
-public record DeregisterPermissionsFromRoleRequest(List<Guid> PermissionIds, Guid RoleId);
+public record DeregisterPermissionsFromRoleRequest(
+    List<Guid> PermissionIds,
+    Guid RoleId,
+    Guid AccountId
+);

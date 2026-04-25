@@ -55,7 +55,12 @@ public class ModificationServiceTelemetryDecoratorTests
     [Fact]
     public async Task ModifyGroup_DelegatesToInnerAndLogsResult()
     {
-        var request = new UpdateGroupRequest(Guid.CreateVersion7(), "TestGroup", "Description");
+        var request = new UpdateGroupRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            "TestGroup",
+            "Description"
+        );
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
         _mockInnerService.Setup(x => x.ModifyGroupAsync(request)).ReturnsAsync(expectedResult);
 
@@ -69,7 +74,12 @@ public class ModificationServiceTelemetryDecoratorTests
     [Fact]
     public async Task ModifyRole_DelegatesToInnerAndLogsResult()
     {
-        var request = new UpdateRoleRequest(Guid.CreateVersion7(), "TestRole", "Description");
+        var request = new UpdateRoleRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            "TestRole",
+            "Description"
+        );
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
         _mockInnerService.Setup(x => x.ModifyRoleAsync(request)).ReturnsAsync(expectedResult);
 

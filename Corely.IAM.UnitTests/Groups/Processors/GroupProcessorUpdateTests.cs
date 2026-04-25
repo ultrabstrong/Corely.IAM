@@ -69,7 +69,7 @@ public class GroupProcessorUpdateTests
     {
         var group = await CreateGroupEntityAsync("OriginalName", description: "OriginalDesc");
 
-        var request = new UpdateGroupRequest(group.Id, "UpdatedName", "UpdatedDesc");
+        var request = new UpdateGroupRequest(group.Id, _accountId, "UpdatedName", "UpdatedDesc");
         var result = await _groupProcessor.UpdateGroupAsync(request);
 
         Assert.Equal(ModifyResultCode.Success, result.ResultCode);
@@ -83,7 +83,7 @@ public class GroupProcessorUpdateTests
     [Fact]
     public async Task UpdateGroup_ReturnsNotFound_WhenGroupDoesNotExist()
     {
-        var request = new UpdateGroupRequest(Guid.CreateVersion7(), "SomeName", null);
+        var request = new UpdateGroupRequest(Guid.CreateVersion7(), _accountId, "SomeName", null);
         var result = await _groupProcessor.UpdateGroupAsync(request);
 
         Assert.Equal(ModifyResultCode.NotFoundError, result.ResultCode);
@@ -95,7 +95,7 @@ public class GroupProcessorUpdateTests
         var otherAccountId = Guid.CreateVersion7();
         var group = await CreateGroupEntityAsync("OtherGroup", otherAccountId);
 
-        var request = new UpdateGroupRequest(group.Id, "NewName", null);
+        var request = new UpdateGroupRequest(group.Id, _accountId, "NewName", null);
         var result = await _groupProcessor.UpdateGroupAsync(request);
 
         Assert.Equal(ModifyResultCode.NotFoundError, result.ResultCode);
@@ -106,7 +106,7 @@ public class GroupProcessorUpdateTests
     {
         var group = await CreateGroupEntityAsync("TestGroup");
 
-        var request = new UpdateGroupRequest(group.Id, "", null);
+        var request = new UpdateGroupRequest(group.Id, _accountId, "", null);
         var result = await _groupProcessor.UpdateGroupAsync(request);
 
         Assert.Equal(ModifyResultCode.ValidationError, result.ResultCode);

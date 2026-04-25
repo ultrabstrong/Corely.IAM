@@ -1,16 +1,19 @@
 # Services
 
-Five public services form the API surface of Corely.IAM. All are registered as scoped and wrapped with authorization and telemetry decorators.
+Eight public services form the API surface of Corely.IAM. All are registered as scoped and wrapped with authorization and telemetry decorators (except `IAuthenticationService`, which has only a telemetry decorator).
 
 ## Service Overview
 
 | Service | Purpose | Methods |
 |---------|---------|---------|
-| `IRegistrationService` | Create entities, manage relationships, invitations | 14 |
+| `IRegistrationService` | Create entities, manage relationships | 14 |
 | `IDeregistrationService` | Delete entities, remove relationships | 11 |
 | `IRetrievalService` | Query entities with filtering, ordering, pagination | 16 |
 | `IModificationService` | Update entity properties | 4 |
 | `IAuthenticationService` | Sign in, sign out, account switching | 4 |
+| `IMfaService` | TOTP setup, confirmation, status, recovery codes | 5 |
+| `IGoogleAuthService` | Link/unlink Google auth, check auth methods | 3 |
+| `IInvitationService` | Create, accept, revoke, and list invitations | 4 |
 
 ## Decorator Pattern
 
@@ -22,6 +25,9 @@ TelemetryDecorator → AuthorizationDecorator → Service Implementation
 
 - **Authorization decorators** validate user/account context (not CRUDX permissions — those are at the processor level)
 - **Telemetry decorators** log method entry/exit and timing
+- **`IAuthenticationService`** has only a telemetry decorator (no authorization decorator)
+
+Authorization decorators use `IsNonSystemUserContext()` for "self" operations (MFA, password, Google auth) that require a real user, and `HasUserContext()` / `HasAccountContext()` for targeting operations that system context can perform.
 
 Registration order in `ServiceRegistrationExtensions.cs` determines nesting (last registered = outermost).
 

@@ -1,3 +1,7 @@
 ﻿namespace Corely.IAM.Models;
 
-public record RegisterPermissionsWithRoleRequest(List<Guid> PermissionIds, Guid RoleId);
+public record RegisterPermissionsWithRoleRequest(
+    List<Guid> PermissionIds,
+    Guid RoleId,
+    Guid AccountId
+);

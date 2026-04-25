@@ -34,12 +34,14 @@ public class RetrievalServiceAuthorizationDecoratorTests
             "",
             PagedResult<Permission>.Empty()
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.ListPermissionsAsync(It.IsAny<ListPermissionsRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListPermissionsAsync(new ListPermissionsRequest());
+        var result = await _decorator.ListPermissionsAsync(
+            new ListPermissionsRequest(Guid.CreateVersion7())
+        );
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(
@@ -51,9 +53,11 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task ListPermissions_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
-        var result = await _decorator.ListPermissionsAsync(new ListPermissionsRequest());
+        var result = await _decorator.ListPermissionsAsync(
+            new ListPermissionsRequest(Guid.CreateVersion7())
+        );
 
         Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerService.Verify(
@@ -76,7 +80,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
             null,
             null
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
         _mockInnerService
             .Setup(x => x.GetPermissionAsync(permissionId, false))
             .ReturnsAsync(expectedResult);
@@ -90,7 +94,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task GetPermission_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
 
         var result = await _decorator.GetPermissionAsync(Guid.CreateVersion7());
 
@@ -113,12 +117,12 @@ public class RetrievalServiceAuthorizationDecoratorTests
             "",
             PagedResult<Group>.Empty()
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.ListGroupsAsync(It.IsAny<ListGroupsRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListGroupsAsync(new ListGroupsRequest());
+        var result = await _decorator.ListGroupsAsync(new ListGroupsRequest(Guid.CreateVersion7()));
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.ListGroupsAsync(It.IsAny<ListGroupsRequest>()), Times.Once);
@@ -127,9 +131,9 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task ListGroups_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
-        var result = await _decorator.ListGroupsAsync(new ListGroupsRequest());
+        var result = await _decorator.ListGroupsAsync(new ListGroupsRequest(Guid.CreateVersion7()));
 
         Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerService.Verify(
@@ -152,7 +156,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
             null,
             null
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
         _mockInnerService.Setup(x => x.GetGroupAsync(groupId, false)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetGroupAsync(groupId);
@@ -164,7 +168,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task GetGroup_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
 
         var result = await _decorator.GetGroupAsync(Guid.CreateVersion7());
 
@@ -187,12 +191,12 @@ public class RetrievalServiceAuthorizationDecoratorTests
             "",
             PagedResult<Role>.Empty()
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.ListRolesAsync(It.IsAny<ListRolesRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListRolesAsync(new ListRolesRequest());
+        var result = await _decorator.ListRolesAsync(new ListRolesRequest(Guid.CreateVersion7()));
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.ListRolesAsync(It.IsAny<ListRolesRequest>()), Times.Once);
@@ -201,9 +205,9 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task ListRoles_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
-        var result = await _decorator.ListRolesAsync(new ListRolesRequest());
+        var result = await _decorator.ListRolesAsync(new ListRolesRequest(Guid.CreateVersion7()));
 
         Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerService.Verify(x => x.ListRolesAsync(It.IsAny<ListRolesRequest>()), Times.Never);
@@ -223,7 +227,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
             null,
             null
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
         _mockInnerService.Setup(x => x.GetRoleAsync(roleId, false)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetRoleAsync(roleId);
@@ -235,7 +239,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task GetRole_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
 
         var result = await _decorator.GetRoleAsync(Guid.CreateVersion7());
 
@@ -258,12 +262,12 @@ public class RetrievalServiceAuthorizationDecoratorTests
             "",
             PagedResult<User>.Empty()
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.ListUsersAsync(It.IsAny<ListUsersRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListUsersAsync(new ListUsersRequest());
+        var result = await _decorator.ListUsersAsync(new ListUsersRequest(Guid.CreateVersion7()));
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.ListUsersAsync(It.IsAny<ListUsersRequest>()), Times.Once);
@@ -272,9 +276,9 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task ListUsers_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
-        var result = await _decorator.ListUsersAsync(new ListUsersRequest());
+        var result = await _decorator.ListUsersAsync(new ListUsersRequest(Guid.CreateVersion7()));
 
         Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerService.Verify(x => x.ListUsersAsync(It.IsAny<ListUsersRequest>()), Times.Never);
@@ -371,7 +375,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
             null,
             null
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.GetAccountAsync(accountId, false))
             .ReturnsAsync(expectedResult);
@@ -385,7 +389,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task GetAccount_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.GetAccountAsync(Guid.CreateVersion7());
 
@@ -410,7 +414,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
             null,
             null
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.GetAccountSymmetricEncryptionProviderAsync(accountId))
             .ReturnsAsync(expectedResult);
@@ -427,7 +431,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task GetAccountSymmetricEncryptionProvider_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.GetAccountSymmetricEncryptionProviderAsync(
             Guid.CreateVersion7()
@@ -454,7 +458,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
             null,
             null
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.GetAccountAsymmetricEncryptionProviderAsync(accountId))
             .ReturnsAsync(expectedResult);
@@ -471,7 +475,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task GetAccountAsymmetricEncryptionProvider_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.GetAccountAsymmetricEncryptionProviderAsync(
             Guid.CreateVersion7()
@@ -498,7 +502,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
             null,
             null
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.GetAccountAsymmetricSignatureProviderAsync(accountId))
             .ReturnsAsync(expectedResult);
@@ -515,7 +519,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task GetAccountAsymmetricSignatureProvider_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.GetAccountAsymmetricSignatureProviderAsync(
             Guid.CreateVersion7()
@@ -541,7 +545,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
             null,
             null
         );
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(true);
         _mockInnerService
             .Setup(x => x.GetUserSymmetricEncryptionProviderAsync())
             .ReturnsAsync(expectedResult);
@@ -555,7 +559,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task GetUserSymmetricEncryptionProvider_ReturnsUnauthorized_WhenNoUserContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(false);
 
         var result = await _decorator.GetUserSymmetricEncryptionProviderAsync();
 
@@ -576,7 +580,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
             null,
             null
         );
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(true);
         _mockInnerService
             .Setup(x => x.GetUserAsymmetricEncryptionProviderAsync())
             .ReturnsAsync(expectedResult);
@@ -590,7 +594,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task GetUserAsymmetricEncryptionProvider_ReturnsUnauthorized_WhenNoUserContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(false);
 
         var result = await _decorator.GetUserAsymmetricEncryptionProviderAsync();
 
@@ -611,7 +615,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
             null,
             null
         );
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(true);
         _mockInnerService
             .Setup(x => x.GetUserAsymmetricSignatureProviderAsync())
             .ReturnsAsync(expectedResult);
@@ -625,7 +629,7 @@ public class RetrievalServiceAuthorizationDecoratorTests
     [Fact]
     public async Task GetUserAsymmetricSignatureProvider_ReturnsUnauthorized_WhenNoUserContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(false);
 
         var result = await _decorator.GetUserAsymmetricSignatureProviderAsync();
 

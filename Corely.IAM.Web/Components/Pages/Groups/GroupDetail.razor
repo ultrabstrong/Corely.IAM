@@ -212,7 +212,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterGroupAsync(new DeregisterGroupRequest(Id));
+            var result = await DeregistrationService.DeregisterGroupAsync(new DeregisterGroupRequest(Id, UserContext!.CurrentAccount!.Id));
             if (result.ResultCode == DeregisterGroupResultCode.Success)
             {
                 NavigationManager.NavigateTo(AppRoutes.Groups);
@@ -238,7 +238,7 @@ else
 
     private async Task<(List<PickerItem>, int)> FetchAvailableUsersAsync(int skip, int take)
     {
-        var result = await RetrievalService.ListUsersAsync(new ListUsersRequest(Skip: skip, Take: take));
+        var result = await RetrievalService.ListUsersAsync(new ListUsersRequest(UserContext!.CurrentAccount!.Id, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             var items = result.Data.Items.Select(u => new PickerItem(u.Id, u.Username, u.Email)).ToList();
@@ -249,7 +249,7 @@ else
 
     private async Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take)
     {
-        var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(Skip: skip, Take: take));
+        var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(UserContext!.CurrentAccount!.Id, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             var items = result.Data.Items.Select(r => new PickerItem(r.Id, r.Name, r.Description)).ToList();
@@ -263,7 +263,7 @@ else
         if (string.IsNullOrWhiteSpace(_editName)) return;
         await ExecuteSafeAsync(async () =>
         {
-            var result = await ModificationService.ModifyGroupAsync(new UpdateGroupRequest(Id, _editName, _editDescription));
+            var result = await ModificationService.ModifyGroupAsync(new UpdateGroupRequest(Id, UserContext!.CurrentAccount!.Id, _editName, _editDescription));
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Group updated.", result.Message);
             if (result.ResultCode == ModifyResultCode.Success)
             {
@@ -277,7 +277,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.RegisterUsersWithGroupAsync(new RegisterUsersWithGroupRequest(userIds, Id));
+            var result = await RegistrationService.RegisterUsersWithGroupAsync(new RegisterUsersWithGroupRequest(userIds, Id, UserContext!.CurrentAccount!.Id));
             SetResultMessage(result.ResultCode == AddUsersToGroupResultCode.Success, $"{userIds.Count} user(s) added.", result.Message);
             await ReloadAsync();
         });
@@ -289,7 +289,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterUsersFromGroupAsync(new DeregisterUsersFromGroupRequest([_confirmItemId], Id));
+            var result = await DeregistrationService.DeregisterUsersFromGroupAsync(new DeregisterUsersFromGroupRequest([_confirmItemId], Id, UserContext!.CurrentAccount!.Id));
             SetResultMessage(result.ResultCode == DeregisterUsersFromGroupResultCode.Success, "User removed.", result.Message);
             await ReloadAsync();
         });
@@ -299,7 +299,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.RegisterRolesWithGroupAsync(new RegisterRolesWithGroupRequest(roleIds, Id));
+            var result = await RegistrationService.RegisterRolesWithGroupAsync(new RegisterRolesWithGroupRequest(roleIds, Id, UserContext!.CurrentAccount!.Id));
             SetResultMessage(result.ResultCode == AssignRolesToGroupResultCode.Success, $"{roleIds.Count} role(s) added.", result.Message);
             await ReloadAsync();
         });
@@ -311,7 +311,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterRolesFromGroupAsync(new DeregisterRolesFromGroupRequest([_confirmItemId], Id));
+            var result = await DeregistrationService.DeregisterRolesFromGroupAsync(new DeregisterRolesFromGroupRequest([_confirmItemId], Id, UserContext!.CurrentAccount!.Id));
             SetResultMessage(result.ResultCode == DeregisterRolesFromGroupResultCode.Success, "Role removed.", result.Message);
             await ReloadAsync();
         });

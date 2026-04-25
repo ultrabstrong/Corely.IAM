@@ -1,6 +1,5 @@
 using AutoFixture;
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 
@@ -11,7 +10,6 @@ public class UserContextProviderTests
     private const string TEST_DEVICE_ID = "test-device";
 
     private readonly Fixture _fixture = new();
-    private readonly Mock<IAuthenticationProvider> _mockAuthenticationProvider = new();
     private readonly UserContextProvider _provider;
 
     public UserContextProviderTests()
@@ -19,7 +17,7 @@ public class UserContextProviderTests
         _fixture.Customize<Account>(c =>
             c.Without(a => a.SymmetricKeys).Without(a => a.AsymmetricKeys)
         );
-        _provider = new UserContextProvider(_mockAuthenticationProvider.Object);
+        _provider = new UserContextProvider();
     }
 
     [Fact]
@@ -83,146 +81,15 @@ public class UserContextProviderTests
     }
 
     [Fact]
-    public async Task SetUserContext_ReturnsResultCode_WhenTokenValidationFails()
+    public void SetSystemContext_SetsSystemContext()
     {
-        var token = "some-token";
-        _mockAuthenticationProvider
-            .Setup(p => p.ValidateUserAuthTokenAsync(token))
-            .ReturnsAsync(
-                new UserAuthTokenValidationResult(
-                    UserAuthTokenValidationResultCode.TokenValidationFailed,
-                    null,
-                    null,
-                    null,
-                    []
-                )
-            );
+        ((IUserContextSetter)_provider).SetSystemContext(TEST_DEVICE_ID);
 
-        var result = await _provider.SetUserContextAsync(token);
+        var result = _provider.GetUserContext();
 
-        Assert.Equal(UserAuthTokenValidationResultCode.TokenValidationFailed, result);
-        Assert.Null(_provider.GetUserContext());
-    }
-
-    [Fact]
-    public async Task SetUserContext_ReturnsSuccess_WhenTokenIsValid()
-    {
-        var token = "valid-token";
-        var account = _fixture.Create<Account>();
-        var validationResult = new UserAuthTokenValidationResult(
-            UserAuthTokenValidationResultCode.Success,
-            new User() { Id = Guid.CreateVersion7() },
-            new Account() { Id = Guid.CreateVersion7() },
-            TEST_DEVICE_ID,
-            [account]
-        );
-
-        _mockAuthenticationProvider
-            .Setup(p => p.ValidateUserAuthTokenAsync(token))
-            .ReturnsAsync(validationResult);
-
-        var result = await _provider.SetUserContextAsync(token);
-
-        Assert.Equal(UserAuthTokenValidationResultCode.Success, result);
-        var context = _provider.GetUserContext();
-        Assert.NotNull(context);
-        Assert.Equal(validationResult.User!.Id, context.User.Id);
-        Assert.NotNull(context.CurrentAccount);
-        Assert.Equal(validationResult.CurrentAccount!.Id, context.CurrentAccount.Id);
-        Assert.Equal(validationResult.DeviceId, context.DeviceId);
-        Assert.Single(context.AvailableAccounts);
-        Assert.Equal(account, context.AvailableAccounts[0]);
-    }
-
-    [Fact]
-    public async Task SetUserContext_SetsContextWithNullAccountId_WhenNoSignedInAccountClaim()
-    {
-        var token = "valid-token";
-        var validationResult = new UserAuthTokenValidationResult(
-            UserAuthTokenValidationResultCode.Success,
-            new User() { Id = Guid.CreateVersion7() },
-            null,
-            TEST_DEVICE_ID,
-            []
-        );
-        _mockAuthenticationProvider
-            .Setup(p => p.ValidateUserAuthTokenAsync(token))
-            .ReturnsAsync(validationResult);
-
-        var result = await _provider.SetUserContextAsync(token);
-
-        Assert.Equal(UserAuthTokenValidationResultCode.Success, result);
-        var context = _provider.GetUserContext();
-        Assert.NotNull(context);
-        Assert.Equal(validationResult.User!.Id, context.User.Id);
-        Assert.Null(context.CurrentAccount);
-        Assert.Equal(TEST_DEVICE_ID, context.DeviceId);
-        Assert.Empty(context.AvailableAccounts);
-    }
-
-    [Theory]
-    [InlineData(UserAuthTokenValidationResultCode.InvalidTokenFormat)]
-    [InlineData(UserAuthTokenValidationResultCode.MissingUserIdClaim)]
-    [InlineData(UserAuthTokenValidationResultCode.TokenValidationFailed)]
-    public async Task SetUserContext_ReturnsCorrectResultCode_ForEachFailureType(
-        UserAuthTokenValidationResultCode expectedResultCode
-    )
-    {
-        var token = "some-token";
-        _mockAuthenticationProvider
-            .Setup(p => p.ValidateUserAuthTokenAsync(token))
-            .ReturnsAsync(
-                new UserAuthTokenValidationResult(expectedResultCode, null, null, null, [])
-            );
-
-        var result = await _provider.SetUserContextAsync(token);
-
-        Assert.Equal(expectedResultCode, result);
-        Assert.Null(_provider.GetUserContext());
-    }
-
-    [Fact]
-    public async Task SetUserContext_ReturnsMissingDeviceIdClaim_WhenDeviceIdIsNull()
-    {
-        var token = "valid-token";
-        var validationResult = new UserAuthTokenValidationResult(
-            UserAuthTokenValidationResultCode.Success,
-            new User() { Id = Guid.CreateVersion7() },
-            new Account() { Id = Guid.CreateVersion7() },
-            null, // DeviceId is null
-            []
-        );
-
-        _mockAuthenticationProvider
-            .Setup(p => p.ValidateUserAuthTokenAsync(token))
-            .ReturnsAsync(validationResult);
-
-        var result = await _provider.SetUserContextAsync(token);
-
-        Assert.Equal(UserAuthTokenValidationResultCode.MissingDeviceIdClaim, result);
-        Assert.Null(_provider.GetUserContext());
-    }
-
-    [Fact]
-    public async Task SetUserContext_ReturnsMissingDeviceIdClaim_WhenDeviceIdIsEmpty()
-    {
-        var token = "valid-token";
-        var validationResult = new UserAuthTokenValidationResult(
-            UserAuthTokenValidationResultCode.Success,
-            new User() { Id = Guid.CreateVersion7() },
-            new Account() { Id = Guid.CreateVersion7() },
-            null, // DeviceId is null
-            []
-        );
-
-        _mockAuthenticationProvider
-            .Setup(p => p.ValidateUserAuthTokenAsync(token))
-            .ReturnsAsync(validationResult);
-
-        var result = await _provider.SetUserContextAsync(token);
-
-        Assert.Equal(UserAuthTokenValidationResultCode.MissingDeviceIdClaim, result);
-        Assert.Null(_provider.GetUserContext());
+        Assert.NotNull(result);
+        Assert.True(result.IsSystemContext);
+        Assert.Equal(TEST_DEVICE_ID, result.DeviceId);
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Extensions;
 using Corely.IAM.Models;
+using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
@@ -57,4 +58,15 @@ internal class AuthenticationServiceTelemetryDecorator(
             () => _inner.VerifyMfaAsync(request),
             logResult: true
         );
+
+    public async Task<UserAuthTokenValidationResultCode> AuthenticateWithTokenAsync(
+        string authToken
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(AuthenticationService),
+            () => _inner.AuthenticateWithTokenAsync(authToken),
+            logResult: true
+        );
+
+    public void AuthenticateAsSystem(string deviceId) => _inner.AuthenticateAsSystem(deviceId);
 }

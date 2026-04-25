@@ -14,7 +14,7 @@ internal class MfaServiceAuthorizationDecorator(
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
     public async Task<EnableTotpResult> EnableTotpAsync() =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.EnableTotpAsync()
             : new EnableTotpResult(
                 EnableTotpResultCode.UnauthorizedError,
@@ -25,17 +25,17 @@ internal class MfaServiceAuthorizationDecorator(
             );
 
     public async Task<ConfirmTotpResult> ConfirmTotpAsync(ConfirmTotpRequest request) =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.ConfirmTotpAsync(request)
             : new ConfirmTotpResult(ConfirmTotpResultCode.UnauthorizedError, "Unauthorized");
 
     public async Task<DisableTotpResult> DisableTotpAsync(DisableTotpRequest request) =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.DisableTotpAsync(request)
             : new DisableTotpResult(DisableTotpResultCode.UnauthorizedError, "Unauthorized");
 
     public async Task<RegenerateTotpRecoveryCodesResult> RegenerateTotpRecoveryCodesAsync() =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.RegenerateTotpRecoveryCodesAsync()
             : new RegenerateTotpRecoveryCodesResult(
                 RegenerateTotpRecoveryCodesResultCode.UnauthorizedError,
@@ -44,7 +44,7 @@ internal class MfaServiceAuthorizationDecorator(
             );
 
     public async Task<TotpStatusResult> GetTotpStatusAsync() =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.GetTotpStatusAsync()
             : new TotpStatusResult(
                 TotpStatusResultCode.UnauthorizedError,

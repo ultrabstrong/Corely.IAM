@@ -99,7 +99,9 @@ public class RetrievalServiceTests
             )
             .ReturnsAsync(new ListResult<Permission>(RetrieveResultCode.Success, "", pagedResult));
 
-        var result = await _service.ListPermissionsAsync(new ListPermissionsRequest());
+        var result = await _service.ListPermissionsAsync(
+            new ListPermissionsRequest(Guid.CreateVersion7())
+        );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -131,7 +133,7 @@ public class RetrievalServiceTests
             )
             .ReturnsAsync(new ListResult<Group>(RetrieveResultCode.Success, "", pagedResult));
 
-        var result = await _service.ListGroupsAsync(new ListGroupsRequest());
+        var result = await _service.ListGroupsAsync(new ListGroupsRequest(Guid.CreateVersion7()));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -163,7 +165,7 @@ public class RetrievalServiceTests
             )
             .ReturnsAsync(new ListResult<Role>(RetrieveResultCode.Success, "", pagedResult));
 
-        var result = await _service.ListRolesAsync(new ListRolesRequest());
+        var result = await _service.ListRolesAsync(new ListRolesRequest(Guid.CreateVersion7()));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -200,7 +202,7 @@ public class RetrievalServiceTests
             )
             .ReturnsAsync(new ListResult<User>(RetrieveResultCode.Success, "", pagedResult));
 
-        var result = await _service.ListUsersAsync(new ListUsersRequest());
+        var result = await _service.ListUsersAsync(new ListUsersRequest(Guid.CreateVersion7()));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);

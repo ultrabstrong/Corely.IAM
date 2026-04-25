@@ -74,7 +74,12 @@ public class RoleProcessorUpdateTests
     {
         var created = await CreateRoleEntityAsync();
 
-        var request = new UpdateRoleRequest(created.Id, "UpdatedRole", "Updated description");
+        var request = new UpdateRoleRequest(
+            created.Id,
+            _accountId,
+            "UpdatedRole",
+            "Updated description"
+        );
         var result = await _roleProcessor.UpdateRoleAsync(request);
 
         Assert.Equal(ModifyResultCode.Success, result.ResultCode);
@@ -88,7 +93,7 @@ public class RoleProcessorUpdateTests
     [Fact]
     public async Task UpdateRole_ReturnsNotFound_WhenRoleDoesNotExist()
     {
-        var request = new UpdateRoleRequest(Guid.CreateVersion7(), "NoRole", null);
+        var request = new UpdateRoleRequest(Guid.CreateVersion7(), _accountId, "NoRole", null);
 
         var result = await _roleProcessor.UpdateRoleAsync(request);
 
@@ -101,7 +106,7 @@ public class RoleProcessorUpdateTests
         var otherAccountId = Guid.CreateVersion7();
         var created = await CreateRoleEntityAsync(accountId: otherAccountId);
 
-        var request = new UpdateRoleRequest(created.Id, "UpdatedRole", null);
+        var request = new UpdateRoleRequest(created.Id, _accountId, "UpdatedRole", null);
         var result = await _roleProcessor.UpdateRoleAsync(request);
 
         Assert.Equal(ModifyResultCode.NotFoundError, result.ResultCode);
@@ -112,7 +117,7 @@ public class RoleProcessorUpdateTests
     {
         var created = await CreateRoleEntityAsync(name: "Owner", isSystemDefined: true);
 
-        var request = new UpdateRoleRequest(created.Id, "RenamedOwner", null);
+        var request = new UpdateRoleRequest(created.Id, _accountId, "RenamedOwner", null);
         var result = await _roleProcessor.UpdateRoleAsync(request);
 
         Assert.Equal(ModifyResultCode.SystemDefinedError, result.ResultCode);
@@ -122,7 +127,7 @@ public class RoleProcessorUpdateTests
     public async Task UpdateRole_ReturnsValidationError_WhenNameEmpty()
     {
         var created = await CreateRoleEntityAsync();
-        var request = new UpdateRoleRequest(created.Id, "", null);
+        var request = new UpdateRoleRequest(created.Id, _accountId, "", null);
 
         var result = await _roleProcessor.UpdateRoleAsync(request);
 

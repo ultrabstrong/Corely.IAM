@@ -1,3 +1,4 @@
+using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Security;
@@ -14,25 +15,35 @@ public class AuthenticationTokenMiddleware(
     IUserContextClaimsBuilder userContextClaimsBuilder
 )
 {
-    public async Task InvokeAsync(HttpContext context, IUserContextProvider userContextProvider)
+    public async Task InvokeAsync(
+        HttpContext context,
+        IAuthenticationService authenticationService,
+        IUserContextProvider userContextProvider
+    )
     {
         var token = context.Request.Cookies[AuthenticationConstants.AUTH_TOKEN_COOKIE];
 
         if (!string.IsNullOrWhiteSpace(token))
-            await ValidateAndSetContextAsync(context, userContextProvider, token);
+            await ValidateAndSetContextAsync(
+                context,
+                authenticationService,
+                userContextProvider,
+                token
+            );
 
         await next(context);
     }
 
     private async Task ValidateAndSetContextAsync(
         HttpContext context,
+        IAuthenticationService authenticationService,
         IUserContextProvider userContextProvider,
         string token
     )
     {
         try
         {
-            var result = await userContextProvider.SetUserContextAsync(token);
+            var result = await authenticationService.AuthenticateWithTokenAsync(token);
             if (result != UserAuthTokenValidationResultCode.Success)
             {
                 logger.LogDebug(

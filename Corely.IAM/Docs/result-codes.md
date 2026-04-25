@@ -199,6 +199,15 @@ Complete reference of all result code enums across Corely.IAM.
 | `InvitationAlreadyAcceptedError` | Already used |
 | `AddToAccountError` | Failed to add user to account |
 | `EmailMismatchError` | Email doesn't match authenticated user |
+| `UnauthorizedError` | No authenticated user context (system context not allowed) |
+
+### RevokeInvitationResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | Invitation revoked |
+| `InvitationNotFoundError` | Invitation not found |
+| `InvitationAlreadyAcceptedError` | Cannot revoke an already-accepted invitation |
 | `UnauthorizedError` | Insufficient permissions |
 
 ## TOTP Result Codes
@@ -209,6 +218,7 @@ Complete reference of all result code enums across Corely.IAM.
 |------|---------|
 | `Success` | TOTP setup initiated, secret and recovery codes returned |
 | `AlreadyEnabledError` | TOTP is already enabled for this user |
+| `UnauthorizedError` | No authenticated user context (system context not allowed) |
 
 ### ConfirmTotpResultCode
 
@@ -218,6 +228,7 @@ Complete reference of all result code enums across Corely.IAM.
 | `NotFoundError` | No TOTP setup found |
 | `AlreadyEnabledError` | TOTP is already confirmed |
 | `InvalidCodeError` | TOTP code does not match |
+| `UnauthorizedError` | No authenticated user context (system context not allowed) |
 
 ### DisableTotpResultCode
 
@@ -226,12 +237,14 @@ Complete reference of all result code enums across Corely.IAM.
 | `Success` | TOTP disabled and removed |
 | `NotFoundError` | TOTP is not enabled |
 | `InvalidCodeError` | TOTP code does not match |
+| `UnauthorizedError` | No authenticated user context (system context not allowed) |
 
 ### TotpStatusResultCode
 
 | Code | Meaning |
 |------|---------|
 | `Success` | Status retrieved |
+| `UnauthorizedError` | No authenticated user context (system context not allowed) |
 
 ### RegenerateTotpRecoveryCodesResultCode
 
@@ -240,6 +253,7 @@ Complete reference of all result code enums across Corely.IAM.
 | `Success` | New recovery codes generated |
 | `NotFoundError` | No TOTP setup found |
 | `NotEnabledError` | TOTP is not yet enabled |
+| `UnauthorizedError` | No authenticated user context (system context not allowed) |
 
 ### VerifyTotpOrRecoveryCodeResultCode
 
@@ -260,6 +274,7 @@ Complete reference of all result code enums across Corely.IAM.
 | `InvalidGoogleTokenError` | Google ID token validation failed |
 | `AlreadyLinkedError` | User already has a linked Google account |
 | `GoogleAccountInUseError` | This Google account is linked to another user |
+| `UnauthorizedError` | No authenticated user context (system context not allowed) |
 
 ### UnlinkGoogleAuthResultCode
 
@@ -268,12 +283,14 @@ Complete reference of all result code enums across Corely.IAM.
 | `Success` | Google account unlinked |
 | `NotLinkedError` | No Google account linked |
 | `LastAuthMethodError` | Cannot unlink the only authentication method |
+| `UnauthorizedError` | No authenticated user context (system context not allowed) |
 
 ### AuthMethodsResultCode
 
 | Code | Meaning |
 |------|---------|
 | `Success` | Auth methods retrieved |
+| `UnauthorizedError` | No authenticated user context (system context not allowed) |
 
 ### RegisterUserWithGoogleResultCode
 

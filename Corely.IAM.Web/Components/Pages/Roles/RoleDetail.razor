@@ -163,7 +163,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterRoleAsync(new DeregisterRoleRequest(Id));
+            var result = await DeregistrationService.DeregisterRoleAsync(new DeregisterRoleRequest(Id, UserContext!.CurrentAccount!.Id));
             if (result.ResultCode == DeregisterRoleResultCode.Success)
             {
                 NavigationManager.NavigateTo(AppRoutes.Roles);
@@ -189,7 +189,7 @@ else
 
     private async Task<(List<PickerItem>, int)> FetchAvailablePermissionsAsync(int skip, int take)
     {
-        var result = await RetrievalService.ListPermissionsAsync(new ListPermissionsRequest(Skip: skip, Take: take));
+        var result = await RetrievalService.ListPermissionsAsync(new ListPermissionsRequest(UserContext!.CurrentAccount!.Id, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             var items = result.Data.Items
@@ -205,7 +205,7 @@ else
         if (string.IsNullOrWhiteSpace(_editName)) return;
         await ExecuteSafeAsync(async () =>
         {
-            var result = await ModificationService.ModifyRoleAsync(new UpdateRoleRequest(Id, _editName, _editDescription));
+            var result = await ModificationService.ModifyRoleAsync(new UpdateRoleRequest(Id, UserContext!.CurrentAccount!.Id, _editName, _editDescription));
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Role updated.", result.Message);
             if (result.ResultCode == ModifyResultCode.Success)
             {
@@ -219,7 +219,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.RegisterPermissionsWithRoleAsync(new RegisterPermissionsWithRoleRequest(permissionIds, Id));
+            var result = await RegistrationService.RegisterPermissionsWithRoleAsync(new RegisterPermissionsWithRoleRequest(permissionIds, Id, UserContext!.CurrentAccount!.Id));
             SetResultMessage(result.ResultCode == AssignPermissionsToRoleResultCode.Success, $"{permissionIds.Count} permission(s) added.", result.Message);
             await ReloadAsync();
         });
@@ -231,7 +231,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterPermissionsFromRoleAsync(new DeregisterPermissionsFromRoleRequest([_confirmItemId], Id));
+            var result = await DeregistrationService.DeregisterPermissionsFromRoleAsync(new DeregisterPermissionsFromRoleRequest([_confirmItemId], Id, UserContext!.CurrentAccount!.Id));
             SetResultMessage(result.ResultCode == DeregisterPermissionsFromRoleResultCode.Success, "Permission removed.", result.Message);
             await ReloadAsync();
         });

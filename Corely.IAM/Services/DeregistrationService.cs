@@ -66,7 +66,8 @@ internal class DeregistrationService(
 
     public async Task<DeregisterUserResult> DeregisterUserAsync()
     {
-        var userId = _userContextProvider.GetUserContext()!.User.Id;
+        var context = _userContextProvider.GetUserContext()!;
+        var userId = context.User!.Id;
         _logger.LogInformation("Deregistering user {UserId}", userId);
 
         var result = await _userProcessor.DeleteUserAsync(userId);
@@ -87,10 +88,13 @@ internal class DeregistrationService(
         return new DeregisterUserResult(DeregisterUserResultCode.Success, string.Empty);
     }
 
-    public async Task<DeregisterAccountResult> DeregisterAccountAsync()
+    public async Task<DeregisterAccountResult> DeregisterAccountAsync(
+        DeregisterAccountRequest request
+    )
     {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
         var context = _userContextProvider.GetUserContext();
-        var accountId = context!.CurrentAccount!.Id;
+        var accountId = request.AccountId;
 
         _logger.LogInformation("Deregistering account {AccountId}", accountId);
 
@@ -108,8 +112,11 @@ internal class DeregistrationService(
             );
         }
 
-        context.AvailableAccounts.RemoveAll(a => a.Id == accountId);
-        _userContextSetter.SetUserContext(context with { CurrentAccount = null });
+        if (!context!.IsSystemContext)
+        {
+            context.AvailableAccounts.RemoveAll(a => a.Id == accountId);
+            _userContextSetter.SetUserContext(context with { CurrentAccount = null });
+        }
 
         _logger.LogInformation("Account {AccountId} deregistered", accountId);
         return new DeregisterAccountResult(DeregisterAccountResultCode.Success, string.Empty);
@@ -192,7 +199,7 @@ internal class DeregistrationService(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         var context = _userContextProvider.GetUserContext()!;
-        var accountId = context.CurrentAccount!.Id;
+        var accountId = request.AccountId;
         _logger.LogInformation(
             "Deregistering user {UserId} from account {AccountId}",
             request.UserId,
@@ -216,8 +223,7 @@ internal class DeregistrationService(
             );
         }
 
-        // If the removed user is the current user, clear account context
-        if (request.UserId == context.User.Id)
+        if (!context.IsSystemContext && request.UserId == context.User!.Id)
         {
             context.AvailableAccounts.RemoveAll(a => a.Id == accountId);
             _userContextSetter.SetUserContext(context with { CurrentAccount = null });
@@ -238,7 +244,7 @@ internal class DeregistrationService(
     public async Task<DeregisterUserFromAccountResult> LeaveAccountAsync(Guid accountId)
     {
         var context = _userContextProvider.GetUserContext()!;
-        var userId = context.User.Id;
+        var userId = context.User!.Id;
         _logger.LogInformation("User {UserId} leaving account {AccountId}", userId, accountId);
 
         var result = await _accountProcessor.RemoveUserFromAccountAsync(new(userId, accountId));
@@ -591,7 +597,7 @@ internal class DeregistrationService(
     public async Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync()
     {
         var context = _userContextProvider.GetUserContext();
-        var result = await _basicAuthProcessor.DeleteBasicAuthAsync(context!.User.Id);
+        var result = await _basicAuthProcessor.DeleteBasicAuthAsync(context!.User!.Id);
         return new DeregisterBasicAuthResult(
             (DeregisterBasicAuthResultCode)(int)result.ResultCode,
             result.Message

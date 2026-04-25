@@ -4,6 +4,7 @@ using Corely.Common.Filtering.Ordering;
 namespace Corely.IAM.Users.Models;
 
 public record ListUsersRequest(
+    Guid AccountId,
     FilterBuilder<User>? Filter = null,
     OrderBuilder<User>? Order = null,
     int Skip = 0,

@@ -131,6 +131,7 @@ public class ModificationServiceTests
     {
         var request = new UpdateGroupRequest(
             Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
             "Updated Group",
             "Updated description"
         );
@@ -149,6 +150,7 @@ public class ModificationServiceTests
     public async Task ModifyGroup_ReturnsNotFound_WhenProcessorReturnsNotFound()
     {
         var request = new UpdateGroupRequest(
+            Guid.CreateVersion7(),
             Guid.CreateVersion7(),
             "Updated Group",
             "Updated description"
@@ -181,6 +183,7 @@ public class ModificationServiceTests
     {
         var request = new UpdateRoleRequest(
             Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
             "Updated Role",
             "Updated description"
         );
@@ -199,6 +202,7 @@ public class ModificationServiceTests
     public async Task ModifyRole_ReturnsNotFound_WhenProcessorReturnsNotFound()
     {
         var request = new UpdateRoleRequest(
+            Guid.CreateVersion7(),
             Guid.CreateVersion7(),
             "Updated Role",
             "Updated description"

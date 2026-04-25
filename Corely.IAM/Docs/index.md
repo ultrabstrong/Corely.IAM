@@ -31,6 +31,7 @@ graph LR
 - **Multi-tenant accounts** — users belong to multiple accounts with scoped RBAC
 - **CRUDX permissions** — fine-grained Create/Read/Update/Delete/Execute per resource type
 - **Token-based authentication** — JWT with custom claims, no HttpContext dependency
+- **System context** — headless processes (Azure Functions, background services) can call APIs without user authentication
 - **Multi-factor authentication** — TOTP (authenticator apps) with recovery codes
 - **Google Sign-In** — link Google accounts as an alternative auth method
 - **Invitation system** — token-based onboarding with expiry and revocation

@@ -2,7 +2,6 @@ using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Services;
-using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.DevTools.Commands.Invitation;
 
@@ -14,16 +13,18 @@ internal partial class Invitation : CommandBase
         private string Token { get; init; } = null!;
 
         private readonly IInvitationService _invitationService;
-        private readonly IUserContextProvider _userContextProvider;
+        private readonly IAuthenticationService _authenticationService;
 
         public AcceptInvitation(
             IInvitationService invitationService,
-            IUserContextProvider userContextProvider
+            IAuthenticationService authenticationService
         )
             : base("accept", "Accept an invitation")
         {
             _invitationService = invitationService.ThrowIfNull(nameof(invitationService));
-            _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
+            _authenticationService = authenticationService.ThrowIfNull(
+                nameof(authenticationService)
+            );
         }
 
         protected override async Task ExecuteAsync()
@@ -34,7 +35,7 @@ internal partial class Invitation : CommandBase
                 return;
             }
 
-            if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
+            if (!await SetUserContextFromAuthTokenFileAsync(_authenticationService))
                 return;
 
             var request = new AcceptInvitationRequest(Token);

@@ -288,7 +288,7 @@ public class AuthorizationProviderTests
             availableAccounts: [account]
         );
 
-        var result = provider.HasAccountContext();
+        var result = provider.HasAccountContext(account.Id);
 
         Assert.True(result);
     }
@@ -299,7 +299,7 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         // Don't set user context
 
-        var result = provider.HasAccountContext();
+        var result = provider.HasAccountContext(Guid.CreateVersion7());
 
         Assert.False(result);
     }
@@ -315,7 +315,7 @@ public class AuthorizationProviderTests
             availableAccounts: [account]
         );
 
-        var result = provider.HasAccountContext();
+        var result = provider.HasAccountContext(account.Id);
 
         Assert.False(result);
     }
@@ -332,7 +332,7 @@ public class AuthorizationProviderTests
             availableAccounts: [availableAccount]
         );
 
-        var result = provider.HasAccountContext();
+        var result = provider.HasAccountContext(currentAccount.Id);
 
         Assert.False(result);
     }
@@ -350,7 +350,7 @@ public class AuthorizationProviderTests
             availableAccounts: [account1, account2, account3]
         );
 
-        var result = provider.HasAccountContext();
+        var result = provider.HasAccountContext(account2.Id);
 
         Assert.True(result);
     }
@@ -366,7 +366,7 @@ public class AuthorizationProviderTests
             availableAccounts: []
         );
 
-        var result = provider.HasAccountContext();
+        var result = provider.HasAccountContext(currentAccount.Id);
 
         Assert.False(result);
     }

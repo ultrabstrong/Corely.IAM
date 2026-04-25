@@ -4,7 +4,6 @@ using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Invitations.Constants;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Services;
-using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.DevTools.Commands.Invitation;
 
@@ -25,16 +24,18 @@ internal partial class Invitation : CommandBase
         private int ExpiresInSeconds { get; init; } = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
 
         private readonly IInvitationService _invitationService;
-        private readonly IUserContextProvider _userContextProvider;
+        private readonly IAuthenticationService _authenticationService;
 
         public CreateInvitation(
             IInvitationService invitationService,
-            IUserContextProvider userContextProvider
+            IAuthenticationService authenticationService
         )
             : base("create", "Create a new invitation")
         {
             _invitationService = invitationService.ThrowIfNull(nameof(invitationService));
-            _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
+            _authenticationService = authenticationService.ThrowIfNull(
+                nameof(authenticationService)
+            );
         }
 
         protected override async Task ExecuteAsync()
@@ -51,7 +52,7 @@ internal partial class Invitation : CommandBase
                 return;
             }
 
-            if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
+            if (!await SetUserContextFromAuthTokenFileAsync(_authenticationService))
                 return;
 
             var request = new CreateInvitationRequest(

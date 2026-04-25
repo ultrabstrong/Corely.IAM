@@ -110,7 +110,7 @@ else
                 _ => null
             };
         }
-        var result = await RetrievalService.ListUsersAsync(new ListUsersRequest(filter, order, _skip, _take));
+        var result = await RetrievalService.ListUsersAsync(new ListUsersRequest(UserContext!.CurrentAccount!.Id, filter, order, _skip, _take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             _items = result.Data.Items;
@@ -125,7 +125,7 @@ else
         await ExecuteSafeAsync(async () =>
         {
             var removedUserId = _confirmItemId;
-            var result = await DeregistrationService.DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(removedUserId));
+            var result = await DeregistrationService.DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(removedUserId, UserContext!.CurrentAccount!.Id));
             if (result.ResultCode == DeregisterUserFromAccountResultCode.Success
                 && removedUserId == UserContext?.User.Id)
             {

@@ -4,6 +4,7 @@ using Corely.Common.Filtering.Ordering;
 namespace Corely.IAM.Roles.Models;
 
 public record ListRolesRequest(
+    Guid AccountId,
     FilterBuilder<Role>? Filter = null,
     OrderBuilder<Role>? Order = null,
     int Skip = 0,

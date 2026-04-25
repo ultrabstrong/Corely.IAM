@@ -148,7 +148,9 @@ public class DeregistrationServiceTests
             .Setup(x => x.DeleteAccountAsync(It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
-        var result = await _service.DeregisterAccountAsync();
+        var result = await _service.DeregisterAccountAsync(
+            new DeregisterAccountRequest(_userContext.CurrentAccount!.Id)
+        );
 
         Assert.Equal(DeregisterAccountResultCode.Success, result.ResultCode);
         _mockAccountProcessor.Verify(
@@ -168,7 +170,9 @@ public class DeregistrationServiceTests
             .Setup(x => x.DeleteAccountAsync(It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
-        var result = await _service.DeregisterAccountAsync();
+        var result = await _service.DeregisterAccountAsync(
+            new DeregisterAccountRequest(_userContext.CurrentAccount!.Id)
+        );
 
         Assert.Equal(DeregisterAccountResultCode.Success, result.ResultCode);
         _mockUserContextSetter.Verify(
@@ -196,7 +200,9 @@ public class DeregistrationServiceTests
             .Setup(x => x.DeleteAccountAsync(It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
-        var result = await _service.DeregisterAccountAsync();
+        var result = await _service.DeregisterAccountAsync(
+            new DeregisterAccountRequest(_userContext.CurrentAccount!.Id)
+        );
 
         Assert.Equal(DeregisterAccountResultCode.AccountNotFoundError, result.ResultCode);
     }
@@ -212,7 +218,9 @@ public class DeregistrationServiceTests
             .Setup(x => x.DeleteAccountAsync(It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
-        var result = await _service.DeregisterAccountAsync();
+        var result = await _service.DeregisterAccountAsync(
+            new DeregisterAccountRequest(_userContext.CurrentAccount!.Id)
+        );
 
         Assert.Equal(DeregisterAccountResultCode.UnauthorizedError, result.ResultCode);
     }
@@ -224,7 +232,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterGroup_ReturnsSuccess_WhenProcessorSucceeds()
     {
-        var request = new DeregisterGroupRequest(Guid.CreateVersion7());
+        var request = new DeregisterGroupRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeleteGroupResult(DeleteGroupResultCode.Success, string.Empty);
         _mockGroupProcessor
             .Setup(x => x.DeleteGroupAsync(It.IsAny<Guid>()))
@@ -239,7 +247,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterGroup_ReturnsGroupNotFound_WhenGroupDoesNotExist()
     {
-        var request = new DeregisterGroupRequest(Guid.CreateVersion7());
+        var request = new DeregisterGroupRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeleteGroupResult(
             DeleteGroupResultCode.GroupNotFoundError,
             "Group not found"
@@ -256,7 +264,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterGroup_ReturnsGroupHasSoleOwnersError_WhenGroupHasSoleOwners()
     {
-        var request = new DeregisterGroupRequest(Guid.CreateVersion7());
+        var request = new DeregisterGroupRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeleteGroupResult(
             DeleteGroupResultCode.GroupHasSoleOwnersError,
             "Group has sole owners"
@@ -273,7 +281,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterGroup_ReturnsUnauthorizedError_WhenUnauthorized()
     {
-        var request = new DeregisterGroupRequest(Guid.CreateVersion7());
+        var request = new DeregisterGroupRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeleteGroupResult(
             DeleteGroupResultCode.UnauthorizedError,
             "Unauthorized"
@@ -303,7 +311,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterRole_ReturnsSuccess_WhenProcessorSucceeds()
     {
-        var request = new DeregisterRoleRequest(Guid.CreateVersion7());
+        var request = new DeregisterRoleRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeleteRoleResult(DeleteRoleResultCode.Success, string.Empty);
         _mockRoleProcessor
             .Setup(x => x.DeleteRoleAsync(It.IsAny<Guid>()))
@@ -318,7 +326,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterRole_ReturnsRoleNotFound_WhenRoleDoesNotExist()
     {
-        var request = new DeregisterRoleRequest(Guid.CreateVersion7());
+        var request = new DeregisterRoleRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeleteRoleResult(
             DeleteRoleResultCode.RoleNotFoundError,
             "Role not found"
@@ -335,7 +343,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterRole_ReturnsSystemDefinedRoleError_WhenRoleIsSystemDefined()
     {
-        var request = new DeregisterRoleRequest(Guid.CreateVersion7());
+        var request = new DeregisterRoleRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeleteRoleResult(
             DeleteRoleResultCode.SystemDefinedRoleError,
             "Role is system defined"
@@ -352,7 +360,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterRole_ReturnsUnauthorizedError_WhenUnauthorized()
     {
-        var request = new DeregisterRoleRequest(Guid.CreateVersion7());
+        var request = new DeregisterRoleRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeleteRoleResult(
             DeleteRoleResultCode.UnauthorizedError,
             "Unauthorized"
@@ -382,7 +390,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterPermission_ReturnsSuccess_WhenProcessorSucceeds()
     {
-        var request = new DeregisterPermissionRequest(Guid.CreateVersion7());
+        var request = new DeregisterPermissionRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeletePermissionResult(
             DeletePermissionResultCode.Success,
             string.Empty
@@ -403,7 +411,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterPermission_ReturnsPermissionNotFound_WhenPermissionDoesNotExist()
     {
-        var request = new DeregisterPermissionRequest(Guid.CreateVersion7());
+        var request = new DeregisterPermissionRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeletePermissionResult(
             DeletePermissionResultCode.PermissionNotFoundError,
             "Permission not found"
@@ -420,7 +428,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterPermission_ReturnsSystemDefinedPermissionError_WhenPermissionIsSystemDefined()
     {
-        var request = new DeregisterPermissionRequest(Guid.CreateVersion7());
+        var request = new DeregisterPermissionRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeletePermissionResult(
             DeletePermissionResultCode.SystemDefinedPermissionError,
             "Permission is system defined"
@@ -440,7 +448,7 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterPermission_ReturnsUnauthorizedError_WhenUnauthorized()
     {
-        var request = new DeregisterPermissionRequest(Guid.CreateVersion7());
+        var request = new DeregisterPermissionRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeletePermissionResult(
             DeletePermissionResultCode.UnauthorizedError,
             "Unauthorized"
@@ -470,7 +478,10 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterUserFromAccount_ReturnsSuccess_WhenProcessorSucceeds()
     {
-        var request = new DeregisterUserFromAccountRequest(Guid.CreateVersion7());
+        var request = new DeregisterUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         var processorResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.Success,
             string.Empty
@@ -486,7 +497,7 @@ public class DeregistrationServiceTests
             x =>
                 x.RemoveUserFromAccountAsync(
                     It.Is<RemoveUserFromAccountRequest>(r =>
-                        r.UserId == request.UserId && r.AccountId == _userContext.CurrentAccount!.Id
+                        r.UserId == request.UserId && r.AccountId == request.AccountId
                     )
                 ),
             Times.Once
@@ -496,7 +507,10 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterUserFromAccount_ReturnsUserNotFound_WhenUserDoesNotExist()
     {
-        var request = new DeregisterUserFromAccountRequest(Guid.CreateVersion7());
+        var request = new DeregisterUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         var processorResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.UserNotFoundError,
             "User not found"
@@ -513,7 +527,10 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterUserFromAccount_ReturnsAccountNotFound_WhenAccountDoesNotExist()
     {
-        var request = new DeregisterUserFromAccountRequest(Guid.CreateVersion7());
+        var request = new DeregisterUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         var processorResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.AccountNotFoundError,
             "Account not found"
@@ -530,7 +547,10 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterUserFromAccount_ReturnsUserNotInAccount_WhenUserNotInAccount()
     {
-        var request = new DeregisterUserFromAccountRequest(Guid.CreateVersion7());
+        var request = new DeregisterUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         var processorResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.UserNotInAccountError,
             "User not in account"
@@ -547,7 +567,10 @@ public class DeregistrationServiceTests
     [Fact]
     public async Task DeregisterUserFromAccount_ReturnsSoleOwnerError_WhenUserIsSoleOwner()
     {
-        var request = new DeregisterUserFromAccountRequest(Guid.CreateVersion7());
+        var request = new DeregisterUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         var processorResult = new RemoveUserFromAccountResult(
             RemoveUserFromAccountResultCode.UserIsSoleOwnerError,
             "User is sole owner"
@@ -579,6 +602,7 @@ public class DeregistrationServiceTests
     {
         var request = new DeregisterUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveUsersFromGroupResult(
@@ -613,6 +637,7 @@ public class DeregistrationServiceTests
         var invalid = Guid.CreateVersion7();
         var request = new DeregisterUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7(), invalid],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveUsersFromGroupResult(
@@ -637,6 +662,7 @@ public class DeregistrationServiceTests
     {
         var request = new DeregisterUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveUsersFromGroupResult(
@@ -660,6 +686,7 @@ public class DeregistrationServiceTests
         var soleOwnerID = Guid.CreateVersion7();
         var request = new DeregisterUsersFromGroupRequest(
             [soleOwnerID, Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveUsersFromGroupResult(
@@ -697,6 +724,7 @@ public class DeregistrationServiceTests
     {
         var request = new DeregisterRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveRolesFromGroupResult(
@@ -731,6 +759,7 @@ public class DeregistrationServiceTests
         var invalid = Guid.CreateVersion7();
         var request = new DeregisterRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7(), invalid],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveRolesFromGroupResult(
@@ -755,6 +784,7 @@ public class DeregistrationServiceTests
     {
         var request = new DeregisterRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveRolesFromGroupResult(
@@ -778,6 +808,7 @@ public class DeregistrationServiceTests
     {
         var request = new DeregisterRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveRolesFromGroupResult(
@@ -802,6 +833,7 @@ public class DeregistrationServiceTests
         var blockedId = Guid.CreateVersion7();
         var request = new DeregisterRolesFromGroupRequest(
             [blockedId, Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveRolesFromGroupResult(
@@ -842,6 +874,7 @@ public class DeregistrationServiceTests
     {
         var request = new DeregisterRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveRolesFromUserResult(
@@ -876,6 +909,7 @@ public class DeregistrationServiceTests
         var invalid = Guid.CreateVersion7();
         var request = new DeregisterRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7(), invalid],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveRolesFromUserResult(
@@ -900,6 +934,7 @@ public class DeregistrationServiceTests
     {
         var request = new DeregisterRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveRolesFromUserResult(
@@ -923,6 +958,7 @@ public class DeregistrationServiceTests
     {
         var request = new DeregisterRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveRolesFromUserResult(
@@ -947,6 +983,7 @@ public class DeregistrationServiceTests
         var soleOwnerRoleId = Guid.CreateVersion7();
         var request = new DeregisterRolesFromUserRequest(
             [soleOwnerRoleId, Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemoveRolesFromUserResult(
@@ -984,6 +1021,7 @@ public class DeregistrationServiceTests
     {
         var request = new DeregisterPermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemovePermissionsFromRoleResult(
@@ -1022,6 +1060,7 @@ public class DeregistrationServiceTests
         var invalid = Guid.CreateVersion7();
         var request = new DeregisterPermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7(), invalid],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemovePermissionsFromRoleResult(
@@ -1048,6 +1087,7 @@ public class DeregistrationServiceTests
     {
         var request = new DeregisterPermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemovePermissionsFromRoleResult(
@@ -1073,6 +1113,7 @@ public class DeregistrationServiceTests
     {
         var request = new DeregisterPermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemovePermissionsFromRoleResult(
@@ -1102,6 +1143,7 @@ public class DeregistrationServiceTests
         var systemPermissionId = Guid.CreateVersion7();
         var request = new DeregisterPermissionsFromRoleRequest(
             [systemPermissionId, Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var processorResult = new RemovePermissionsFromRoleResult(

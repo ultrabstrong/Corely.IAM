@@ -17,8 +17,8 @@ internal class InvitationService(IInvitationProcessor invitationProcessor) : IIn
     public Task<AcceptInvitationResult> AcceptInvitationAsync(AcceptInvitationRequest request) =>
         _invitationProcessor.AcceptInvitationAsync(request);
 
-    public Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId) =>
-        _invitationProcessor.RevokeInvitationAsync(invitationId);
+    public Task<RevokeInvitationResult> RevokeInvitationAsync(RevokeInvitationRequest request) =>
+        _invitationProcessor.RevokeInvitationAsync(request.InvitationId);
 
     public async Task<RetrieveListResult<Invitation>> ListInvitationsAsync(
         ListInvitationsRequest request

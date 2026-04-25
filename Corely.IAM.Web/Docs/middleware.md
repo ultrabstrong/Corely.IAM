@@ -62,11 +62,11 @@ object-src 'none'
 Validates JWT cookies and sets user context.
 
 1. Reads `auth_token` cookie from the request
-2. Calls `IUserContextProvider.SetUserContextAsync(token)` to validate
+2. Calls `IAuthenticationService.AuthenticateWithTokenAsync(token)` to validate
 3. On success: builds `ClaimsPrincipal` via `IUserContextClaimsBuilder` and sets `HttpContext.User`
 4. On failure: clears all auth cookies via `IAuthCookieManager.DeleteAuthCookies()`
 
-Note: `IUserContextProvider` is scoped — it must be resolved from the request scope, not constructor-injected.
+Note: Both `IAuthenticationService` and `IUserContextProvider` are scoped — they must be resolved from the request scope, not constructor-injected.
 
 ## Configuration
 

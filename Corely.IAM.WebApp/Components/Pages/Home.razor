@@ -123,7 +123,7 @@ else if (_userContext?.CurrentAccount != null)
         try
         {
             var result = await RegistrationService.RegisterAccountAsync(
-                new RegisterAccountRequest(_newAccountName));
+                new RegisterAccountRequest(_newAccountName, _userContext!.User!.Id));
 
             if (result.ResultCode == RegisterAccountResultCode.Success)
             {

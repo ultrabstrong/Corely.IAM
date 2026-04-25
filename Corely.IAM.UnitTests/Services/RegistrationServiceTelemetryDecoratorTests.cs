@@ -45,7 +45,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     [Fact]
     public async Task RegisterAccount_DelegatesToInnerAndLogsResult()
     {
-        var request = new RegisterAccountRequest("testaccount");
+        var request = new RegisterAccountRequest("testaccount", Guid.CreateVersion7());
         var expectedResult = new RegisterAccountResult(
             RegisterAccountResultCode.Success,
             string.Empty,
@@ -63,7 +63,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     [Fact]
     public async Task RegisterGroup_DelegatesToInnerAndLogsResult()
     {
-        var request = new RegisterGroupRequest("testgroup");
+        var request = new RegisterGroupRequest("testgroup", Guid.CreateVersion7());
         var expectedResult = new RegisterGroupResult(
             CreateGroupResultCode.Success,
             string.Empty,
@@ -81,7 +81,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     [Fact]
     public async Task RegisterRole_DelegatesToInnerAndLogsResult()
     {
-        var request = new RegisterRoleRequest("testrole");
+        var request = new RegisterRoleRequest("testrole", Guid.CreateVersion7());
         var expectedResult = new RegisterRoleResult(
             CreateRoleResultCode.Success,
             string.Empty,
@@ -100,6 +100,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     public async Task RegisterPermission_DelegatesToInnerAndLogsResult()
     {
         var request = new RegisterPermissionRequest(
+            Guid.CreateVersion7(),
             "Resource",
             Guid.CreateVersion7(),
             true,
@@ -128,7 +129,10 @@ public class RegistrationServiceTelemetryDecoratorTests
     [Fact]
     public async Task RegisterUserWithAccount_DelegatesToInnerAndLogsResult()
     {
-        var request = new RegisterUserWithAccountRequest(Guid.CreateVersion7());
+        var request = new RegisterUserWithAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         var expectedResult = new RegisterUserWithAccountResult(
             RegisterUserWithAccountResultCode.Success,
             string.Empty
@@ -149,6 +153,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     {
         var request = new RegisterUsersWithGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var expectedResult = new RegisterUsersWithGroupResult(
@@ -173,6 +178,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     {
         var request = new RegisterRolesWithGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var expectedResult = new RegisterRolesWithGroupResult(
@@ -197,6 +203,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     {
         var request = new RegisterRolesWithUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var expectedResult = new RegisterRolesWithUserResult(
@@ -221,6 +228,7 @@ public class RegistrationServiceTelemetryDecoratorTests
     {
         var request = new RegisterPermissionsWithRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var expectedResult = new RegisterPermissionsWithRoleResult(

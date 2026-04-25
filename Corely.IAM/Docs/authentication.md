@@ -58,15 +58,15 @@ await authenticationService.SignOutAllAsync();
 
 ## Token Validation
 
-Set user context by validating a token through `IUserContextProvider`:
+Set user context by validating a token through `IAuthenticationService`:
 
 ```csharp
-var contextProvider = serviceProvider.GetRequiredService<IUserContextProvider>();
-var result = await contextProvider.SetUserContextAsync(token);
+var authService = serviceProvider.GetRequiredService<IAuthenticationService>();
+var result = await authService.AuthenticateWithTokenAsync(token);
 
 if (result == UserAuthTokenValidationResultCode.Success)
 {
-    var context = contextProvider.GetUserContext();
+    var context = userContextProvider.GetUserContext();
 }
 ```
 
@@ -99,5 +99,19 @@ Configure in `appsettings.json` under the `SecurityOptions` section.
 
 - Tokens are signed with per-user asymmetric keys (not a shared secret)
 - The system key encrypts stored private keys — it is never embedded in tokens
-- `IUserContextSetter` is `internal` — only the host middleware and test infrastructure can set context directly
+- `IUserContextSetter` is `internal` — only `AuthenticationService` and test infrastructure can set context directly
 - If using `Corely.IAM.Web`, the `AuthenticationTokenMiddleware` handles token validation and context setup automatically
+
+## System Context (Headless Processes)
+
+For background services, Azure Functions, or other headless processes that need to call IAM services without authenticating as a user, use `IAuthenticationService.AuthenticateAsSystem()`:
+
+```csharp
+var authService = serviceProvider.GetRequiredService<IAuthenticationService>();
+authService.AuthenticateAsSystem("my-function-app");
+
+// All IAM service calls in this scope now bypass permission checks
+var result = await retrievalService.ListUsersAsync(request);
+```
+
+System context is fully permissioned but blocks "self" operations (MFA, password management, Google auth) that only make sense for a logged-in user. See [User Context](security/user-context.md) and [Authorization](authorization.md) for details.

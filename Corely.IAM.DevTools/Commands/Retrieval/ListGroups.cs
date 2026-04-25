@@ -3,7 +3,6 @@ using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Services;
-using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.DevTools.Commands.Retrieval;
 
@@ -13,6 +12,9 @@ internal partial class Retrieval : CommandBase
     {
         private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
+        [Option("-a", "--account-id", Description = "Account ID (GUID)")]
+        private string AccountId { get; init; } = null!;
+
         [Option("-s", "--skip", Description = "Number of records to skip")]
         private int Skip { get; init; } = 0;
 
@@ -20,25 +22,33 @@ internal partial class Retrieval : CommandBase
         private int Take { get; init; } = 25;
 
         private readonly IRetrievalService _retrievalService;
-        private readonly IUserContextProvider _userContextProvider;
+        private readonly IAuthenticationService _authenticationService;
 
         public ListGroups(
             IRetrievalService retrievalService,
-            IUserContextProvider userContextProvider
+            IAuthenticationService authenticationService
         )
             : base("list-groups", "List groups")
         {
             _retrievalService = retrievalService.ThrowIfNull(nameof(retrievalService));
-            _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
+            _authenticationService = authenticationService.ThrowIfNull(
+                nameof(authenticationService)
+            );
         }
 
         protected override async Task ExecuteAsync()
         {
-            if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
+            if (string.IsNullOrWhiteSpace(AccountId))
+            {
+                ShowHelp("--account-id is required");
+                return;
+            }
+
+            if (!await SetUserContextFromAuthTokenFileAsync(_authenticationService))
                 return;
 
             var result = await _retrievalService.ListGroupsAsync(
-                new ListGroupsRequest(Skip: Skip, Take: Take)
+                new ListGroupsRequest(Guid.Parse(AccountId), Skip: Skip, Take: Take)
             );
             Console.WriteLine(JsonSerializer.Serialize(result, _jsonOptions));
         }

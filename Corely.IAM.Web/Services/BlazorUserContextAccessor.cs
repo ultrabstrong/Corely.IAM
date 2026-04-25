@@ -1,3 +1,4 @@
+using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Security;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Corely.IAM.Web.Services;
 
 public class BlazorUserContextAccessor(
+    IAuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
     IHttpContextAccessor httpContextAccessor,
     ILogger<BlazorUserContextAccessor> logger
@@ -49,7 +51,7 @@ public class BlazorUserContextAccessor(
                 return null;
             }
 
-            var result = await userContextProvider.SetUserContextAsync(token);
+            var result = await authenticationService.AuthenticateWithTokenAsync(token);
             if (result == UserAuthTokenValidationResultCode.Success)
             {
                 return userContextProvider.GetUserContext();

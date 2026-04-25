@@ -3,7 +3,7 @@ using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
-using Corely.IAM.Users.Providers;
+using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.DevTools.Commands.Authentication;
 
@@ -15,18 +15,13 @@ internal partial class Authentication : CommandBase
         private Guid AccountId { get; init; }
 
         private readonly IAuthenticationService _authenticationService;
-        private readonly IUserContextProvider _userContextProvider;
 
-        public SwitchAccount(
-            IAuthenticationService authenticationService,
-            IUserContextProvider userContextProvider
-        )
+        public SwitchAccount(IAuthenticationService authenticationService)
             : base("switch-account", "Switch to a specific account")
         {
             _authenticationService = authenticationService.ThrowIfNull(
                 nameof(authenticationService)
             );
-            _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
         }
 
         protected override async Task ExecuteAsync()
@@ -42,12 +37,10 @@ internal partial class Authentication : CommandBase
             if (string.IsNullOrEmpty(authToken))
                 return;
 
-            // Set the user context from the auth token (simulating middleware)
-            var validationResult = await _userContextProvider.SetUserContextAsync(authToken);
-            if (
-                validationResult
-                != Corely.IAM.Users.Models.UserAuthTokenValidationResultCode.Success
-            )
+            var validationResult = await _authenticationService.AuthenticateWithTokenAsync(
+                authToken
+            );
+            if (validationResult != UserAuthTokenValidationResultCode.Success)
             {
                 Error($"Failed to set user context: {validationResult}");
                 return;

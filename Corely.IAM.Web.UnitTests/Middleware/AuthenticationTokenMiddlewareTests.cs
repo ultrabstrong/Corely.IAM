@@ -1,4 +1,5 @@
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Middleware;
@@ -12,6 +13,7 @@ namespace Corely.IAM.Web.UnitTests.Middleware;
 
 public class AuthenticationTokenMiddlewareTests
 {
+    private readonly Mock<IAuthenticationService> _mockAuthenticationService;
     private readonly Mock<IUserContextProvider> _mockUserContextProvider;
     private readonly Mock<ILogger<AuthenticationTokenMiddleware>> _mockLogger;
     private readonly IAuthCookieManager _authCookieManager = new AuthCookieManager(
@@ -22,6 +24,7 @@ public class AuthenticationTokenMiddlewareTests
 
     public AuthenticationTokenMiddlewareTests()
     {
+        _mockAuthenticationService = new Mock<IAuthenticationService>();
         _mockUserContextProvider = new Mock<IUserContextProvider>();
         _mockLogger = new Mock<ILogger<AuthenticationTokenMiddleware>>();
     }
@@ -48,12 +51,16 @@ public class AuthenticationTokenMiddlewareTests
         var middleware = CreateMiddleware(next);
         var httpContext = new DefaultHttpContext();
 
-        await middleware.InvokeAsync(httpContext, _mockUserContextProvider.Object);
+        await middleware.InvokeAsync(
+            httpContext,
+            _mockAuthenticationService.Object,
+            _mockUserContextProvider.Object
+        );
 
         Assert.True(nextCalled);
         Assert.False(httpContext.User.Identity?.IsAuthenticated ?? false);
-        _mockUserContextProvider.Verify(
-            x => x.SetUserContextAsync(It.IsAny<string>()),
+        _mockAuthenticationService.Verify(
+            x => x.AuthenticateWithTokenAsync(It.IsAny<string>()),
             Times.Never
         );
     }
@@ -77,12 +84,16 @@ public class AuthenticationTokenMiddlewareTests
             currentAccount: account,
             availableAccounts: [account]
         );
-        _mockUserContextProvider
-            .Setup(x => x.SetUserContextAsync("test-token"))
+        _mockAuthenticationService
+            .Setup(x => x.AuthenticateWithTokenAsync("test-token"))
             .ReturnsAsync(UserAuthTokenValidationResultCode.Success);
         _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(userContext);
 
-        await middleware.InvokeAsync(httpContext, _mockUserContextProvider.Object);
+        await middleware.InvokeAsync(
+            httpContext,
+            _mockAuthenticationService.Object,
+            _mockUserContextProvider.Object
+        );
 
         Assert.True(nextCalled);
         Assert.True(httpContext.User.Identity?.IsAuthenticated);
@@ -116,11 +127,15 @@ public class AuthenticationTokenMiddlewareTests
         httpContext.Request.Headers["Cookie"] =
             $"{AuthenticationConstants.AUTH_TOKEN_COOKIE}=bad-token";
 
-        _mockUserContextProvider
-            .Setup(x => x.SetUserContextAsync("bad-token"))
+        _mockAuthenticationService
+            .Setup(x => x.AuthenticateWithTokenAsync("bad-token"))
             .ReturnsAsync(resultCode);
 
-        await middleware.InvokeAsync(httpContext, _mockUserContextProvider.Object);
+        await middleware.InvokeAsync(
+            httpContext,
+            _mockAuthenticationService.Object,
+            _mockUserContextProvider.Object
+        );
 
         Assert.True(nextCalled);
         Assert.False(httpContext.User.Identity?.IsAuthenticated ?? false);
@@ -144,11 +159,15 @@ public class AuthenticationTokenMiddlewareTests
         httpContext.Request.Headers["Cookie"] =
             $"{AuthenticationConstants.AUTH_TOKEN_COOKIE}=error-token";
 
-        _mockUserContextProvider
-            .Setup(x => x.SetUserContextAsync("error-token"))
+        _mockAuthenticationService
+            .Setup(x => x.AuthenticateWithTokenAsync("error-token"))
             .ThrowsAsync(new InvalidOperationException("Something went wrong"));
 
-        await middleware.InvokeAsync(httpContext, _mockUserContextProvider.Object);
+        await middleware.InvokeAsync(
+            httpContext,
+            _mockAuthenticationService.Object,
+            _mockUserContextProvider.Object
+        );
 
         Assert.True(nextCalled);
         Assert.False(httpContext.User.Identity?.IsAuthenticated ?? false);
@@ -172,12 +191,16 @@ public class AuthenticationTokenMiddlewareTests
         httpContext.Request.Headers["Cookie"] =
             $"{AuthenticationConstants.AUTH_TOKEN_COOKIE}=test-token";
 
-        _mockUserContextProvider
-            .Setup(x => x.SetUserContextAsync("test-token"))
+        _mockAuthenticationService
+            .Setup(x => x.AuthenticateWithTokenAsync("test-token"))
             .ReturnsAsync(UserAuthTokenValidationResultCode.Success);
         _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((UserContext?)null);
 
-        await middleware.InvokeAsync(httpContext, _mockUserContextProvider.Object);
+        await middleware.InvokeAsync(
+            httpContext,
+            _mockAuthenticationService.Object,
+            _mockUserContextProvider.Object
+        );
 
         Assert.True(nextCalled);
         Assert.False(httpContext.User.Identity?.IsAuthenticated ?? false);

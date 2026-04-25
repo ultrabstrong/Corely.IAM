@@ -946,4 +946,128 @@ public class AuthenticationServiceTests
     }
 
     #endregion
+
+    #region AuthenticateWithTokenAsync Tests
+
+    [Fact]
+    public async Task AuthenticateWithTokenAsync_ReturnsSuccess_WhenTokenIsValid()
+    {
+        var result = await _authenticationService.AuthenticateWithTokenAsync("valid-token");
+
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, result);
+        _userContextSetterMock.Verify(m => m.SetUserContext(It.IsAny<UserContext>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AuthenticateWithTokenAsync_ReturnsResultCode_WhenTokenValidationFails()
+    {
+        _authenticationProviderMock
+            .Setup(m => m.ValidateUserAuthTokenAsync("bad-token"))
+            .ReturnsAsync(
+                new UserAuthTokenValidationResult(
+                    UserAuthTokenValidationResultCode.TokenValidationFailed,
+                    null,
+                    null,
+                    null,
+                    []
+                )
+            );
+
+        var result = await _authenticationService.AuthenticateWithTokenAsync("bad-token");
+
+        Assert.Equal(UserAuthTokenValidationResultCode.TokenValidationFailed, result);
+        _userContextSetterMock.Verify(m => m.SetUserContext(It.IsAny<UserContext>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(UserAuthTokenValidationResultCode.InvalidTokenFormat)]
+    [InlineData(UserAuthTokenValidationResultCode.MissingUserIdClaim)]
+    [InlineData(UserAuthTokenValidationResultCode.TokenValidationFailed)]
+    public async Task AuthenticateWithTokenAsync_ReturnsCorrectResultCode_ForEachFailureType(
+        UserAuthTokenValidationResultCode expectedResultCode
+    )
+    {
+        _authenticationProviderMock
+            .Setup(m => m.ValidateUserAuthTokenAsync("bad-token"))
+            .ReturnsAsync(
+                new UserAuthTokenValidationResult(expectedResultCode, null, null, null, [])
+            );
+
+        var result = await _authenticationService.AuthenticateWithTokenAsync("bad-token");
+
+        Assert.Equal(expectedResultCode, result);
+        _userContextSetterMock.Verify(m => m.SetUserContext(It.IsAny<UserContext>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AuthenticateWithTokenAsync_ReturnsMissingDeviceIdClaim_WhenDeviceIdIsNull()
+    {
+        _authenticationProviderMock
+            .Setup(m => m.ValidateUserAuthTokenAsync("token"))
+            .ReturnsAsync(
+                new UserAuthTokenValidationResult(
+                    UserAuthTokenValidationResultCode.Success,
+                    new User() { Id = Guid.CreateVersion7() },
+                    null,
+                    null,
+                    []
+                )
+            );
+
+        var result = await _authenticationService.AuthenticateWithTokenAsync("token");
+
+        Assert.Equal(UserAuthTokenValidationResultCode.MissingDeviceIdClaim, result);
+        _userContextSetterMock.Verify(m => m.SetUserContext(It.IsAny<UserContext>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AuthenticateWithTokenAsync_SetsContextWithNullAccount_WhenNoSignedInAccount()
+    {
+        _authenticationProviderMock
+            .Setup(m => m.ValidateUserAuthTokenAsync("token"))
+            .ReturnsAsync(
+                new UserAuthTokenValidationResult(
+                    UserAuthTokenValidationResultCode.Success,
+                    new User() { Id = Guid.CreateVersion7() },
+                    null,
+                    TEST_DEVICE_ID,
+                    []
+                )
+            );
+
+        var result = await _authenticationService.AuthenticateWithTokenAsync("token");
+
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, result);
+        _userContextSetterMock.Verify(
+            m =>
+                m.SetUserContext(
+                    It.Is<UserContext>(c =>
+                        c.CurrentAccount == null && c.DeviceId == TEST_DEVICE_ID
+                    )
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task AuthenticateWithTokenAsync_ThrowsArgumentNullException_WhenTokenIsNull()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _authenticationService.AuthenticateWithTokenAsync(null!)
+        );
+    }
+
+    #endregion
+
+    #region AuthenticateAsSystem Tests
+
+    [Fact]
+    public void AuthenticateAsSystem_CallsSetSystemContext()
+    {
+        _authenticationService.AuthenticateAsSystem(TEST_DEVICE_ID);
+
+        _userContextSetterMock.Verify(m => m.SetSystemContext(TEST_DEVICE_ID), Times.Once);
+    }
+
+    #endregion
 }

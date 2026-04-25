@@ -22,10 +22,12 @@ internal class DeregistrationServiceTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<DeregisterAccountResult> DeregisterAccountAsync() =>
+    public async Task<DeregisterAccountResult> DeregisterAccountAsync(
+        DeregisterAccountRequest request
+    ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(DeregistrationService),
-            () => _inner.DeregisterAccountAsync(),
+            () => _inner.DeregisterAccountAsync(request),
             logResult: true
         );
 

@@ -5,9 +5,10 @@ namespace Corely.IAM.Security.Providers;
 public interface IAuthorizationProvider
 {
     Task<bool> IsAuthorizedAsync(AuthAction action, string resourceType, params Guid[] resourceIds);
+    bool IsNonSystemUserContext();
     bool IsAuthorizedForOwnUser(Guid requestUserId, bool suppressLog = true);
     bool HasUserContext();
-    bool HasAccountContext();
+    bool HasAccountContext(Guid accountId);
 }
 
 internal interface IAuthorizationCacheClearer

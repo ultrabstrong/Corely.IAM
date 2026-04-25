@@ -7,6 +7,6 @@ public interface IInvitationService
 {
     Task<CreateInvitationResult> CreateInvitationAsync(CreateInvitationRequest request);
     Task<AcceptInvitationResult> AcceptInvitationAsync(AcceptInvitationRequest request);
-    Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId);
+    Task<RevokeInvitationResult> RevokeInvitationAsync(RevokeInvitationRequest request);
     Task<RetrieveListResult<Invitation>> ListInvitationsAsync(ListInvitationsRequest request);
 }

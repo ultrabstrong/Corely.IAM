@@ -96,7 +96,7 @@ internal class Program
 
             // ========= REGISTER ACCOUNT ==========
             var registerAccountResult = await registrationService.RegisterAccountAsync(
-                new RegisterAccountRequest("acct1")
+                new RegisterAccountRequest("acct1", registerUserResult.CreatedUserId)
             );
 
             // Switch to the account after creating it (context is already set from sign in)
@@ -118,15 +118,19 @@ internal class Program
             // Add user2 to account (owner action)
             var registerUserWithAccountResult =
                 await registrationService.RegisterUserWithAccountAsync(
-                    new RegisterUserWithAccountRequest(registerUser2Result.CreatedUserId)
+                    new RegisterUserWithAccountRequest(
+                        registerUser2Result.CreatedUserId,
+                        registerAccountResult.CreatedAccountId
+                    )
                 );
 
             var registerGroupResult = await registrationService.RegisterGroupAsync(
-                new RegisterGroupRequest("grp1")
+                new RegisterGroupRequest("grp1", registerAccountResult.CreatedAccountId)
             );
 
             var registerPermissionResult = await registrationService.RegisterPermissionAsync(
                 new RegisterPermissionRequest(
+                    registerAccountResult.CreatedAccountId,
                     "group",
                     registerGroupResult.CreatedGroupId,
                     Read: true
@@ -141,12 +145,13 @@ internal class Program
                             Guid.CreateVersion7(),
                             Guid.CreateVersion7(),
                         ],
-                        registerGroupResult.CreatedGroupId
+                        registerGroupResult.CreatedGroupId,
+                        registerAccountResult.CreatedAccountId
                     )
                 );
 
             var registerRoleResult = await registrationService.RegisterRoleAsync(
-                new RegisterRoleRequest("role1")
+                new RegisterRoleRequest("role1", registerAccountResult.CreatedAccountId)
             );
 
             var registerPermissionsWithRoleResult =
@@ -157,7 +162,8 @@ internal class Program
                             Guid.CreateVersion7(),
                             Guid.CreateVersion7(),
                         ],
-                        registerRoleResult.CreatedRoleId
+                        registerRoleResult.CreatedRoleId,
+                        registerAccountResult.CreatedAccountId
                     )
                 );
 
@@ -165,7 +171,8 @@ internal class Program
             var registerRolesWithUserResult = await registrationService.RegisterRolesWithUserAsync(
                 new RegisterRolesWithUserRequest(
                     [registerRoleResult.CreatedRoleId],
-                    registerUser2Result.CreatedUserId
+                    registerUser2Result.CreatedUserId,
+                    registerAccountResult.CreatedAccountId
                 )
             );
 
@@ -174,7 +181,8 @@ internal class Program
                 await registrationService.RegisterRolesWithGroupAsync(
                     new RegisterRolesWithGroupRequest(
                         [registerRoleResult.CreatedRoleId],
-                        registerGroupResult.CreatedGroupId
+                        registerGroupResult.CreatedGroupId,
+                        registerAccountResult.CreatedAccountId
                     )
                 );
 
@@ -201,23 +209,29 @@ internal class Program
             // ========= RETRIEVAL SERVICE ========== //
 
             // List all groups
-            var listGroupsResult = await retrievalService.ListGroupsAsync(new ListGroupsRequest());
+            var listGroupsResult = await retrievalService.ListGroupsAsync(
+                new ListGroupsRequest(registerAccountResult.CreatedAccountId)
+            );
             Console.WriteLine($"List Groups: {JsonSerializer.Serialize(listGroupsResult)}");
 
             // List all roles
-            var listRolesResult = await retrievalService.ListRolesAsync(new ListRolesRequest());
+            var listRolesResult = await retrievalService.ListRolesAsync(
+                new ListRolesRequest(registerAccountResult.CreatedAccountId)
+            );
             Console.WriteLine($"List Roles: {JsonSerializer.Serialize(listRolesResult)}");
 
             // List all permissions
             var listPermissionsResult = await retrievalService.ListPermissionsAsync(
-                new ListPermissionsRequest()
+                new ListPermissionsRequest(registerAccountResult.CreatedAccountId)
             );
             Console.WriteLine(
                 $"List Permissions: {JsonSerializer.Serialize(listPermissionsResult)}"
             );
 
             // List all users
-            var listUsersResult = await retrievalService.ListUsersAsync(new ListUsersRequest());
+            var listUsersResult = await retrievalService.ListUsersAsync(
+                new ListUsersRequest(registerAccountResult.CreatedAccountId)
+            );
             Console.WriteLine($"List Users: {JsonSerializer.Serialize(listUsersResult)}");
 
             // List all accounts
@@ -386,6 +400,7 @@ internal class Program
             var modifyGroupResult = await modificationService.ModifyGroupAsync(
                 new UpdateGroupRequest(
                     registerGroupResult.CreatedGroupId,
+                    registerAccountResult.CreatedAccountId,
                     "grp1-updated",
                     "Updated group description"
                 )
@@ -396,6 +411,7 @@ internal class Program
             var modifyRoleResult = await modificationService.ModifyRoleAsync(
                 new UpdateRoleRequest(
                     registerRoleResult.CreatedRoleId,
+                    registerAccountResult.CreatedAccountId,
                     "role1-updated",
                     "Updated role description"
                 )
@@ -451,7 +467,10 @@ internal class Program
 
             // Revoke the second invitation
             var revokeInvitationResult = await invitationService.RevokeInvitationAsync(
-                createInvitation2Result.InvitationId!.Value
+                new RevokeInvitationRequest(
+                    registerAccountResult.CreatedAccountId,
+                    createInvitation2Result.InvitationId!.Value
+                )
             );
             Console.WriteLine(
                 $"Revoke Invitation: {JsonSerializer.Serialize(revokeInvitationResult)}"
@@ -553,7 +572,8 @@ internal class Program
                 await deregistrationService.DeregisterRolesFromGroupAsync(
                     new DeregisterRolesFromGroupRequest(
                         [registerRoleResult.CreatedRoleId],
-                        registerGroupResult.CreatedGroupId
+                        registerGroupResult.CreatedGroupId,
+                        registerAccountResult.CreatedAccountId
                     )
                 );
 
@@ -562,7 +582,8 @@ internal class Program
                 await deregistrationService.DeregisterRolesFromUserAsync(
                     new DeregisterRolesFromUserRequest(
                         [registerRoleResult.CreatedRoleId],
-                        registerUser2Result.CreatedUserId
+                        registerUser2Result.CreatedUserId,
+                        registerAccountResult.CreatedAccountId
                     )
                 );
 
@@ -571,7 +592,8 @@ internal class Program
                 await deregistrationService.DeregisterPermissionsFromRoleAsync(
                     new DeregisterPermissionsFromRoleRequest(
                         [registerPermissionResult.CreatedPermissionId],
-                        registerRoleResult.CreatedRoleId
+                        registerRoleResult.CreatedRoleId,
+                        registerAccountResult.CreatedAccountId
                     )
                 );
 
@@ -581,28 +603,45 @@ internal class Program
             // Deregister user1 from account fails because user1 is sole owner
             var deregisterUserFromAccountResult =
                 await deregistrationService.DeregisterUserFromAccountAsync(
-                    new DeregisterUserFromAccountRequest(registerUserResult.CreatedUserId)
+                    new DeregisterUserFromAccountRequest(
+                        registerUserResult.CreatedUserId,
+                        registerAccountResult.CreatedAccountId
+                    )
                 );
 
             // deregister user2 from account succeeds because user2 is not owner
             deregisterUserFromAccountResult =
                 await deregistrationService.DeregisterUserFromAccountAsync(
-                    new DeregisterUserFromAccountRequest(registerUser2Result.CreatedUserId)
+                    new DeregisterUserFromAccountRequest(
+                        registerUser2Result.CreatedUserId,
+                        registerAccountResult.CreatedAccountId
+                    )
                 );
 
             var deregisterPermissionResult = await deregistrationService.DeregisterPermissionAsync(
-                new DeregisterPermissionRequest(registerPermissionResult.CreatedPermissionId)
+                new DeregisterPermissionRequest(
+                    registerPermissionResult.CreatedPermissionId,
+                    registerAccountResult.CreatedAccountId
+                )
             );
 
             var deregisterRoleResult = await deregistrationService.DeregisterRoleAsync(
-                new DeregisterRoleRequest(registerRoleResult.CreatedRoleId)
+                new DeregisterRoleRequest(
+                    registerRoleResult.CreatedRoleId,
+                    registerAccountResult.CreatedAccountId
+                )
             );
 
             var deregisterGroupResult = await deregistrationService.DeregisterGroupAsync(
-                new DeregisterGroupRequest(registerGroupResult.CreatedGroupId)
+                new DeregisterGroupRequest(
+                    registerGroupResult.CreatedGroupId,
+                    registerAccountResult.CreatedAccountId
+                )
             );
 
-            var deregisterAccountResult = await deregistrationService.DeregisterAccountAsync();
+            var deregisterAccountResult = await deregistrationService.DeregisterAccountAsync(
+                new DeregisterAccountRequest(registerAccountResult.CreatedAccountId)
+            );
 
             // deregister user when user is not sole owner succeeds
             deregisterUserResult = await deregistrationService.DeregisterUserAsync();

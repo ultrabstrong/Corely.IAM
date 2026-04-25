@@ -82,7 +82,7 @@ public class PermissionProcessorListGetTests
         await CreatePermissionEntityAsync(PermissionConstants.ROLE_RESOURCE_TYPE);
         await CreatePermissionEntityAsync(PermissionConstants.USER_RESOURCE_TYPE);
 
-        var result = await _permissionProcessor.ListPermissionsAsync(new(Take: 10));
+        var result = await _permissionProcessor.ListPermissionsAsync(new(_accountId, Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -100,7 +100,7 @@ public class PermissionProcessorListGetTests
             accountId: otherAccountId
         );
 
-        var result = await _permissionProcessor.ListPermissionsAsync(new(Take: 10));
+        var result = await _permissionProcessor.ListPermissionsAsync(new(_accountId, Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -116,7 +116,7 @@ public class PermissionProcessorListGetTests
         await CreatePermissionEntityAsync(PermissionConstants.ROLE_RESOURCE_TYPE);
         await CreatePermissionEntityAsync(PermissionConstants.USER_RESOURCE_TYPE);
 
-        var result = await _permissionProcessor.ListPermissionsAsync(new(Take: 2));
+        var result = await _permissionProcessor.ListPermissionsAsync(new(_accountId, Take: 2));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -128,7 +128,7 @@ public class PermissionProcessorListGetTests
     [Fact]
     public async Task ListPermissions_ReturnsEmptyWhenNoPermissions()
     {
-        var result = await _permissionProcessor.ListPermissionsAsync(new(Take: 10));
+        var result = await _permissionProcessor.ListPermissionsAsync(new(_accountId, Take: 10));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);

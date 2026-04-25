@@ -23,12 +23,12 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterGroup_DelegatesToInner_WhenHasAccountContext()
     {
-        var request = new DeregisterGroupRequest(Guid.CreateVersion7());
+        var request = new DeregisterGroupRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var expectedResult = new DeregisterGroupResult(
             DeregisterGroupResultCode.Success,
             string.Empty
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService.Setup(x => x.DeregisterGroupAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.DeregisterGroupAsync(request);
@@ -40,8 +40,8 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterGroup_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        var request = new DeregisterGroupRequest(Guid.CreateVersion7());
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        var request = new DeregisterGroupRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.DeregisterGroupAsync(request);
 
@@ -55,12 +55,12 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterRole_DelegatesToInner_WhenHasAccountContext()
     {
-        var request = new DeregisterRoleRequest(Guid.CreateVersion7());
+        var request = new DeregisterRoleRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var expectedResult = new DeregisterRoleResult(
             DeregisterRoleResultCode.Success,
             string.Empty
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService.Setup(x => x.DeregisterRoleAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.DeregisterRoleAsync(request);
@@ -72,8 +72,8 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterRole_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        var request = new DeregisterRoleRequest(Guid.CreateVersion7());
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        var request = new DeregisterRoleRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.DeregisterRoleAsync(request);
 
@@ -87,12 +87,12 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterPermission_DelegatesToInner_WhenHasAccountContext()
     {
-        var request = new DeregisterPermissionRequest(Guid.CreateVersion7());
+        var request = new DeregisterPermissionRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var expectedResult = new DeregisterPermissionResult(
             DeregisterPermissionResultCode.Success,
             string.Empty
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.DeregisterPermissionAsync(request))
             .ReturnsAsync(expectedResult);
@@ -106,8 +106,8 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterPermission_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        var request = new DeregisterPermissionRequest(Guid.CreateVersion7());
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        var request = new DeregisterPermissionRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.DeregisterPermissionAsync(request);
 
@@ -123,6 +123,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     {
         var request = new DeregisterUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var expectedResult = new DeregisterUsersFromGroupResult(
@@ -131,7 +132,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
             2,
             []
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.DeregisterUsersFromGroupAsync(request))
             .ReturnsAsync(expectedResult);
@@ -147,9 +148,10 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     {
         var request = new DeregisterUsersFromGroupRequest(
             [Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.DeregisterUsersFromGroupAsync(request);
 
@@ -165,6 +167,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     {
         var request = new DeregisterRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var expectedResult = new DeregisterRolesFromGroupResult(
@@ -173,7 +176,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
             2,
             []
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.DeregisterRolesFromGroupAsync(request))
             .ReturnsAsync(expectedResult);
@@ -189,9 +192,10 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     {
         var request = new DeregisterRolesFromGroupRequest(
             [Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.DeregisterRolesFromGroupAsync(request);
 
@@ -207,6 +211,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     {
         var request = new DeregisterRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var expectedResult = new DeregisterRolesFromUserResult(
@@ -215,7 +220,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
             2,
             []
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.DeregisterRolesFromUserAsync(request))
             .ReturnsAsync(expectedResult);
@@ -231,9 +236,10 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     {
         var request = new DeregisterRolesFromUserRequest(
             [Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.DeregisterRolesFromUserAsync(request);
 
@@ -249,6 +255,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     {
         var request = new DeregisterPermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
         var expectedResult = new DeregisterPermissionsFromRoleResult(
@@ -257,7 +264,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
             2,
             []
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.DeregisterPermissionsFromRoleAsync(request))
             .ReturnsAsync(expectedResult);
@@ -273,9 +280,10 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     {
         var request = new DeregisterPermissionsFromRoleRequest(
             [Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.DeregisterPermissionsFromRoleAsync(request);
 
@@ -300,7 +308,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
             DeregisterUserResultCode.Success,
             string.Empty
         );
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(true);
         _mockInnerService.Setup(x => x.DeregisterUserAsync()).ReturnsAsync(expectedResult);
 
         var result = await _decorator.DeregisterUserAsync();
@@ -312,7 +320,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterUser_ReturnsUnauthorized_WhenNoUserContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(false);
 
         var result = await _decorator.DeregisterUserAsync();
 
@@ -327,28 +335,35 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterAccount_Succeeds_WhenHasAccountContext()
     {
+        var request = new DeregisterAccountRequest(Guid.CreateVersion7());
         var expectedResult = new DeregisterAccountResult(
             DeregisterAccountResultCode.Success,
             string.Empty
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
-        _mockInnerService.Setup(x => x.DeregisterAccountAsync()).ReturnsAsync(expectedResult);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
+        _mockInnerService
+            .Setup(x => x.DeregisterAccountAsync(request))
+            .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.DeregisterAccountAsync();
+        var result = await _decorator.DeregisterAccountAsync(request);
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.DeregisterAccountAsync(), Times.Once);
+        _mockInnerService.Verify(x => x.DeregisterAccountAsync(request), Times.Once);
     }
 
     [Fact]
     public async Task DeregisterAccount_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        var request = new DeregisterAccountRequest(Guid.CreateVersion7());
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
-        var result = await _decorator.DeregisterAccountAsync();
+        var result = await _decorator.DeregisterAccountAsync(request);
 
         Assert.Equal(DeregisterAccountResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerService.Verify(x => x.DeregisterAccountAsync(), Times.Never);
+        _mockInnerService.Verify(
+            x => x.DeregisterAccountAsync(It.IsAny<DeregisterAccountRequest>()),
+            Times.Never
+        );
     }
 
     #endregion
@@ -358,12 +373,15 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterUserFromAccount_Succeeds_WhenHasAccountContext()
     {
-        var request = new DeregisterUserFromAccountRequest(Guid.CreateVersion7());
+        var request = new DeregisterUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
         var expectedResult = new DeregisterUserFromAccountResult(
             DeregisterUserFromAccountResultCode.Success,
             string.Empty
         );
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService
             .Setup(x => x.DeregisterUserFromAccountAsync(request))
             .ReturnsAsync(expectedResult);
@@ -377,8 +395,11 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task DeregisterUserFromAccount_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        var request = new DeregisterUserFromAccountRequest(Guid.CreateVersion7());
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        var request = new DeregisterUserFromAccountRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.DeregisterUserFromAccountAsync(request);
 
@@ -401,7 +422,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
             DeregisterUserFromAccountResultCode.Success,
             string.Empty
         );
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(true);
         _mockInnerService.Setup(x => x.LeaveAccountAsync(accountId)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.LeaveAccountAsync(accountId);
@@ -414,7 +435,7 @@ public class DeregistrationServiceAuthorizationDecoratorTests
     public async Task LeaveAccount_ReturnsUnauthorized_WhenNoUserContext()
     {
         var accountId = Guid.CreateVersion7();
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(false);
 
         var result = await _decorator.LeaveAccountAsync(accountId);
 

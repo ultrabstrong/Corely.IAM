@@ -1,4 +1,5 @@
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Security;
@@ -11,6 +12,7 @@ namespace Corely.IAM.Web.UnitTests.Services;
 
 public class BlazorUserContextAccessorTests
 {
+    private readonly Mock<IAuthenticationService> _mockAuthenticationService = new();
     private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor = new();
     private readonly Mock<ILogger<BlazorUserContextAccessor>> _mockLogger = new();
@@ -19,6 +21,7 @@ public class BlazorUserContextAccessorTests
     public BlazorUserContextAccessorTests()
     {
         _accessor = new BlazorUserContextAccessor(
+            _mockAuthenticationService.Object,
             _mockUserContextProvider.Object,
             _mockHttpContextAccessor.Object,
             _mockLogger.Object
@@ -51,8 +54,8 @@ public class BlazorUserContextAccessorTests
         var result = await _accessor.GetUserContextAsync();
 
         Assert.Same(expectedContext, result);
-        _mockUserContextProvider.Verify(
-            p => p.SetUserContextAsync(It.IsAny<string>()),
+        _mockAuthenticationService.Verify(
+            s => s.AuthenticateWithTokenAsync(It.IsAny<string>()),
             Times.Never
         );
     }
@@ -87,8 +90,8 @@ public class BlazorUserContextAccessorTests
         _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns((UserContext?)null);
         SetupHttpContextWithCookie("valid-token");
 
-        _mockUserContextProvider
-            .Setup(p => p.SetUserContextAsync("valid-token"))
+        _mockAuthenticationService
+            .Setup(s => s.AuthenticateWithTokenAsync("valid-token"))
             .ReturnsAsync(UserAuthTokenValidationResultCode.Success)
             .Callback(() =>
             {
@@ -98,7 +101,10 @@ public class BlazorUserContextAccessorTests
         var result = await _accessor.GetUserContextAsync();
 
         Assert.Same(expectedContext, result);
-        _mockUserContextProvider.Verify(p => p.SetUserContextAsync("valid-token"), Times.Once);
+        _mockAuthenticationService.Verify(
+            s => s.AuthenticateWithTokenAsync("valid-token"),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -107,8 +113,8 @@ public class BlazorUserContextAccessorTests
         _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns((UserContext?)null);
         SetupHttpContextWithCookie("bad-token");
 
-        _mockUserContextProvider
-            .Setup(p => p.SetUserContextAsync("bad-token"))
+        _mockAuthenticationService
+            .Setup(s => s.AuthenticateWithTokenAsync("bad-token"))
             .ReturnsAsync(UserAuthTokenValidationResultCode.TokenValidationFailed);
 
         var result = await _accessor.GetUserContextAsync();
@@ -122,8 +128,8 @@ public class BlazorUserContextAccessorTests
         _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns((UserContext?)null);
         SetupHttpContextWithCookie("bad-token");
 
-        _mockUserContextProvider
-            .Setup(p => p.SetUserContextAsync("bad-token"))
+        _mockAuthenticationService
+            .Setup(s => s.AuthenticateWithTokenAsync("bad-token"))
             .ReturnsAsync(UserAuthTokenValidationResultCode.TokenValidationFailed);
 
         var firstResult = await _accessor.GetUserContextAsync();
@@ -131,8 +137,8 @@ public class BlazorUserContextAccessorTests
 
         Assert.Null(firstResult);
         Assert.Null(secondResult);
-        _mockUserContextProvider.Verify(
-            p => p.SetUserContextAsync(It.IsAny<string>()),
+        _mockAuthenticationService.Verify(
+            s => s.AuthenticateWithTokenAsync(It.IsAny<string>()),
             Times.Exactly(2)
         );
     }
@@ -143,8 +149,8 @@ public class BlazorUserContextAccessorTests
         _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns((UserContext?)null);
         SetupHttpContextWithCookie("error-token");
 
-        _mockUserContextProvider
-            .Setup(p => p.SetUserContextAsync("error-token"))
+        _mockAuthenticationService
+            .Setup(s => s.AuthenticateWithTokenAsync("error-token"))
             .ThrowsAsync(new InvalidOperationException("Something broke"));
 
         var result = await _accessor.GetUserContextAsync();

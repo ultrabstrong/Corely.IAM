@@ -126,10 +126,10 @@ Every processor and service is wrapped with **decorator layers** via Scrutor:
 Registration order in `ServiceRegistrationExtensions.cs` matters: decorators are applied bottom-up (last registered = outermost).
 
 Authorization is split into two layers:
-- **Service decorators** — validate context only (`HasUserContext()` / `HasAccountContext()`). They do NOT check CRUDX permissions.
+- **Service decorators** — validate context only (`HasUserContext()` / `HasAccountContext()` / `IsNonSystemUserContext()`). They do NOT check CRUDX permissions.
 - **Processor decorators** — enforce specific CRUDX permission checks on resources via `AuthorizationProvider.IsAuthorizedAsync()`.
 
-Service methods that appear "unguarded" (e.g., `RegisterUsersWithGroupAsync`) are protected at the processor level where the actual work happens.
+Service decorators use `IsNonSystemUserContext()` for "self" operations (MFA, password, Google auth, deregister self) that require a real user. Other operations use `HasUserContext()` / `HasAccountContext()` which allow system context to pass through.
 
 ### Domain Structure
 
@@ -166,7 +166,8 @@ New services go in `Services/` with an interface, registered in `ServiceRegistra
 - Always use `ISymmetricEncryptedValue` or `IAsymmetricEncryptedValue` — never store decrypted values as strings
 - CRUDX permission model (Create, Read, Update, Delete, Execute) with wildcard support (`ResourceId == Guid.Empty` = all resources)
 - JWT-based authentication via `AuthenticationProvider`
-- Host-agnostic auth context: `UserContextProvider` implements both `IUserContextProvider` (read) and `IUserContextSetter` (write) — no HttpContext dependency
+- Host-agnostic auth context: `IUserContextProvider` (read-only) for reading context, `IAuthenticationService` for setting context (`AuthenticateWithTokenAsync`, `AuthenticateAsSystem`) — no HttpContext dependency
+- System context for headless processes: `IAuthenticationService.AuthenticateAsSystem()` creates a fully-permissioned context that bypasses permission checks but blocks "self" operations (MFA, password, Google auth). `IsNonSystemUserContext()` on `IAuthorizationProvider` gates these self operations.
 - Multi-tenant user model: users exist independently of accounts (M:M relationship). There is no concept of "user A administrates user B" — account owners can register/deregister users with account entities but cannot read or modify other users directly.
 
 ## Development Patterns

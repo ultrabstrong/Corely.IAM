@@ -354,9 +354,17 @@ internal class AuthenticationService(
             );
         }
 
+        if (context.IsSystemContext)
+        {
+            return CreateFailedSignInResult(
+                SignInResultCode.InvalidAuthTokenError,
+                "System context cannot switch accounts"
+            );
+        }
+
         _logger.LogDebug(
             "User {UserId} switching to account {AccountId}",
-            context.User.Id,
+            context.User!.Id,
             request.AccountId
         );
 
@@ -372,7 +380,7 @@ internal class AuthenticationService(
             var newContext = _userContextProvider.GetUserContext();
             _logger.LogDebug(
                 "User {UserId} switched to account {AccountId}",
-                context.User.Id,
+                context.User!.Id,
                 newContext?.CurrentAccount?.Id
             );
         }
@@ -391,9 +399,15 @@ internal class AuthenticationService(
             return false;
         }
 
+        if (context.IsSystemContext)
+        {
+            _logger.LogDebug("System context cannot sign out");
+            return false;
+        }
+
         _logger.LogDebug(
             "Signing out user {UserId} with token {TokenId}, account {AccountId}, device {DeviceId}",
-            context.User.Id,
+            context.User!.Id,
             request.TokenId,
             context.CurrentAccount?.Id,
             context.DeviceId
@@ -428,7 +442,13 @@ internal class AuthenticationService(
             return;
         }
 
-        var userId = context.User.Id;
+        if (context.IsSystemContext)
+        {
+            _logger.LogDebug("System context cannot sign out");
+            return;
+        }
+
+        var userId = context.User!.Id;
         _logger.LogDebug("Signing out all sessions for user {UserId}", userId);
 
         await _authenticationProvider.RevokeAllUserAuthTokensAsync(userId);
@@ -539,4 +559,41 @@ internal class AuthenticationService(
         SignInResultCode resultCode,
         string message
     ) => new(resultCode, message, null, null);
+
+    public async Task<UserAuthTokenValidationResultCode> AuthenticateWithTokenAsync(
+        string authToken
+    )
+    {
+        ArgumentNullException.ThrowIfNull(authToken, nameof(authToken));
+
+        var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(authToken);
+
+        if (
+            validationResult.ResultCode != UserAuthTokenValidationResultCode.Success
+            || validationResult.User == null
+        )
+        {
+            return validationResult.ResultCode;
+        }
+
+        if (string.IsNullOrWhiteSpace(validationResult.DeviceId))
+        {
+            return UserAuthTokenValidationResultCode.MissingDeviceIdClaim;
+        }
+
+        _userContextSetter.SetUserContext(
+            new UserContext(
+                validationResult.User,
+                validationResult.CurrentAccount,
+                validationResult.DeviceId,
+                validationResult.AvailableAccounts
+            )
+        );
+        return UserAuthTokenValidationResultCode.Success;
+    }
+
+    public void AuthenticateAsSystem(string deviceId)
+    {
+        _userContextSetter.SetSystemContext(deviceId);
+    }
 }

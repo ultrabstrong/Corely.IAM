@@ -20,22 +20,25 @@ internal class GoogleAuthService(
     public async Task<LinkGoogleAuthResult> LinkGoogleAuthAsync(LinkGoogleAuthRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var context = _userContextProvider.GetUserContext();
+        var context = _userContextProvider.GetUserContext()!;
+
         return await _googleAuthProcessor.LinkGoogleAuthAsync(
-            context!.User.Id,
+            context.User!.Id,
             request.GoogleIdToken
         );
     }
 
     public async Task<UnlinkGoogleAuthResult> UnlinkGoogleAuthAsync()
     {
-        var context = _userContextProvider.GetUserContext();
-        return await _googleAuthProcessor.UnlinkGoogleAuthAsync(context!.User.Id);
+        var context = _userContextProvider.GetUserContext()!;
+
+        return await _googleAuthProcessor.UnlinkGoogleAuthAsync(context.User!.Id);
     }
 
     public async Task<AuthMethodsResult> GetAuthMethodsAsync()
     {
-        var context = _userContextProvider.GetUserContext();
-        return await _googleAuthProcessor.GetAuthMethodsAsync(context!.User.Id);
+        var context = _userContextProvider.GetUserContext()!;
+
+        return await _googleAuthProcessor.GetAuthMethodsAsync(context.User!.Id);
     }
 }

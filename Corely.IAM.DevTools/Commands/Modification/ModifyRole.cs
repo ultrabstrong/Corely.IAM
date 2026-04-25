@@ -3,7 +3,6 @@ using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Services;
-using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.DevTools.Commands.Modification;
 
@@ -18,16 +17,18 @@ internal partial class Modification : CommandBase
         private bool Create { get; init; }
 
         private readonly IModificationService _modificationService;
-        private readonly IUserContextProvider _userContextProvider;
+        private readonly IAuthenticationService _authenticationService;
 
         public ModifyRole(
             IModificationService modificationService,
-            IUserContextProvider userContextProvider
+            IAuthenticationService authenticationService
         )
             : base("role", "Update a role")
         {
             _modificationService = modificationService.ThrowIfNull(nameof(modificationService));
-            _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
+            _authenticationService = authenticationService.ThrowIfNull(
+                nameof(authenticationService)
+            );
         }
 
         protected override async Task ExecuteAsync()
@@ -36,7 +37,7 @@ internal partial class Modification : CommandBase
             {
                 SampleJsonFileHelper.CreateSampleMultipleRequestJson(
                     RequestJsonFile,
-                    new UpdateRoleRequest(Guid.Empty, "roleName", "description")
+                    new UpdateRoleRequest(Guid.Empty, Guid.Empty, "roleName", "description")
                 );
             }
             else
@@ -50,7 +51,7 @@ internal partial class Modification : CommandBase
 
         private async Task ModifyRoleAsync()
         {
-            if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
+            if (!await SetUserContextFromAuthTokenFileAsync(_authenticationService))
                 return;
 
             var requests = SampleJsonFileHelper.ReadMultipleRequestJson<UpdateRoleRequest>(

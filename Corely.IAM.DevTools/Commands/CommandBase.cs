@@ -4,8 +4,8 @@ using System.CommandLine.NamingConventionBinder;
 using System.Reflection;
 using System.Text.Json;
 using Corely.IAM.DevTools.Attributes;
+using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
-using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.DevTools.Commands;
 
@@ -281,7 +281,7 @@ internal abstract class CommandBase : Command
     }
 
     protected static async Task<bool> SetUserContextFromAuthTokenFileAsync(
-        IUserContextProvider userContextProvider
+        IAuthenticationService authenticationService
     )
     {
         var authFilePath = ConfigurationProvider.AuthTokenFilePath;
@@ -316,7 +316,9 @@ internal abstract class CommandBase : Command
                 return false;
             }
 
-            var setContextResult = await userContextProvider.SetUserContextAsync(authToken);
+            var setContextResult = await authenticationService.AuthenticateWithTokenAsync(
+                authToken
+            );
             if (setContextResult != UserAuthTokenValidationResultCode.Success)
             {
                 Error($"Failed to set user context: {setContextResult}");

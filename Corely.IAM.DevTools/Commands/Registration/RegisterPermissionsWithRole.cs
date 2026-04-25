@@ -3,7 +3,6 @@ using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
-using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.DevTools.Commands.Registration;
 
@@ -18,16 +17,18 @@ internal partial class Registration : CommandBase
         private bool Create { get; init; }
 
         private readonly IRegistrationService _registrationService;
-        private readonly IUserContextProvider _userContextProvider;
+        private readonly IAuthenticationService _authenticationService;
 
         public RegisterPermissionsWithRole(
             IRegistrationService registrationService,
-            IUserContextProvider userContextProvider
+            IAuthenticationService authenticationService
         )
             : base("permissions-with-role", "Register permissions with role")
         {
             _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
-            _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
+            _authenticationService = authenticationService.ThrowIfNull(
+                nameof(authenticationService)
+            );
         }
 
         protected override async Task ExecuteAsync()
@@ -36,7 +37,7 @@ internal partial class Registration : CommandBase
             {
                 SampleJsonFileHelper.CreateSampleMultipleRequestJson(
                     RequestJsonFile,
-                    new RegisterPermissionsWithRoleRequest([Guid.Empty], Guid.Empty)
+                    new RegisterPermissionsWithRoleRequest([Guid.Empty], Guid.Empty, Guid.Empty)
                 );
             }
             else
@@ -50,7 +51,7 @@ internal partial class Registration : CommandBase
 
         private async Task RegisterPermissionsWithRoleAsync()
         {
-            if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
+            if (!await SetUserContextFromAuthTokenFileAsync(_authenticationService))
                 return;
 
             var request =

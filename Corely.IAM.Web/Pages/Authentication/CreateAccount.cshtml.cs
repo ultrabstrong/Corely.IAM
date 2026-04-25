@@ -45,7 +45,7 @@ public class CreateAccountModel(
         }
 
         var createResult = await registrationService.RegisterAccountAsync(
-            new RegisterAccountRequest(accountName)
+            new RegisterAccountRequest(accountName, userContextProvider.GetUserContext()!.User!.Id)
         );
 
         if (createResult.ResultCode != RegisterAccountResultCode.Success)

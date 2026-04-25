@@ -3,7 +3,6 @@ using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
-using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.DevTools.Commands.Deregistration;
 
@@ -18,18 +17,20 @@ internal partial class Deregistration : CommandBase
         private bool Create { get; init; }
 
         private readonly IDeregistrationService _deregistrationService;
-        private readonly IUserContextProvider _userContextProvider;
+        private readonly IAuthenticationService _authenticationService;
 
         public DeregisterUserFromAccount(
             IDeregistrationService deregistrationService,
-            IUserContextProvider userContextProvider
+            IAuthenticationService authenticationService
         )
             : base("user-from-account", "Deregister a user from an account")
         {
             _deregistrationService = deregistrationService.ThrowIfNull(
                 nameof(deregistrationService)
             );
-            _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
+            _authenticationService = authenticationService.ThrowIfNull(
+                nameof(authenticationService)
+            );
         }
 
         protected override async Task ExecuteAsync()
@@ -38,7 +39,7 @@ internal partial class Deregistration : CommandBase
             {
                 SampleJsonFileHelper.CreateSampleMultipleRequestJson(
                     RequestJsonFile,
-                    new DeregisterUserFromAccountRequest(Guid.Empty)
+                    new DeregisterUserFromAccountRequest(Guid.Empty, Guid.Empty)
                 );
             }
             else
@@ -52,7 +53,7 @@ internal partial class Deregistration : CommandBase
 
         private async Task DeregisterUserFromAccountAsync()
         {
-            if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
+            if (!await SetUserContextFromAuthTokenFileAsync(_authenticationService))
                 return;
 
             var request =

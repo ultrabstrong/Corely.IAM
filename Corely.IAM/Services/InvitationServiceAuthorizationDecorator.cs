@@ -17,7 +17,7 @@ internal class InvitationServiceAuthorizationDecorator(
     public async Task<CreateInvitationResult> CreateInvitationAsync(
         CreateInvitationRequest request
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? await _inner.CreateInvitationAsync(request)
             : new CreateInvitationResult(
                 CreateInvitationResultCode.UnauthorizedError,
@@ -29,7 +29,7 @@ internal class InvitationServiceAuthorizationDecorator(
     public async Task<AcceptInvitationResult> AcceptInvitationAsync(
         AcceptInvitationRequest request
     ) =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.AcceptInvitationAsync(request)
             : new AcceptInvitationResult(
                 AcceptInvitationResultCode.UnauthorizedError,
@@ -37,9 +37,11 @@ internal class InvitationServiceAuthorizationDecorator(
                 null
             );
 
-    public async Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId) =>
-        _authorizationProvider.HasAccountContext()
-            ? await _inner.RevokeInvitationAsync(invitationId)
+    public async Task<RevokeInvitationResult> RevokeInvitationAsync(
+        RevokeInvitationRequest request
+    ) =>
+        _authorizationProvider.HasAccountContext(request.AccountId)
+            ? await _inner.RevokeInvitationAsync(request)
             : new RevokeInvitationResult(
                 RevokeInvitationResultCode.UnauthorizedError,
                 "Unauthorized to revoke invitation"
@@ -48,7 +50,7 @@ internal class InvitationServiceAuthorizationDecorator(
     public async Task<RetrieveListResult<Invitation>> ListInvitationsAsync(
         ListInvitationsRequest request
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? await _inner.ListInvitationsAsync(request)
             : new RetrieveListResult<Invitation>(
                 RetrieveResultCode.UnauthorizedError,

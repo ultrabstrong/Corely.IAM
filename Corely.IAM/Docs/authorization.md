@@ -1,6 +1,6 @@
 # Authorization
 
-Two-layer authorization model with context validation at the service level and fine-grained CRUDX permission checks at the processor level.
+Two-layer authorization model with context validation at the service level and fine-grained CRUDX permission checks at the processor level. Supports system context for headless background processes.
 
 ## Features
 
@@ -8,6 +8,7 @@ Two-layer authorization model with context validation at the service level and f
 - **Wildcard support** — `"*"` matches all resource types; `Guid.Empty` matches all resources of a type
 - **Two authorization layers** — services validate context, processors check permissions
 - **Self-ownership** — users can act on their own resources without explicit permission
+- **System context** — headless processes bypass permission checks while "self" operations are blocked
 - **Effective permissions** — aggregated view of permissions through roles and groups
 
 ## AuthAction Enum
@@ -29,11 +30,20 @@ public enum AuthAction
 public interface IAuthorizationProvider
 {
     Task<bool> IsAuthorizedAsync(AuthAction action, string resourceType, params Guid[] resourceIds);
+    bool IsNonSystemUserContext();
     bool IsAuthorizedForOwnUser(Guid requestUserId, bool suppressLog = true);
     bool HasUserContext();
-    bool HasAccountContext();
+    bool HasAccountContext(Guid accountId);
 }
 ```
+
+| Method | Purpose |
+|--------|---------|
+| `IsAuthorizedAsync` | Checks CRUDX permission for specific resource types and IDs. Returns `true` for system context. |
+| `IsNonSystemUserContext` | Returns `true` if a real (non-system) user context is present. Used for "self" operations. |
+| `IsAuthorizedForOwnUser` | Checks if the request targets the current user. Returns `false` for system context. |
+| `HasUserContext` | Returns `true` if any user context is present (including system context). |
+| `HasAccountContext` | Validates account ID matches the active account. Returns `true` for system context. |
 
 ## Two Authorization Layers
 
@@ -41,10 +51,19 @@ public interface IAuthorizationProvider
 
 Service authorization decorators check only that the required context exists:
 
-- **`HasUserContext()`** — user is authenticated
-- **`HasAccountContext()`** — user is authenticated AND has an active account
+- **`HasUserContext()`** — user is authenticated (or system context is active)
+- **`HasAccountContext(accountId)`** — user is authenticated AND has an active account (or system context)
+- **`IsNonSystemUserContext()`** — user is a real authenticated user, NOT system context
 
 These are coarse-grained gates. They do not check specific CRUDX permissions.
+
+#### Category 1: "Self" Operations
+
+Operations that only make sense for a real logged-in user (e.g., set password, manage MFA, manage Google auth, accept invitation). These use `IsNonSystemUserContext()` and block system context.
+
+#### Category 2: "Targeting" Operations
+
+Operations that target specific entities and can be performed by system context (e.g., register group, list users, deregister role). These use `HasAccountContext(accountId)` or `HasUserContext()`.
 
 ### Processor Layer (CRUDX Permission Checks)
 
@@ -58,6 +77,8 @@ if (!await authorizationProvider.IsAuthorizedAsync(
     return new RegisterGroupResult(RegisterGroupResultCode.AuthorizationError, ...);
 }
 ```
+
+System context automatically passes `IsAuthorizedAsync()` checks — no permissions need to be provisioned.
 
 ## Resource Types
 

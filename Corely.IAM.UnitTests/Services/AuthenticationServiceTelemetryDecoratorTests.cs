@@ -1,5 +1,6 @@
 using Corely.IAM.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Services;
@@ -96,6 +97,29 @@ public class AuthenticationServiceTelemetryDecoratorTests
         Assert.Throws<ArgumentNullException>(() =>
             new AuthenticationServiceTelemetryDecorator(_mockInnerService.Object, null!)
         );
+
+    [Fact]
+    public async Task AuthenticateWithToken_DelegatesToInnerAndLogsResult()
+    {
+        var expectedResult = UserAuthTokenValidationResultCode.Success;
+        _mockInnerService
+            .Setup(x => x.AuthenticateWithTokenAsync("test-token"))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.AuthenticateWithTokenAsync("test-token");
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.AuthenticateWithTokenAsync("test-token"), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public void AuthenticateAsSystem_DelegatesToInner()
+    {
+        _decorator.AuthenticateAsSystem(TEST_DEVICE_ID);
+
+        _mockInnerService.Verify(x => x.AuthenticateAsSystem(TEST_DEVICE_ID), Times.Once);
+    }
 
     private void VerifyLoggedWithResult() =>
         _mockLogger.Verify(

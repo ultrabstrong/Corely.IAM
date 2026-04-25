@@ -29,7 +29,7 @@ public class ModificationServiceAuthorizationDecoratorTests
     {
         var request = new UpdateAccountRequest(Guid.CreateVersion7(), "TestAccount");
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService.Setup(x => x.ModifyAccountAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.ModifyAccountAsync(request);
@@ -42,7 +42,7 @@ public class ModificationServiceAuthorizationDecoratorTests
     public async Task ModifyAccount_ReturnsUnauthorized_WhenNoAccountContext()
     {
         var request = new UpdateAccountRequest(Guid.CreateVersion7(), "TestAccount");
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.ModifyAccountAsync(request);
 
@@ -93,9 +93,14 @@ public class ModificationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task ModifyGroup_Succeeds_WhenHasAccountContext()
     {
-        var request = new UpdateGroupRequest(Guid.CreateVersion7(), "TestGroup", "Description");
+        var request = new UpdateGroupRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            "TestGroup",
+            "Description"
+        );
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService.Setup(x => x.ModifyGroupAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.ModifyGroupAsync(request);
@@ -107,8 +112,13 @@ public class ModificationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task ModifyGroup_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        var request = new UpdateGroupRequest(Guid.CreateVersion7(), "TestGroup", "Description");
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        var request = new UpdateGroupRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            "TestGroup",
+            "Description"
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.ModifyGroupAsync(request);
 
@@ -126,9 +136,14 @@ public class ModificationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task ModifyRole_Succeeds_WhenHasAccountContext()
     {
-        var request = new UpdateRoleRequest(Guid.CreateVersion7(), "TestRole", "Description");
+        var request = new UpdateRoleRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            "TestRole",
+            "Description"
+        );
         var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _mockInnerService.Setup(x => x.ModifyRoleAsync(request)).ReturnsAsync(expectedResult);
 
         var result = await _decorator.ModifyRoleAsync(request);
@@ -140,8 +155,13 @@ public class ModificationServiceAuthorizationDecoratorTests
     [Fact]
     public async Task ModifyRole_ReturnsUnauthorized_WhenNoAccountContext()
     {
-        var request = new UpdateRoleRequest(Guid.CreateVersion7(), "TestRole", "Description");
-        _mockAuthorizationProvider.Setup(x => x.HasAccountContext()).Returns(false);
+        var request = new UpdateRoleRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            "TestRole",
+            "Description"
+        );
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(false);
 
         var result = await _decorator.ModifyRoleAsync(request);
 

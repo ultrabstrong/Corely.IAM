@@ -84,7 +84,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterPermissionAsync(new DeregisterPermissionRequest(Id));
+            var result = await DeregistrationService.DeregisterPermissionAsync(new DeregisterPermissionRequest(Id, UserContext!.CurrentAccount!.Id));
             if (result.ResultCode == DeregisterPermissionResultCode.Success)
             {
                 NavigationManager.NavigateTo(AppRoutes.Permissions);

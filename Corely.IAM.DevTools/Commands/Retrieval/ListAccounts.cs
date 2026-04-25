@@ -3,7 +3,6 @@ using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Services;
-using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.DevTools.Commands.Retrieval;
 
@@ -20,21 +19,23 @@ internal partial class Retrieval : CommandBase
         private int Take { get; init; } = 25;
 
         private readonly IRetrievalService _retrievalService;
-        private readonly IUserContextProvider _userContextProvider;
+        private readonly IAuthenticationService _authenticationService;
 
         public ListAccounts(
             IRetrievalService retrievalService,
-            IUserContextProvider userContextProvider
+            IAuthenticationService authenticationService
         )
             : base("list-accounts", "List accounts")
         {
             _retrievalService = retrievalService.ThrowIfNull(nameof(retrievalService));
-            _userContextProvider = userContextProvider.ThrowIfNull(nameof(userContextProvider));
+            _authenticationService = authenticationService.ThrowIfNull(
+                nameof(authenticationService)
+            );
         }
 
         protected override async Task ExecuteAsync()
         {
-            if (!await SetUserContextFromAuthTokenFileAsync(_userContextProvider))
+            if (!await SetUserContextFromAuthTokenFileAsync(_authenticationService))
                 return;
 
             var result = await _retrievalService.ListAccountsAsync(

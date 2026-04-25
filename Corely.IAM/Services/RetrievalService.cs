@@ -158,13 +158,17 @@ internal class RetrievalService(
     )
     {
         var userContext = _userContextProvider.GetUserContext();
-        if (userContext?.CurrentAccount == null)
+        if (
+            userContext == null
+            || userContext.IsSystemContext
+            || userContext.CurrentAccount == null
+        )
             return [];
 
         return await _permissionProcessor.GetEffectivePermissionsForUserAsync(
             resourceType,
             resourceId,
-            userContext.User.Id,
+            userContext.User!.Id,
             userContext.CurrentAccount.Id
         );
     }

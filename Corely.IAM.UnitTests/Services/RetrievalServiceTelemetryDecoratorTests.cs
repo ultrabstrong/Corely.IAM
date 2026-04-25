@@ -38,7 +38,9 @@ public class RetrievalServiceTelemetryDecoratorTests
             .Setup(x => x.ListPermissionsAsync(It.IsAny<ListPermissionsRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListPermissionsAsync(new ListPermissionsRequest());
+        var result = await _decorator.ListPermissionsAsync(
+            new ListPermissionsRequest(Guid.CreateVersion7())
+        );
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(
@@ -81,7 +83,7 @@ public class RetrievalServiceTelemetryDecoratorTests
             .Setup(x => x.ListGroupsAsync(It.IsAny<ListGroupsRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListGroupsAsync(new ListGroupsRequest());
+        var result = await _decorator.ListGroupsAsync(new ListGroupsRequest(Guid.CreateVersion7()));
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.ListGroupsAsync(It.IsAny<ListGroupsRequest>()), Times.Once);
@@ -119,7 +121,7 @@ public class RetrievalServiceTelemetryDecoratorTests
             .Setup(x => x.ListRolesAsync(It.IsAny<ListRolesRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListRolesAsync(new ListRolesRequest());
+        var result = await _decorator.ListRolesAsync(new ListRolesRequest(Guid.CreateVersion7()));
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.ListRolesAsync(It.IsAny<ListRolesRequest>()), Times.Once);
@@ -157,7 +159,7 @@ public class RetrievalServiceTelemetryDecoratorTests
             .Setup(x => x.ListUsersAsync(It.IsAny<ListUsersRequest>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.ListUsersAsync(new ListUsersRequest());
+        var result = await _decorator.ListUsersAsync(new ListUsersRequest(Guid.CreateVersion7()));
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.ListUsersAsync(It.IsAny<ListUsersRequest>()), Times.Once);

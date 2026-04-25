@@ -161,7 +161,7 @@ else
 
     private async Task<(List<PickerItem>, int)> FetchAvailableGroupsAsync(int skip, int take)
     {
-        var result = await RetrievalService.ListGroupsAsync(new ListGroupsRequest(Skip: skip, Take: take));
+        var result = await RetrievalService.ListGroupsAsync(new ListGroupsRequest(UserContext!.CurrentAccount!.Id, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             var items = result.Data.Items.Select(g => new PickerItem(g.Id, g.Name, g.Description)).ToList();
@@ -177,7 +177,7 @@ else
             foreach (var groupId in groupIds)
             {
                 var result = await RegistrationService.RegisterUsersWithGroupAsync(
-                    new RegisterUsersWithGroupRequest([Id], groupId)
+                    new RegisterUsersWithGroupRequest([Id], groupId, UserContext!.CurrentAccount!.Id)
                 );
                 if (result.ResultCode != AddUsersToGroupResultCode.Success)
                 {
@@ -192,7 +192,7 @@ else
 
     private async Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take)
     {
-        var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(Skip: skip, Take: take));
+        var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(UserContext!.CurrentAccount!.Id, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             var items = result.Data.Items.Select(r => new PickerItem(r.Id, r.Name, r.Description)).ToList();
@@ -205,7 +205,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.RegisterRolesWithUserAsync(new RegisterRolesWithUserRequest(roleIds, Id));
+            var result = await RegistrationService.RegisterRolesWithUserAsync(new RegisterRolesWithUserRequest(roleIds, Id, UserContext!.CurrentAccount!.Id));
             SetResultMessage(result.ResultCode == AssignRolesToUserResultCode.Success, $"{roleIds.Count} role(s) assigned.", result.Message ?? "Failed.");
             await ReloadAsync();
         });
@@ -217,7 +217,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterRolesFromUserAsync(new DeregisterRolesFromUserRequest([_confirmItemId], Id));
+            var result = await DeregistrationService.DeregisterRolesFromUserAsync(new DeregisterRolesFromUserRequest([_confirmItemId], Id, UserContext!.CurrentAccount!.Id));
             SetResultMessage(result.ResultCode == DeregisterRolesFromUserResultCode.Success, "Role removed.", result.Message ?? "Failed.");
             await ReloadAsync();
         });

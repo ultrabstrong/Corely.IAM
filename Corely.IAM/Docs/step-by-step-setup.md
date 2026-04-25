@@ -91,8 +91,8 @@ dotnet run -- db create
 After authenticating a user (e.g., validating a JWT or cookie), set the user context so IAM services can enforce authorization:
 
 ```csharp
-var contextSetter = serviceProvider.GetRequiredService<IUserContextSetter>();
-var result = await contextSetter.SetUserContextAsync(token);
+var authService = serviceProvider.GetRequiredService<IAuthenticationService>();
+var result = await authService.AuthenticateWithTokenAsync(token);
 ```
 
 If using `Corely.IAM.Web`, the `AuthenticationTokenMiddleware` handles this automatically.

@@ -22,7 +22,7 @@ internal class RetrievalServiceAuthorizationDecorator(
     public async Task<RetrieveListResult<Permission>> ListPermissionsAsync(
         ListPermissionsRequest request
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? await _inner.ListPermissionsAsync(request)
             : new RetrieveListResult<Permission>(
                 RetrieveResultCode.UnauthorizedError,
@@ -34,7 +34,7 @@ internal class RetrievalServiceAuthorizationDecorator(
         Guid permissionId,
         bool hydrate = false
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasUserContext()
             ? await _inner.GetPermissionAsync(permissionId, hydrate)
             : new RetrieveSingleResult<Permission>(
                 RetrieveResultCode.UnauthorizedError,
@@ -44,7 +44,7 @@ internal class RetrievalServiceAuthorizationDecorator(
             );
 
     public async Task<RetrieveListResult<Group>> ListGroupsAsync(ListGroupsRequest request) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? await _inner.ListGroupsAsync(request)
             : new RetrieveListResult<Group>(
                 RetrieveResultCode.UnauthorizedError,
@@ -56,7 +56,7 @@ internal class RetrievalServiceAuthorizationDecorator(
         Guid groupId,
         bool hydrate = false
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasUserContext()
             ? await _inner.GetGroupAsync(groupId, hydrate)
             : new RetrieveSingleResult<Group>(
                 RetrieveResultCode.UnauthorizedError,
@@ -66,7 +66,7 @@ internal class RetrievalServiceAuthorizationDecorator(
             );
 
     public async Task<RetrieveListResult<Role>> ListRolesAsync(ListRolesRequest request) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? await _inner.ListRolesAsync(request)
             : new RetrieveListResult<Role>(
                 RetrieveResultCode.UnauthorizedError,
@@ -75,7 +75,7 @@ internal class RetrievalServiceAuthorizationDecorator(
             );
 
     public async Task<RetrieveSingleResult<Role>> GetRoleAsync(Guid roleId, bool hydrate = false) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasUserContext()
             ? await _inner.GetRoleAsync(roleId, hydrate)
             : new RetrieveSingleResult<Role>(
                 RetrieveResultCode.UnauthorizedError,
@@ -85,7 +85,7 @@ internal class RetrievalServiceAuthorizationDecorator(
             );
 
     public async Task<RetrieveListResult<User>> ListUsersAsync(ListUsersRequest request) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? await _inner.ListUsersAsync(request)
             : new RetrieveListResult<User>(
                 RetrieveResultCode.UnauthorizedError,
@@ -116,7 +116,7 @@ internal class RetrievalServiceAuthorizationDecorator(
         Guid accountId,
         bool hydrate = false
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(accountId)
             ? await _inner.GetAccountAsync(accountId, hydrate)
             : new RetrieveSingleResult<Account>(
                 RetrieveResultCode.UnauthorizedError,
@@ -128,7 +128,7 @@ internal class RetrievalServiceAuthorizationDecorator(
     public async Task<
         RetrieveSingleResult<IIamSymmetricEncryptionProvider>
     > GetAccountSymmetricEncryptionProviderAsync(Guid accountId) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(accountId)
             ? await _inner.GetAccountSymmetricEncryptionProviderAsync(accountId)
             : new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
                 RetrieveResultCode.UnauthorizedError,
@@ -140,7 +140,7 @@ internal class RetrievalServiceAuthorizationDecorator(
     public async Task<
         RetrieveSingleResult<IIamAsymmetricEncryptionProvider>
     > GetAccountAsymmetricEncryptionProviderAsync(Guid accountId) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(accountId)
             ? await _inner.GetAccountAsymmetricEncryptionProviderAsync(accountId)
             : new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
                 RetrieveResultCode.UnauthorizedError,
@@ -152,7 +152,7 @@ internal class RetrievalServiceAuthorizationDecorator(
     public async Task<
         RetrieveSingleResult<IIamAsymmetricSignatureProvider>
     > GetAccountAsymmetricSignatureProviderAsync(Guid accountId) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(accountId)
             ? await _inner.GetAccountAsymmetricSignatureProviderAsync(accountId)
             : new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
                 RetrieveResultCode.UnauthorizedError,
@@ -164,7 +164,7 @@ internal class RetrievalServiceAuthorizationDecorator(
     public async Task<
         RetrieveSingleResult<IIamSymmetricEncryptionProvider>
     > GetUserSymmetricEncryptionProviderAsync() =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.GetUserSymmetricEncryptionProviderAsync()
             : new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
                 RetrieveResultCode.UnauthorizedError,
@@ -176,7 +176,7 @@ internal class RetrievalServiceAuthorizationDecorator(
     public async Task<
         RetrieveSingleResult<IIamAsymmetricEncryptionProvider>
     > GetUserAsymmetricEncryptionProviderAsync() =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.GetUserAsymmetricEncryptionProviderAsync()
             : new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
                 RetrieveResultCode.UnauthorizedError,
@@ -188,7 +188,7 @@ internal class RetrievalServiceAuthorizationDecorator(
     public async Task<
         RetrieveSingleResult<IIamAsymmetricSignatureProvider>
     > GetUserAsymmetricSignatureProviderAsync() =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.GetUserAsymmetricSignatureProviderAsync()
             : new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
                 RetrieveResultCode.UnauthorizedError,

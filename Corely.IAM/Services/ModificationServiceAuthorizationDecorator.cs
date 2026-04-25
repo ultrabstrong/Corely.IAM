@@ -18,7 +18,7 @@ internal class ModificationServiceAuthorizationDecorator(
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
     public async Task<ModifyResult> ModifyAccountAsync(UpdateAccountRequest request) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? await _inner.ModifyAccountAsync(request)
             : new ModifyResult(
                 ModifyResultCode.UnauthorizedError,
@@ -31,12 +31,12 @@ internal class ModificationServiceAuthorizationDecorator(
             : new ModifyResult(ModifyResultCode.UnauthorizedError, "Unauthorized to modify user");
 
     public async Task<ModifyResult> ModifyGroupAsync(UpdateGroupRequest request) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? await _inner.ModifyGroupAsync(request)
             : new ModifyResult(ModifyResultCode.UnauthorizedError, "Unauthorized to modify group");
 
     public async Task<ModifyResult> ModifyRoleAsync(UpdateRoleRequest request) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? await _inner.ModifyRoleAsync(request)
             : new ModifyResult(ModifyResultCode.UnauthorizedError, "Unauthorized to modify role");
 }

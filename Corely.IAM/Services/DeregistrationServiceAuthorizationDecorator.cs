@@ -14,7 +14,7 @@ internal class DeregistrationServiceAuthorizationDecorator(
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
     public Task<DeregisterUserResult> DeregisterUserAsync() =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? _inner.DeregisterUserAsync()
             : Task.FromResult(
                 new DeregisterUserResult(
@@ -23,16 +23,18 @@ internal class DeregistrationServiceAuthorizationDecorator(
                 )
             );
 
-    public async Task<DeregisterAccountResult> DeregisterAccountAsync() =>
-        _authorizationProvider.HasAccountContext()
-            ? await _inner.DeregisterAccountAsync()
+    public async Task<DeregisterAccountResult> DeregisterAccountAsync(
+        DeregisterAccountRequest request
+    ) =>
+        _authorizationProvider.HasAccountContext(request.AccountId)
+            ? await _inner.DeregisterAccountAsync(request)
             : new DeregisterAccountResult(
                 DeregisterAccountResultCode.UnauthorizedError,
                 "Unauthorized to delete account"
             );
 
     public Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? _inner.DeregisterGroupAsync(request)
             : Task.FromResult(
                 new DeregisterGroupResult(
@@ -42,7 +44,7 @@ internal class DeregistrationServiceAuthorizationDecorator(
             );
 
     public Task<DeregisterRoleResult> DeregisterRoleAsync(DeregisterRoleRequest request) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? _inner.DeregisterRoleAsync(request)
             : Task.FromResult(
                 new DeregisterRoleResult(
@@ -54,7 +56,7 @@ internal class DeregistrationServiceAuthorizationDecorator(
     public Task<DeregisterPermissionResult> DeregisterPermissionAsync(
         DeregisterPermissionRequest request
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? _inner.DeregisterPermissionAsync(request)
             : Task.FromResult(
                 new DeregisterPermissionResult(
@@ -66,7 +68,7 @@ internal class DeregistrationServiceAuthorizationDecorator(
     public async Task<DeregisterUserFromAccountResult> DeregisterUserFromAccountAsync(
         DeregisterUserFromAccountRequest request
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? await _inner.DeregisterUserFromAccountAsync(request)
             : new DeregisterUserFromAccountResult(
                 DeregisterUserFromAccountResultCode.UnauthorizedError,
@@ -74,7 +76,7 @@ internal class DeregistrationServiceAuthorizationDecorator(
             );
 
     public async Task<DeregisterUserFromAccountResult> LeaveAccountAsync(Guid accountId) =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.LeaveAccountAsync(accountId)
             : new DeregisterUserFromAccountResult(
                 DeregisterUserFromAccountResultCode.UnauthorizedError,
@@ -84,7 +86,7 @@ internal class DeregistrationServiceAuthorizationDecorator(
     public Task<DeregisterUsersFromGroupResult> DeregisterUsersFromGroupAsync(
         DeregisterUsersFromGroupRequest request
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? _inner.DeregisterUsersFromGroupAsync(request)
             : Task.FromResult(
                 new DeregisterUsersFromGroupResult(
@@ -98,7 +100,7 @@ internal class DeregistrationServiceAuthorizationDecorator(
     public Task<DeregisterRolesFromGroupResult> DeregisterRolesFromGroupAsync(
         DeregisterRolesFromGroupRequest request
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? _inner.DeregisterRolesFromGroupAsync(request)
             : Task.FromResult(
                 new DeregisterRolesFromGroupResult(
@@ -112,7 +114,7 @@ internal class DeregistrationServiceAuthorizationDecorator(
     public Task<DeregisterRolesFromUserResult> DeregisterRolesFromUserAsync(
         DeregisterRolesFromUserRequest request
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? _inner.DeregisterRolesFromUserAsync(request)
             : Task.FromResult(
                 new DeregisterRolesFromUserResult(
@@ -126,7 +128,7 @@ internal class DeregistrationServiceAuthorizationDecorator(
     public Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(
         DeregisterPermissionsFromRoleRequest request
     ) =>
-        _authorizationProvider.HasAccountContext()
+        _authorizationProvider.HasAccountContext(request.AccountId)
             ? _inner.DeregisterPermissionsFromRoleAsync(request)
             : Task.FromResult(
                 new DeregisterPermissionsFromRoleResult(
@@ -138,7 +140,7 @@ internal class DeregistrationServiceAuthorizationDecorator(
             );
 
     public Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync() =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? _inner.DeregisterBasicAuthAsync()
             : Task.FromResult(
                 new DeregisterBasicAuthResult(

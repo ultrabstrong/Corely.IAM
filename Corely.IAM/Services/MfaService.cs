@@ -19,9 +19,10 @@ internal class MfaService(
 
     public async Task<EnableTotpResult> EnableTotpAsync()
     {
-        var context = _userContextProvider.GetUserContext();
+        var context = _userContextProvider.GetUserContext()!;
+
         return await _totpAuthProcessor.EnableTotpAsync(
-            context!.User.Id,
+            context.User!.Id,
             "Corely.IAM",
             context.User.Email
         );
@@ -30,26 +31,30 @@ internal class MfaService(
     public async Task<ConfirmTotpResult> ConfirmTotpAsync(ConfirmTotpRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var context = _userContextProvider.GetUserContext();
-        return await _totpAuthProcessor.ConfirmTotpAsync(context!.User.Id, request.Code);
+        var context = _userContextProvider.GetUserContext()!;
+
+        return await _totpAuthProcessor.ConfirmTotpAsync(context.User!.Id, request.Code);
     }
 
     public async Task<DisableTotpResult> DisableTotpAsync(DisableTotpRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var context = _userContextProvider.GetUserContext();
-        return await _totpAuthProcessor.DisableTotpAsync(context!.User.Id, request.Code);
+        var context = _userContextProvider.GetUserContext()!;
+
+        return await _totpAuthProcessor.DisableTotpAsync(context.User!.Id, request.Code);
     }
 
     public async Task<RegenerateTotpRecoveryCodesResult> RegenerateTotpRecoveryCodesAsync()
     {
-        var context = _userContextProvider.GetUserContext();
-        return await _totpAuthProcessor.RegenerateTotpRecoveryCodesAsync(context!.User.Id);
+        var context = _userContextProvider.GetUserContext()!;
+
+        return await _totpAuthProcessor.RegenerateTotpRecoveryCodesAsync(context.User!.Id);
     }
 
     public async Task<TotpStatusResult> GetTotpStatusAsync()
     {
-        var context = _userContextProvider.GetUserContext();
-        return await _totpAuthProcessor.GetTotpStatusAsync(context!.User.Id);
+        var context = _userContextProvider.GetUserContext()!;
+
+        return await _totpAuthProcessor.GetTotpStatusAsync(context.User!.Id);
     }
 }

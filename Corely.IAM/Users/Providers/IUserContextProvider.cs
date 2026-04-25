@@ -5,11 +5,11 @@ namespace Corely.IAM.Users.Providers;
 public interface IUserContextProvider
 {
     UserContext? GetUserContext();
-    Task<UserAuthTokenValidationResultCode> SetUserContextAsync(string authToken);
 }
 
 internal interface IUserContextSetter
 {
     void SetUserContext(UserContext context);
+    void SetSystemContext(string deviceId);
     void ClearUserContext(Guid userId);
 }

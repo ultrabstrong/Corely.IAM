@@ -36,11 +36,13 @@ internal class InvitationServiceTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId) =>
+    public async Task<RevokeInvitationResult> RevokeInvitationAsync(
+        RevokeInvitationRequest request
+    ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(InvitationService),
-            invitationId,
-            () => _inner.RevokeInvitationAsync(invitationId),
+            request,
+            () => _inner.RevokeInvitationAsync(request),
             logResult: true
         );
 

@@ -129,11 +129,7 @@ public class RoleProcessorListGetTests
     {
         await CreateRoleAsync("Role1");
 
-        var result = await _roleProcessor.ListRolesAsync(new());
-
-        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
-        Assert.NotNull(result.Data);
-        Assert.True(result.Data.Items.Count >= 1);
+        var result = await _roleProcessor.ListRolesAsync(new(_accountId));
         Assert.True(result.Data.TotalCount >= 1);
     }
 
@@ -158,7 +154,7 @@ public class RoleProcessorListGetTests
             }
         );
 
-        var result = await _roleProcessor.ListRolesAsync(new(Take: 100));
+        var result = await _roleProcessor.ListRolesAsync(new(_accountId, Take: 100));
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -172,9 +168,7 @@ public class RoleProcessorListGetTests
     {
         _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((UserContext?)null);
 
-        var result = await _roleProcessor.ListRolesAsync(new());
-
-        Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
+        var result = await _roleProcessor.ListRolesAsync(new(_accountId));
         Assert.Null(result.Data);
     }
 

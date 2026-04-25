@@ -271,7 +271,7 @@ internal class RegistrationService(
         {
             await _uowProvider.BeginAsync();
 
-            var ownerUserId = _userContextProvider.GetUserContext()!.User.Id;
+            var ownerUserId = request.OwnerUserId;
             var createAccountResult = await _accountProcessor.CreateAccountAsync(
                 new(request.AccountName, ownerUserId)
             );
@@ -315,15 +315,17 @@ internal class RegistrationService(
             await _uowProvider.CommitAsync();
             uowSucceeded = true;
 
-            _userContextProvider
-                .GetUserContext()!
-                .AvailableAccounts.Add(
+            var context = _userContextProvider.GetUserContext()!;
+            if (!context.IsSystemContext)
+            {
+                context.AvailableAccounts.Add(
                     new Account
                     {
                         Id = createAccountResult.CreatedId,
                         AccountName = request.AccountName,
                     }
                 );
+            }
 
             _logger.LogInformation(
                 "Account {AccountName} registered with Id {AccountId}",
@@ -350,8 +352,9 @@ internal class RegistrationService(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Registering group {GroupName}", request.GroupName);
 
-        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
-        var result = await _groupProcessor.CreateGroupAsync(new(request.GroupName, accountId));
+        var result = await _groupProcessor.CreateGroupAsync(
+            new(request.GroupName, request.AccountId)
+        );
         if (result.ResultCode != CreateGroupResultCode.Success)
         {
             _logger.LogInformation(
@@ -375,8 +378,7 @@ internal class RegistrationService(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Registering role {RoleName}", request.RoleName);
 
-        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
-        var result = await _roleProcessor.CreateRoleAsync(new(request.RoleName, accountId));
+        var result = await _roleProcessor.CreateRoleAsync(new(request.RoleName, request.AccountId));
         if (result.ResultCode != CreateRoleResultCode.Success)
         {
             _logger.LogInformation(
@@ -406,10 +408,9 @@ internal class RegistrationService(
             request.ResourceId
         );
 
-        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
         var result = await _permissionProcessor.CreatePermissionAsync(
             new(
-                accountId,
+                request.AccountId,
                 request.ResourceType,
                 request.ResourceId,
                 request.Create,
@@ -444,7 +445,7 @@ internal class RegistrationService(
     )
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
+        var accountId = request.AccountId;
         _logger.LogInformation(
             "Registering user {UserId} with account {AccountId}",
             request.UserId,
@@ -691,9 +692,10 @@ internal class RegistrationService(
     public async Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var context = _userContextProvider.GetUserContext();
+        var context = _userContextProvider.GetUserContext()!;
+
         var createResult = await _basicAuthProcessor.CreateBasicAuthAsync(
-            new(context!.User.Id, request.Password)
+            new(context.User!.Id, request.Password)
         );
 
         if (createResult.ResultCode != CreateBasicAuthResultCode.BasicAuthExistsError)
@@ -705,7 +707,7 @@ internal class RegistrationService(
         }
 
         var updateResult = await _basicAuthProcessor.UpdateBasicAuthAsync(
-            new(context.User.Id, request.Password)
+            new(context.User!.Id, request.Password)
         );
         return updateResult.ResultCode switch
         {

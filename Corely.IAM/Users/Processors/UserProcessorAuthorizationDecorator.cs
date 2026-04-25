@@ -57,7 +57,7 @@ internal class UserProcessorAuthorizationDecorator(
             );
 
     public async Task<GetResult<UserEntity>> GetCurrentUserKeysAsync() =>
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.GetCurrentUserKeysAsync()
             : new GetResult<UserEntity>(
                 RetrieveResultCode.UnauthorizedError,

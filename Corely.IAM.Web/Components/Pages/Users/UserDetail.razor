@@ -99,6 +99,11 @@ else
                         OnPageChanged="newSkip => { _rolesSkip = newSkip; StateHasChanged(); }" />
         </div>
 
+        @if (Id == UserContext?.User?.Id)
+        {
+            <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider" />
+        }
+
         <EffectivePermissionsPanel Permissions="_effectivePermissions" UseCard="false" />
 
     </div>
@@ -139,6 +144,9 @@ else
     private int GroupsTotalCount => _groups.Count;
     private List<ChildRef> PagedRoles => _roles.Skip(_rolesSkip).Take(RelationPageSize).ToList();
     private int RolesTotalCount => _roles.Count;
+    private IIamSymmetricEncryptionProvider? _symProvider;
+    private IIamAsymmetricEncryptionProvider? _asymProvider;
+    private IIamAsymmetricSignatureProvider? _sigProvider;
 
     protected override async Task LoadCoreAsync()
     {
@@ -152,11 +160,31 @@ else
             _assignedGroupIds = _groups.Select(g => g.Id).ToHashSet();
             _assignedRoleIds = _roles.Select(r => r.Id).ToHashSet();
             _effectivePermissions = result.EffectivePermissions;
+
+            if (Id == UserContext?.User?.Id)
+            {
+                await LoadKeyProvidersAsync();
+            }
         }
         else
         {
             NavigationManager.NavigateTo(AppRoutes.Users);
         }
+    }
+
+    private async Task LoadKeyProvidersAsync()
+    {
+        var symResult = await RetrievalService.GetUserSymmetricEncryptionProviderAsync();
+        if (symResult.ResultCode == RetrieveResultCode.Success)
+            _symProvider = symResult.Item;
+
+        var asymResult = await RetrievalService.GetUserAsymmetricEncryptionProviderAsync();
+        if (asymResult.ResultCode == RetrieveResultCode.Success)
+            _asymProvider = asymResult.Item;
+
+        var sigResult = await RetrievalService.GetUserAsymmetricSignatureProviderAsync();
+        if (sigResult.ResultCode == RetrieveResultCode.Success)
+            _sigProvider = sigResult.Item;
     }
 
     private async Task<(List<PickerItem>, int)> FetchAvailableGroupsAsync(int skip, int take)

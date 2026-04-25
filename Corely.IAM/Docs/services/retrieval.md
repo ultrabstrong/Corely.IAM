@@ -75,8 +75,8 @@ List requests accept `FilterBuilder<T>` and `OrderBuilder<T>` from `Corely.Commo
 
 ## Authorization
 
-- **Service level**: requires account context for all methods
-- **Processor level**: CRUDX Read permission on the target resource type
+- **Service level**: entity and account key methods require account context; user key provider methods require a non-system authenticated user context
+- **Processor level**: CRUDX Read permission on the target resource type for entity/account retrieval; user key providers resolve the current user's keys only
 - User key providers use the current user context (no user ID parameter)
 
 ## Notes

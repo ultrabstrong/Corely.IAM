@@ -24,7 +24,7 @@ User table for the current account with search, sort, and pagination.
 
 ## UserDetail — `/users/{Id:guid}`
 
-Read-only user properties with group and role assignment.
+Read-only user properties with group and role assignment. When viewing your own user detail, the page also exposes your personal encryption/signing providers.
 
 **Base class**: `EntityDetailPageBase`
 
@@ -32,6 +32,7 @@ Read-only user properties with group and role assignment.
 - **Properties** — username, email (read-only)
 - **Groups section** — paginated (10 per page), add via `EntityPickerModal`
 - **Roles section** — paginated (10 per page), add/remove via `EntityPickerModal`
+- **Encryption & Signing** — only shown when `Id == UserContext.User.Id`; uses the current user's symmetric, asymmetric encryption, and signature providers
 - **Effective permissions panel** — inherited permissions through roles and groups
 
 **Authorization gates:**
@@ -39,6 +40,7 @@ Read-only user properties with group and role assignment.
 
 **Behavior:**
 - Loads with `hydrate: true` to include group and role relations
+- Eager-loads user key providers only when viewing your own user detail
 - Role assignment uses bulk `RegisterRolesWithUserAsync()`
 - Group assignment loops over selected groups individually
 - Groups are add-only (cannot remove from this page)

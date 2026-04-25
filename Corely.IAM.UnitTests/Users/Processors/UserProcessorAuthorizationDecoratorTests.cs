@@ -543,7 +543,7 @@ public class UserProcessorAuthorizationDecoratorTests
     #region GetCurrentUserKeysAsync
 
     [Fact]
-    public async Task GetCurrentUserKeys_CallsInner_WhenHasUserContext()
+    public async Task GetCurrentUserKeys_CallsInner_WhenHasNonSystemUserContext()
     {
         var expectedResult = new GetResult<UserEntity>(
             RetrieveResultCode.Success,
@@ -555,7 +555,7 @@ public class UserProcessorAuthorizationDecoratorTests
                 Email = "test@test.com",
             }
         );
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(true);
         _mockInnerProcessor.Setup(x => x.GetCurrentUserKeysAsync()).ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetCurrentUserKeysAsync();
@@ -565,9 +565,9 @@ public class UserProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task GetCurrentUserKeys_ReturnsUnauthorized_WhenNoUserContext()
+    public async Task GetCurrentUserKeys_ReturnsUnauthorized_WhenNoNonSystemUserContext()
     {
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(false);
 
         var result = await _decorator.GetCurrentUserKeysAsync();
 

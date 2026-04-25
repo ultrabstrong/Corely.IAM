@@ -21,7 +21,7 @@ Corely.IAM.Web provides two types of pages: **Razor Pages** for pre-authenticati
 | `/profile` | Profile | Blazor | User profile + encryption keys |
 | `/accounts/{Id}` | AccountDetail | Blazor | Account detail, invitations, users, keys |
 | `/users` | UserList | Blazor | User table with search/sort |
-| `/users/{Id}` | UserDetail | Blazor | User detail + group/role assignment |
+| `/users/{Id}` | UserDetail | Blazor | User detail + group/role assignment + own key operations |
 | `/groups` | GroupList | Blazor | Group table with search/sort |
 | `/groups/{Id}` | GroupDetail | Blazor | Group detail + user/role management |
 | `/roles` | RoleList | Blazor | Role table with search/sort |

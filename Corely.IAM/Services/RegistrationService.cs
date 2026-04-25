@@ -21,6 +21,7 @@ using Corely.IAM.Roles.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Validators;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
@@ -37,6 +38,7 @@ internal class RegistrationService(
     IPermissionProcessor permissionProcessor,
     IUserContextProvider userContextProvider,
     IUserContextSetter userContextSetter,
+    IValidationProvider validationProvider,
     IUnitOfWorkProvider uowProvider
 ) : IRegistrationService
 {
@@ -71,6 +73,9 @@ internal class RegistrationService(
     );
     private readonly IUserContextSetter _userContextSetter = userContextSetter.ThrowIfNull(
         nameof(userContextSetter)
+    );
+    private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
+        nameof(validationProvider)
     );
     private readonly IUnitOfWorkProvider _uowProvider = uowProvider.ThrowIfNull(
         nameof(uowProvider)
@@ -146,6 +151,16 @@ internal class RegistrationService(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Registering user with Google");
+
+        var validation = _validationProvider.ValidateAndLog(request);
+        if (!validation.IsValid)
+        {
+            return new RegisterUserWithGoogleResult(
+                RegisterUserWithGoogleResultCode.ValidationError,
+                validation.Message,
+                Guid.Empty
+            );
+        }
 
         var payload = await _googleIdTokenValidator.ValidateAsync(request.GoogleIdToken);
         if (payload == null)

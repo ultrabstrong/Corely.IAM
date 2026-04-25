@@ -18,10 +18,10 @@ Services (public) → Processors (internal) → Repositories/UoW → EF Core DbC
 Every service and processor is wrapped with decorators registered via Scrutor:
 
 ```
-TelemetryDecorator → AuthorizationDecorator → Implementation
+TelemetryDecorator → [AuthorizationDecorator] → Implementation
 ```
 
-- **Authorization decorators** — service level checks context; processor level checks CRUDX permissions
+- **Authorization decorators** — service level decorators are only used where a context gate is still required; processor level decorators enforce CRUDX permissions
 - **Telemetry decorators** — structured logging of method entry/exit
 
 Registration order in `ServiceRegistrationExtensions.cs` matters: last registered = outermost (first to execute).

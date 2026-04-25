@@ -4,8 +4,10 @@
 # Usage: .\RemoveMigration.ps1
 #
 # NOTE: This script removes migration FILES only. It does not revert migrations
-# that have been applied to a database. To revert applied migrations, use:
-#   corely-db db migrate <previous-migration-name>
+# that have been applied to a database. To revert applied migrations, run the
+# migration CLI and target the previous migration, for example:
+#   cd Corely.IAM.DataAccessMigrations.Cli
+#   dotnet run -- db migrate <previous-migration-name>
 
 $projects = @(
     "Corely.IAM.DataAccessMigrations.MySql",
@@ -16,7 +18,7 @@ $projects = @(
 $failed = @()
 
 Write-Host ""
-Write-Warning "This removes migration files only. To revert applied migrations, use 'corely-db db migrate <target>'."
+Write-Warning "This removes migration files only. To revert applied migrations, run 'dotnet run -- db migrate <target>' from Corely.IAM.DataAccessMigrations.Cli."
 Write-Host ""
 
 foreach ($project in $projects) {

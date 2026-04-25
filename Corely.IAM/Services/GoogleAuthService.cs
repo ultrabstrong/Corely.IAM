@@ -2,12 +2,14 @@ using Corely.Common.Extensions;
 using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Validators;
 
 namespace Corely.IAM.Services;
 
 internal class GoogleAuthService(
     IGoogleAuthProcessor googleAuthProcessor,
-    IUserContextProvider userContextProvider
+    IUserContextProvider userContextProvider,
+    IValidationProvider validationProvider
 ) : IGoogleAuthService
 {
     private readonly IGoogleAuthProcessor _googleAuthProcessor = googleAuthProcessor.ThrowIfNull(
@@ -16,10 +18,22 @@ internal class GoogleAuthService(
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
     );
+    private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
+        nameof(validationProvider)
+    );
 
     public async Task<LinkGoogleAuthResult> LinkGoogleAuthAsync(LinkGoogleAuthRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
+        var validation = _validationProvider.ValidateAndLog(request);
+        if (!validation.IsValid)
+        {
+            return new LinkGoogleAuthResult(
+                LinkGoogleAuthResultCode.InvalidGoogleTokenError,
+                validation.Message
+            );
+        }
+
         var context = _userContextProvider.GetUserContext()!;
 
         return await _googleAuthProcessor.LinkGoogleAuthAsync(

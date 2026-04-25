@@ -14,12 +14,14 @@ namespace Corely.IAM.UnitTests.TotpAuths.Processors;
 public class TotpAuthProcessorTests
 {
     private readonly ServiceFactory _serviceFactory = new();
+    private readonly Mock<TimeProvider> _timeProviderMock = new();
     private readonly TotpAuthProcessor _processor;
     private readonly ITotpProvider _totpProvider;
 
     public TotpAuthProcessorTests()
     {
         _totpProvider = _serviceFactory.GetRequiredService<ITotpProvider>();
+        _timeProviderMock.Setup(x => x.GetUtcNow()).Returns(DateTimeOffset.UtcNow);
         _processor = new TotpAuthProcessor(
             _serviceFactory.GetRequiredService<IRepo<TotpAuthEntity>>(),
             _serviceFactory.GetRequiredService<IRepo<TotpRecoveryCodeEntity>>(),
@@ -27,6 +29,7 @@ public class TotpAuthProcessorTests
             _serviceFactory.GetRequiredService<ISecurityConfigurationProvider>(),
             _serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>(),
             _serviceFactory.GetRequiredService<IHashProviderFactory>(),
+            _timeProviderMock.Object,
             _serviceFactory.GetRequiredService<ILogger<TotpAuthProcessor>>()
         );
     }
@@ -262,6 +265,34 @@ public class TotpAuthProcessorTests
         );
 
         Assert.Equal(VerifyTotpOrRecoveryCodeResultCode.RecoveryCodeValid, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task VerifyTotpOrRecoveryCodeAsync_UsesTimeProvider_WhenRecoveryCodeMatches()
+    {
+        var expectedUtc = new DateTimeOffset(2025, 1, 2, 3, 4, 5, TimeSpan.Zero);
+        _timeProviderMock.Setup(x => x.GetUtcNow()).Returns(expectedUtc);
+
+        var userId = Guid.CreateVersion7();
+        var enableResult = await _processor.EnableTotpAsync(userId, "TestIssuer", "user@test.com");
+        var recoveryCode = enableResult.RecoveryCodes![0];
+        var confirmCode = _totpProvider.GenerateCode(enableResult.Secret!);
+        await _processor.ConfirmTotpAsync(userId, confirmCode);
+        await WireRecoveryCodesNavPropertyAsync(userId);
+
+        var result = await _processor.VerifyTotpOrRecoveryCodeAsync(
+            new VerifyTotpOrRecoveryCodeRequest(userId, recoveryCode)
+        );
+
+        var totpAuth = await _serviceFactory
+            .GetRequiredService<IRepo<TotpAuthEntity>>()
+            .GetAsync(e => e.UserId == userId);
+        var recoveryCodes = await _serviceFactory
+            .GetRequiredService<IRepo<TotpRecoveryCodeEntity>>()
+            .ListAsync(c => c.TotpAuthId == totpAuth!.Id);
+
+        Assert.Equal(VerifyTotpOrRecoveryCodeResultCode.RecoveryCodeValid, result.ResultCode);
+        Assert.Equal(expectedUtc.UtcDateTime, recoveryCodes.Single(c => c.UsedUtc != null).UsedUtc);
     }
 
     [Fact]

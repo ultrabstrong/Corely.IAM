@@ -119,8 +119,8 @@ The default config sends structured logs to [Seq](https://datalust.co/seq) at `h
 Services (public) → Processors (internal) → Repositories/UoW → EF Core DbContext → Database
 ```
 
-Every processor and service is wrapped with **decorator layers** via Scrutor:
-- `AuthorizationDecorator` — checks permissions before calling the inner implementation
+Processors are wrapped with **authorization + telemetry decorators** via Scrutor. Services always have telemetry decorators, and only the services that still need a service-layer context gate keep authorization decorators.
+- `AuthorizationDecorator` — services validate context when needed; processors enforce permissions before calling the inner implementation
 - `TelemetryDecorator` — logs operations
 
 Registration order in `ServiceRegistrationExtensions.cs` matters: decorators are applied bottom-up (last registered = outermost).

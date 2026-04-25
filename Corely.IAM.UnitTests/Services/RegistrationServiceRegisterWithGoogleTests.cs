@@ -13,6 +13,7 @@ using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Validators;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Services;
@@ -41,8 +42,21 @@ public class RegistrationServiceRegisterWithGoogleTests
             new Mock<IPermissionProcessor>().Object,
             new Mock<IUserContextProvider>().Object,
             new Mock<IUserContextSetter>().Object,
+            _serviceFactory.GetRequiredService<IValidationProvider>(),
             _unitOfWorkProviderMock.Object
         );
+    }
+
+    [Fact]
+    public async Task RegisterUserWithGoogleAsync_ReturnsValidationError_WhenTokenMissing()
+    {
+        var result = await _registrationService.RegisterUserWithGoogleAsync(
+            new RegisterUserWithGoogleRequest(string.Empty)
+        );
+
+        Assert.Equal(RegisterUserWithGoogleResultCode.ValidationError, result.ResultCode);
+        Assert.Equal(Guid.Empty, result.CreatedUserId);
+        _googleIdTokenValidatorMock.Verify(x => x.ValidateAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]

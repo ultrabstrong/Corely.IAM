@@ -17,6 +17,7 @@ using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Validators;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Services;
@@ -100,6 +101,7 @@ public class RegistrationServiceTests
             _permissionProcessorMock.Object,
             _userContextProviderMock.Object,
             new Mock<IUserContextSetter>().Object,
+            _serviceFactory.GetRequiredService<IValidationProvider>(),
             _unitOfWorkProviderMock.Object
         );
     }

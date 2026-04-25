@@ -2,12 +2,14 @@ using Corely.Common.Extensions;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Validators;
 
 namespace Corely.IAM.Services;
 
 internal class MfaService(
     ITotpAuthProcessor totpAuthProcessor,
-    IUserContextProvider userContextProvider
+    IUserContextProvider userContextProvider,
+    IValidationProvider validationProvider
 ) : IMfaService
 {
     private readonly ITotpAuthProcessor _totpAuthProcessor = totpAuthProcessor.ThrowIfNull(
@@ -15,6 +17,9 @@ internal class MfaService(
     );
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
+    );
+    private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
+        nameof(validationProvider)
     );
 
     public async Task<EnableTotpResult> EnableTotpAsync()
@@ -31,6 +36,15 @@ internal class MfaService(
     public async Task<ConfirmTotpResult> ConfirmTotpAsync(ConfirmTotpRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
+        var validation = _validationProvider.ValidateAndLog(request);
+        if (!validation.IsValid)
+        {
+            return new ConfirmTotpResult(
+                ConfirmTotpResultCode.InvalidCodeError,
+                validation.Message
+            );
+        }
+
         var context = _userContextProvider.GetUserContext()!;
 
         return await _totpAuthProcessor.ConfirmTotpAsync(context.User!.Id, request.Code);
@@ -39,6 +53,15 @@ internal class MfaService(
     public async Task<DisableTotpResult> DisableTotpAsync(DisableTotpRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
+        var validation = _validationProvider.ValidateAndLog(request);
+        if (!validation.IsValid)
+        {
+            return new DisableTotpResult(
+                DisableTotpResultCode.InvalidCodeError,
+                validation.Message
+            );
+        }
+
         var context = _userContextProvider.GetUserContext()!;
 
         return await _totpAuthProcessor.DisableTotpAsync(context.User!.Id, request.Code);

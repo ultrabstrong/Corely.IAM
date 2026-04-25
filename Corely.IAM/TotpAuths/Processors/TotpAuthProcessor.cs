@@ -21,6 +21,7 @@ internal class TotpAuthProcessor(
     ISecurityConfigurationProvider securityConfigProvider,
     ISymmetricEncryptionProviderFactory encryptionProviderFactory,
     IHashProviderFactory hashProviderFactory,
+    TimeProvider timeProvider,
     ILogger<TotpAuthProcessor> logger
 ) : ITotpAuthProcessor
 {
@@ -38,6 +39,7 @@ internal class TotpAuthProcessor(
     private readonly IHashProviderFactory _hashProviderFactory = hashProviderFactory.ThrowIfNull(
         nameof(hashProviderFactory)
     );
+    private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
     private readonly ILogger<TotpAuthProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<EnableTotpResult> EnableTotpAsync(
@@ -260,7 +262,7 @@ internal class TotpAuthProcessor(
             var hashedValue = recoveryCode.CodeHash.ToHashedValue(_hashProviderFactory);
             if (hashedValue.Verify(normalizedCode))
             {
-                recoveryCode.UsedUtc = DateTime.UtcNow;
+                recoveryCode.UsedUtc = _timeProvider.GetUtcNow().UtcDateTime;
                 await _recoveryCodeRepo.UpdateAsync(recoveryCode);
 
                 _logger.LogDebug("Recovery code used for UserId {UserId}", request.UserId);

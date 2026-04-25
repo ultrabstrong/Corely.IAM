@@ -43,7 +43,7 @@ public interface IAuthorizationProvider
 | `IsNonSystemUserContext` | Returns `true` if a real (non-system) user context is present. Used for "self" operations. |
 | `IsAuthorizedForOwnUser` | Checks if the request targets the current user. Returns `false` for system context. |
 | `HasUserContext` | Returns `true` if any user context is present (including system context). |
-| `HasAccountContext` | Validates account ID matches the active account. Returns `true` for system context. |
+| `HasAccountContext` | Validates that the requested account ID matches the active account in the current context. Returns `true` for system context. |
 
 ## Two Authorization Layers
 
@@ -52,7 +52,7 @@ public interface IAuthorizationProvider
 Service authorization decorators check only that the required context exists:
 
 - **`HasUserContext()`** — user is authenticated (or system context is active)
-- **`HasAccountContext(accountId)`** — user is authenticated AND has an active account (or system context)
+- **`HasAccountContext(accountId)`** — user is authenticated and the requested `accountId` matches the current active account (or system context, which bypasses the account-match requirement)
 - **`IsNonSystemUserContext()`** — user is a real authenticated user, NOT system context
 
 These are coarse-grained gates. They do not check specific CRUDX permissions.

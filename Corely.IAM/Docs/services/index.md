@@ -1,6 +1,6 @@
 # Services
 
-Eight public services form the API surface of Corely.IAM. All are registered as scoped and wrapped with authorization and telemetry decorators (except `IAuthenticationService`, which has only a telemetry decorator).
+Eight public services form the API surface of Corely.IAM. All are registered as scoped and wrapped with telemetry decorators. Service-layer authorization decorators remain only on the services that still need context gating before the implementation runs.
 
 ## Service Overview
 
@@ -17,15 +17,15 @@ Eight public services form the API surface of Corely.IAM. All are registered as 
 
 ## Decorator Pattern
 
-Every service is wrapped with two decorator layers via Scrutor:
+Services are wrapped with telemetry decorators via Scrutor, and some also keep an authorization decorator:
 
 ```
-TelemetryDecorator → AuthorizationDecorator → Service Implementation
+TelemetryDecorator → [AuthorizationDecorator] → Service Implementation
 ```
 
-- **Authorization decorators** validate user/account context (not CRUDX permissions — those are at the processor level)
+- **Authorization decorators** validate user/account context where a service still dereferences ambient context before handing off
 - **Telemetry decorators** log method entry/exit and timing
-- **`IAuthenticationService`** has only a telemetry decorator (no authorization decorator)
+- **`IAuthenticationService`**, `IRetrievalService`, `IModificationService`, and `IInvitationService` currently run without a service-layer authorization decorator because their permission/context enforcement now lives lower in the stack where the real domain work happens
 
 Authorization decorators use `IsNonSystemUserContext()` for "self" operations (MFA, password, Google auth) that require a real user, and `HasUserContext()` / `HasAccountContext()` for targeting operations that system context can perform.
 

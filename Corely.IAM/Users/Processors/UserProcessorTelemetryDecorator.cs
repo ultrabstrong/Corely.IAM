@@ -71,12 +71,18 @@ internal class UserProcessorTelemetryDecorator(
 
     public async Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(
         Guid roleId,
-        Guid userId
+        Guid userId,
+        Guid accountId
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),
-            new { roleId, userId },
-            () => _inner.AssignOwnerRolesToUserAsync(roleId, userId),
+            new
+            {
+                roleId,
+                userId,
+                accountId,
+            },
+            () => _inner.AssignOwnerRolesToUserAsync(roleId, userId, accountId),
             logResult: true
         );
 
@@ -106,11 +112,20 @@ internal class UserProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate) =>
+    public async Task<GetResult<User>> GetUserByIdAsync(
+        Guid userId,
+        bool hydrate,
+        Guid accountId = default
+    ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),
-            userId,
-            () => _inner.GetUserByIdAsync(userId, hydrate),
+            new
+            {
+                userId,
+                hydrate,
+                accountId,
+            },
+            () => _inner.GetUserByIdAsync(userId, hydrate, accountId),
             logResult: true
         );
 }

@@ -91,6 +91,30 @@ public class RoleProcessorUpdateTests
     }
 
     [Fact]
+    public async Task UpdateRole_UsesRequestAccountId_WhenCurrentAccountMissing()
+    {
+        var created = await CreateRoleEntityAsync();
+        _mockUserContextProvider
+            .Setup(x => x.GetUserContext())
+            .Returns(new UserContext(true, "device1"));
+
+        var request = new UpdateRoleRequest(
+            created.Id,
+            _accountId,
+            "UpdatedRole",
+            "Updated description"
+        );
+        var result = await _roleProcessor.UpdateRoleAsync(request);
+
+        Assert.Equal(ModifyResultCode.Success, result.ResultCode);
+
+        var getResult = await _roleProcessor.GetRoleAsync(created.Id);
+        Assert.NotNull(getResult.Role);
+        Assert.Equal("UpdatedRole", getResult.Role.Name);
+        Assert.Equal("Updated description", getResult.Role.Description);
+    }
+
+    [Fact]
     public async Task UpdateRole_ReturnsNotFound_WhenRoleDoesNotExist()
     {
         var request = new UpdateRoleRequest(Guid.CreateVersion7(), _accountId, "NoRole", null);

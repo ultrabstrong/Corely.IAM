@@ -137,10 +137,9 @@ internal class PermissionProcessor(
 
     public async Task<ListResult<Permission>> ListPermissionsAsync(ListPermissionsRequest request)
     {
-        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
         return await ListQueryHelper.ExecuteListAsync(
             _permissionRepo,
-            p => p.AccountId == accountId,
+            p => p.AccountId == request.AccountId,
             request.Filter,
             request.Order,
             request.Skip,
@@ -149,21 +148,33 @@ internal class PermissionProcessor(
         );
     }
 
-    public async Task<GetResult<Permission>> GetPermissionByIdAsync(Guid permissionId, bool hydrate)
+    public async Task<GetResult<Permission>> GetPermissionByIdAsync(
+        Guid permissionId,
+        bool hydrate,
+        Guid accountId = default
+    )
     {
         var permissionEntity = hydrate
             ? await _permissionRepo.GetAsync(
-                p => p.Id == permissionId,
+                p => p.Id == permissionId && (accountId == default || p.AccountId == accountId),
                 include: q => q.Include(p => p.Roles)
             )
-            : await _permissionRepo.GetAsync(p => p.Id == permissionId);
+            : await _permissionRepo.GetAsync(p =>
+                p.Id == permissionId && (accountId == default || p.AccountId == accountId)
+            );
 
         if (permissionEntity == null)
         {
-            _logger.LogInformation("Permission with Id {PermissionId} not found", permissionId);
+            _logger.LogInformation(
+                "Permission with Id {PermissionId} not found for account {AccountId}",
+                permissionId,
+                accountId
+            );
             return new GetResult<Permission>(
                 RetrieveResultCode.NotFoundError,
-                $"Permission with Id {permissionId} not found",
+                accountId == default
+                    ? $"Permission with Id {permissionId} not found"
+                    : $"Permission with Id {permissionId} not found for account {accountId}",
                 null
             );
         }
@@ -235,7 +246,10 @@ internal class PermissionProcessor(
         return effectivePermissions.ToList();
     }
 
-    public async Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId)
+    public async Task<DeletePermissionResult> DeletePermissionAsync(
+        Guid permissionId,
+        Guid accountId = default
+    )
     {
         var permissionEntity = await _permissionRepo.GetAsync(
             p => p.Id == permissionId,

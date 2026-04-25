@@ -70,16 +70,16 @@ public class InvitationProcessorTelemetryDecoratorTests
     [Fact]
     public async Task RevokeInvitation_DelegatesToInnerAndLogsResult()
     {
-        var invitationId = Guid.CreateVersion7();
+        var request = new RevokeInvitationRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var expectedResult = new RevokeInvitationResult(RevokeInvitationResultCode.Success, "");
         _mockInnerProcessor
-            .Setup(x => x.RevokeInvitationAsync(invitationId))
+            .Setup(x => x.RevokeInvitationAsync(request))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.RevokeInvitationAsync(invitationId);
+        var result = await _decorator.RevokeInvitationAsync(request);
 
         Assert.Equal(expectedResult, result);
-        _mockInnerProcessor.Verify(x => x.RevokeInvitationAsync(invitationId), Times.Once);
+        _mockInnerProcessor.Verify(x => x.RevokeInvitationAsync(request), Times.Once);
         VerifyLoggedWithResult();
     }
 

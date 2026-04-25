@@ -16,6 +16,11 @@ public class AccountProcessorAuthorizationDecoratorTests
 
     public AccountProcessorAuthorizationDecoratorTests()
     {
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedForOwnUser(It.IsAny<Guid>(), It.IsAny<bool>()))
+            .Returns(true);
         _decorator = new AccountProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
             _mockAuthorizationProvider.Object
@@ -23,7 +28,7 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task CreateAccount_BypassesAuthorization()
+    public async Task CreateAccount_CallsOwnUserAuthorization()
     {
         var request = new CreateAccountRequest("TestAccount", Guid.Empty);
         var expectedResult = new CreateAccountResult(
@@ -36,6 +41,11 @@ public class AccountProcessorAuthorizationDecoratorTests
         var result = await _decorator.CreateAccountAsync(request);
 
         Assert.Equal(expectedResult, result);
+        _mockAuthorizationProvider.Verify(x => x.HasUserContext(), Times.Once);
+        _mockAuthorizationProvider.Verify(
+            x => x.IsAuthorizedForOwnUser(request.OwnerUserId, It.IsAny<bool>()),
+            Times.Once
+        );
         _mockAuthorizationProvider.Verify(
             x =>
                 x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),

@@ -204,4 +204,23 @@ public class PermissionProcessorListGetTests
         Assert.NotNull(result.Data.Roles);
         Assert.Empty(result.Data.Roles);
     }
+
+    [Fact]
+    public async Task GetPermissionById_ReturnsNotFoundWhenPermissionBelongsToDifferentAccount()
+    {
+        var otherAccountId = Guid.CreateVersion7();
+        var permission = await CreatePermissionEntityAsync(
+            PermissionConstants.GROUP_RESOURCE_TYPE,
+            accountId: otherAccountId
+        );
+
+        var result = await _permissionProcessor.GetPermissionByIdAsync(
+            permission.Id,
+            hydrate: false,
+            accountId: _accountId
+        );
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Data);
+    }
 }

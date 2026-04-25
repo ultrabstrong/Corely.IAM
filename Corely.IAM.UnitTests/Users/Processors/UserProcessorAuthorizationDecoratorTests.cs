@@ -16,6 +16,8 @@ public class UserProcessorAuthorizationDecoratorTests
 
     public UserProcessorAuthorizationDecoratorTests()
     {
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
         _decorator = new UserProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
             _mockAuthorizationProvider.Object
@@ -334,7 +336,7 @@ public class UserProcessorAuthorizationDecoratorTests
             []
         );
         _mockInnerProcessor
-            .Setup(x => x.AssignOwnerRolesToUserAsync(roleId, userId))
+            .Setup(x => x.AssignOwnerRolesToUserAsync(roleId, userId, It.IsAny<Guid>()))
             .ReturnsAsync(expectedResult);
 
         var result = await _decorator.AssignOwnerRolesToUserAsync(roleId, userId);
@@ -345,7 +347,10 @@ public class UserProcessorAuthorizationDecoratorTests
                 x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
             Times.Never
         );
-        _mockInnerProcessor.Verify(x => x.AssignOwnerRolesToUserAsync(roleId, userId), Times.Once);
+        _mockInnerProcessor.Verify(
+            x => x.AssignOwnerRolesToUserAsync(roleId, userId, It.IsAny<Guid>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -482,13 +487,16 @@ public class UserProcessorAuthorizationDecoratorTests
             .Setup(x => x.IsAuthorizedForOwnUser(userId, It.IsAny<bool>()))
             .Returns(true);
         _mockInnerProcessor
-            .Setup(x => x.GetUserByIdAsync(userId, false))
+            .Setup(x => x.GetUserByIdAsync(userId, false, It.IsAny<Guid>()))
             .ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetUserByIdAsync(userId, false);
 
         Assert.Equal(expectedResult, result);
-        _mockInnerProcessor.Verify(x => x.GetUserByIdAsync(userId, false), Times.Once);
+        _mockInnerProcessor.Verify(
+            x => x.GetUserByIdAsync(userId, false, It.IsAny<Guid>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -509,13 +517,16 @@ public class UserProcessorAuthorizationDecoratorTests
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
-            .Setup(x => x.GetUserByIdAsync(userId, false))
+            .Setup(x => x.GetUserByIdAsync(userId, false, It.IsAny<Guid>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.GetUserByIdAsync(userId, false);
+        var result = await _decorator.GetUserByIdAsync(userId, false, Guid.CreateVersion7());
 
         Assert.Equal(expectedResult, result);
-        _mockInnerProcessor.Verify(x => x.GetUserByIdAsync(userId, false), Times.Once);
+        _mockInnerProcessor.Verify(
+            x => x.GetUserByIdAsync(userId, false, It.IsAny<Guid>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -535,7 +546,7 @@ public class UserProcessorAuthorizationDecoratorTests
 
         Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerProcessor.Verify(
-            x => x.GetUserByIdAsync(It.IsAny<Guid>(), It.IsAny<bool>()),
+            x => x.GetUserByIdAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<Guid>()),
             Times.Never
         );
     }

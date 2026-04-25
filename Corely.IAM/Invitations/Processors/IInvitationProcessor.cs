@@ -7,6 +7,6 @@ internal interface IInvitationProcessor
 {
     Task<CreateInvitationResult> CreateInvitationAsync(CreateInvitationRequest request);
     Task<AcceptInvitationResult> AcceptInvitationAsync(AcceptInvitationRequest request);
-    Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId);
+    Task<RevokeInvitationResult> RevokeInvitationAsync(RevokeInvitationRequest request);
     Task<ListResult<Invitation>> ListInvitationsAsync(ListInvitationsRequest request);
 }

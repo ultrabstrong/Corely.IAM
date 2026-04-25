@@ -75,12 +75,12 @@ public class InvitationProcessorTests
         return created;
     }
 
-    private async Task<AccountEntity> CreateAccountAsync()
+    private async Task<AccountEntity> CreateAccountAsync(string accountName = "testaccount")
     {
         var account = new AccountEntity
         {
             Id = Guid.CreateVersion7(),
-            AccountName = "testaccount",
+            AccountName = accountName,
             Users = [],
             Invitations = [],
         };
@@ -485,7 +485,9 @@ public class InvitationProcessorTests
 
         var invitation = await CreateInvitationEntityAsync(account.Id, creator.Id);
 
-        var result = await _invitationProcessor.RevokeInvitationAsync(invitation.Id);
+        var result = await _invitationProcessor.RevokeInvitationAsync(
+            new RevokeInvitationRequest(account.Id, invitation.Id)
+        );
 
         Assert.Equal(RevokeInvitationResultCode.Success, result.ResultCode);
 
@@ -499,7 +501,9 @@ public class InvitationProcessorTests
     [Fact]
     public async Task RevokeInvitation_ReturnsNotFound_WhenInvitationDoesNotExist()
     {
-        var result = await _invitationProcessor.RevokeInvitationAsync(Guid.CreateVersion7());
+        var result = await _invitationProcessor.RevokeInvitationAsync(
+            new RevokeInvitationRequest(Guid.CreateVersion7(), Guid.CreateVersion7())
+        );
 
         Assert.Equal(RevokeInvitationResultCode.InvitationNotFoundError, result.ResultCode);
     }
@@ -517,9 +521,27 @@ public class InvitationProcessorTests
             acceptedUtc: DateTime.UtcNow.AddMinutes(-5)
         );
 
-        var result = await _invitationProcessor.RevokeInvitationAsync(invitation.Id);
+        var result = await _invitationProcessor.RevokeInvitationAsync(
+            new RevokeInvitationRequest(account.Id, invitation.Id)
+        );
 
         Assert.Equal(RevokeInvitationResultCode.InvitationAlreadyAcceptedError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RevokeInvitation_ReturnsNotFound_WhenInvitationBelongsToDifferentAccount()
+    {
+        var creator = await CreateUserAsync();
+        var account = await CreateAccountAsync();
+        var otherAccount = await CreateAccountAsync("OtherAccount");
+
+        var invitation = await CreateInvitationEntityAsync(otherAccount.Id, creator.Id);
+
+        var result = await _invitationProcessor.RevokeInvitationAsync(
+            new RevokeInvitationRequest(account.Id, invitation.Id)
+        );
+
+        Assert.Equal(RevokeInvitationResultCode.InvitationNotFoundError, result.ResultCode);
     }
 
     // ─────────────────────────────────────────────

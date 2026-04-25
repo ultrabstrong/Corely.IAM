@@ -68,7 +68,8 @@ internal class UserProcessorAuthorizationDecorator(
     public async Task<AssignRolesToUserResult> AssignRolesToUserAsync(
         AssignRolesToUserRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.USER_RESOURCE_TYPE,
             request.UserId
@@ -86,13 +87,17 @@ internal class UserProcessorAuthorizationDecorator(
                 []
             );
 
-    public Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(Guid roleId, Guid userId) =>
-        _inner.AssignOwnerRolesToUserAsync(roleId, userId);
+    public Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(
+        Guid roleId,
+        Guid userId,
+        Guid accountId = default
+    ) => _inner.AssignOwnerRolesToUserAsync(roleId, userId, accountId);
 
     public async Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(
         RemoveRolesFromUserRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.USER_RESOURCE_TYPE,
             request.UserId
@@ -119,7 +124,8 @@ internal class UserProcessorAuthorizationDecorator(
             );
 
     public async Task<ListResult<User>> ListUsersAsync(ListUsersRequest request) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.USER_RESOURCE_TYPE
         )
@@ -130,14 +136,21 @@ internal class UserProcessorAuthorizationDecorator(
                 null
             );
 
-    public async Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate) =>
+    public async Task<GetResult<User>> GetUserByIdAsync(
+        Guid userId,
+        bool hydrate,
+        Guid accountId = default
+    ) =>
         _authorizationProvider.IsAuthorizedForOwnUser(userId)
-        || await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
-            userId
+        || (
+            _authorizationProvider.HasAccountContext(accountId)
+            && await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.USER_RESOURCE_TYPE,
+                userId
+            )
         )
-            ? await _inner.GetUserByIdAsync(userId, hydrate)
+            ? await _inner.GetUserByIdAsync(userId, hydrate, accountId)
             : new GetResult<User>(
                 RetrieveResultCode.UnauthorizedError,
                 $"Unauthorized to read user {userId}",

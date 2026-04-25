@@ -18,7 +18,16 @@ internal class AccountProcessorAuthorizationDecorator(
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
     public Task<CreateAccountResult> CreateAccountAsync(CreateAccountRequest request) =>
-        _inner.CreateAccountAsync(request);
+        _authorizationProvider.HasUserContext()
+        && _authorizationProvider.IsAuthorizedForOwnUser(request.OwnerUserId)
+            ? _inner.CreateAccountAsync(request)
+            : Task.FromResult(
+                new CreateAccountResult(
+                    CreateAccountResultCode.UnauthorizedError,
+                    $"Unauthorized to create account for user {request.OwnerUserId}",
+                    Guid.Empty
+                )
+            );
 
     public async Task<GetAccountResult> GetAccountAsync(Guid accountId) =>
         await _authorizationProvider.IsAuthorizedAsync(
@@ -34,7 +43,8 @@ internal class AccountProcessorAuthorizationDecorator(
             );
 
     public async Task<ModifyResult> UpdateAccountAsync(UpdateAccountRequest request) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
             request.AccountId
@@ -46,7 +56,8 @@ internal class AccountProcessorAuthorizationDecorator(
             );
 
     public async Task<DeleteAccountResult> DeleteAccountAsync(Guid accountId) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(accountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
             accountId
@@ -60,7 +71,8 @@ internal class AccountProcessorAuthorizationDecorator(
     public async Task<AddUserToAccountResult> AddUserToAccountAsync(
         AddUserToAccountRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
             request.AccountId
@@ -94,10 +106,19 @@ internal class AccountProcessorAuthorizationDecorator(
     // No permission check — results are already scoped to the user's own accounts inside
     // AccountProcessor, and listing accounts is required before any account context exists.
     public Task<ListResult<Account>> ListAccountsAsync(ListAccountsRequest request) =>
-        _inner.ListAccountsAsync(request);
+        _authorizationProvider.HasUserContext()
+            ? _inner.ListAccountsAsync(request)
+            : Task.FromResult(
+                new ListResult<Account>(
+                    RetrieveResultCode.UnauthorizedError,
+                    "Unauthorized to list accounts",
+                    null
+                )
+            );
 
     public async Task<GetResult<Account>> GetAccountByIdAsync(Guid accountId, bool hydrate) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(accountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
             accountId
@@ -110,7 +131,8 @@ internal class AccountProcessorAuthorizationDecorator(
             );
 
     public async Task<GetResult<AccountEntity>> GetAccountKeysAsync(Guid accountId) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(accountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
             accountId

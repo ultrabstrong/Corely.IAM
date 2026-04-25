@@ -14,6 +14,7 @@ public class RoleProcessorAuthorizationDecoratorTests
 
     public RoleProcessorAuthorizationDecoratorTests()
     {
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _decorator = new RoleProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
             _mockAuthorizationProvider.Object
@@ -435,7 +436,9 @@ public class RoleProcessorAuthorizationDecoratorTests
                 )
             )
             .ReturnsAsync(true);
-        _mockInnerProcessor.Setup(x => x.DeleteRoleAsync(roleId)).ReturnsAsync(expectedResult);
+        _mockInnerProcessor
+            .Setup(x => x.DeleteRoleAsync(roleId, It.IsAny<Guid>()))
+            .ReturnsAsync(expectedResult);
 
         var result = await _decorator.DeleteRoleAsync(roleId);
 
@@ -449,7 +452,7 @@ public class RoleProcessorAuthorizationDecoratorTests
                 ),
             Times.Once
         );
-        _mockInnerProcessor.Verify(x => x.DeleteRoleAsync(roleId), Times.Once);
+        _mockInnerProcessor.Verify(x => x.DeleteRoleAsync(roleId, It.IsAny<Guid>()), Times.Once);
     }
 
     [Fact]
@@ -469,7 +472,10 @@ public class RoleProcessorAuthorizationDecoratorTests
         var result = await _decorator.DeleteRoleAsync(roleId);
 
         Assert.Equal(DeleteRoleResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerProcessor.Verify(x => x.DeleteRoleAsync(It.IsAny<Guid>()), Times.Never);
+        _mockInnerProcessor.Verify(
+            x => x.DeleteRoleAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
+            Times.Never
+        );
     }
 
     [Fact]

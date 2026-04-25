@@ -1,3 +1,7 @@
 namespace Corely.IAM.Users.Models;
 
-internal record RemoveRolesFromUserRequest(List<Guid> RoleIds, Guid UserId);
+internal record RemoveRolesFromUserRequest(
+    List<Guid> RoleIds,
+    Guid UserId,
+    Guid AccountId = default
+);

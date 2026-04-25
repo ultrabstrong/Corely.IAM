@@ -1,3 +1,7 @@
-﻿namespace Corely.IAM.Roles.Models;
+namespace Corely.IAM.Roles.Models;
 
-internal record AssignPermissionsToRoleRequest(List<Guid> PermissionIds, Guid RoleId);
+internal record AssignPermissionsToRoleRequest(
+    List<Guid> PermissionIds,
+    Guid RoleId,
+    Guid AccountId = default
+);

@@ -19,7 +19,8 @@ internal class PermissionProcessorAuthorizationDecorator(
     public async Task<CreatePermissionResult> CreatePermissionAsync(
         CreatePermissionRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.OwnerAccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Create,
             PermissionConstants.PERMISSION_RESOURCE_TYPE
         )
@@ -36,7 +37,8 @@ internal class PermissionProcessorAuthorizationDecorator(
     public async Task<ListResult<Permission>> ListPermissionsAsync(
         ListPermissionsRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.PERMISSION_RESOURCE_TYPE
         )
@@ -49,14 +51,16 @@ internal class PermissionProcessorAuthorizationDecorator(
 
     public async Task<GetResult<Permission>> GetPermissionByIdAsync(
         Guid permissionId,
-        bool hydrate
+        bool hydrate,
+        Guid accountId = default
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(accountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.PERMISSION_RESOURCE_TYPE,
             permissionId
         )
-            ? await _inner.GetPermissionByIdAsync(permissionId, hydrate)
+            ? await _inner.GetPermissionByIdAsync(permissionId, hydrate, accountId)
             : new GetResult<Permission>(
                 RetrieveResultCode.UnauthorizedError,
                 $"Unauthorized to read permission {permissionId}",
@@ -70,13 +74,17 @@ internal class PermissionProcessorAuthorizationDecorator(
         Guid accountId
     ) => _inner.GetEffectivePermissionsForUserAsync(resourceType, resourceId, userId, accountId);
 
-    public async Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+    public async Task<DeletePermissionResult> DeletePermissionAsync(
+        Guid permissionId,
+        Guid accountId = default
+    ) =>
+        _authorizationProvider.HasAccountContext(accountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
             PermissionConstants.PERMISSION_RESOURCE_TYPE,
             permissionId
         )
-            ? await _inner.DeletePermissionAsync(permissionId)
+            ? await _inner.DeletePermissionAsync(permissionId, accountId)
             : new DeletePermissionResult(
                 DeletePermissionResultCode.UnauthorizedError,
                 $"Unauthorized to delete permission {permissionId}"

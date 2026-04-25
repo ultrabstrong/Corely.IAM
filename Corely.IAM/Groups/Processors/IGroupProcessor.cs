@@ -11,7 +11,7 @@ internal interface IGroupProcessor
     Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(AssignRolesToGroupRequest request);
     Task<RemoveRolesFromGroupResult> RemoveRolesFromGroupAsync(RemoveRolesFromGroupRequest request);
     Task<ModifyResult> UpdateGroupAsync(UpdateGroupRequest request);
-    Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId);
+    Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId, Guid accountId = default);
     Task<ListResult<Group>> ListGroupsAsync(ListGroupsRequest request);
-    Task<GetResult<Group>> GetGroupByIdAsync(Guid groupId, bool hydrate);
+    Task<GetResult<Group>> GetGroupByIdAsync(Guid groupId, bool hydrate, Guid accountId = default);
 }

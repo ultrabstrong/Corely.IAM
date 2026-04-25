@@ -17,7 +17,8 @@ internal class GroupProcessorAuthorizationDecorator(
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
     public async Task<CreateGroupResult> CreateGroupAsync(CreateGroupRequest request) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.OwnerAccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Create,
             PermissionConstants.GROUP_RESOURCE_TYPE
         )
@@ -29,7 +30,8 @@ internal class GroupProcessorAuthorizationDecorator(
             );
 
     public async Task<AddUsersToGroupResult> AddUsersToGroupAsync(AddUsersToGroupRequest request) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.GROUP_RESOURCE_TYPE,
             request.GroupId
@@ -50,7 +52,8 @@ internal class GroupProcessorAuthorizationDecorator(
     public async Task<RemoveUsersFromGroupResult> RemoveUsersFromGroupAsync(
         RemoveUsersFromGroupRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.GROUP_RESOURCE_TYPE,
             request.GroupId
@@ -71,7 +74,8 @@ internal class GroupProcessorAuthorizationDecorator(
     public async Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(
         AssignRolesToGroupRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.GROUP_RESOURCE_TYPE,
             request.GroupId
@@ -92,7 +96,8 @@ internal class GroupProcessorAuthorizationDecorator(
     public async Task<RemoveRolesFromGroupResult> RemoveRolesFromGroupAsync(
         RemoveRolesFromGroupRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.GROUP_RESOURCE_TYPE,
             request.GroupId
@@ -111,7 +116,8 @@ internal class GroupProcessorAuthorizationDecorator(
             );
 
     public async Task<ModifyResult> UpdateGroupAsync(UpdateGroupRequest request) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.GROUP_RESOURCE_TYPE,
             request.GroupId
@@ -122,20 +128,22 @@ internal class GroupProcessorAuthorizationDecorator(
                 $"Unauthorized to update group {request.GroupId}"
             );
 
-    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId, Guid accountId = default) =>
+        _authorizationProvider.HasAccountContext(accountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
             PermissionConstants.GROUP_RESOURCE_TYPE,
             groupId
         )
-            ? await _inner.DeleteGroupAsync(groupId)
+            ? await _inner.DeleteGroupAsync(groupId, accountId)
             : new DeleteGroupResult(
                 DeleteGroupResultCode.UnauthorizedError,
                 $"Unauthorized to delete group {groupId}"
             );
 
     public async Task<ListResult<Group>> ListGroupsAsync(ListGroupsRequest request) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.GROUP_RESOURCE_TYPE
         )
@@ -146,13 +154,18 @@ internal class GroupProcessorAuthorizationDecorator(
                 null
             );
 
-    public async Task<GetResult<Group>> GetGroupByIdAsync(Guid groupId, bool hydrate) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+    public async Task<GetResult<Group>> GetGroupByIdAsync(
+        Guid groupId,
+        bool hydrate,
+        Guid accountId = default
+    ) =>
+        _authorizationProvider.HasAccountContext(accountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.GROUP_RESOURCE_TYPE,
             groupId
         )
-            ? await _inner.GetGroupByIdAsync(groupId, hydrate)
+            ? await _inner.GetGroupByIdAsync(groupId, hydrate, accountId)
             : new GetResult<Group>(
                 RetrieveResultCode.UnauthorizedError,
                 $"Unauthorized to read group {groupId}",

@@ -304,8 +304,11 @@ internal class UserProcessor(
         );
     }
 
-    public Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(Guid roleId, Guid userId) =>
-        AssignRolesToUserAsync(new([roleId], userId));
+    public Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(
+        Guid roleId,
+        Guid userId,
+        Guid accountId
+    ) => AssignRolesToUserAsync(new([roleId], userId, accountId));
 
     public async Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(
         RemoveRolesFromUserRequest request
@@ -489,10 +492,9 @@ internal class UserProcessor(
 
     public async Task<ListResult<User>> ListUsersAsync(ListUsersRequest request)
     {
-        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
         return await ListQueryHelper.ExecuteListAsync(
             _userRepo,
-            u => u.Accounts!.Any(a => a.Id == accountId),
+            u => u.Accounts!.Any(a => a.Id == request.AccountId),
             request.Filter,
             request.Order,
             request.Skip,
@@ -509,18 +511,25 @@ internal class UserProcessor(
         );
     }
 
-    public async Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate)
+    public async Task<GetResult<User>> GetUserByIdAsync(
+        Guid userId,
+        bool hydrate,
+        Guid accountId = default
+    )
     {
         UserEntity? userEntity;
 
-        var currentAccountId = hydrate
-            ? _userContextProvider.GetUserContext()?.CurrentAccount?.Id
+        var currentAccountId =
+            accountId != default ? accountId
+            : hydrate ? _userContextProvider.GetUserContext()?.CurrentAccount?.Id
             : null;
 
         if (hydrate)
         {
             userEntity = await _userRepo.GetAsync(
-                u => u.Id == userId,
+                u =>
+                    u.Id == userId
+                    && (accountId == default || u.Accounts!.Any(a => a.Id == accountId)),
                 // When account context is known, use a filtered include to avoid loading
                 // groups/roles from other accounts at the DB level. The in-memory filter
                 // below acts as a fallback (e.g. for mock repos in tests).
@@ -534,7 +543,9 @@ internal class UserProcessor(
         }
         else
         {
-            userEntity = await _userRepo.GetAsync(u => u.Id == userId);
+            userEntity = await _userRepo.GetAsync(u =>
+                u.Id == userId && (accountId == default || u.Accounts!.Any(a => a.Id == accountId))
+            );
         }
 
         if (userEntity == null)

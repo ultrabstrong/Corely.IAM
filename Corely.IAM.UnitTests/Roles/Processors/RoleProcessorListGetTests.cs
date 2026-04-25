@@ -164,12 +164,17 @@ public class RoleProcessorListGetTests
     }
 
     [Fact]
-    public async Task ListRoles_ReturnsUnauthorized_WhenNoAccountContext()
+    public async Task ListRoles_UsesRequestAccount_WhenNoAccountContext()
     {
+        var (role, _) = await CreateRoleAsync();
         _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns((UserContext?)null);
 
         var result = await _roleProcessor.ListRolesAsync(new(_accountId));
-        Assert.Null(result.Data);
+
+        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.Data);
+        Assert.Contains(result.Data.Items, item => item.Id == role.Id);
+        Assert.All(result.Data.Items, item => Assert.Equal(_accountId, item.AccountId));
     }
 
     [Fact]
@@ -216,5 +221,35 @@ public class RoleProcessorListGetTests
         Assert.NotNull(result.Data.Permissions);
         Assert.Single(result.Data.Permissions);
         Assert.Contains(result.Data.Permissions, p => p.Name == "Read users");
+    }
+
+    [Fact]
+    public async Task GetRoleById_ReturnsNotFoundWhenRoleBelongsToDifferentAccount()
+    {
+        await CreateRoleAsync("ScopedRole");
+
+        var otherAccountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var otherAccount = await otherAccountRepo.CreateAsync(
+            new AccountEntity { Id = Guid.CreateVersion7(), AccountName = "OtherAccount" }
+        );
+        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
+        var otherRole = await roleRepo.CreateAsync(
+            new RoleEntity
+            {
+                Id = Guid.CreateVersion7(),
+                Name = "OtherRole",
+                AccountId = otherAccount.Id,
+                Account = otherAccount,
+            }
+        );
+
+        var result = await _roleProcessor.GetRoleByIdAsync(
+            otherRole.Id,
+            hydrate: false,
+            accountId: _accountId
+        );
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Data);
     }
 }

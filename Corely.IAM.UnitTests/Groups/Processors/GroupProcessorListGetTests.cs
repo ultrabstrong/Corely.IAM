@@ -214,4 +214,20 @@ public class GroupProcessorListGetTests
         Assert.NotNull(result.Data.Roles);
         Assert.Empty(result.Data.Roles);
     }
+
+    [Fact]
+    public async Task GetGroupById_ReturnsNotFoundWhenGroupBelongsToDifferentAccount()
+    {
+        var otherAccountId = Guid.CreateVersion7();
+        var group = await CreateGroupEntityAsync("OtherAccountGroup", otherAccountId);
+
+        var result = await _groupProcessor.GetGroupByIdAsync(
+            group.Id,
+            hydrate: false,
+            accountId: _accountId
+        );
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Data);
+    }
 }

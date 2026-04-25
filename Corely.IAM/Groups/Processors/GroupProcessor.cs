@@ -460,9 +460,8 @@ internal class GroupProcessor(
             return new ModifyResult(ModifyResultCode.ValidationError, validation.Message);
         }
 
-        var accountId = _userContextProvider.GetUserContext()?.CurrentAccount?.Id;
         var entity = await _groupRepo.GetAsync(e =>
-            e.Id == request.GroupId && e.AccountId == accountId
+            e.Id == request.GroupId && e.AccountId == request.AccountId
         );
         if (entity == null)
         {
@@ -479,7 +478,7 @@ internal class GroupProcessor(
         return new ModifyResult(ModifyResultCode.Success, string.Empty);
     }
 
-    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId)
+    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId, Guid accountId = default)
     {
         var groupEntity = await _groupRepo.GetAsync(
             g => g.Id == groupId,
@@ -537,10 +536,9 @@ internal class GroupProcessor(
 
     public async Task<ListResult<Group>> ListGroupsAsync(ListGroupsRequest request)
     {
-        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
         return await ListQueryHelper.ExecuteListAsync(
             _groupRepo,
-            g => g.AccountId == accountId,
+            g => g.AccountId == request.AccountId,
             request.Filter,
             request.Order,
             request.Skip,
@@ -549,28 +547,40 @@ internal class GroupProcessor(
         );
     }
 
-    public async Task<GetResult<Group>> GetGroupByIdAsync(Guid groupId, bool hydrate)
+    public async Task<GetResult<Group>> GetGroupByIdAsync(
+        Guid groupId,
+        bool hydrate,
+        Guid accountId = default
+    )
     {
         GroupEntity? groupEntity;
 
         if (hydrate)
         {
             groupEntity = await _groupRepo.GetAsync(
-                g => g.Id == groupId,
+                g => g.Id == groupId && (accountId == default || g.AccountId == accountId),
                 include: q => q.Include(g => g.Users).Include(g => g.Roles)
             );
         }
         else
         {
-            groupEntity = await _groupRepo.GetAsync(g => g.Id == groupId);
+            groupEntity = await _groupRepo.GetAsync(g =>
+                g.Id == groupId && (accountId == default || g.AccountId == accountId)
+            );
         }
 
         if (groupEntity == null)
         {
-            _logger.LogInformation("Group with Id {GroupId} not found", groupId);
+            _logger.LogInformation(
+                "Group with Id {GroupId} not found for account {AccountId}",
+                groupId,
+                accountId
+            );
             return new GetResult<Group>(
                 RetrieveResultCode.NotFoundError,
-                $"Group with Id {groupId} not found",
+                accountId == default
+                    ? $"Group with Id {groupId} not found"
+                    : $"Group with Id {groupId} not found for account {accountId}",
                 null
             );
         }

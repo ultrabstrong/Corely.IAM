@@ -145,20 +145,9 @@ internal class RoleProcessor(
 
     public async Task<ListResult<Role>> ListRolesAsync(ListRolesRequest request)
     {
-        var accountId = _userContextProvider.GetUserContext()?.CurrentAccount?.Id;
-        if (accountId == null)
-        {
-            _logger.LogWarning("No account context available for listing roles");
-            return new ListResult<Role>(
-                RetrieveResultCode.UnauthorizedError,
-                "No account context available",
-                null
-            );
-        }
-
         return await ListQueryHelper.ExecuteListAsync(
             _roleRepo,
-            r => r.AccountId == accountId.Value,
+            r => r.AccountId == request.AccountId,
             request.Filter,
             request.Order,
             request.Skip,
@@ -167,22 +156,34 @@ internal class RoleProcessor(
         );
     }
 
-    public async Task<GetResult<Role>> GetRoleByIdAsync(Guid roleId, bool hydrate)
+    public async Task<GetResult<Role>> GetRoleByIdAsync(
+        Guid roleId,
+        bool hydrate,
+        Guid accountId = default
+    )
     {
         var roleEntity = hydrate
             ? await _roleRepo.GetAsync(
-                r => r.Id == roleId,
+                r => r.Id == roleId && (accountId == default || r.AccountId == accountId),
                 include: q =>
                     q.Include(r => r.Users).Include(r => r.Groups).Include(r => r.Permissions)
             )
-            : await _roleRepo.GetAsync(r => r.Id == roleId);
+            : await _roleRepo.GetAsync(r =>
+                r.Id == roleId && (accountId == default || r.AccountId == accountId)
+            );
 
         if (roleEntity == null)
         {
-            _logger.LogInformation("Role with Id {RoleId} not found", roleId);
+            _logger.LogInformation(
+                "Role with Id {RoleId} not found for account {AccountId}",
+                roleId,
+                accountId
+            );
             return new GetResult<Role>(
                 RetrieveResultCode.NotFoundError,
-                $"Role with Id {roleId} not found",
+                accountId == default
+                    ? $"Role with Id {roleId} not found"
+                    : $"Role with Id {roleId} not found for account {accountId}",
                 null
             );
         }
@@ -403,9 +404,8 @@ internal class RoleProcessor(
             return new ModifyResult(ModifyResultCode.ValidationError, validation.Message);
         }
 
-        var accountId = _userContextProvider.GetUserContext()?.CurrentAccount?.Id;
         var entity = await _roleRepo.GetAsync(e =>
-            e.Id == request.RoleId && e.AccountId == accountId
+            e.Id == request.RoleId && e.AccountId == request.AccountId
         );
         if (entity == null)
         {
@@ -435,7 +435,7 @@ internal class RoleProcessor(
         return new ModifyResult(ModifyResultCode.Success, string.Empty);
     }
 
-    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId)
+    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, Guid accountId = default)
     {
         var roleEntity = await _roleRepo.GetAsync(
             r => r.Id == roleId,

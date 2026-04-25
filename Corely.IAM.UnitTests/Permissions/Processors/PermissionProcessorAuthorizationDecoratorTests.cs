@@ -14,6 +14,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
 
     public PermissionProcessorAuthorizationDecoratorTests()
     {
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _decorator = new PermissionProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
             _mockAuthorizationProvider.Object
@@ -114,7 +115,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
-            .Setup(x => x.DeletePermissionAsync(permissionId))
+            .Setup(x => x.DeletePermissionAsync(permissionId, It.IsAny<Guid>()))
             .ReturnsAsync(expectedResult);
 
         var result = await _decorator.DeletePermissionAsync(permissionId);
@@ -129,7 +130,10 @@ public class PermissionProcessorAuthorizationDecoratorTests
                 ),
             Times.Once
         );
-        _mockInnerProcessor.Verify(x => x.DeletePermissionAsync(permissionId), Times.Once);
+        _mockInnerProcessor.Verify(
+            x => x.DeletePermissionAsync(permissionId, It.IsAny<Guid>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -149,7 +153,10 @@ public class PermissionProcessorAuthorizationDecoratorTests
         var result = await _decorator.DeletePermissionAsync(permissionId);
 
         Assert.Equal(DeletePermissionResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerProcessor.Verify(x => x.DeletePermissionAsync(It.IsAny<Guid>()), Times.Never);
+        _mockInnerProcessor.Verify(
+            x => x.DeletePermissionAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
+            Times.Never
+        );
     }
 
     [Fact]

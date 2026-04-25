@@ -127,7 +127,7 @@ internal class DeregistrationService(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Deregistering group {GroupId}", request.GroupId);
 
-        var result = await _groupProcessor.DeleteGroupAsync(request.GroupId);
+        var result = await _groupProcessor.DeleteGroupAsync(request.GroupId, request.AccountId);
 
         if (result.ResultCode != DeleteGroupResultCode.Success)
         {
@@ -150,7 +150,7 @@ internal class DeregistrationService(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Deregistering role {RoleId}", request.RoleId);
 
-        var result = await _roleProcessor.DeleteRoleAsync(request.RoleId);
+        var result = await _roleProcessor.DeleteRoleAsync(request.RoleId, request.AccountId);
 
         if (result.ResultCode != DeleteRoleResultCode.Success)
         {
@@ -175,7 +175,10 @@ internal class DeregistrationService(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Deregistering permission {PermissionId}", request.PermissionId);
 
-        var result = await _permissionProcessor.DeletePermissionAsync(request.PermissionId);
+        var result = await _permissionProcessor.DeletePermissionAsync(
+            request.PermissionId,
+            request.AccountId
+        );
 
         if (result.ResultCode != DeletePermissionResultCode.Success)
         {
@@ -253,7 +256,7 @@ internal class DeregistrationService(
         );
 
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(
-            new(request.UserIds, request.GroupId)
+            new(request.UserIds, request.GroupId, request.AccountId)
         );
 
         if (result.ResultCode == RemoveUsersFromGroupResultCode.GroupNotFoundError)
@@ -319,7 +322,7 @@ internal class DeregistrationService(
         );
 
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(
-            new(request.RoleIds, request.GroupId)
+            new(request.RoleIds, request.GroupId, request.AccountId)
         );
 
         if (result.ResultCode == RemoveRolesFromGroupResultCode.GroupNotFoundError)
@@ -403,7 +406,7 @@ internal class DeregistrationService(
         );
 
         var result = await _userProcessor.RemoveRolesFromUserAsync(
-            new(request.RoleIds, request.UserId)
+            new(request.RoleIds, request.UserId, request.AccountId)
         );
 
         if (result.ResultCode == RemoveRolesFromUserResultCode.UserNotFoundError)
@@ -487,7 +490,7 @@ internal class DeregistrationService(
         );
 
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(
-            new(request.PermissionIds, request.RoleId)
+            new(request.PermissionIds, request.RoleId, request.AccountId)
         );
 
         if (result.ResultCode == RemovePermissionsFromRoleResultCode.RoleNotFoundError)

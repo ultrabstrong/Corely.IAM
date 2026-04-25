@@ -1,3 +1,7 @@
 namespace Corely.IAM.Roles.Models;
 
-internal record RemovePermissionsFromRoleRequest(List<Guid> PermissionIds, Guid RoleId);
+internal record RemovePermissionsFromRoleRequest(
+    List<Guid> PermissionIds,
+    Guid RoleId,
+    Guid AccountId = default
+);

@@ -266,7 +266,9 @@ public class RetrievalServiceTests
             ResourceId = Guid.Empty,
         };
         _mockPermissionProcessor
-            .Setup(x => x.GetPermissionByIdAsync(permissionId, false))
+            .Setup(x =>
+                x.GetPermissionByIdAsync(permissionId, false, _userContext.CurrentAccount!.Id)
+            )
             .ReturnsAsync(new GetResult<Permission>(RetrieveResultCode.Success, "", permission));
 
         var result = await _service.GetPermissionAsync(permissionId);
@@ -277,7 +279,7 @@ public class RetrievalServiceTests
         Assert.NotNull(result.EffectivePermissions);
         Assert.Empty(result.EffectivePermissions);
         _mockPermissionProcessor.Verify(
-            x => x.GetPermissionByIdAsync(permissionId, false),
+            x => x.GetPermissionByIdAsync(permissionId, false, _userContext.CurrentAccount!.Id),
             Times.Once
         );
     }
@@ -288,7 +290,7 @@ public class RetrievalServiceTests
         var groupId = Guid.CreateVersion7();
         var group = new Group { Id = groupId, Name = "TestGroup" };
         _mockGroupProcessor
-            .Setup(x => x.GetGroupByIdAsync(groupId, false))
+            .Setup(x => x.GetGroupByIdAsync(groupId, false, _userContext.CurrentAccount!.Id))
             .ReturnsAsync(new GetResult<Group>(RetrieveResultCode.Success, "", group));
 
         var result = await _service.GetGroupAsync(groupId);
@@ -298,7 +300,10 @@ public class RetrievalServiceTests
         Assert.Equal(groupId, result.Item.Id);
         Assert.NotNull(result.EffectivePermissions);
         Assert.Empty(result.EffectivePermissions);
-        _mockGroupProcessor.Verify(x => x.GetGroupByIdAsync(groupId, false), Times.Once);
+        _mockGroupProcessor.Verify(
+            x => x.GetGroupByIdAsync(groupId, false, _userContext.CurrentAccount!.Id),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -307,7 +312,7 @@ public class RetrievalServiceTests
         var roleId = Guid.CreateVersion7();
         var role = new Role { Id = roleId, Name = "TestRole" };
         _mockRoleProcessor
-            .Setup(x => x.GetRoleByIdAsync(roleId, false))
+            .Setup(x => x.GetRoleByIdAsync(roleId, false, _userContext.CurrentAccount!.Id))
             .ReturnsAsync(new GetResult<Role>(RetrieveResultCode.Success, "", role));
 
         var result = await _service.GetRoleAsync(roleId);
@@ -317,7 +322,10 @@ public class RetrievalServiceTests
         Assert.Equal(roleId, result.Item.Id);
         Assert.NotNull(result.EffectivePermissions);
         Assert.Empty(result.EffectivePermissions);
-        _mockRoleProcessor.Verify(x => x.GetRoleByIdAsync(roleId, false), Times.Once);
+        _mockRoleProcessor.Verify(
+            x => x.GetRoleByIdAsync(roleId, false, _userContext.CurrentAccount!.Id),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -331,7 +339,7 @@ public class RetrievalServiceTests
             Email = "get@test.com",
         };
         _mockUserProcessor
-            .Setup(x => x.GetUserByIdAsync(userId, false))
+            .Setup(x => x.GetUserByIdAsync(userId, false, _userContext.CurrentAccount!.Id))
             .ReturnsAsync(new GetResult<User>(RetrieveResultCode.Success, "", user));
 
         var result = await _service.GetUserAsync(userId);
@@ -341,7 +349,10 @@ public class RetrievalServiceTests
         Assert.Equal(userId, result.Item.Id);
         Assert.NotNull(result.EffectivePermissions);
         Assert.Empty(result.EffectivePermissions);
-        _mockUserProcessor.Verify(x => x.GetUserByIdAsync(userId, false), Times.Once);
+        _mockUserProcessor.Verify(
+            x => x.GetUserByIdAsync(userId, false, _userContext.CurrentAccount!.Id),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -372,7 +383,9 @@ public class RetrievalServiceTests
     {
         var permissionId = Guid.CreateVersion7();
         _mockPermissionProcessor
-            .Setup(x => x.GetPermissionByIdAsync(permissionId, false))
+            .Setup(x =>
+                x.GetPermissionByIdAsync(permissionId, false, _userContext.CurrentAccount!.Id)
+            )
             .ReturnsAsync(
                 new GetResult<Permission>(RetrieveResultCode.NotFoundError, "Not found", null)
             );
@@ -382,7 +395,7 @@ public class RetrievalServiceTests
         Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
         Assert.Null(result.Item);
         _mockPermissionProcessor.Verify(
-            x => x.GetPermissionByIdAsync(permissionId, false),
+            x => x.GetPermissionByIdAsync(permissionId, false, _userContext.CurrentAccount!.Id),
             Times.Once
         );
     }

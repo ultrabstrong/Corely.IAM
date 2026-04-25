@@ -21,7 +21,8 @@ internal class InvitationProcessorAuthorizationDecorator(
     public async Task<CreateInvitationResult> CreateInvitationAsync(
         CreateInvitationRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
             request.AccountId
@@ -37,8 +38,7 @@ internal class InvitationProcessorAuthorizationDecorator(
     public async Task<AcceptInvitationResult> AcceptInvitationAsync(
         AcceptInvitationRequest request
     ) =>
-        // Only requires authenticated user — no account context or CRUDX check
-        _authorizationProvider.HasUserContext()
+        _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.AcceptInvitationAsync(request)
             : new AcceptInvitationResult(
                 AcceptInvitationResultCode.UnauthorizedError,
@@ -46,20 +46,26 @@ internal class InvitationProcessorAuthorizationDecorator(
                 null
             );
 
-    public async Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId)
-    {
-        // Must look up the invitation to get the account ID for the auth check
-        // Delegate to inner — the processor will handle not-found.
-        // Auth is checked at the service level (HasAccountContext) and via account Update permission.
-        // Since we can't check the specific account without loading the entity first,
-        // we rely on the service-level guard and the fact that only account members can reach this.
-        return await _inner.RevokeInvitationAsync(invitationId);
-    }
+    public async Task<RevokeInvitationResult> RevokeInvitationAsync(
+        RevokeInvitationRequest request
+    ) =>
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
+            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            request.AccountId
+        )
+            ? await _inner.RevokeInvitationAsync(request)
+            : new RevokeInvitationResult(
+                RevokeInvitationResultCode.UnauthorizedError,
+                $"Unauthorized to revoke invitation for account {request.AccountId}"
+            );
 
     public async Task<ListResult<Invitation>> ListInvitationsAsync(
         ListInvitationsRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
             request.AccountId

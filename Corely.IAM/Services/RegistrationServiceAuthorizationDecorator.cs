@@ -28,101 +28,37 @@ internal class RegistrationServiceAuthorizationDecorator(
     ) => _inner.RegisterUserWithGoogleAsync(request);
 
     public async Task<RegisterAccountResult> RegisterAccountAsync(RegisterAccountRequest request) =>
-        _authorizationProvider.HasUserContext()
-        && _authorizationProvider.IsAuthorizedForOwnUser(request.OwnerUserId)
-            ? await _inner.RegisterAccountAsync(request)
-            : new RegisterAccountResult(
-                RegisterAccountResultCode.UnauthorizedError,
-                "Unauthorized to create account",
-                Guid.Empty
-            );
+        await _inner.RegisterAccountAsync(request);
 
     public async Task<RegisterGroupResult> RegisterGroupAsync(RegisterGroupRequest request) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? await _inner.RegisterGroupAsync(request)
-            : new RegisterGroupResult(
-                CreateGroupResultCode.UnauthorizedError,
-                "Unauthorized to create group",
-                Guid.Empty
-            );
+        await _inner.RegisterGroupAsync(request);
 
     public async Task<RegisterRoleResult> RegisterRoleAsync(RegisterRoleRequest request) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? await _inner.RegisterRoleAsync(request)
-            : new RegisterRoleResult(
-                CreateRoleResultCode.UnauthorizedError,
-                "Unauthorized to create role",
-                Guid.Empty
-            );
+        await _inner.RegisterRoleAsync(request);
 
     public async Task<RegisterPermissionResult> RegisterPermissionAsync(
         RegisterPermissionRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? await _inner.RegisterPermissionAsync(request)
-            : new RegisterPermissionResult(
-                CreatePermissionResultCode.UnauthorizedError,
-                "Unauthorized to create permission",
-                Guid.Empty
-            );
+    ) => await _inner.RegisterPermissionAsync(request);
 
     public async Task<RegisterUserWithAccountResult> RegisterUserWithAccountAsync(
         RegisterUserWithAccountRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? await _inner.RegisterUserWithAccountAsync(request)
-            : new RegisterUserWithAccountResult(
-                RegisterUserWithAccountResultCode.UnauthorizedError,
-                "Unauthorized to add user to account"
-            );
+    ) => await _inner.RegisterUserWithAccountAsync(request);
 
     public async Task<RegisterUsersWithGroupResult> RegisterUsersWithGroupAsync(
         RegisterUsersWithGroupRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? await _inner.RegisterUsersWithGroupAsync(request)
-            : new RegisterUsersWithGroupResult(
-                AddUsersToGroupResultCode.UnauthorizedError,
-                "Unauthorized to add users to group",
-                0,
-                []
-            );
+    ) => await _inner.RegisterUsersWithGroupAsync(request);
 
     public async Task<RegisterRolesWithGroupResult> RegisterRolesWithGroupAsync(
         RegisterRolesWithGroupRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? await _inner.RegisterRolesWithGroupAsync(request)
-            : new RegisterRolesWithGroupResult(
-                AssignRolesToGroupResultCode.UnauthorizedError,
-                "Unauthorized to assign roles to group",
-                0,
-                []
-            );
+    ) => await _inner.RegisterRolesWithGroupAsync(request);
 
     public async Task<RegisterRolesWithUserResult> RegisterRolesWithUserAsync(
         RegisterRolesWithUserRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? await _inner.RegisterRolesWithUserAsync(request)
-            : new RegisterRolesWithUserResult(
-                AssignRolesToUserResultCode.UnauthorizedError,
-                "Unauthorized to assign roles to user",
-                0,
-                []
-            );
+    ) => await _inner.RegisterRolesWithUserAsync(request);
 
     public async Task<RegisterPermissionsWithRoleResult> RegisterPermissionsWithRoleAsync(
         RegisterPermissionsWithRoleRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? await _inner.RegisterPermissionsWithRoleAsync(request)
-            : new RegisterPermissionsWithRoleResult(
-                AssignPermissionsToRoleResultCode.UnauthorizedError,
-                "Unauthorized to assign permissions to role",
-                0,
-                []
-            );
+    ) => await _inner.RegisterPermissionsWithRoleAsync(request);
 
     public async Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request) =>
         _authorizationProvider.IsNonSystemUserContext()

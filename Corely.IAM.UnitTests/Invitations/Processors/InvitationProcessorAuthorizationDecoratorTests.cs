@@ -1,6 +1,7 @@
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Invitations.Processors;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
 
@@ -14,6 +15,8 @@ public class InvitationProcessorAuthorizationDecoratorTests
 
     public InvitationProcessorAuthorizationDecoratorTests()
     {
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(true);
         _decorator = new InvitationProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
             _mockAuthorizationProvider.Object
@@ -78,7 +81,7 @@ public class InvitationProcessorAuthorizationDecoratorTests
     public async Task AcceptInvitation_ReturnsUnauthorized_WhenNoUserContext()
     {
         var request = new AcceptInvitationRequest("token");
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(false);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(false);
 
         var result = await _decorator.AcceptInvitationAsync(request);
 
@@ -98,7 +101,7 @@ public class InvitationProcessorAuthorizationDecoratorTests
             "",
             Guid.CreateVersion7()
         );
-        _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(true);
         _mockInnerProcessor
             .Setup(x => x.AcceptInvitationAsync(request))
             .ReturnsAsync(expectedResult);
@@ -110,18 +113,50 @@ public class InvitationProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RevokeInvitation_DelegatesToInner()
+    public async Task RevokeInvitation_ReturnsUnauthorized_WhenNotAuthorized()
     {
-        var invitationId = Guid.CreateVersion7();
+        var request = new RevokeInvitationRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    request.AccountId
+                )
+            )
+            .ReturnsAsync(false);
+
+        var result = await _decorator.RevokeInvitationAsync(request);
+
+        Assert.Equal(RevokeInvitationResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerProcessor.Verify(
+            x => x.RevokeInvitationAsync(It.IsAny<RevokeInvitationRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task RevokeInvitation_DelegatesToInner_WhenAuthorized()
+    {
+        var request = new RevokeInvitationRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var expectedResult = new RevokeInvitationResult(RevokeInvitationResultCode.Success, "");
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                    request.AccountId
+                )
+            )
+            .ReturnsAsync(true);
         _mockInnerProcessor
-            .Setup(x => x.RevokeInvitationAsync(invitationId))
+            .Setup(x => x.RevokeInvitationAsync(request))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.RevokeInvitationAsync(invitationId);
+        var result = await _decorator.RevokeInvitationAsync(request);
 
         Assert.Equal(expectedResult, result);
-        _mockInnerProcessor.Verify(x => x.RevokeInvitationAsync(invitationId), Times.Once);
+        _mockInnerProcessor.Verify(x => x.RevokeInvitationAsync(request), Times.Once);
     }
 
     [Fact]

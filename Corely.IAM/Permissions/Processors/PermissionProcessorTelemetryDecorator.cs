@@ -45,20 +45,29 @@ internal class PermissionProcessorTelemetryDecorator(
 
     public async Task<GetResult<Permission>> GetPermissionByIdAsync(
         Guid permissionId,
-        bool hydrate
+        bool hydrate,
+        Guid accountId = default
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(PermissionProcessor),
-            new { permissionId, hydrate },
-            () => _inner.GetPermissionByIdAsync(permissionId, hydrate),
+            new
+            {
+                permissionId,
+                hydrate,
+                accountId,
+            },
+            () => _inner.GetPermissionByIdAsync(permissionId, hydrate, accountId),
             logResult: true
         );
 
-    public async Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId) =>
+    public async Task<DeletePermissionResult> DeletePermissionAsync(
+        Guid permissionId,
+        Guid accountId = default
+    ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(PermissionProcessor),
-            permissionId,
-            () => _inner.DeletePermissionAsync(permissionId),
+            new { permissionId, accountId },
+            () => _inner.DeletePermissionAsync(permissionId, accountId),
             logResult: true
         );
 

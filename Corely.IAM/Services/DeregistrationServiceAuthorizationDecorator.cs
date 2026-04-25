@@ -25,45 +25,17 @@ internal class DeregistrationServiceAuthorizationDecorator(
 
     public async Task<DeregisterAccountResult> DeregisterAccountAsync(
         DeregisterAccountRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? await _inner.DeregisterAccountAsync(request)
-            : new DeregisterAccountResult(
-                DeregisterAccountResultCode.UnauthorizedError,
-                "Unauthorized to delete account"
-            );
+    ) => await _inner.DeregisterAccountAsync(request);
 
     public Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? _inner.DeregisterGroupAsync(request)
-            : Task.FromResult(
-                new DeregisterGroupResult(
-                    DeregisterGroupResultCode.UnauthorizedError,
-                    "Unauthorized to delete group"
-                )
-            );
+        _inner.DeregisterGroupAsync(request);
 
     public Task<DeregisterRoleResult> DeregisterRoleAsync(DeregisterRoleRequest request) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? _inner.DeregisterRoleAsync(request)
-            : Task.FromResult(
-                new DeregisterRoleResult(
-                    DeregisterRoleResultCode.UnauthorizedError,
-                    "Unauthorized to delete role"
-                )
-            );
+        _inner.DeregisterRoleAsync(request);
 
     public Task<DeregisterPermissionResult> DeregisterPermissionAsync(
         DeregisterPermissionRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? _inner.DeregisterPermissionAsync(request)
-            : Task.FromResult(
-                new DeregisterPermissionResult(
-                    DeregisterPermissionResultCode.UnauthorizedError,
-                    "Unauthorized to delete permission"
-                )
-            );
+    ) => _inner.DeregisterPermissionAsync(request);
 
     public async Task<DeregisterUserFromAccountResult> DeregisterUserFromAccountAsync(
         DeregisterUserFromAccountRequest request
@@ -78,59 +50,19 @@ internal class DeregistrationServiceAuthorizationDecorator(
 
     public Task<DeregisterUsersFromGroupResult> DeregisterUsersFromGroupAsync(
         DeregisterUsersFromGroupRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? _inner.DeregisterUsersFromGroupAsync(request)
-            : Task.FromResult(
-                new DeregisterUsersFromGroupResult(
-                    DeregisterUsersFromGroupResultCode.UnauthorizedError,
-                    "Unauthorized to remove users from group",
-                    0,
-                    []
-                )
-            );
+    ) => _inner.DeregisterUsersFromGroupAsync(request);
 
     public Task<DeregisterRolesFromGroupResult> DeregisterRolesFromGroupAsync(
         DeregisterRolesFromGroupRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? _inner.DeregisterRolesFromGroupAsync(request)
-            : Task.FromResult(
-                new DeregisterRolesFromGroupResult(
-                    DeregisterRolesFromGroupResultCode.UnauthorizedError,
-                    "Unauthorized to remove roles from group",
-                    0,
-                    []
-                )
-            );
+    ) => _inner.DeregisterRolesFromGroupAsync(request);
 
     public Task<DeregisterRolesFromUserResult> DeregisterRolesFromUserAsync(
         DeregisterRolesFromUserRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? _inner.DeregisterRolesFromUserAsync(request)
-            : Task.FromResult(
-                new DeregisterRolesFromUserResult(
-                    DeregisterRolesFromUserResultCode.UnauthorizedError,
-                    "Unauthorized to remove roles from user",
-                    0,
-                    []
-                )
-            );
+    ) => _inner.DeregisterRolesFromUserAsync(request);
 
     public Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(
         DeregisterPermissionsFromRoleRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-            ? _inner.DeregisterPermissionsFromRoleAsync(request)
-            : Task.FromResult(
-                new DeregisterPermissionsFromRoleResult(
-                    DeregisterPermissionsFromRoleResultCode.UnauthorizedError,
-                    "Unauthorized to remove permissions from role",
-                    0,
-                    []
-                )
-            );
+    ) => _inner.DeregisterPermissionsFromRoleAsync(request);
 
     public Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync() =>
         _authorizationProvider.IsNonSystemUserContext()

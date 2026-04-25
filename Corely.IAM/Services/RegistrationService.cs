@@ -282,7 +282,9 @@ internal class RegistrationService(
                     request.AccountName
                 );
                 return new RegisterAccountResult(
-                    RegisterAccountResultCode.AccountCreationError,
+                    createAccountResult.ResultCode == CreateAccountResultCode.UnauthorizedError
+                        ? RegisterAccountResultCode.UnauthorizedError
+                        : RegisterAccountResultCode.AccountCreationError,
                     createAccountResult.Message,
                     Guid.Empty
                 );
@@ -297,7 +299,8 @@ internal class RegistrationService(
 
             var assignRoleResult = await _userProcessor.AssignOwnerRolesToUserAsync(
                 rolesResult.OwnerRoleId,
-                ownerUserId
+                ownerUserId,
+                createAccountResult.CreatedId
             );
             if (assignRoleResult.ResultCode != AssignRolesToUserResultCode.Success)
             {
@@ -490,7 +493,7 @@ internal class RegistrationService(
         );
 
         var result = await _groupProcessor.AddUsersToGroupAsync(
-            new(request.UserIds, request.GroupId)
+            new(request.UserIds, request.GroupId, request.AccountId)
         );
         if (
             result.ResultCode != AddUsersToGroupResultCode.Success
@@ -542,7 +545,7 @@ internal class RegistrationService(
         );
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(
-            new(request.RoleIds, request.GroupId)
+            new(request.RoleIds, request.GroupId, request.AccountId)
         );
         if (
             result.ResultCode != AssignRolesToGroupResultCode.Success
@@ -594,7 +597,7 @@ internal class RegistrationService(
         );
 
         var result = await _userProcessor.AssignRolesToUserAsync(
-            new(request.RoleIds, request.UserId)
+            new(request.RoleIds, request.UserId, request.AccountId)
         );
         if (
             result.ResultCode != AssignRolesToUserResultCode.Success
@@ -646,7 +649,7 @@ internal class RegistrationService(
         );
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(
-            new(request.PermissionIds, request.RoleId)
+            new(request.PermissionIds, request.RoleId, request.AccountId)
         );
         if (
             result.ResultCode != AssignPermissionsToRoleResultCode.Success

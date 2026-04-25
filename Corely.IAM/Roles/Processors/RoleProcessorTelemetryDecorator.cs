@@ -58,11 +58,20 @@ internal class RoleProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<GetResult<Role>> GetRoleByIdAsync(Guid roleId, bool hydrate) =>
+    public async Task<GetResult<Role>> GetRoleByIdAsync(
+        Guid roleId,
+        bool hydrate,
+        Guid accountId = default
+    ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
-            new { roleId, hydrate },
-            () => _inner.GetRoleByIdAsync(roleId, hydrate),
+            new
+            {
+                roleId,
+                hydrate,
+                accountId,
+            },
+            () => _inner.GetRoleByIdAsync(roleId, hydrate, accountId),
             logResult: true
         );
 
@@ -94,11 +103,11 @@ internal class RoleProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId) =>
+    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, Guid accountId = default) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
-            roleId,
-            () => _inner.DeleteRoleAsync(roleId),
+            new { roleId, accountId },
+            () => _inner.DeleteRoleAsync(roleId, accountId),
             logResult: true
         );
 }

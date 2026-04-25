@@ -12,9 +12,13 @@ internal interface IUserProcessor
     Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(Guid userId);
     Task<GetResult<UserEntity>> GetCurrentUserKeysAsync();
     Task<AssignRolesToUserResult> AssignRolesToUserAsync(AssignRolesToUserRequest request);
-    Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(Guid roleId, Guid userId);
+    Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(
+        Guid roleId,
+        Guid userId,
+        Guid accountId = default
+    );
     Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(RemoveRolesFromUserRequest request);
     Task<DeleteUserResult> DeleteUserAsync(Guid userId);
     Task<ListResult<User>> ListUsersAsync(ListUsersRequest request);
-    Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate);
+    Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate, Guid accountId = default);
 }

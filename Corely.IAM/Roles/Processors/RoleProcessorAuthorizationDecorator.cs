@@ -17,7 +17,8 @@ internal class RoleProcessorAuthorizationDecorator(
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
     public async Task<CreateRoleResult> CreateRoleAsync(CreateRoleRequest createRoleRequest) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(createRoleRequest.OwnerAccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Create,
             PermissionConstants.ROLE_RESOURCE_TYPE
         )
@@ -58,7 +59,8 @@ internal class RoleProcessorAuthorizationDecorator(
             );
 
     public async Task<ListResult<Role>> ListRolesAsync(ListRolesRequest request) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.ROLE_RESOURCE_TYPE
         )
@@ -69,13 +71,18 @@ internal class RoleProcessorAuthorizationDecorator(
                 null
             );
 
-    public async Task<GetResult<Role>> GetRoleByIdAsync(Guid roleId, bool hydrate) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+    public async Task<GetResult<Role>> GetRoleByIdAsync(
+        Guid roleId,
+        bool hydrate,
+        Guid accountId = default
+    ) =>
+        _authorizationProvider.HasAccountContext(accountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.ROLE_RESOURCE_TYPE,
             roleId
         )
-            ? await _inner.GetRoleByIdAsync(roleId, hydrate)
+            ? await _inner.GetRoleByIdAsync(roleId, hydrate, accountId)
             : new GetResult<Role>(
                 RetrieveResultCode.UnauthorizedError,
                 $"Unauthorized to read role {roleId}",
@@ -85,7 +92,8 @@ internal class RoleProcessorAuthorizationDecorator(
     public async Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(
         AssignPermissionsToRoleRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.ROLE_RESOURCE_TYPE,
             request.RoleId
@@ -106,7 +114,8 @@ internal class RoleProcessorAuthorizationDecorator(
     public async Task<RemovePermissionsFromRoleResult> RemovePermissionsFromRoleAsync(
         RemovePermissionsFromRoleRequest request
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.ROLE_RESOURCE_TYPE,
             request.RoleId
@@ -125,7 +134,8 @@ internal class RoleProcessorAuthorizationDecorator(
             );
 
     public async Task<ModifyResult> UpdateRoleAsync(UpdateRoleRequest request) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.ROLE_RESOURCE_TYPE,
             request.RoleId
@@ -136,13 +146,14 @@ internal class RoleProcessorAuthorizationDecorator(
                 $"Unauthorized to update role {request.RoleId}"
             );
 
-    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId) =>
-        await _authorizationProvider.IsAuthorizedAsync(
+    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, Guid accountId = default) =>
+        _authorizationProvider.HasAccountContext(accountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
             PermissionConstants.ROLE_RESOURCE_TYPE,
             roleId
         )
-            ? await _inner.DeleteRoleAsync(roleId)
+            ? await _inner.DeleteRoleAsync(roleId, accountId)
             : new DeleteRoleResult(
                 DeleteRoleResultCode.UnauthorizedError,
                 $"Unauthorized to delete role {roleId}"

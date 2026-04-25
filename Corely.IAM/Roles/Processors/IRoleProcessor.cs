@@ -10,7 +10,7 @@ internal interface IRoleProcessor
     Task<GetRoleResult> GetRoleAsync(Guid roleId);
     Task<GetRoleResult> GetRoleAsync(string roleName, Guid ownerAccountId);
     Task<ListResult<Role>> ListRolesAsync(ListRolesRequest request);
-    Task<GetResult<Role>> GetRoleByIdAsync(Guid roleId, bool hydrate);
+    Task<GetResult<Role>> GetRoleByIdAsync(Guid roleId, bool hydrate, Guid accountId = default);
     Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(
         AssignPermissionsToRoleRequest request
     );
@@ -18,5 +18,5 @@ internal interface IRoleProcessor
         RemovePermissionsFromRoleRequest request
     );
     Task<ModifyResult> UpdateRoleAsync(UpdateRoleRequest request);
-    Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId);
+    Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, Guid accountId = default);
 }

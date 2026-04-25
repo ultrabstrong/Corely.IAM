@@ -70,11 +70,11 @@ internal class GroupProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId) =>
+    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId, Guid accountId = default) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),
-            groupId,
-            () => _inner.DeleteGroupAsync(groupId),
+            new { groupId, accountId },
+            () => _inner.DeleteGroupAsync(groupId, accountId),
             logResult: true
         );
 
@@ -86,11 +86,20 @@ internal class GroupProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<GetResult<Group>> GetGroupByIdAsync(Guid groupId, bool hydrate) =>
+    public async Task<GetResult<Group>> GetGroupByIdAsync(
+        Guid groupId,
+        bool hydrate,
+        Guid accountId = default
+    ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),
-            groupId,
-            () => _inner.GetGroupByIdAsync(groupId, hydrate),
+            new
+            {
+                groupId,
+                hydrate,
+                accountId,
+            },
+            () => _inner.GetGroupByIdAsync(groupId, hydrate, accountId),
             logResult: true
         );
 }

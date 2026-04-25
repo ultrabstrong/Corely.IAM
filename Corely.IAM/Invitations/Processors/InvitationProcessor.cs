@@ -267,15 +267,23 @@ internal class InvitationProcessor(
         );
     }
 
-    public async Task<RevokeInvitationResult> RevokeInvitationAsync(Guid invitationId)
+    public async Task<RevokeInvitationResult> RevokeInvitationAsync(RevokeInvitationRequest request)
     {
-        var invitationEntity = await _invitationRepo.GetAsync(i => i.Id == invitationId);
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var invitationEntity = await _invitationRepo.GetAsync(i =>
+            i.Id == request.InvitationId && i.AccountId == request.AccountId
+        );
         if (invitationEntity == null)
         {
-            _logger.LogWarning("Invitation with Id {InvitationId} not found", invitationId);
+            _logger.LogWarning(
+                "Invitation with Id {InvitationId} not found for account {AccountId}",
+                request.InvitationId,
+                request.AccountId
+            );
             return new RevokeInvitationResult(
                 RevokeInvitationResultCode.InvitationNotFoundError,
-                $"Invitation with Id {invitationId} not found"
+                $"Invitation with Id {request.InvitationId} not found for account {request.AccountId}"
             );
         }
 
@@ -290,7 +298,11 @@ internal class InvitationProcessor(
         invitationEntity.RevokedUtc = _timeProvider.GetUtcNow().UtcDateTime;
         await _invitationRepo.UpdateAsync(invitationEntity);
 
-        _logger.LogInformation("Invitation {InvitationId} revoked", invitationId);
+        _logger.LogInformation(
+            "Invitation {InvitationId} revoked for account {AccountId}",
+            request.InvitationId,
+            request.AccountId
+        );
         return new RevokeInvitationResult(RevokeInvitationResultCode.Success, string.Empty);
     }
 

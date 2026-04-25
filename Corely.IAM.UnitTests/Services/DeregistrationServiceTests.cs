@@ -235,13 +235,16 @@ public class DeregistrationServiceTests
         var request = new DeregisterGroupRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeleteGroupResult(DeleteGroupResultCode.Success, string.Empty);
         _mockGroupProcessor
-            .Setup(x => x.DeleteGroupAsync(It.IsAny<Guid>()))
+            .Setup(x => x.DeleteGroupAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
         var result = await _service.DeregisterGroupAsync(request);
 
         Assert.Equal(DeregisterGroupResultCode.Success, result.ResultCode);
-        _mockGroupProcessor.Verify(x => x.DeleteGroupAsync(request.GroupId), Times.Once);
+        _mockGroupProcessor.Verify(
+            x => x.DeleteGroupAsync(request.GroupId, It.IsAny<Guid>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -253,7 +256,7 @@ public class DeregistrationServiceTests
             "Group not found"
         );
         _mockGroupProcessor
-            .Setup(x => x.DeleteGroupAsync(It.IsAny<Guid>()))
+            .Setup(x => x.DeleteGroupAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
         var result = await _service.DeregisterGroupAsync(request);
@@ -270,7 +273,7 @@ public class DeregistrationServiceTests
             "Group has sole owners"
         );
         _mockGroupProcessor
-            .Setup(x => x.DeleteGroupAsync(It.IsAny<Guid>()))
+            .Setup(x => x.DeleteGroupAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
         var result = await _service.DeregisterGroupAsync(request);
@@ -287,7 +290,7 @@ public class DeregistrationServiceTests
             "Unauthorized"
         );
         _mockGroupProcessor
-            .Setup(x => x.DeleteGroupAsync(It.IsAny<Guid>()))
+            .Setup(x => x.DeleteGroupAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
         var result = await _service.DeregisterGroupAsync(request);
@@ -314,13 +317,16 @@ public class DeregistrationServiceTests
         var request = new DeregisterRoleRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var processorResult = new DeleteRoleResult(DeleteRoleResultCode.Success, string.Empty);
         _mockRoleProcessor
-            .Setup(x => x.DeleteRoleAsync(It.IsAny<Guid>()))
+            .Setup(x => x.DeleteRoleAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
         var result = await _service.DeregisterRoleAsync(request);
 
         Assert.Equal(DeregisterRoleResultCode.Success, result.ResultCode);
-        _mockRoleProcessor.Verify(x => x.DeleteRoleAsync(request.RoleId), Times.Once);
+        _mockRoleProcessor.Verify(
+            x => x.DeleteRoleAsync(request.RoleId, It.IsAny<Guid>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -332,7 +338,7 @@ public class DeregistrationServiceTests
             "Role not found"
         );
         _mockRoleProcessor
-            .Setup(x => x.DeleteRoleAsync(It.IsAny<Guid>()))
+            .Setup(x => x.DeleteRoleAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
         var result = await _service.DeregisterRoleAsync(request);
@@ -349,7 +355,7 @@ public class DeregistrationServiceTests
             "Role is system defined"
         );
         _mockRoleProcessor
-            .Setup(x => x.DeleteRoleAsync(It.IsAny<Guid>()))
+            .Setup(x => x.DeleteRoleAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
         var result = await _service.DeregisterRoleAsync(request);
@@ -366,7 +372,7 @@ public class DeregistrationServiceTests
             "Unauthorized"
         );
         _mockRoleProcessor
-            .Setup(x => x.DeleteRoleAsync(It.IsAny<Guid>()))
+            .Setup(x => x.DeleteRoleAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
         var result = await _service.DeregisterRoleAsync(request);
@@ -396,14 +402,14 @@ public class DeregistrationServiceTests
             string.Empty
         );
         _mockPermissionProcessor
-            .Setup(x => x.DeletePermissionAsync(It.IsAny<Guid>()))
+            .Setup(x => x.DeletePermissionAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
         var result = await _service.DeregisterPermissionAsync(request);
 
         Assert.Equal(DeregisterPermissionResultCode.Success, result.ResultCode);
         _mockPermissionProcessor.Verify(
-            x => x.DeletePermissionAsync(request.PermissionId),
+            x => x.DeletePermissionAsync(request.PermissionId, It.IsAny<Guid>()),
             Times.Once
         );
     }
@@ -417,7 +423,7 @@ public class DeregistrationServiceTests
             "Permission not found"
         );
         _mockPermissionProcessor
-            .Setup(x => x.DeletePermissionAsync(It.IsAny<Guid>()))
+            .Setup(x => x.DeletePermissionAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
         var result = await _service.DeregisterPermissionAsync(request);
@@ -434,7 +440,7 @@ public class DeregistrationServiceTests
             "Permission is system defined"
         );
         _mockPermissionProcessor
-            .Setup(x => x.DeletePermissionAsync(It.IsAny<Guid>()))
+            .Setup(x => x.DeletePermissionAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
         var result = await _service.DeregisterPermissionAsync(request);
@@ -454,7 +460,7 @@ public class DeregistrationServiceTests
             "Unauthorized"
         );
         _mockPermissionProcessor
-            .Setup(x => x.DeletePermissionAsync(It.IsAny<Guid>()))
+            .Setup(x => x.DeletePermissionAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(processorResult);
 
         var result = await _service.DeregisterPermissionAsync(request);

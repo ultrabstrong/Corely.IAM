@@ -109,10 +109,9 @@ public static class ServiceRegistrationExtensions
             sp.GetRequiredService<AuthorizationProvider>()
         );
 
-        // Auth boundary: service decorators check only user/account context (HasUserContext /
-        // HasAccountContext). CRUDX permission checks happen at the processor level via
-        // IsAuthorizedAsync. Service methods that look "unguarded" are protected at the
-        // processor level where the actual domain work is performed.
+        // Auth boundary: retain service decorators only where pre-call user-context checks are
+        // still required. CRUDX permission checks happen at the processor level via
+        // IsAuthorizedAsync, so services that no longer add a boundary are left undecorated.
         serviceCollection.AddScoped<IRegistrationService, RegistrationService>();
         serviceCollection.Decorate<
             IRegistrationService,
@@ -129,13 +128,8 @@ public static class ServiceRegistrationExtensions
             DeregistrationServiceTelemetryDecorator
         >();
         serviceCollection.AddScoped<IRetrievalService, RetrievalService>();
-        serviceCollection.Decorate<IRetrievalService, RetrievalServiceAuthorizationDecorator>();
         serviceCollection.Decorate<IRetrievalService, RetrievalServiceTelemetryDecorator>();
         serviceCollection.AddScoped<IModificationService, ModificationService>();
-        serviceCollection.Decorate<
-            IModificationService,
-            ModificationServiceAuthorizationDecorator
-        >();
         serviceCollection.Decorate<IModificationService, ModificationServiceTelemetryDecorator>();
         serviceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
         serviceCollection.Decorate<
@@ -152,7 +146,6 @@ public static class ServiceRegistrationExtensions
         serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceTelemetryDecorator>();
 
         serviceCollection.AddScoped<IInvitationService, InvitationService>();
-        serviceCollection.Decorate<IInvitationService, InvitationServiceAuthorizationDecorator>();
         serviceCollection.Decorate<IInvitationService, InvitationServiceTelemetryDecorator>();
 
         serviceCollection.AddScoped<IUserOwnershipProcessor, UserOwnershipProcessor>();

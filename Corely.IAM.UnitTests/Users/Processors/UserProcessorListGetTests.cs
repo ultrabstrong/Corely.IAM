@@ -316,4 +316,23 @@ public class UserProcessorListGetTests
         Assert.NotNull(result.Data.Roles);
         Assert.Empty(result.Data.Roles);
     }
+
+    [Fact]
+    public async Task GetUserById_ReturnsNotFoundWhenUserBelongsToDifferentAccount()
+    {
+        var otherAccountId = Guid.CreateVersion7();
+        var user = await CreateUserEntityAsync(
+            "otheraccountuser",
+            accounts: [new AccountEntity { Id = otherAccountId, AccountName = "OtherAccount" }]
+        );
+
+        var result = await _userProcessor.GetUserByIdAsync(
+            user.Id,
+            hydrate: false,
+            accountId: _accountId
+        );
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Data);
+    }
 }

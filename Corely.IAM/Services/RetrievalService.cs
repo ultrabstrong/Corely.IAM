@@ -64,7 +64,11 @@ internal class RetrievalService(
         bool hydrate = false
     )
     {
-        var result = await _permissionProcessor.GetPermissionByIdAsync(permissionId, hydrate);
+        var result = await _permissionProcessor.GetPermissionByIdAsync(
+            permissionId,
+            hydrate,
+            GetCurrentAccountId()
+        );
         var effectivePermissions = await GetEffectivePermissionsAsync(
             PermissionConstants.PERMISSION_RESOURCE_TYPE,
             permissionId
@@ -82,7 +86,11 @@ internal class RetrievalService(
 
     public async Task<RetrieveSingleResult<Group>> GetGroupAsync(Guid groupId, bool hydrate = false)
     {
-        var result = await _groupProcessor.GetGroupByIdAsync(groupId, hydrate);
+        var result = await _groupProcessor.GetGroupByIdAsync(
+            groupId,
+            hydrate,
+            GetCurrentAccountId()
+        );
         var effectivePermissions = await GetEffectivePermissionsAsync(
             PermissionConstants.GROUP_RESOURCE_TYPE,
             groupId
@@ -100,7 +108,7 @@ internal class RetrievalService(
 
     public async Task<RetrieveSingleResult<Role>> GetRoleAsync(Guid roleId, bool hydrate = false)
     {
-        var result = await _roleProcessor.GetRoleByIdAsync(roleId, hydrate);
+        var result = await _roleProcessor.GetRoleByIdAsync(roleId, hydrate, GetCurrentAccountId());
         var effectivePermissions = await GetEffectivePermissionsAsync(
             PermissionConstants.ROLE_RESOURCE_TYPE,
             roleId
@@ -118,7 +126,7 @@ internal class RetrievalService(
 
     public async Task<RetrieveSingleResult<User>> GetUserAsync(Guid userId, bool hydrate = false)
     {
-        var result = await _userProcessor.GetUserByIdAsync(userId, hydrate);
+        var result = await _userProcessor.GetUserByIdAsync(userId, hydrate, GetCurrentAccountId());
         var effectivePermissions = await GetEffectivePermissionsAsync(
             PermissionConstants.USER_RESOURCE_TYPE,
             userId
@@ -172,6 +180,9 @@ internal class RetrievalService(
             userContext.CurrentAccount.Id
         );
     }
+
+    private Guid GetCurrentAccountId() =>
+        _userContextProvider.GetUserContext()?.CurrentAccount?.Id ?? Guid.Empty;
 
     private static async Task<RetrieveListResult<T>> WrapListResultAsync<T>(
         Task<ListResult<T>> resultTask

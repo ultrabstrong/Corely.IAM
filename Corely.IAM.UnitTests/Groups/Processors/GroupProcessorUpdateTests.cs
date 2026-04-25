@@ -81,6 +81,23 @@ public class GroupProcessorUpdateTests
     }
 
     [Fact]
+    public async Task UpdateGroup_UsesRequestAccountId_WhenCurrentAccountMissing()
+    {
+        var group = await CreateGroupEntityAsync("OriginalName", description: "OriginalDesc");
+        _serviceFactory.GetRequiredService<IUserContextSetter>().SetSystemContext("device1");
+
+        var request = new UpdateGroupRequest(group.Id, _accountId, "UpdatedName", "UpdatedDesc");
+        var result = await _groupProcessor.UpdateGroupAsync(request);
+
+        Assert.Equal(ModifyResultCode.Success, result.ResultCode);
+
+        var getResult = await _groupProcessor.GetGroupByIdAsync(group.Id, false, _accountId);
+        Assert.NotNull(getResult.Data);
+        Assert.Equal("UpdatedName", getResult.Data.Name);
+        Assert.Equal("UpdatedDesc", getResult.Data.Description);
+    }
+
+    [Fact]
     public async Task UpdateGroup_ReturnsNotFound_WhenGroupDoesNotExist()
     {
         var request = new UpdateGroupRequest(Guid.CreateVersion7(), _accountId, "SomeName", null);

@@ -1,3 +1,3 @@
-﻿namespace Corely.IAM.Groups.Models;
+namespace Corely.IAM.Groups.Models;
 
-internal record AddUsersToGroupRequest(List<Guid> UserIds, Guid GroupId);
+internal record AddUsersToGroupRequest(List<Guid> UserIds, Guid GroupId, Guid AccountId = default);

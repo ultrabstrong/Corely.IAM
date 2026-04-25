@@ -14,6 +14,7 @@ public class GroupProcessorAuthorizationDecoratorTests
 
     public GroupProcessorAuthorizationDecoratorTests()
     {
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
         _decorator = new GroupProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
             _mockAuthorizationProvider.Object
@@ -567,7 +568,9 @@ public class GroupProcessorAuthorizationDecoratorTests
                 )
             )
             .ReturnsAsync(true);
-        _mockInnerProcessor.Setup(x => x.DeleteGroupAsync(groupId)).ReturnsAsync(expectedResult);
+        _mockInnerProcessor
+            .Setup(x => x.DeleteGroupAsync(groupId, It.IsAny<Guid>()))
+            .ReturnsAsync(expectedResult);
 
         var result = await _decorator.DeleteGroupAsync(groupId);
 
@@ -581,7 +584,7 @@ public class GroupProcessorAuthorizationDecoratorTests
                 ),
             Times.Once
         );
-        _mockInnerProcessor.Verify(x => x.DeleteGroupAsync(groupId), Times.Once);
+        _mockInnerProcessor.Verify(x => x.DeleteGroupAsync(groupId, It.IsAny<Guid>()), Times.Once);
     }
 
     [Fact]
@@ -601,7 +604,10 @@ public class GroupProcessorAuthorizationDecoratorTests
         var result = await _decorator.DeleteGroupAsync(groupId);
 
         Assert.Equal(DeleteGroupResultCode.UnauthorizedError, result.ResultCode);
-        _mockInnerProcessor.Verify(x => x.DeleteGroupAsync(It.IsAny<Guid>()), Times.Never);
+        _mockInnerProcessor.Verify(
+            x => x.DeleteGroupAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
+            Times.Never
+        );
     }
 
     [Fact]

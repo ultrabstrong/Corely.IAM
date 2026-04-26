@@ -10,7 +10,7 @@ Nine public services form the API surface of Corely.IAM. All are registered as s
 | `IDeregistrationService` | Delete entities, remove relationships | 11 |
 | `IRetrievalService` | Query entities with filtering, ordering, pagination | 16 |
 | `IModificationService` | Update entity properties | 4 |
-| `IAuthenticationService` | Sign in, sign out, account switching | 6 |
+| `IAuthenticationService` | Sign in, sign out, account switching, session management | 9 |
 | `IPasswordRecoveryService` | Request recovery, validate tokens, reset passwords | 3 |
 | `IMfaService` | TOTP setup, confirmation, status, recovery codes | 5 |
 | `IGoogleAuthService` | Link/unlink Google auth, check auth methods | 3 |

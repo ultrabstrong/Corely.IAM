@@ -1,6 +1,6 @@
 # IAuthenticationService
 
-Manages sign-in, sign-out, and account switching. See [Authentication](../authentication.md) for the full flow and token details.
+Manages sign-in, sign-out, account switching, and user session management. See [Authentication](../authentication.md) for the full flow and token details.
 
 ## Methods
 
@@ -8,6 +8,9 @@ Manages sign-in, sign-out, and account switching. See [Authentication](../authen
 |--------|-----------|---------|
 | `SignInAsync` | `SignInRequest` | `SignInResult` |
 | `SwitchAccountAsync` | `SwitchAccountRequest` | `SignInResult` |
+| `ListSessionsAsync` | *(none)* | `RetrieveListResult<UserSession>` |
+| `RevokeSessionAsync` | `RevokeSessionRequest` | `ModifyResult` |
+| `RevokeOtherSessionsAsync` | *(none)* | `ModifyResult` |
 | `SignOutAsync` | `SignOutRequest` | `bool` |
 | `SignOutAllAsync` | *(none)* | `void` |
 | `SignInWithGoogleAsync` | `SignInWithGoogleRequest` | `SignInResult` |
@@ -42,11 +45,24 @@ Issues a new token scoped to the target account. Revokes the previous token.
 ```csharp
 // Single session
 var success = await authenticationService.SignOutAsync(
-    new SignOutRequest(tokenId, deviceId));
+    new SignOutRequest(tokenId.ToString()));
 
 // All sessions
 await authenticationService.SignOutAllAsync();
 ```
+
+### Session Management
+
+```csharp
+var sessions = await authenticationService.ListSessionsAsync();
+
+var revokeResult = await authenticationService.RevokeSessionAsync(
+    new RevokeSessionRequest(sessionId));
+
+var revokeOthersResult = await authenticationService.RevokeOtherSessionsAsync();
+```
+
+`ListSessionsAsync()` returns active tracked sessions for the current user. `RevokeSessionAsync()` revokes a selected active session by tracked token ID. `RevokeOtherSessionsAsync()` revokes all other active sessions while preserving the current one.
 
 ### Sign In with Google
 
@@ -88,7 +104,7 @@ Accepts either a 6-digit TOTP code or a recovery code in `XXXX-XXXX` format. See
 
 - `SignInAsync` does not require prior authentication
 - `SwitchAccountAsync` requires user context
-- `SignOutAsync` and `SignOutAllAsync` require user context
+- `ListSessionsAsync`, `RevokeSessionAsync`, `RevokeOtherSessionsAsync`, `SignOutAsync`, and `SignOutAllAsync` require a non-system user context
 
 ## Notes
 

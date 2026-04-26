@@ -261,6 +261,7 @@ internal class AuthenticationProvider(
             userEntity.ToModel(),
             signedInAccount,
             deviceId,
+            tokenId,
             accounts
         );
     }
@@ -306,6 +307,61 @@ internal class AuthenticationProvider(
             request.AccountId,
             request.DeviceId
         );
+        return true;
+    }
+
+    public async Task<List<UserSession>> ListUserSessionsAsync(Guid userId, Guid? currentSessionId)
+    {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var activeTokens = await _authTokenRepo.ListAsync(t =>
+            t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > now
+        );
+
+        return activeTokens
+            .Select(t => new UserSession(
+                t.Id,
+                t.DeviceId,
+                t.AccountId,
+                t.IssuedUtc,
+                t.ExpiresUtc,
+                currentSessionId.HasValue && t.Id == currentSessionId.Value
+            ))
+            .OrderByDescending(s => s.IsCurrentSession)
+            .ThenByDescending(s => s.IssuedUtc)
+            .ToList();
+    }
+
+    public async Task<bool> RevokeUserAuthTokenByIdAsync(Guid userId, Guid tokenId)
+    {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var trackedToken = await _authTokenRepo.GetAsync(t =>
+            t.Id == tokenId && t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > now
+        );
+
+        if (trackedToken == null)
+            return false;
+
+        trackedToken.RevokedUtc = now;
+        await _authTokenRepo.UpdateAsync(trackedToken);
+        return true;
+    }
+
+    public async Task<bool> RevokeOtherUserAuthTokensAsync(Guid userId, Guid currentTokenId)
+    {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var activeTokens = await _authTokenRepo.ListAsync(t =>
+            t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > now
+        );
+
+        if (!activeTokens.Any(t => t.Id == currentTokenId))
+            return false;
+
+        foreach (var token in activeTokens.Where(t => t.Id != currentTokenId))
+        {
+            token.RevokedUtc = now;
+            await _authTokenRepo.UpdateAsync(token);
+        }
+
         return true;
     }
 
@@ -459,5 +515,5 @@ internal class AuthenticationProvider(
 
     private static UserAuthTokenValidationResult CreateFailedValidationResult(
         UserAuthTokenValidationResultCode resultCode
-    ) => new(resultCode, null, null, null, []);
+    ) => new(resultCode, null, null, null, null, []);
 }

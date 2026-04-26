@@ -8,6 +8,7 @@ JWT-based authentication with custom claims, device tracking, and multi-account 
 - **Custom claims** — `account_id`, `signed_in_account_id`, `device_id` embedded in token
 - **Account switching** — issue new tokens scoped to a different account without re-authenticating
 - **Device tracking** — tokens bound to device IDs for session management
+- **Session management** — list active sessions, revoke one session, or revoke all other sessions
 - **Login metrics** — failed attempt counting and lockout cooldown
 - **Bulk sign-out** — revoke all tokens for a user across all devices
 - **Password recovery** — email-based token flow for unauthenticated password reset
@@ -49,13 +50,26 @@ This revokes the previous token and issues a new one with `signedInAccountId` se
 
 ```csharp
 // Single session
-await authenticationService.SignOutAsync(new SignOutRequest(tokenId, deviceId));
+await authenticationService.SignOutAsync(new SignOutRequest(tokenId.ToString()));
 
 // All sessions for the current user
 await authenticationService.SignOutAllAsync();
 ```
 
 `SignOutAsync` revokes the specific token. `SignOutAllAsync` revokes all active tokens for the user across all devices.
+
+## Session Management
+
+Tracked auth tokens are the backing store for user sessions. Each active `UserAuthTokenEntity` represents one active session for a `(user, signed-in account, device)` combination.
+
+```csharp
+var sessions = await authenticationService.ListSessionsAsync();
+
+await authenticationService.RevokeSessionAsync(new RevokeSessionRequest(sessionId));
+await authenticationService.RevokeOtherSessionsAsync();
+```
+
+`ListSessionsAsync()` returns the current user's active sessions only — revoked and expired tokens are excluded. Each session includes its tracked token ID, device ID, signed-in account ID, issued/expiry timestamps, and whether it is the current session.
 
 ## Password Recovery
 

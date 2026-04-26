@@ -135,6 +135,7 @@ public class AuthenticationServiceTests
                     new User() { Id = Guid.CreateVersion7() },
                     null,
                     TEST_DEVICE_ID,
+                    Guid.CreateVersion7(),
                     []
                 )
             );
@@ -638,6 +639,115 @@ public class AuthenticationServiceTests
         _userContextSetterMock.Verify(m => m.ClearUserContext(It.IsAny<Guid>()), Times.Never);
     }
 
+    [Fact]
+    public async Task ListSessions_ReturnsSessionsForCurrentUser()
+    {
+        var userId = Guid.CreateVersion7();
+        var currentSessionId = Guid.CreateVersion7();
+        var expectedSessions = new List<UserSession>
+        {
+            new(
+                currentSessionId,
+                TEST_DEVICE_ID,
+                null,
+                DateTime.UtcNow,
+                DateTime.UtcNow.AddHours(1),
+                true
+            ),
+            new(
+                Guid.CreateVersion7(),
+                "other-device",
+                Guid.CreateVersion7(),
+                DateTime.UtcNow.AddMinutes(-5),
+                DateTime.UtcNow.AddHours(1),
+                false
+            ),
+        };
+
+        _userContextProviderMock
+            .Setup(m => m.GetUserContext())
+            .Returns(
+                new UserContext(
+                    new User() { Id = userId },
+                    null,
+                    TEST_DEVICE_ID,
+                    [],
+                    currentSessionId
+                )
+            );
+        _authenticationProviderMock
+            .Setup(m => m.ListUserSessionsAsync(userId, currentSessionId))
+            .ReturnsAsync(expectedSessions);
+
+        var result = await _authenticationService.ListSessionsAsync();
+
+        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
+        Assert.NotNull(result.Data);
+        Assert.Equal(2, result.Data.Items.Count);
+        Assert.Equal(currentSessionId, result.Data.Items[0].SessionId);
+    }
+
+    [Fact]
+    public async Task RevokeSession_ClearsContext_WhenRevokingCurrentSession()
+    {
+        var userId = Guid.CreateVersion7();
+        var currentSessionId = Guid.CreateVersion7();
+
+        _userContextProviderMock
+            .Setup(m => m.GetUserContext())
+            .Returns(
+                new UserContext(
+                    new User() { Id = userId },
+                    null,
+                    TEST_DEVICE_ID,
+                    [],
+                    currentSessionId
+                )
+            );
+        _authenticationProviderMock
+            .Setup(m => m.RevokeUserAuthTokenByIdAsync(userId, currentSessionId))
+            .ReturnsAsync(true);
+
+        var result = await _authenticationService.RevokeSessionAsync(
+            new RevokeSessionRequest(currentSessionId)
+        );
+
+        Assert.Equal(ModifyResultCode.Success, result.ResultCode);
+        _userContextSetterMock.Verify(m => m.ClearUserContext(userId), Times.Once);
+        _authorizationCacheClearerMock.Verify(m => m.ClearCache(), Times.Once);
+    }
+
+    [Fact]
+    public async Task RevokeOtherSessions_RevokesAllExceptCurrentSession()
+    {
+        var userId = Guid.CreateVersion7();
+        var currentSessionId = Guid.CreateVersion7();
+
+        _userContextProviderMock
+            .Setup(m => m.GetUserContext())
+            .Returns(
+                new UserContext(
+                    new User() { Id = userId },
+                    null,
+                    TEST_DEVICE_ID,
+                    [],
+                    currentSessionId
+                )
+            );
+        _authenticationProviderMock
+            .Setup(m => m.RevokeOtherUserAuthTokensAsync(userId, currentSessionId))
+            .ReturnsAsync(true);
+
+        var result = await _authenticationService.RevokeOtherSessionsAsync();
+
+        Assert.Equal(ModifyResultCode.Success, result.ResultCode);
+        _authenticationProviderMock.Verify(
+            m => m.RevokeOtherUserAuthTokensAsync(userId, currentSessionId),
+            Times.Once
+        );
+        _userContextSetterMock.Verify(m => m.ClearUserContext(It.IsAny<Guid>()), Times.Never);
+    }
+
     #region MFA Flow Tests
 
     [Fact]
@@ -969,6 +1079,7 @@ public class AuthenticationServiceTests
                     null,
                     null,
                     null,
+                    null,
                     []
                 )
             );
@@ -990,7 +1101,7 @@ public class AuthenticationServiceTests
         _authenticationProviderMock
             .Setup(m => m.ValidateUserAuthTokenAsync("bad-token"))
             .ReturnsAsync(
-                new UserAuthTokenValidationResult(expectedResultCode, null, null, null, [])
+                new UserAuthTokenValidationResult(expectedResultCode, null, null, null, null, [])
             );
 
         var result = await _authenticationService.AuthenticateWithTokenAsync("bad-token");
@@ -1010,6 +1121,7 @@ public class AuthenticationServiceTests
                     new User() { Id = Guid.CreateVersion7() },
                     null,
                     null,
+                    Guid.CreateVersion7(),
                     []
                 )
             );
@@ -1031,6 +1143,7 @@ public class AuthenticationServiceTests
                     new User() { Id = Guid.CreateVersion7() },
                     null,
                     TEST_DEVICE_ID,
+                    Guid.CreateVersion7(),
                     []
                 )
             );

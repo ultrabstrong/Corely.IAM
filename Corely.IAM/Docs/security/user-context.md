@@ -10,6 +10,7 @@ public record UserContext
     public User? User { get; init; }
     public Account? CurrentAccount { get; init; }
     public string DeviceId { get; init; }
+    public Guid? AuthTokenId { get; init; }
     public List<Account> AvailableAccounts { get; init; }
     public bool IsSystemContext { get; init; }
 }
@@ -20,6 +21,7 @@ public record UserContext
 | `User` | Authenticated user (null for system context) |
 | `CurrentAccount` | Active account (null = no account selected) |
 | `DeviceId` | Device identifier from token (identifies the calling host for system context) |
+| `AuthTokenId` | Tracked auth-token/session ID for the current user context (null for system context) |
 | `AvailableAccounts` | All accounts the user can access (empty for system context) |
 | `IsSystemContext` | `true` when context was set via `IAuthenticationService.AuthenticateAsSystem()` |
 

@@ -30,5 +30,9 @@ The library tracks auth tokens and device IDs and documents this as supporting s
 
 ## Status
 
-- Plan created.
-- No implementation started.
+- Completed.
+- `IAuthenticationService` now exposes `ListSessionsAsync()`, `RevokeSessionAsync(...)`, and `RevokeOtherSessionsAsync()` for current-user session management.
+- Sessions are now modeled as active tracked auth tokens, surfaced as `UserSession` records with session ID, device ID, signed-in account ID, issued/expiry timestamps, and current-session flag.
+- `UserContext` now carries the tracked auth-token ID so the current session can be identified and preserved when revoking other sessions.
+- Added focused provider/service/telemetry tests covering session listing, selected-session revocation, and revoke-other-sessions behavior.
+- Authentication and user-context docs were updated, and the full repository rebuild/test output is clean.

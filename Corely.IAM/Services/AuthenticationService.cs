@@ -388,6 +388,78 @@ internal class AuthenticationService(
         return result;
     }
 
+    public async Task<RetrieveListResult<UserSession>> ListSessionsAsync()
+    {
+        var context = GetUserSessionContext();
+        if (context == null)
+        {
+            return new RetrieveListResult<UserSession>(
+                RetrieveResultCode.UnauthorizedError,
+                "A non-system user context is required",
+                null
+            );
+        }
+
+        var sessions = await _authenticationProvider.ListUserSessionsAsync(
+            context.User!.Id,
+            context.AuthTokenId
+        );
+
+        return new RetrieveListResult<UserSession>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            new PagedResult<UserSession>(sessions, sessions.Count, 1, false)
+        );
+    }
+
+    public async Task<ModifyResult> RevokeSessionAsync(RevokeSessionRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var context = GetUserSessionContext();
+        if (context == null)
+            return new ModifyResult(
+                ModifyResultCode.UnauthorizedError,
+                "A non-system user context is required"
+            );
+
+        var revoked = await _authenticationProvider.RevokeUserAuthTokenByIdAsync(
+            context.User!.Id,
+            request.SessionId
+        );
+
+        if (!revoked)
+            return new ModifyResult(ModifyResultCode.NotFoundError, "Session not found");
+
+        if (context.AuthTokenId == request.SessionId)
+        {
+            _userContextSetter.ClearUserContext(context.User.Id);
+            _authorizationCacheClearer.ClearCache();
+        }
+
+        return new ModifyResult(ModifyResultCode.Success, string.Empty);
+    }
+
+    public async Task<ModifyResult> RevokeOtherSessionsAsync()
+    {
+        var context = GetUserSessionContext();
+        if (context == null || !context.AuthTokenId.HasValue)
+            return new ModifyResult(
+                ModifyResultCode.UnauthorizedError,
+                "A non-system user context is required"
+            );
+
+        var revoked = await _authenticationProvider.RevokeOtherUserAuthTokensAsync(
+            context.User!.Id,
+            context.AuthTokenId.Value
+        );
+
+        if (!revoked)
+            return new ModifyResult(ModifyResultCode.NotFoundError, "Current session not found");
+
+        return new ModifyResult(ModifyResultCode.Success, string.Empty);
+    }
+
     public async Task<bool> SignOutAsync(SignOutRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
@@ -521,7 +593,8 @@ internal class AuthenticationService(
             authTokenResult.User!,
             authTokenResult.CurrentAccount,
             deviceId,
-            authTokenResult.AvailableAccounts
+            authTokenResult.AvailableAccounts,
+            authTokenResult.TokenId
         );
 
         _userContextSetter.SetUserContext(userContext);
@@ -586,7 +659,8 @@ internal class AuthenticationService(
                 validationResult.User,
                 validationResult.CurrentAccount,
                 validationResult.DeviceId,
-                validationResult.AvailableAccounts
+                validationResult.AvailableAccounts,
+                validationResult.TokenId
             )
         );
         return UserAuthTokenValidationResultCode.Success;
@@ -595,5 +669,14 @@ internal class AuthenticationService(
     public void AuthenticateAsSystem(string deviceId)
     {
         _userContextSetter.SetSystemContext(deviceId);
+    }
+
+    private UserContext? GetUserSessionContext()
+    {
+        var context = _userContextProvider.GetUserContext();
+        if (context == null || context.IsSystemContext || context.User == null)
+            return null;
+
+        return context;
     }
 }

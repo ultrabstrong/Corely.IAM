@@ -87,6 +87,50 @@ public class AuthenticationServiceTelemetryDecoratorTests
     }
 
     [Fact]
+    public async Task ListSessions_DelegatesToInnerAndLogsResult()
+    {
+        var expectedResult = new RetrieveListResult<UserSession>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            PagedResult<UserSession>.Empty()
+        );
+        _mockInnerService.Setup(x => x.ListSessionsAsync()).ReturnsAsync(expectedResult);
+
+        var result = await _decorator.ListSessionsAsync();
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.ListSessionsAsync(), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public async Task RevokeSession_DelegatesToInnerAndLogsResult()
+    {
+        var request = new RevokeSessionRequest(Guid.CreateVersion7());
+        var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
+        _mockInnerService.Setup(x => x.RevokeSessionAsync(request)).ReturnsAsync(expectedResult);
+
+        var result = await _decorator.RevokeSessionAsync(request);
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.RevokeSessionAsync(request), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public async Task RevokeOtherSessions_DelegatesToInnerAndLogsResult()
+    {
+        var expectedResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
+        _mockInnerService.Setup(x => x.RevokeOtherSessionsAsync()).ReturnsAsync(expectedResult);
+
+        var result = await _decorator.RevokeOtherSessionsAsync();
+
+        Assert.Equal(expectedResult, result);
+        _mockInnerService.Verify(x => x.RevokeOtherSessionsAsync(), Times.Once);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
     public void Constructor_ThrowsOnNullInnerService() =>
         Assert.Throws<ArgumentNullException>(() =>
             new AuthenticationServiceTelemetryDecorator(null!, _mockLogger.Object)

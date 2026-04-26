@@ -694,4 +694,78 @@ public class AuthenticationProviderTests
             validation2.ResultCode
         );
     }
+
+    [Fact]
+    public async Task ListUserSessions_ReturnsActiveSessions_SortedWithCurrentFirst()
+    {
+        var account = await CreateAccountAsync();
+        var userEntity = await CreateUserAsync([account]);
+
+        var currentToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id)
+        );
+        await Task.Delay(5);
+        await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, "other-device")
+        );
+
+        var sessions = await _authenticationProvider.ListUserSessionsAsync(
+            userEntity.Id,
+            currentToken.TokenId
+        );
+
+        Assert.Equal(2, sessions.Count);
+        Assert.True(sessions[0].IsCurrentSession);
+        Assert.Equal(currentToken.TokenId, sessions[0].SessionId);
+    }
+
+    [Fact]
+    public async Task RevokeUserAuthTokenById_ReturnsTrue_WhenTokenExists()
+    {
+        var userEntity = await CreateUserAsync();
+        var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+
+        var result = await _authenticationProvider.RevokeUserAuthTokenByIdAsync(
+            userEntity.Id,
+            authTokenResult.TokenId!.Value
+        );
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task RevokeOtherUserAuthTokens_RevokesAllExceptCurrentToken()
+    {
+        var account = await CreateAccountAsync();
+        var userEntity = await CreateUserAsync([account]);
+
+        var currentToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id)
+        );
+        var otherToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, "other-device")
+        );
+
+        var result = await _authenticationProvider.RevokeOtherUserAuthTokensAsync(
+            userEntity.Id,
+            currentToken.TokenId!.Value
+        );
+
+        Assert.True(result);
+
+        var currentValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            currentToken.Token!
+        );
+        var otherValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            otherToken.Token!
+        );
+
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, currentValidation.ResultCode);
+        Assert.Equal(
+            UserAuthTokenValidationResultCode.TokenValidationFailed,
+            otherValidation.ResultCode
+        );
+    }
 }

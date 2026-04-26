@@ -16,5 +16,6 @@ internal record UserAuthTokenValidationResult(
     User? User,
     Account? CurrentAccount,
     string? DeviceId,
+    Guid? TokenId,
     List<Account> AvailableAccounts
 );

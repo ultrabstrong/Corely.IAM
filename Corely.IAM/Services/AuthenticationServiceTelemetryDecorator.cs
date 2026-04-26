@@ -31,6 +31,28 @@ internal class AuthenticationServiceTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<RetrieveListResult<UserSession>> ListSessionsAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(AuthenticationService),
+            () => _inner.ListSessionsAsync(),
+            logResult: true
+        );
+
+    public async Task<ModifyResult> RevokeSessionAsync(RevokeSessionRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(AuthenticationService),
+            request,
+            () => _inner.RevokeSessionAsync(request),
+            logResult: true
+        );
+
+    public async Task<ModifyResult> RevokeOtherSessionsAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(AuthenticationService),
+            () => _inner.RevokeOtherSessionsAsync(),
+            logResult: true
+        );
+
     public async Task<bool> SignOutAsync(SignOutRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),

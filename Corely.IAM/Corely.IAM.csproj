@@ -10,7 +10,7 @@
     <PackageProjectUrl>https://github.com/ultrabstrong/Corely.IAM</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>1.1.1</Version>
+    <Version>1.2.0</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn></NoWarn>
@@ -28,7 +28,7 @@
     <PackageReference Include="Corely.Common" Version="1.2.1" />
     <PackageReference Include="Corely.DataAccess" Version="2.2.10" />
     <PackageReference Include="Corely.Security" Version="1.0.3" />
-    <PackageReference Include="CSharpier.MsBuild" Version="1.2.5">
+    <PackageReference Include="CSharpier.MsBuild" Version="1.2.6">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>

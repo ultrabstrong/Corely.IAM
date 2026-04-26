@@ -624,7 +624,7 @@ public class AuthorizationProviderTests
 
         var user = new UserEntity
         {
-            Id = context.User.Id,
+            Id = context.User!.Id,
             Username = "testuser",
             Email = "test@test.com",
         };

@@ -74,8 +74,8 @@ public class DeregistrationServiceTests
         var result = await _service.DeregisterUserAsync();
 
         Assert.Equal(DeregisterUserResultCode.Success, result.ResultCode);
-        _mockUserProcessor.Verify(x => x.DeleteUserAsync(_userContext.User.Id), Times.Once);
-        _mockUserContextSetter.Verify(x => x.ClearUserContext(_userContext.User.Id), Times.Once);
+        _mockUserProcessor.Verify(x => x.DeleteUserAsync(_userContext.User!.Id), Times.Once);
+        _mockUserContextSetter.Verify(x => x.ClearUserContext(_userContext.User!.Id), Times.Once);
         _mockAuthorizationCacheClearer.Verify(x => x.ClearCache(), Times.Once);
     }
 
@@ -179,7 +179,7 @@ public class DeregistrationServiceTests
             x =>
                 x.SetUserContext(
                     It.Is<UserContext>(c =>
-                        c.User.Id == _userContext.User.Id
+                        c.User!.Id == _userContext.User!.Id
                         && c.CurrentAccount == null
                         && c.AvailableAccounts.Count == 1
                         && c.AvailableAccounts[0].Id == _userContext.AvailableAccounts[0].Id

@@ -593,7 +593,7 @@ public class RetrievalServiceTests
     [Fact]
     public async Task GetUserSymmetricEncryptionProvider_ReturnsSuccess_WhenKeyFound()
     {
-        var userEntity = CreateUserEntityWithKeys(_userContext.User.Id);
+        var userEntity = CreateUserEntityWithKeys(_userContext.User!.Id);
         SetupUserKeysSuccess(userEntity);
         SetupSymmetricEncryptionFactory();
         var mockIamProvider = new Mock<IIamSymmetricEncryptionProvider>();
@@ -615,7 +615,7 @@ public class RetrievalServiceTests
     [Fact]
     public async Task GetUserAsymmetricEncryptionProvider_ReturnsSuccess_WhenKeyFound()
     {
-        var userEntity = CreateUserEntityWithKeys(_userContext.User.Id);
+        var userEntity = CreateUserEntityWithKeys(_userContext.User!.Id);
         SetupUserKeysSuccess(userEntity);
         SetupSymmetricEncryptionFactory();
         var mockIamProvider = new Mock<IIamAsymmetricEncryptionProvider>();
@@ -637,7 +637,7 @@ public class RetrievalServiceTests
     [Fact]
     public async Task GetUserAsymmetricSignatureProvider_ReturnsSuccess_WhenKeyFound()
     {
-        var userEntity = CreateUserEntityWithKeys(_userContext.User.Id);
+        var userEntity = CreateUserEntityWithKeys(_userContext.User!.Id);
         SetupUserKeysSuccess(userEntity);
         SetupSymmetricEncryptionFactory();
         var mockIamProvider = new Mock<IIamAsymmetricSignatureProvider>();
@@ -714,7 +714,7 @@ public class RetrievalServiceTests
     {
         var userEntity = new UserEntity
         {
-            Id = _userContext.User.Id,
+            Id = _userContext.User!.Id,
             Username = "testuser",
             Email = "test@test.com",
             SymmetricKeys = [],
@@ -733,7 +733,7 @@ public class RetrievalServiceTests
     {
         var userEntity = new UserEntity
         {
-            Id = _userContext.User.Id,
+            Id = _userContext.User!.Id,
             Username = "testuser",
             Email = "test@test.com",
             SymmetricKeys = [],
@@ -752,7 +752,7 @@ public class RetrievalServiceTests
     {
         var userEntity = new UserEntity
         {
-            Id = _userContext.User.Id,
+            Id = _userContext.User!.Id,
             Username = "testuser",
             Email = "test@test.com",
             SymmetricKeys = [],

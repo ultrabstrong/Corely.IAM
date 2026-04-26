@@ -52,7 +52,15 @@
         _message = null;
         try
         {
-            var result = await InvitationService.AcceptInvitationAsync(new AcceptInvitationRequest(_token.Trim()));
+            var token = _token?.Trim();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                _messageType = AlertType.Warning;
+                _message = "Invitation token is required.";
+                return;
+            }
+
+            var result = await InvitationService.AcceptInvitationAsync(new AcceptInvitationRequest(token));
             if (result.ResultCode == AcceptInvitationResultCode.Success && result.AccountId != null)
             {
                 NavigationManager.NavigateTo(

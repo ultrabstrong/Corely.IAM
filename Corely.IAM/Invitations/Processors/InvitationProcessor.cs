@@ -12,6 +12,7 @@ using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Invitations.Mappers;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
+using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
@@ -103,7 +104,7 @@ internal class InvitationProcessor(
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var userId = _userContextProvider.GetUserContext()!.User.Id;
+        var userId = GetRequiredUserContext("create invitations").User!.Id;
 
         var tokenBytes = RandomNumberGenerator.GetBytes(InvitationConstants.TOKEN_LENGTH);
         var token = Convert
@@ -192,12 +193,12 @@ internal class InvitationProcessor(
             );
         }
 
-        var userContext = _userContextProvider.GetUserContext()!;
-        var userId = userContext.User.Id;
+        var userContext = GetRequiredUserContext("accept invitations");
+        var userId = userContext.User!.Id;
 
         if (
             !string.Equals(
-                userContext.User.Email,
+                userContext.User!.Email,
                 invitationEntity.Email,
                 StringComparison.OrdinalIgnoreCase
             )
@@ -340,5 +341,16 @@ internal class InvitationProcessor(
             request.Take,
             e => e.ToModel()
         );
+    }
+
+    private UserContext GetRequiredUserContext(string operation)
+    {
+        var userContext = _userContextProvider.GetUserContext();
+        if (userContext?.User == null)
+            throw new InvalidOperationException(
+                $"A non-system user context is required to {operation}."
+            );
+
+        return userContext;
     }
 }

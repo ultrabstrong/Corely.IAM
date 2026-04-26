@@ -42,9 +42,9 @@ public class UserContextProviderTests
         var result = _provider.GetUserContext();
 
         Assert.NotNull(result);
-        Assert.Equal(context.User.Id, result.User.Id);
+        Assert.Equal(context.User!.Id, result.User!.Id);
         Assert.NotNull(result.CurrentAccount);
-        Assert.Equal(context.CurrentAccount!.Id, result.CurrentAccount.Id);
+        Assert.Equal(context.CurrentAccount!.Id, result.CurrentAccount!.Id);
         Assert.Equal(TEST_DEVICE_ID, result.DeviceId);
         Assert.Single(result.AvailableAccounts);
     }
@@ -72,9 +72,9 @@ public class UserContextProviderTests
         var result = _provider.GetUserContext();
 
         Assert.NotNull(result);
-        Assert.Equal(context2.User.Id, result.User.Id);
+        Assert.Equal(context2.User!.Id, result.User!.Id);
         Assert.NotNull(result.CurrentAccount);
-        Assert.Equal(context2.CurrentAccount!.Id, result.CurrentAccount.Id);
+        Assert.Equal(context2.CurrentAccount!.Id, result.CurrentAccount!.Id);
         Assert.Equal("other-device", result.DeviceId);
         Assert.Single(result.AvailableAccounts);
         Assert.Equal(context2.AvailableAccounts, result.AvailableAccounts);
@@ -103,7 +103,7 @@ public class UserContextProviderTests
         );
         _provider.SetUserContext(context);
 
-        _provider.ClearUserContext(context.User.Id);
+        _provider.ClearUserContext(context.User!.Id);
 
         Assert.Null(_provider.GetUserContext());
     }
@@ -123,9 +123,9 @@ public class UserContextProviderTests
 
         var result = _provider.GetUserContext();
         Assert.NotNull(result);
-        Assert.Equal(context.User.Id, result.User.Id);
+        Assert.Equal(context.User!.Id, result.User!.Id);
         Assert.NotNull(result.CurrentAccount);
-        Assert.Equal(context.CurrentAccount!.Id, result.CurrentAccount.Id);
+        Assert.Equal(context.CurrentAccount!.Id, result.CurrentAccount!.Id);
         Assert.Equal(TEST_DEVICE_ID, result.DeviceId);
         Assert.Single(result.AvailableAccounts);
     }

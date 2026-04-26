@@ -125,9 +125,16 @@ else
         await ExecuteSafeAsync(async () =>
         {
             var removedUserId = _confirmItemId;
-            var result = await DeregistrationService.DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(removedUserId, UserContext!.CurrentAccount!.Id));
+            var currentAccountId = UserContext?.CurrentAccount?.Id;
+            var currentUserId = UserContext?.User?.Id;
+            if (currentAccountId == null)
+                return;
+
+            var result = await DeregistrationService.DeregisterUserFromAccountAsync(
+                new DeregisterUserFromAccountRequest(removedUserId, currentAccountId.Value)
+            );
             if (result.ResultCode == DeregisterUserFromAccountResultCode.Success
-                && removedUserId == UserContext?.User.Id)
+                && removedUserId == currentUserId)
             {
                 NavigationManager.NavigateTo(AppRoutes.SelectAccount, forceLoad: true);
                 return;

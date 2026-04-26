@@ -98,7 +98,7 @@ public class AuthenticationTokenMiddlewareTests
         Assert.True(nextCalled);
         Assert.True(httpContext.User.Identity?.IsAuthenticated);
         Assert.Equal(
-            userContext.User.Id.ToString(),
+            userContext.User!.Id.ToString(),
             httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
         );
         Assert.Equal(

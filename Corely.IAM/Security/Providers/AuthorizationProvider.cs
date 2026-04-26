@@ -45,6 +45,15 @@ internal class AuthorizationProvider(
         if (userContext.IsSystemContext)
             return true;
 
+        if (
+            !TryGetUserId(
+                userContext,
+                $"{action} on {resourceType}{resourceIdDisplay}",
+                out var userId
+            )
+        )
+            return false;
+
         var permissions = await GetPermissionsAsync();
 
         var relevantPermissions = permissions
@@ -71,7 +80,7 @@ internal class AuthorizationProvider(
         {
             _logger.LogInformation(
                 "Authorization denied: User {UserId} lacks {Action} permission for {ResourceType}{ResourceIds}",
-                userContext.User.Id,
+                userId,
                 action,
                 resourceType,
                 resourceIdDisplay
@@ -98,13 +107,16 @@ internal class AuthorizationProvider(
         if (userContext.IsSystemContext)
             return false;
 
-        var isAuthorized = userContext.User!.Id == requestUserId;
+        if (!TryGetUserId(userContext, $"act on user {requestUserId}", out var userId))
+            return false;
+
+        var isAuthorized = userId == requestUserId;
 
         if (!isAuthorized && !suppressLog)
         {
             _logger.LogInformation(
                 "Authorization denied: User {UserId} is not authorized to act on user {RequestUserId}",
-                userContext.User.Id,
+                userId,
                 requestUserId
             );
         }
@@ -124,9 +136,14 @@ internal class AuthorizationProvider(
 
         if (userContext.CurrentAccount == null || userContext.CurrentAccount.Id != accountId)
         {
+            if (
+                !TryGetUserId(userContext, $"check account context for {accountId}", out var userId)
+            )
+                return false;
+
             _logger.LogInformation(
                 "Authorization denied: User {UserId} is not signed in to account {AccountId}",
-                userContext.User!.Id,
+                userId,
                 accountId
             );
             return false;
@@ -136,9 +153,12 @@ internal class AuthorizationProvider(
 
         if (!hasAccountAccess)
         {
+            if (!TryGetUserId(userContext, $"check account access for {accountId}", out var userId))
+                return false;
+
             _logger.LogInformation(
                 "Authorization denied: User {UserId} does not have access to account {AccountId}",
-                userContext.User!.Id,
+                userId,
                 accountId
             );
         }
@@ -192,7 +212,12 @@ internal class AuthorizationProvider(
             if (_cachedPermissions is not null && _cachedAccountId == currentAccountId)
                 return _cachedPermissions;
 
-            var contextUserId = userContext!.User!.Id;
+            if (userContext == null)
+                return [];
+
+            if (!TryGetUserId(userContext, "load permissions", out var contextUserId))
+                return [];
+
             var contextAccountId = userContext.CurrentAccount?.Id;
 
             _cachedPermissions = await _permissionRepo.ListAsync(p =>
@@ -223,4 +248,20 @@ internal class AuthorizationProvider(
             AuthAction.Execute => permission.Execute,
             _ => false,
         };
+
+    private bool TryGetUserId(UserContext userContext, string operation, out Guid userId)
+    {
+        if (userContext.User != null)
+        {
+            userId = userContext.User.Id;
+            return true;
+        }
+
+        _logger.LogInformation(
+            "Authorization denied: No user attached to context for {Operation}",
+            operation
+        );
+        userId = Guid.Empty;
+        return false;
+    }
 }

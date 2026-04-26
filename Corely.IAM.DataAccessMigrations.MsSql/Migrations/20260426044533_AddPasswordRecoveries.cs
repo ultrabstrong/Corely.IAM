@@ -17,11 +17,19 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SecretHash = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
+                    SecretHash = table.Column<string>(
+                        type: "nvarchar(250)",
+                        maxLength: 250,
+                        nullable: false
+                    ),
                     ExpiresUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CompletedUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
                     InvalidatedUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedUtc = table.Column<DateTime>(type: "DATETIME2", nullable: false, defaultValueSql: "(SYSUTCDATETIME())")
+                    CreatedUtc = table.Column<DateTime>(
+                        type: "DATETIME2",
+                        nullable: false,
+                        defaultValueSql: "(SYSUTCDATETIME())"
+                    ),
                 },
                 constraints: table =>
                 {
@@ -31,25 +39,28 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+                        onDelete: ReferentialAction.Cascade
+                    );
+                }
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_PasswordRecoverys_ExpiresUtc",
                 table: "PasswordRecoverys",
-                column: "ExpiresUtc");
+                column: "ExpiresUtc"
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_PasswordRecoverys_UserId",
                 table: "PasswordRecoverys",
-                column: "UserId");
+                column: "UserId"
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "PasswordRecoverys");
+            migrationBuilder.DropTable(name: "PasswordRecoverys");
         }
     }
 }

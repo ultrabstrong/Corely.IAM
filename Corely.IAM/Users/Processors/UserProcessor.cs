@@ -213,7 +213,11 @@ internal class UserProcessor(
 
     public async Task<GetResult<UserEntity>> GetCurrentUserKeysAsync()
     {
-        var userId = _userContextProvider.GetUserContext()!.User.Id;
+        var userId =
+            _userContextProvider.GetUserContext()?.User?.Id
+            ?? throw new InvalidOperationException(
+                "A non-system user context is required to get current user keys."
+            );
         var userEntity = await _userRepo.GetAsync(
             u => u.Id == userId,
             include: q => q.Include(u => u.SymmetricKeys).Include(u => u.AsymmetricKeys)

@@ -130,6 +130,7 @@ public class RoleProcessorListGetTests
         await CreateRoleAsync("Role1");
 
         var result = await _roleProcessor.ListRolesAsync(new(_accountId));
+        Assert.NotNull(result.Data);
         Assert.True(result.Data.TotalCount >= 1);
     }
 

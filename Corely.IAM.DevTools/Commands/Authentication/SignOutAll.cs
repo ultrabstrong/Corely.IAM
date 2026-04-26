@@ -27,12 +27,17 @@ internal partial class Authentication : CommandBase
         protected override async Task ExecuteAsync()
         {
             var currentContext = _userContextProvider.GetUserContext();
+            var userId =
+                currentContext?.User?.Id
+                ?? throw new InvalidOperationException(
+                    "A non-system user context is required to sign out all sessions."
+                );
 
             await _authenticationService.SignOutAllAsync();
 
             var output = new { Success = true };
             Console.WriteLine(JsonSerializer.Serialize(output));
-            Success($"All sessions for user {currentContext!.User.Id} signed out successfully");
+            Success($"All sessions for user {userId} signed out successfully");
 
             ClearAuthTokenFile();
         }

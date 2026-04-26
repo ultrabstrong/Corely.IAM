@@ -50,7 +50,7 @@ public class AuthenticationTokenMiddleware(
                     "Token validation failed with {ResultCode}, clearing cookies",
                     result
                 );
-                authCookieManager.DeleteAuthCookies(context.Response.Cookies);
+                DeleteAuthStateCookies(context.Response.Cookies);
                 return;
             }
 
@@ -61,7 +61,13 @@ public class AuthenticationTokenMiddleware(
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Error validating authentication token, clearing cookies");
-            authCookieManager.DeleteAuthCookies(context.Response.Cookies);
+            DeleteAuthStateCookies(context.Response.Cookies);
         }
+    }
+
+    private void DeleteAuthStateCookies(IResponseCookies cookies)
+    {
+        authCookieManager.DeleteAuthCookies(cookies);
+        authCookieManager.DeleteDeviceIdCookie(cookies);
     }
 }

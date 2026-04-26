@@ -2,10 +2,9 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
-using Corely.IAM.Users.Models;
-using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Pages.Authentication;
 using Corely.IAM.Web.Security;
+using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,19 +18,16 @@ namespace Corely.IAM.Web.UnitTests.Pages.Auth;
 public class VerifyMfaModelTests
 {
     private readonly Mock<IAuthenticationService> _mockAuthService;
-    private readonly Mock<IUserContextProvider> _mockUserContextProvider;
-    private readonly Mock<IAuthCookieManager> _mockCookieManager;
+    private readonly Mock<IPostAuthenticationFlowService> _mockPostAuthenticationFlowService;
     private readonly VerifyMfaModel _model;
 
     public VerifyMfaModelTests()
     {
         _mockAuthService = new Mock<IAuthenticationService>();
-        _mockUserContextProvider = new Mock<IUserContextProvider>();
-        _mockCookieManager = new Mock<IAuthCookieManager>();
+        _mockPostAuthenticationFlowService = new Mock<IPostAuthenticationFlowService>();
         _model = new VerifyMfaModel(
             _mockAuthService.Object,
-            _mockUserContextProvider.Object,
-            _mockCookieManager.Object,
+            _mockPostAuthenticationFlowService.Object,
             Options.Create(new SecurityOptions())
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();
@@ -65,40 +61,22 @@ public class VerifyMfaModelTests
     public async Task OnPost_WithValidCode_SetsCookiesAndRedirects()
     {
         var tokenId = Guid.CreateVersion7();
+        var signInResult = new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId);
         _model.MfaChallengeToken = "test-challenge-token";
         _model.Code = "123456";
         _mockAuthService
             .Setup(s => s.VerifyMfaAsync(It.IsAny<VerifyMfaRequest>()))
-            .ReturnsAsync(new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId));
-        _mockUserContextProvider
-            .Setup(p => p.GetUserContext())
-            .Returns(
-                new UserContext(
-                    new User
-                    {
-                        Id = Guid.CreateVersion7(),
-                        Username = "testuser",
-                        Email = "test@test.com",
-                    },
-                    null,
-                    "device-1",
-                    []
-                )
-            );
+            .ReturnsAsync(signInResult);
+        _mockPostAuthenticationFlowService
+            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()))
+            .ReturnsAsync(new RedirectResult(AppRoutes.Dashboard));
 
         var result = await _model.OnPostAsync();
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.Dashboard, redirect.Url);
-        _mockCookieManager.Verify(
-            c =>
-                c.SetAuthCookies(
-                    It.IsAny<IResponseCookies>(),
-                    "auth-token",
-                    tokenId,
-                    It.IsAny<bool>(),
-                    It.IsAny<int>()
-                ),
+        _mockPostAuthenticationFlowService.Verify(
+            s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()),
             Times.Once
         );
     }
@@ -170,42 +148,22 @@ public class VerifyMfaModelTests
     public async Task OnPost_WithValidCode_OneAccount_AutoSwitchesAndRedirects()
     {
         var tokenId = Guid.CreateVersion7();
-        var switchTokenId = Guid.CreateVersion7();
-        var account = new Account { Id = Guid.CreateVersion7(), AccountName = "TestAccount" };
+        var signInResult = new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId);
         _model.MfaChallengeToken = "test-challenge-token";
         _model.Code = "123456";
         _mockAuthService
             .Setup(s => s.VerifyMfaAsync(It.IsAny<VerifyMfaRequest>()))
-            .ReturnsAsync(new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId));
-        _mockAuthService
-            .Setup(s =>
-                s.SwitchAccountAsync(It.Is<SwitchAccountRequest>(r => r.AccountId == account.Id))
-            )
-            .ReturnsAsync(
-                new SignInResult(SignInResultCode.Success, null, "switched-token", switchTokenId)
-            );
-        _mockUserContextProvider
-            .Setup(p => p.GetUserContext())
-            .Returns(
-                new UserContext(
-                    new User
-                    {
-                        Id = Guid.CreateVersion7(),
-                        Username = "testuser",
-                        Email = "test@test.com",
-                    },
-                    null,
-                    "device-1",
-                    [account]
-                )
-            );
+            .ReturnsAsync(signInResult);
+        _mockPostAuthenticationFlowService
+            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()))
+            .ReturnsAsync(new RedirectResult(AppRoutes.Dashboard));
 
         var result = await _model.OnPostAsync();
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.Dashboard, redirect.Url);
-        _mockAuthService.Verify(
-            s => s.SwitchAccountAsync(It.Is<SwitchAccountRequest>(r => r.AccountId == account.Id)),
+        _mockPostAuthenticationFlowService.Verify(
+            s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()),
             Times.Once
         );
     }
@@ -214,28 +172,15 @@ public class VerifyMfaModelTests
     public async Task OnPost_WithValidCode_MultipleAccounts_RedirectsToSelectAccount()
     {
         var tokenId = Guid.CreateVersion7();
-        var account1 = new Account { Id = Guid.CreateVersion7(), AccountName = "Account1" };
-        var account2 = new Account { Id = Guid.CreateVersion7(), AccountName = "Account2" };
+        var signInResult = new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId);
         _model.MfaChallengeToken = "test-challenge-token";
         _model.Code = "123456";
         _mockAuthService
             .Setup(s => s.VerifyMfaAsync(It.IsAny<VerifyMfaRequest>()))
-            .ReturnsAsync(new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId));
-        _mockUserContextProvider
-            .Setup(p => p.GetUserContext())
-            .Returns(
-                new UserContext(
-                    new User
-                    {
-                        Id = Guid.CreateVersion7(),
-                        Username = "testuser",
-                        Email = "test@test.com",
-                    },
-                    null,
-                    "device-1",
-                    [account1, account2]
-                )
-            );
+            .ReturnsAsync(signInResult);
+        _mockPostAuthenticationFlowService
+            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()))
+            .ReturnsAsync(new RedirectResult(AppRoutes.SelectAccount));
 
         var result = await _model.OnPostAsync();
 

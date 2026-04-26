@@ -25,10 +25,7 @@ public class BlazorUserContextAccessor(
             return existingContext;
         }
 
-        if (!await _semaphore.WaitAsync(TimeSpan.FromSeconds(5)))
-        {
-            return null;
-        }
+        await _semaphore.WaitAsync();
 
         try
         {

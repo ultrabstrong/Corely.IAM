@@ -15,6 +15,7 @@ public static class IamWebServiceExtensions
 
         services.AddSingleton<IAuthCookieManager, AuthCookieManager>();
         services.AddSingleton<IUserContextClaimsBuilder, UserContextClaimsBuilder>();
+        services.AddScoped<IPostAuthenticationFlowService, PostAuthenticationFlowService>();
 
         services
             .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

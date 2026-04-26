@@ -2,10 +2,9 @@ using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
-using Corely.IAM.Users.Models;
-using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Pages.Authentication;
 using Corely.IAM.Web.Security;
+using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,21 +19,21 @@ public class RegisterWithGoogleModelTests
 {
     private readonly Mock<IRegistrationService> _mockRegistrationService;
     private readonly Mock<IAuthenticationService> _mockAuthService;
-    private readonly Mock<IUserContextProvider> _mockUserContextProvider;
     private readonly Mock<IAuthCookieManager> _mockCookieManager;
+    private readonly Mock<IPostAuthenticationFlowService> _mockPostAuthenticationFlowService;
     private readonly RegisterWithGoogleModel _model;
 
     public RegisterWithGoogleModelTests()
     {
         _mockRegistrationService = new Mock<IRegistrationService>();
         _mockAuthService = new Mock<IAuthenticationService>();
-        _mockUserContextProvider = new Mock<IUserContextProvider>();
         _mockCookieManager = new Mock<IAuthCookieManager>();
+        _mockPostAuthenticationFlowService = new Mock<IPostAuthenticationFlowService>();
         _model = new RegisterWithGoogleModel(
             _mockRegistrationService.Object,
             _mockAuthService.Object,
-            _mockUserContextProvider.Object,
             _mockCookieManager.Object,
+            _mockPostAuthenticationFlowService.Object,
             Options.Create(new SecurityOptions())
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();
@@ -67,6 +66,12 @@ public class RegisterWithGoogleModelTests
     public async Task OnPost_WithSuccess_SignsInAndRedirectsToDashboard()
     {
         _model.TempData["GoogleIdToken"] = "valid-google-token";
+        var signInResult = new SignInResult(
+            SignInResultCode.Success,
+            null,
+            "token",
+            Guid.CreateVersion7()
+        );
 
         _mockRegistrationService
             .Setup(s => s.RegisterUserWithGoogleAsync(It.IsAny<RegisterUserWithGoogleRequest>()))
@@ -79,38 +84,17 @@ public class RegisterWithGoogleModelTests
             );
         _mockAuthService
             .Setup(s => s.SignInWithGoogleAsync(It.IsAny<SignInWithGoogleRequest>()))
-            .ReturnsAsync(
-                new SignInResult(SignInResultCode.Success, null, "token", Guid.CreateVersion7())
-            );
-        _mockUserContextProvider
-            .Setup(p => p.GetUserContext())
-            .Returns(
-                new UserContext(
-                    new User
-                    {
-                        Id = Guid.CreateVersion7(),
-                        Username = "testuser",
-                        Email = "test@test.com",
-                    },
-                    null,
-                    "device-1",
-                    []
-                )
-            );
+            .ReturnsAsync(signInResult);
+        _mockPostAuthenticationFlowService
+            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()))
+            .ReturnsAsync(new RedirectResult(AppRoutes.Dashboard));
 
         var result = await _model.OnPostAsync();
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.Dashboard, redirect.Url);
-        _mockCookieManager.Verify(
-            c =>
-                c.SetAuthCookies(
-                    It.IsAny<IResponseCookies>(),
-                    It.IsAny<string>(),
-                    It.IsAny<Guid>(),
-                    It.IsAny<bool>(),
-                    It.IsAny<int>()
-                ),
+        _mockPostAuthenticationFlowService.Verify(
+            s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()),
             Times.Once
         );
     }

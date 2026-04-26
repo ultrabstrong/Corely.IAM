@@ -143,6 +143,10 @@ public class AuthenticationTokenMiddlewareTests
             httpContext.Response.Headers.SetCookie,
             c => c != null && c.Contains(AuthenticationConstants.AUTH_TOKEN_COOKIE)
         );
+        Assert.Contains(
+            httpContext.Response.Headers.SetCookie,
+            c => c != null && c.Contains(AuthenticationConstants.DEVICE_ID_COOKIE)
+        );
     }
 
     [Fact]
@@ -174,6 +178,10 @@ public class AuthenticationTokenMiddlewareTests
         Assert.Contains(
             httpContext.Response.Headers.SetCookie,
             c => c != null && c.Contains(AuthenticationConstants.AUTH_TOKEN_COOKIE)
+        );
+        Assert.Contains(
+            httpContext.Response.Headers.SetCookie,
+            c => c != null && c.Contains(AuthenticationConstants.DEVICE_ID_COOKIE)
         );
     }
 

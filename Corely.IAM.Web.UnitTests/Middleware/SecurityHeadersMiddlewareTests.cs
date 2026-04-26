@@ -21,8 +21,6 @@ public class SecurityHeadersMiddlewareTests
     [InlineData("X-Frame-Options", "DENY")]
     [InlineData("X-Content-Type-Options", "nosniff")]
     [InlineData("Referrer-Policy", "strict-origin-when-cross-origin")]
-    [InlineData("Cache-Control", "no-store, no-cache, must-revalidate")]
-    [InlineData("Pragma", "no-cache")]
     [InlineData("Cross-Origin-Opener-Policy", "same-origin")]
     [InlineData("Cross-Origin-Resource-Policy", "same-origin")]
     [InlineData("X-Permitted-Cross-Domain-Policies", "none")]
@@ -35,6 +33,38 @@ public class SecurityHeadersMiddlewareTests
 
         Assert.True(httpContext.Response.Headers.ContainsKey(headerName));
         Assert.Equal(expectedValue, httpContext.Response.Headers[headerName].ToString());
+    }
+
+    [Fact]
+    public async Task Invoke_DynamicRequest_SetsNoStoreCacheHeaders()
+    {
+        var middleware = CreateMiddleware();
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Path = "/signin";
+
+        await middleware.InvokeAsync(httpContext);
+
+        Assert.Equal(
+            "no-store, no-cache, must-revalidate",
+            httpContext.Response.Headers["Cache-Control"].ToString()
+        );
+        Assert.Equal("no-cache", httpContext.Response.Headers["Pragma"].ToString());
+    }
+
+    [Fact]
+    public async Task Invoke_StaticAssetRequest_SetsPublicCacheHeaders()
+    {
+        var middleware = CreateMiddleware();
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Path = "/lib/bootstrap/dist/css/bootstrap.min.css";
+
+        await middleware.InvokeAsync(httpContext);
+
+        Assert.Equal(
+            "public, max-age=86400",
+            httpContext.Response.Headers["Cache-Control"].ToString()
+        );
+        Assert.False(httpContext.Response.Headers.ContainsKey("Pragma"));
     }
 
     [Fact]

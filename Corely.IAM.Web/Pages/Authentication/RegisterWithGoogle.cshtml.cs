@@ -2,8 +2,8 @@ using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
-using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Security;
+using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
@@ -13,8 +13,8 @@ namespace Corely.IAM.Web.Pages.Authentication;
 public class RegisterWithGoogleModel(
     IRegistrationService registrationService,
     IAuthenticationService authenticationService,
-    IUserContextProvider userContextProvider,
     IAuthCookieManager authCookieManager,
+    IPostAuthenticationFlowService postAuthenticationFlowService,
     IOptions<SecurityOptions> securityOptions
 ) : PageModel
 {
@@ -76,39 +76,10 @@ public class RegisterWithGoogleModel(
             return Page();
         }
 
-        authCookieManager.SetAuthCookies(
-            Response.Cookies,
-            signInResult.AuthToken!,
-            signInResult.AuthTokenId!.Value,
-            Request.IsHttps,
+        return await postAuthenticationFlowService.CompleteSignInAsync(
+            HttpContext,
+            signInResult,
             _authTokenTtlSeconds
         );
-
-        var userContext = userContextProvider.GetUserContext();
-        if (userContext == null || userContext.AvailableAccounts.Count == 0)
-        {
-            return Redirect(AppRoutes.Dashboard);
-        }
-
-        if (userContext.AvailableAccounts.Count == 1)
-        {
-            var switchResult = await authenticationService.SwitchAccountAsync(
-                new SwitchAccountRequest(userContext.AvailableAccounts[0].Id)
-            );
-            if (switchResult.ResultCode == SignInResultCode.Success)
-            {
-                authCookieManager.SetAuthCookies(
-                    Response.Cookies,
-                    switchResult.AuthToken!,
-                    switchResult.AuthTokenId!.Value,
-                    Request.IsHttps,
-                    _authTokenTtlSeconds
-                );
-                return Redirect(AppRoutes.Dashboard);
-            }
-            return Redirect(AppRoutes.SelectAccount);
-        }
-
-        return Redirect(AppRoutes.SelectAccount);
     }
 }

@@ -157,4 +157,45 @@ public class BlazorUserContextAccessorTests
 
         Assert.Null(result);
     }
+
+    [Fact]
+    public async Task GetUserContext_ConcurrentCalls_ShareSingleAuthenticationAttempt()
+    {
+        var expectedContext = CreateTestUserContext();
+        var authStarted = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+        var releaseAuth = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+        UserContext? currentContext = null;
+        var authCalls = 0;
+
+        _mockUserContextProvider.Setup(p => p.GetUserContext()).Returns(() => currentContext);
+        SetupHttpContextWithCookie("valid-token");
+
+        _mockAuthenticationService
+            .Setup(s => s.AuthenticateWithTokenAsync("valid-token"))
+            .Returns(async () =>
+            {
+                Interlocked.Increment(ref authCalls);
+                authStarted.TrySetResult();
+                await releaseAuth.Task;
+                currentContext = expectedContext;
+                return UserAuthTokenValidationResultCode.Success;
+            });
+
+        var firstTask = _accessor.GetUserContextAsync();
+        await authStarted.Task;
+
+        var secondTask = _accessor.GetUserContextAsync();
+        releaseAuth.SetResult();
+
+        var firstResult = await firstTask;
+        var secondResult = await secondTask;
+
+        Assert.Same(expectedContext, firstResult);
+        Assert.Same(expectedContext, secondResult);
+        Assert.Equal(1, authCalls);
+    }
 }

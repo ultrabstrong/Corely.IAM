@@ -52,6 +52,16 @@ dotnet run
 
 The app launches at **https://localhost:7100**.
 
+### Password Recovery Demo
+
+`Corely.IAM.WebApp` includes a demo forgot-password flow for the reference app:
+
+- `/forgot-password` requests a recovery token through `IPasswordRecoveryService`
+- `/forgot-password-preview` acts as a fake outbox and shows the generated reset token/link
+- `/reset-password` demonstrates validating and consuming the recovery token
+
+The preview page is controlled by `DemoFeatures:EnablePasswordRecoveryPreview` in `appsettings.json` / `appsettings.template.json`. In a real host, the token would be delivered through email or another trusted channel instead of being displayed in the UI.
+
 ## Optional: Seq Logging
 
 The default config sends structured logs to [Seq](https://datalust.co/seq) at `http://localhost:5341`. If Seq isn't running, the app still works — console logging is unaffected. Remove the Seq entry from `Serilog:WriteTo` in `appsettings.json` to suppress connection warnings.

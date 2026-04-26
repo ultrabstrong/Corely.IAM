@@ -32,6 +32,7 @@ graph LR
 - **CRUDX permissions** — fine-grained Create/Read/Update/Delete/Execute per resource type
 - **Token-based authentication** — JWT with custom claims, no HttpContext dependency
 - **System context** — headless processes (Azure Functions, background services) can call APIs without user authentication
+- **Password recovery** — email-based recovery tokens for unauthenticated password reset
 - **Multi-factor authentication** — TOTP (authenticator apps) with recovery codes
 - **Google Sign-In** — link Google accounts as an alternative auth method
 - **Invitation system** — token-based onboarding with expiry and revocation
@@ -52,6 +53,7 @@ graph LR
     - [Retrieval](services/retrieval.md)
     - [Modification](services/modification.md)
     - [Authentication Service](services/authentication-service.md)
+    - [Password Recovery](services/password-recovery.md)
 - [Domains](domains/index.md)
     - [Accounts](domains/accounts.md)
     - [Users](domains/users.md)
@@ -59,6 +61,7 @@ graph LR
     - [Roles](domains/roles.md)
     - [Permissions](domains/permissions.md)
     - [Basic Auths](domains/basic-auths.md)
+    - [Password Recoveries](domains/password-recoveries.md)
     - [Invitations](domains/invitations.md)
     - [TOTP Auth](domains/totp-auths.md)
     - [Google Auth](domains/google-auths.md)

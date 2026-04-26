@@ -1,6 +1,7 @@
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM;
 using Corely.IAM.Web.Extensions;
+using Corely.IAM.WebApp;
 using Corely.IAM.WebApp.Components;
 using Corely.IAM.WebApp.DataAccess;
 using Corely.IAM.WebApp.Security;
@@ -19,7 +20,13 @@ builder.Host.UseSerilog();
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddIAMWeb();
+builder.Services.Configure<DemoFeaturesOptions>(
+    builder.Configuration.GetSection(DemoFeaturesOptions.NAME)
+);
+builder.Services.AddIAMWeb(options =>
+{
+    options.ForgotPasswordPath = WebAppRoutes.ForgotPassword;
+});
 builder.Services.AddIAMWebBlazor();
 
 var securityConfigProvider = new SecurityConfigurationProvider(builder.Configuration);

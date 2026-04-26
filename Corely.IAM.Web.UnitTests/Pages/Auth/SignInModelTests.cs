@@ -2,6 +2,7 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Pages.Authentication;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
@@ -31,9 +32,25 @@ public class SignInModelTests
             _mockAuthService.Object,
             _mockCookieManager.Object,
             _mockPostAuthenticationFlowService.Object,
-            Options.Create(new SecurityOptions())
+            Options.Create(new SecurityOptions()),
+            Options.Create(new IAMWebOptions())
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();
+    }
+
+    [Fact]
+    public void Constructor_SetsForgotPasswordPath_FromOptions()
+    {
+        const string forgotPasswordPath = "/forgot-password";
+        var model = new SignInModel(
+            _mockAuthService.Object,
+            _mockCookieManager.Object,
+            _mockPostAuthenticationFlowService.Object,
+            Options.Create(new SecurityOptions()),
+            Options.Create(new IAMWebOptions { ForgotPasswordPath = forgotPasswordPath })
+        );
+
+        Assert.Equal(forgotPasswordPath, model.ForgotPasswordPath);
     }
 
     [Fact]

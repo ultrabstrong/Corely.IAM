@@ -34,6 +34,13 @@
         <button type="submit" class="btn btn-primary w-100">Sign In</button>
     </form>
 
+    @if (!string.IsNullOrWhiteSpace(Model.ForgotPasswordPath))
+    {
+        <div class="mt-3 text-center">
+            <a href="@Model.ForgotPasswordPath">Forgot password?</a>
+        </div>
+    }
+
     @if (!string.IsNullOrWhiteSpace(Model.GoogleClientId))
     {
         <hr class="my-3" />

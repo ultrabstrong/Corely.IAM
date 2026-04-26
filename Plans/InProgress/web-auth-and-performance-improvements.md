@@ -64,4 +64,5 @@ The latest review of `Corely.IAM` and `Corely.IAM.Web` found a short list of rea
 - Item 5 reopened:
   - The current token-revocation batching implementation was not accepted and has been removed from the staged set.
   - Follow-up on item 5 is deferred until there is a better option that does not require injecting `IamDbContext` directly.
+  - `PasswordRecoveryProcessor.InvalidatePendingRecoveriesAsync()` uses the same list-and-update-each-row pattern as auth-token bulk revocation; it is a lower-priority path, but it should be treated as another candidate if a cleaner repo-level bulk update capability is introduced later.
   - Items 1-4 remain complete; this plan stays in progress until item 5 is either redesigned or dropped.

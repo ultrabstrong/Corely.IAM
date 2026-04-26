@@ -408,6 +408,42 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                     b.ToTable("MfaChallenges", (string)null);
                 });
 
+            modelBuilder.Entity("Corely.IAM.PasswordRecoveries.Entities.PasswordRecoveryEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("DATETIME2")
+                        .HasDefaultValueSql("(SYSUTCDATETIME())");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("InvalidatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SecretHash")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresUtc");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordRecoverys", (string)null);
+                });
+
             modelBuilder.Entity("Corely.IAM.Permissions.Entities.PermissionEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -868,6 +904,17 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                 });
 
             modelBuilder.Entity("Corely.IAM.MfaChallenges.Entities.MfaChallengeEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Corely.IAM.PasswordRecoveries.Entities.PasswordRecoveryEntity", b =>
                 {
                     b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
                         .WithMany()

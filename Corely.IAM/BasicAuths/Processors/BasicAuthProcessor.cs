@@ -4,6 +4,7 @@ using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Mappers;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.GoogleAuths.Entities;
+using Corely.IAM.Security.Mappers;
 using Corely.IAM.Validators;
 using Corely.Security.Hashing.Factories;
 using Corely.Security.PasswordValidation.Providers;
@@ -122,10 +123,9 @@ internal class BasicAuthProcessor(
             );
         }
 
-        var basicAuthEntity = basicAuth.ToEntity();
-
         _logger.LogDebug("Updating basic auth for UserId {UserId}", request.UserId);
-        await _basicAuthRepo.UpdateAsync(basicAuthEntity);
+        existingAuth.Password = basicAuth.Password.ToHashString()!;
+        await _basicAuthRepo.UpdateAsync(existingAuth);
         return new UpdateBasicAuthResult(UpdateBasicAuthResultCode.Success, string.Empty);
     }
 

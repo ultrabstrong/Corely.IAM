@@ -6,6 +6,8 @@ using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.GoogleAuths.Providers;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Invitations.Processors;
+using Corely.IAM.PasswordRecoveries.Constants;
+using Corely.IAM.PasswordRecoveries.Processors;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Roles.Processors;
@@ -22,6 +24,7 @@ using Corely.Security.Encryption.Factories;
 using Corely.Security.Hashing.Factories;
 using Corely.Security.PasswordValidation.Models;
 using Corely.Security.PasswordValidation.Providers;
+using Corely.Security.Secrets;
 using Corely.Security.Signature.Factories;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
@@ -81,6 +84,9 @@ public static class ServiceRegistrationExtensions
         serviceCollection.AddSingleton<IHashProviderFactory, HashProviderFactory>(
             _ => new HashProviderFactory(options.HashCode)
         );
+        serviceCollection.AddSingleton<ISecretProvider>(_ => new RandomSecretProvider(
+            PasswordRecoveryConstants.TOKEN_SECRET_LENGTH
+        ));
 
         serviceCollection.AddSingleton<ISecurityProvider, SecurityProvider>();
         serviceCollection.AddScoped<IPasswordValidationProvider, PasswordValidationProvider>();
@@ -148,6 +154,12 @@ public static class ServiceRegistrationExtensions
         serviceCollection.AddScoped<IInvitationService, InvitationService>();
         serviceCollection.Decorate<IInvitationService, InvitationServiceTelemetryDecorator>();
 
+        serviceCollection.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
+        serviceCollection.Decorate<
+            IPasswordRecoveryService,
+            PasswordRecoveryServiceTelemetryDecorator
+        >();
+
         serviceCollection.AddScoped<IUserOwnershipProcessor, UserOwnershipProcessor>();
 
         serviceCollection.AddScoped<IAccountProcessor, AccountProcessor>();
@@ -158,7 +170,10 @@ public static class ServiceRegistrationExtensions
         serviceCollection.Decorate<IUserProcessor, UserProcessorAuthorizationDecorator>();
         serviceCollection.Decorate<IUserProcessor, UserProcessorTelemetryDecorator>();
 
-        serviceCollection.AddScoped<IBasicAuthProcessor, BasicAuthProcessor>();
+        serviceCollection.AddScoped<BasicAuthProcessor>();
+        serviceCollection.AddScoped<IBasicAuthProcessor>(sp =>
+            sp.GetRequiredService<BasicAuthProcessor>()
+        );
         serviceCollection.Decorate<IBasicAuthProcessor, BasicAuthProcessorAuthorizationDecorator>();
         serviceCollection.Decorate<IBasicAuthProcessor, BasicAuthProcessorTelemetryDecorator>();
 
@@ -183,6 +198,12 @@ public static class ServiceRegistrationExtensions
             InvitationProcessorAuthorizationDecorator
         >();
         serviceCollection.Decorate<IInvitationProcessor, InvitationProcessorTelemetryDecorator>();
+
+        serviceCollection.AddScoped<IPasswordRecoveryProcessor, PasswordRecoveryProcessor>();
+        serviceCollection.Decorate<
+            IPasswordRecoveryProcessor,
+            PasswordRecoveryProcessorTelemetryDecorator
+        >();
 
         serviceCollection.AddSingleton<ITotpProvider, TotpProvider>();
         serviceCollection.AddScoped<ITotpAuthProcessor, TotpAuthProcessor>();

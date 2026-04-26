@@ -1,3 +1,4 @@
+using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -8,10 +9,14 @@ namespace Corely.IAM.Web.Extensions;
 
 public static class IamWebServiceExtensions
 {
-    public static IServiceCollection AddIAMWeb(this IServiceCollection services)
+    public static IServiceCollection AddIAMWeb(
+        this IServiceCollection services,
+        Action<IAMWebOptions>? configure = null
+    )
     {
         services.AddRazorPages();
         services.AddHttpContextAccessor();
+        services.Configure(configure ?? (_ => { }));
 
         services.AddSingleton<IAuthCookieManager, AuthCookieManager>();
         services.AddSingleton<IUserContextClaimsBuilder, UserContextClaimsBuilder>();

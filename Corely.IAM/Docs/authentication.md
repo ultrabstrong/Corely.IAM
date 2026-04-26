@@ -10,6 +10,7 @@ JWT-based authentication with custom claims, device tracking, and multi-account 
 - **Device tracking** — tokens bound to device IDs for session management
 - **Login metrics** — failed attempt counting and lockout cooldown
 - **Bulk sign-out** — revoke all tokens for a user across all devices
+- **Password recovery** — email-based token flow for unauthenticated password reset
 - **MFA (TOTP)** — optional second factor via authenticator apps (see [mfa.md](mfa.md))
 - **Google Sign-In** — alternative auth method via Google ID tokens (see [google-signin.md](google-signin.md))
 
@@ -55,6 +56,17 @@ await authenticationService.SignOutAllAsync();
 ```
 
 `SignOutAsync` revokes the specific token. `SignOutAllAsync` revokes all active tokens for the user across all devices.
+
+## Password Recovery
+
+Forgot-password flows are handled by `IPasswordRecoveryService`, not `IAuthenticationService`:
+
+```csharp
+var requestResult = await passwordRecoveryService.RequestPasswordRecoveryAsync(
+    new RequestPasswordRecoveryRequest("user@example.com"));
+```
+
+The host app delivers the returned token through its own trusted channel. A successful reset updates or creates the user's basic-auth credential, revokes all active auth tokens, and clears lockout state. See [services/password-recovery.md](services/password-recovery.md) for the full flow.
 
 ## Token Validation
 

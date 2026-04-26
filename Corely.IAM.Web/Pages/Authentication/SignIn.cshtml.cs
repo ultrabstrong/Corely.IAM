@@ -1,6 +1,7 @@
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -13,12 +14,14 @@ public class SignInModel(
     IAuthenticationService authenticationService,
     IAuthCookieManager authCookieManager,
     IPostAuthenticationFlowService postAuthenticationFlowService,
-    IOptions<SecurityOptions> securityOptions
+    IOptions<SecurityOptions> securityOptions,
+    IOptions<IAMWebOptions> iamWebOptions
 ) : PageModel
 {
     private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
 
     public string? GoogleClientId { get; } = securityOptions.Value.GoogleClientId;
+    public string? ForgotPasswordPath { get; } = iamWebOptions.Value.ForgotPasswordPath;
 
     public string? GoogleCallbackUrl { get; set; }
 

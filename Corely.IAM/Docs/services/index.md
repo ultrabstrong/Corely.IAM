@@ -1,6 +1,6 @@
 # Services
 
-Eight public services form the API surface of Corely.IAM. All are registered as scoped and wrapped with telemetry decorators. Service-layer authorization decorators remain only on the services that still need context gating before the implementation runs.
+Nine public services form the API surface of Corely.IAM. All are registered as scoped and wrapped with telemetry decorators. Service-layer authorization decorators remain only on the services that still need context gating before the implementation runs.
 
 ## Service Overview
 
@@ -10,7 +10,8 @@ Eight public services form the API surface of Corely.IAM. All are registered as 
 | `IDeregistrationService` | Delete entities, remove relationships | 11 |
 | `IRetrievalService` | Query entities with filtering, ordering, pagination | 16 |
 | `IModificationService` | Update entity properties | 4 |
-| `IAuthenticationService` | Sign in, sign out, account switching | 4 |
+| `IAuthenticationService` | Sign in, sign out, account switching | 6 |
+| `IPasswordRecoveryService` | Request recovery, validate tokens, reset passwords | 3 |
 | `IMfaService` | TOTP setup, confirmation, status, recovery codes | 5 |
 | `IGoogleAuthService` | Link/unlink Google auth, check auth methods | 3 |
 | `IInvitationService` | Create, accept, revoke, and list invitations | 4 |
@@ -25,7 +26,7 @@ TelemetryDecorator → [AuthorizationDecorator] → Service Implementation
 
 - **Authorization decorators** validate user/account context where a service still dereferences ambient context before handing off
 - **Telemetry decorators** log method entry/exit and timing
-- **`IAuthenticationService`**, `IRetrievalService`, `IModificationService`, and `IInvitationService` currently run without a service-layer authorization decorator because their permission/context enforcement now lives lower in the stack where the real domain work happens
+- **`IAuthenticationService`**, `IPasswordRecoveryService`, `IRetrievalService`, `IModificationService`, and `IInvitationService` currently run without a service-layer authorization decorator because their permission/context enforcement now lives lower in the stack where the real domain work happens
 
 Authorization decorators use `IsNonSystemUserContext()` for "self" operations (MFA, password, Google auth) that require a real user, and `HasUserContext()` / `HasAccountContext()` for targeting operations that system context can perform.
 
@@ -61,3 +62,4 @@ if (result.ResultCode == RegisterUserResultCode.Success)
 - [Retrieval](retrieval.md)
 - [Modification](modification.md)
 - [Authentication Service](authentication-service.md)
+- [Password Recovery](password-recovery.md)

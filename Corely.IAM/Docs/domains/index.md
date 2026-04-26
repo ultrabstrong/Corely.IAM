@@ -14,6 +14,7 @@ graph TD
     U -->|M:M| G
     U -->|M:M| R
     U -->|1:1| B[BasicAuth]
+    U -->|1:M| PR[PasswordRecovery]
     G -->|M:M| R
     R -->|M:M| P
 
@@ -56,4 +57,5 @@ Domain/
 - [Roles](roles.md)
 - [Permissions](permissions.md)
 - [Basic Auths](basic-auths.md)
+- [Password Recoveries](password-recoveries.md)
 - [Invitations](invitations.md)

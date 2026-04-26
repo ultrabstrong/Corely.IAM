@@ -80,9 +80,19 @@ public class BasicAuthProcessorTests
 
         var updateRequest = new UpdateBasicAuthRequest(createRequest.UserId, "NewPassword1!");
         var result = await _basicAuthProcessor.UpdateBasicAuthAsync(updateRequest);
+        var verifyUpdated = await _basicAuthProcessor.VerifyBasicAuthAsync(
+            new VerifyBasicAuthRequest(createRequest.UserId, "NewPassword1!")
+        );
+        var verifyOriginal = await _basicAuthProcessor.VerifyBasicAuthAsync(
+            new VerifyBasicAuthRequest(createRequest.UserId, VALID_PASSWORD)
+        );
 
         Assert.NotNull(result);
         Assert.Equal(UpdateBasicAuthResultCode.Success, result.ResultCode);
+        Assert.Equal(VerifyBasicAuthResultCode.Success, verifyUpdated.ResultCode);
+        Assert.True(verifyUpdated.IsValid);
+        Assert.Equal(VerifyBasicAuthResultCode.Success, verifyOriginal.ResultCode);
+        Assert.False(verifyOriginal.IsValid);
     }
 
     [Fact]

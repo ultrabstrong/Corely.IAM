@@ -41,7 +41,17 @@ dotnet run -- db create
 - `config init` creates a local settings file for the migration CLI (provider + connection string)
 - `db create` creates the database and applies all pending migrations
 
-**4. Run the app**
+**4. Seed the demo environment (optional)**
+
+From the WebApp folder:
+
+```powershell
+.\DemoSetup\SeedWebAppDemo.ps1
+```
+
+This seeds the WebApp's configured IAM database with the demo users/accounts used for local dogfooding. Demo users, including `admin` and `alice.johnson`, use the password `admin`.
+
+**5. Run the app**
 
 Set `Corely.IAM.WebApp` as the startup project in Visual Studio and press F5, or:
 

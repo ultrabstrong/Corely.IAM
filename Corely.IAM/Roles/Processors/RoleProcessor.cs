@@ -439,7 +439,7 @@ internal class RoleProcessor(
     {
         var roleEntity = await _roleRepo.GetAsync(
             r => r.Id == roleId,
-            include: q => q.Include(r => r.Users).Include(r => r.Groups)
+            include: q => q.Include(r => r.Users).Include(r => r.Groups).Include(r => r.Permissions)
         );
         if (roleEntity == null)
         {
@@ -463,9 +463,12 @@ internal class RoleProcessor(
             );
         }
 
-        // Clear join tables (NoAction side - must do manually for SQL Server compatibility)
+        // Clear join tables (NoAction side - must do manually for SQL Server compatibility).
+        // Permissions belongs here too: RolePermission is NoAction on both sides, so leaving it
+        // populated orphans the join rows and the delete fails on a foreign key violation.
         roleEntity.Users?.Clear();
         roleEntity.Groups?.Clear();
+        roleEntity.Permissions?.Clear();
 
         await _roleRepo.DeleteAsync(roleEntity);
 

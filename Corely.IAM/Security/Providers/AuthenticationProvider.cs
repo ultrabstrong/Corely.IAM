@@ -288,6 +288,7 @@ internal class AuthenticationProvider(
             ValidAudience = UserConstants.JWT_AUDIENCE,
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero,
+            LifetimeValidator = IsWithinLifetime,
         };
 
         try
@@ -576,6 +577,23 @@ internal class AuthenticationProvider(
         );
     }
 
+    /// <summary>
+    /// Token lifetime is checked against the injected <see cref="TimeProvider"/> rather than the
+    /// handler's default, which reads <c>DateTime.UtcNow</c> directly. Without this the clock
+    /// abstraction is bypassed for the one check that is entirely about time, leaving expiry and
+    /// renewal boundaries unassertable in tests.
+    /// </summary>
+    private bool IsWithinLifetime(
+        DateTime? notBefore,
+        DateTime? expires,
+        SecurityToken? securityToken,
+        TokenValidationParameters validationParameters
+    )
+    {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        return (notBefore == null || notBefore <= now) && expires != null && expires > now;
+    }
+
     private bool ValidateJwtToken(
         string authToken,
         UserAsymmetricKeyEntity signatureKey,
@@ -598,6 +616,7 @@ internal class AuthenticationProvider(
             ValidAudience = UserConstants.JWT_AUDIENCE,
             ValidateLifetime = validateLifetime,
             ClockSkew = TimeSpan.Zero,
+            LifetimeValidator = validateLifetime ? IsWithinLifetime : null,
         };
 
         try

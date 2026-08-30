@@ -34,7 +34,9 @@
   <Project Path="Corely.IAM.DataAccessMigrations.MsSql/Corely.IAM.DataAccessMigrations.MsSql.csproj" />
   <Project Path="Corely.IAM.DataAccessMigrations.MySql/Corely.IAM.DataAccessMigrations.MySql.csproj" />
   <Project Path="Corely.IAM.DevTools/Corely.IAM.DevTools.csproj" />
+  <Project Path="Corely.IAM.IntegrationTests/Corely.IAM.IntegrationTests.csproj" />
   <Project Path="Corely.IAM.UnitTests/Corely.IAM.UnitTests.csproj" />
+  <Project Path="Corely.IAM.Web.FunctionalTests/Corely.IAM.Web.FunctionalTests.csproj" />
   <Project Path="Corely.IAM.Web.UnitTests/Corely.IAM.Web.UnitTests.csproj" />
   <Project Path="Corely.IAM.Web/Corely.IAM.Web.csproj" />
   <Project Path="Corely.IAM.WebApp/Corely.IAM.WebApp.csproj" />

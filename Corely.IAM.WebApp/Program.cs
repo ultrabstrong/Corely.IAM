@@ -75,3 +75,6 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+// Exposed so Corely.IAM.Web.FunctionalTests can boot this host with WebApplicationFactory.
+public partial class Program { }

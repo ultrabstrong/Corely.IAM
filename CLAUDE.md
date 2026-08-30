@@ -18,16 +18,101 @@ dotnet build Corely.IAM.slnx
 
 ## Testing
 
+### Tiers
+
+Each tier owns exactly one seam. Full reasoning, the per-item test case inventory, and the
+findings from building it live in `Plans/Completed/testing-strategy.md`.
+
+| Tier | Owns | Substrate | Project |
+|------|------|-----------|---------|
+| Unit | One class's logic, dependencies substituted | No database | `Corely.IAM.UnitTests`, `Corely.IAM.Web.UnitTests` |
+| Integration | Persistence — EF translation, schema, provider behavior | SQLite / Testcontainers | `Corely.IAM.IntegrationTests` |
+| Functional | HTTP — middleware, cookies, redirects, ASP.NET pipeline | `WebApplicationFactory` in-process | `Corely.IAM.Web.FunctionalTests` |
+| E2E | Browser — JS, real cookie enforcement, external redirects | Playwright | *deliberately none* |
+
+### Where does a new test go?
+
+Walk down and stop at the **first** tier that can prove the case:
+
+1. Provable with no database and no host? → **Unit**
+2. Needs real SQL translation, real schema, or provider behavior? → **Integration**
+3. Needs the HTTP pipeline — middleware, cookies, redirects, antiforgery? → **Functional**
+4. Needs a real browser — JS, actual cookie enforcement, external OAuth? → **E2E**
+
+**A case proven at tier N is never re-proven at tier N+1.** Higher tiers exercise the seam they
+own, not logic that already passed below. A functional test asserting a permission calculation is
+in the wrong tier — it should assert only that the pipeline surfaced the decision.
+
+If a case seems to fit two tiers, it is usually two cases. Split it.
+
+**`MockRepo` stays for the unit tier.** It is a hand-written re-implementation of EF semantics and
+therefore can drift, but the integration tier now covers everything it cannot model — translation,
+constraints, join-entity delete behavior, provider differences. Replacing it wholesale would slow
+the unit suite by roughly 40x per test (measured: 1365 unit tests in ~4s against the mock; 66
+integration tests in ~8s against SQLite). Put behavior that depends on the database in the
+integration tier rather than trying to make the mock more faithful.
+
+E2E is deliberately empty. Do not add Playwright unless the gap needs JS/Blazor, verification that
+a browser *enforces* cookie attributes (rather than that the app *sets* them), or an external OAuth
+redirect. Otherwise the answer is Functional.
+
+### Running tests
+
 ```powershell
-# Run all tests
+# Everything (solution-wide; this is what RebuildAndTest.ps1 runs)
+dotnet test
+
+# Unit tier
 dotnet test Corely.IAM.UnitTests
+dotnet test Corely.IAM.Web.UnitTests
 
-# Run a single test class
+# Integration tier — real EF on SQLite. No external dependencies.
+dotnet test Corely.IAM.IntegrationTests
+
+# Functional tier — boots the real WebApp in-process on SQLite. No external dependencies.
+dotnet test Corely.IAM.Web.FunctionalTests
+
+# Single test class / method
 dotnet test --filter "UserProcessorTests" Corely.IAM.UnitTests
-
-# Run a single test method
 dotnet test --filter "UserProcessorTests.CreateUserAsync_WithValidRequest_ReturnsSuccess" Corely.IAM.UnitTests
 ```
+
+**Nothing above needs a running database, Docker, or any manual setup.** The integration and
+functional tiers create their own SQLite databases, seed through the real registration service, and
+drive a controllable clock — a seven-day session expiry is asserted in milliseconds, never by
+sleeping.
+
+### Provider matrix (opt-in, needs Docker)
+
+The three shipped providers are exercised by Testcontainers. These are **skipped by default**
+because spinning three database containers takes minutes:
+
+```powershell
+$env:CORELY_RUN_CONTAINER_TESTS = "1"
+dotnet test Corely.IAM.IntegrationTests --filter "ProviderMatrix"
+```
+
+If Docker is not running, start it — `Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"`,
+then wait for `docker info` to succeed. Docker being down is never a reason to report a behavior
+as unverifiable; it is a reason to start Docker.
+
+**When a tier is added, its run command goes here in the same change** — a tier that exists but is
+undocumented is one a future session will not find.
+
+### Local verification capabilities
+
+Recorded so no session claims a behavior "cannot be verified locally" without checking. All of
+this is directly reachable and requires no manual setup by the user:
+
+- **Databases** — SQLite in-memory, LocalDB, a local SQL Server instance, and any provider via
+  Docker.
+- **Docker** — not always running, but **startable on request**. Not a blocker.
+- **The WebApp** — launchable locally (`dotnet run` in `Corely.IAM.WebApp`), with a demo dataset
+  defined in `Corely.IAM.WebApp/DemoSetup/SeedWebAppDemo.ps1`.
+- **Browser automation** — can drive the running app: sign in, read cookies, inspect pages.
+- **Direct database access** — rows can be read and written to arrange or verify state.
+
+Before saying something cannot be tested or verified, check it against this list.
 
 ## Code Formatting
 

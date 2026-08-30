@@ -10,7 +10,7 @@
     <PackageProjectUrl>https://github.com/ultrabstrong/Corely.IAM</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn></NoWarn>
@@ -20,6 +20,8 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Corely.IAM.UnitTests" />
+    <InternalsVisibleTo Include="Corely.IAM.Web.FunctionalTests" />
+    <InternalsVisibleTo Include="Corely.IAM.IntegrationTests" />
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     <InternalsVisibleTo Include="Corely.IAM.DataAccessMigrations.Cli" />
     <InternalsVisibleTo Include="Corely.IAM.DataAccessMigrations.MySql" />

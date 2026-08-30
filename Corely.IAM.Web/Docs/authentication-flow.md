@@ -91,14 +91,15 @@ All auth cookies use `Path=/`. The `device_id` cookie is created on first visit 
 
 1. Reads `auth_token` cookie
 2. Calls `IAuthenticationService.AuthenticateWithTokenAsync(token)` to validate the JWT
-3. On success: builds `ClaimsPrincipal` via `IUserContextClaimsBuilder` and sets `HttpContext.User`
-4. On failure: clears all auth cookies
+3. If validation fails but the bounded session is still renewable, calls `IAuthenticationService.RenewAuthTokenAsync(...)`, rotates the tracked token, and updates the auth cookies
+4. On success: builds `ClaimsPrincipal` via `IUserContextClaimsBuilder` and sets `HttpContext.User`
+5. On irrecoverable failure: clears all auth cookies
 
 This happens before ASP.NET Core's `UseAuthentication()` and `UseAuthorization()` middleware.
 
 ## Notes
 
 - Pre-auth pages use the `_AuthLayout` layout (centered card with tab navigation between Sign In and Sign Up)
-- The `auth_token` cookie TTL comes from `SecurityOptions.AuthTokenTtlSeconds` (default: 3600)
+- The auth cookies use `SecurityOptions.AuthSessionTtlSeconds` so the browser can present an expired access token for renewal inside the bounded session window
 - If a user navigates to `/signin` while already authenticated, they are redirected to the dashboard
 - `GetOrCreateDeviceId()` creates a new device ID cookie if one doesn't exist, using a v7 UUID

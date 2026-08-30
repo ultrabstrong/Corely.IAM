@@ -23,7 +23,7 @@ public class SelectAccountModel(
 {
     private const int PageSize = 10;
 
-    private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
+    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
 
     public List<Account> Accounts { get; set; } = [];
 
@@ -69,7 +69,7 @@ public class SelectAccountModel(
             result.AuthToken!,
             result.AuthTokenId!.Value,
             Request.IsHttps,
-            _authTokenTtlSeconds
+            _authSessionTtlSeconds
         );
 
         return Redirect(AppRoutes.Dashboard);

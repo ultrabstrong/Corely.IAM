@@ -16,7 +16,7 @@ public class GoogleCallbackModel(
     IOptions<SecurityOptions> securityOptions
 ) : PageModel
 {
-    private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
+    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
 
     public string? ErrorMessage { get; set; }
 
@@ -65,7 +65,7 @@ public class GoogleCallbackModel(
         return await postAuthenticationFlowService.CompleteSignInAsync(
             HttpContext,
             result,
-            _authTokenTtlSeconds
+            _authSessionTtlSeconds
         );
     }
 }

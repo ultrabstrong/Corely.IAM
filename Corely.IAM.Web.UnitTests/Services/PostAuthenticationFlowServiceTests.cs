@@ -7,12 +7,15 @@ using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SignInResultModel = Corely.IAM.Models.SignInResult;
 
 namespace Corely.IAM.Web.UnitTests.Services;
 
 public class PostAuthenticationFlowServiceTests
 {
+    private const int AUTH_SESSION_TTL_SECONDS = 604800;
+
     private readonly Mock<IAuthenticationService> _mockAuthenticationService = new();
     private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly Mock<IAuthCookieManager> _mockAuthCookieManager = new();
@@ -23,7 +26,13 @@ public class PostAuthenticationFlowServiceTests
         _service = new PostAuthenticationFlowService(
             _mockAuthenticationService.Object,
             _mockUserContextProvider.Object,
-            _mockAuthCookieManager.Object
+            _mockAuthCookieManager.Object,
+            Options.Create(
+                new Corely.IAM.Security.Models.SecurityOptions
+                {
+                    AuthSessionTtlSeconds = AUTH_SESSION_TTL_SECONDS,
+                }
+            )
         );
     }
 
@@ -56,7 +65,7 @@ public class PostAuthenticationFlowServiceTests
                     signInResult.AuthToken!,
                     signInResult.AuthTokenId!.Value,
                     false,
-                    3600
+                    AUTH_SESSION_TTL_SECONDS
                 ),
             Times.Once
         );
@@ -129,7 +138,7 @@ public class PostAuthenticationFlowServiceTests
                     It.IsAny<string>(),
                     It.IsAny<Guid>(),
                     false,
-                    3600
+                    AUTH_SESSION_TTL_SECONDS
                 ),
             Times.Exactly(2)
         );
@@ -173,7 +182,7 @@ public class PostAuthenticationFlowServiceTests
                     signInResult.AuthToken!,
                     signInResult.AuthTokenId!.Value,
                     false,
-                    3600
+                    AUTH_SESSION_TTL_SECONDS
                 ),
             Times.Once
         );

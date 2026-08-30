@@ -8,6 +8,7 @@ public interface IAuthenticationService
     Task<SignInResult> SignInAsync(SignInRequest request);
     Task<SignInResult> SignInWithGoogleAsync(SignInWithGoogleRequest request);
     Task<SignInResult> VerifyMfaAsync(VerifyMfaRequest request);
+    Task<RenewAuthTokenResult> RenewAuthTokenAsync(RenewAuthTokenRequest request);
     Task<SignInResult> SwitchAccountAsync(SwitchAccountRequest request);
     Task<RetrieveListResult<UserSession>> ListSessionsAsync();
     Task<ModifyResult> RevokeSessionAsync(RevokeSessionRequest request);

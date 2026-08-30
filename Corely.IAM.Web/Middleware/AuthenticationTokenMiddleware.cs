@@ -1,3 +1,5 @@
+using Corely.IAM.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -5,6 +7,7 @@ using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Web.Middleware;
 
@@ -12,9 +15,12 @@ public class AuthenticationTokenMiddleware(
     RequestDelegate next,
     ILogger<AuthenticationTokenMiddleware> logger,
     IAuthCookieManager authCookieManager,
-    IUserContextClaimsBuilder userContextClaimsBuilder
+    IUserContextClaimsBuilder userContextClaimsBuilder,
+    IOptions<SecurityOptions> securityOptions
 )
 {
+    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
+
     public async Task InvokeAsync(
         HttpContext context,
         IAuthenticationService authenticationService,
@@ -44,19 +50,40 @@ public class AuthenticationTokenMiddleware(
         try
         {
             var result = await authenticationService.AuthenticateWithTokenAsync(token);
-            if (result != UserAuthTokenValidationResultCode.Success)
+            if (result == UserAuthTokenValidationResultCode.Success)
             {
-                logger.LogDebug(
-                    "Token validation failed with {ResultCode}, clearing cookies",
-                    result
-                );
-                DeleteAuthStateCookies(context.Response.Cookies);
+                SetUserPrincipal(context, userContextProvider);
                 return;
             }
 
-            var userContext = userContextProvider.GetUserContext();
-            if (userContext != null)
-                context.User = userContextClaimsBuilder.BuildPrincipal(userContext);
+            logger.LogDebug(
+                "Token validation failed with {ResultCode}, attempting renewal",
+                result
+            );
+
+            var renewResult = await authenticationService.RenewAuthTokenAsync(new(token));
+            if (
+                renewResult.ResultCode == RenewAuthTokenResultCode.Success
+                && !string.IsNullOrWhiteSpace(renewResult.AuthToken)
+                && renewResult.AuthTokenId.HasValue
+            )
+            {
+                authCookieManager.SetAuthCookies(
+                    context.Response.Cookies,
+                    renewResult.AuthToken,
+                    renewResult.AuthTokenId.Value,
+                    context.Request.IsHttps,
+                    _authSessionTtlSeconds
+                );
+                SetUserPrincipal(context, userContextProvider);
+                return;
+            }
+
+            logger.LogDebug(
+                "Token renewal failed with {ResultCode}, clearing cookies",
+                renewResult.ResultCode
+            );
+            DeleteAuthStateCookies(context.Response.Cookies);
         }
         catch (Exception ex)
         {
@@ -69,5 +96,12 @@ public class AuthenticationTokenMiddleware(
     {
         authCookieManager.DeleteAuthCookies(cookies);
         authCookieManager.DeleteDeviceIdCookie(cookies);
+    }
+
+    private void SetUserPrincipal(HttpContext context, IUserContextProvider userContextProvider)
+    {
+        var userContext = userContextProvider.GetUserContext();
+        if (userContext != null)
+            context.User = userContextClaimsBuilder.BuildPrincipal(userContext);
     }
 }

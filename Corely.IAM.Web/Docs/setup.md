@@ -71,7 +71,8 @@ CSS is auto-served from `_content/Corely.IAM.Web/`. Reference it in your layout:
     "SystemKey": "your-hex-key-from-devtools"
   },
   "SecurityOptions": {
-    "AuthTokenTtlSeconds": 3600
+    "AuthTokenTtlSeconds": 3600,
+    "AuthSessionTtlSeconds": 604800
   },
   "Database": {
     "Provider": "mssql"

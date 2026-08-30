@@ -105,9 +105,10 @@ Validation checks: JWT format, required claims, user existence, token not revoke
 | `sub` | `Guid` | User ID |
 | `jti` | `Guid` | Token ID (for revocation) |
 | `iat` | `long` | Unix timestamp of issuance |
-| `deviceId` | `string` | Device identifier |
-| `accountId` | `Guid[]` | All accounts the user can access (multiple claims) |
-| `signedInAccountId` | `Guid` | Currently active account |
+| `session_started_at` | `long` | Unix timestamp of the session start used to enforce the maximum session lifetime |
+| `device_id` | `string` | Device identifier |
+| `account_id` | `Guid[]` | All accounts the user can access (multiple claims) |
+| `signed_in_account_id` | `Guid` | Currently active account |
 
 ## Login Metrics
 
@@ -118,12 +119,14 @@ Failed login attempts are tracked per user. After `MaxLoginAttempts` consecutive
 | `MaxLoginAttempts` | 5 | Consecutive failures before lockout |
 | `LockoutCooldownSeconds` | 900 | Lockout duration (15 minutes) |
 | `AuthTokenTtlSeconds` | 3600 | Token lifetime (1 hour) |
+| `AuthSessionTtlSeconds` | 604800 | Maximum renewable session lifetime (7 days) |
 
 Configure in `appsettings.json` under the `SecurityOptions` section.
 
 ## Notes
 
 - Tokens are signed with per-user asymmetric keys (not a shared secret)
+- Renewals rotate tracked tokens while preserving the original session start so sessions stay bounded
 - The system key encrypts stored private keys — it is never embedded in tokens
 - `IUserContextSetter` is `internal` — only `AuthenticationService` and test infrastructure can set context directly
 - If using `Corely.IAM.Web`, the `AuthenticationTokenMiddleware` handles token validation and context setup automatically

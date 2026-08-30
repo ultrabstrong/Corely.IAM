@@ -340,6 +340,47 @@ internal class AuthenticationService(
         return result;
     }
 
+    public async Task<RenewAuthTokenResult> RenewAuthTokenAsync(RenewAuthTokenRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var renewResult = await _authenticationProvider.RenewUserAuthTokenAsync(request.AuthToken);
+
+        if (
+            renewResult.ResultCode != RenewUserAuthTokenResultCode.Success
+            || renewResult.User == null
+        )
+        {
+            var (resultCode, message) = MapRenewAuthTokenResultCode(renewResult.ResultCode);
+            return CreateFailedRenewAuthTokenResult(resultCode, message);
+        }
+
+        if (string.IsNullOrWhiteSpace(renewResult.DeviceId))
+        {
+            return CreateFailedRenewAuthTokenResult(
+                RenewAuthTokenResultCode.MissingDeviceIdClaim,
+                "Device ID claim is missing"
+            );
+        }
+
+        _userContextSetter.SetUserContext(
+            new UserContext(
+                renewResult.User,
+                renewResult.CurrentAccount,
+                renewResult.DeviceId,
+                renewResult.AvailableAccounts,
+                renewResult.TokenId
+            )
+        );
+
+        return new RenewAuthTokenResult(
+            RenewAuthTokenResultCode.Success,
+            null,
+            renewResult.Token,
+            renewResult.TokenId
+        );
+    }
+
     public async Task<SignInResult> SwitchAccountAsync(SwitchAccountRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
@@ -630,6 +671,47 @@ internal class AuthenticationService(
 
     private static SignInResult CreateFailedSignInResult(
         SignInResultCode resultCode,
+        string message
+    ) => new(resultCode, message, null, null);
+
+    private static (RenewAuthTokenResultCode, string) MapRenewAuthTokenResultCode(
+        RenewUserAuthTokenResultCode resultCode
+    ) =>
+        resultCode switch
+        {
+            RenewUserAuthTokenResultCode.InvalidTokenFormat => (
+                RenewAuthTokenResultCode.InvalidTokenFormat,
+                "Auth token is in an invalid format"
+            ),
+            RenewUserAuthTokenResultCode.MissingUserIdClaim => (
+                RenewAuthTokenResultCode.MissingUserIdClaim,
+                "User ID claim is missing"
+            ),
+            RenewUserAuthTokenResultCode.MissingDeviceIdClaim => (
+                RenewAuthTokenResultCode.MissingDeviceIdClaim,
+                "Device ID claim is missing"
+            ),
+            RenewUserAuthTokenResultCode.UserNotFoundError => (
+                RenewAuthTokenResultCode.UserNotFoundError,
+                "User not found"
+            ),
+            RenewUserAuthTokenResultCode.SignatureKeyNotFoundError => (
+                RenewAuthTokenResultCode.SignatureKeyNotFoundError,
+                "User signature key not found"
+            ),
+            RenewUserAuthTokenResultCode.AccountNotFoundError => (
+                RenewAuthTokenResultCode.AccountNotFoundError,
+                "Account not found for user"
+            ),
+            RenewUserAuthTokenResultCode.SessionExpiredError => (
+                RenewAuthTokenResultCode.SessionExpiredError,
+                "Auth session has expired"
+            ),
+            _ => (RenewAuthTokenResultCode.InvalidAuthTokenError, "Auth token is invalid"),
+        };
+
+    private static RenewAuthTokenResult CreateFailedRenewAuthTokenResult(
+        RenewAuthTokenResultCode resultCode,
         string message
     ) => new(resultCode, message, null, null);
 

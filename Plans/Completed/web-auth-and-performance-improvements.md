@@ -43,7 +43,7 @@ The latest review of `Corely.IAM` and `Corely.IAM.Web` found a short list of rea
 - Keep the current user-facing behavior intact unless the improvement explicitly changes it.
 - Favor shared abstractions only where they remove real duplication or harden correctness.
 - Each item should include test coverage or updated validation around the changed behavior.
-- Item 5 is deferred for now. Revisit it only if there is a cleaner path that does not require injecting `IamDbContext` directly into the auth-provider flow.
+- Item 5 was deferred until a cleaner path existed than injecting `IamDbContext` directly into the auth-provider flow. That condition was later met by a repo-level bulk update capability.
 
 ## Status
 
@@ -61,8 +61,35 @@ The latest review of `Corely.IAM` and `Corely.IAM.Web` found a short list of rea
 - Item 4 completed:
   - `AuthenticationTokenMiddleware` now clears the device-id cookie alongside auth cookies when token validation fails or throws.
   - Updated middleware tests to assert that both auth-token cleanup and device-id cleanup happen on failure paths.
-- Item 5 reopened:
-  - The current token-revocation batching implementation was not accepted and has been removed from the staged set.
-  - Follow-up on item 5 is deferred until there is a better option that does not require injecting `IamDbContext` directly.
-  - `PasswordRecoveryProcessor.InvalidatePendingRecoveriesAsync()` uses the same list-and-update-each-row pattern as auth-token bulk revocation; it is a lower-priority path, but it should be treated as another candidate if a cleaner repo-level bulk update capability is introduced later.
-  - Items 1-4 remain complete; this plan stays in progress until item 5 is either redesigned or dropped.
+- Item 5 completed:
+  - `Corely.DataAccess` 2.3.0 adds `IRepo.ExecuteUpdateAsync(query, setProperties)`, exposing EF's
+    set-based update through the repository seam. This is the "cleaner repo-level bulk update
+    capability" the earlier deferral was waiting on - no `IamDbContext` injection required.
+  - `AuthenticationProvider.RevokeOtherUserAuthTokensAsync`, `RevokeAllUserAuthTokensAsync`, and
+    `RevokeExistingTokensForUserAccountDeviceAsync` now issue a single UPDATE instead of one
+    awaited update per token.
+  - `PasswordRecoveryProcessor.InvalidatePendingRecoveriesAsync()` - flagged here as the sibling
+    candidate - was converted to the same pattern.
+  - The efficiency gain is modest, since these paths touch few rows. The material win is
+    atomicity: revocation previously saved each token in its own transaction, so a mid-loop
+    failure could leave a user partially signed out after a password reset.
+  - `MockRepo` satisfies `ExecuteUpdateAsync` by interpreting the `SetProperty` expression tree in
+    memory. `Corely.DataAccess` covers that with parity tests asserting identical behavior against
+    both the mock and real EF on SQLite.
+- All five items are complete; this plan is done.
+
+## Testing follow-ups
+
+Recorded here so they are not lost. Tracked in `Plans/New/testing-strategy.md`.
+
+- The IAM revocation predicates are only exercised through `MockRepo`, since every IAM test runs
+  on the mock database. EF's translation of them - notably the nullable `t.AccountId == accountId`
+  comparison - is unverified in this repo. A throwaway-LocalDB fixture was prototyped, confirmed
+  the translation works, and was then removed deliberately rather than bolted onto the unit test
+  project.
+- Token renewal has no end-to-end verification. Nobody has signed into the WebApp, let an access
+  token expire, and confirmed the middleware renews it in a real browser. This is the one flow
+  that depends on wall-clock time and cookie lifetime, which unit tests cannot meaningfully
+  assert - and it is exactly where the cookie-lifetime bug would have hidden.
+- Renewal deliberately does not re-challenge MFA. A session that passed MFA at sign-in stays
+  renewable for the full `AuthSessionTtlSeconds` window. This was reviewed and accepted.

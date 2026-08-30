@@ -18,7 +18,7 @@ public class RegisterWithGoogleModel(
     IOptions<SecurityOptions> securityOptions
 ) : PageModel
 {
-    private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
+    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
 
     public string? ErrorMessage { get; set; }
 
@@ -79,7 +79,7 @@ public class RegisterWithGoogleModel(
         return await postAuthenticationFlowService.CompleteSignInAsync(
             HttpContext,
             signInResult,
-            _authTokenTtlSeconds
+            _authSessionTtlSeconds
         );
     }
 }

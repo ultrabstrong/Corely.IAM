@@ -164,7 +164,8 @@ The library's CSS is served from the RCL's static asset path. Bootstrap and Boot
   },
   "SecurityOptions": {
     "MaxLoginAttempts": 5,
-    "AuthTokenTtlSeconds": 3600
+    "AuthTokenTtlSeconds": 3600,
+    "AuthSessionTtlSeconds": 604800
   },
   "PasswordValidationOptions": {
     "MinimumLength": 8,
@@ -181,7 +182,7 @@ The library's CSS is served from the RCL's static asset path. Bootstrap and Boot
 | `ConnectionStrings:DefaultConnection` | ✅ | Database connection string |
 | `Database:Provider` | ✅ | `mssql`, `mysql`, or `mariadb` |
 | `Security:SystemKey` | ✅ | Base64 symmetric key — generate with DevTools |
-| `SecurityOptions:*` | ✅ | Login lockout and token TTL |
+| `SecurityOptions:*` | ✅ | Login lockout, access-token TTL, and renewable session TTL |
 | `PasswordValidationOptions:*` | ✅ | Password rules |
 
 Generate a system key with the DevTools project:

@@ -36,15 +36,21 @@ public class AuthenticationProviderTests
                 .Without(a => a.Permissions)
         );
 
-        _authenticationProvider = new AuthenticationProvider(
+        _authenticationProvider = CreateAuthenticationProvider();
+    }
+
+    private AuthenticationProvider CreateAuthenticationProvider(
+        TimeProvider? timeProvider = null,
+        SecurityOptions? securityOptions = null
+    ) =>
+        new(
             _serviceFactory.GetRequiredService<IRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>(),
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
-            _serviceFactory.GetRequiredService<IOptions<SecurityOptions>>(),
+            Options.Create(securityOptions ?? new SecurityOptions()),
             _serviceFactory.GetRequiredService<ILogger<AuthenticationProvider>>(),
-            TimeProvider.System
+            timeProvider ?? TimeProvider.System
         );
-    }
 
     private async Task<UserEntity> CreateUserAsync(List<AccountEntity>? accounts = null)
     {
@@ -767,5 +773,210 @@ public class AuthenticationProviderTests
             UserAuthTokenValidationResultCode.TokenValidationFailed,
             otherValidation.ResultCode
         );
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_RotatesTokenAndRevokesPreviousToken()
+    {
+        var account = await CreateAccountAsync();
+        var userEntity = await CreateUserAsync([account]);
+        var initialToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id)
+        );
+
+        var renewResult = await _authenticationProvider.RenewUserAuthTokenAsync(
+            initialToken.Token!
+        );
+
+        Assert.Equal(RenewUserAuthTokenResultCode.Success, renewResult.ResultCode);
+        Assert.NotNull(renewResult.Token);
+        Assert.NotEqual(initialToken.TokenId, renewResult.TokenId);
+
+        var oldValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            initialToken.Token!
+        );
+        var newValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            renewResult.Token!
+        );
+
+        Assert.Equal(
+            UserAuthTokenValidationResultCode.TokenValidationFailed,
+            oldValidation.ResultCode
+        );
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, newValidation.ResultCode);
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var initialJwt = tokenHandler.ReadJwtToken(initialToken.Token);
+        var renewedJwt = tokenHandler.ReadJwtToken(renewResult.Token);
+        var initialSessionStartedAt = initialJwt.Claims.First(c =>
+            c.Type == UserConstants.SESSION_STARTED_AT_CLAIM
+        );
+        var renewedSessionStartedAt = renewedJwt.Claims.First(c =>
+            c.Type == UserConstants.SESSION_STARTED_AT_CLAIM
+        );
+
+        Assert.Equal(initialSessionStartedAt.Value, renewedSessionStartedAt.Value);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_ReturnsSessionExpiredError_WhenSessionTtlElapsed()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var timeProviderMock = new Mock<TimeProvider>();
+        var currentTime = now;
+        timeProviderMock.Setup(t => t.GetUtcNow()).Returns(() => currentTime);
+        var authenticationProvider = CreateAuthenticationProvider(
+            timeProviderMock.Object,
+            new SecurityOptions { AuthTokenTtlSeconds = 60, AuthSessionTtlSeconds = 10 }
+        );
+
+        var userEntity = await CreateUserAsync();
+        var authToken = await authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        currentTime = now.AddSeconds(11);
+
+        var renewResult = await authenticationProvider.RenewUserAuthTokenAsync(authToken.Token!);
+
+        Assert.Equal(RenewUserAuthTokenResultCode.SessionExpiredError, renewResult.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_ReturnsTokenValidationFailed_WhenTokenIsReused()
+    {
+        var userEntity = await CreateUserAsync();
+        var authToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+
+        var firstRenewResult = await _authenticationProvider.RenewUserAuthTokenAsync(
+            authToken.Token!
+        );
+        var secondRenewResult = await _authenticationProvider.RenewUserAuthTokenAsync(
+            authToken.Token!
+        );
+
+        Assert.Equal(RenewUserAuthTokenResultCode.Success, firstRenewResult.ResultCode);
+        Assert.Equal(
+            RenewUserAuthTokenResultCode.TokenValidationFailed,
+            secondRenewResult.ResultCode
+        );
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_LeavesOtherDeviceTokensIntact()
+    {
+        var userEntity = await CreateUserAsync();
+        var deviceAToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, "device-a")
+        );
+        var deviceBToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, "device-b")
+        );
+
+        var renewResult = await _authenticationProvider.RenewUserAuthTokenAsync(
+            deviceAToken.Token!
+        );
+
+        Assert.Equal(RenewUserAuthTokenResultCode.Success, renewResult.ResultCode);
+
+        var deviceBValidation = await _authenticationProvider.ValidateUserAuthTokenAsync(
+            deviceBToken.Token!
+        );
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, deviceBValidation.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_RenewsEachDeviceIndependently()
+    {
+        var userEntity = await CreateUserAsync();
+        var deviceAToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, "device-a")
+        );
+        var deviceBToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, "device-b")
+        );
+
+        var renewA = await _authenticationProvider.RenewUserAuthTokenAsync(deviceAToken.Token!);
+        var renewB = await _authenticationProvider.RenewUserAuthTokenAsync(deviceBToken.Token!);
+
+        Assert.Equal(RenewUserAuthTokenResultCode.Success, renewA.ResultCode);
+        Assert.Equal(RenewUserAuthTokenResultCode.Success, renewB.ResultCode);
+        Assert.Equal("device-a", renewA.DeviceId);
+        Assert.Equal("device-b", renewB.DeviceId);
+        Assert.NotEqual(renewA.TokenId, renewB.TokenId);
+
+        // Both renewed tokens must remain independently usable.
+        var validationA = await _authenticationProvider.ValidateUserAuthTokenAsync(renewA.Token!);
+        var validationB = await _authenticationProvider.ValidateUserAuthTokenAsync(renewB.Token!);
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, validationA.ResultCode);
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, validationB.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_Fails_AfterAllTokensRevoked()
+    {
+        var userEntity = await CreateUserAsync();
+        var authToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+
+        await _authenticationProvider.RevokeAllUserAuthTokensAsync(userEntity.Id);
+
+        var renewResult = await _authenticationProvider.RenewUserAuthTokenAsync(authToken.Token!);
+
+        Assert.Equal(RenewUserAuthTokenResultCode.TokenValidationFailed, renewResult.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_Fails_AfterOtherSessionsRevokedFromAnotherDevice()
+    {
+        var userEntity = await CreateUserAsync();
+        var currentToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, "device-a")
+        );
+        var otherToken = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, "device-b")
+        );
+
+        var revoked = await _authenticationProvider.RevokeOtherUserAuthTokensAsync(
+            userEntity.Id,
+            currentToken.TokenId!.Value
+        );
+        Assert.True(revoked);
+
+        var renewRevoked = await _authenticationProvider.RenewUserAuthTokenAsync(otherToken.Token!);
+        var renewCurrent = await _authenticationProvider.RenewUserAuthTokenAsync(
+            currentToken.Token!
+        );
+
+        Assert.Equal(RenewUserAuthTokenResultCode.TokenValidationFailed, renewRevoked.ResultCode);
+        Assert.Equal(RenewUserAuthTokenResultCode.Success, renewCurrent.ResultCode);
+    }
+
+    [Fact]
+    public async Task RevokeAllUserAuthTokensAsync_RevokesTokensAcrossEveryDevice()
+    {
+        var userEntity = await CreateUserAsync();
+        var tokens = new List<UserAuthTokenResult>();
+        foreach (var deviceId in new[] { "device-a", "device-b", "device-c" })
+        {
+            tokens.Add(
+                await _authenticationProvider.GetUserAuthTokenAsync(
+                    new GetUserAuthTokenRequest(userEntity.Id, deviceId)
+                )
+            );
+        }
+
+        await _authenticationProvider.RevokeAllUserAuthTokensAsync(userEntity.Id);
+
+        foreach (var token in tokens)
+        {
+            var validation = await _authenticationProvider.ValidateUserAuthTokenAsync(token.Token!);
+            Assert.Equal(
+                UserAuthTokenValidationResultCode.TokenValidationFailed,
+                validation.ResultCode
+            );
+        }
     }
 }

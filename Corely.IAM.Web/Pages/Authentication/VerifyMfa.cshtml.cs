@@ -15,7 +15,7 @@ public class VerifyMfaModel(
     IOptions<SecurityOptions> securityOptions
 ) : PageModel
 {
-    private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
+    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
 
     [BindProperty]
     public string Code { get; set; } = string.Empty;
@@ -72,7 +72,7 @@ public class VerifyMfaModel(
         return await postAuthenticationFlowService.CompleteSignInAsync(
             HttpContext,
             result,
-            _authTokenTtlSeconds
+            _authSessionTtlSeconds
         );
     }
 }

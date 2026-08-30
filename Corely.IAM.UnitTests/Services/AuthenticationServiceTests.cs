@@ -140,6 +140,19 @@ public class AuthenticationServiceTests
                 )
             );
 
+        mock.Setup(m => m.RenewUserAuthTokenAsync(It.IsAny<string>()))
+            .ReturnsAsync(
+                new RenewUserAuthTokenResult(
+                    RenewUserAuthTokenResultCode.Success,
+                    "renewed-token",
+                    Guid.CreateVersion7(),
+                    new User() { Id = Guid.CreateVersion7() },
+                    null,
+                    TEST_DEVICE_ID,
+                    []
+                )
+            );
+
         return mock;
     }
 
@@ -1053,6 +1066,55 @@ public class AuthenticationServiceTests
 
         Assert.Equal(SignInResultCode.GoogleAuthNotLinkedError, result.ResultCode);
         Assert.Null(result.AuthToken);
+    }
+
+    #endregion
+
+    #region RenewAuthTokenAsync Tests
+
+    [Fact]
+    public async Task RenewAuthTokenAsync_ReturnsSuccessAndSetsContext_WhenRenewalSucceeds()
+    {
+        var result = await _authenticationService.RenewAuthTokenAsync(
+            new RenewAuthTokenRequest("token")
+        );
+
+        Assert.Equal(RenewAuthTokenResultCode.Success, result.ResultCode);
+        Assert.Equal("renewed-token", result.AuthToken);
+        _userContextSetterMock.Verify(m => m.SetUserContext(It.IsAny<UserContext>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RenewAuthTokenAsync_ReturnsSessionExpiredError_WhenProviderRejectsRenewal()
+    {
+        _authenticationProviderMock
+            .Setup(m => m.RenewUserAuthTokenAsync("expired-token"))
+            .ReturnsAsync(
+                new RenewUserAuthTokenResult(
+                    RenewUserAuthTokenResultCode.SessionExpiredError,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    []
+                )
+            );
+
+        var result = await _authenticationService.RenewAuthTokenAsync(
+            new RenewAuthTokenRequest("expired-token")
+        );
+
+        Assert.Equal(RenewAuthTokenResultCode.SessionExpiredError, result.ResultCode);
+        _userContextSetterMock.Verify(m => m.SetUserContext(It.IsAny<UserContext>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RenewAuthTokenAsync_ThrowsArgumentNullException_WhenRequestIsNull()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _authenticationService.RenewAuthTokenAsync(null!)
+        );
     }
 
     #endregion

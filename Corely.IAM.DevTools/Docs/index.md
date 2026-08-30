@@ -169,6 +169,9 @@ Sign in to establish a session. The auth token is saved to a local file for subs
 # Sign in (prompts for or accepts request JSON)
 dotnet run -- auth signin "request.json"
 
+# Renew the saved auth token
+dotnet run -- auth renew
+
 # Switch to a different account
 dotnet run -- auth switch-account
 

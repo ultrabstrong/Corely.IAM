@@ -17,7 +17,7 @@ public class CreateAccountModel(
     IOptions<SecurityOptions> securityOptions
 ) : PageModel
 {
-    private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
+    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
 
     public string AccountName { get; set; } = string.Empty;
 
@@ -70,7 +70,7 @@ public class CreateAccountModel(
             switchResult.AuthToken!,
             switchResult.AuthTokenId!.Value,
             Request.IsHttps,
-            _authTokenTtlSeconds
+            _authSessionTtlSeconds
         );
 
         return Redirect(AppRoutes.Dashboard);

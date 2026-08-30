@@ -106,7 +106,7 @@ All five services are wrapped with authorization and telemetry decorators via Sc
 
 | Section | Options Class | Properties |
 |---------|--------------|------------|
-| `SecurityOptions` | `SecurityOptions` | `MaxLoginAttempts` (5), `LockoutCooldownSeconds` (900), `AuthTokenTtlSeconds` (3600) |
+| `SecurityOptions` | `SecurityOptions` | `MaxLoginAttempts` (5), `LockoutCooldownSeconds` (900), `AuthTokenTtlSeconds` (3600), `AuthSessionTtlSeconds` (604800) |
 | `PasswordValidationOptions` | `PasswordValidationOptions` | Minimum length, complexity requirements |
 
 Configure these in `appsettings.json`:
@@ -116,7 +116,8 @@ Configure these in `appsettings.json`:
   "SecurityOptions": {
     "MaxLoginAttempts": 5,
     "LockoutCooldownSeconds": 900,
-    "AuthTokenTtlSeconds": 3600
+    "AuthTokenTtlSeconds": 3600,
+    "AuthSessionTtlSeconds": 604800
   }
 }
 ```

@@ -9,7 +9,7 @@ public interface IAuthCookieManager
         string authToken,
         Guid authTokenId,
         bool isHttps,
-        int authTokenTtlSeconds
+        int authCookieTtlSeconds
     );
     void DeleteAuthCookies(IResponseCookies cookies);
     void DeleteDeviceIdCookie(IResponseCookies cookies);

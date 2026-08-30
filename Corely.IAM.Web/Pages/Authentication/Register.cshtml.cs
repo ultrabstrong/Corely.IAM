@@ -15,7 +15,7 @@ public class RegisterModel(
     IOptions<SecurityOptions> securityOptions
 ) : PageModel
 {
-    private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
+    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
 
     public string? GoogleClientId { get; } = securityOptions.Value.GoogleClientId;
 
@@ -82,7 +82,7 @@ public class RegisterModel(
                 signInResult.AuthToken!,
                 signInResult.AuthTokenId!.Value,
                 Request.IsHttps,
-                _authTokenTtlSeconds
+                _authSessionTtlSeconds
             );
             return Redirect(AppRoutes.Dashboard);
         }

@@ -5,6 +5,7 @@ namespace Corely.IAM.Security.Providers;
 internal interface IAuthenticationProvider
 {
     Task<UserAuthTokenResult> GetUserAuthTokenAsync(GetUserAuthTokenRequest request);
+    Task<RenewUserAuthTokenResult> RenewUserAuthTokenAsync(string authToken);
     Task<UserAuthTokenValidationResult> ValidateUserAuthTokenAsync(string authToken);
     Task<bool> RevokeUserAuthTokenAsync(RevokeUserAuthTokenRequest request);
     Task<List<UserSession>> ListUserSessionsAsync(Guid userId, Guid? currentSessionId);

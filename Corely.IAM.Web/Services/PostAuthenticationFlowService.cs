@@ -5,6 +5,7 @@ using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SignInResultModel = Corely.IAM.Models.SignInResult;
 
 namespace Corely.IAM.Web.Services;
@@ -12,7 +13,8 @@ namespace Corely.IAM.Web.Services;
 public class PostAuthenticationFlowService(
     IAuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
-    IAuthCookieManager authCookieManager
+    IAuthCookieManager authCookieManager,
+    IOptions<Corely.IAM.Security.Models.SecurityOptions> securityOptions
 ) : IPostAuthenticationFlowService
 {
     private readonly IAuthenticationService _authenticationService =
@@ -23,11 +25,14 @@ public class PostAuthenticationFlowService(
     private readonly IAuthCookieManager _authCookieManager = authCookieManager.ThrowIfNull(
         nameof(authCookieManager)
     );
+    private readonly int _authSessionTtlSeconds = securityOptions
+        .ThrowIfNull(nameof(securityOptions))
+        .Value.AuthSessionTtlSeconds;
 
     public async Task<IActionResult> CompleteSignInAsync(
         HttpContext httpContext,
         SignInResultModel signInResult,
-        int authTokenTtlSeconds
+        int _unusedAuthCookieTtlSeconds
     )
     {
         ArgumentNullException.ThrowIfNull(httpContext);
@@ -49,7 +54,7 @@ public class PostAuthenticationFlowService(
             signInResult.AuthToken,
             signInResult.AuthTokenId.Value,
             httpContext.Request.IsHttps,
-            authTokenTtlSeconds
+            _authSessionTtlSeconds
         );
 
         var userContext = _userContextProvider.GetUserContext();
@@ -76,7 +81,7 @@ public class PostAuthenticationFlowService(
             switchResult.AuthToken!,
             switchResult.AuthTokenId!.Value,
             httpContext.Request.IsHttps,
-            authTokenTtlSeconds
+            _authSessionTtlSeconds
         );
 
         return new RedirectResult(AppRoutes.Dashboard);

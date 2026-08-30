@@ -30,5 +30,9 @@ Authentication currently relies on fixed-lifetime JWTs with no refresh-token or 
 
 ## Status
 
-- Plan created.
-- No implementation started.
+- Implemented as a host-agnostic, tracked-token renewal flow with bounded sessions.
+- Added `AuthSessionTtlSeconds` to bound the renewable session lifetime independently from the short-lived access-token TTL.
+- Added `RenewAuthTokenAsync` to `IAuthenticationService` plus public renewal request/result models and result codes.
+- Tokens now carry a `session_started_at` claim so renewals can rotate JWTs while preserving the original session lifetime.
+- `AuthenticationTokenMiddleware` now attempts renewal before clearing auth cookies, and Web auth cookies now live for the bounded session window so renewal works after idle periods.
+- Added focused provider, service, middleware, and post-authentication tests plus DevTools `auth renew` support.

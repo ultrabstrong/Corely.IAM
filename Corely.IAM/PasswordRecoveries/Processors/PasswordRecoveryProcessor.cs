@@ -209,19 +209,15 @@ internal class PasswordRecoveryProcessor(
         Guid? excludeRecoveryId = null
     )
     {
-        var pendingRecoveries = await _passwordRecoveryRepo.ListAsync(r =>
-            r.UserId == userId
-            && r.CompletedUtc == null
-            && r.InvalidatedUtc == null
-            && r.ExpiresUtc > utcNow
-            && (!excludeRecoveryId.HasValue || r.Id != excludeRecoveryId.Value)
+        await _passwordRecoveryRepo.ExecuteUpdateAsync(
+            r =>
+                r.UserId == userId
+                && r.CompletedUtc == null
+                && r.InvalidatedUtc == null
+                && r.ExpiresUtc > utcNow
+                && (!excludeRecoveryId.HasValue || r.Id != excludeRecoveryId.Value),
+            s => s.SetProperty(r => r.InvalidatedUtc, utcNow)
         );
-
-        foreach (var recovery in pendingRecoveries)
-        {
-            recovery.InvalidatedUtc = utcNow;
-            await _passwordRecoveryRepo.UpdateAsync(recovery);
-        }
     }
 
     private async Task<(

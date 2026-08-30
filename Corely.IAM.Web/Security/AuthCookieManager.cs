@@ -12,7 +12,7 @@ public class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
         string authToken,
         Guid authTokenId,
         bool isHttps,
-        int authTokenTtlSeconds
+        int authCookieTtlSeconds
     )
     {
         var cookieOptions = new CookieOptions
@@ -21,7 +21,7 @@ public class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
             Secure = isHttps,
             SameSite = SameSiteMode.Strict,
             Path = "/",
-            Expires = _timeProvider.GetUtcNow().AddSeconds(authTokenTtlSeconds),
+            Expires = _timeProvider.GetUtcNow().AddSeconds(authCookieTtlSeconds),
         };
 
         cookies.Append(AuthenticationConstants.AUTH_TOKEN_COOKIE, authToken, cookieOptions);

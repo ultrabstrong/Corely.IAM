@@ -14,7 +14,7 @@ public class SwitchAccountModel(
     IOptions<SecurityOptions> securityOptions
 ) : PageModel
 {
-    private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
+    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
 
     public async Task<IActionResult> OnGetAsync(Guid? accountId = null, string? returnUrl = null)
     {
@@ -47,7 +47,7 @@ public class SwitchAccountModel(
             result.AuthToken!,
             result.AuthTokenId!.Value,
             Request.IsHttps,
-            _authTokenTtlSeconds
+            _authSessionTtlSeconds
         );
 
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))

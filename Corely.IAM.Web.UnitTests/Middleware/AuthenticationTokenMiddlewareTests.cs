@@ -1,4 +1,5 @@
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -8,11 +9,14 @@ using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Web.UnitTests.Middleware;
 
 public class AuthenticationTokenMiddlewareTests
 {
+    private const int AUTH_SESSION_TTL_SECONDS = 604800;
+
     private readonly Mock<IAuthenticationService> _mockAuthenticationService;
     private readonly Mock<IUserContextProvider> _mockUserContextProvider;
     private readonly Mock<ILogger<AuthenticationTokenMiddleware>> _mockLogger;
@@ -35,7 +39,13 @@ public class AuthenticationTokenMiddlewareTests
             next,
             _mockLogger.Object,
             _authCookieManager,
-            _userContextClaimsBuilder
+            _userContextClaimsBuilder,
+            Options.Create(
+                new Corely.IAM.Security.Models.SecurityOptions
+                {
+                    AuthSessionTtlSeconds = AUTH_SESSION_TTL_SECONDS,
+                }
+            )
         );
     }
 
@@ -130,6 +140,18 @@ public class AuthenticationTokenMiddlewareTests
         _mockAuthenticationService
             .Setup(x => x.AuthenticateWithTokenAsync("bad-token"))
             .ReturnsAsync(resultCode);
+        _mockAuthenticationService
+            .Setup(x =>
+                x.RenewAuthTokenAsync(It.Is<RenewAuthTokenRequest>(r => r.AuthToken == "bad-token"))
+            )
+            .ReturnsAsync(
+                new RenewAuthTokenResult(
+                    RenewAuthTokenResultCode.InvalidAuthTokenError,
+                    "invalid",
+                    null,
+                    null
+                )
+            );
 
         await middleware.InvokeAsync(
             httpContext,
@@ -146,6 +168,58 @@ public class AuthenticationTokenMiddlewareTests
         Assert.Contains(
             httpContext.Response.Headers.SetCookie,
             c => c != null && c.Contains(AuthenticationConstants.DEVICE_ID_COOKIE)
+        );
+    }
+
+    [Fact]
+    public async Task Invoke_ValidationFailsButRenewSucceeds_SetsUpdatedCookiesAndPrincipal()
+    {
+        bool nextCalled = false;
+        RequestDelegate next = (ctx) =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        };
+        var middleware = CreateMiddleware(next);
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Headers["Cookie"] =
+            $"{AuthenticationConstants.AUTH_TOKEN_COOKIE}=expired-token";
+
+        var account = new Account { Id = Guid.CreateVersion7(), AccountName = "TestAccount" };
+        var userContext = PageTestHelpers.CreateUserContext(
+            currentAccount: account,
+            availableAccounts: [account]
+        );
+        _mockAuthenticationService
+            .Setup(x => x.AuthenticateWithTokenAsync("expired-token"))
+            .ReturnsAsync(UserAuthTokenValidationResultCode.TokenValidationFailed);
+        _mockAuthenticationService
+            .Setup(x =>
+                x.RenewAuthTokenAsync(
+                    It.Is<RenewAuthTokenRequest>(r => r.AuthToken == "expired-token")
+                )
+            )
+            .ReturnsAsync(
+                new RenewAuthTokenResult(
+                    RenewAuthTokenResultCode.Success,
+                    null,
+                    "renewed-token",
+                    Guid.CreateVersion7()
+                )
+            );
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(userContext);
+
+        await middleware.InvokeAsync(
+            httpContext,
+            _mockAuthenticationService.Object,
+            _mockUserContextProvider.Object
+        );
+
+        Assert.True(nextCalled);
+        Assert.True(httpContext.User.Identity?.IsAuthenticated);
+        Assert.Contains(
+            httpContext.Response.Headers.SetCookie,
+            c => c != null && c.Contains(AuthenticationConstants.AUTH_TOKEN_COOKIE)
         );
     }
 

@@ -18,7 +18,7 @@ public class SignInModel(
     IOptions<IAMWebOptions> iamWebOptions
 ) : PageModel
 {
-    private readonly int _authTokenTtlSeconds = securityOptions.Value.AuthTokenTtlSeconds;
+    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
 
     public string? GoogleClientId { get; } = securityOptions.Value.GoogleClientId;
     public string? ForgotPasswordPath { get; } = iamWebOptions.Value.ForgotPasswordPath;
@@ -77,7 +77,7 @@ public class SignInModel(
         return await postAuthenticationFlowService.CompleteSignInAsync(
             HttpContext,
             result,
-            _authTokenTtlSeconds
+            _authSessionTtlSeconds
         );
     }
 }

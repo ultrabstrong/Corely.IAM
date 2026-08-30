@@ -79,7 +79,7 @@ The select-account page supports search by account name and pagination (10 per p
 
 | Cookie | Purpose | Flags |
 |--------|---------|-------|
-| `auth_token` | JWT token | HttpOnly, Secure, SameSite=Strict, TTL-based expiry |
+| `authentication_token` | JWT token | HttpOnly, Secure, SameSite=Strict, TTL-based expiry |
 | `auth_token_id` | Token ID for revocation | HttpOnly, Secure, SameSite=Strict, TTL-based expiry |
 | `device_id` | Device fingerprint | HttpOnly, Secure, SameSite=Strict, 90-day expiry |
 
@@ -89,7 +89,7 @@ All auth cookies use `Path=/`. The `device_id` cookie is created on first visit 
 
 `AuthenticationTokenMiddleware` runs on every request:
 
-1. Reads `auth_token` cookie
+1. Reads `authentication_token` cookie
 2. Calls `IAuthenticationService.AuthenticateWithTokenAsync(token)` to validate the JWT
 3. If validation fails but the bounded session is still renewable, calls `IAuthenticationService.RenewAuthTokenAsync(...)`, rotates the tracked token, and updates the auth cookies
 4. On success: builds `ClaimsPrincipal` via `IUserContextClaimsBuilder` and sets `HttpContext.User`

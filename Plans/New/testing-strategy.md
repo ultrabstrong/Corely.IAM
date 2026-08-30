@@ -64,6 +64,50 @@ Decisions to make:
   `AddIAMServices` with the mock database. Changing that default reaches 1300+ tests at once, so
   it needs measuring before committing to it.
 
+## Containerized local stack
+
+Every piece needed for a reproducible local environment already exists; the only thing missing is
+the Docker layer itself. There is currently no Dockerfile, compose file, or `.dcproj` anywhere in
+the repository.
+
+**Already in place:**
+
+- `Corely.IAM.DataAccessMigrations.Cli` creates the database and applies migrations, taking a
+  connection string as an argument. Container-friendly as-is.
+- `Corely.IAM.DevTools` (`corely`) has no `RuntimeIdentifier` pinned in its csproj - the `win-x64`
+  publish comes only from `RebuildAndTest.ps1`, so a `linux-x64` publish needs no project change.
+- `Corely.IAM.WebApp/DemoSetup/SeedWebAppDemo.ps1` holds the demo dataset and its orchestration.
+
+**Services a full stack would need:**
+
+- SQL Server (`mcr.microsoft.com/mssql/server`) - or MySQL / MariaDB, since all three are shipped
+  providers and running the suite against each is exactly what the integration tier should catch
+- The WebApp itself
+- Seq - the app is configured to log to `http://localhost:5341`, and structured logs are the most
+  direct evidence for flows like token renewal
+- Whatever a migration/seed step becomes: an init container, a compose one-shot, or a host step
+
+Whether these are separate services or one combined image is an open question. A single image is
+simpler to run and probably fine for a dev/demo stack; separate services compose better with
+Testcontainers for automated integration tests. Worth deciding alongside the tier layout above
+rather than in isolation.
+
+**Known obstacles:**
+
+- The seed script is not self-contained. It expects `corely` on PATH, `corely config` already
+  pointed at the target database, an auth token at `%USERPROFILE%\Corely\corely-iam-auth-token.json`,
+  and scratch directories under `%TEMP%`. Those are Windows paths and host-level state, so the
+  seeding step needs rethinking before it runs inside a Linux container - most likely as a program
+  with an entrypoint rather than pwsh plus CLI plus config files.
+- Three target frameworks are in play: WebApp on net10.0, DevTools and the migrations CLI on
+  net9.0, `Corely.DataAccess` on net8.0.
+
+**Suggested first step - containerize only the database.** Compose a SQL Server service and keep
+migrations, seeding, and the app on the host. That yields a reproducible database from scratch on
+any machine, needs one compose file and zero Dockerfiles, avoids every path problem above, and
+immediately unlocks Testcontainers for the integration tier without a LocalDB dependency. Full
+containerization can follow once the seeding step is portable.
+
 ## Candidate first targets
 
 - EF translation of repo predicates, especially nullable comparisons such as

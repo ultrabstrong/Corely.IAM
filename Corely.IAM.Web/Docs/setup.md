@@ -106,7 +106,7 @@ Middleware pipeline in order:
 
 1. **CorrelationIdMiddleware** — assigns `X-Correlation-ID` header, enriches Serilog context
 2. **SecurityHeadersMiddleware** — adds CSP, HSTS, X-Frame-Options, Permissions-Policy
-3. **AuthenticationTokenMiddleware** — reads `auth_token` cookie, validates JWT, sets `UserContext` + `ClaimsPrincipal`
+3. **AuthenticationTokenMiddleware** — reads `authentication_token` cookie, validates JWT, sets `UserContext` + `ClaimsPrincipal`
 4. **UseAuthentication()** — ASP.NET Core authentication
 5. **UseAuthorization()** — ASP.NET Core authorization
 

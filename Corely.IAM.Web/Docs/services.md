@@ -42,7 +42,7 @@ public interface IBlazorUserContextAccessor
 ```
 
 - Fast path: returns context from `IUserContextProvider` if already set by middleware
-- Slow path: reads `auth_token` cookie, validates, and sets context
+- Slow path: reads `authentication_token` cookie, validates, and sets context
 - Thread-safe via `SemaphoreSlim` with 5-second timeout
 - Double-checked locking pattern to avoid redundant token validation
 

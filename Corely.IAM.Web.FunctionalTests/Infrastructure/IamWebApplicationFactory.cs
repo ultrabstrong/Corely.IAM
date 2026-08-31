@@ -45,25 +45,31 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment(Environments.Development);
 
-        builder.ConfigureAppConfiguration(
-            (_, config) =>
-                config.AddInMemoryCollection(
-                    new Dictionary<string, string?>
-                    {
-                        // Required by Program.cs even though the EF configuration is replaced below.
-                        ["ConnectionStrings:DefaultConnection"] = "Data Source=:memory:",
-                        ["Database:Provider"] = "mssql",
-                        ["Security:SystemKey"] = CreateSystemKey(),
-                        ["SecurityOptions:AuthTokenTtlSeconds"] = AuthTokenTtlSeconds.ToString(),
-                        ["SecurityOptions:AuthSessionTtlSeconds"] =
-                            AuthSessionTtlSeconds.ToString(),
-                        ["SecurityOptions:MaxLoginAttempts"] = "5",
-                        ["SecurityOptions:MfaChallengeTimeoutSeconds"] = "300",
-                        ["SecurityOptions:GoogleClientId"] = "",
-                        ["DemoFeatures:EnablePasswordRecoveryPreview"] = "true",
-                    }
-                )
-        );
+        // UseSetting rather than ConfigureAppConfiguration: Program.cs reads Security:SystemKey and
+        // the connection string directly off builder.Configuration, before the host is built, so an
+        // added configuration source lands too late. UseSetting values are seeded early enough.
+        //
+        // This matters beyond ordering. appsettings.json is gitignored, so with the late-applied
+        // source these tests silently fell back to the developer's own appsettings.json and failed
+        // anywhere it was absent. Every value the app needs is supplied here.
+        foreach (
+            var (key, value) in new Dictionary<string, string>
+            {
+                // Required by Program.cs even though the EF configuration is replaced below.
+                ["ConnectionStrings:DefaultConnection"] = "Data Source=:memory:",
+                ["Database:Provider"] = "mssql",
+                ["Security:SystemKey"] = CreateSystemKey(),
+                ["SecurityOptions:AuthTokenTtlSeconds"] = AuthTokenTtlSeconds.ToString(),
+                ["SecurityOptions:AuthSessionTtlSeconds"] = AuthSessionTtlSeconds.ToString(),
+                ["SecurityOptions:MaxLoginAttempts"] = "5",
+                ["SecurityOptions:MfaChallengeTimeoutSeconds"] = "300",
+                ["SecurityOptions:GoogleClientId"] = "",
+                ["DemoFeatures:EnablePasswordRecoveryPreview"] = "true",
+            }
+        )
+        {
+            builder.UseSetting(key, value);
+        }
 
         builder.ConfigureTestServices(services =>
         {

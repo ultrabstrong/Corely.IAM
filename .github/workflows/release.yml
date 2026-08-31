@@ -1,0 +1,91 @@
+name: Release
+
+# Publishes to NuGet via Trusted Publishing (OIDC). There is no API key stored anywhere: the
+# workflow proves its identity to nuget.org, which checks it against the trusted publisher policy
+# bound to this repository and hands back a key valid for one hour.
+#
+# The policy is bound to this file name (release.yml) - renaming it breaks publishing until the
+# policy on nuget.org is updated to match. Its package scope is Corely.IAM*, covering both
+# packages this repository ships.
+#
+#   git tag v1.2.1 && git push origin v1.2.1
+#
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write # required for nuget.org to issue the short-lived key
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Corely.IAM multi-targets net9.0 and net10.0; the web projects target net10.0.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Restore
+        run: dotnet restore Corely.IAM.slnx
+
+      - name: Build
+        run: dotnet build Corely.IAM.slnx --configuration Release --no-restore
+
+      # The provider matrix is opt-in and stays skipped here, so no database containers are
+      # needed. Everything else runs against SQLite with no external dependencies.
+      - name: Test
+        run: dotnet test Corely.IAM.slnx --configuration Release --no-build
+
+      # Two packages ship from this repository, and they are versioned independently in their
+      # own csproj files. Deriving a version from the tag would force them into lockstep, so the
+      # tag is the trigger and each csproj remains the source of truth for its own version.
+      - name: Pack Corely.IAM
+        run: >
+          dotnet pack Corely.IAM/Corely.IAM.csproj
+          --configuration Release
+          --no-build
+          -p:IncludeSymbols=true
+          -p:SymbolPackageFormat=snupkg
+          --output ./artifacts
+
+      - name: Pack Corely.IAM.Web
+        run: >
+          dotnet pack Corely.IAM.Web/Corely.IAM.Web.csproj
+          --configuration Release
+          --no-build
+          -p:IncludeSymbols=true
+          -p:SymbolPackageFormat=snupkg
+          --output ./artifacts
+
+      - name: List packages
+        run: ls -l ./artifacts
+
+      # Requested immediately before the push: the key expires after one hour.
+      - name: NuGet login (OIDC to short-lived key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ultrabstrong
+
+      # --skip-duplicate matters here: whichever of the two packages did not change version is
+      # already published, and must not fail the run.
+      - name: Push
+        run: >
+          dotnet nuget push "./artifacts/*.nupkg"
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: ./artifacts/*

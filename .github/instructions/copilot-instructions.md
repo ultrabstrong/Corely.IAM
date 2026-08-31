@@ -1,1 +1,0 @@
-All project conventions, architecture details, build/test commands, and coding guidelines are maintained in [CLAUDE.md](../../CLAUDE.md) at the repository root. Refer to that file for all instructions.

@@ -84,6 +84,7 @@ public static class ServiceRegistrationExtensions
         serviceCollection.AddSingleton<IHashProviderFactory, HashProviderFactory>(
             _ => new HashProviderFactory(options.HashCode)
         );
+        serviceCollection.AddSingleton(new IamHashCodes(options.HashCode, options.TokenHashCode));
         serviceCollection.AddSingleton<ISecretProvider>(_ => new RandomSecretProvider(
             PasswordRecoveryConstants.TOKEN_SECRET_LENGTH
         ));

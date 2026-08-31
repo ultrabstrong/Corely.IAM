@@ -6,6 +6,7 @@ using Corely.IAM.PasswordRecoveries.Constants;
 using Corely.IAM.PasswordRecoveries.Entities;
 using Corely.IAM.PasswordRecoveries.Models;
 using Corely.IAM.Security.Mappers;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Validators;
@@ -21,6 +22,7 @@ internal class PasswordRecoveryProcessor(
     BasicAuthProcessor basicAuthProcessor,
     IAuthenticationProvider authenticationProvider,
     IHashProviderFactory hashProviderFactory,
+    IamHashCodes hashCodes,
     ISecretProvider secretProvider,
     IValidationProvider validationProvider,
     TimeProvider timeProvider,
@@ -38,6 +40,7 @@ internal class PasswordRecoveryProcessor(
     private readonly IHashProviderFactory _hashProviderFactory = hashProviderFactory.ThrowIfNull(
         nameof(hashProviderFactory)
     );
+    private readonly IamHashCodes _hashCodes = hashCodes.ThrowIfNull(nameof(hashCodes));
     private readonly ISecretProvider _secretProvider = secretProvider.ThrowIfNull(
         nameof(secretProvider)
     );
@@ -87,7 +90,9 @@ internal class PasswordRecoveryProcessor(
         {
             Id = Guid.CreateVersion7(),
             UserId = userEntity.Id,
-            SecretHash = secret.ToHashedValueFromPlainText(_hashProviderFactory).ToHashString()!,
+            SecretHash = secret
+                .ToHashedValueFromPlainText(_hashProviderFactory, _hashCodes.TokenHashCode)
+                .ToHashString()!,
             ExpiresUtc = utcNow.AddSeconds(PasswordRecoveryConstants.TOKEN_TTL_SECONDS),
         };
 

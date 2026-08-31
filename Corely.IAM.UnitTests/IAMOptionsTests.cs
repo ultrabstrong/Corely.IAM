@@ -138,13 +138,26 @@ public class IAMOptionsTests
     {
         var options = IAMOptions.Create(_configuration, Mock.Of<ISecurityConfigurationProvider>());
 
-        Assert.Equal(SymmetricEncryptionConstants.AES_CODE, options.SymmetricEncryptionCode);
+        Assert.Equal(SymmetricEncryptionConstants.AES_GCM_CODE, options.SymmetricEncryptionCode);
         Assert.Equal(AsymmetricEncryptionConstants.RSA_CODE, options.AsymmetricEncryptionCode);
         Assert.Equal(
             AsymmetricSignatureConstants.ECDSA_SHA256_CODE,
             options.AsymmetricSignatureCode
         );
-        Assert.Equal(HashConstants.SALTED_SHA256_CODE, options.HashCode);
+
+        // Passwords get a deliberately slow hash; generated tokens are high-entropy and do not.
+        Assert.Equal(HashConstants.PBKDF2_SHA256_CODE, options.HashCode);
+        Assert.Equal(HashConstants.SALTED_SHA256_CODE, options.TokenHashCode);
+    }
+
+    [Fact]
+    public void UseTokenHash_SetsCode()
+    {
+        var options = IAMOptions.Create(_configuration, Mock.Of<ISecurityConfigurationProvider>());
+
+        options.UseTokenHash(HashConstants.SALTED_SHA512_CODE);
+
+        Assert.Equal(HashConstants.SALTED_SHA512_CODE, options.TokenHashCode);
     }
 
     [Fact]

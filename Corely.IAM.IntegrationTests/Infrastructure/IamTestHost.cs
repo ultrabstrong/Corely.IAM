@@ -1,5 +1,8 @@
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.DataAccess;
+using Corely.Security.Hashing;
+using Corely.Security.Hashing.Factories;
+using Corely.Security.Hashing.Providers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -60,6 +63,13 @@ public sealed class IamTestHost : IDisposable
         services.AddSingleton<TimeProvider>(TimeProvider);
 
         _serviceProvider = services.BuildServiceProvider();
+
+        // The production PBKDF2 work factor is 600,000 iterations - roughly 200ms per hash. Every
+        // scenario here registers users and signs them in, so paying that would dominate the run.
+        // Behaviour is what is under test; the work factor is asserted in Corely.Security.
+        _serviceProvider
+            .GetRequiredService<IHashProviderFactory>()
+            .UpdateProvider(HashConstants.PBKDF2_SHA256_CODE, new Pbkdf2HashProvider(1000));
 
         CreateSchema();
     }

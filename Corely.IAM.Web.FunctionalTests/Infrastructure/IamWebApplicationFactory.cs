@@ -1,6 +1,9 @@
 using System.Security.Cryptography;
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.DataAccess;
+using Corely.Security.Hashing;
+using Corely.Security.Hashing.Factories;
+using Corely.Security.Hashing.Providers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -94,6 +97,14 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
     public async Task InitializeDatabaseAsync()
     {
         await _connection.OpenAsync();
+
+        // The production PBKDF2 work factor is 600,000 iterations - roughly 200ms per hash. Every
+        // test here seeds a user and signs in, so paying that would dominate the run. Behaviour is
+        // what is under test; the work factor is asserted in Corely.Security.
+        Services
+            .GetRequiredService<IHashProviderFactory>()
+            .UpdateProvider(HashConstants.PBKDF2_SHA256_CODE, new Pbkdf2HashProvider(1000));
+
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<IamDbContext>();
         await dbContext.Database.EnsureCreatedAsync();

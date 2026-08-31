@@ -30,6 +30,7 @@ public class PasswordRecoveryProcessorTests
             _serviceFactory.GetRequiredService<BasicAuthProcessor>(),
             _serviceFactory.GetRequiredService<IAuthenticationProvider>(),
             _serviceFactory.GetRequiredService<Corely.Security.Hashing.Factories.IHashProviderFactory>(),
+            _serviceFactory.GetRequiredService<Corely.IAM.Security.Models.IamHashCodes>(),
             _serviceFactory.GetRequiredService<ISecretProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<TimeProvider>(),

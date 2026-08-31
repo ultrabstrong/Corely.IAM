@@ -16,8 +16,11 @@ public class IAMOptions
 
     internal Func<IServiceProvider, IEFConfiguration>? EFConfigurationFactory { get; private set; }
 
+    // GCM rather than CBC: authenticated encryption, so tampering is detected instead of silently
+    // decrypting to something else. Values already stored under CBC keep decrypting, because the
+    // provider is resolved from the prefix embedded in each stored value.
     internal string SymmetricEncryptionCode { get; private set; } =
-        SymmetricEncryptionConstants.AES_CODE;
+        SymmetricEncryptionConstants.AES_GCM_CODE;
 
     internal string AsymmetricEncryptionCode { get; private set; } =
         AsymmetricEncryptionConstants.RSA_CODE;
@@ -25,7 +28,18 @@ public class IAMOptions
     internal string AsymmetricSignatureCode { get; private set; } =
         AsymmetricSignatureConstants.ECDSA_SHA256_CODE;
 
-    internal string HashCode { get; private set; } = HashConstants.SALTED_SHA256_CODE;
+    /// <summary>
+    /// Hash used for user-chosen passwords. Deliberately slow, because a leaked hash is attacked
+    /// offline and a password has little entropy to begin with.
+    /// </summary>
+    internal string HashCode { get; private set; } = HashConstants.PBKDF2_SHA256_CODE;
+
+    /// <summary>
+    /// Hash used for generated secrets such as password-recovery tokens. These are high-entropy
+    /// random values, so a slow hash buys nothing and would put hundreds of milliseconds on every
+    /// issue and validation. A salted single-round hash is the right tool here.
+    /// </summary>
+    internal string TokenHashCode { get; private set; } = HashConstants.SALTED_SHA256_CODE;
 
     internal Dictionary<string, string> CustomResourceTypes { get; } =
         new(StringComparer.OrdinalIgnoreCase);
@@ -96,6 +110,13 @@ public class IAMOptions
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
         HashCode = code;
+        return this;
+    }
+
+    public IAMOptions UseTokenHash(string code)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+        TokenHashCode = code;
         return this;
     }
 }

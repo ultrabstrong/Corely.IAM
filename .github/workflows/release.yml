@@ -25,10 +25,10 @@ jobs:
       id-token: write # required for nuget.org to issue the short-lived key
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Corely.IAM multi-targets net9.0 and net10.0; the web projects target net10.0.
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             9.0.x
@@ -85,7 +85,7 @@ jobs:
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages
           path: ./artifacts/*

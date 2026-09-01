@@ -1,4 +1,5 @@
-﻿using Corely.Common.Extensions;
+﻿using System.Security.Cryptography;
+using Corely.Common.Extensions;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.Security.Encryption.Factories;
@@ -33,10 +34,20 @@ internal class SecurityProvider(
         var symmetricEncryptionProvider = _symmetricEncryptionProviderFactory.GetDefaultProvider();
 
         var decryptedKey = symmetricEncryptionProvider.GetSymmetricKeyProvider().CreateKey();
-        var encryptedKey = symmetricEncryptionProvider.Encrypt(
-            decryptedKey,
-            systemKeyStoreProvider
-        );
+        string encryptedKey;
+        try
+        {
+            // Keys are stored Base64-encoded, so the encoded copy is what gets encrypted. The
+            // generated array is zeroed here; the string it produced belongs to the ciphertext.
+            encryptedKey = symmetricEncryptionProvider.Encrypt(
+                Convert.ToBase64String(decryptedKey),
+                systemKeyStoreProvider
+            );
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(decryptedKey);
+        }
 
         var symmetricKey = new SymmetricKey
         {
@@ -62,10 +73,18 @@ internal class SecurityProvider(
         var (publickey, privateKey) = asymmetricEncryptionProvider
             .GetAsymmetricKeyProvider()
             .CreateKeys();
-        var encryptedPrivateKey = symmetricEncryptionProvider.Encrypt(
-            privateKey,
-            systemKeyStoreProvider
-        );
+        string encryptedPrivateKey;
+        try
+        {
+            encryptedPrivateKey = symmetricEncryptionProvider.Encrypt(
+                Convert.ToBase64String(privateKey),
+                systemKeyStoreProvider
+            );
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(privateKey);
+        }
 
         var asymmetricKey = new AsymmetricKey
         {
@@ -73,7 +92,7 @@ internal class SecurityProvider(
             KeyUsedFor = KeyUsedFor.Encryption,
             ProviderName = asymmetricEncryptionProvider.ProviderName,
             Version = systemKeyStoreProvider.GetCurrentVersion(),
-            PublicKey = publickey,
+            PublicKey = Convert.ToBase64String(publickey),
             PrivateKey = new SymmetricEncryptedValue(symmetricEncryptionProvider)
             {
                 Secret = encryptedPrivateKey,
@@ -91,10 +110,18 @@ internal class SecurityProvider(
         var (publickey, privateKey) = asymmetricSignatureProvider
             .GetAsymmetricKeyProvider()
             .CreateKeys();
-        var encryptedPrivateKey = symmetricEncryptionProvider.Encrypt(
-            privateKey,
-            systemKeyStoreProvider
-        );
+        string encryptedPrivateKey;
+        try
+        {
+            encryptedPrivateKey = symmetricEncryptionProvider.Encrypt(
+                Convert.ToBase64String(privateKey),
+                systemKeyStoreProvider
+            );
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(privateKey);
+        }
 
         var asymmetricKey = new AsymmetricKey
         {
@@ -102,7 +129,7 @@ internal class SecurityProvider(
             KeyUsedFor = KeyUsedFor.Signature,
             ProviderName = asymmetricSignatureProvider.ProviderName,
             Version = systemKeyStoreProvider.GetCurrentVersion(),
-            PublicKey = publickey,
+            PublicKey = Convert.ToBase64String(publickey),
             PrivateKey = new SymmetricEncryptedValue(symmetricEncryptionProvider)
             {
                 Secret = encryptedPrivateKey,
@@ -133,7 +160,10 @@ internal class SecurityProvider(
         var asymmetricSignatureProvider = _asymmetricSignatureProviderFactory.GetProvider(
             providerName
         );
-        return asymmetricSignatureProvider.GetSigningCredentials(key, isKeyPrivate);
+        return asymmetricSignatureProvider.GetSigningCredentials(
+            Convert.FromBase64String(key),
+            isKeyPrivate
+        );
     }
 
     public IIamSymmetricEncryptionProvider BuildSymmetricEncryptionProvider(

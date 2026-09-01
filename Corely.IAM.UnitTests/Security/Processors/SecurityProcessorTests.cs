@@ -58,7 +58,9 @@ public class SecurityProcessorTests
         var decryptedKey = _securityProcessor.DecryptWithSystemKey(result.Key.Secret);
 
         Assert.True(
-            _symmetricEncryptionProvider.GetSymmetricKeyProvider().IsKeyValid(decryptedKey)
+            _symmetricEncryptionProvider
+                .GetSymmetricKeyProvider()
+                .IsKeyValid(Convert.FromBase64String(decryptedKey))
         );
     }
 
@@ -80,7 +82,10 @@ public class SecurityProcessorTests
         Assert.True(
             _asymmetricEncryptionProvider
                 .GetAsymmetricKeyProvider()
-                .IsKeyValid(result.PublicKey, decryptedPrivateKey)
+                .IsKeyValid(
+                    Convert.FromBase64String(result.PublicKey),
+                    Convert.FromBase64String(decryptedPrivateKey)
+                )
         );
     }
 
@@ -102,7 +107,10 @@ public class SecurityProcessorTests
         Assert.True(
             _asymmetricSignatureProvider
                 .GetAsymmetricKeyProvider()
-                .IsKeyValid(result.PublicKey, decryptedPrivateKey)
+                .IsKeyValid(
+                    Convert.FromBase64String(result.PublicKey),
+                    Convert.FromBase64String(decryptedPrivateKey)
+                )
         );
     }
 

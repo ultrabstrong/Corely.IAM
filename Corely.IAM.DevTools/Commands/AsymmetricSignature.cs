@@ -1,4 +1,5 @@
-﻿using Corely.IAM.DevTools.Attributes;
+﻿using System.Security.Cryptography;
+using Corely.IAM.DevTools.Attributes;
 using Corely.Security.KeyStore;
 using Corely.Security.Signature;
 using Corely.Security.Signature.Factories;
@@ -114,7 +115,18 @@ internal class AsymmetricSignature : CommandBase
         var (publicKey, privateKey) = asymmetricEncryptionProvider
             .GetAsymmetricKeyProvider()
             .CreateKeys();
-        File.WriteAllText(KeyFile, $"{publicKey}{Environment.NewLine}{privateKey}");
+        try
+        {
+            File.WriteAllText(
+                KeyFile,
+                $"{Convert.ToBase64String(publicKey)}{Environment.NewLine}"
+                    + Convert.ToBase64String(privateKey)
+            );
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(privateKey);
+        }
         Console.WriteLine($"Keys written to {KeyFile}");
     }
 
@@ -124,10 +136,19 @@ internal class AsymmetricSignature : CommandBase
         if (keys is not var (publicKey, privateKey))
             return;
 
+        if (
+            !TryDecode(publicKey, out var publicBytes)
+            || !TryDecode(privateKey, out var privateBytes)
+        )
+        {
+            Console.WriteLine("Keys are not valid");
+            return;
+        }
+
         var asymmetricEncryptionProvider = _signatureProviderFactory.GetProvider(ProviderName);
         var isValid = asymmetricEncryptionProvider
             .GetAsymmetricKeyProvider()
-            .IsKeyValid(publicKey, privateKey);
+            .IsKeyValid(publicBytes, privateBytes);
         Console.WriteLine(isValid ? "Keys are valid" : "Keys are not valid");
     }
 
@@ -155,5 +176,19 @@ internal class AsymmetricSignature : CommandBase
             .GetProvider(ProviderName)
             .Verify(Message, Signature, keyProvider);
         Console.WriteLine(isValid ? "Signature is valid" : "Signature is not valid");
+    }
+
+    private static bool TryDecode(string value, out byte[] bytes)
+    {
+        try
+        {
+            bytes = Convert.FromBase64String(value);
+            return true;
+        }
+        catch (FormatException)
+        {
+            bytes = [];
+            return false;
+        }
     }
 }

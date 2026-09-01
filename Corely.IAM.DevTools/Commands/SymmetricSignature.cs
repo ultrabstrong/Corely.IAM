@@ -1,4 +1,5 @@
-﻿using Corely.IAM.DevTools.Attributes;
+﻿using System.Security.Cryptography;
+using Corely.IAM.DevTools.Attributes;
 using Corely.Security.KeyStore;
 using Corely.Security.Signature;
 using Corely.Security.Signature.Factories;
@@ -100,13 +101,26 @@ internal class SymmetricSignature : CommandBase
     {
         var signatureProvider = _signatureProviderFactory.GetProvider(ProviderName);
         var key = signatureProvider.GetSymmetricKeyProvider().CreateKey();
-        Console.WriteLine(key);
+        try
+        {
+            Console.WriteLine(Convert.ToBase64String(key));
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+        }
     }
 
     private void ValidateKey()
     {
+        if (!TryDecode(Key, out var keyBytes))
+        {
+            Console.WriteLine("Key is invalid");
+            return;
+        }
+
         var signatureProvider = _signatureProviderFactory.GetProvider(ProviderName);
-        var isValid = signatureProvider.GetSymmetricKeyProvider().IsKeyValid(Key);
+        var isValid = signatureProvider.GetSymmetricKeyProvider().IsKeyValid(keyBytes);
         Console.WriteLine($"Key is {(isValid ? "valid" : "invalid")}");
     }
 
@@ -126,5 +140,19 @@ internal class SymmetricSignature : CommandBase
             .GetProvider(ProviderName)
             .Verify(Message, Signature, keyProvider);
         Console.WriteLine($"Signature is {(isValid ? "valid" : "invalid")} for message");
+    }
+
+    private static bool TryDecode(string value, out byte[] bytes)
+    {
+        try
+        {
+            bytes = Convert.FromBase64String(value);
+            return true;
+        }
+        catch (FormatException)
+        {
+            bytes = [];
+            return false;
+        }
     }
 }

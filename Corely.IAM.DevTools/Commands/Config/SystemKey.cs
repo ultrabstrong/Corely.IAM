@@ -81,7 +81,9 @@ internal partial class Config
                 var encryptionProvider = _encryptionProviderFactory.GetProvider(
                     SymmetricEncryptionConstants.AES_CODE
                 );
-                keyToSet = encryptionProvider.GetSymmetricKeyProvider().CreateKey();
+                keyToSet = Convert.ToBase64String(
+                    encryptionProvider.GetSymmetricKeyProvider().CreateKey()
+                );
             }
             else
             {

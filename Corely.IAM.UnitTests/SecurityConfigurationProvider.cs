@@ -6,7 +6,7 @@ namespace Corely.IAM.UnitTests;
 
 internal class SecurityConfigurationProvider : ISecurityConfigurationProvider
 {
-    private readonly string _symmetricKey;
+    private readonly byte[] _symmetricKey;
 
     public SecurityConfigurationProvider()
     {

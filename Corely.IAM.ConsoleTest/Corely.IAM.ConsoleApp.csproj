@@ -17,7 +17,7 @@
   <ItemGroup>
     <PackageReference Include="Corely.Common" Version="1.2.1" />
     <PackageReference Include="Corely.DataAccess" Version="2.3.0" />
-    <PackageReference Include="Corely.Security" Version="1.1.0" />
+    <PackageReference Include="Corely.Security" Version="2.0.0" />
     <PackageReference Include="CSharpier.MsBuild" Version="1.2.6">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

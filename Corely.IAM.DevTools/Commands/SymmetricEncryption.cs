@@ -1,4 +1,5 @@
-﻿using Corely.IAM.DevTools.Attributes;
+﻿using System.Security.Cryptography;
+using Corely.IAM.DevTools.Attributes;
 using Corely.Security.Encryption;
 using Corely.Security.Encryption.Factories;
 using Corely.Security.KeyStore;
@@ -97,13 +98,26 @@ internal class SymmetricEncryption : CommandBase
     {
         var encryptionProvider = _encryptionProviderFactory.GetProvider(ProviderName);
         var key = encryptionProvider.GetSymmetricKeyProvider().CreateKey();
-        Console.WriteLine(key);
+        try
+        {
+            Console.WriteLine(Convert.ToBase64String(key));
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+        }
     }
 
     private void ValidateKey()
     {
+        if (!TryDecode(Key, out var keyBytes))
+        {
+            Console.WriteLine("Key is invalid");
+            return;
+        }
+
         var encryptionProvider = _encryptionProviderFactory.GetProvider(ProviderName);
-        var isValid = encryptionProvider.GetSymmetricKeyProvider().IsKeyValid(Key);
+        var isValid = encryptionProvider.GetSymmetricKeyProvider().IsKeyValid(keyBytes);
         Console.WriteLine($"Key is {(isValid ? "valid" : "invalid")}");
     }
 
@@ -123,5 +137,19 @@ internal class SymmetricEncryption : CommandBase
             .GetProvider(ProviderName)
             .Decrypt(ToDecrypt, keyProvider);
         Console.WriteLine(decrypted);
+    }
+
+    private static bool TryDecode(string value, out byte[] bytes)
+    {
+        try
+        {
+            bytes = Convert.FromBase64String(value);
+            return true;
+        }
+        catch (FormatException)
+        {
+            bytes = [];
+            return false;
+        }
     }
 }

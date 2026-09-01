@@ -1,6 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Binding;
-using System.CommandLine.NamingConventionBinder;
 using System.Reflection;
 using Corely.IAM.DataAccessMigrations.Cli.Attributes;
 
@@ -10,8 +8,9 @@ internal abstract class CommandBase : Command
 {
     private const string _helpFlag = "--help";
 
-    private readonly Dictionary<string, Argument> _arguments = [];
-    private readonly Dictionary<string, Option> _options = [];
+    // Property name -> the parse-result name of the symbol bound to it. Options are looked up by
+    // their primary alias, arguments by the property name.
+    private readonly Dictionary<PropertyInfo, string> _boundNames = [];
 
     protected CommandBase(string name, string description, string additionalDescription)
         : this(name, $"{description}{Environment.NewLine}{additionalDescription}") { }
@@ -19,12 +18,7 @@ internal abstract class CommandBase : Command
     protected CommandBase(string name, string description)
         : base(name, description)
     {
-        var type = GetType();
-        foreach (
-            var property in type.GetProperties(
-                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly
-            )
-        )
+        foreach (var property in DeclaredProperties())
         {
             var optionAttribute = property.GetCustomAttribute<OptionAttribute>();
             if (optionAttribute == null)
@@ -32,22 +26,25 @@ internal abstract class CommandBase : Command
                 var argumentAttribute = property.GetCustomAttribute<ArgumentAttribute>();
                 if (CreateArgument(property, argumentAttribute, out var argument))
                 {
-                    _arguments.Add(type.FullName + property.Name, argument);
-                    AddArgument(argument);
+                    _boundNames[property] = argument.Name;
+                    Arguments.Add(argument);
                 }
             }
-            else
+            else if (CreateOption(property, optionAttribute, out var option))
             {
-                if (CreateOption(property, optionAttribute, out var option))
-                {
-                    _options.Add(type.FullName + property.Name, option);
-                    AddOption(option);
-                }
+                _boundNames[property] = option.Name;
+                Options.Add(option);
             }
         }
 
-        Handler = CommandHandler.Create(InvokeExecute);
+        SetAction((parseResult, _) => InvokeExecute(parseResult));
     }
+
+    private IEnumerable<PropertyInfo> DeclaredProperties() =>
+        GetType()
+            .GetProperties(
+                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly
+            );
 
     private bool CreateArgument(
         PropertyInfo property,
@@ -56,33 +53,36 @@ internal abstract class CommandBase : Command
     )
     {
         var argumentGenericType = typeof(Argument<>).MakeGenericType(property.PropertyType);
-        var optionalText = argumentAttribute?.IsRequired ?? false ? string.Empty : "[Optional] ";
+        var isRequired = argumentAttribute?.IsRequired ?? false;
+        var optionalText = isRequired ? string.Empty : "[Optional] ";
 
-        var argumentInstance = Activator.CreateInstance(
-            argumentGenericType,
-            [property.Name, $"{optionalText}{argumentAttribute?.Description}"]
-        );
-
-        if (argumentInstance is Argument arg)
+        // The name is the only constructor parameter now; description is a property.
+        if (Activator.CreateInstance(argumentGenericType, [property.Name]) is not Argument arg)
         {
-            if (argumentAttribute != null)
-            {
-                if (argumentAttribute.ArgumentArity != null)
-                {
-                    arg.Arity = argumentAttribute.ArgumentArity.Value;
-                }
-                if (!argumentAttribute.IsRequired)
-                {
-                    arg.SetDefaultValue(property.GetValue(this));
-                }
-            }
-
-            argument = arg;
-            return true;
+            argument = null!;
+            return false;
         }
 
-        argument = null!;
-        return false;
+        arg.Description = $"{optionalText}{argumentAttribute?.Description}";
+
+        if (argumentAttribute?.ArgumentArity != null)
+        {
+            arg.Arity = argumentAttribute.ArgumentArity.Value;
+        }
+        else if (!isRequired)
+        {
+            // beta4 inferred optionality from the presence of a default value, including a null
+            // one. 2.0 takes it from arity alone, so an optional argument has to say so.
+            arg.Arity = ArgumentArity.ZeroOrOne;
+        }
+
+        if (!isRequired)
+        {
+            SetDefaultValue(arg, property.PropertyType, property.GetValue(this));
+        }
+
+        argument = arg;
+        return true;
     }
 
     private bool CreateOption(
@@ -92,42 +92,65 @@ internal abstract class CommandBase : Command
     )
     {
         var optionGenericType = typeof(Option<>).MakeGenericType(property.PropertyType);
-        var optionInstance = Activator.CreateInstance(
-            optionGenericType,
-            [optionAttribute.Aliases, optionAttribute.Description]
-        );
 
-        if (optionInstance is Option opt)
+        // Option<T> now takes a mandatory name plus a params array of aliases. The longest alias
+        // is used as the name so help renders "--verbose" rather than "-v" as the primary form.
+        var aliases = optionAttribute.Aliases;
+        var name = aliases.OrderByDescending(a => a.Length).First();
+        var rest = aliases.Where(a => a != name).ToArray();
+
+        if (Activator.CreateInstance(optionGenericType, [name, rest]) is not Option opt)
         {
-            if (optionAttribute.ArgumentArity != null)
-            {
-                opt.Arity = optionAttribute.ArgumentArity.Value;
-            }
-            opt.SetDefaultValue(property.GetValue(this));
-
-            option = opt;
-            return true;
+            option = null!;
+            return false;
         }
 
-        option = null!;
-        return false;
+        opt.Description = optionAttribute.Description;
+
+        if (optionAttribute.ArgumentArity != null)
+        {
+            opt.Arity = optionAttribute.ArgumentArity.Value;
+        }
+        SetDefaultValue(opt, property.PropertyType, property.GetValue(this));
+
+        option = opt;
+        return true;
     }
 
-    private async Task InvokeExecute(BindingContext context)
+    // DefaultValueFactory is Func<ArgumentResult, T>, so the delegate has to be built against the
+    // property's own type rather than object.
+    private static void SetDefaultValue(object symbol, Type valueType, object? value)
     {
-        var type = GetType();
-        foreach (
-            var property in type.GetProperties(
-                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly
-            )
-        )
-        {
-            var value = _options.TryGetValue(type.FullName + property.Name, out Option? option)
-                ? context.ParseResult.GetValueForOption(option)
-                : context.ParseResult.GetValueForArgument(
-                    _arguments[type.FullName + property.Name]
-                );
+        typeof(CommandBase)
+            .GetMethod(nameof(SetDefaultValueCore), BindingFlags.NonPublic | BindingFlags.Static)!
+            .MakeGenericMethod(valueType)
+            .Invoke(null, [symbol, value]);
+    }
 
+    private static void SetDefaultValueCore<T>(object symbol, object? value)
+    {
+        var typed = value is null ? default! : (T)value;
+        switch (symbol)
+        {
+            case Option<T> option:
+                option.DefaultValueFactory = _ => typed;
+                break;
+            case Argument<T> argument:
+                argument.DefaultValueFactory = _ => typed;
+                break;
+        }
+    }
+
+    private async Task InvokeExecute(ParseResult parseResult)
+    {
+        foreach (var property in DeclaredProperties())
+        {
+            if (!_boundNames.TryGetValue(property, out var name))
+            {
+                continue;
+            }
+
+            var value = GetParsedValue(parseResult, property.PropertyType, name);
             if (value != null)
             {
                 property.SetValue(this, value);
@@ -148,6 +171,18 @@ internal abstract class CommandBase : Command
         }
     }
 
+    private static object? GetParsedValue(ParseResult parseResult, Type valueType, string name) =>
+        typeof(ParseResult)
+            .GetMethods()
+            .Single(m =>
+                m.Name == nameof(ParseResult.GetValue)
+                && m.IsGenericMethodDefinition
+                && m.GetParameters() is [{ ParameterType: var p }]
+                && p == typeof(string)
+            )
+            .MakeGenericMethod(valueType)
+            .Invoke(parseResult, [name]);
+
     protected virtual Task ExecuteAsync()
     {
         Execute();
@@ -156,14 +191,14 @@ internal abstract class CommandBase : Command
 
     protected virtual void Execute() { }
 
-    protected void ShowHelp(string? message = null)
+    protected void ShowHelp(string message = null)
     {
         if (!string.IsNullOrEmpty(message))
         {
             Warn(message);
             Console.WriteLine();
         }
-        this.Invoke(_helpFlag);
+        Parse(_helpFlag).Invoke();
     }
 
     protected static void Success(string message)

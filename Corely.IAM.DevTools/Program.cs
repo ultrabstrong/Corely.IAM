@@ -64,7 +64,7 @@ internal class Program
             using var scope = host.Services.CreateScope();
 
             var rootCommand = GetRootCommand(scope.ServiceProvider);
-            await rootCommand.InvokeAsync(args);
+            await rootCommand.Parse(args).InvokeAsync();
         }
         catch (Exception ex)
         {
@@ -95,7 +95,7 @@ internal class Program
             if (command != null)
             {
                 AddSubCommands(serviceProvider, command);
-                rootCommand.AddCommand(command);
+                rootCommand.Subcommands.Add(command);
             }
         }
 
@@ -115,7 +115,7 @@ internal class Program
         foreach (var subCommand in subCommandInstances)
         {
             AddSubCommands(serviceProvider, subCommand!);
-            command.AddCommand(subCommand!);
+            command.Subcommands.Add(subCommand!);
         }
     }
 

@@ -65,7 +65,7 @@ internal class Program
             var rootCommand = GetRootCommand(scope.ServiceProvider);
             rootCommand.Description = "IAM Database Migration Management Tool";
 
-            await rootCommand.InvokeAsync(args);
+            await rootCommand.Parse(args).InvokeAsync();
         }
         catch (Exception ex)
         {
@@ -100,7 +100,7 @@ internal class Program
             if (command != null)
             {
                 AddSubCommands(serviceProvider, command, allCommandTypes);
-                rootCommand.AddCommand(command);
+                rootCommand.Subcommands.Add(command);
             }
         }
 
@@ -126,7 +126,7 @@ internal class Program
             if (subCommand != null)
             {
                 AddSubCommands(serviceProvider, subCommand, allCommandTypes);
-                parentCommand.AddCommand(subCommand);
+                parentCommand.Subcommands.Add(subCommand);
             }
         }
     }

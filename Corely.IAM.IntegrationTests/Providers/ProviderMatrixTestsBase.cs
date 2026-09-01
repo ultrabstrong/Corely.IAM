@@ -11,16 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Providers;
 
-/// <summary>
-/// I8 and I9 - the same behaviour, re-proven against each shipped provider.
-///
-/// Deliberately narrow. SQLite already covers the breadth; what only a real provider can settle is
-/// whether the migrations apply, whether the M:M NoAction constraints behave as configured, and
-/// whether set-based updates translate on that engine. Those are the cases where the providers are
-/// most likely to diverge.
-///
-/// Opt-in: skipped when Docker is not running.
-/// </summary>
 public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLifetime
 {
     private const string Password = "Provider!Pass123";
@@ -78,8 +68,6 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
     [RequiresDockerFact]
     public async Task DeletingARoleWithPermissions_DoesNotViolateForeignKeys()
     {
-        // This is the case that failed before RoleProcessor cleared its Permissions collection.
-        // The M:M join is NoAction on both sides on every shipped provider, so it must hold here.
         var result = await ActAsOwnerAsync(services =>
             services
                 .GetRequiredService<IDeregistrationService>()

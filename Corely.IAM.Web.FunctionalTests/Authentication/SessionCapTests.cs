@@ -3,10 +3,6 @@ using Corely.IAM.Web.FunctionalTests.Infrastructure;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
-/// <summary>
-/// F3 - the session cap. Renewal is bounded: repeated activity keeps a session alive only until
-/// the original session start plus the session TTL, after which re-authentication is required.
-/// </summary>
 public class SessionCapTests : FunctionalTestBase
 {
     protected override int AuthTokenTtlSeconds => 30;
@@ -53,7 +49,6 @@ public class SessionCapTests : FunctionalTestBase
         await SignInSuccessfullyAsync();
         var sessionStartedAt = TestJwt.GetSessionStartedAt(CurrentAuthToken!);
 
-        // Keep the session alive across several renewals, staying inside the cap throughout.
         for (var i = 0; i < 5; i++)
         {
             Clock.AdvanceSeconds(AuthTokenTtlSeconds + 5);
@@ -62,7 +57,6 @@ public class SessionCapTests : FunctionalTestBase
             Assert.Equal(sessionStartedAt, TestJwt.GetSessionStartedAt(CurrentAuthToken!));
         }
 
-        // Crossing the original bound must still end the session despite the activity.
         Clock.AdvanceSeconds(AuthSessionTtlSeconds);
         using var expired = await Client.GetAsync(AppRoutes.Dashboard);
 

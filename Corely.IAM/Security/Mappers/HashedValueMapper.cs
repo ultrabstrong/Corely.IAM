@@ -30,10 +30,6 @@ internal static class HashedValueMapper
         return hashedValue;
     }
 
-    /// <summary>
-    /// Hashes with a named provider rather than the default. Used for generated secrets, which
-    /// need a different provider than passwords - see <see cref="Models.IamHashCodes"/>.
-    /// </summary>
     public static IHashedValue ToHashedValueFromPlainText(
         this string source,
         IHashProviderFactory hashProviderFactory,

@@ -3,10 +3,6 @@ using Corely.IAM.Web.FunctionalTests.Infrastructure;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
-/// <summary>
-/// F4 - revocation takes effect on the next request. Revoking out of band stands in for a
-/// sign-out-everywhere triggered elsewhere: another device, an admin action, a password reset.
-/// </summary>
 public class RevocationTests : FunctionalTestBase
 {
     [Fact]
@@ -64,7 +60,6 @@ public class RevocationTests : FunctionalTestBase
     {
         await SignInSuccessfullyAsync();
 
-        // A second client is a second device: separate cookie jar, separate token row.
         using var sibling = new TestClient(Factory.CreateTestClient());
         using var siblingSignIn = await sibling.PostFormAsync(
             AppRoutes.SignIn,

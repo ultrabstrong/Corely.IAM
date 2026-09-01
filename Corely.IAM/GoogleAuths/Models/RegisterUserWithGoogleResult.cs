@@ -4,6 +4,9 @@ public enum RegisterUserWithGoogleResultCode
 {
     Success,
     InvalidGoogleTokenError,
+
+    EmailNotVerifiedError,
+
     GoogleAccountInUseError,
     UserExistsError,
     ValidationError,

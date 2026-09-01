@@ -156,17 +156,6 @@ internal class BasicAuthProcessor(
         return new VerifyBasicAuthResult(VerifyBasicAuthResultCode.Success, string.Empty, isValid);
     }
 
-    /// <summary>
-    /// Re-hashes a password that was stored under a weaker provider or a lower work factor.
-    ///
-    /// Changing the default hash only affects passwords set after the change; every existing
-    /// password would otherwise keep its original hash forever. A successful sign-in is the only
-    /// moment the plaintext is available, so it is the only place the upgrade can happen without
-    /// forcing a reset.
-    ///
-    /// Failure here must never fail the sign-in: the password was already verified, and an
-    /// un-upgraded hash is no worse than the status quo.
-    /// </summary>
     private async Task UpgradeStoredHashIfNeededAsync(BasicAuthEntity entity, string password)
     {
         try

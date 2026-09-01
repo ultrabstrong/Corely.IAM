@@ -3,11 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Corely.IAM.IntegrationTests.Providers;
 
-/// <summary>
-/// Mirrors the configurations the migration assemblies define. Those are internal to their own
-/// assemblies, so the migrations assembly is named here by string instead - the same name EF
-/// resolves at design time.
-/// </summary>
 internal sealed class TestMsSqlConfiguration(string connectionString)
     : EFMsSqlConfigurationBase(connectionString)
 {

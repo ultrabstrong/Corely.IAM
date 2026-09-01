@@ -1,8 +1,5 @@
 namespace Corely.IAM.IntegrationTests.Infrastructure;
 
-/// <summary>
-/// Controllable clock so expiry-dependent behaviour is assertable without sleeping.
-/// </summary>
 public sealed class TestTimeProvider(DateTimeOffset start) : TimeProvider
 {
     private DateTimeOffset _utcNow = start;

@@ -10,20 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Infrastructure;
 
-/// <summary>
-/// The dataset the authorization matrix runs against. Mirrors what
-/// <c>Corely.IAM.WebApp/DemoSetup/SeedWebAppDemo.ps1</c> builds, but as code so it runs anywhere
-/// with no PATH, config file, or host state.
-///
-/// Shape:
-/// <list type="bullet">
-/// <item>An owner with two accounts, so cross-account isolation is testable.</item>
-/// <item>A direct member granted a wildcard read on users via a role assigned to them.</item>
-/// <item>A group member granted read+update on a single specific role, via a group-to-role
-/// assignment - the longest grant path in the model.</item>
-/// <item>An outsider with no membership anywhere.</item>
-/// </list>
-/// </summary>
 public sealed class IamScenario : IAsyncLifetime
 {
     public const string Password = "Scenario!Pass123";
@@ -38,15 +24,12 @@ public sealed class IamScenario : IAsyncLifetime
     public Guid AccountId { get; private set; }
     public Guid OtherAccountId { get; private set; }
 
-    /// <summary>Role granted to the direct member. Carries a wildcard read on users.</summary>
     public Guid ReaderRoleId { get; private set; }
 
-    /// <summary>Role reached only through group membership. Grants read+update on itself.</summary>
     public Guid EditorRoleId { get; private set; }
 
     public Guid EditorGroupId { get; private set; }
 
-    /// <summary>A role nobody is granted anything on - the control for negative cases.</summary>
     public Guid UngrantedRoleId { get; private set; }
 
     public string OwnerUsername => "owner";
@@ -91,13 +74,6 @@ public sealed class IamScenario : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    // --- acting as a user --------------------------------------------------------------------
-
-    /// <summary>
-    /// Runs work under a real authenticated context for the given user, scoped to an account when
-    /// one is supplied. Uses sign-in rather than a synthetic context so the permissions being
-    /// tested are resolved the same way the application resolves them.
-    /// </summary>
     public Task<T> ActAsAsync<T>(
         string username,
         Guid? accountId,
@@ -122,9 +98,6 @@ public sealed class IamScenario : IAsyncLifetime
             return await work(services);
         });
 
-    /// <summary>
-    /// Answers the authorization question the application asks, under the given identity.
-    /// </summary>
     public Task<bool> IsAuthorizedAsync(
         string username,
         Guid? accountId,
@@ -141,15 +114,12 @@ public sealed class IamScenario : IAsyncLifetime
                     .IsAuthorizedAsync(action, resourceType, resourceIds)
         );
 
-    /// <summary>Runs work under the system context, which bypasses permission checks.</summary>
     public Task<T> AsSystemAsync<T>(Func<IServiceProvider, Task<T>> work) =>
         Host.WithScopeAsync(async services =>
         {
             services.GetRequiredService<IAuthenticationService>().AuthenticateAsSystem("system");
             return await work(services);
         });
-
-    // --- seeding ----------------------------------------------------------------------------
 
     private Task<Guid> RegisterUserAsync(string username) =>
         Host.WithScopeAsync(async services =>
@@ -205,7 +175,6 @@ public sealed class IamScenario : IAsyncLifetime
         EditorRoleId = await CreateRoleAsync("Editors", AccountId);
         UngrantedRoleId = await CreateRoleAsync("Ungranted", AccountId);
 
-        // Wildcard read across every user in the account.
         var wildcardUserRead = await CreatePermissionAsync(
             AccountId,
             Permissions.Constants.PermissionConstants.USER_RESOURCE_TYPE,
@@ -215,7 +184,6 @@ public sealed class IamScenario : IAsyncLifetime
         await AssignPermissionToRoleAsync(wildcardUserRead, ReaderRoleId, AccountId);
         await AssignRoleToUserAsync(ReaderRoleId, DirectMemberUserId, AccountId);
 
-        // Read and update on exactly one role, reachable only via group membership.
         var specificRoleAccess = await CreatePermissionAsync(
             AccountId,
             Permissions.Constants.PermissionConstants.ROLE_RESOURCE_TYPE,

@@ -6,15 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Persistence;
 
-/// <summary>
-/// I5 - nullable comparisons behave differently in SQL than in memory, and the difference is
-/// silent. In C# <c>null != x</c> is true; in SQL a comparison involving NULL is UNKNOWN, so rows
-/// with NULL are excluded from both <c>= x</c> and <c>&lt;&gt; x</c>. An in-memory test double
-/// cannot reproduce that.
-///
-/// <c>UserAuthTokenEntity.AccountId</c> is the live example: it is null until an account is
-/// selected.
-/// </summary>
 public class NullablePredicateTests : IAsyncLifetime
 {
     private readonly IamScenario _scenario = new();
@@ -52,18 +43,6 @@ public class NullablePredicateTests : IAsyncLifetime
         Assert.DoesNotContain(matching, t => t.AccountId == null);
     }
 
-    /// <summary>
-    /// Pins down behaviour that is easy to get wrong in both directions.
-    ///
-    /// In raw SQL, <c>AccountId &lt;&gt; @value</c> excludes NULL rows, because a comparison
-    /// involving NULL is UNKNOWN rather than true. EF Core deliberately compensates: it emits
-    /// <c>AccountId &lt;&gt; @value OR AccountId IS NULL</c> so the result matches C# semantics,
-    /// where <c>null != value</c> is true.
-    ///
-    /// The consequence worth knowing: a LINQ inequality and the "same" hand-written SQL return
-    /// different rows. Anyone dropping to raw SQL for one of these predicates has to add the
-    /// null branch back by hand.
-    /// </summary>
     [Fact]
     public async Task InequalityAgainstANonNullValue_IncludesNullRows_BecauseEfCompensates()
     {

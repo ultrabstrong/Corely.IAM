@@ -12,11 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.Web.FunctionalTests.Infrastructure;
 
-/// <summary>
-/// One host, one database, and one clock per test. Boot cost is small against SQLite, and the
-/// isolation matters: these tests advance time and revoke tokens, so sharing state across tests
-/// would make them order-dependent.
-/// </summary>
 public abstract class FunctionalTestBase : IAsyncLifetime
 {
     protected IamWebApplicationFactory Factory { get; private set; } = null!;
@@ -26,7 +21,6 @@ public abstract class FunctionalTestBase : IAsyncLifetime
     protected Guid OwnerUserId { get; private set; }
     protected Guid AccountId { get; private set; }
 
-    /// <summary>Overridden by tests that need a short window to cross a boundary.</summary>
     protected virtual int AuthTokenTtlSeconds => 3600;
     protected virtual int AuthSessionTtlSeconds => 604800;
 
@@ -49,15 +43,6 @@ public abstract class FunctionalTestBase : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    /// <summary>
-    /// Seeds through the real registration service rather than by inserting rows, so the fixture
-    /// exercises the same key provisioning and password hashing the application uses. Hand-built
-    /// rows could not produce valid encrypted values anyway.
-    ///
-    /// Account creation happens in a second scope, after signing in: creating an account requires
-    /// a user context and the caller must be the prospective owner, so there is no way to seed it
-    /// without first authenticating - the same order the demo seed script follows.
-    /// </summary>
     private async Task SeedAsync()
     {
         await Factory.WithScopeAsync(async services =>
@@ -94,8 +79,6 @@ public abstract class FunctionalTestBase : IAsyncLifetime
         });
     }
 
-    // --- sign in -----------------------------------------------------------------------------
-
     protected Task<HttpResponseMessage> SignInAsync(
         string username = SeedData.OwnerUsername,
         string password = SeedData.OwnerPassword
@@ -112,12 +95,6 @@ public abstract class FunctionalTestBase : IAsyncLifetime
         Assert.NotNull(CurrentAuthToken);
     }
 
-    // --- fixture extensions ------------------------------------------------------------------
-
-    /// <summary>
-    /// Adds a second account owned by the seeded user, which is what pushes sign-in through the
-    /// account selection branch rather than straight to the dashboard.
-    /// </summary>
     protected async Task<Guid> CreateAdditionalAccountAsync(string accountName) =>
         await Factory.WithScopeAsync(async services =>
         {
@@ -135,10 +112,6 @@ public abstract class FunctionalTestBase : IAsyncLifetime
             return account.CreatedAccountId;
         });
 
-    /// <summary>
-    /// Enables and confirms TOTP for the seeded user, returning the shared secret so tests can
-    /// generate valid codes. Uses the real MFA service so enrollment is exercised, not faked.
-    /// </summary>
     protected async Task<string> EnableMfaAsync() =>
         await Factory.WithScopeAsync(async services =>
         {
@@ -175,8 +148,6 @@ public abstract class FunctionalTestBase : IAsyncLifetime
             return result.RecoveryToken;
         });
 
-    // --- cookie and token access -------------------------------------------------------------
-
     protected string? CurrentAuthToken => Client.Cookies[AuthenticationConstants.AUTH_TOKEN_COOKIE];
 
     protected string? CurrentAuthTokenId =>
@@ -184,8 +155,6 @@ public abstract class FunctionalTestBase : IAsyncLifetime
 
     protected bool HasAuthCookies =>
         Client.Cookies.Contains(AuthenticationConstants.AUTH_TOKEN_COOKIE);
-
-    // --- database access ---------------------------------------------------------------------
 
     internal Task<T> QueryAsync<T>(Func<IamDbContext, Task<T>> query) =>
         Factory.WithScopeAsync(services => query(services.GetRequiredService<IamDbContext>()));
@@ -200,10 +169,6 @@ public abstract class FunctionalTestBase : IAsyncLifetime
                 .ToListAsync()
         );
 
-    /// <summary>
-    /// Revokes the current session out of band, standing in for a sign-out-everywhere performed
-    /// elsewhere - another device, an admin action, a password reset.
-    /// </summary>
     protected async Task RevokeCurrentTokenOutOfBandAsync()
     {
         var tokenId = Guid.Parse(CurrentAuthTokenId!);

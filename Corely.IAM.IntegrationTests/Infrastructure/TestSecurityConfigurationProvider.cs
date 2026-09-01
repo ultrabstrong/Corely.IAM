@@ -4,10 +4,6 @@ using Corely.Security.KeyStore;
 
 namespace Corely.IAM.IntegrationTests.Infrastructure;
 
-/// <summary>
-/// A throwaway system key per host. Matches the base64 AES key format the library's own key
-/// provider emits; that provider is internal to Corely.Security so it cannot be called here.
-/// </summary>
 internal sealed class TestSecurityConfigurationProvider : ISecurityConfigurationProvider
 {
     private readonly string _symmetricKey = CreateKey();

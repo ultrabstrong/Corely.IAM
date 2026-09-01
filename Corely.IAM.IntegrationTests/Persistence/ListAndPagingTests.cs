@@ -7,11 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Persistence;
 
-/// <summary>
-/// I6 - list, filter, and paging must translate to SQL rather than falling back to client-side
-/// evaluation. A query that silently materialises the whole table and then pages in memory returns
-/// correct answers in a test and falls over in production.
-/// </summary>
 public class ListAndPagingTests(IamScenario scenario) : IClassFixture<IamScenario>
 {
     [Fact]

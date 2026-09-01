@@ -2,11 +2,6 @@ using System.IdentityModel.Tokens.Jwt;
 
 namespace Corely.IAM.Web.FunctionalTests.Infrastructure;
 
-/// <summary>
-/// Reads claims out of an issued auth token without validating it. Tests assert on identity and
-/// lifetime claims - <c>jti</c>, <c>exp</c>, <c>session_started_at</c> - and validation is the
-/// application's job, not the test's.
-/// </summary>
 public static class TestJwt
 {
     public const string SESSION_STARTED_AT = "session_started_at";

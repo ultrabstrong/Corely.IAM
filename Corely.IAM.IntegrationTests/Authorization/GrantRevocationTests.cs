@@ -7,14 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Authorization;
 
-/// <summary>
-/// I2 - grants must be revocable. Access that survives the removal of the thing that granted it
-/// is the most dangerous failure this tier can catch, and it is invisible to a mock repo because
-/// it depends on join rows actually being deleted.
-///
-/// Each test owns its scenario: these mutate the grant graph, so a shared fixture would make the
-/// results order-dependent.
-/// </summary>
 public class GrantRevocationTests : IAsyncLifetime
 {
     private readonly IamScenario _scenario = new();

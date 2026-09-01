@@ -36,6 +36,18 @@ internal class GoogleAuthProcessor(
             );
         }
 
+        if (!payload.EmailVerified)
+        {
+            _logger.LogInformation(
+                "Google link refused for UserId {UserId}: email is not verified",
+                userId
+            );
+            return new LinkGoogleAuthResult(
+                LinkGoogleAuthResultCode.EmailNotVerifiedError,
+                "Google has not verified this email address"
+            );
+        }
+
         var existing = await _googleAuthRepo.GetAsync(e => e.UserId == userId);
         if (existing != null)
         {

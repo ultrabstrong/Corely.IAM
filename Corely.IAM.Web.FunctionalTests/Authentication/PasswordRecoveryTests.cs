@@ -4,17 +4,6 @@ using Corely.IAM.WebApp;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
-/// <summary>
-/// F10 - password recovery end to end through the reference host's pages.
-///
-/// Assertions check page content rather than status codes: this host re-renders the same page
-/// with a 200 whether the reset succeeded or failed, so asserting on status alone lets a broken
-/// reset pass silently. It did exactly that until a missing ConfirmPassword field was found.
-///
-/// Note on user enumeration: this host deliberately surfaces library result codes directly, so an
-/// unknown email renders a distinguishable error. That is documented intent for a demo host, not
-/// a defect, so it is asserted as-is rather than as a no-enumeration guarantee.
-/// </summary>
 public class PasswordRecoveryTests : FunctionalTestBase
 {
     private const string NewPassword = "Rotated!Pass456";
@@ -167,10 +156,6 @@ public class PasswordRecoveryTests : FunctionalTestBase
         );
     }
 
-    /// <summary>
-    /// Drives the real pages: post the email, follow the demo preview redirect, and read the token
-    /// off the rendered page - the reference host's stand-in for email delivery.
-    /// </summary>
     private async Task<string?> RequestRecoveryTokenAsync(string email)
     {
         using var request = await Client.PostFormAsync(

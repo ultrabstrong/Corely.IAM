@@ -3,10 +3,6 @@ using Corely.IAM.Web.FunctionalTests.Infrastructure;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
-/// <summary>
-/// F7 - the MFA challenge. The critical assertion is the negative one: a correct password on an
-/// MFA-enabled account must not, on its own, produce a usable session.
-/// </summary>
 public class MfaTests : FunctionalTestBase
 {
     [Fact]
@@ -101,7 +97,6 @@ public class MfaTests : FunctionalTestBase
         var secret = await EnableMfaAsync();
         var challenge = await StartMfaChallengeAsync();
 
-        // MfaChallengeTimeoutSeconds is 300 in the test host configuration.
         Clock.AdvanceSeconds(400);
         var code = await GenerateTotpCodeAsync(secret);
 
@@ -118,13 +113,6 @@ public class MfaTests : FunctionalTestBase
         Assert.False(HasAuthCookies);
     }
 
-    /// <summary>
-    /// Signs in to obtain a challenge, then reads the challenge token and the antiforgery token
-    /// off the rendered form in a single GET - the same way a browser would carry them forward.
-    ///
-    /// The page must only be fetched once: it reads its challenge token from TempData, so a
-    /// second GET would find nothing and redirect to sign-in.
-    /// </summary>
     private async Task<MfaChallenge> StartMfaChallengeAsync()
     {
         using (var signIn = await SignInAsync())

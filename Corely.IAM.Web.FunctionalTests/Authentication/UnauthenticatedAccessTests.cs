@@ -4,11 +4,6 @@ using Corely.IAM.Web.Security;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
-/// <summary>
-/// F6 - what an anonymous or malformed request sees. The malformed-cookie case matters most:
-/// the middleware must reject and clear rather than throw, since a corrupt cookie would otherwise
-/// lock a user out of the site with a 500 that no amount of retrying fixes.
-/// </summary>
 public class UnauthenticatedAccessTests : FunctionalTestBase
 {
     [Fact]
@@ -43,7 +38,6 @@ public class UnauthenticatedAccessTests : FunctionalTestBase
     {
         await SignInSuccessfullyAsync();
 
-        // Replay a syntactically valid but meaningless token.
         using var corrupt = new TestClient(Factory.CreateTestClient());
         corrupt.Cookies.Apply(BuildCookieHeader("not.a.jwt"));
 

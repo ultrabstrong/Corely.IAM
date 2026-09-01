@@ -2,9 +2,6 @@ using System.Net.Http.Headers;
 
 namespace Corely.IAM.Web.FunctionalTests.Infrastructure;
 
-/// <summary>
-/// A single cookie as the server actually sent it, attributes included.
-/// </summary>
 public sealed record SentCookie(
     string Name,
     string Value,
@@ -14,19 +11,11 @@ public sealed record SentCookie(
     DateTimeOffset? Expires
 )
 {
-    /// <summary>
-    /// ASP.NET Core deletes a cookie by re-sending it empty with an expiry at the Unix epoch.
-    /// </summary>
     public bool IsDeletion =>
         string.IsNullOrEmpty(Value)
         || (Expires.HasValue && Expires.Value <= DateTimeOffset.UnixEpoch);
 }
 
-/// <summary>
-/// Cookies are managed explicitly rather than by <c>HttpClient</c>'s built-in container because
-/// these tests assert on cookie attributes - HttpOnly, Secure, SameSite, expiry - and on the exact
-/// moment a cookie is cleared. A container hides all of that.
-/// </summary>
 public sealed class CookieJar
 {
     private readonly Dictionary<string, string> _cookies = [];
@@ -40,10 +29,6 @@ public sealed class CookieJar
     public string? ToHeaderValue() =>
         _cookies.Count == 0 ? null : string.Join("; ", _cookies.Select(c => $"{c.Key}={c.Value}"));
 
-    /// <summary>
-    /// Applies a response's Set-Cookie headers and returns them parsed, so a test can assert on
-    /// what was sent in that specific response.
-    /// </summary>
     public IReadOnlyList<SentCookie> Apply(HttpResponseHeaders headers)
     {
         var applied = new List<SentCookie>();

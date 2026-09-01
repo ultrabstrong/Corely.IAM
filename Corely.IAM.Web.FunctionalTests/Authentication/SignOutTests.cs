@@ -3,10 +3,6 @@ using Corely.IAM.Web.FunctionalTests.Infrastructure;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
-/// <summary>
-/// F9 - sign out clears client state and revokes the server-side token, so a stolen cookie is
-/// worthless afterwards.
-/// </summary>
 public class SignOutTests : FunctionalTestBase
 {
     [Fact]

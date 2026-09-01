@@ -14,13 +14,6 @@ using Testcontainers.MySql;
 
 namespace Corely.IAM.IntegrationTests.Providers;
 
-/// <summary>
-/// The IAM service graph against a real containerised instance of a shipped provider, with the
-/// schema built by that provider's own migrations rather than by EnsureCreated.
-///
-/// This is the only tier that can prove the three migration sets actually work. SQLite catches
-/// translation mistakes; it cannot catch a migration that only SQL Server rejects.
-/// </summary>
 public sealed class ProviderTestHost(DatabaseProvider provider) : IAsyncLifetime
 {
     private IContainer? _container;
@@ -109,7 +102,6 @@ public sealed class ProviderTestHost(DatabaseProvider provider) : IAsyncLifetime
             _ => throw new NotSupportedException($"Unsupported provider {provider}."),
         };
 
-    /// <summary>Applies the provider's migrations. This is I9's assertion, run as setup.</summary>
     public Task MigrateAsync() =>
         WithScopeAsync(services =>
             services.GetRequiredService<IamDbContext>().Database.MigrateAsync()

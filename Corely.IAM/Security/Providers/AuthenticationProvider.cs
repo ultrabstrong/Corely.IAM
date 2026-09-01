@@ -577,12 +577,6 @@ internal class AuthenticationProvider(
         );
     }
 
-    /// <summary>
-    /// Token lifetime is checked against the injected <see cref="TimeProvider"/> rather than the
-    /// handler's default, which reads <c>DateTime.UtcNow</c> directly. Without this the clock
-    /// abstraction is bypassed for the one check that is entirely about time, leaving expiry and
-    /// renewal boundaries unassertable in tests.
-    /// </summary>
     private bool IsWithinLifetime(
         DateTime? notBefore,
         DateTime? expires,

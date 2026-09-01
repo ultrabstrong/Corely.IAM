@@ -6,14 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Persistence;
 
-/// <summary>
-/// I3 - many-to-many join entities and delete behaviour.
-///
-/// SQL Server forbids cascade deletes on M:M relationships, so every such relationship uses an
-/// explicit join entity with <c>DeleteBehavior.NoAction</c>, and processors must Include and Clear
-/// the collections before deleting the parent. That contract is invisible to a mock repo: it only
-/// exists in the database's referential integrity rules.
-/// </summary>
 public class JoinEntityDeleteTests : IAsyncLifetime
 {
     private readonly IamScenario _scenario = new();

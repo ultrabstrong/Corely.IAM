@@ -2,17 +2,12 @@ using System.Text.RegularExpressions;
 
 namespace Corely.IAM.Web.FunctionalTests.Infrastructure;
 
-/// <summary>
-/// Thin HTTP client with an explicit cookie jar and antiforgery handling, so tests read as a
-/// sequence of requests rather than as plumbing.
-/// </summary>
 public sealed partial class TestClient(HttpClient client) : IDisposable
 {
     private const string ANTIFORGERY_FIELD = "__RequestVerificationToken";
 
     public CookieJar Cookies { get; } = new();
 
-    /// <summary>Set-Cookie headers from the most recent response, parsed.</summary>
     public IReadOnlyList<SentCookie> LastSetCookies { get; private set; } = [];
 
     public async Task<HttpResponseMessage> GetAsync(string path)
@@ -21,11 +16,6 @@ public sealed partial class TestClient(HttpClient client) : IDisposable
         return await SendAsync(request);
     }
 
-    /// <summary>
-    /// Posts a form, fetching an antiforgery token from the target page unless one is supplied.
-    /// Pass <paramref name="antiforgeryToken"/> for pages whose GET consumes single-use state -
-    /// the MFA challenge reads its token from TempData, so re-fetching the page would destroy it.
-    /// </summary>
     public async Task<HttpResponseMessage> PostFormAsync(
         string path,
         Dictionary<string, string> fields,
@@ -43,9 +33,6 @@ public sealed partial class TestClient(HttpClient client) : IDisposable
         return await SendAsync(request);
     }
 
-    /// <summary>
-    /// Posts without an antiforgery token, for tests that assert the guard actually fires.
-    /// </summary>
     public async Task<HttpResponseMessage> PostFormWithoutAntiforgeryAsync(
         string path,
         Dictionary<string, string> fields

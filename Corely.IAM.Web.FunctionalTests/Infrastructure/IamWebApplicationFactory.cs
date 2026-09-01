@@ -17,22 +17,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Web.FunctionalTests.Infrastructure;
 
-/// <summary>
-/// Boots the real WebApp host in-process against SQLite and a controllable clock.
-///
-/// This owns the HTTP seam: the genuine <c>AuthenticationTokenMiddleware</c>, Razor Pages,
-/// antiforgery, and cookie pipeline all run exactly as they do in production. Only the database
-/// provider and the clock are substituted.
-/// </summary>
 public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly SqliteConnection _connection = new("Data Source=:memory:");
 
-    /// <summary>
-    /// Fixed origin so every request is treated as HTTPS. Without this
-    /// <c>UseHttpsRedirection</c> would 307 every request, and cookies would be issued
-    /// without the Secure flag - which is itself under test.
-    /// </summary>
     public static readonly Uri BaseAddress = new("https://localhost");
 
     public TestTimeProvider TimeProvider { get; } =
@@ -45,17 +33,9 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment(Environments.Development);
 
-        // UseSetting rather than ConfigureAppConfiguration: Program.cs reads Security:SystemKey and
-        // the connection string directly off builder.Configuration, before the host is built, so an
-        // added configuration source lands too late. UseSetting values are seeded early enough.
-        //
-        // This matters beyond ordering. appsettings.json is gitignored, so with the late-applied
-        // source these tests silently fell back to the developer's own appsettings.json and failed
-        // anywhere it was absent. Every value the app needs is supplied here.
         foreach (
             var (key, value) in new Dictionary<string, string>
             {
-                // Required by Program.cs even though the EF configuration is replaced below.
                 ["ConnectionStrings:DefaultConnection"] = "Data Source=:memory:",
                 ["Database:Provider"] = "mssql",
                 ["Security:SystemKey"] = CreateSystemKey(),
@@ -83,11 +63,6 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
         });
     }
 
-    /// <summary>
-    /// A throwaway system key per host. Matches the base64 AES key format the library's own
-    /// key provider emits; that provider is internal to Corely.Security so it cannot be called
-    /// from here.
-    /// </summary>
     private static string CreateSystemKey()
     {
         using var aes = Aes.Create();
@@ -95,18 +70,10 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
         return Convert.ToBase64String(aes.Key);
     }
 
-    /// <summary>
-    /// Opens the shared connection and creates the schema. Must run before any request, and is
-    /// the point at which SQLite's ability to round-trip the IAM entity configurations - the M:M
-    /// join entities in particular - is proven.
-    /// </summary>
     public async Task InitializeDatabaseAsync()
     {
         await _connection.OpenAsync();
 
-        // The production PBKDF2 work factor is 600,000 iterations - roughly 200ms per hash. Every
-        // test here seeds a user and signs in, so paying that would dominate the run. Behaviour is
-        // what is under test; the work factor is asserted in Corely.Security.
         Services
             .GetRequiredService<IHashProviderFactory>()
             .UpdateProvider(HashConstants.PBKDF2_SHA256_CODE, new Pbkdf2HashProvider(1000));

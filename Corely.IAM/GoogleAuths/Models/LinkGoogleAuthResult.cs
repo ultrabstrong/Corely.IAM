@@ -4,6 +4,9 @@ public enum LinkGoogleAuthResultCode
 {
     Success,
     InvalidGoogleTokenError,
+
+    EmailNotVerifiedError,
+
     AlreadyLinkedError,
     GoogleAccountInUseError,
     UnauthorizedError,

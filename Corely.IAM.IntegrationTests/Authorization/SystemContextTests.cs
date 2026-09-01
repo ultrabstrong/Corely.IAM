@@ -8,11 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Authorization;
 
-/// <summary>
-/// I2 - the system context. It exists so headless processes can operate without a user, and its
-/// two properties pull in opposite directions: it bypasses permission checks, yet must be blocked
-/// from "self" operations that only make sense for a real person.
-/// </summary>
 public class SystemContextTests(IamScenario scenario) : IClassFixture<IamScenario>
 {
     [Fact]

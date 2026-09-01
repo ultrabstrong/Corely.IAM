@@ -13,13 +13,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Corely.IAM.IntegrationTests.Infrastructure;
 
-/// <summary>
-/// The real IAM service graph wired to a real relational database.
-///
-/// This is the whole point of the tier: every processor, decorator, repository, and entity
-/// configuration is the production one, and queries are translated to SQL and executed rather
-/// than interpreted in memory by a test double.
-/// </summary>
 public sealed class IamTestHost : IDisposable
 {
     private readonly SqliteConnection _connection = new("Data Source=:memory:");
@@ -64,9 +57,6 @@ public sealed class IamTestHost : IDisposable
 
         _serviceProvider = services.BuildServiceProvider();
 
-        // The production PBKDF2 work factor is 600,000 iterations - roughly 200ms per hash. Every
-        // scenario here registers users and signs them in, so paying that would dominate the run.
-        // Behaviour is what is under test; the work factor is asserted in Corely.Security.
         _serviceProvider
             .GetRequiredService<IHashProviderFactory>()
             .UpdateProvider(HashConstants.PBKDF2_SHA256_CODE, new Pbkdf2HashProvider(1000));
@@ -74,22 +64,12 @@ public sealed class IamTestHost : IDisposable
         CreateSchema();
     }
 
-    /// <summary>
-    /// Creating the schema from the EF model is itself a test: it proves the IAM entity
-    /// configurations - including the M:M join entities and their NoAction delete behaviour -
-    /// round-trip through a relational provider.
-    /// </summary>
     private void CreateSchema()
     {
         using var scope = _serviceProvider.CreateScope();
         scope.ServiceProvider.GetRequiredService<IamDbContext>().Database.EnsureCreated();
     }
 
-    /// <summary>
-    /// Each call gets a fresh scope. This matters beyond hygiene: the authorization provider
-    /// caches within a scope, so permission changes are only observed by a later scope - exactly
-    /// as they would be across separate requests in a running application.
-    /// </summary>
     public async Task<T> WithScopeAsync<T>(Func<IServiceProvider, Task<T>> work)
     {
         using var scope = _serviceProvider.CreateScope();

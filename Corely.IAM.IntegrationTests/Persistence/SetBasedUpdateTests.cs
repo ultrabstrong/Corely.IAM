@@ -7,17 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Persistence;
 
-/// <summary>
-/// I4 - set-based updates must translate to SQL.
-///
-/// Token revocation and password-recovery invalidation both go through
-/// <c>IRepo.ExecuteUpdateAsync</c>. In the unit suite those pass because <c>MockRepo</c>
-/// interprets the SetProperty expression tree in memory - which proves the mock agrees with
-/// itself, not that EF can translate the predicate. These run the real translation.
-///
-/// The batching also buys atomicity, not just speed: revoking each token in its own transaction
-/// meant a mid-loop failure could leave a user partially signed out after a password reset.
-/// </summary>
 public class SetBasedUpdateTests : IAsyncLifetime
 {
     private readonly IamScenario _scenario = new();
@@ -73,7 +62,6 @@ public class SetBasedUpdateTests : IAsyncLifetime
     [Fact]
     public async Task RevocationWithNoMatchingRows_DoesNotThrow()
     {
-        // The outsider has never signed in on a second device; the predicate matches nothing.
         var exception = await Record.ExceptionAsync(() =>
             _scenario.ActAsAsync(
                 _scenario.OutsiderUsername,

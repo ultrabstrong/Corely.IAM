@@ -6,13 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Persistence;
 
-/// <summary>
-/// I7 - key provisioning, storage, and round-trip against a real database.
-///
-/// The rule this tier can actually enforce is that nothing sensitive is stored in the clear: keys
-/// are encrypted with the system key before persisting, so the stored column must never equal the
-/// value the provider hands back.
-/// </summary>
 public class KeyManagementTests(IamScenario scenario) : IClassFixture<IamScenario>
 {
     [Fact]

@@ -172,6 +172,21 @@ internal class RegistrationService(
             );
         }
 
+        // Sign-in is intentionally not gated on this: it resolves by Google subject and binds no
+        // address, so gating it would lock out already-linked accounts.
+        if (!payload.EmailVerified)
+        {
+            _logger.LogInformation(
+                "Google registration refused: email {Email} is not verified",
+                payload.Email
+            );
+            return new RegisterUserWithGoogleResult(
+                RegisterUserWithGoogleResultCode.EmailNotVerifiedError,
+                "Google has not verified this email address",
+                Guid.Empty
+            );
+        }
+
         var existingGoogleUser = await _googleAuthProcessor.GetUserIdByGoogleSubjectAsync(
             payload.Subject
         );

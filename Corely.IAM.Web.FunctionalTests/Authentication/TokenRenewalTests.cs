@@ -3,11 +3,6 @@ using Corely.IAM.Web.FunctionalTests.Infrastructure;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
-/// <summary>
-/// F2 - bounded session renewal, the automated form of what was previously only ever verified by
-/// hand in a browser. A short token TTL inside a long session lets the renewal boundary be crossed
-/// by advancing the clock rather than waiting.
-/// </summary>
 public class TokenRenewalTests : FunctionalTestBase
 {
     protected override int AuthTokenTtlSeconds => 60;
@@ -48,7 +43,6 @@ public class TokenRenewalTests : FunctionalTestBase
         using var response = await Client.GetAsync(AppRoutes.Dashboard);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        // The whole point of a bounded session: renewal moves the token, never the session origin.
         Assert.Equal(before, TestJwt.GetSessionStartedAt(CurrentAuthToken!));
     }
 
@@ -103,7 +97,6 @@ public class TokenRenewalTests : FunctionalTestBase
             .AddSeconds(AuthSessionTtlSeconds)
             .UtcDateTime;
 
-        // Land inside the session but close enough to its end that a full token TTL would overrun.
         Clock.AdvanceSeconds(AuthSessionTtlSeconds - (AuthTokenTtlSeconds / 2));
         using var response = await Client.GetAsync(AppRoutes.Dashboard);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

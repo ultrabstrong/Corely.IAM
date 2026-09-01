@@ -4,11 +4,6 @@ using Corely.IAM.Web.Security;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
-/// <summary>
-/// F5 / F6 - the sign-in seam. Cookie attributes are asserted from the raw Set-Cookie headers,
-/// which is why no browser is needed: whether the app *sets* Secure and HttpOnly is observable
-/// here, and whether a browser *enforces* them is not this suite's concern.
-/// </summary>
 public class SignInTests : FunctionalTestBase
 {
     [Fact]
@@ -85,7 +80,6 @@ public class SignInTests : FunctionalTestBase
         using var unknownUser = await SignInAsync(username: "nosuchuser");
         var unknownUserBody = await unknownUser.Content.ReadAsStringAsync();
 
-        // Fresh client so the failed attempt above does not affect lockout state.
         await DisposeAsync();
         await InitializeAsync();
 

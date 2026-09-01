@@ -3,10 +3,6 @@ using Corely.IAM.Web.FunctionalTests.Infrastructure;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
-/// <summary>
-/// F11 - the antiforgery guard actually fires. Every other test in this suite posts *with* a
-/// token, so without these the guard could be disabled entirely and nothing would notice.
-/// </summary>
 public class AntiforgeryTests : FunctionalTestBase
 {
     [Fact]

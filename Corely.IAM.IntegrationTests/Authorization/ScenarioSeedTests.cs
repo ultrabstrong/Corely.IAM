@@ -2,10 +2,6 @@ using Corely.IAM.IntegrationTests.Infrastructure;
 
 namespace Corely.IAM.IntegrationTests.Authorization;
 
-/// <summary>
-/// I1 - proves the fixture itself. Every assertion below is a precondition of the authorization
-/// matrix, so when the matrix fails these say whether the cause is the grant logic or the setup.
-/// </summary>
 public class ScenarioSeedTests : IClassFixture<IamScenario>
 {
     private readonly IamScenario _scenario;

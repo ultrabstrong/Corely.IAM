@@ -463,9 +463,7 @@ internal class RoleProcessor(
             );
         }
 
-        // Clear join tables (NoAction side - must do manually for SQL Server compatibility).
-        // Permissions belongs here too: RolePermission is NoAction on both sides, so leaving it
-        // populated orphans the join rows and the delete fails on a foreign key violation.
+        // Clear join tables (NoAction side - must do manually for SQL Server compatibility)
         roleEntity.Users?.Clear();
         roleEntity.Groups?.Clear();
         roleEntity.Permissions?.Clear();

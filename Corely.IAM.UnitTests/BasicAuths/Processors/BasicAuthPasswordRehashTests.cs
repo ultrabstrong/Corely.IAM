@@ -12,11 +12,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.BasicAuths.Processors;
 
-/// <summary>
-/// Changing the default hash only affects passwords set afterwards. Without an upgrade on sign-in,
-/// every existing account keeps its original hash forever - so this behaviour, not the default
-/// change, is what actually migrates stored passwords off the weaker algorithm.
-/// </summary>
 public class BasicAuthPasswordRehashTests
 {
     private const string VALID_PASSWORD = "Password1!";
@@ -97,10 +92,6 @@ public class BasicAuthPasswordRehashTests
         Assert.Equal(before, await GetStoredHashAsync(userId));
     }
 
-    /// <summary>
-    /// Writes a hash in the format used before PBKDF2 became the default, standing in for a row
-    /// created by an earlier version of the library.
-    /// </summary>
     private async Task<Guid> CreateLegacyBasicAuthAsync()
     {
         var userId = Guid.CreateVersion7();

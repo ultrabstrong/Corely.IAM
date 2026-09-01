@@ -3,10 +3,6 @@ using Corely.IAM.Web.FunctionalTests.Infrastructure;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
-/// <summary>
-/// F8 - account selection and switching. Multi-tenancy means a user's token is scoped to one
-/// account at a time, so switching must reissue rather than mutate.
-/// </summary>
 public class AccountSelectionTests : FunctionalTestBase
 {
     [Fact]
@@ -84,7 +80,6 @@ public class AccountSelectionTests : FunctionalTestBase
             new Dictionary<string, string> { ["accountId"] = Guid.NewGuid().ToString() }
         );
 
-        // The page re-renders with an error rather than redirecting to the dashboard.
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 

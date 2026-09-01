@@ -95,7 +95,7 @@ public class UserDetailTests : TestContext
                 )
             );
 
-        var cut = RenderComponent<UserDetail>(parameters => parameters.Add(p => p.Id, userId));
+        var cut = Render<UserDetail>(parameters => parameters.Add(p => p.Id, userId));
 
         cut.WaitForAssertion(() =>
         {
@@ -148,9 +148,7 @@ public class UserDetailTests : TestContext
                 )
             );
 
-        var cut = RenderComponent<UserDetail>(parameters =>
-            parameters.Add(p => p.Id, targetUserId)
-        );
+        var cut = Render<UserDetail>(parameters => parameters.Add(p => p.Id, targetUserId));
 
         cut.WaitForAssertion(() =>
         {

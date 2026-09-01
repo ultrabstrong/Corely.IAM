@@ -5,7 +5,7 @@ Blazor Server host app for the Corely.IAM management portal.
 ## Prerequisites
 
 1. **.NET 10.0 SDK** (or 9.0)
-2. **SQL Server** (LocalDB or full instance) — or MySQL/MariaDB if you change the provider
+2. **SQL Server** (LocalDB or full instance) — or MySQL if you change the provider
 
 ## Setup
 
@@ -28,7 +28,7 @@ Fill in the two required values (see `appsettings.template.json` for reference):
 | `ConnectionStrings:DefaultConnection` | Your SQL Server connection string (e.g. `Server=(localdb)\MSSQLLocalDB;Database=CorelIAM;Trusted_Connection=True;`) |
 | `Security:SystemKey` | The hex key from step 1 |
 
-`Database:Provider` defaults to `"mssql"`. Change to `"mysql"` or `"mariadb"` if needed.
+`Database:Provider` defaults to `"mssql"`. Change to `"mysql"` if needed.
 
 **3. Create the database and apply migrations**
 

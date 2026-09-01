@@ -8,13 +8,10 @@ internal class EFMySqlConfiguration(string connectionString)
 {
     public override void Configure(DbContextOptionsBuilder optionsBuilder)
     {
-        var serverVersion = connectionString.Contains(MySqlDesignTimeConstants.DesignTimeMarker)
-            ? MySqlDesignTimeConstants.DesignTimeServerVersion
-            : ServerVersion.AutoDetect(connectionString);
-
-        optionsBuilder.UseMySql(
+        // Oracle's provider resolves server capabilities from the connection, so unlike Pomelo
+        // there is no ServerVersion to declare - and no design-time stand-in needed for one.
+        optionsBuilder.UseMySQL(
             connectionString,
-            serverVersion,
             b => b.MigrationsAssembly(typeof(EFMySqlConfiguration).Assembly.GetName().Name)
         );
     }

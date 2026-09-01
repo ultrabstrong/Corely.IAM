@@ -12,7 +12,7 @@ internal partial class Config
         [Option("-c", "--connection", Description = "Database connection string")]
         private string ConnectionString { get; init; } = null!;
 
-        [Option("-p", "--provider", Description = "Database provider (MySql, MariaDb, MsSql)")]
+        [Option("-p", "--provider", Description = "Database provider (MySql, MsSql)")]
         private string ProviderName { get; init; } = null!;
 
         public Init()

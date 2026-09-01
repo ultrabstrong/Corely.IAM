@@ -3,7 +3,6 @@ namespace Corely.IAM.DataAccessMigrations.Cli;
 public enum DatabaseProvider
 {
     MySql,
-    MariaDb,
     MsSql,
 }
 

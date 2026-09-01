@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Host-agnostic, multi-tenant identity and access management library for .NET applications. Provides authentication, authorization, RBAC, and permission management without external service dependencies. Multi-target framework: .NET 9.0 and .NET 10.0.
+Host-agnostic, multi-tenant identity and access management library for .NET applications. Provides authentication, authorization, RBAC, and permission management without external service dependencies. Targets .NET 10.0.
 
 ## Build Commands
 
@@ -103,8 +103,8 @@ sleeping.
 
 ### Provider matrix (opt-in, needs Docker)
 
-The three shipped providers are exercised by Testcontainers. These are **skipped by default**
-because spinning three database containers takes minutes:
+Both shipped providers are exercised by Testcontainers. These are **skipped by default**
+because spinning database containers takes minutes:
 
 ```powershell
 $env:CORELY_RUN_CONTAINER_TESTS = "1"
@@ -142,7 +142,7 @@ CSharpier enforced via MSBuild integration. Files are auto-formatted on build.
 ## Migrations
 
 ```powershell
-# Run from repo root — all scripts target all 3 DB providers (MySQL, MariaDB, SQL Server)
+# Run from repo root — all scripts target both DB providers (MySQL, SQL Server)
 .\AddMigration.ps1 "MigrationName"    # Creates migration in all providers
 .\RemoveMigration.ps1                  # Removes last migration from all providers
 .\ListMigrations.ps1                   # Lists migrations (no DB connection needed)
@@ -152,8 +152,8 @@ CSharpier enforced via MSBuild integration. Files are auto-formatted on build.
 
 ### Prerequisites
 
-1. **.NET 10.0 SDK** (or 9.0 — the WebApp targets net10.0)
-2. **SQL Server** (LocalDB or full instance) — or MySQL/MariaDB if you change the provider
+1. **.NET 10.0 SDK**
+2. **SQL Server** (LocalDB or full instance) — or MySQL if you change the provider
 
 ### Setup Steps
 
@@ -174,7 +174,7 @@ Fill in the two required values (see `appsettings.template.json` for reference):
 | `ConnectionStrings:DefaultConnection` | Your SQL Server connection string (e.g. `Server=(localdb)\MSSQLLocalDB;Database=CorelIAM;Trusted_Connection=True;`) |
 | `Security:SystemKey` | The hex key from step 1 |
 
-`Database:Provider` defaults to `"mssql"`. Change to `"mysql"` or `"mariadb"` if needed.
+`Database:Provider` defaults to `"mssql"`. Change to `"mysql"` if needed.
 
 **3. Create the database and apply migrations**
 
@@ -208,13 +208,12 @@ The default config sends structured logs to [Seq](https://datalust.co/seq) at `h
 
 | Project | Purpose |
 |---------|---------|
-| `Corely.IAM` | Core library — business logic, data access, security (multi-target net9.0/net10.0) |
+| `Corely.IAM` | Core library — business logic, data access, security (net10.0) |
 | `Corely.IAM.UnitTests` | Test suite (XUnit, Moq, AutoFixture, FluentAssertions) |
 | `Corely.IAM.ConsoleTest` | Console app for manual testing and demonstration |
 | `Corely.IAM.DevTools` | Developer utilities for crypto operations (encryption, hashing, signing, encoding) |
 | `Corely.IAM.DataAccessMigrations.Cli` | Database migration CLI tool (System.CommandLine) |
 | `Corely.IAM.DataAccessMigrations.MySql` | MySQL EF Core migrations |
-| `Corely.IAM.DataAccessMigrations.MariaDb` | MariaDB EF Core migrations |
 | `Corely.IAM.DataAccessMigrations.MsSql` | SQL Server EF Core migrations |
 
 ### Layered Architecture
@@ -253,7 +252,9 @@ Domain/
 
 - **Entity Framework Core** — primary ORM, single `IamDbContext` for all providers via `IEFConfiguration`
 - Entity configurations auto-discovered via reflection in `IamDbContext.OnModelCreating`
-- Three DB providers (MySQL, MariaDB, SQL Server) each in separate migration projects
+- Two DB providers (MySQL, SQL Server) each in separate migration projects. MySQL uses
+  Oracle's `MySql.EntityFrameworkCore`; MariaDB support was dropped when Pomelo stopped
+  shipping (no EF 10 release, no commits since August 2025).
 
 **SQL Server constraint**: No cascade deletes on M:M relationships. All many-to-many relationships use explicit join entities (`JoinEntities.cs`) with `DeleteBehavior.NoAction`. Processors must manually `.Include()` and `.Clear()` collections before deleting entities.
 

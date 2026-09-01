@@ -19,7 +19,7 @@ Reusable Razor Class Library (RCL) that provides a complete Blazor Server UI for
 ## What the host is responsible for
 
 - **`SecurityConfigurationProvider`** — reads the system encryption key from config and implements `ISecurityConfigurationProvider`. The library defines the interface; the host provides the implementation.
-- **Database / EF configuration** — choosing and wiring the EF provider (SQL Server, MySQL, MariaDB)
+- **Database / EF configuration** — choosing and wiring the EF provider (SQL Server, MySQL)
 - **Blazor host shell** — `App.razor`, `Routes.razor`, `Program.cs`
 - **Static asset references** — Bootstrap, Bootstrap Icons (must be served by the host)
 - **Logging** — Serilog or any other provider of your choice
@@ -180,7 +180,7 @@ The library's CSS is served from the RCL's static asset path. Bootstrap and Boot
 | Key | Required | Notes |
 |-----|:--------:|-------|
 | `ConnectionStrings:DefaultConnection` | ✅ | Database connection string |
-| `Database:Provider` | ✅ | `mssql`, `mysql`, or `mariadb` |
+| `Database:Provider` | ✅ | `mssql` or `mysql` |
 | `Security:SystemKey` | ✅ | Base64 symmetric key — generate with DevTools |
 | `SecurityOptions:*` | ✅ | Login lockout, access-token TTL, and renewable session TTL |
 | `PasswordValidationOptions:*` | ✅ | Password rules |

@@ -1,6 +1,6 @@
 # Corely.IAM Documentation
 
-Host-agnostic, multi-tenant identity and access management for .NET applications. Provides authentication, authorization, RBAC, and permission management with no external service dependencies. Supports MySQL, MariaDB, and SQL Server.
+Host-agnostic, multi-tenant identity and access management for .NET applications. Provides authentication, authorization, RBAC, and permission management with no external service dependencies. Supports MySQL and SQL Server.
 
 ```mermaid
 graph LR
@@ -100,4 +100,3 @@ var accountResult = await registrationService.RegisterAccountAsync(
 |----------|----------------------|
 | SQL Server | `MsSqlEFConfiguration` |
 | MySQL | `MySqlEFConfiguration` |
-| MariaDB | `MySqlEFConfiguration` |

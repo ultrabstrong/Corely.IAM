@@ -15,9 +15,8 @@ internal class MySqlEFConfiguration(string connectionString, ILoggerFactory logg
     public override void Configure(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder
-            .UseMySql(
+            .UseMySQL(
                 connectionString,
-                ServerVersion.AutoDetect(connectionString),
                 b => b.MigrationsAssembly(Assembly.GetExecutingAssembly().GetName().Name)
             )
             .LogTo(

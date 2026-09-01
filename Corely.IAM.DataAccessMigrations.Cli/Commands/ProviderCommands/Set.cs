@@ -6,7 +6,7 @@ namespace Corely.IAM.DataAccessMigrations.Cli.Commands.ProviderCommands;
 
 internal class Set() : CommandBase("set", "Change the database provider in the config file")
 {
-    [Argument("The database provider to use (MySql, MariaDb)")]
+    [Argument("The database provider to use (MySql, MsSql)")]
     private string ProviderName { get; init; } = null!;
 
     protected override Task ExecuteAsync()

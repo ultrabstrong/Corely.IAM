@@ -19,12 +19,7 @@ internal sealed class TestMySqlConfiguration(string connectionString, string mig
     : EFMySqlConfigurationBase(connectionString)
 {
     public const string MYSQL_MIGRATIONS_ASSEMBLY = "Corely.IAM.DataAccessMigrations.MySql";
-    public const string MARIADB_MIGRATIONS_ASSEMBLY = "Corely.IAM.DataAccessMigrations.MariaDb";
 
     public override void Configure(DbContextOptionsBuilder optionsBuilder) =>
-        optionsBuilder.UseMySql(
-            connectionString,
-            ServerVersion.AutoDetect(connectionString),
-            b => b.MigrationsAssembly(migrationsAssembly)
-        );
+        optionsBuilder.UseMySQL(connectionString, b => b.MigrationsAssembly(migrationsAssembly));
 }

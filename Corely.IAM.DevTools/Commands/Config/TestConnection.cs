@@ -1,5 +1,5 @@
 using Microsoft.Data.SqlClient;
-using MySqlConnector;
+using MySql.Data.MySqlClient;
 
 namespace Corely.IAM.DevTools.Commands.Config;
 
@@ -35,8 +35,7 @@ internal partial class Config
 
                 bool canConnect = provider switch
                 {
-                    DatabaseProvider.MySql or DatabaseProvider.MariaDb =>
-                        await TestMySqlConnectionAsync(connectionString),
+                    DatabaseProvider.MySql => await TestMySqlConnectionAsync(connectionString),
                     DatabaseProvider.MsSql => await TestSqlServerConnectionAsync(connectionString),
                     _ => throw new InvalidOperationException($"Unsupported provider: {provider}"),
                 };

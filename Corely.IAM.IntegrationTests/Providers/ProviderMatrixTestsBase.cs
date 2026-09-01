@@ -210,6 +210,3 @@ public class MsSqlProviderMatrixTests()
 
 public class MySqlProviderMatrixTests()
     : ProviderMatrixTestsBase(new ProviderTestHost(DatabaseProvider.MySql)) { }
-
-public class MariaDbProviderMatrixTests()
-    : ProviderMatrixTestsBase(new ProviderTestHost(DatabaseProvider.MariaDb)) { }

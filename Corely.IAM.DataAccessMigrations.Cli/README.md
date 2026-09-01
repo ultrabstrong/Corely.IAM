@@ -6,7 +6,6 @@ A command-line tool for managing Corely IAM database migrations and schema.
 
 This CLI tool supports migrations for:
 - **MySQL** (via `Corely.IAM.DataAccessMigrations.MySql`)
-- **MariaDB** (via `Corely.IAM.DataAccessMigrations.MariaDb`)
 - **SQL Server** (via `Corely.IAM.DataAccessMigrations.MsSql`)
 
 ## Creating Migrations (Development)
@@ -57,7 +56,7 @@ dotnet build
 dotnet publish -c Release -r win-x64
 ```
 
-The output will be in `bin/Release/net9.0/win-x64/publish/`.
+The output will be in `bin/Release/net10.0/win-x64/publish/`.
 
 ## Installation
 
@@ -73,13 +72,13 @@ The tool requires a `corely-iam-db-migration-settings.json` file in the same dir
 # Create a settings file for MySQL
 corely-db config init MySql
 
-# Create a settings file for MariaDB
-corely-db config init MariaDb
+# Create a settings file for MySQL
+corely-db config init MySql
 
 # Create a settings file for SQL Server
 corely-db config init MsSql
 
-# Create with a specific connection string (MySQL/MariaDB)
+# Create with a specific connection string (MySQL)
 corely-db config init MySql -c "Server=myserver;Database=mydb;User=myuser;Password=mypassword;"
 
 # Create with a specific connection string (SQL Server)

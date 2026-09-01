@@ -61,14 +61,15 @@ FluentValidation is used for all input validation. Validators are auto-discovere
 
 ## Database
 
-- **Entity Framework Core** with three providers: MySQL, MariaDB, SQL Server
+- **Entity Framework Core** with two providers: MySQL, SQL Server
 - Entity configurations auto-discovered via reflection in `IamDbContext.OnModelCreating`
 - **SQL Server constraint**: no cascade deletes on M:M relationships — processors manually clear collections before deleting
 - Migrations are in separate projects per provider
 
-## Multi-Target
+## Target Framework
 
-Corely.IAM targets both `net9.0` and `net10.0`.
+Corely.IAM targets `net10.0`. .NET 9 reached end of support in May 2026; .NET 10 is LTS through
+November 2028.
 
 ## Time Abstraction
 

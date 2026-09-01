@@ -8,7 +8,7 @@ internal partial class Provider
 {
     internal class Set : CommandBase
     {
-        [Argument("The database provider to use (MySql, MariaDb, MsSql)")]
+        [Argument("The database provider to use (MySql, MsSql)")]
         private string ProviderName { get; init; } = null!;
 
         public Set()

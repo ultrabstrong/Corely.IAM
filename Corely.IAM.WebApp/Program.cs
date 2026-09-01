@@ -42,10 +42,6 @@ Func<IServiceProvider, IEFConfiguration> efConfig = providerName.ToLowerInvarian
         connectionString,
         sp.GetRequiredService<ILoggerFactory>()
     ),
-    "mariadb" => sp => new MySqlEFConfiguration(
-        connectionString,
-        sp.GetRequiredService<ILoggerFactory>()
-    ),
     "mssql" => sp => new MsSqlEFConfiguration(
         connectionString,
         sp.GetRequiredService<ILoggerFactory>()

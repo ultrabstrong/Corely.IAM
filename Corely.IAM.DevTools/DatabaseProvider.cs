@@ -3,7 +3,6 @@ namespace Corely.IAM.DevTools;
 public enum DatabaseProvider
 {
     MySql,
-    MariaDb,
     MsSql,
 }
 

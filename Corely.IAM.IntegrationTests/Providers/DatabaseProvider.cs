@@ -4,5 +4,4 @@ public enum DatabaseProvider
 {
     MsSql,
     MySql,
-    MariaDb,
 }

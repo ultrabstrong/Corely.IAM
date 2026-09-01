@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Testcontainers.MariaDb;
 using Testcontainers.MsSql;
 using Testcontainers.MySql;
 
@@ -76,12 +75,6 @@ public sealed class ProviderTestHost(DatabaseProvider provider) : IAsyncLifetime
                 await mysql.StartAsync();
                 return mysql.GetConnectionString();
 
-            case DatabaseProvider.MariaDb:
-                var mariadb = new MariaDbBuilder().WithDatabase("corely_iam").Build();
-                _container = mariadb;
-                await mariadb.StartAsync();
-                return mariadb.GetConnectionString();
-
             default:
                 throw new NotSupportedException($"Unsupported provider {provider}.");
         }
@@ -94,10 +87,6 @@ public sealed class ProviderTestHost(DatabaseProvider provider) : IAsyncLifetime
             DatabaseProvider.MySql => new TestMySqlConfiguration(
                 connectionString,
                 TestMySqlConfiguration.MYSQL_MIGRATIONS_ASSEMBLY
-            ),
-            DatabaseProvider.MariaDb => new TestMySqlConfiguration(
-                connectionString,
-                TestMySqlConfiguration.MARIADB_MIGRATIONS_ASSEMBLY
             ),
             _ => throw new NotSupportedException($"Unsupported provider {provider}."),
         };

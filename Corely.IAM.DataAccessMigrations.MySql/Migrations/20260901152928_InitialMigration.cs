@@ -11,21 +11,19 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterDatabase().Annotation("MySql:CharSet", "utf8mb4");
+            migrationBuilder.AlterDatabase().Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "Accounts",
                     columns: table => new
                     {
-                        Id = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        AccountName = table.Column<string>(
+                            type: "varchar(100)",
+                            maxLength: 100,
+                            nullable: false
                         ),
-                        AccountName = table
-                            .Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
                         CreatedUtc = table.Column<DateTime>(
                             type: "TIMESTAMP",
                             nullable: false,
@@ -38,25 +36,25 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         table.PrimaryKey("PK_Accounts", x => x.Id);
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "Users",
                     columns: table => new
                     {
-                        Id = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        Username = table.Column<string>(
+                            type: "varchar(30)",
+                            maxLength: 30,
+                            nullable: false
                         ),
-                        Username = table
-                            .Column<string>(type: "varchar(30)", maxLength: 30, nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        Email = table
-                            .Column<string>(type: "varchar(254)", maxLength: 254, nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        Disabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                        Email = table.Column<string>(
+                            type: "varchar(254)",
+                            maxLength: 254,
+                            nullable: false
+                        ),
+                        LockedUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                         TotalSuccessfulLogins = table.Column<int>(type: "int", nullable: false),
                         LastSuccessfulLoginUtc = table.Column<DateTime>(
                             type: "datetime(6)",
@@ -83,36 +81,23 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         table.PrimaryKey("PK_Users", x => x.Id);
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "AccountAsymmetricKeys",
                     columns: table => new
                     {
-                        Id = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        AccountId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        KeyUsedFor = table
-                            .Column<string>(type: "varchar(255)", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        ProviderTypeCode = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        AccountId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        KeyUsedFor = table.Column<string>(type: "varchar(255)", nullable: false),
+                        ProviderName = table.Column<string>(type: "longtext", nullable: false),
                         Version = table.Column<int>(type: "int", nullable: false),
-                        PublicKey = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        EncryptedPrivateKey = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        PublicKey = table.Column<string>(type: "longtext", nullable: false),
+                        EncryptedPrivateKey = table.Column<string>(
+                            type: "longtext",
+                            nullable: false
+                        ),
                         CreatedUtc = table.Column<DateTime>(
                             type: "TIMESTAMP",
                             nullable: false,
@@ -132,33 +117,23 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "AccountSymmetricKeys",
                     columns: table => new
                     {
-                        Id = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        AccountId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        KeyUsedFor = table
-                            .Column<string>(type: "varchar(255)", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        ProviderTypeCode = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        AccountId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        KeyUsedFor = table.Column<string>(type: "varchar(255)", nullable: false),
+                        ProviderName = table.Column<string>(type: "longtext", nullable: false),
                         Version = table.Column<int>(type: "int", nullable: false),
-                        EncryptedKey = table
-                            .Column<string>(type: "varchar(256)", maxLength: 256, nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        EncryptedKey = table.Column<string>(
+                            type: "varchar(256)",
+                            maxLength: 256,
+                            nullable: false
+                        ),
                         CreatedUtc = table.Column<DateTime>(
                             type: "TIMESTAMP",
                             nullable: false,
@@ -178,29 +153,21 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "Groups",
                     columns: table => new
                     {
-                        Id = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        Name = table.Column<string>(
+                            type: "varchar(100)",
+                            maxLength: 100,
+                            nullable: false
                         ),
-                        Name = table
-                            .Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        Description = table
-                            .Column<string>(type: "longtext", nullable: true)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        AccountId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
+                        Description = table.Column<string>(type: "longtext", nullable: true),
+                        AccountId = table.Column<Guid>(type: "char(36)", nullable: false),
                         CreatedUtc = table.Column<DateTime>(
                             type: "TIMESTAMP",
                             nullable: false,
@@ -220,34 +187,66 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder
+                .CreateTable(
+                    name: "Invitations",
+                    columns: table => new
+                    {
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        AccountId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        Token = table.Column<string>(
+                            type: "varchar(64)",
+                            maxLength: 64,
+                            nullable: false
+                        ),
+                        CreatedByUserId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        Email = table.Column<string>(
+                            type: "varchar(254)",
+                            maxLength: 254,
+                            nullable: false
+                        ),
+                        Description = table.Column<string>(
+                            type: "varchar(200)",
+                            maxLength: 200,
+                            nullable: true
+                        ),
+                        ExpiresUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                        AcceptedByUserId = table.Column<Guid>(type: "char(36)", nullable: true),
+                        AcceptedUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                        RevokedUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                        CreatedUtc = table.Column<DateTime>(
+                            type: "TIMESTAMP",
+                            nullable: false,
+                            defaultValueSql: "(UTC_TIMESTAMP)"
+                        ),
+                        ModifiedUtc = table.Column<DateTime>(type: "TIMESTAMP", nullable: true),
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_Invitations", x => x.Id);
+                        table.ForeignKey(
+                            name: "FK_Invitations_Accounts_AccountId",
+                            column: x => x.AccountId,
+                            principalTable: "Accounts",
+                            principalColumn: "Id",
+                            onDelete: ReferentialAction.Cascade
+                        );
+                    }
+                )
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "Permissions",
                     columns: table => new
                     {
-                        Id = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        Description = table
-                            .Column<string>(type: "longtext", nullable: true)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        AccountId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        ResourceType = table
-                            .Column<string>(type: "varchar(255)", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        ResourceId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        Description = table.Column<string>(type: "longtext", nullable: true),
+                        AccountId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        ResourceType = table.Column<string>(type: "varchar(255)", nullable: false),
+                        ResourceId = table.Column<Guid>(type: "char(36)", nullable: false),
                         Create = table.Column<bool>(type: "tinyint(1)", nullable: false),
                         Read = table.Column<bool>(type: "tinyint(1)", nullable: false),
                         Update = table.Column<bool>(type: "tinyint(1)", nullable: false),
@@ -273,30 +272,22 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "Roles",
                     columns: table => new
                     {
-                        Id = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        Name = table.Column<string>(
+                            type: "varchar(100)",
+                            maxLength: 100,
+                            nullable: false
                         ),
-                        Name = table
-                            .Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        Description = table
-                            .Column<string>(type: "longtext", nullable: true)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        Description = table.Column<string>(type: "longtext", nullable: true),
                         IsSystemDefined = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                        AccountId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
+                        AccountId = table.Column<Guid>(type: "char(36)", nullable: false),
                         CreatedUtc = table.Column<DateTime>(
                             type: "TIMESTAMP",
                             nullable: false,
@@ -316,26 +307,20 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "BasicAuths",
                     columns: table => new
                     {
-                        Id = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        UserId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        Password = table.Column<string>(
+                            type: "varchar(250)",
+                            maxLength: 250,
+                            nullable: false
                         ),
-                        UserId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        Password = table
-                            .Column<string>(type: "varchar(250)", maxLength: 250, nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
                         CreatedUtc = table.Column<DateTime>(
                             type: "TIMESTAMP",
                             nullable: false,
@@ -355,23 +340,174 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder
+                .CreateTable(
+                    name: "GoogleAuths",
+                    columns: table => new
+                    {
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        UserId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        GoogleSubjectId = table.Column<string>(
+                            type: "varchar(255)",
+                            maxLength: 255,
+                            nullable: false
+                        ),
+                        Email = table.Column<string>(
+                            type: "varchar(254)",
+                            maxLength: 254,
+                            nullable: false
+                        ),
+                        CreatedUtc = table.Column<DateTime>(
+                            type: "TIMESTAMP",
+                            nullable: false,
+                            defaultValueSql: "(UTC_TIMESTAMP)"
+                        ),
+                        ModifiedUtc = table.Column<DateTime>(type: "TIMESTAMP", nullable: true),
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_GoogleAuths", x => x.Id);
+                        table.ForeignKey(
+                            name: "FK_GoogleAuths_Users_UserId",
+                            column: x => x.UserId,
+                            principalTable: "Users",
+                            principalColumn: "Id",
+                            onDelete: ReferentialAction.Cascade
+                        );
+                    }
+                )
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder
+                .CreateTable(
+                    name: "MfaChallenges",
+                    columns: table => new
+                    {
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        UserId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        ChallengeToken = table.Column<string>(
+                            type: "varchar(128)",
+                            maxLength: 128,
+                            nullable: false
+                        ),
+                        DeviceId = table.Column<string>(
+                            type: "varchar(100)",
+                            maxLength: 100,
+                            nullable: false
+                        ),
+                        AccountId = table.Column<Guid>(type: "char(36)", nullable: true),
+                        ExpiresUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                        CompletedUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                        FailedAttempts = table.Column<int>(
+                            type: "int",
+                            nullable: false,
+                            defaultValue: 0
+                        ),
+                        CreatedUtc = table.Column<DateTime>(
+                            type: "TIMESTAMP",
+                            nullable: false,
+                            defaultValueSql: "(UTC_TIMESTAMP)"
+                        ),
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_MfaChallenges", x => x.Id);
+                        table.ForeignKey(
+                            name: "FK_MfaChallenges_Users_UserId",
+                            column: x => x.UserId,
+                            principalTable: "Users",
+                            principalColumn: "Id",
+                            onDelete: ReferentialAction.Cascade
+                        );
+                    }
+                )
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder
+                .CreateTable(
+                    name: "PasswordRecoverys",
+                    columns: table => new
+                    {
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        UserId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        SecretHash = table.Column<string>(
+                            type: "varchar(250)",
+                            maxLength: 250,
+                            nullable: false
+                        ),
+                        ExpiresUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                        CompletedUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                        InvalidatedUtc = table.Column<DateTime>(
+                            type: "datetime(6)",
+                            nullable: true
+                        ),
+                        CreatedUtc = table.Column<DateTime>(
+                            type: "TIMESTAMP",
+                            nullable: false,
+                            defaultValueSql: "(UTC_TIMESTAMP)"
+                        ),
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_PasswordRecoverys", x => x.Id);
+                        table.ForeignKey(
+                            name: "FK_PasswordRecoverys_Users_UserId",
+                            column: x => x.UserId,
+                            principalTable: "Users",
+                            principalColumn: "Id",
+                            onDelete: ReferentialAction.Cascade
+                        );
+                    }
+                )
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder
+                .CreateTable(
+                    name: "TotpAuths",
+                    columns: table => new
+                    {
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        UserId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        EncryptedSecret = table.Column<string>(
+                            type: "varchar(500)",
+                            maxLength: 500,
+                            nullable: false
+                        ),
+                        IsEnabled = table.Column<bool>(
+                            type: "tinyint(1)",
+                            nullable: false,
+                            defaultValue: false
+                        ),
+                        CreatedUtc = table.Column<DateTime>(
+                            type: "TIMESTAMP",
+                            nullable: false,
+                            defaultValueSql: "(UTC_TIMESTAMP)"
+                        ),
+                        ModifiedUtc = table.Column<DateTime>(type: "TIMESTAMP", nullable: true),
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_TotpAuths", x => x.Id);
+                        table.ForeignKey(
+                            name: "FK_TotpAuths_Users_UserId",
+                            column: x => x.UserId,
+                            principalTable: "Users",
+                            principalColumn: "Id",
+                            onDelete: ReferentialAction.Cascade
+                        );
+                    }
+                )
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "UserAccounts",
                     columns: table => new
                     {
-                        UsersId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        AccountsId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
+                        UsersId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        AccountsId = table.Column<Guid>(type: "char(36)", nullable: false),
                     },
                     constraints: table =>
                     {
@@ -390,36 +526,23 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "UserAsymmetricKeys",
                     columns: table => new
                     {
-                        Id = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        UserId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        KeyUsedFor = table
-                            .Column<string>(type: "varchar(255)", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        ProviderTypeCode = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        UserId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        KeyUsedFor = table.Column<string>(type: "varchar(255)", nullable: false),
+                        ProviderName = table.Column<string>(type: "longtext", nullable: false),
                         Version = table.Column<int>(type: "int", nullable: false),
-                        PublicKey = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        EncryptedPrivateKey = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        PublicKey = table.Column<string>(type: "longtext", nullable: false),
+                        EncryptedPrivateKey = table.Column<string>(
+                            type: "longtext",
+                            nullable: false
+                        ),
                         CreatedUtc = table.Column<DateTime>(
                             type: "TIMESTAMP",
                             nullable: false,
@@ -439,31 +562,17 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "UserAuthTokens",
                     columns: table => new
                     {
-                        Id = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        UserId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        AccountId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: true,
-                            collation: "ascii_general_ci"
-                        ),
-                        DeviceId = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        UserId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        AccountId = table.Column<Guid>(type: "char(36)", nullable: true),
+                        DeviceId = table.Column<string>(type: "longtext", nullable: false),
                         IssuedUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                         ExpiresUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                         RevokedUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -485,33 +594,23 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "UserSymmetricKeys",
                     columns: table => new
                     {
-                        Id = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        UserId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        KeyUsedFor = table
-                            .Column<string>(type: "varchar(255)", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
-                        ProviderTypeCode = table
-                            .Column<string>(type: "longtext", nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        UserId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        KeyUsedFor = table.Column<string>(type: "varchar(255)", nullable: false),
+                        ProviderName = table.Column<string>(type: "longtext", nullable: false),
                         Version = table.Column<int>(type: "int", nullable: false),
-                        EncryptedKey = table
-                            .Column<string>(type: "varchar(256)", maxLength: 256, nullable: false)
-                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        EncryptedKey = table.Column<string>(
+                            type: "varchar(256)",
+                            maxLength: 256,
+                            nullable: false
+                        ),
                         CreatedUtc = table.Column<DateTime>(
                             type: "TIMESTAMP",
                             nullable: false,
@@ -531,23 +630,15 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "UserGroups",
                     columns: table => new
                     {
-                        UsersId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        GroupsId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
+                        UsersId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        GroupsId = table.Column<Guid>(type: "char(36)", nullable: false),
                     },
                     constraints: table =>
                     {
@@ -566,23 +657,15 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "GroupRoles",
                     columns: table => new
                     {
-                        GroupsId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        RolesId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
+                        GroupsId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        RolesId = table.Column<Guid>(type: "char(36)", nullable: false),
                     },
                     constraints: table =>
                     {
@@ -601,23 +684,15 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "RolePermissions",
                     columns: table => new
                     {
-                        RolesId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        PermissionsId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
+                        RolesId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        PermissionsId = table.Column<Guid>(type: "char(36)", nullable: false),
                     },
                     constraints: table =>
                     {
@@ -639,23 +714,15 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder
                 .CreateTable(
                     name: "UserRoles",
                     columns: table => new
                     {
-                        UsersId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
-                        RolesId = table.Column<Guid>(
-                            type: "char(36)",
-                            nullable: false,
-                            collation: "ascii_general_ci"
-                        ),
+                        UsersId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        RolesId = table.Column<Guid>(type: "char(36)", nullable: false),
                     },
                     constraints: table =>
                     {
@@ -674,7 +741,40 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         );
                     }
                 )
-                .Annotation("MySql:CharSet", "utf8mb4");
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder
+                .CreateTable(
+                    name: "TotpRecoveryCodes",
+                    columns: table => new
+                    {
+                        Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                        TotpAuthId = table.Column<Guid>(type: "char(36)", nullable: false),
+                        CodeHash = table.Column<string>(
+                            type: "varchar(250)",
+                            maxLength: 250,
+                            nullable: false
+                        ),
+                        UsedUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                        CreatedUtc = table.Column<DateTime>(
+                            type: "TIMESTAMP",
+                            nullable: false,
+                            defaultValueSql: "(UTC_TIMESTAMP)"
+                        ),
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_TotpRecoveryCodes", x => x.Id);
+                        table.ForeignKey(
+                            name: "FK_TotpRecoveryCodes_TotpAuths_TotpAuthId",
+                            column: x => x.TotpAuthId,
+                            principalTable: "TotpAuths",
+                            principalColumn: "Id",
+                            onDelete: ReferentialAction.Cascade
+                        );
+                    }
+                )
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AccountAsymmetricKeys_AccountId_KeyUsedFor",
@@ -705,6 +805,20 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
             );
 
             migrationBuilder.CreateIndex(
+                name: "IX_GoogleAuths_GoogleSubjectId",
+                table: "GoogleAuths",
+                column: "GoogleSubjectId",
+                unique: true
+            );
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GoogleAuths_UserId",
+                table: "GoogleAuths",
+                column: "UserId",
+                unique: true
+            );
+
+            migrationBuilder.CreateIndex(
                 name: "IX_GroupRoles_RolesId",
                 table: "GroupRoles",
                 column: "RolesId"
@@ -715,6 +829,50 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                 table: "Groups",
                 columns: new[] { "AccountId", "Name" },
                 unique: true
+            );
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Invitations_AccountId",
+                table: "Invitations",
+                column: "AccountId"
+            );
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Invitations_Token",
+                table: "Invitations",
+                column: "Token",
+                unique: true
+            );
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MfaChallenges_ChallengeToken",
+                table: "MfaChallenges",
+                column: "ChallengeToken",
+                unique: true
+            );
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MfaChallenges_ExpiresUtc",
+                table: "MfaChallenges",
+                column: "ExpiresUtc"
+            );
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MfaChallenges_UserId",
+                table: "MfaChallenges",
+                column: "UserId"
+            );
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PasswordRecoverys_ExpiresUtc",
+                table: "PasswordRecoverys",
+                column: "ExpiresUtc"
+            );
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PasswordRecoverys_UserId",
+                table: "PasswordRecoverys",
+                column: "UserId"
             );
 
             migrationBuilder.CreateIndex(
@@ -745,6 +903,19 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                 table: "Roles",
                 columns: new[] { "AccountId", "Name" },
                 unique: true
+            );
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TotpAuths_UserId",
+                table: "TotpAuths",
+                column: "UserId",
+                unique: true
+            );
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TotpRecoveryCodes_TotpAuthId",
+                table: "TotpRecoveryCodes",
+                column: "TotpAuthId"
             );
 
             migrationBuilder.CreateIndex(
@@ -815,9 +986,19 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
 
             migrationBuilder.DropTable(name: "BasicAuths");
 
+            migrationBuilder.DropTable(name: "GoogleAuths");
+
             migrationBuilder.DropTable(name: "GroupRoles");
 
+            migrationBuilder.DropTable(name: "Invitations");
+
+            migrationBuilder.DropTable(name: "MfaChallenges");
+
+            migrationBuilder.DropTable(name: "PasswordRecoverys");
+
             migrationBuilder.DropTable(name: "RolePermissions");
+
+            migrationBuilder.DropTable(name: "TotpRecoveryCodes");
 
             migrationBuilder.DropTable(name: "UserAccounts");
 
@@ -832,6 +1013,8 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
             migrationBuilder.DropTable(name: "UserSymmetricKeys");
 
             migrationBuilder.DropTable(name: "Permissions");
+
+            migrationBuilder.DropTable(name: "TotpAuths");
 
             migrationBuilder.DropTable(name: "Groups");
 

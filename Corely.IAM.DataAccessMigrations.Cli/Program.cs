@@ -2,7 +2,6 @@ using System.CommandLine;
 using System.Reflection;
 using Corely.IAM.DataAccess;
 using Corely.IAM.DataAccessMigrations.Cli.Commands;
-using Corely.IAM.DataAccessMigrations.MariaDb;
 using Corely.IAM.DataAccessMigrations.MsSql;
 using Corely.IAM.DataAccessMigrations.MySql;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,9 +31,6 @@ internal class Program
                             {
                                 case DatabaseProvider.MySql:
                                     tempServices.AddMySqlIamDbContext(connectionString);
-                                    break;
-                                case DatabaseProvider.MariaDb:
-                                    tempServices.AddMariaDbIamDbContext(connectionString);
                                     break;
                                 case DatabaseProvider.MsSql:
                                     tempServices.AddMsSqlIamDbContext(connectionString);

@@ -14,7 +14,7 @@ public class MySqlEFConfiguration(string connectionString, ILoggerFactory logger
     public override void Configure(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder
-            .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+            .UseMySQL(connectionString)
             .LogTo(
                 logger: e =>
                     EFEventDataLogger.Write(_efLogger, e, EFEventDataLogger.WriteInfoLogsAs.Trace),

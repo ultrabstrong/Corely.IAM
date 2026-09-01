@@ -22,7 +22,7 @@ Create a local settings file with a database provider and connection string:
 dotnet run -- config init mssql -c "Server=(localdb)\MSSQLLocalDB;Database=CorelIAM;Trusted_Connection=True;"
 ```
 
-The `ProviderName` argument is required. Supported values: `MySql`, `MariaDb`, `MsSql`.
+The `ProviderName` argument is required. Supported values: `MySql`, `MsSql`.
 
 Options:
 - `-c, --connection` — connection string
@@ -138,7 +138,7 @@ dotnet run -- provider list
 dotnet run -- provider show
 
 # Change provider
-dotnet run -- provider set mariadb
+dotnet run -- provider set mysql
 ```
 
 Each provider uses its own migration assembly:
@@ -146,7 +146,6 @@ Each provider uses its own migration assembly:
 | Provider | Migration Project |
 |----------|------------------|
 | `MySql` | `Corely.IAM.DataAccessMigrations.MySql` |
-| `MariaDb` | `Corely.IAM.DataAccessMigrations.MariaDb` |
 | `MsSql` | `Corely.IAM.DataAccessMigrations.MsSql` |
 
 ## Common Workflows

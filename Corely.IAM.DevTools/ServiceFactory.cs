@@ -39,10 +39,6 @@ internal static class ServiceFactory
                     connectionString,
                     sp.GetRequiredService<ILoggerFactory>()
                 ),
-                DatabaseProvider.MariaDb => sp => new MySqlEFConfiguration(
-                    connectionString,
-                    sp.GetRequiredService<ILoggerFactory>()
-                ),
                 DatabaseProvider.MsSql => sp => new MsSqlEFConfiguration(
                     connectionString,
                     sp.GetRequiredService<ILoggerFactory>()

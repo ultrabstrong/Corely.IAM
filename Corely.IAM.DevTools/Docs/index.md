@@ -37,7 +37,7 @@ dotnet run -- config init -p mssql -c "Server=(localdb)\MSSQLLocalDB;Database=Co
 ```
 
 Options:
-- `-p, --provider` — database provider (`MySql`, `MariaDb`, `MsSql`)
+- `-p, --provider` — database provider (`MySql`, `MsSql`)
 - `-c, --connection` — connection string
 - `-f, --force` — overwrite existing settings file
 

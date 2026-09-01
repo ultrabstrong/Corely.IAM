@@ -49,7 +49,6 @@ Func<IServiceProvider, IEFConfiguration> efConfig = sp =>
 |----------|-------------------|--------------------------|
 | SQL Server | `MsSqlEFConfiguration` | `Server=(localdb)\MSSQLLocalDB;Database=CorelIAM;Trusted_Connection=True;` |
 | MySQL | `MySqlEFConfiguration` | `Server=localhost;Database=CorelIAM;Uid=root;Pwd=password;` |
-| MariaDB | `MySqlEFConfiguration` | Same as MySQL |
 
 ## 4) Configure IAMOptions
 

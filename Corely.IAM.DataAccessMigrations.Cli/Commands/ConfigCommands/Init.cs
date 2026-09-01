@@ -5,7 +5,7 @@ namespace Corely.IAM.DataAccessMigrations.Cli.Commands.ConfigCommands;
 internal class Init()
     : CommandBase("init", "Create a new settings file with the specified provider")
 {
-    [Argument("The database provider to use (MySql, MariaDb)")]
+    [Argument("The database provider to use (MySql, MsSql)")]
     private string ProviderName { get; init; } = null!;
 
     [Option("-f", "--force", Description = "Overwrite existing settings file")]

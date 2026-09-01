@@ -40,7 +40,7 @@ graph LR
 - **Invitation system** — token-based onboarding with expiry and revocation
 - **Per-entity encryption** — account and user-scoped key pairs, stored encrypted
 - **Pluggable crypto** — configure algorithms via the `IAMOptions` builder
-- **Three database providers** — SQL Server, MySQL, MariaDB via EF Core
+- **Two database providers** — SQL Server and MySQL via EF Core
 
 ## Quick Start
 

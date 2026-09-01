@@ -58,24 +58,32 @@ redirect. Otherwise the answer is Functional.
 
 ### Running tests
 
+The test projects run on **xunit.v3 / Microsoft.Testing.Platform**, not VSTest. `global.json` at
+the repo root opts `dotnet test` into MTP mode; without it the build fails outright on .NET 10 SDK.
+This changes the command line: projects and solutions are named with `--project` / `--solution`
+rather than positionally, and `--filter` becomes `--filter-query` with a path expression.
+
 ```powershell
-# Everything (solution-wide; this is what RebuildAndTest.ps1 runs)
-dotnet test
+# Everything (solution-wide; this is what RebuildAndTest.ps1 runs, plus --coverage)
+dotnet test --solution Corely.IAM.slnx
 
 # Unit tier
-dotnet test Corely.IAM.UnitTests
-dotnet test Corely.IAM.Web.UnitTests
+dotnet test --project Corely.IAM.UnitTests
+dotnet test --project Corely.IAM.Web.UnitTests
 
 # Integration tier — real EF on SQLite. No external dependencies.
-dotnet test Corely.IAM.IntegrationTests
+dotnet test --project Corely.IAM.IntegrationTests
 
 # Functional tier — boots the real WebApp in-process on SQLite. No external dependencies.
-dotnet test Corely.IAM.Web.FunctionalTests
+dotnet test --project Corely.IAM.Web.FunctionalTests
 
-# Single test class / method
-dotnet test --filter "UserProcessorTests" Corely.IAM.UnitTests
-dotnet test --filter "UserProcessorTests.CreateUserAsync_WithValidRequest_ReturnsSuccess" Corely.IAM.UnitTests
+# Single test class / method. The filter is /assembly/namespace/class/method — `*` any segment.
+dotnet test --project Corely.IAM.UnitTests --filter-query "/*/*/UserProcessorTests/*"
+dotnet test --project Corely.IAM.UnitTests --filter-query "/*/*/UserProcessorTests/CreateUser_Fails_WhenUserExists"
 ```
+
+A filter matching nothing exits **8**, not 0 — a typo'd class name looks like a clean run in the
+summary but fails the exit code. Check the reported test count.
 
 **Nothing above needs a running database, Docker, or any manual setup.** The integration and
 functional tiers create their own SQLite databases, seed through the real registration service, and
@@ -89,7 +97,7 @@ because spinning three database containers takes minutes:
 
 ```powershell
 $env:CORELY_RUN_CONTAINER_TESTS = "1"
-dotnet test Corely.IAM.IntegrationTests --filter "ProviderMatrix"
+dotnet test --project Corely.IAM.IntegrationTests --filter-query "/*/*/*ProviderMatrixTests/*"
 ```
 
 If Docker is not running, start it — `Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"`,

@@ -24,7 +24,7 @@ public sealed class ProviderTestHost(DatabaseProvider provider) : IAsyncLifetime
 
     public DatabaseProvider Provider => provider;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         var connectionString = await StartContainerAsync();
 
@@ -122,7 +122,7 @@ public sealed class ProviderTestHost(DatabaseProvider provider) : IAsyncLifetime
     internal Task<T> QueryAsync<T>(Func<IamDbContext, Task<T>> query) =>
         WithScopeAsync(services => query(services.GetRequiredService<IamDbContext>()));
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _serviceProvider?.Dispose();
         if (_container is not null)

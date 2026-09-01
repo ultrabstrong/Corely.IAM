@@ -43,7 +43,7 @@ jobs:
       # The provider matrix is opt-in and stays skipped here, so no database containers are
       # needed. Everything else runs against SQLite with no external dependencies.
       - name: Test
-        run: dotnet test Corely.IAM.slnx --configuration Release --no-build
+        run: dotnet test --solution Corely.IAM.slnx --configuration Release --no-build
 
       # Two packages ship from this repository, and they are versioned independently in their
       # own csproj files. Deriving a version from the tag would force them into lockstep, so the

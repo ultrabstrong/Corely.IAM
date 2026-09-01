@@ -10,9 +10,9 @@ public class JoinEntityDeleteTests : IAsyncLifetime
 {
     private readonly IamScenario _scenario = new();
 
-    public Task InitializeAsync() => _scenario.InitializeAsync();
+    public ValueTask InitializeAsync() => _scenario.InitializeAsync();
 
-    public Task DisposeAsync() => _scenario.DisposeAsync();
+    public ValueTask DisposeAsync() => _scenario.DisposeAsync();
 
     [Fact]
     public async Task DeletingAGroupWithMembersAndRoles_Succeeds()

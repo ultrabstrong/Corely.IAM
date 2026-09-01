@@ -24,7 +24,7 @@ public abstract class FunctionalTestBase : IAsyncLifetime
     protected virtual int AuthTokenTtlSeconds => 3600;
     protected virtual int AuthSessionTtlSeconds => 604800;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         Factory = new IamWebApplicationFactory
         {
@@ -36,11 +36,11 @@ public abstract class FunctionalTestBase : IAsyncLifetime
         Client = new TestClient(Factory.CreateTestClient());
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         Client?.Dispose();
         Factory?.Dispose();
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     private async Task SeedAsync()

@@ -37,7 +37,7 @@ public sealed class IamScenario : IAsyncLifetime
     public string GroupMemberUsername => "group-member";
     public string OutsiderUsername => "outsider";
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         Host = new IamTestHost();
 
@@ -68,10 +68,10 @@ public sealed class IamScenario : IAsyncLifetime
         await BuildRolesAndPermissionsAsync();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         Host.Dispose();
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     public Task<T> ActAsAsync<T>(

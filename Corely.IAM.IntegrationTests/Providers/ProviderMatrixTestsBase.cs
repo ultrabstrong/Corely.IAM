@@ -21,7 +21,7 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
 
     protected ProviderTestHost Host { get; } = host;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         if (DockerAvailability.UnavailableReason is not null)
             return;
@@ -31,7 +31,7 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
         await SeedAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (DockerAvailability.UnavailableReason is null)
             await Host.DisposeAsync();

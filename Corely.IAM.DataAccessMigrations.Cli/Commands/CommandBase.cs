@@ -191,6 +191,8 @@ internal abstract class CommandBase : Command
 
     protected virtual void Execute() { }
 
+    private bool _showingHelp;
+
     protected void ShowHelp(string message = null)
     {
         if (!string.IsNullOrEmpty(message))
@@ -198,7 +200,25 @@ internal abstract class CommandBase : Command
             Warn(message);
             Console.WriteLine();
         }
-        Parse(_helpFlag).Invoke();
+
+        // Showing help re-invokes this command. If the help option is not reachable - a command
+        // parsed on its own rather than through the root command - that lands back in the action
+        // that failed, which calls ShowHelp again. Guard so the second attempt stops instead of
+        // recursing until the stack runs out.
+        if (_showingHelp)
+        {
+            return;
+        }
+
+        _showingHelp = true;
+        try
+        {
+            Parse(_helpFlag).Invoke();
+        }
+        finally
+        {
+            _showingHelp = false;
+        }
     }
 
     protected static void Success(string message)

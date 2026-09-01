@@ -5,9 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
-    <!-- Single-file publishing options -->
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>true</SelfContained>
+    <!-- Single-file publishing options. Applied only when publishing: a self-contained
+         executable cannot be referenced by a non-self-contained one, which would block a test
+         project from referencing this. RebuildAndTest.ps1 passes the publish-time equivalents. -->
+    <PublishSingleFile Condition="'$(_IsPublishing)' == 'true'">true</PublishSingleFile>
+    <SelfContained Condition="'$(_IsPublishing)' == 'true'">true</SelfContained>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 

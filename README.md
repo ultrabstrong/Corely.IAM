@@ -2,6 +2,10 @@
 
 Host-agnostic, multi-tenant identity and access management for .NET applications. Drop-in authentication, authorization, RBAC, and permission management — no external service dependencies.
 
+> **Upgrading from 1.x?** See [MIGRATION-2.0.md](MIGRATION-2.0.md). MariaDB support is removed,
+> MySQL moved to Oracle's provider and its databases must be recreated, and the target framework is
+> `net10.0` only. SQL Server is unaffected.
+
 ```mermaid
 graph LR
     subgraph Host App

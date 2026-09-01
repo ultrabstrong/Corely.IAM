@@ -52,6 +52,17 @@ the unit suite by roughly 40x per test (measured: 1365 unit tests in ~4s against
 integration tests in ~8s against SQLite). Put behavior that depends on the database in the
 integration tier rather than trying to make the mock more faithful.
 
+**Do not propose replacing the repository layer or `MockRepo` with the EF in-memory provider, with
+raw `DbContext` injection, or with `DbSet` mocking.** All three have been evaluated against
+Microsoft's own testing guidance, which recommends the repository pattern for exactly this case and
+explicitly discourages the alternatives — the in-memory provider is slower than SQLite, cannot run
+`ExecuteUpdateAsync` (used here for token revocation and password-recovery expiry), and is
+supported only for legacy applications.
+
+The reasoning, the sources, the honest cost, and the specific conditions that *would* justify
+changing course are recorded in `Corely.DataAccess/DESIGN-RATIONALE.md`. Read it before raising the
+question; if none of the listed conditions hold, the answer stands.
+
 E2E is deliberately empty. Do not add Playwright unless the gap needs JS/Blazor, verification that
 a browser *enforces* cookie attributes (rather than that the app *sets* them), or an external OAuth
 redirect. Otherwise the answer is Functional.

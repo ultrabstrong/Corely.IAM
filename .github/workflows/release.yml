@@ -47,6 +47,10 @@ jobs:
       # Three packages ship from this repository, and they are versioned independently in their
       # own csproj files. Deriving a version from the tag would force them into lockstep, so the
       # tag is the trigger and each csproj remains the source of truth for its own version.
+      #
+      # The migration CLI is the one exception, and only at the major: CLI 2.x targets IAM 2.x,
+      # because a major IAM release is what can change the schema its migrations produce. Minor
+      # and patch move independently - most IAM releases add no migrations at all.
       - name: Pack Corely.IAM
         run: >
           dotnet pack Corely.IAM/Corely.IAM.csproj

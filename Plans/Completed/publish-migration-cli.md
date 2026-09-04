@@ -139,7 +139,7 @@ build output. Delete it.
 
 | Package | From | To | Why |
 |---------|------|----|-----|
-| `Corely.IAM.DataAccessMigrations.Cli` | — | 1.0.0 | New package |
+| `Corely.IAM.DataAccessMigrations.Cli` | — | 2.0.0 | New package. Its major tracks `Corely.IAM`'s, since a major IAM release is what can change the schema its migrations produce; minor and patch move independently |
 | `Corely.IAM` | 2.0.0 | 2.0.1 | Packs the root README, whose links and quickstart changed; no API change |
 | `Corely.IAM.Web` | 2.0.0 | 2.0.0 | Unchanged - it packs its own README, which had no relative doc links |
 
@@ -160,7 +160,9 @@ Implemented.
   back to `CORELY_IAM_DB_PROVIDER` / `CORELY_IAM_DB_CONNECTION`. No settings file remains, and the
   `config` group plus `provider set` / `provider show` are gone. `config test-connection` became
   `db test-connection`.
-- Packed as a .NET tool with the command name `corely-iam-db`, at 1.0.0.
+- Packed as a .NET tool with the command name `corely-iam-db`. Published first as 1.0.0, then
+  immediately republished as 2.0.0 to establish the major-tracks-IAM rule before anyone installed
+  it. 1.0.0 remains listed on nuget.org.
 - Both provider configurations now set `MigrationsHistoryTable`, defaulting to
   `__CorelyIamMigrationsHistory`, overridable with `--history-table`.
 - `Corely.IAM` bumped to 2.0.1 for the packed README. `Corely.IAM.Web` was left at 2.0.0 - it packs

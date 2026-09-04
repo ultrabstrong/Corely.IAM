@@ -217,7 +217,7 @@ The default config sends structured logs to [Seq](https://datalust.co/seq) at `h
 | `Corely.IAM.UnitTests` | Test suite (XUnit, Moq, AutoFixture, FluentAssertions) |
 | `Corely.IAM.ConsoleTest` | Console app for manual testing and demonstration |
 | `Corely.IAM.DevTools` | Developer utilities for crypto operations (encryption, hashing, signing, encoding) |
-| `Corely.IAM.DataAccessMigrations.Cli` | Database migration CLI, published as the `corely-iam-db` .NET tool (System.CommandLine) |
+| `Corely.IAM.DataAccessMigrations.Cli` | Database migration CLI, published as the `corely-iam-db` .NET tool (System.CommandLine). Its **major** version tracks `Corely.IAM`'s — CLI 2.x targets IAM 2.x — while minor and patch move independently |
 | `Corely.IAM.DataAccessMigrations.MySql` | MySQL EF Core migrations |
 | `Corely.IAM.DataAccessMigrations.MsSql` | SQL Server EF Core migrations |
 

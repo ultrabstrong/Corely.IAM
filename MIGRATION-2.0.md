@@ -70,6 +70,51 @@ Action<IUpdateSetters<T>> setProperties
 Call sites are unchanged in practice - `s => s.SetProperty(x => x.Prop, value)` compiles against
 both. Only code that built those expressions programmatically needs rewriting.
 
+## Creating the schema
+
+There is now a published tool for this. Previously the only way to create the IAM schema was to
+build the migration CLI from a clone of this repository, which left package consumers with no
+supported path at all.
+
+```bash
+dotnet tool install --global Corely.IAM.DataAccessMigrations.Cli
+corely-iam-db db create -p MsSql -c "<connection string>"
+```
+
+Provider and connection string come from `--provider` / `--connection-string` or from
+`CORELY_IAM_DB_PROVIDER` / `CORELY_IAM_DB_CONNECTION`. The `corely-iam-db-migration-settings.json`
+file the old CLI relied on is gone, along with the `config` command group that managed it.
+
+## Migrations history table
+
+IAM now records its migrations in `__CorelyIamMigrationsHistory` instead of the default
+`__EFMigrationsHistory`, so it can share a database with your own contexts without their migration
+records interleaving.
+
+**This affects any database whose IAM schema was already applied.** Without one of the two steps
+below, the tool finds an empty history table and tries to re-apply every migration against tables
+that already exist.
+
+Either keep the old table:
+
+```bash
+corely-iam-db db migrate --history-table __EFMigrationsHistory
+```
+
+Or copy the records across once, after which the option is no longer needed:
+
+```sql
+-- SQL Server
+SELECT * INTO __CorelyIamMigrationsHistory FROM __EFMigrationsHistory;
+
+-- MySQL
+CREATE TABLE __CorelyIamMigrationsHistory AS SELECT * FROM __EFMigrationsHistory;
+```
+
+Copy everything when IAM is the only context in the database. When it shares the database, restrict
+the copy to the migration ids `corely-iam-db db list` reports. Run `db status` afterwards - every
+IAM migration should read as applied.
+
 ## Verification
 
 The provider matrix runs the full schema, migrations and authorization queries against real MySQL

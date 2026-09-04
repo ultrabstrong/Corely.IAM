@@ -1,4 +1,3 @@
-using Corely.IAM.DataAccess;
 using Corely.IAM.DataAccessMigrations.Cli.Attributes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -7,8 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.DataAccessMigrations.Cli.Commands.DatabaseCommands;
 
-internal class ListMigrations(IServiceProvider serviceProvider)
-    : CommandBase("list", "List all available migrations")
+internal class ListMigrations() : DbCommandBase("list", "List all available migrations")
 {
     [Option(
         "-a",
@@ -19,59 +17,63 @@ internal class ListMigrations(IServiceProvider serviceProvider)
 
     protected override async Task ExecuteAsync()
     {
-        if (!await ValidateConnectionAsync(serviceProvider))
+        if (!TryCreateDbContext(out var dbContext))
             return;
 
-        try
+        using (dbContext)
         {
-            using var dbContext = serviceProvider.GetRequiredService<IamDbContext>();
+            if (!await TryConnectAsync(dbContext))
+                return;
 
-            // Get migrations defined in this project's assembly
-            var migrationsAssembly = dbContext
-                .Database.GetInfrastructure()
-                .GetRequiredService<IMigrationsAssembly>();
-            var localMigrations = migrationsAssembly.Migrations.Keys.ToHashSet();
-
-            var allAppliedMigrations = await dbContext.Database.GetAppliedMigrationsAsync();
-            var allPendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
-
-            // Filter to local migrations unless ShowAll is specified
-            var appliedMigrations = (
-                ShowAll
-                    ? allAppliedMigrations
-                    : allAppliedMigrations.Where(m => localMigrations.Contains(m))
-            ).ToHashSet();
-            var pendingMigrations = (
-                ShowAll
-                    ? allPendingMigrations
-                    : allPendingMigrations.Where(m => localMigrations.Contains(m))
-            ).ToList();
-            var allMigrations = appliedMigrations.Union(pendingMigrations).OrderBy(m => m);
-
-            Info(ShowAll ? "=== All Migrations (All Projects) ===" : "=== All Migrations ===");
-            Info("");
-
-            foreach (var migration in allMigrations)
+            try
             {
-                var isApplied = appliedMigrations.Contains(migration);
-                var isLocal = localMigrations.Contains(migration);
-                var status = isApplied ? "Applied" : "Pending";
+                // Get migrations defined in this project's assembly
+                var migrationsAssembly = dbContext
+                    .Database.GetInfrastructure()
+                    .GetRequiredService<IMigrationsAssembly>();
+                var localMigrations = migrationsAssembly.Migrations.Keys.ToHashSet();
 
-                // Mark non-local migrations when showing all
-                var suffix = ShowAll && !isLocal ? " (other project)" : "";
+                var allAppliedMigrations = await dbContext.Database.GetAppliedMigrationsAsync();
+                var allPendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
 
-                var color = isApplied ? ConsoleColor.Green : ConsoleColor.Yellow;
-                WriteColored($"  [{status}] {migration}{suffix}", color);
+                // Filter to local migrations unless ShowAll is specified
+                var appliedMigrations = (
+                    ShowAll
+                        ? allAppliedMigrations
+                        : allAppliedMigrations.Where(m => localMigrations.Contains(m))
+                ).ToHashSet();
+                var pendingMigrations = (
+                    ShowAll
+                        ? allPendingMigrations
+                        : allPendingMigrations.Where(m => localMigrations.Contains(m))
+                ).ToList();
+                var allMigrations = appliedMigrations.Union(pendingMigrations).OrderBy(m => m);
+
+                Info(ShowAll ? "=== All Migrations (All Projects) ===" : "=== All Migrations ===");
+                Info("");
+
+                foreach (var migration in allMigrations)
+                {
+                    var isApplied = appliedMigrations.Contains(migration);
+                    var isLocal = localMigrations.Contains(migration);
+                    var status = isApplied ? "Applied" : "Pending";
+
+                    // Mark non-local migrations when showing all
+                    var suffix = ShowAll && !isLocal ? " (other project)" : "";
+
+                    var color = isApplied ? ConsoleColor.Green : ConsoleColor.Yellow;
+                    WriteColored($"  [{status}] {migration}{suffix}", color);
+                }
+
+                Info("");
+                Info(
+                    $"Total: {allMigrations.Count()} migrations ({appliedMigrations.Count} applied, {pendingMigrations.Count} pending)"
+                );
             }
-
-            Info("");
-            Info(
-                $"Total: {allMigrations.Count()} migrations ({appliedMigrations.Count} applied, {pendingMigrations.Count} pending)"
-            );
-        }
-        catch (Exception ex)
-        {
-            Error($"Failed to list migrations: {ex.Message}");
+            catch (Exception ex)
+            {
+                Error($"Failed to list migrations: {ex.Message}");
+            }
         }
     }
 }

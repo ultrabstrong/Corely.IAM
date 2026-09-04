@@ -1,11 +1,8 @@
-using Corely.IAM.DataAccess;
 using Corely.IAM.DataAccessMigrations.Cli.Attributes;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.DataAccessMigrations.Cli.Commands.DatabaseCommands;
 
-internal class Drop(IServiceProvider serviceProvider)
-    : CommandBase("drop", "Drop the database (DANGEROUS)")
+internal class Drop() : DbCommandBase("drop", "Drop the database (DANGEROUS)")
 {
     [Option("-f", "--force", Description = "Skip confirmation prompt")]
     private bool Force { get; init; }
@@ -25,28 +22,32 @@ internal class Drop(IServiceProvider serviceProvider)
             }
         }
 
-        if (!await ValidateConnectionAsync(serviceProvider))
+        if (!TryCreateDbContext(out var dbContext))
             return;
 
-        try
+        using (dbContext)
         {
-            using var dbContext = serviceProvider.GetRequiredService<IamDbContext>();
+            if (!await TryConnectAsync(dbContext))
+                return;
 
-            Info("Dropping database...");
-            var deleted = await dbContext.Database.EnsureDeletedAsync();
+            try
+            {
+                Info("Dropping database...");
+                var deleted = await dbContext.Database.EnsureDeletedAsync();
 
-            if (deleted)
-            {
-                Success("Database dropped successfully.");
+                if (deleted)
+                {
+                    Success("Database dropped successfully.");
+                }
+                else
+                {
+                    Warn("Database did not exist.");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Warn("Database did not exist.");
+                Error($"Failed to drop database: {ex.Message}");
             }
-        }
-        catch (Exception ex)
-        {
-            Error($"Failed to drop database: {ex.Message}");
         }
     }
 }

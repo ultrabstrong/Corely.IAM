@@ -30,6 +30,7 @@
   </Folder>
   <Project Path="Corely.IAM.ConsoleTest/Corely.IAM.ConsoleApp.csproj" />
   <Project Path="Corely.IAM.DataAccessMigrations.Cli/Corely.IAM.DataAccessMigrations.Cli.csproj" />
+  <Project Path="Corely.IAM.DataAccessMigrations.Cli.UnitTests/Corely.IAM.DataAccessMigrations.Cli.UnitTests.csproj" />
   <Project Path="Corely.IAM.DataAccessMigrations.MsSql/Corely.IAM.DataAccessMigrations.MsSql.csproj" />
   <Project Path="Corely.IAM.DataAccessMigrations.MySql/Corely.IAM.DataAccessMigrations.MySql.csproj" />
   <Project Path="Corely.IAM.DevTools/Corely.IAM.DevTools.csproj" />

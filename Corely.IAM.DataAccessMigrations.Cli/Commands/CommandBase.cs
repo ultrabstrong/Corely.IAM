@@ -23,7 +23,14 @@ internal abstract class CommandBase : Command
             var optionAttribute = property.GetCustomAttribute<OptionAttribute>();
             if (optionAttribute == null)
             {
+                // Now that the scan walks base classes, an unattributed property is ordinary
+                // state rather than an unlabelled argument, and must not be bound.
                 var argumentAttribute = property.GetCustomAttribute<ArgumentAttribute>();
+                if (argumentAttribute == null)
+                {
+                    continue;
+                }
+
                 if (CreateArgument(property, argumentAttribute, out var argument))
                 {
                     _boundNames[property] = argument.Name;
@@ -40,11 +47,27 @@ internal abstract class CommandBase : Command
         SetAction((parseResult, _) => InvokeExecute(parseResult));
     }
 
-    private IEnumerable<PropertyInfo> DeclaredProperties() =>
-        GetType()
-            .GetProperties(
-                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly
-            );
+    // Walks the hierarchy rather than using GetProperties alone, because the properties are
+    // private: a derived command would otherwise not see the options its base declares, which is
+    // how DbCommandBase shares --provider and --connection-string with every db subcommand.
+    private IEnumerable<PropertyInfo> DeclaredProperties()
+    {
+        for (
+            var type = GetType();
+            type != null && type != typeof(CommandBase);
+            type = type.BaseType
+        )
+        {
+            foreach (
+                var property in type.GetProperties(
+                    BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly
+                )
+            )
+            {
+                yield return property;
+            }
+        }
+    }
 
     private bool CreateArgument(
         PropertyInfo property,
@@ -273,35 +296,5 @@ internal abstract class CommandBase : Command
         Console.ForegroundColor = color;
         Console.WriteLine(string.Join(Environment.NewLine, messages));
         Console.ResetColor();
-    }
-
-    protected static bool ValidateSettings(out DatabaseConnectionValidator.ValidationResult result)
-    {
-        result = DatabaseConnectionValidator.ValidateSettingsFile();
-        if (!result.IsValid)
-        {
-            Error(result.ErrorMessage!);
-            if (!string.IsNullOrEmpty(result.Guidance))
-            {
-                Info(result.Guidance);
-            }
-            return false;
-        }
-        return true;
-    }
-
-    protected static async Task<bool> ValidateConnectionAsync(IServiceProvider serviceProvider)
-    {
-        var result = await DatabaseConnectionValidator.ValidateConnectionAsync(serviceProvider);
-        if (!result.IsValid)
-        {
-            Error(result.ErrorMessage!);
-            if (!string.IsNullOrEmpty(result.Guidance))
-            {
-                Info(result.Guidance);
-            }
-            return false;
-        }
-        return true;
     }
 }

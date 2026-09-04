@@ -1,6 +1,0 @@
-{
-  "Provider": "MySql",
-  "ConnectionStrings": {
-    "DataRepoConnection": "Server=localhost;Port=3306;Database=dbName;Uid=userName;Pwd=password;"
-  }
-}

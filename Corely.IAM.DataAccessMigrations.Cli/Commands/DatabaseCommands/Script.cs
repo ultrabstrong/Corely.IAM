@@ -1,4 +1,3 @@
-using Corely.IAM.DataAccess;
 using Corely.IAM.DataAccessMigrations.Cli.Attributes;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -6,8 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.DataAccessMigrations.Cli.Commands.DatabaseCommands;
 
-internal class Script(IServiceProvider serviceProvider)
-    : CommandBase("script", "Generate a SQL script from migrations")
+internal class Script() : DbCommandBase("script", "Generate a SQL script from migrations")
 {
     [Argument("Source migration (use '0' for initial state)", isRequired: false)]
     private string FromMigration { get; init; } = null!;
@@ -29,51 +27,56 @@ internal class Script(IServiceProvider serviceProvider)
     )]
     private bool Idempotent { get; init; }
 
+    protected override bool RequiresConnectionString => false;
+
     protected override async Task ExecuteAsync()
     {
-        if (!ValidateSettings(out _))
+        if (!TryCreateDbContext(out var dbContext))
             return;
 
-        try
+        using (dbContext)
         {
-            using var dbContext = serviceProvider.GetRequiredService<IamDbContext>();
-
-            var migrator = dbContext.Database.GetInfrastructure().GetRequiredService<IMigrator>();
-
-            var fromMigration = string.IsNullOrEmpty(FromMigration) ? null : FromMigration;
-            var toMigration = string.IsNullOrEmpty(ToMigration) ? null : ToMigration;
-
-            Info($"Generating SQL script...");
-            if (fromMigration != null)
-                Info($"  From: {fromMigration}");
-            if (toMigration != null)
-                Info($"  To: {toMigration}");
-            if (Idempotent)
-                Info("  Mode: Idempotent");
-
-            var script = migrator.GenerateScript(
-                fromMigration,
-                toMigration,
-                Idempotent
-                    ? MigrationsSqlGenerationOptions.Idempotent
-                    : MigrationsSqlGenerationOptions.Default
-            );
-
-            if (!string.IsNullOrEmpty(OutputFile))
+            try
             {
-                await File.WriteAllTextAsync(OutputFile, script);
-                Success($"SQL script saved to: {OutputFile}");
+                var migrator = dbContext
+                    .Database.GetInfrastructure()
+                    .GetRequiredService<IMigrator>();
+
+                var fromMigration = string.IsNullOrEmpty(FromMigration) ? null : FromMigration;
+                var toMigration = string.IsNullOrEmpty(ToMigration) ? null : ToMigration;
+
+                Info($"Generating SQL script...");
+                if (fromMigration != null)
+                    Info($"  From: {fromMigration}");
+                if (toMigration != null)
+                    Info($"  To: {toMigration}");
+                if (Idempotent)
+                    Info("  Mode: Idempotent");
+
+                var script = migrator.GenerateScript(
+                    fromMigration,
+                    toMigration,
+                    Idempotent
+                        ? MigrationsSqlGenerationOptions.Idempotent
+                        : MigrationsSqlGenerationOptions.Default
+                );
+
+                if (!string.IsNullOrEmpty(OutputFile))
+                {
+                    await File.WriteAllTextAsync(OutputFile, script);
+                    Success($"SQL script saved to: {OutputFile}");
+                }
+                else
+                {
+                    Info("");
+                    Info("=== Generated SQL Script ===");
+                    Info(script);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Info("");
-                Info("=== Generated SQL Script ===");
-                Info(script);
+                Error($"Failed to generate script: {ex.Message}");
             }
-        }
-        catch (Exception ex)
-        {
-            Error($"Failed to generate script: {ex.Message}");
         }
     }
 }

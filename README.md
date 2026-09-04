@@ -2,7 +2,7 @@
 
 Host-agnostic, multi-tenant identity and access management for .NET applications. Drop-in authentication, authorization, RBAC, and permission management — no external service dependencies.
 
-> **Upgrading from 1.x?** See [MIGRATION-2.0.md](MIGRATION-2.0.md). MariaDB support is removed,
+> **Upgrading from 1.x?** See [MIGRATION-2.0.md](https://github.com/ultrabstrong/Corely.IAM/blob/master/MIGRATION-2.0.md). MariaDB support is removed,
 > MySQL moved to Oracle's provider and its databases must be recreated, and the target framework is
 > `net10.0` only. SQL Server is unaffected.
 
@@ -48,6 +48,22 @@ graph LR
 
 ## Quick Start
 
+### 1. Create the database schema
+
+The library never applies migrations at runtime. Create the schema with the migration tool, which
+ships both providers' migrations:
+
+```bash
+dotnet tool install --global Corely.IAM.DataAccessMigrations.Cli
+
+corely-iam-db db create -p MsSql -c "Server=(localdb)\MSSQLLocalDB;Database=CorelyIam;Trusted_Connection=True;"
+```
+
+See the [Migration CLI docs](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM.DataAccessMigrations.Cli/Docs/index.md) for deployment
+scripting, environment-variable configuration, and running against MySQL.
+
+### 2. Register and use the services
+
 ```csharp
 // Register services
 var options = IAMOptions.Create(configuration, securityConfigProvider, efConfigFactory);
@@ -67,10 +83,10 @@ var accountResult = await registrationService.RegisterAccountAsync(
 
 | Docs | Description |
 |------|-------------|
-| **[Corely.IAM](Corely.IAM/Docs/index.md)** | Core library — setup, services, domains, security, architecture |
-| **[Corely.IAM.Web](Corely.IAM.Web/Docs/index.md)** | Pre-built Blazor UI — auth pages, account management, RBAC visualization |
-| [DevTools CLI](Corely.IAM.DevTools/Docs/index.md) | Crypto operations and IAM service interaction from the command line |
-| [Migration CLI](Corely.IAM.DataAccessMigrations.Cli/Docs/index.md) | Database creation, migrations, and scripting |
+| **[Corely.IAM](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM/Docs/index.md)** | Core library — setup, services, domains, security, architecture |
+| **[Corely.IAM.Web](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM.Web/Docs/index.md)** | Pre-built Blazor UI — auth pages, account management, RBAC visualization |
+| [DevTools CLI](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM.DevTools/Docs/index.md) | Crypto operations and IAM service interaction from the command line |
+| [Migration CLI](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM.DataAccessMigrations.Cli/Docs/index.md) | Database creation, migrations, and scripting |
 
 ## Solution Structure
 
@@ -81,8 +97,9 @@ var accountResult = await registrationService.RegisterAccountAsync(
 | `Corely.IAM.WebApp` | Host application (reference implementation) |
 | `Corely.IAM.UnitTests` | Test suite (xUnit, Moq, AutoFixture, FluentAssertions) |
 | `Corely.IAM.DevTools` | Developer CLI for crypto and IAM operations |
-| `Corely.IAM.DataAccessMigrations.*` | EF Core migrations per database provider |
+| `Corely.IAM.DataAccessMigrations.Cli` | Migration CLI — creates and migrates the IAM schema (published as a .NET tool) |
+| `Corely.IAM.DataAccessMigrations.MsSql` / `.MySql` | EF Core migrations per database provider, bundled into the CLI |
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+See [LICENSE](https://github.com/ultrabstrong/Corely.IAM/blob/master/LICENSE) for details.

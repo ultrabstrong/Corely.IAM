@@ -1,160 +1,126 @@
 # Corely IAM Database Migration CLI
 
-A command-line tool for managing Corely IAM database migrations and schema.
+Creates and migrates the Corely IAM database schema. This is the supported way to stand up the IAM
+tables — the library itself never applies migrations at runtime.
 
-## Supported Databases
+The tool ships both provider migration sets, so nothing beyond it needs to be referenced.
 
-This CLI tool supports migrations for:
-- **MySQL** (via `Corely.IAM.DataAccessMigrations.MySql`)
-- **SQL Server** (via `Corely.IAM.DataAccessMigrations.MsSql`)
+| Provider | Value |
+|----------|-------|
+| SQL Server | `MsSql` |
+| MySQL | `MySql` |
 
-## Creating Migrations (Development)
-
-When the data model changes, new migrations need to be created. This requires the EF Core CLI tools and access to the source code.
-
-### Prerequisites
+## Install
 
 ```bash
-# Install EF Core tools globally (if not already installed)
-dotnet tool install --global dotnet-ef
+dotnet tool install --global Corely.IAM.DataAccessMigrations.Cli
 ```
 
-### Creating a New Migration
-
-Run from the migration project directory (e.g., `Corely.IAM.DataAccessMigrations.MySql`):
-
-```bash
-# Create a new migration
-dotnet ef migrations add <MigrationName>
-
-# Example
-dotnet ef migrations add AddNewUserFields
-```
-
-### Other Migration Commands
-
-```bash
-# Remove the last migration (if not yet applied)
-dotnet ef migrations remove
-
-# List all migrations
-dotnet ef migrations list
-
-# Generate SQL script for all migrations
-dotnet ef migrations script
-```
-
-For full documentation, see: https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/
-
-## Building
-
-```powershell
-# Build
-dotnet build
-
-# Publish as single executable
-dotnet publish -c Release -r win-x64
-```
-
-The output will be in `bin/Release/net10.0/win-x64/publish/`.
-
-## Installation
-
-After building, copy the executable to a location in your PATH, or use the provided `CopyCorelyTools.ps1` script.
+The command is `corely-iam-db`.
 
 ## Configuration
 
-The tool requires a `corely-iam-db-migration-settings.json` file in the same directory as the executable.
+Every `db` command takes the provider and connection string as options, falling back to environment
+variables:
 
-### Creating the Settings File
+| Option | Environment variable |
+|--------|---------------------|
+| `-p, --provider` | `CORELY_IAM_DB_PROVIDER` |
+| `-c, --connection-string` | `CORELY_IAM_DB_CONNECTION` |
+
+The option wins when both are present. There is no settings file — an installed tool would have to
+keep one in its own install directory, shared by every repository and CI job on the machine.
 
 ```bash
-# Create a settings file for MySQL
-corely-db config init MySql
+# Per invocation
+corely-iam-db db create -p MsSql -c "Server=(localdb)\MSSQLLocalDB;Database=CorelyIam;Trusted_Connection=True;"
 
-# Create a settings file for MySQL
-corely-db config init MySql
-
-# Create a settings file for SQL Server
-corely-db config init MsSql
-
-# Create with a specific connection string (MySQL)
-corely-db config init MySql -c "Server=myserver;Database=mydb;User=myuser;Password=mypassword;"
-
-# Create with a specific connection string (SQL Server)
-corely-db config init MsSql -c "Server=localhost;Database=IAM;User Id=sa;Password=yourpassword;TrustServerCertificate=True;"
-
-# Overwrite an existing settings file
-corely-db config init MySql -f
+# Or once per shell
+export CORELY_IAM_DB_PROVIDER=MsSql
+export CORELY_IAM_DB_CONNECTION="Server=(localdb)\MSSQLLocalDB;Database=CorelyIam;Trusted_Connection=True;"
+corely-iam-db db create
 ```
 
-### Settings File Format
-
-```json
-{
-  "Provider": "MySql",
-  "ConnectionStrings": {
-    "DataRepoConnection": "Server=localhost;Port=3306;Database=IAM;Uid=root;Pwd=yourpassword;"
-  }
-}
+```powershell
+$env:CORELY_IAM_DB_PROVIDER = "MsSql"
+$env:CORELY_IAM_DB_CONNECTION = "Server=(localdb)\MSSQLLocalDB;Database=CorelyIam;Trusted_Connection=True;"
+corely-iam-db db create
 ```
 
 ## Commands
 
-### Database Commands (`db`)
-
 | Command | Description |
 |---------|-------------|
-| `db status` | Show the migration status (applied vs pending) |
-| `db list` | List all available migrations |
-| `db migrate [target]` | Apply pending migrations (optionally to a specific target) |
-| `db script [from] [to]` | Generate a SQL script from migrations |
 | `db create` | Create the database and apply all migrations |
-| `db drop [-f]` | Drop the database (use `-f` to skip confirmation) |
+| `db migrate [target]` | Apply pending migrations, or migrate to a specific target (`0` reverts all) |
+| `db status` | Show applied and pending migrations |
+| `db list` | List all available migrations |
+| `db script [from] [to]` | Generate a SQL script from migrations |
+| `db drop [-f]` | Drop the database (`-f` skips confirmation) |
 | `db test-connection` | Test the database connection |
-
-### Config Commands (`config`)
-
-| Command | Description |
-|---------|-------------|
-| `config init <provider> [-f] [-c <connection>]` | Create a new settings file with the specified provider |
-| `config set-connection <connection>` | Set the database connection string |
-| `config show` | Display the current settings file contents |
-| `config path` | Display the expected settings file path |
-
-### Provider Commands (`provider`)
-
-| Command | Description |
-|---------|-------------|
 | `provider list` | List available database providers |
-| `provider show` | Show current provider from config |
-| `provider set <provider>` | Change the provider in the config file |
 
-## Usage Examples
+`db status` and `db list` take `-a, --show-all` to include migrations belonging to other contexts
+in the same database. `db script` takes `-o, --output` to write to a file and `-i, --idempotent`
+for a script that is safe to run repeatedly.
+
+## Migrations history table
+
+IAM records its migrations in `__CorelyIamMigrationsHistory` rather than the default
+`__EFMigrationsHistory`, so it can share a database with your own contexts without their migration
+records interleaving.
+
+A database that was migrated before this default existed has its IAM history in
+`__EFMigrationsHistory`. Either keep using it:
 
 ```bash
-# View help
-corely-db --help
-corely-db db --help
-
-# Test database connection
-corely-db db test-connection
-
-# View migration status
-corely-db db status
-
-# Apply all pending migrations
-corely-db db migrate
-
-# Migrate to a specific migration
-corely-db db migrate 20241221063840_AddRoles
-
-# Revert all migrations
-corely-db db migrate 0
-
-# Generate an idempotent SQL script
-corely-db db script -i -o migration.sql
-
-# Create database and apply migrations
-corely-db db create
+corely-iam-db db migrate --history-table __EFMigrationsHistory
 ```
+
+or copy the records across once and drop the option:
+
+```sql
+-- SQL Server
+SELECT * INTO __CorelyIamMigrationsHistory FROM __EFMigrationsHistory;
+
+-- MySQL
+CREATE TABLE __CorelyIamMigrationsHistory AS SELECT * FROM __EFMigrationsHistory;
+```
+
+That copies everything, which is what you want when IAM is the only context in the database. If it
+shares the database, restrict the copy to the migration ids `corely-iam-db db list` reports.
+
+Run `db status` afterwards: every IAM migration should read as applied. If they read as pending,
+the copy did not land and migrating would try to recreate tables that already exist.
+
+## Examples
+
+```bash
+# First-time setup
+corely-iam-db db create -p MsSql -c "<connection string>"
+
+# Deployment script, reviewed before it runs anywhere
+corely-iam-db db script -i -o deploy.sql -p MsSql
+
+# CI or a test fixture with a container-assigned connection string
+CORELY_IAM_DB_PROVIDER=MsSql CORELY_IAM_DB_CONNECTION="$CONN" corely-iam-db db create
+```
+
+`db script` needs a provider but never opens a connection, so it works offline.
+
+## Authoring migrations
+
+Creating migrations is a development task that needs the repository, not this tool. Use the scripts
+at the repository root, which target both providers:
+
+```powershell
+.\AddMigration.ps1 "MigrationName"
+.\RemoveMigration.ps1
+.\ListMigrations.ps1
+```
+
+## Notes
+
+- `db create` is safe to run against an existing database — it applies whatever is pending.
+- `db migrate 0` reverts all migrations but does not drop the database.
+- `db drop` is destructive and cannot be undone.

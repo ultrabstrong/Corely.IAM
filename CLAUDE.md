@@ -25,7 +25,7 @@ findings from building it live in `Plans/Completed/testing-strategy.md`.
 
 | Tier | Owns | Substrate | Project |
 |------|------|-----------|---------|
-| Unit | One class's logic, dependencies substituted | No database | `Corely.IAM.UnitTests`, `Corely.IAM.Web.UnitTests` |
+| Unit | One class's logic, dependencies substituted | No database | `Corely.IAM.UnitTests`, `Corely.IAM.Web.UnitTests`, `Corely.IAM.DevTools.UnitTests`, `Corely.IAM.DataAccessMigrations.Cli.UnitTests` |
 | Integration | Persistence — EF translation, schema, provider behavior | SQLite / Testcontainers | `Corely.IAM.IntegrationTests` |
 | Functional | HTTP — middleware, cookies, redirects, ASP.NET pipeline | `WebApplicationFactory` in-process | `Corely.IAM.Web.FunctionalTests` |
 | E2E | Browser — JS, real cookie enforcement, external redirects | Playwright | *deliberately none* |
@@ -81,6 +81,8 @@ dotnet test --solution Corely.IAM.slnx
 # Unit tier
 dotnet test --project Corely.IAM.UnitTests
 dotnet test --project Corely.IAM.Web.UnitTests
+dotnet test --project Corely.IAM.DevTools.UnitTests
+dotnet test --project Corely.IAM.DataAccessMigrations.Cli.UnitTests
 
 # Integration tier — real EF on SQLite. No external dependencies.
 dotnet test --project Corely.IAM.IntegrationTests
@@ -180,12 +182,15 @@ Fill in the two required values (see `appsettings.template.json` for reference):
 
 ```powershell
 cd Corely.IAM.DataAccessMigrations.Cli
-dotnet run -- config init mssql -c "your-connection-string"
-dotnet run -- db create
+dotnet run -- db create -p MsSql -c "your-connection-string"
 ```
 
-- `config init` creates a local settings file for the migration CLI (provider + connection string)
 - `db create` creates the database and applies all pending migrations
+- Provider and connection string come from `--provider` / `--connection-string`, or from
+  `CORELY_IAM_DB_PROVIDER` / `CORELY_IAM_DB_CONNECTION`. There is no settings file - as an
+  installed tool it would live in the tool's own install directory, shared machine-wide.
+- IAM records migrations in `__CorelyIamMigrationsHistory`, not the default. `--history-table`
+  overrides it for databases migrated before that default existed.
 
 **4. Run the app**
 
@@ -212,7 +217,7 @@ The default config sends structured logs to [Seq](https://datalust.co/seq) at `h
 | `Corely.IAM.UnitTests` | Test suite (XUnit, Moq, AutoFixture, FluentAssertions) |
 | `Corely.IAM.ConsoleTest` | Console app for manual testing and demonstration |
 | `Corely.IAM.DevTools` | Developer utilities for crypto operations (encryption, hashing, signing, encoding) |
-| `Corely.IAM.DataAccessMigrations.Cli` | Database migration CLI tool (System.CommandLine) |
+| `Corely.IAM.DataAccessMigrations.Cli` | Database migration CLI, published as the `corely-iam-db` .NET tool (System.CommandLine) |
 | `Corely.IAM.DataAccessMigrations.MySql` | MySQL EF Core migrations |
 | `Corely.IAM.DataAccessMigrations.MsSql` | SQL Server EF Core migrations |
 

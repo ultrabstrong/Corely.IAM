@@ -5,8 +5,8 @@ name: Release
 # bound to this repository and hands back a key valid for one hour.
 #
 # The policy is bound to this file name (release.yml) - renaming it breaks publishing until the
-# policy on nuget.org is updated to match. Its package scope is Corely.IAM*, covering both
-# packages this repository ships.
+# policy on nuget.org is updated to match. Its package scope is Corely.IAM*, covering every
+# package this repository ships, the migration CLI included.
 #
 #   git tag v1.2.1 && git push origin v1.2.1
 #
@@ -44,7 +44,7 @@ jobs:
       - name: Test
         run: dotnet test --solution Corely.IAM.slnx --configuration Release --no-build
 
-      # Two packages ship from this repository, and they are versioned independently in their
+      # Three packages ship from this repository, and they are versioned independently in their
       # own csproj files. Deriving a version from the tag would force them into lockstep, so the
       # tag is the trigger and each csproj remains the source of truth for its own version.
       - name: Pack Corely.IAM
@@ -65,6 +65,15 @@ jobs:
           -p:SymbolPackageFormat=snupkg
           --output ./artifacts
 
+      # Packed as a .NET tool (corely-iam-db). It bundles both provider migration assemblies, so
+      # those projects stay unpublished.
+      - name: Pack Migration CLI
+        run: >
+          dotnet pack Corely.IAM.DataAccessMigrations.Cli/Corely.IAM.DataAccessMigrations.Cli.csproj
+          --configuration Release
+          --no-build
+          --output ./artifacts
+
       - name: List packages
         run: ls -l ./artifacts
 
@@ -75,8 +84,8 @@ jobs:
         with:
           user: ultrabstrong
 
-      # --skip-duplicate matters here: whichever of the two packages did not change version is
-      # already published, and must not fail the run.
+      # --skip-duplicate matters here: whichever packages did not change version are already
+      # published, and must not fail the run.
       - name: Push
         run: >
           dotnet nuget push "./artifacts/*.nupkg"

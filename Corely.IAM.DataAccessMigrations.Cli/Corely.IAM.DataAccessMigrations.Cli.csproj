@@ -5,16 +5,29 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>corely-iam-db</ToolCommandName>
+    <PackageId>Corely.IAM.DataAccessMigrations.Cli</PackageId>
+    <Title>Corely IAM Migration CLI</Title>
+    <Description>Command-line tool that creates and migrates the Corely IAM database schema. Ships the SQL Server and MySQL migrations, so a consumer of the Corely.IAM package can stand up a database without referencing anything beyond this tool.</Description>
+    <PackageTags>Corely IAM Migrations EntityFrameworkCore Database CLI DotnetTool</PackageTags>
+    <RepositoryUrl>https://github.com/ultrabstrong/Corely.IAM</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/ultrabstrong/Corely.IAM</PackageProjectUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>1.0.0</Version>
+
     <!-- Single-file publishing options. Applied only when publishing: a self-contained
          executable cannot be referenced by a non-self-contained one, which would block a test
-         project from referencing this. RebuildAndTest.ps1 passes the publish-time equivalents. -->
+         project from referencing this. RebuildAndTest.ps1 passes the publish-time equivalents.
+         PackAsTool is unaffected - `dotnet pack` does not set _IsPublishing. -->
     <PublishSingleFile Condition="'$(_IsPublishing)' == 'true'">true</PublishSingleFile>
     <SelfContained Condition="'$(_IsPublishing)' == 'true'">true</SelfContained>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 
-    <!-- 
-    Trimming is disabled because EF Core migrations rely heavily on reflection 
+    <!--
+    Trimming is disabled because EF Core migrations rely heavily on reflection
     and are not compatible with IL trimming. This results in a larger executable
     but ensures migrations work correctly at runtime.
     -->
@@ -22,19 +35,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Corely.IAM.DataAccessMigrations.Cli.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Corely.Common" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.11" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
     <PackageReference Include="System.CommandLine" Version="2.0.11" />
   </ItemGroup>
 
-  <!-- Only copy settings file during Debug builds for local development -->
-  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
-    <None Update="corely-iam-db-migration-settings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  <ItemGroup>
+    <None Include="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Corely.IAM.DataAccessMigrations.MySql\Corely.IAM.DataAccessMigrations.MySql.csproj" />
     <ProjectReference Include="..\Corely.IAM.DataAccessMigrations.MsSql\Corely.IAM.DataAccessMigrations.MsSql.csproj" />

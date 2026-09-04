@@ -6,7 +6,7 @@ Reusable Blazor components in the `Corely.IAM.Web.Components.Shared` namespace.
 
 | Component | Purpose | Key Parameters |
 |-----------|---------|----------------|
-| `PermissionView` | Authorization gate — show/hide UI by CRUDX | `Action`, `Resource`, `ResourceIds` |
+| `PermissionView` | Authorization gate — show/hide UI by CRUDX | `Action`, `Resource`, `ResourceIds`, `Undetermined` |
 | `EntityPickerModal` | Multi-select modal with search and pagination | `FetchItemsAsync`, `ExcludeIds`, `OnConfirm` |
 | `FormModal` | Generic form modal with confirm/cancel | `Title`, `ChildContent`, `OnConfirm` |
 | `ConfirmModal` | Destructive action confirmation | `Title`, `Message`, `Type`, `OnConfirm` |

@@ -1,4 +1,5 @@
 @inject IAuthorizationProvider AuthorizationProvider
+@inject IUserContextProvider UserContextProvider
 
 @if (_checkComplete)
 {
@@ -17,6 +18,10 @@
     {
         @NotAuthorized
     }
+}
+else if (Undetermined != null)
+{
+    @Undetermined
 }
 
 @code {
@@ -38,6 +43,14 @@
     [Parameter]
     public RenderFragment? NotAuthorized { get; set; }
 
+    /// <summary>
+    /// Rendered while the answer is genuinely unknown - before the first check completes, or
+    /// while there is no user context to check against. Optional: with nothing supplied the
+    /// component renders nothing, which is the right default for a gated control.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? Undetermined { get; set; }
+
     private bool _checkComplete;
     private bool _isAuthorized;
     private AuthAction _lastAction;
@@ -46,6 +59,16 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        // An authenticated page awaits its user context in OnInitializedAsync, and that await
+        // makes Blazor paint an interim render of its children first. A check running in that
+        // render has no context to authorize against and is denied - an unknown, not a decision.
+        // Caching it would be permanent, because the parameters never change to invalidate it.
+        if (UserContextProvider.GetUserContext() == null)
+        {
+            _checkComplete = false;
+            return;
+        }
+
         if (
             _checkComplete
             && Action == _lastAction

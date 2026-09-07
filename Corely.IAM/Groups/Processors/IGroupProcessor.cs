@@ -12,6 +12,9 @@ internal interface IGroupProcessor
     Task<RemoveRolesFromGroupResult> RemoveRolesFromGroupAsync(RemoveRolesFromGroupRequest request);
     Task<ModifyResult> UpdateGroupAsync(UpdateGroupRequest request);
     Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId, Guid accountId = default);
-    Task<ListResult<Group>> ListGroupsAsync(ListGroupsRequest request);
+    Task<ListResult<Group>> ListGroupsAsync(
+        ListGroupsRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    );
     Task<GetResult<Group>> GetGroupByIdAsync(Guid groupId, bool hydrate, Guid accountId = default);
 }

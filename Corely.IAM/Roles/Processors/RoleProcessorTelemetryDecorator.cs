@@ -50,11 +50,14 @@ internal class RoleProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<ListResult<Role>> ListRolesAsync(ListRolesRequest request) =>
+    public async Task<ListResult<Role>> ListRolesAsync(
+        ListRolesRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
             request,
-            () => _inner.ListRolesAsync(request),
+            () => _inner.ListRolesAsync(request, authorizedResourceIds),
             logResult: true
         );
 

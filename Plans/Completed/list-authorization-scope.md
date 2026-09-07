@@ -2,11 +2,39 @@
 
 ## Status
 
-**Agreed in principle, not yet built.** Direction settled: push the permitted resource ids into the
-list query rather than filtering after it, and document the scaling limit. Details in
-"Agreed approach" below.
+Implemented in `Corely.IAM` 2.2.0.
 
-One question is still open and decides the priority - see "Is it live or latent?".
+`IAuthorizationProvider.GetAuthorizedResourceIdsAsync(action, resourceType)` returns the permitted
+ids, or `null` for a wildcard grant. `ListQueryHelper.ExecuteListAsync` folds them into the scope
+predicate as an `IN (...)` clause, so the page and the count come from one predicate and stay
+consistent.
+
+Applied to four list endpoints - groups, roles, users, permissions - where the authorization check
+is against the resource type being listed.
+
+**Accounts and invitations were deliberately left alone.** Both authorize by account membership
+rather than by their own resource type, so their permitted ids are account ids, not the rows being
+listed. Scoping those queries by them would filter on the wrong thing. Both take the parameter and
+pass it through, but never derive one.
+
+The decorators resolve the scope themselves and ignore any value handed in, since a caller-supplied
+scope could only ever be a request to widen it.
+
+### Verified where it can actually fail
+
+The scope is a hand-built expression tree, and `MockRepo` evaluates anything that compiles - so the
+unit tier could not tell a translatable predicate from an untranslatable one. `Corely.IAM.Integration
+Tests/Persistence/AuthorizationScopedListTests.cs` covers it against real SQL.
+
+Those tests run as the **group member**, not the owner. The group member reaches the Editor role
+through a group, and that role holds a grant on one specific role id. The owner holds a wildcard,
+which takes the null-scope path and adds no clause at all - an owner-based test would have passed
+without ever exercising the new code.
+
+### The live-or-latent question was dropped
+
+It gated the work on evidence that would not have changed the outcome. The fix is the same either
+way and it was cheap, so it was simply built.
 
 ## The observation
 

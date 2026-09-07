@@ -66,7 +66,7 @@ public class GroupListAuthorizationScopeTests
         _decorator = new GroupProcessorAuthorizationDecorator(processor, authorizationProvider);
     }
 
-    [Fact(Skip = "Pins an unresolved defect - see Plans/New/list-authorization-scope.md")]
+    [Fact]
     public async Task ListGroups_ReturnsOnlyPermittedGroups_WhenPermissionIsPerResource()
     {
         var permitted = await CreateGroupAsync("permitted");
@@ -80,7 +80,7 @@ public class GroupListAuthorizationScopeTests
         Assert.Equal(permitted.Id, result.Data.Items[0].Id);
     }
 
-    [Fact(Skip = "Pins an unresolved defect - see Plans/New/list-authorization-scope.md")]
+    [Fact]
     public async Task ListGroups_TotalCountReflectsOnlyPermittedGroups()
     {
         var permitted = await CreateGroupAsync("permitted");

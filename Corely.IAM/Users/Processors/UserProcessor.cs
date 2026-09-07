@@ -494,7 +494,10 @@ internal class UserProcessor(
         return new DeleteUserResult(DeleteUserResultCode.Success, string.Empty);
     }
 
-    public async Task<ListResult<User>> ListUsersAsync(ListUsersRequest request)
+    public async Task<ListResult<User>> ListUsersAsync(
+        ListUsersRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    )
     {
         return await ListQueryHelper.ExecuteListAsync(
             _userRepo,
@@ -511,7 +514,8 @@ internal class UserProcessor(
                 LockedUtc = e.LockedUtc,
                 CreatedUtc = e.CreatedUtc,
                 ModifiedUtc = e.ModifiedUtc,
-            }
+            },
+            authorizedResourceIds
         );
     }
 

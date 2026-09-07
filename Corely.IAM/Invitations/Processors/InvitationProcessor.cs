@@ -307,7 +307,10 @@ internal class InvitationProcessor(
         return new RevokeInvitationResult(RevokeInvitationResultCode.Success, string.Empty);
     }
 
-    public async Task<ListResult<Invitation>> ListInvitationsAsync(ListInvitationsRequest request)
+    public async Task<ListResult<Invitation>> ListInvitationsAsync(
+        ListInvitationsRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    )
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
@@ -339,7 +342,8 @@ internal class InvitationProcessor(
             request.Order,
             request.Skip,
             request.Take,
-            e => e.ToModel()
+            e => e.ToModel(),
+            authorizedResourceIds
         );
     }
 

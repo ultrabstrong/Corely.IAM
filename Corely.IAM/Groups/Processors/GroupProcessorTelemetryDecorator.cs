@@ -78,11 +78,14 @@ internal class GroupProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<ListResult<Group>> ListGroupsAsync(ListGroupsRequest request) =>
+    public async Task<ListResult<Group>> ListGroupsAsync(
+        ListGroupsRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),
             request,
-            () => _inner.ListGroupsAsync(request),
+            () => _inner.ListGroupsAsync(request, authorizedResourceIds),
             logResult: true
         );
 

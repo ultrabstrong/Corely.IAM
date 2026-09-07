@@ -58,18 +58,36 @@ internal class RoleProcessorAuthorizationDecorator(
                 null
             );
 
-    public async Task<ListResult<Role>> ListRolesAsync(ListRolesRequest request) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE
+    public async Task<ListResult<Role>> ListRolesAsync(
+        ListRolesRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    )
+    {
+        if (
+            !_authorizationProvider.HasAccountContext(request.AccountId)
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.ROLE_RESOURCE_TYPE
+            )
         )
-            ? await _inner.ListRolesAsync(request)
-            : new ListResult<Role>(
+        {
+            return new ListResult<Role>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list roles",
                 null
             );
+        }
+
+        // Resolved here rather than taken from the caller: a scope supplied by the caller would be
+        // a request to widen it. Null means a wildcard grant, so the query is left unscoped.
+        return await _inner.ListRolesAsync(
+            request,
+            await _authorizationProvider.GetAuthorizedResourceIdsAsync(
+                AuthAction.Read,
+                PermissionConstants.ROLE_RESOURCE_TYPE
+            )
+        );
+    }
 
     public async Task<GetResult<Role>> GetRoleByIdAsync(
         Guid roleId,

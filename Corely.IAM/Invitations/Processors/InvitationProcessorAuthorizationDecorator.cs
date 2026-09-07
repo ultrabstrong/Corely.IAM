@@ -62,7 +62,10 @@ internal class InvitationProcessorAuthorizationDecorator(
             );
 
     public async Task<ListResult<Invitation>> ListInvitationsAsync(
-        ListInvitationsRequest request
+        ListInvitationsRequest request,
+        // Authorization here is by account membership, not by this resource type, so the permitted
+        // ids are account ids rather than the rows being listed. Passed through, never derived.
+        IReadOnlySet<Guid>? authorizedResourceIds = null
     ) =>
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
@@ -70,7 +73,7 @@ internal class InvitationProcessorAuthorizationDecorator(
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
             request.AccountId
         )
-            ? await _inner.ListInvitationsAsync(request)
+            ? await _inner.ListInvitationsAsync(request, authorizedResourceIds)
             : new ListResult<Invitation>(
                 RetrieveResultCode.UnauthorizedError,
                 $"Unauthorized to list invitations for account {request.AccountId}",

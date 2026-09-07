@@ -17,7 +17,10 @@ internal interface IAccountProcessor
         RemoveUserFromAccountRequest request
     );
     Task<DeleteAccountResult> DeleteAccountAsync(Guid accountId);
-    Task<ListResult<Account>> ListAccountsAsync(ListAccountsRequest request);
+    Task<ListResult<Account>> ListAccountsAsync(
+        ListAccountsRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    );
     Task<GetResult<Account>> GetAccountByIdAsync(Guid accountId, bool hydrate);
     Task<GetResult<AccountEntity>> GetAccountKeysAsync(Guid accountId);
 }

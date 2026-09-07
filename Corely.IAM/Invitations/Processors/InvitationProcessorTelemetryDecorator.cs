@@ -49,12 +49,13 @@ internal class InvitationProcessorTelemetryDecorator(
         );
 
     public async Task<ListResult<Invitation>> ListInvitationsAsync(
-        ListInvitationsRequest request
+        ListInvitationsRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(InvitationProcessor),
             request,
-            () => _inner.ListInvitationsAsync(request),
+            () => _inner.ListInvitationsAsync(request, authorizedResourceIds),
             logResult: true
         );
 }

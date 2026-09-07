@@ -34,12 +34,13 @@ internal class PermissionProcessorTelemetryDecorator(
         );
 
     public async Task<ListResult<Permission>> ListPermissionsAsync(
-        ListPermissionsRequest request
+        ListPermissionsRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(PermissionProcessor),
             request,
-            () => _inner.ListPermissionsAsync(request),
+            () => _inner.ListPermissionsAsync(request, authorizedResourceIds),
             logResult: true
         );
 

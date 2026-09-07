@@ -14,7 +14,8 @@ internal static class ListQueryHelper
         OrderBuilder<TModel>? order,
         int skip,
         int take,
-        Func<TEntity, TModel> toModel
+        Func<TEntity, TModel> toModel,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
     )
         where TEntity : class
     {
@@ -22,6 +23,18 @@ internal static class ListQueryHelper
             throw new ArgumentOutOfRangeException(nameof(skip), "Must be non-negative.");
         if (take <= 0)
             throw new ArgumentOutOfRangeException(nameof(take), "Must be positive.");
+
+        // Folded into the scope predicate rather than applied to the results, so the page and the
+        // count agree. Filtering afterwards returns fewer rows than asked for and a total that
+        // includes rows the caller may not see. Null means a wildcard grant - every row is in
+        // scope, so no clause is added at all.
+        if (authorizedResourceIds != null)
+        {
+            scopePredicate = AndAlso(
+                scopePredicate,
+                BuildIdInSetPredicate<TEntity>(authorizedResourceIds)
+            );
+        }
 
         var filterExpression = filter?.Build();
         Expression<Func<TEntity, bool>> predicate;
@@ -60,6 +73,42 @@ internal static class ListQueryHelper
             string.Empty,
             PagedResult<TModel>.Create(items, totalCount, skip, take)
         );
+    }
+
+    private static Expression<Func<TEntity, bool>> AndAlso<TEntity>(
+        Expression<Func<TEntity, bool>> left,
+        Expression<Func<TEntity, bool>> right
+    )
+    {
+        var param = Expression.Parameter(typeof(TEntity), "e");
+        return Expression.Lambda<Func<TEntity, bool>>(
+            Expression.AndAlso(Expression.Invoke(left, param), Expression.Invoke(right, param)),
+            param
+        );
+    }
+
+    private static Expression<Func<TEntity, bool>> BuildIdInSetPredicate<TEntity>(
+        IReadOnlySet<Guid> ids
+    )
+    {
+        var idProp =
+            typeof(TEntity).GetProperty("Id")
+            ?? throw new InvalidOperationException(
+                $"Entity type '{typeof(TEntity).Name}' does not have an 'Id' property required for authorization scoping."
+            );
+
+        // Materialised so the provider translates it to an IN (...) clause rather than closing
+        // over the set.
+        var idList = ids.ToList();
+        var param = Expression.Parameter(typeof(TEntity), "e");
+        var contains = Expression.Call(
+            typeof(Enumerable),
+            nameof(Enumerable.Contains),
+            [typeof(Guid)],
+            Expression.Constant(idList),
+            Expression.MakeMemberAccess(param, idProp)
+        );
+        return Expression.Lambda<Func<TEntity, bool>>(contains, param);
     }
 
     private static Expression<Func<TEntity, Guid>> BuildDefaultOrderExpression<TEntity>()

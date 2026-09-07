@@ -104,11 +104,14 @@ internal class UserProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<ListResult<User>> ListUsersAsync(ListUsersRequest request) =>
+    public async Task<ListResult<User>> ListUsersAsync(
+        ListUsersRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),
             request,
-            () => _inner.ListUsersAsync(request),
+            () => _inner.ListUsersAsync(request, authorizedResourceIds),
             logResult: true
         );
 

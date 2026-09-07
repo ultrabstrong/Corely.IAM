@@ -141,18 +141,36 @@ internal class GroupProcessorAuthorizationDecorator(
                 $"Unauthorized to delete group {groupId}"
             );
 
-    public async Task<ListResult<Group>> ListGroupsAsync(ListGroupsRequest request) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.GROUP_RESOURCE_TYPE
+    public async Task<ListResult<Group>> ListGroupsAsync(
+        ListGroupsRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    )
+    {
+        if (
+            !_authorizationProvider.HasAccountContext(request.AccountId)
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
         )
-            ? await _inner.ListGroupsAsync(request)
-            : new ListResult<Group>(
+        {
+            return new ListResult<Group>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list groups",
                 null
             );
+        }
+
+        // Resolved here rather than taken from the caller: a scope supplied by the caller would be
+        // a request to widen it. Null means a wildcard grant, so the query is left unscoped.
+        return await _inner.ListGroupsAsync(
+            request,
+            await _authorizationProvider.GetAuthorizedResourceIdsAsync(
+                AuthAction.Read,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+    }
 
     public async Task<GetResult<Group>> GetGroupByIdAsync(
         Guid groupId,

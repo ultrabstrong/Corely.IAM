@@ -205,6 +205,36 @@ internal class AuthorizationProvider(
         return true;
     }
 
+    public async Task<IReadOnlySet<Guid>?> GetAuthorizedResourceIdsAsync(
+        AuthAction action,
+        string resourceType
+    )
+    {
+        if (!TryGetUserContext(out var userContext, $"list {resourceType}"))
+            return new HashSet<Guid>();
+
+        // System context bypasses permission checks entirely, so every resource is in scope.
+        if (userContext.IsSystemContext)
+            return null;
+
+        var relevant = (await GetPermissionsAsync())
+            .Where(p =>
+                (
+                    p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
+                    || p.ResourceType == resourceType
+                ) && HasAction(p, action)
+            )
+            .ToList();
+
+        // A wildcard grant covers every resource of the type, so there is nothing to filter by -
+        // and returning ids here would wrongly narrow the query to resources that happen to have
+        // their own grant as well.
+        if (relevant.Any(p => p.ResourceId == Guid.Empty))
+            return null;
+
+        return relevant.Select(p => p.ResourceId).ToHashSet();
+    }
+
     private bool IsCacheValidFor(Guid? accountId) =>
         _cachedPermissions is not null
         && _cachedAccountId == accountId

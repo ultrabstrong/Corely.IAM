@@ -534,7 +534,10 @@ internal class GroupProcessor(
         return new DeleteGroupResult(DeleteGroupResultCode.Success, string.Empty);
     }
 
-    public async Task<ListResult<Group>> ListGroupsAsync(ListGroupsRequest request)
+    public async Task<ListResult<Group>> ListGroupsAsync(
+        ListGroupsRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    )
     {
         return await ListQueryHelper.ExecuteListAsync(
             _groupRepo,
@@ -543,7 +546,8 @@ internal class GroupProcessor(
             request.Order,
             request.Skip,
             request.Take,
-            e => e.ToModel()
+            e => e.ToModel(),
+            authorizedResourceIds
         );
     }
 

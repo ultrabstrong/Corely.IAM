@@ -400,7 +400,10 @@ internal class AccountProcessor(
         );
     }
 
-    public async Task<ListResult<Account>> ListAccountsAsync(ListAccountsRequest request)
+    public async Task<ListResult<Account>> ListAccountsAsync(
+        ListAccountsRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    )
     {
         var userAccountIds = _userContextProvider
             .GetUserContext()!
@@ -414,7 +417,8 @@ internal class AccountProcessor(
             request.Order,
             request.Skip,
             request.Take,
-            e => e.ToModel()
+            e => e.ToModel(),
+            authorizedResourceIds
         );
     }
 

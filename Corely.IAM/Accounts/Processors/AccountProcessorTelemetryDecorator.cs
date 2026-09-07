@@ -79,11 +79,14 @@ internal class AccountProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<ListResult<Account>> ListAccountsAsync(ListAccountsRequest request) =>
+    public async Task<ListResult<Account>> ListAccountsAsync(
+        ListAccountsRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AccountProcessor),
             request,
-            () => _inner.ListAccountsAsync(request),
+            () => _inner.ListAccountsAsync(request, authorizedResourceIds),
             logResult: true
         );
 

@@ -105,9 +105,14 @@ internal class AccountProcessorAuthorizationDecorator(
 
     // No permission check — results are already scoped to the user's own accounts inside
     // AccountProcessor, and listing accounts is required before any account context exists.
-    public Task<ListResult<Account>> ListAccountsAsync(ListAccountsRequest request) =>
+    public Task<ListResult<Account>> ListAccountsAsync(
+        ListAccountsRequest request,
+        // Authorization here is by account membership, not by this resource type, so the permitted
+        // ids are account ids rather than the rows being listed. Passed through, never derived.
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    ) =>
         _authorizationProvider.HasUserContext()
-            ? _inner.ListAccountsAsync(request)
+            ? _inner.ListAccountsAsync(request, authorizedResourceIds)
             : Task.FromResult(
                 new ListResult<Account>(
                     RetrieveResultCode.UnauthorizedError,

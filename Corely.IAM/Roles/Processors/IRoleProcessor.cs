@@ -9,7 +9,10 @@ internal interface IRoleProcessor
     Task<CreateDefaultSystemRolesResult> CreateDefaultSystemRolesAsync(Guid ownerAccountId);
     Task<GetRoleResult> GetRoleAsync(Guid roleId);
     Task<GetRoleResult> GetRoleAsync(string roleName, Guid ownerAccountId);
-    Task<ListResult<Role>> ListRolesAsync(ListRolesRequest request);
+    Task<ListResult<Role>> ListRolesAsync(
+        ListRolesRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    );
     Task<GetResult<Role>> GetRoleByIdAsync(Guid roleId, bool hydrate, Guid accountId = default);
     Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(
         AssignPermissionsToRoleRequest request

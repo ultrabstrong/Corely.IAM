@@ -123,18 +123,36 @@ internal class UserProcessorAuthorizationDecorator(
                 $"Unauthorized to delete user {userId}"
             );
 
-    public async Task<ListResult<User>> ListUsersAsync(ListUsersRequest request) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE
+    public async Task<ListResult<User>> ListUsersAsync(
+        ListUsersRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    )
+    {
+        if (
+            !_authorizationProvider.HasAccountContext(request.AccountId)
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.USER_RESOURCE_TYPE
+            )
         )
-            ? await _inner.ListUsersAsync(request)
-            : new ListResult<User>(
+        {
+            return new ListResult<User>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list users",
                 null
             );
+        }
+
+        // Resolved here rather than taken from the caller: a scope supplied by the caller would be
+        // a request to widen it. Null means a wildcard grant, so the query is left unscoped.
+        return await _inner.ListUsersAsync(
+            request,
+            await _authorizationProvider.GetAuthorizedResourceIdsAsync(
+                AuthAction.Read,
+                PermissionConstants.USER_RESOURCE_TYPE
+            )
+        );
+    }
 
     public async Task<GetResult<User>> GetUserByIdAsync(
         Guid userId,

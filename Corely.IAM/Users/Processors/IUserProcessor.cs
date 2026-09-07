@@ -19,6 +19,9 @@ internal interface IUserProcessor
     );
     Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(RemoveRolesFromUserRequest request);
     Task<DeleteUserResult> DeleteUserAsync(Guid userId);
-    Task<ListResult<User>> ListUsersAsync(ListUsersRequest request);
+    Task<ListResult<User>> ListUsersAsync(
+        ListUsersRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    );
     Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate, Guid accountId = default);
 }

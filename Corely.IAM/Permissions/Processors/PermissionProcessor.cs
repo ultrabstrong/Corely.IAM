@@ -135,7 +135,10 @@ internal class PermissionProcessor(
         await _permissionRepo.CreateAsync(permissionEntities);
     }
 
-    public async Task<ListResult<Permission>> ListPermissionsAsync(ListPermissionsRequest request)
+    public async Task<ListResult<Permission>> ListPermissionsAsync(
+        ListPermissionsRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    )
     {
         return await ListQueryHelper.ExecuteListAsync(
             _permissionRepo,
@@ -144,7 +147,8 @@ internal class PermissionProcessor(
             request.Order,
             request.Skip,
             request.Take,
-            e => e.ToModel()
+            e => e.ToModel(),
+            authorizedResourceIds
         );
     }
 

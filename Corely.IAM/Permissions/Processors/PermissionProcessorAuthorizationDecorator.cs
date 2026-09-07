@@ -35,19 +35,35 @@ internal class PermissionProcessorAuthorizationDecorator(
         _inner.CreateDefaultSystemPermissionsAsync(accountId);
 
     public async Task<ListResult<Permission>> ListPermissionsAsync(
-        ListPermissionsRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.PERMISSION_RESOURCE_TYPE
+        ListPermissionsRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    )
+    {
+        if (
+            !_authorizationProvider.HasAccountContext(request.AccountId)
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.PERMISSION_RESOURCE_TYPE
+            )
         )
-            ? await _inner.ListPermissionsAsync(request)
-            : new ListResult<Permission>(
+        {
+            return new ListResult<Permission>(
                 RetrieveResultCode.UnauthorizedError,
                 "Unauthorized to list permissions",
                 null
             );
+        }
+
+        // Resolved here rather than taken from the caller: a scope supplied by the caller would be
+        // a request to widen it. Null means a wildcard grant, so the query is left unscoped.
+        return await _inner.ListPermissionsAsync(
+            request,
+            await _authorizationProvider.GetAuthorizedResourceIdsAsync(
+                AuthAction.Read,
+                PermissionConstants.PERMISSION_RESOURCE_TYPE
+            )
+        );
+    }
 
     public async Task<GetResult<Permission>> GetPermissionByIdAsync(
         Guid permissionId,

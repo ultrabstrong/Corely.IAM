@@ -143,7 +143,10 @@ internal class RoleProcessor(
         return new GetRoleResult(GetRoleResultCode.Success, string.Empty, roleEntity.ToModel());
     }
 
-    public async Task<ListResult<Role>> ListRolesAsync(ListRolesRequest request)
+    public async Task<ListResult<Role>> ListRolesAsync(
+        ListRolesRequest request,
+        IReadOnlySet<Guid>? authorizedResourceIds = null
+    )
     {
         return await ListQueryHelper.ExecuteListAsync(
             _roleRepo,
@@ -152,7 +155,8 @@ internal class RoleProcessor(
             request.Order,
             request.Skip,
             request.Take,
-            e => e.ToModel()
+            e => e.ToModel(),
+            authorizedResourceIds
         );
     }
 

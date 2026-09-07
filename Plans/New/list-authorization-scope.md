@@ -2,10 +2,11 @@
 
 ## Status
 
-**Unresolved, and not yet agreed.** The owner's position is that the decorator pattern plus custom
-resource types already covers this and that no new rails are needed. That position is right about
-every operation except one shape, and the disagreement is narrow enough to settle by looking at the
-code. Written down so it is not lost.
+**Agreed in principle, not yet built.** Direction settled: push the permitted resource ids into the
+list query rather than filtering after it, and document the scaling limit. Details in
+"Agreed approach" below.
+
+One question is still open and decides the priority - see "Is it live or latent?".
 
 ## The observation
 
@@ -71,19 +72,55 @@ this is a trap armed for the first per-resource grant rather than a live defect.
 **Answer this before doing any work.** Check what `ResourceId` values exist in the permissions table
 of a real database.
 
-## Options, if it is worth closing
+## Agreed approach
 
-1. **Filter inside `ExecuteListAsync`.** Every IAM list already routes through it, and it owns both
-   the page predicate and the count, so paging stays correct. Needs the permitted-id set, which
-   means a lookup on `AuthorizationProvider` - internal is enough for IAM's own lists.
-2. **Also expose that lookup publicly.** Only matters for custom resource types, where the rows live
-   in the consumer's own tables and IAM cannot reach the query. Without it, a consumer registering a
-   custom type can filter per row but cannot page correctly.
-3. **Do nothing, and document it.** State that per-resource permissions apply to single-record
-   operations and that lists are type-level. Costs nothing and leaves the sharp edge in the API.
+Filter inside `ListQueryHelper.ExecuteListAsync` by passing the permitted resource ids into the
+query as a `WHERE Id IN (...)` clause. Every IAM list already routes through that helper, and it
+owns both the page predicate and the count.
 
-Option 1 is the smallest change that removes the inconsistency inside the library. Option 2 is only
-worth it if custom resource types are meant to be first-class.
+### Why this fixes paging rather than breaking it
+
+The initial worry was that materialising ids would wreck ordering and paging. It is the reverse.
+With the ids in the query, the database still does the ordering, the skip/take and the count, so
+the page is correct. Paging is broken *today*, by filtering after the rows come back - ask for 50,
+drop 7, and both the page size and the total are wrong.
+
+### There is no extra database call
+
+`AuthorizationProvider` already loads a user's permission rows into memory on the first check and
+caches them. The id set is derived from data that is already in hand.
+
+### Where it does not scale, and what to say about it
+
+A large `IN (...)` clause is the real limit. SQL Server caps at roughly 2,100 parameters and
+degrades before that. Two things push the ceiling further out than it first appears:
+
+- **Wildcard grants add no clause at all.** `ResourceId == Guid.Empty` means every resource of the
+  type, so the query is unfiltered.
+- **Rows are per-role, not per-user.** Fifty documents shared with thirty people through one role
+  is fifty permission rows, not fifteen hundred.
+
+So the documented guidance is that many individual per-resource grants do not scale, and that a
+wildcard grant is the alternative - **with the caveat that this is a permissions decision, not a
+performance setting.** A wildcard grants access to everything of that type. If the individual
+grants were standing in for "this principal should see all of these", the wildcard was always the
+right model. If the restriction is real - this user sees only these fifty documents - the wildcard
+is not available and the guidance does not apply. Word it so nobody widens access to fix a slow
+query.
+
+### Custom resource types
+
+For a consumer's own tables the rows live in a different `DbContext`, and EF cannot join across two
+contexts in one query even when they share a physical database. So closing the gap there means the
+id set crosses the boundary and the consumer applies it to their own query. That is the only part
+that needs anything public; IAM's own lists need nothing new, since permissions and groups already
+share `IamDbContext`.
+
+### Likelihood, by resource type
+
+- **IAM's own types** (groups, roles, users): low. Nobody hand-grants fifty individual groups.
+- **Consumer types**: plausible. Document sharing is exactly the "these specific records" case, and
+  DocsToData is a document product.
 
 ## Notes
 

@@ -1,0 +1,38 @@
+name: CI
+
+# Build and test on every push and pull request. release.yml runs the same build and test, but only
+# on a version tag - so without this, a commit that breaks the build sits on master undetected
+# until someone cuts a release.
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            10.0.x
+
+      - name: Restore
+        run: dotnet restore Corely.IAM.slnx
+
+      - name: Build
+        run: dotnet build Corely.IAM.slnx --configuration Release --no-restore
+
+      # The provider matrix is opt-in and stays skipped here, so no database containers
+      # are needed. Everything else runs against SQLite with no external dependencies.
+      - name: Test
+        run: dotnet test --solution Corely.IAM.slnx --configuration Release --no-build

@@ -26,11 +26,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # version check compares against the previous release tag
 
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             10.0.x
+
+      # A package changed without a version bump publishes nothing: push --skip-duplicate treats
+      # the existing version as success, so the release goes green and the change reaches nobody.
+      - name: Package versions
+        run: STRICT=1 bash scripts/check-package-versions.sh
 
       - name: Restore
         run: dotnet restore Corely.IAM.slnx

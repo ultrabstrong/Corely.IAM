@@ -20,6 +20,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # version check compares against the last release tag
 
       - uses: actions/setup-dotnet@v6
         with:
@@ -36,3 +38,7 @@ jobs:
       # are needed. Everything else runs against SQLite with no external dependencies.
       - name: Test
         run: dotnet test --solution Corely.IAM.slnx --configuration Release --no-build
+
+      # Reports only here. A version bump is required at release time, not on every push.
+      - name: Package versions
+        run: bash scripts/check-package-versions.sh

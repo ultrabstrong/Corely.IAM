@@ -107,8 +107,7 @@ internal class AccountProcessorAuthorizationDecorator(
     // AccountProcessor, and listing accounts is required before any account context exists.
     public Task<ListResult<Account>> ListAccountsAsync(
         ListAccountsRequest request,
-        // Authorization here is by account membership, not by this resource type, so the permitted
-        // ids are account ids rather than the rows being listed. Passed through, never derived.
+        // Authorized by account membership, so permitted ids would be account ids, not these rows.
         IReadOnlySet<Guid>? authorizedResourceIds = null
     ) =>
         _authorizationProvider.HasUserContext()

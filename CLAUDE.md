@@ -407,3 +407,19 @@ return new CreateUserResult(CreateUserResultCode.UserExistsError, "Username alre
 ### Plans
 
 Store implementation plans in `Plans/` at the repository root.
+
+## Documentation
+
+`Docs/` describes **how the current version works**. Nothing else.
+
+- **No version numbers of this library.** No "since 2.1", "fixed in 3.0.2", "1.x did X". A reader on
+  an older version is served by that version's docs. Migration guides are the sole exception and
+  live at the repository root, not in `Docs/`.
+- **No references to `Plans/`.** Plans are working material. Never link to one from documentation and
+  never cite one as the reason something is the way it is.
+- **Match the house style.** Terse and code-forward: a short orienting paragraph, then examples.
+  Not an essay with nested headings. Read the neighbouring files in `Docs/` before adding one.
+- **Legacy identifiers may be named, versions may not.** "The legacy name `X` stays registered as an
+  alias" is fine; "the 1.x name `X`" is not.
+
+The full guide is [`DOCUMENTATION-STYLE.md`](DOCUMENTATION-STYLE.md) at this repository root.

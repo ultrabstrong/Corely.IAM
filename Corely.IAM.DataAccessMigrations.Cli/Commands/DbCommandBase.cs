@@ -109,8 +109,7 @@ internal abstract class DbCommandBase(string name, string description)
         return false;
     }
 
-    // EF needs a syntactically valid connection string to build options even when nothing will
-    // open it.
+    // EF needs a syntactically valid connection string to build options, even unopened.
     private static string PlaceholderConnectionString(DatabaseProvider provider) =>
         provider switch
         {

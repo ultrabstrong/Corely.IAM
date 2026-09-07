@@ -4,7 +4,7 @@
 
 ## Overview
 
-Documentation for the Blazor Server UI library following the [Corely Documentation Style Guide](documentation-style-guide.md). Lives in `Corely.IAM.Web/Docs/`.
+Documentation for the Blazor Server UI library following the [Corely Documentation Style Guide](../../DOCUMENTATION-STYLE.md). Lives in `Corely.IAM.Web/Docs/`.
 
 ---
 

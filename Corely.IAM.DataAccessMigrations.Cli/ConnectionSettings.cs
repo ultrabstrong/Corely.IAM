@@ -5,9 +5,7 @@ namespace Corely.IAM.DataAccessMigrations.Cli;
 /// environment variables.
 /// </summary>
 /// <remarks>
-/// There is deliberately no settings file. As an installed tool this would live in the tool's own
-/// install directory, shared by every repository and CI job on the machine, holding a plaintext
-/// connection string.
+/// No settings file: an installed tool's would sit in its install directory, shared machine-wide.
 /// </remarks>
 internal static class ConnectionSettings
 {

@@ -193,6 +193,8 @@ Keep tables clean — pipe-delimited, no excessive column widths. 2-4 columns is
 - **Auto-generated code** (migrations, designer files)
 - **Things the code already says** — don't describe what a method does if the signature is self-explanatory
 - **Changelog or version history** — that belongs in git, not docs
+- **Version numbers of this library** — no "since 2.1", "fixed in 3.0.2", "1.x behaviour". Docs describe how the current version works, full stop. A reader on an older version is served by that version's docs. Migration guides are the one exception, and they live at the repository root, not in `Docs/`
+- **Plan files** — `Plans/` is working material. Never link to it from documentation, and never cite it as the reason something is the way it is
 - **Badges, front matter, or metadata** — keep docs clean
 
 ---

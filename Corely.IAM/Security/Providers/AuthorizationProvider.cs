@@ -31,11 +31,8 @@ internal class AuthorizationProvider(
         .ThrowIfNull(nameof(securityOptions))
         .Value.PermissionCacheTtlSeconds;
 
-    // Expires PermissionCacheTtlSeconds after the load, not after last use: a sliding window would
-    // never expire for an active user, who is exactly who needs the refresh. A host with a scope
-    // per request never reaches the expiry; one with a long-lived scope - a Blazor Server circuit
-    // lasts the whole browser session - depends on it, since the cache is per-scope and the scope
-    // that changes a permission cannot reach the one holding a stale copy.
+    // Absolute rather than sliding: a sliding window would never expire for an active user, who
+    // is exactly who needs the refresh.
     private IReadOnlyList<PermissionEntity>? _cachedPermissions;
     private Guid? _cachedAccountId;
     private DateTimeOffset _cachedAtUtc;

@@ -27,7 +27,6 @@ internal class Status() : DbCommandBase("status", "Show the migration status of 
 
             try
             {
-                // Get migrations defined in this project's assembly
                 var migrationsAssembly = dbContext
                     .Database.GetInfrastructure()
                     .GetRequiredService<IMigrationsAssembly>();
@@ -36,7 +35,6 @@ internal class Status() : DbCommandBase("status", "Show the migration status of 
                 var allAppliedMigrations = await dbContext.Database.GetAppliedMigrationsAsync();
                 var allPendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
 
-                // Filter to local migrations unless ShowAll is specified
                 var appliedMigrations = (
                     ShowAll
                         ? allAppliedMigrations

@@ -27,7 +27,6 @@ internal class ListMigrations() : DbCommandBase("list", "List all available migr
 
             try
             {
-                // Get migrations defined in this project's assembly
                 var migrationsAssembly = dbContext
                     .Database.GetInfrastructure()
                     .GetRequiredService<IMigrationsAssembly>();
@@ -36,7 +35,6 @@ internal class ListMigrations() : DbCommandBase("list", "List all available migr
                 var allAppliedMigrations = await dbContext.Database.GetAppliedMigrationsAsync();
                 var allPendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
 
-                // Filter to local migrations unless ShowAll is specified
                 var appliedMigrations = (
                     ShowAll
                         ? allAppliedMigrations
@@ -58,7 +56,6 @@ internal class ListMigrations() : DbCommandBase("list", "List all available migr
                     var isLocal = localMigrations.Contains(migration);
                     var status = isApplied ? "Applied" : "Pending";
 
-                    // Mark non-local migrations when showing all
                     var suffix = ShowAll && !isLocal ? " (other project)" : "";
 
                     var color = isApplied ? ConsoleColor.Green : ConsoleColor.Yellow;

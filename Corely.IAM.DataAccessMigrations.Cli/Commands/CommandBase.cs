@@ -23,8 +23,7 @@ internal abstract class CommandBase : Command
             var optionAttribute = property.GetCustomAttribute<OptionAttribute>();
             if (optionAttribute == null)
             {
-                // Now that the scan walks base classes, an unattributed property is ordinary
-                // state rather than an unlabelled argument, and must not be bound.
+                // Unattributed properties on a base class are ordinary state, not arguments.
                 var argumentAttribute = property.GetCustomAttribute<ArgumentAttribute>();
                 if (argumentAttribute == null)
                 {
@@ -47,9 +46,8 @@ internal abstract class CommandBase : Command
         SetAction((parseResult, _) => InvokeExecute(parseResult));
     }
 
-    // Walks the hierarchy rather than using GetProperties alone, because the properties are
-    // private: a derived command would otherwise not see the options its base declares, which is
-    // how DbCommandBase shares --provider and --connection-string with every db subcommand.
+    // Walks the hierarchy because the properties are private, so a derived command would not
+    // otherwise see the options its base declares.
     private IEnumerable<PropertyInfo> DeclaredProperties()
     {
         for (

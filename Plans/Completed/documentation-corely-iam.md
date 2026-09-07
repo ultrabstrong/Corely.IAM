@@ -4,7 +4,7 @@
 
 ## Overview
 
-Documentation for the core IAM library following the [Corely Documentation Style Guide](documentation-style-guide.md). Lives in `Corely.IAM/Docs/`.
+Documentation for the core IAM library following the [Corely Documentation Style Guide](../../DOCUMENTATION-STYLE.md). Lives in `Corely.IAM/Docs/`.
 
 ---
 

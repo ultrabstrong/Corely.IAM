@@ -54,8 +54,7 @@ internal class PermissionProcessorAuthorizationDecorator(
             );
         }
 
-        // Resolved here rather than taken from the caller: a scope supplied by the caller would be
-        // a request to widen it. Null means a wildcard grant, so the query is left unscoped.
+        // Resolved here, never taken from the caller - an inbound scope could only widen it.
         return await _inner.ListPermissionsAsync(
             request,
             await _authorizationProvider.GetAuthorizedResourceIdsAsync(

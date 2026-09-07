@@ -297,8 +297,9 @@ internal class TotpAuthProcessor(
     private string DecryptWithSystemKey(string encryptedValue)
     {
         var systemKeyProvider = _securityConfigProvider.GetSystemSymmetricKey();
+        // Read back with the provider the stored value names, not the current default.
         return _encryptionProviderFactory
-            .GetDefaultProvider()
+            .GetProviderForDecrypting(encryptedValue)
             .Decrypt(encryptedValue, systemKeyProvider);
     }
 

@@ -131,6 +131,29 @@ seconds. Nothing to configure unless you want a different window.
 serviceProvider.GetRequiredService<IAuthorizationCacheClearer>().ClearCache();
 ```
 
+## The default encryption and hashing providers changed
+
+Since 1.3.0 the defaults are **AES-256-GCM** for symmetric encryption and **PBKDF2** for password
+hashing. Databases written by earlier 1.x versions hold values prefixed `AES-256-CBC-PKCS7:`.
+
+**Those values stay readable and no action is required.** Every stored value names the provider that
+wrote it, and both decryption and hash verification resolve the provider from the value rather than
+from the current default. New values are written with the new defaults, so data migrates as it is
+rewritten.
+
+This is called out because it did bite once. Before 2.1.0, two decrypt paths in this library used
+the default provider instead of the one the value named, so a 1.x database upgraded to 2.0.x failed
+sign-in with `AuthenticationTagMismatchException` - which looks exactly like a wrong key and sent
+the investigation after the key rather than the provider. Fixed in 2.1.0; if you are on 2.0.x with
+data written before 1.3.0, upgrade.
+
+To keep writing the old defaults instead, set them explicitly:
+
+```csharp
+IAMOptions.Create(...)
+    .UseSymmetricEncryption(SymmetricEncryptionConstants.AES_CODE)
+```
+
 ## Verification
 
 The provider matrix runs the full schema, migrations and authorization queries against real MySQL

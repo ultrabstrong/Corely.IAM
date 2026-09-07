@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using Corely.Common.Extensions;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
@@ -147,7 +147,11 @@ internal class SecurityProvider(
 
         var systemKeyStoreProvider = _securityConfigurationProvider.GetSystemSymmetricKey();
 
-        var symmetricEncryptionProvider = _symmetricEncryptionProviderFactory.GetDefaultProvider();
+        // The stored value names the provider that wrote it. Reading it with the current default
+        // instead fails as an authentication tag mismatch, which is indistinguishable from a wrong
+        // key - so a changed default looks like a key problem.
+        var symmetricEncryptionProvider =
+            _symmetricEncryptionProviderFactory.GetProviderForDecrypting(encryptedValue);
         return symmetricEncryptionProvider.Decrypt(encryptedValue, systemKeyStoreProvider);
     }
 

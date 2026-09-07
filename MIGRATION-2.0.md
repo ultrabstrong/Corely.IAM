@@ -115,6 +115,22 @@ Copy everything when IAM is the only context in the database. When it shares the
 the copy to the migration ids `corely-iam-db db list` reports. Run `db status` afterwards - every
 IAM migration should read as applied.
 
+## Permission caching now expires
+
+`AuthorizationProvider` cached a user's permissions for the life of its scope with no expiry. That
+is invisible to a host with a scope per request, but a Blazor Server circuit is one scope for the
+whole browser session, so a permission granted or revoked by someone else was not seen until the
+user signed out.
+
+The cache now expires `SecurityOptions:PermissionCacheTtlSeconds` after the load, defaulting to 30
+seconds. Nothing to configure unless you want a different window.
+
+`IAuthorizationCacheClearer` is now public for hosts that need immediate invalidation:
+
+```csharp
+serviceProvider.GetRequiredService<IAuthorizationCacheClearer>().ClearCache();
+```
+
 ## Verification
 
 The provider matrix runs the full schema, migrations and authorization queries against real MySQL

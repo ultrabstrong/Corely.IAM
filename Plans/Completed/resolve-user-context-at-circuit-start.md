@@ -67,6 +67,21 @@ These are the reasons this is a plan rather than a change.
 5. **Is the circuit-open delay acceptable?** It is a blocking database round-trip before anything
    renders. Worth measuring against the current behavior before committing.
 
+## Decision: not doing this
+
+Accepted the flicker instead. It is one gated control, on the first authenticated page, once per
+browser session, and since the `PermissionView` fix it shows nothing rather than something wrong.
+That is not worth moving a blocking token validation to circuit start and taking on the open
+questions below.
+
+A cosmetic middle option was considered and rejected: filling `PermissionView`'s `Undetermined`
+slot with a button-shaped skeleton. It helps authorized users, but gives *un*authorized users a
+phantom control that appears and vanishes - they currently see nothing at all, so it would make
+their experience worse and faintly leak that a control exists there.
+
+Revisit only if the gap becomes visible for a reason other than this one - a slower token check, or
+a component that needs the context earlier than a permission gate does.
+
 ## Notes
 
 - Deliberately not started. Raised while fixing the `PermissionView` bug; recorded so the reasoning

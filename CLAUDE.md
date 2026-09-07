@@ -275,6 +275,7 @@ New services go in `Services/` with an interface, registered in `ServiceRegistra
 - Encryption keys stored encrypted in the database using system keys provisioned via `ISymmetricKeyStoreProvider` / `IAsymmetricKeyStoreProvider` (never in code)
 - Always use `ISymmetricEncryptedValue` or `IAsymmetricEncryptedValue` — never store decrypted values as strings
 - CRUDX permission model (Create, Read, Update, Delete, Execute) with wildcard support (`ResourceId == Guid.Empty` = all resources)
+- `AuthorizationProvider` caches permissions per scope, expiring `SecurityOptions.PermissionCacheTtlSeconds` (default 30) after the load — absolute, not sliding, so an active user still refreshes. A scope-per-request host never reaches it; a long-lived scope (a Blazor Server circuit lasts the whole browser session) depends on it, since the cache is per-scope and one scope cannot invalidate another's. Hosts needing immediate invalidation inject `IAuthorizationCacheClearer` and call `ClearCache()`.
 - JWT-based authentication via `AuthenticationProvider`
 - Host-agnostic auth context: `IUserContextProvider` (read-only) for reading context, `IAuthenticationService` for setting context (`AuthenticateWithTokenAsync`, `AuthenticateAsSystem`) — no HttpContext dependency
 - System context for headless processes: `IAuthenticationService.AuthenticateAsSystem()` creates a fully-permissioned context that bypasses permission checks but blocks "self" operations (MFA, password, Google auth). `IsNonSystemUserContext()` on `IAuthorizationProvider` gates these self operations.

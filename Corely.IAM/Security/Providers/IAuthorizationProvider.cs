@@ -11,7 +11,12 @@ public interface IAuthorizationProvider
     bool HasAccountContext(Guid accountId);
 }
 
-internal interface IAuthorizationCacheClearer
+/// <summary>
+/// Lets a host discard cached permissions immediately rather than waiting out
+/// <see cref="Corely.IAM.Security.Models.SecurityOptions.PermissionCacheTtlSeconds"/>. Intended for
+/// hosts with a long-lived scope that know permissions have just changed.
+/// </summary>
+public interface IAuthorizationCacheClearer
 {
     void ClearCache();
 }

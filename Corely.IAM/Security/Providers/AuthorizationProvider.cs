@@ -3,16 +3,20 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Security.Providers;
 
 internal class AuthorizationProvider(
     IUserContextProvider userContextProvider,
     IReadonlyRepo<PermissionEntity> permissionRepo,
-    ILogger<AuthorizationProvider> logger
+    ILogger<AuthorizationProvider> logger,
+    IOptions<SecurityOptions> securityOptions,
+    TimeProvider timeProvider
 ) : IAuthorizationProvider, IAuthorizationCacheClearer
 {
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
@@ -22,8 +26,19 @@ internal class AuthorizationProvider(
         nameof(permissionRepo)
     );
     private readonly ILogger<AuthorizationProvider> _logger = logger.ThrowIfNull(nameof(logger));
+    private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
+    private readonly int _cacheTtlSeconds = securityOptions
+        .ThrowIfNull(nameof(securityOptions))
+        .Value.PermissionCacheTtlSeconds;
+
+    // Expires PermissionCacheTtlSeconds after the load, not after last use: a sliding window would
+    // never expire for an active user, who is exactly who needs the refresh. A host with a scope
+    // per request never reaches the expiry; one with a long-lived scope - a Blazor Server circuit
+    // lasts the whole browser session - depends on it, since the cache is per-scope and the scope
+    // that changes a permission cannot reach the one holding a stale copy.
     private IReadOnlyList<PermissionEntity>? _cachedPermissions;
     private Guid? _cachedAccountId;
+    private DateTimeOffset _cachedAtUtc;
     private readonly SemaphoreSlim _cacheLock = new(1, 1);
 
     public async Task<bool> IsAuthorizedAsync(
@@ -170,6 +185,7 @@ internal class AuthorizationProvider(
     {
         _cachedPermissions = null;
         _cachedAccountId = null;
+        _cachedAtUtc = default;
     }
 
     private bool TryGetUserContext(out UserContext userContext, string operation)
@@ -189,6 +205,11 @@ internal class AuthorizationProvider(
         return true;
     }
 
+    private bool IsCacheValidFor(Guid? accountId) =>
+        _cachedPermissions is not null
+        && _cachedAccountId == accountId
+        && _timeProvider.GetUtcNow() - _cachedAtUtc < TimeSpan.FromSeconds(_cacheTtlSeconds);
+
     private async Task<IReadOnlyList<PermissionEntity>> GetPermissionsAsync()
     {
         var userContext = _userContextProvider.GetUserContext();
@@ -200,17 +221,17 @@ internal class AuthorizationProvider(
 
         var currentAccountId = userContext?.CurrentAccount?.Id;
 
-        // Fast path - cache already populated for the same account
-        if (_cachedPermissions is not null && _cachedAccountId == currentAccountId)
-            return _cachedPermissions;
+        // Fast path - cache already populated for the same account and not yet expired
+        if (IsCacheValidFor(currentAccountId))
+            return _cachedPermissions!;
 
         // Serialize access to prevent concurrent DbContext usage
         await _cacheLock.WaitAsync();
         try
         {
             // Double-check after acquiring lock
-            if (_cachedPermissions is not null && _cachedAccountId == currentAccountId)
-                return _cachedPermissions;
+            if (IsCacheValidFor(currentAccountId))
+                return _cachedPermissions!;
 
             if (userContext == null)
                 return [];
@@ -229,6 +250,7 @@ internal class AuthorizationProvider(
             );
 
             _cachedAccountId = contextAccountId;
+            _cachedAtUtc = _timeProvider.GetUtcNow();
 
             return _cachedPermissions;
         }

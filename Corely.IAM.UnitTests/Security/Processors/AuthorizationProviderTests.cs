@@ -6,17 +6,21 @@ using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.UnitTests.Security.Processors;
 
 public class AuthorizationProviderTests
 {
     private readonly ServiceFactory _serviceFactory = new();
+    private readonly ControllableTimeProvider _timeProvider = new();
+    private const int CACHE_TTL_SECONDS = 30;
 
     [Fact]
     public async Task IsAuthorized_ReturnsTrue_WhenUserHasPermission()
@@ -554,7 +558,9 @@ public class AuthorizationProviderTests
         return new AuthorizationProvider(
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>(),
-            _serviceFactory.GetRequiredService<ILogger<AuthorizationProvider>>()
+            _serviceFactory.GetRequiredService<ILogger<AuthorizationProvider>>(),
+            Options.Create(new SecurityOptions { PermissionCacheTtlSeconds = CACHE_TTL_SECONDS }),
+            _timeProvider
         );
     }
 
@@ -657,5 +663,158 @@ public class AuthorizationProviderTests
             };
             await permissionRepo.CreateAsync(permission);
         }
+    }
+
+    /// <summary>
+    /// Revokes in the repository only, leaving whatever the provider already cached untouched -
+    /// which is what a permission change made by someone else looks like to a live scope.
+    /// </summary>
+    /// <remarks>
+    /// Deletes rather than clearing the CRUDX flags. MockRepo hands back the same entity
+    /// instances the cache is holding, so mutating them would edit the cache in place and the
+    /// test would prove nothing.
+    /// </remarks>
+    private async Task RevokeAllPermissionsAsync()
+    {
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+
+        foreach (var permission in await permissionRepo.ListAsync(_ => true))
+        {
+            await permissionRepo.DeleteAsync(permission);
+        }
+    }
+
+    [Fact]
+    public async Task Permissions_AreCached_WithinTheTtl()
+    {
+        var provider = CreateProvider();
+        var userId = Guid.CreateVersion7();
+        SetUserContext(userId, Guid.CreateVersion7());
+        await SetupTestPermissionDataAsync(
+            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceId: Guid.Empty,
+            create: true
+        );
+
+        Assert.True(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+
+        // Revoked in the database, but the cache has not expired yet
+        await RevokeAllPermissionsAsync();
+        _timeProvider.Advance(TimeSpan.FromSeconds(CACHE_TTL_SECONDS - 1));
+
+        Assert.True(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+    }
+
+    [Fact]
+    public async Task Permissions_AreReloaded_AfterTheTtlExpires()
+    {
+        var provider = CreateProvider();
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
+        await SetupTestPermissionDataAsync(
+            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceId: Guid.Empty,
+            create: true
+        );
+
+        Assert.True(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+
+        await RevokeAllPermissionsAsync();
+        _timeProvider.Advance(TimeSpan.FromSeconds(CACHE_TTL_SECONDS));
+
+        Assert.False(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+    }
+
+    [Fact]
+    public async Task CacheTtl_IsAbsolute_NotSliding()
+    {
+        var provider = CreateProvider();
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
+        await SetupTestPermissionDataAsync(
+            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceId: Guid.Empty,
+            create: true
+        );
+
+        await provider.IsAuthorizedAsync(
+            AuthAction.Create,
+            PermissionConstants.GROUP_RESOURCE_TYPE
+        );
+        await RevokeAllPermissionsAsync();
+
+        // Checking continuously must not hold the entry alive past the window - an active user is
+        // exactly who needs the refresh.
+        for (var i = 0; i < CACHE_TTL_SECONDS; i++)
+        {
+            _timeProvider.Advance(TimeSpan.FromSeconds(1));
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            );
+        }
+
+        Assert.False(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+    }
+
+    [Fact]
+    public async Task ClearCache_ForcesAReload_WithoutWaitingOutTheTtl()
+    {
+        var provider = CreateProvider();
+        SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
+        await SetupTestPermissionDataAsync(
+            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceId: Guid.Empty,
+            create: true
+        );
+
+        Assert.True(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+
+        await RevokeAllPermissionsAsync();
+        ((IAuthorizationCacheClearer)provider).ClearCache();
+
+        Assert.False(
+            await provider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.GROUP_RESOURCE_TYPE
+            )
+        );
+    }
+
+    private sealed class ControllableTimeProvider : TimeProvider
+    {
+        private DateTimeOffset _utcNow = DateTimeOffset.UnixEpoch;
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
+
+        public void Advance(TimeSpan by) => _utcNow = _utcNow.Add(by);
     }
 }

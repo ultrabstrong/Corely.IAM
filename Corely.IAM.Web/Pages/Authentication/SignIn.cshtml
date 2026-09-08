@@ -31,7 +31,7 @@
             <label for="password" class="form-label">Password</label>
             <input type="password" class="form-control" id="password" name="Password" required />
         </div>
-        <button type="submit" class="btn btn-primary w-100">Sign In</button>
+        <button type="submit" data-busy-spinner class="btn btn-primary w-100">Sign In</button>
     </form>
 
     @if (!string.IsNullOrWhiteSpace(Model.ForgotPasswordPath))

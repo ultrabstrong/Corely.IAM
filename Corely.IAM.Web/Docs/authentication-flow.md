@@ -103,3 +103,24 @@ This happens before ASP.NET Core's `UseAuthentication()` and `UseAuthorization()
 - The auth cookies use `SecurityOptions.AuthSessionTtlSeconds` so the browser can present an expired access token for renewal inside the bounded session window
 - If a user navigates to `/signin` while already authenticated, they are redirected to the dashboard
 - `GetOrCreateDeviceId()` creates a new device ID cookie if one doesn't exist, using a v7 UUID
+
+## Busy state on form posts
+
+The authentication pages are Razor Pages form posts, not Blazor components, so there is no circuit
+to bind a busy flag to. `_AuthLayout` loads `_content/Corely.IAM.Web/js/form-busy.js`, which on
+submit of any `method="post"` form disables its submit buttons and sets `aria-busy`. This prevents a
+second post of the same credentials while the first is in flight.
+
+Buttons marked `data-busy-spinner` also swap their label for a spinner after 150 ms:
+
+```html
+<button type="submit" data-busy-spinner class="btn btn-primary w-100">Sign In</button>
+```
+
+The delay means an action that completes quickly shows nothing rather than flashing a spinner. The
+button's width is pinned before the swap so the card does not resize.
+
+Buttons without the attribute are disabled but keep their label - correct where the label is content
+rather than a verb, as on the account list in Select Account. `method="get"` forms are left alone.
+
+Progressive enhancement: with scripting unavailable the forms still post normally.

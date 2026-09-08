@@ -40,7 +40,7 @@
             <label for="confirmPassword" class="form-label">Confirm Password</label>
             <input type="password" class="form-control" id="confirmPassword" name="ConfirmPassword" required />
         </div>
-        <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+        <button type="submit" data-busy-spinner class="btn btn-primary w-100">Sign Up</button>
     </form>
 
     @if (!string.IsNullOrWhiteSpace(Model.GoogleClientId))

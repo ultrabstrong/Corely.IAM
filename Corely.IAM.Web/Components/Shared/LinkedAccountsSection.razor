@@ -1,4 +1,7 @@
 @inject IGoogleAuthService GoogleAuthService
+@inject IJSRuntime JSRuntime
+@inject IOptions<SecurityOptions> SecurityOptions
+@implements IAsyncDisposable
 
 <div class="section-divider mb-4 mt-4">
     <div class="section-divider-label">Linked Accounts</div>
@@ -8,21 +11,36 @@
             <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
         </div>
     }
+
+    <div class="props-grid mb-2">
+        <span class="prop-label"><i class="bi bi-google me-2"></i>Google</span>
+        <span class="prop-value">
+            @if (HasGoogleAuth)
+            {
+                @GoogleEmail <i class="bi bi-check-circle text-success ms-1"></i>
+            }
+            else
+            {
+                <span class="text-muted">Not linked</span>
+            }
+        </span>
+    </div>
+
     @if (HasGoogleAuth)
     {
-        <div class="props-grid mb-2">
-            <span class="prop-label">Google</span>
-            <span class="prop-value">@GoogleEmail <i class="bi bi-check-circle text-success"></i></span>
-        </div>
         <button class="btn btn-outline-danger btn-sm" @onclick="() => _unlinkModal.Show()" disabled="@_busy">
             Unlink Google Account
         </button>
     }
+    else if (string.IsNullOrWhiteSpace(_googleClientId))
+    {
+        <p class="text-muted mb-0"><small>Google sign-in is not configured for this application.</small></p>
+    }
     else
     {
-        <p class="text-muted mb-2">No Google account linked. Use the Google Sign-In flow to link an account.</p>
+        @* Google's own button, rendered by their script - their terms do not allow a look-alike. *@
+        <div id="google-link-button"></div>
     }
-
 </div>
 
 <ConfirmModal @ref="_unlinkModal"
@@ -45,6 +63,82 @@
     private bool _busy;
     private string? _message;
     private AlertType _messageType;
+
+    private string? _googleClientId;
+    private IJSObjectReference? _linkModule;
+    private DotNetObjectReference<LinkedAccountsSection>? _selfRef;
+    private bool _linkButtonRendered;
+
+    protected override void OnInitialized() =>
+        _googleClientId = SecurityOptions.Value.GoogleClientId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var needsButton = !HasGoogleAuth && !string.IsNullOrWhiteSpace(_googleClientId);
+
+        // Re-rendered after an unlink, so the button has to appear then too - not only on first
+        // render.
+        if (!needsButton)
+        {
+            _linkButtonRendered = false;
+            return;
+        }
+
+        if (_linkButtonRendered)
+        {
+            return;
+        }
+
+        try
+        {
+            _linkButtonRendered = true;
+            _selfRef ??= DotNetObjectReference.Create(this);
+            _linkModule ??= await JSRuntime.InvokeAsync<IJSObjectReference>(
+                "import",
+                "./_content/Corely.IAM.Web/js/google-link.js"
+            );
+            await _linkModule.InvokeVoidAsync(
+                "renderLinkButton",
+                "google-link-button",
+                _googleClientId,
+                _selfRef
+            );
+        }
+        catch
+        {
+            _linkButtonRendered = false;
+            SetMessage(false, "Could not load Google sign-in. Check your connection and try again.");
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnGoogleCredential(string credential)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var result = await GoogleAuthService.LinkGoogleAuthAsync(
+                new LinkGoogleAuthRequest(credential)
+            );
+            if (result.ResultCode == LinkGoogleAuthResultCode.Success)
+            {
+                SetMessage(true, "Google account linked.");
+                await OnStatusChanged.InvokeAsync();
+            }
+            else
+            {
+                SetMessage(false, result.Message);
+            }
+        }
+        catch { SetMessage(false, "An unexpected error occurred."); }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
 
     private async Task UnlinkAsync()
     {
@@ -71,5 +165,21 @@
     {
         _message = text;
         _messageType = success ? AlertType.Success : AlertType.Danger;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _selfRef?.Dispose();
+        if (_linkModule is not null)
+        {
+            try
+            {
+                await _linkModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // The circuit is already gone; there is nothing left to dispose.
+            }
+        }
     }
 }

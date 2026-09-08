@@ -10,7 +10,7 @@
 
 <div class="management-header">
     <h1><i class="bi bi-shield me-2"></i>@(_role?.Name ?? "Role") <span class="resource-label">Role</span></h1>
-    <a href="@AppRoutes.Roles" class="btn btn-outline-secondary btn-sm">Back to Roles</a>
+    <a href="@AppRoutes.Roles" class="btn btn-outline-secondary">Back to Roles</a>
 </div>
 
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />

@@ -13,7 +13,7 @@
 
 <div class="management-header">
     <h1><i class="bi bi-building me-2"></i>@_accountName <span class="resource-label">Account</span></h1>
-    <a href="@AppRoutes.Dashboard" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+    <a href="@AppRoutes.Dashboard" class="btn btn-outline-secondary">Back to Dashboard</a>
 </div>
 
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
@@ -191,7 +191,8 @@ else
         </div>
 
         <PermissionView Action="AuthAction.Read" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-            <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider" />
+            <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
+                                    DescriptionText="This account has its own symmetric and asymmetric encryption keys plus a signing key." />
         </PermissionView>
 
         <EffectivePermissionsPanel Permissions="_effectivePermissions" UseCard="false" />

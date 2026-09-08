@@ -2,6 +2,10 @@
 
 <div class="section-divider mb-4">
     <div class="section-divider-label">Encryption &amp; Signing</div>
+    <p class="text-muted mb-3">
+        @DescriptionText Keys are provisioned automatically and stored encrypted - use the tools
+        below to encrypt, decrypt and sign messages with them.
+    </p>
     <ul class="nav nav-tabs">
         <li class="nav-item">
             <button class="nav-link @(_activeKeyTab == 0 ? "active" : "")" @onclick="() => _activeKeyTab = 0">
@@ -146,6 +150,10 @@
 </div>
 
 @code {
+    [Parameter]
+    public string DescriptionText { get; set; } =
+        "This user has its own symmetric and asymmetric encryption keys plus a signing key.";
+
     [Parameter]
     public IIamSymmetricEncryptionProvider? SymProvider { get; set; }
 

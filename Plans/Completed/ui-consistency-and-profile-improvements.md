@@ -72,7 +72,16 @@ Applies to every list page in this package, and to DocsToData, which reported it
 
 ## Missing capability
 
-### 3. Encryption and signing keys cannot be rotated
+### 3. Encryption and signing keys cannot be rotated — **dropped**
+
+Not being built. Recorded because the capability really is absent, so the question will come back.
+
+Note for whoever picks it up: the security layer is not the blocker. `Corely.Security` has versioned
+key stores and `ReEncrypt`; what is missing is `Corely.IAM` exposing rotation on its services. The
+retention question below is still the one that decides the size of the work.
+
+<details>
+<summary>Original scoping</summary>
 
 There is no rotation API for user or account keys - no `Rotate`/`Regenerate` on
 `IModificationService` or the processors, confirmed by search. `Corely.Security` supports key
@@ -93,6 +102,8 @@ large one:
 - **Which permission gates it?** Rotating an account key is not the same authority as rotating your
   own.
 - Whether rotation is exposed in the UI at all in the first pass, or only through the service.
+
+</details>
 
 ## Presentation
 
@@ -171,3 +182,46 @@ The same panel appears on the account page and should carry the same description
 (2), (4) and (5) are consumer-visible in DocsToData too. Fixing them here does not fix them there:
 DocsToData has its own pages and its own tables. A companion plan in that repository should
 reference this one rather than restating it.
+
+## Status
+
+Everything except key rotation is implemented in `Corely.IAM.Web` 2.2.0. Key rotation was dropped by
+decision. The consumer-side halves of (2), (4) and (5) remain for DocsToData.
+
+**(1) TOTP.** `TotpSection` now imports `js/totp-qrcode.js` itself, which loads the QR library on
+demand, so no host has to add a script tag. A host that already loads them is unaffected - the
+module skips loading when `window.QRCode` is present. Rendering failures no longer escape
+`OnAfterRenderAsync`; they set a message pointing at the secret, which was already on screen and is
+a supported way to enrol.
+
+**(2) Empty state.** Absence of data is now the loading condition rather than a flag that starts
+`false`. A load failure sets `_loadFailed` so a page that never got data stops spinning instead of
+waiting forever - the first attempt at this fix traded a flicker for a hang, and the tests caught
+it.
+
+**(4) Header.** Back arrow on the dashboard link, heading to 1.75rem, and `btn-sm` dropped from
+header controls only. Table-row action buttons stay small.
+
+**(5) Tables.** `vertical-align: middle` applied at the table level, with `.align-top-cell` to opt
+out.
+
+**(6) Password.** Sentence removed. The remove option was already correctly gated on another
+sign-in method existing, so the state communicates the rule on its own.
+
+**(7) Linked accounts.** Now a provider list showing linked or not. `LinkGoogleAuthAsync` already
+existed; what was missing was a way to reach it, so linking now happens on the page through Google's
+own button, loaded on demand by `js/google-link.js`.
+
+**(8) Encryption panel.** Description added, parameterised so the account page says "account" rather
+than "user".
+
+### On the tests
+
+Four bUnit tests cover the empty state. Two things worth recording about getting there:
+
+- **The first version of the test passed against the unfixed code**, because a synchronously
+  completing mock never produces the interim render the bug lives in. The real reproduction holds
+  the user-context task open, which is the same await that caused the `PermissionView` bug.
+- **`mv` preserved an old timestamp and MSBuild skipped the rebuild**, so an earlier "does this test
+  catch the bug" check was reading stale output. Re-run after touching the file, the test fails
+  against the old markup and passes against the new.

@@ -1,5 +1,6 @@
 @inject IMfaService MfaService
 @inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 
 <div class="section-divider mb-4 mt-4">
     <div class="section-divider-label">Two-Factor Authentication</div>
@@ -17,6 +18,12 @@
                 <div class="text-muted mt-1" style="font-size: 0.85rem; white-space: normal; word-break: break-word;">Scan the QR code with your authenticator app, or enter the secret manually.</div>
                 <div class="mt-4 mb-2 text-center">
                     <div id="totp-qrcode" style="display: inline-block;"></div>
+                    @if (_qrUnavailable)
+                    {
+                        <div class="text-muted" style="font-size: 0.85rem;">
+                            QR code unavailable. Enter the secret above manually.
+                        </div>
+                    }
                 </div>
             </div>
             <div class="flex-fill">
@@ -104,6 +111,8 @@
     private string[]? _regeneratedCodes;
     private int _remainingCodes;
     private bool _pendingQrRender;
+    private bool _qrUnavailable;
+    private IJSObjectReference? _qrModule;
     private bool _busy;
     private string? _message;
     private AlertType _messageType;
@@ -115,10 +124,49 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_pendingQrRender && !string.IsNullOrWhiteSpace(_setupUri))
+        if (!_pendingQrRender || string.IsNullOrWhiteSpace(_setupUri))
         {
-            _pendingQrRender = false;
-            await JSRuntime.InvokeVoidAsync("qrCodeInterop.generate", "totp-qrcode", _setupUri, 150);
+            return;
+        }
+
+        _pendingQrRender = false;
+
+        // Enrolment has already succeeded server-side by the time this runs. Letting a rendering
+        // failure escape would strand the user with a stored secret and no way to finish, so the
+        // QR degrades to the secret shown beside it.
+        try
+        {
+            _qrModule ??= await JSRuntime.InvokeAsync<IJSObjectReference>(
+                "import",
+                "./_content/Corely.IAM.Web/js/totp-qrcode.js"
+            );
+            await _qrModule.InvokeVoidAsync(
+                "generate",
+                "totp-qrcode",
+                _setupUri,
+                150,
+                "./_content/Corely.IAM.Web/lib/qrcodejs/qrcode.min.js"
+            );
+        }
+        catch
+        {
+            _qrUnavailable = true;
+            StateHasChanged();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_qrModule is not null)
+        {
+            try
+            {
+                await _qrModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // The circuit is already gone; there is nothing left to dispose.
+            }
         }
     }
 

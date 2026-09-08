@@ -10,18 +10,22 @@
 <div class="management-header">
     <h1><i class="bi bi-shield me-2"></i>Roles</h1>
     <div class="d-flex gap-2 align-items-center">
-        <a href="@AppRoutes.Dashboard" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+        <a href="@AppRoutes.Dashboard" class="btn btn-outline-secondary" title="Back to dashboard"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
         <PermissionView Action="AuthAction.Create" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE">
-            <button class="btn btn-primary btn-sm" @onclick="() => _createModal.Show()"><i class="bi bi-plus-lg me-1"></i>Create</button>
+            <button class="btn btn-primary" @onclick="() => _createModal.Show()"><i class="bi bi-plus-lg me-1"></i>Create</button>
         </PermissionView>
     </div>
 </div>
 
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
 
-@if (_loading && _items == null)
+@if (_items == null)
 {
-    <LoadingSpinner />
+    @* Absence of data means loading, unless the load failed - then the alert above is the answer. *@
+    @if (!_loadFailed)
+    {
+        <LoadingSpinner />
+    }
 }
 else
 {
@@ -54,7 +58,7 @@ else
                 </tr>
             </thead>
             <tbody>
-                @if (_items == null || _items.Count == 0)
+                @if (_items.Count == 0)
                 {
                     <tr><td colspan="4" class="text-muted text-center">No roles found</td></tr>
                 }

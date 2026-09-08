@@ -12,6 +12,10 @@ public abstract class EntityPageBase : AuthenticatedPageBase
     protected string? _message;
     protected AlertType _messageType = AlertType.Info;
     protected bool _loading;
+
+    // Distinguishes "still loading" from "load failed and there is nothing to show", so a page
+    // whose data never arrived stops spinning instead of waiting forever.
+    protected bool _loadFailed;
     protected Guid _confirmItemId;
     protected string _confirmMessage = "";
 
@@ -22,6 +26,7 @@ public abstract class EntityPageBase : AuthenticatedPageBase
     protected async Task ReloadAsync()
     {
         _loading = true;
+        _loadFailed = false;
         try
         {
             await LoadCoreAsync();
@@ -31,6 +36,7 @@ public abstract class EntityPageBase : AuthenticatedPageBase
             Logger.LogError(ex, "An error occurred in page component");
             _message = "An unexpected error occurred. Please try again.";
             _messageType = AlertType.Danger;
+            _loadFailed = true;
         }
         finally
         {

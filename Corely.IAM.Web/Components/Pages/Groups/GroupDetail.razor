@@ -10,7 +10,7 @@
 
 <div class="management-header">
     <h1><i class="bi bi-diagram-3 me-2"></i>@(_group?.Name ?? "Group") <span class="resource-label">Group</span></h1>
-    <a href="@AppRoutes.Groups" class="btn btn-outline-secondary btn-sm">Back to Groups</a>
+    <a href="@AppRoutes.Groups" class="btn btn-outline-secondary">Back to Groups</a>
 </div>
 
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />

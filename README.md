@@ -95,6 +95,8 @@ var accountResult = await registrationService.RegisterAccountAsync(
 | `Corely.IAM` | Core library — business logic, data access, security |
 | `Corely.IAM.Web` | Blazor Server UI — pages, components, auth flow |
 | `Corely.IAM.WebApp` | Host application (reference implementation) |
+| `Corely.IAM.Demos.UsersOnly` | Demo app — users sign up and own their data, no accounts or roles |
+| `Corely.IAM.Demos.SharedAccount` | Demo app — one team account shared by invited users, no roles to manage |
 | `Corely.IAM.UnitTests` | Test suite (xUnit, Moq, AutoFixture, FluentAssertions) |
 | `Corely.IAM.DevTools` | Developer CLI for crypto and IAM operations |
 | `Corely.IAM.DataAccessMigrations.Cli` | Migration CLI — creates and migrates the IAM schema (published as a .NET tool) |

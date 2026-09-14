@@ -1,0 +1,42 @@
+@inherits LayoutComponentBase
+@inject IBlazorUserContextAccessor UserContextAccessor
+
+<nav class="navbar navbar-expand navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="bi bi-people me-2"></i>Team Notes</a>
+        @if (_context?.User != null)
+        {
+            <ul class="navbar-nav ms-auto">
+                @if (_context.CurrentAccount != null)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" href="/team"><i class="bi bi-building me-1"></i>@_context.CurrentAccount.AccountName</a>
+                    </li>
+                }
+                @if (_context.AvailableAccounts.Count > 1)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" href="@AppRoutes.SelectAccount" data-enhance-nav="false">Switch team</a>
+                    </li>
+                }
+                <li class="nav-item">
+                    <a class="nav-link" href="/profile"><i class="bi bi-person me-1"></i>@_context.User.Username</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="@AppRoutes.SignOut" data-enhance-nav="false">Sign Out</a>
+                </li>
+            </ul>
+        }
+    </div>
+</nav>
+
+<main class="container py-4">
+    @Body
+</main>
+
+@code {
+    private UserContext? _context;
+
+    protected override async Task OnInitializedAsync() =>
+        _context = await UserContextAccessor.GetUserContextAsync();
+}

@@ -1,0 +1,30 @@
+@inherits LayoutComponentBase
+@inject IBlazorUserContextAccessor UserContextAccessor
+
+<nav class="navbar navbar-expand navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/"><i class="bi bi-journal-text me-2"></i>My Notes</a>
+        @if (_username != null)
+        {
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/profile"><i class="bi bi-person me-1"></i>@_username</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="@AppRoutes.SignOut" data-enhance-nav="false">Sign Out</a>
+                </li>
+            </ul>
+        }
+    </div>
+</nav>
+
+<main class="container py-4">
+    @Body
+</main>
+
+@code {
+    private string? _username;
+
+    protected override async Task OnInitializedAsync() =>
+        _username = (await UserContextAccessor.GetUserContextAsync())?.User?.Username;
+}

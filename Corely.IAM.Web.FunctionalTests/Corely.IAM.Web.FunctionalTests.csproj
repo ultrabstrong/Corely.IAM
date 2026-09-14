@@ -32,6 +32,14 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Corely.IAM.WebApp\Corely.IAM.WebApp.csproj" />
+    <ProjectReference
+      Include="..\Corely.IAM.Demos.UsersOnly\Corely.IAM.Demos.UsersOnly.csproj"
+      Aliases="UsersOnlyDemo"
+    />
+    <ProjectReference
+      Include="..\Corely.IAM.Demos.SharedAccount\Corely.IAM.Demos.SharedAccount.csproj"
+      Aliases="SharedAccountDemo"
+    />
     <ProjectReference Include="..\Corely.IAM.Web\Corely.IAM.Web.csproj" />
     <ProjectReference Include="..\Corely.IAM\Corely.IAM.csproj" />
   </ItemGroup>

@@ -80,6 +80,52 @@ CSS is auto-served from `_content/Corely.IAM.Web/`. Reference it in your layout:
 }
 ```
 
+## Simple Apps
+
+An app that uses IAM for sign-in only - users without accounts, or one shared account - usually
+wants the sign-in pages and none of the management portal. See
+[Usage Shapes](../../Corely.IAM/Docs/usage-shapes.md) for the IAM side.
+
+**Leave out `AddAdditionalAssemblies`.** It routes every Blazor page in this package, including
+`/users`, `/groups`, `/roles`, and `/permissions`. Without it the Razor Pages - sign in, register,
+sign out, account switching - still work, because `MapRazorPages()` maps them regardless.
+
+```csharp
+app.MapRazorPages();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+```
+
+**Compose your own profile page.** `/profile` comes only with the full set, but its sections are
+public components:
+
+```razor
+<TotpSection />
+<PasswordSection HasBasicAuth="_hasBasicAuth" HasGoogleAuth="_hasGoogleAuth" OnStatusChanged="ReloadAsync" />
+<LinkedAccountsSection HasGoogleAuth="_hasGoogleAuth" GoogleEmail="@_googleEmail" OnStatusChanged="ReloadAsync" />
+```
+
+`IGoogleAuthService.GetAuthMethodsAsync()` supplies the three values.
+
+**Replace the sign-in layout.** The pages render inside `Pages/Shared/_AuthLayout.cshtml`, which
+carries this package's name and a Create Account link. An app file at the same path takes
+precedence. Keep loading the busy-state script, or submit buttons stop disabling while a post is in
+flight:
+
+```html
+<script src="/_content/Corely.IAM.Web/js/form-busy.js"></script>
+```
+
+Your own layout's `[Authorize]` pages send an anonymous visitor to `/signin` through the
+`RedirectToLogin` component:
+
+```razor
+<AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MyLayout)">
+    <NotAuthorized><RedirectToLogin /></NotAuthorized>
+</AuthorizeRouteView>
+```
+
+Working examples: `Corely.IAM.Demos.UsersOnly` and `Corely.IAM.Demos.SharedAccount`.
+
 ## What AddIAMWeb() Registers
 
 | Service | Lifetime | Purpose |

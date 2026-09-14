@@ -1,0 +1,102 @@
+@page "/team"
+@attribute [Authorize]
+@inject IBlazorUserContextAccessor UserContextAccessor
+@inject IRetrievalService RetrievalService
+@inject IInvitationService InvitationService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Team</PageTitle>
+
+<h1 class="h3 mb-3">@_accountName</h1>
+
+@if (_members == null && _canManage)
+{
+    <LoadingSpinner />
+}
+else if (!_canManage)
+{
+    @* IAM's own permission check, not the app's: a member has no roles, so listing users and
+       creating invitations are refused. Only the owner holds a role that grants them. *@
+    <p class="text-muted">Only the team's owner can see the member list and invite people.</p>
+}
+else
+{
+    <h2 class="h5">Members</h2>
+    <ul class="list-group mb-4">
+        @foreach (var member in _members!)
+        {
+            <li class="list-group-item">@member.Username <small class="text-muted ms-2">@member.Email</small></li>
+        }
+    </ul>
+
+    <h2 class="h5">Invite someone</h2>
+    <Alert Message="@_message" Type="AlertType.Danger" OnDismissed="() => _message = null" />
+    <form class="input-group mb-3" @onsubmit="InviteAsync">
+        <input class="form-control" type="email" @bind="_inviteEmail" placeholder="Their email address" />
+        <button class="btn btn-primary" type="submit">Create invitation</button>
+    </form>
+
+    @if (_token != null)
+    {
+        @* A real app emails this. The invitation only works for the account with that email. *@
+        <div class="alert alert-info">
+            Send this token to <strong>@_invitedEmail</strong>. They sign up with that email, then paste
+            it under "Join a team".
+            <div class="mt-2"><code class="user-select-all">@_token</code></div>
+        </div>
+    }
+}
+
+@code {
+    private const int INVITATION_LIFETIME_SECONDS = 7 * 24 * 60 * 60;
+
+    private Guid _accountId;
+    private string? _accountName;
+    private bool _canManage = true;
+    private List<User>? _members;
+    private string? _inviteEmail;
+    private string? _invitedEmail;
+    private string? _token;
+    private string? _message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var account = (await UserContextAccessor.GetUserContextAsync())?.CurrentAccount;
+        if (account == null)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        _accountId = account.Id;
+        _accountName = account.AccountName;
+
+        var result = await RetrievalService.ListUsersAsync(new ListUsersRequest(_accountId, Take: 100));
+        if (result.ResultCode == RetrieveResultCode.UnauthorizedError)
+        {
+            _canManage = false;
+            return;
+        }
+
+        _members = result.Data?.Items ?? [];
+    }
+
+    private async Task InviteAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_inviteEmail))
+            return;
+
+        var result = await InvitationService.CreateInvitationAsync(
+            new CreateInvitationRequest(_accountId, _inviteEmail.Trim(), null, INVITATION_LIFETIME_SECONDS)
+        );
+        if (result.ResultCode != CreateInvitationResultCode.Success)
+        {
+            _message = result.Message;
+            return;
+        }
+
+        _invitedEmail = _inviteEmail.Trim();
+        _token = result.Token;
+        _inviteEmail = null;
+    }
+}

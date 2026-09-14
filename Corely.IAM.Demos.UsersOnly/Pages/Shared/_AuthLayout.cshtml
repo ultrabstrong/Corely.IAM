@@ -1,0 +1,33 @@
+@* Replaces Corely.IAM.Web's layout for its sign-in and register pages: an app file at the same path
+   wins over the library's. Keep form-busy.js - without it the submit buttons lose their busy state. *@
+@{
+    var title = ViewData["Title"]?.ToString() ?? "My Notes";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - My Notes</title>
+    <link rel="stylesheet" href="/_content/Corely.IAM.Demos.Assets/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/_content/Corely.IAM.Demos.Assets/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="/_content/Corely.IAM.Web/css/iam-web.css" />
+</head>
+<body class="bg-light">
+    <header class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="bi bi-journal-text me-2"></i>My Notes</a>
+        </div>
+    </header>
+
+    <main class="container d-flex justify-content-center">
+        <div class="col-md-5 auth-container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <script src="/_content/Corely.IAM.Demos.Assets/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/_content/Corely.IAM.Web/js/form-busy.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

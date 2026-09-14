@@ -1,0 +1,172 @@
+@page "/"
+@attribute [Authorize]
+@inject IBlazorUserContextAccessor UserContextAccessor
+@inject IRegistrationService RegistrationService
+@inject IInvitationService InvitationService
+@inject IDbContextFactory<NotesDbContext> DbFactory
+@inject TimeProvider TimeProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>Team Notes</PageTitle>
+
+@if (_context == null)
+{
+    <LoadingSpinner />
+}
+else if (_context.CurrentAccount == null)
+{
+    @* No team yet. Sign-in switches a user with exactly one account into it automatically, so this
+       is a new user - or one who belongs to several and has not picked. *@
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h1 class="h3 mb-3">Welcome, @_context.User!.Username</h1>
+            <Alert Message="@_message" Type="AlertType.Danger" OnDismissed="() => _message = null" />
+
+            @if (_context.AvailableAccounts.Count > 0)
+            {
+                <p><a href="@AppRoutes.SelectAccount" data-enhance-nav="false">Choose one of your teams</a>, or:</p>
+            }
+
+            <h2 class="h5 mt-4">Start a team</h2>
+            <form class="input-group" @onsubmit="CreateTeamAsync">
+                <input class="form-control" @bind="_teamName" placeholder="Team name" />
+                <button class="btn btn-primary" type="submit" disabled="@_busy">Create</button>
+            </form>
+
+            <h2 class="h5 mt-4">Join a team</h2>
+            <form class="input-group" @onsubmit="JoinTeamAsync">
+                <input class="form-control" @bind="_invitationToken" placeholder="Invitation token" />
+                <button class="btn btn-outline-primary" type="submit" disabled="@_busy">Join</button>
+            </form>
+        </div>
+    </div>
+}
+else
+{
+    <h1 class="h3 mb-3">@_context.CurrentAccount.AccountName</h1>
+
+    <form class="input-group mb-4" @onsubmit="AddNoteAsync">
+        <input class="form-control" @bind="_newText" placeholder="Write a note for the team" maxlength="2000" />
+        <button class="btn btn-primary" type="submit">Add</button>
+    </form>
+
+    @if (_notes == null)
+    {
+        <LoadingSpinner />
+    }
+    else if (_notes.Count == 0)
+    {
+        <p class="text-muted">No notes yet.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var note in _notes)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>@note.Text <small class="text-muted ms-2">@note.AuthorUsername</small></span>
+                    <button class="btn btn-sm btn-outline-danger" title="Delete" @onclick="() => DeleteNoteAsync(note.Id)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    // Corely.IAM.Web's Razor Page; AppRoutes has no constant for it.
+    private const string SWITCH_ACCOUNT_PATH = "/switch-account";
+
+    private UserContext? _context;
+    private List<Note>? _notes;
+    private string? _newText;
+    private string? _teamName;
+    private string? _invitationToken;
+    private string? _message;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _context = await UserContextAccessor.GetUserContextAsync();
+        if (_context?.CurrentAccount != null)
+            await LoadNotesAsync();
+    }
+
+    private Guid AccountId => _context!.CurrentAccount!.Id;
+
+    private async Task CreateTeamAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_teamName))
+            return;
+
+        _busy = true;
+        // The creator becomes the account's owner, and the only member IAM lets invite others.
+        var result = await RegistrationService.RegisterAccountAsync(
+            new RegisterAccountRequest(_teamName.Trim(), _context!.User!.Id)
+        );
+        _busy = false;
+
+        if (result.ResultCode == RegisterAccountResultCode.Success)
+            SwitchInto(result.CreatedAccountId);
+        else
+            _message = result.Message;
+    }
+
+    private async Task JoinTeamAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_invitationToken))
+            return;
+
+        _busy = true;
+        var result = await InvitationService.AcceptInvitationAsync(
+            new AcceptInvitationRequest(_invitationToken.Trim())
+        );
+        _busy = false;
+
+        if (result.ResultCode == AcceptInvitationResultCode.Success && result.AccountId != null)
+            SwitchInto(result.AccountId.Value);
+        else
+            _message = result.Message;
+    }
+
+    // Membership changes land in a fresh auth token, which only the switch-account page can issue.
+    private void SwitchInto(Guid accountId) =>
+        NavigationManager.NavigateTo($"{SWITCH_ACCOUNT_PATH}?accountId={accountId}&returnUrl=/", forceLoad: true);
+
+    private async Task LoadNotesAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _notes = await db.Notes
+            .Where(n => n.AccountId == AccountId)
+            .OrderByDescending(n => n.CreatedUtc)
+            .ToListAsync();
+    }
+
+    private async Task AddNoteAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newText))
+            return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.Notes.Add(new Note
+        {
+            Id = Guid.CreateVersion7(),
+            AccountId = AccountId,
+            AuthorUsername = _context!.User!.Username,
+            Text = _newText.Trim(),
+            CreatedUtc = TimeProvider.GetUtcNow().UtcDateTime,
+        });
+        await db.SaveChangesAsync();
+        _newText = null;
+        await LoadNotesAsync();
+    }
+
+    private async Task DeleteNoteAsync(Guid noteId)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        // Scoped to the team even though the id came from its own list - the id is client input.
+        await db.Notes.Where(n => n.Id == noteId && n.AccountId == AccountId).ExecuteDeleteAsync();
+        await LoadNotesAsync();
+    }
+}

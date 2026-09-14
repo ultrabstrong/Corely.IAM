@@ -34,12 +34,11 @@ Fill in the two required values (see `appsettings.template.json` for reference):
 
 ```powershell
 cd Corely.IAM.DataAccessMigrations.Cli
-dotnet run -- config init mssql -c "your-connection-string"
-dotnet run -- db create
+dotnet run -- db create -p MsSql -c "your-connection-string"
 ```
 
-- `config init` creates a local settings file for the migration CLI (provider + connection string)
-- `db create` creates the database and applies all pending migrations
+`db create` creates the database and applies all pending migrations. The provider and connection
+string can also come from `CORELY_IAM_DB_PROVIDER` and `CORELY_IAM_DB_CONNECTION`.
 
 **4. Seed the demo environment (optional)**
 

@@ -43,6 +43,7 @@ graph LR
 ## Topics
 
 - [Step-by-Step Setup](step-by-step-setup.md)
+- [Usage Shapes](usage-shapes.md) — users only, one shared account, or full RBAC
 - [IAMOptions Configuration](iam-options.md)
 - [Authentication](authentication.md)
 - [Authorization](authorization.md)
@@ -91,7 +92,7 @@ var userResult = await registrationService.RegisterUserAsync(
     new RegisterUserRequest("admin", "admin@example.com", "P@ssw0rd!"));
 
 var accountResult = await registrationService.RegisterAccountAsync(
-    new RegisterAccountRequest("My Organization"));
+    new RegisterAccountRequest("My Organization", userResult.CreatedUserId));
 ```
 
 ## Database Providers

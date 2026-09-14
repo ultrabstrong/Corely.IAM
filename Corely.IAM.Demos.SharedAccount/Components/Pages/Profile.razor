@@ -1,0 +1,82 @@
+@page "/profile"
+@attribute [Authorize]
+@using Corely.IAM.GoogleAuths.Models
+@inject IBlazorUserContextAccessor UserContextAccessor
+@inject IGoogleAuthService GoogleAuthService
+@inject IDeregistrationService DeregistrationService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Profile</PageTitle>
+
+@* Composed from Corely.IAM.Web's public sections rather than routing its /profile page, which
+   would bring the admin pages with it. *@
+<h1 class="h3 mb-3">Profile</h1>
+
+<div class="props-grid mb-3">
+    <span class="prop-label">Username</span>
+    <span class="prop-value">@_username</span>
+    <span class="prop-label">Email</span>
+    <span class="prop-value">@_email</span>
+</div>
+
+@if (_authMethodsLoaded)
+{
+    <TotpSection />
+    <PasswordSection HasBasicAuth="_hasBasicAuth" HasGoogleAuth="_hasGoogleAuth" OnStatusChanged="LoadAuthMethodsAsync" />
+    <LinkedAccountsSection HasGoogleAuth="_hasGoogleAuth" GoogleEmail="@_googleEmail" OnStatusChanged="LoadAuthMethodsAsync" />
+}
+else
+{
+    <LoadingSpinner />
+}
+
+<div class="section-divider mb-4 mt-4">
+    <div class="section-divider-label">Delete</div>
+    <Alert Message="@_deleteError" Type="AlertType.Danger" OnDismissed="() => _deleteError = null" />
+    <button class="btn btn-outline-danger btn-sm" @onclick="() => _deleteModal.Show()">Delete my account</button>
+</div>
+
+<ConfirmModal @ref="_deleteModal"
+              Title="Delete account"
+              Message="Permanently delete your account? Notes you wrote stay with the team. This cannot be undone."
+              ConfirmText="Delete"
+              OnConfirm="DeleteAsync" />
+
+@code {
+    private string? _username;
+    private string? _email;
+    private bool _authMethodsLoaded;
+    private bool _hasBasicAuth;
+    private bool _hasGoogleAuth;
+    private string? _googleEmail;
+    private string? _deleteError;
+    private ConfirmModal _deleteModal = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await UserContextAccessor.GetUserContextAsync())!.User!;
+        _username = user.Username;
+        _email = user.Email;
+        await LoadAuthMethodsAsync();
+    }
+
+    private async Task LoadAuthMethodsAsync()
+    {
+        var methods = await GoogleAuthService.GetAuthMethodsAsync();
+        _hasBasicAuth = methods.HasBasicAuth;
+        _hasGoogleAuth = methods.HasGoogleAuth;
+        _googleEmail = methods.GoogleEmail;
+        _authMethodsLoaded = methods.ResultCode == AuthMethodsResultCode.Success;
+    }
+
+    private async Task DeleteAsync()
+    {
+        var result = await DeregistrationService.DeregisterUserAsync();
+        if (result.ResultCode != DeregisterUserResultCode.Success)
+        {
+            _deleteError = result.Message;
+            return;
+        }
+        NavigationManager.NavigateTo(AppRoutes.SignOut, forceLoad: true);
+    }
+}

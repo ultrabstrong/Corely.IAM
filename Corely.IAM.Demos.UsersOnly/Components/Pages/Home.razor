@@ -1,0 +1,85 @@
+@page "/"
+@attribute [Authorize]
+@inject IBlazorUserContextAccessor UserContextAccessor
+@inject IDbContextFactory<NotesDbContext> DbFactory
+@inject TimeProvider TimeProvider
+
+<PageTitle>My Notes</PageTitle>
+
+<h1 class="h3 mb-3">My Notes</h1>
+
+<form class="input-group mb-4" @onsubmit="AddAsync">
+    <input class="form-control" @bind="_newText" placeholder="Write a note" maxlength="2000" />
+    <button class="btn btn-primary" type="submit">Add</button>
+</form>
+
+@if (_notes == null)
+{
+    <LoadingSpinner />
+}
+else if (_notes.Count == 0)
+{
+    <p class="text-muted">No notes yet.</p>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var note in _notes)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@note.Text</span>
+                <button class="btn btn-sm btn-outline-danger" title="Delete" @onclick="() => DeleteAsync(note.Id)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private Guid _userId;
+    private List<Note>? _notes;
+    private string? _newText;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var context = await UserContextAccessor.GetUserContextAsync();
+        _userId = context!.User!.Id;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        _notes = await db.Notes
+            .Where(n => n.UserId == _userId)
+            .OrderByDescending(n => n.CreatedUtc)
+            .ToListAsync();
+    }
+
+    private async Task AddAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newText))
+            return;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.Notes.Add(new Note
+        {
+            Id = Guid.CreateVersion7(),
+            UserId = _userId,
+            Text = _newText.Trim(),
+            CreatedUtc = TimeProvider.GetUtcNow().UtcDateTime,
+        });
+        await db.SaveChangesAsync();
+        _newText = null;
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(Guid noteId)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        // Scoped to the user even though the id came from their own list - the id is client input.
+        await db.Notes.Where(n => n.Id == noteId && n.UserId == _userId).ExecuteDeleteAsync();
+        await LoadAsync();
+    }
+}

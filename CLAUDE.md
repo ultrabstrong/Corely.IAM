@@ -220,6 +220,8 @@ The default config sends structured logs to [Seq](https://datalust.co/seq) at `h
 | `Corely.IAM.DataAccessMigrations.Cli` | Database migration CLI, published as the `corely-iam-db` .NET tool (System.CommandLine). Its **major** version tracks `Corely.IAM`'s — CLI 2.x targets IAM 2.x — while minor and patch move independently |
 | `Corely.IAM.DataAccessMigrations.MySql` | MySQL EF Core migrations |
 | `Corely.IAM.DataAccessMigrations.MsSql` | SQL Server EF Core migrations |
+| `Corely.IAM.Demos.UsersOnly` / `.SharedAccount` | Demo hosts for the simpler usage shapes (see `Corely.IAM/Docs/usage-shapes.md`). They use `Corely.IAM.Web`'s Razor Pages but not its Blazor assembly, and schema comes from the migration CLI. Smoke-tested in `Corely.IAM.Web.FunctionalTests/Demos`, which references them through extern aliases because every host's top-level `Program` is public |
+| `Corely.IAM.Demos.Assets` | Bootstrap for the demos, served as a static web asset so it is vendored once |
 
 ### Layered Architecture
 

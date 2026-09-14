@@ -1,8 +1,7 @@
 # Preface
 List of features that may be nice to implement
 
-Ideas already considered and rejected are in [`DESIGN-DECISIONS.md`](../DESIGN-DECISIONS.md), with the
-reasons and what would reopen them. Check there before adding one here.
+Dropped ideas that are easy to remember as done are in [`DESIGN-DECISIONS.md`](../DESIGN-DECISIONS.md).
 
 ### Soft Deletes
 - [ ] Add IsDeleted bool to entities and groups

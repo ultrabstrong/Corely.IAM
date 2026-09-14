@@ -412,11 +412,9 @@ Store implementation plans in `Plans/` at the repository root.
 
 ### Rejected Ideas
 
-**Read [`DESIGN-DECISIONS.md`](DESIGN-DECISIONS.md) before proposing a feature or a structural
-change.** It records ideas that were considered and dropped - account-scoped password rules, light
-schemas, migrating on startup, invitation role pre-assignment, and others - with the reason and the
-condition that would reopen each. If the condition does not hold, do not re-propose it. When the
-user rejects an idea with a reason worth keeping, add an entry.
+[`DESIGN-DECISIONS.md`](DESIGN-DECISIONS.md) records ideas that were dropped but are easy to
+remember as done - account-scoped password rules, for one. Check it before assuming such a change
+exists. It is not a log of every decision: add an entry only when the user asks for one.
 
 ## Documentation
 

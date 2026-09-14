@@ -16,6 +16,15 @@ dotnet run --project Corely.IAM.Demos.UsersOnly
 The first command creates the IAM schema - the same `corely-iam-db` tool a real deployment uses. The
 app creates its own notes database on startup. Open https://localhost:7101 and sign up.
 
+To start with users already there, seed once before running:
+
+```powershell
+dotnet run --project Corely.IAM.Demos.UsersOnly -- --seed
+```
+
+That creates `alice` and `marcus`, each with a few notes, password `Demo-Pass1!`. Rerunning skips
+users that already exist.
+
 `appsettings.Development.json` holds a committed system key. It exists so the demo runs without
 setup and protects nothing but local demo data; a real app supplies its own key.
 

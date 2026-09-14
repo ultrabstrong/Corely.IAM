@@ -7,12 +7,11 @@
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path=".gitattributes" />
-    <File Path=".github/instructions/copilot-instructions.md" />
     <File Path=".gitignore" />
     <File Path="AddMigration.ps1" />
     <File Path="CONTRIBUTING.md" />
     <File Path="CopyCorelyTools.ps1" />
-    <File Path="Feature-Ideas.md" />
+    <File Path="DESIGN-DECISIONS.md" />
     <File Path="LICENSE" />
     <File Path="ListMigrations.ps1" />
     <File Path="README.md" />
@@ -23,10 +22,7 @@
     <File Path="Docs/The IAM Difference.md" />
   </Folder>
   <Folder Name="/Solution Items/Plans/">
-    <File Path="DataAccessMigrations-Add-MsSql-Support.md" />
-    <File Path="Plans/CascadeDeleteCleanup.md" />
-    <File Path="Plans/DataAccessMigrations-Add-MariaDb-Support.md" />
-    <File Path="Plans/DataAccessMigrations-CLI-Refactor.md" />
+    <File Path="Plans/Feature-Ideas.md" />
   </Folder>
   <Project Path="Corely.IAM.ConsoleTest/Corely.IAM.ConsoleApp.csproj" />
   <Project Path="Corely.IAM.DataAccessMigrations.Cli/Corely.IAM.DataAccessMigrations.Cli.csproj" />

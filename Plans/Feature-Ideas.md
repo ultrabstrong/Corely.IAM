@@ -1,6 +1,9 @@
 # Preface
 List of features that may be nice to implement
 
+Ideas already considered and rejected are in [`DESIGN-DECISIONS.md`](../DESIGN-DECISIONS.md), with the
+reasons and what would reopen them. Check there before adding one here.
+
 ### Soft Deletes
 - [ ] Add IsDeleted bool to entities and groups
 - [ ] Resepect IsDeleted flag in queries and operations

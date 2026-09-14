@@ -410,6 +410,14 @@ return new CreateUserResult(CreateUserResultCode.UserExistsError, "Username alre
 
 Store implementation plans in `Plans/` at the repository root.
 
+### Rejected Ideas
+
+**Read [`DESIGN-DECISIONS.md`](DESIGN-DECISIONS.md) before proposing a feature or a structural
+change.** It records ideas that were considered and dropped - account-scoped password rules, light
+schemas, migrating on startup, invitation role pre-assignment, and others - with the reason and the
+condition that would reopen each. If the condition does not hold, do not re-propose it. When the
+user rejects an idea with a reason worth keeping, add an entry.
+
 ## Documentation
 
 `Docs/` describes **how the current version works**. Nothing else.

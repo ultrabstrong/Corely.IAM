@@ -33,6 +33,12 @@ using (var scope = app.Services.CreateScope())
     scope.ServiceProvider.GetRequiredService<NotesDbContext>().Database.EnsureCreated();
 }
 
+if (args.Contains("--seed"))
+{
+    await DemoSeed.RunAsync(app.Services);
+    return;
+}
+
 app.UseIAMWebAuthentication();
 app.UseHttpsRedirection();
 app.UseStaticFiles();

@@ -16,7 +16,17 @@ dotnet run --project Corely.IAM.Demos.SharedAccount
 The first command creates the IAM schema - the same `corely-iam-db` tool a real deployment uses. The
 app creates its own notes database on startup. Open https://localhost:7102.
 
-To see two people on one team, use a second browser profile or a private window:
+To start with a team already there, seed once before running:
+
+```powershell
+dotnet run --project Corely.IAM.Demos.SharedAccount -- --seed
+```
+
+That creates the team `Acme` with owner `olivia` and members `bobby` and `carla`, a few team notes,
+and `dana.solo` with no team. Every seeded password is `Test1234`. Sign in as `olivia` to see the
+member list and invite people; sign in as `bobby` to see what a member without roles gets.
+
+To see an invitation end to end, use a second browser profile or a private window:
 
 1. Sign up as the first user and start a team.
 2. On the team page, invite the second user's email address and copy the token.

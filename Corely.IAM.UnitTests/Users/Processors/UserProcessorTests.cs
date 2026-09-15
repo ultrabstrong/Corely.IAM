@@ -7,6 +7,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Providers;
+using Corely.IAM.Users.Constants;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
@@ -218,6 +219,18 @@ public class UserProcessorTests
         var result = await _userProcessor.CreateUserAsync(request);
 
         Assert.Equal(CreateUserResultCode.UserExistsError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task CreateUser_WithTooShortUsername_SaysWhichRuleFailed()
+    {
+        var request = new CreateUserRequest("bob", VALID_EMAIL);
+
+        var result = await _userProcessor.CreateUserAsync(request);
+
+        Assert.Equal(CreateUserResultCode.ValidationError, result.ResultCode);
+        Assert.Contains("Username", result.Message);
+        Assert.Contains($"{UserConstants.USERNAME_MIN_LENGTH} characters", result.Message);
     }
 
     [Fact]

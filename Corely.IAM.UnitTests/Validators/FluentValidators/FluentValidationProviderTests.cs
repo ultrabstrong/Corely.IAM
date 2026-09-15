@@ -31,7 +31,8 @@ public class FluentValidationProviderTests
             .Setup(v => v.Validate(It.Is<string>(s => s == INVALID_STRING)))
             .Returns(
                 new FluentValidationResult([
-                    new FluentValidationFailure("property", "error message"),
+                    new FluentValidationFailure("Username", "Username is too short."),
+                    new FluentValidationFailure("Email", "Email is not valid."),
                 ])
             );
 
@@ -63,6 +64,17 @@ public class FluentValidationProviderTests
         var ex = Record.Exception(() => _provider.Validate(toValidate));
         Assert.NotNull(ex);
         Assert.IsType<InvalidOperationException>(ex);
+    }
+
+    [Fact]
+    public void Validate_MessageSaysWhichRulesFailed()
+    {
+        // The message is what reaches the person filling in the form. "Validation failed" gives
+        // them nothing to correct, and the rules themselves are not secret.
+        var result = _provider.Validate(INVALID_STRING);
+
+        Assert.Contains("Username is too short.", result.Message);
+        Assert.Contains("Email is not valid.", result.Message);
     }
 
     [Theory]

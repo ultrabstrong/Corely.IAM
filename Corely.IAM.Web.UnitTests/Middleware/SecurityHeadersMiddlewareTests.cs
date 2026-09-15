@@ -84,22 +84,31 @@ public class SecurityHeadersMiddlewareTests
     }
 
     [Fact]
-    public async Task Invoke_Always_SetsContentSecurityPolicy()
+    public async Task Invoke_LeavesContentSecurityPolicyToTheHost()
     {
+        // A page's policy depends on every script, style, and frame the app loads - Google sign-in,
+        // analytics, a CDN. The library cannot know those, and a policy it set would block them.
         var middleware = CreateMiddleware();
         var httpContext = new DefaultHttpContext();
 
         await middleware.InvokeAsync(httpContext);
 
-        Assert.True(httpContext.Response.Headers.ContainsKey("Content-Security-Policy"));
-        var csp = httpContext.Response.Headers["Content-Security-Policy"].ToString();
-        Assert.Contains("default-src 'self'", csp);
-        Assert.Contains("script-src", csp);
-        Assert.Contains("connect-src 'self' wss: ws:", csp);
-        Assert.Contains("frame-ancestors 'none'", csp);
-        Assert.Contains("object-src 'none'", csp);
-        Assert.Contains("form-action 'self'", csp);
-        Assert.Contains("base-uri 'self'", csp);
+        Assert.False(httpContext.Response.Headers.ContainsKey("Content-Security-Policy"));
+    }
+
+    [Fact]
+    public async Task Invoke_KeepsAContentSecurityPolicyTheHostAlreadySet()
+    {
+        var middleware = CreateMiddleware();
+        var httpContext = new DefaultHttpContext();
+        httpContext.Response.Headers["Content-Security-Policy"] = "default-src 'self' host.example";
+
+        await middleware.InvokeAsync(httpContext);
+
+        Assert.Equal(
+            "default-src 'self' host.example",
+            httpContext.Response.Headers["Content-Security-Policy"].ToString()
+        );
     }
 
     [Fact]

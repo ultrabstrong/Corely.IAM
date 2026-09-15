@@ -31,10 +31,17 @@ See the [Corely.IAM setup guide](../../Corely.IAM/Docs/step-by-step-setup.md) fo
 
 ## 4) Configure Middleware
 
-Order matters — `UseIAMWebAuthentication()` must come before `UseHttpsRedirection()`:
+Order matters — `UseIAMWebAuthentication()` must come before `UseHttpsRedirection()`. The package
+sets no Content-Security-Policy, so set your own first; [Security](security.md#content-security-policy)
+has a starting policy.
 
 ```csharp
 var app = builder.Build();
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.ContentSecurityPolicy = "..."; // your app's policy
+    await next();
+});
 app.UseIAMWebAuthentication();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
@@ -151,7 +158,7 @@ Working examples: `Corely.IAM.Demos.UsersOnly` and `Corely.IAM.Demos.SharedAccou
 Middleware pipeline in order:
 
 1. **CorrelationIdMiddleware** — assigns `X-Correlation-ID` header, enriches Serilog context
-2. **SecurityHeadersMiddleware** — adds CSP, HSTS, X-Frame-Options, Permissions-Policy
+2. **SecurityHeadersMiddleware** — adds HSTS, X-Frame-Options, Permissions-Policy (the Content-Security-Policy is the host's)
 3. **AuthenticationTokenMiddleware** — reads `authentication_token` cookie, validates JWT, sets `UserContext` + `ClaimsPrincipal`
 4. **UseAuthentication()** — ASP.NET Core authentication
 5. **UseAuthorization()** — ASP.NET Core authorization

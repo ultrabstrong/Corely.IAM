@@ -67,6 +67,15 @@ public abstract class DemoAppTestsBase<TNotesContext> : IAsyncLifetime
         Assert.Contains("_content/Corely.IAM.Web/js/form-busy.js", html);
     }
 
+    [Fact]
+    public async Task TheAppSendsItsOwnContentSecurityPolicy()
+    {
+        using var response = await _client.GetAsync(AppRoutes.SignIn);
+
+        var policy = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
+        Assert.Contains("default-src 'self'", policy);
+    }
+
     private async Task SignUpAsync()
     {
         using var response = await _client.PostFormAsync(

@@ -9,7 +9,7 @@ Reusable Razor Class Library (RCL) that provides a complete Blazor Server UI for
 - **Blazor pages** — Users, Groups, Roles, Permissions, Account detail, Profile, Dashboard, Home
 - **Razor Pages** — Sign In, Register, Sign Out, Select Account, Switch Account, Create Account
 - **Shared components** — Alert, Pagination, ConfirmModal, FormModal, EntityPickerModal, EffectivePermissionsPanel, PermissionView, LoadingSpinner, and more
-- **Middleware** — correlation ID, security headers (CSP, X-Frame-Options, etc.), JWT cookie → UserContext
+- **Middleware** — correlation ID, security headers (X-Frame-Options, etc. - the host sets its own CSP), JWT cookie → UserContext
 - **Authentication** — cookie-based auth wired to Corely.IAM's JWT token system
 - **Static assets** — `iam-web.css` (custom styles), `modal-keyboard.js`
 - **Route constants** — `AppRoutes` class with all page paths
@@ -103,7 +103,7 @@ app.MapRazorComponents<App>()
 
 `UseIAMWebAuthentication()` applies middleware in this order:
 1. `CorrelationIdMiddleware` — assigns a correlation ID to every request
-2. `SecurityHeadersMiddleware` — sets CSP, X-Frame-Options, X-Content-Type-Options, etc.
+2. `SecurityHeadersMiddleware` — sets X-Frame-Options, X-Content-Type-Options, etc. It sets no Content-Security-Policy; the host owns that
 3. `AuthenticationTokenMiddleware` — validates the JWT auth cookie and populates `UserContext`
 4. `UseAuthentication()` — ASP.NET Core authentication
 5. `UseAuthorization()` — ASP.NET Core authorization

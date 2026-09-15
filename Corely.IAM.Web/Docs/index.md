@@ -6,7 +6,7 @@ Pre-built Blazor Server UI for Corely.IAM. Provides authentication pages, multi-
 - **Multi-tenant management** — account selection, user/group/role/permission CRUD (Blazor Server)
 - **Authorization gates** — `PermissionView` component hides UI based on CRUDX permissions
 - **Effective permissions** — visualize permission grants through roles and groups
-- **Security headers** — CSP, HSTS, X-Frame-Options out of the box
+- **Security headers** — HSTS, X-Frame-Options and more out of the box; the host sets its own Content-Security-Policy
 - **Customizable styling** — Bootstrap-first CSS with scoped utility classes
 
 ## Topics

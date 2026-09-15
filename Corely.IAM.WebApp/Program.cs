@@ -60,6 +60,19 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// The app's Content-Security-Policy is the app's to set; Corely.IAM.Web sets none. This allows
+// Blazor Server (inline bootstrap script, SignalR over WebSockets) and nothing external. An app
+// using Google sign-in adds Google's sources - see Corely.IAM.Web/Docs/security.md.
+app.Use(
+    async (context, next) =>
+    {
+        context.Response.Headers.ContentSecurityPolicy =
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+            + "connect-src 'self' wss: ws:; img-src 'self' data:; font-src 'self'; "
+            + "frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'";
+        await next();
+    }
+);
 app.UseIAMWebAuthentication();
 app.UseHttpsRedirection();
 app.UseStaticFiles();

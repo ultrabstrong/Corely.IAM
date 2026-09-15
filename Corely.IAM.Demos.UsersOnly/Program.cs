@@ -39,6 +39,17 @@ if (args.Contains("--seed"))
     return;
 }
 
+// The app sets its own Content-Security-Policy; Corely.IAM.Web sets none.
+app.Use(
+    async (context, next) =>
+    {
+        context.Response.Headers.ContentSecurityPolicy =
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+            + "connect-src 'self' wss: ws:; img-src 'self' data:; font-src 'self'; "
+            + "frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'";
+        await next();
+    }
+);
 app.UseIAMWebAuthentication();
 app.UseHttpsRedirection();
 app.UseStaticFiles();

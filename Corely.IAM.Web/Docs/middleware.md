@@ -38,24 +38,9 @@ Adds security response headers on every request.
 | `Cross-Origin-Resource-Policy` | `same-origin` |
 | `X-Permitted-Cross-Domain-Policies` | `none` |
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` (non-development only) |
-| `Content-Security-Policy` | See below |
 
-### Content Security Policy
-
-```
-default-src 'self';
-script-src 'self' 'unsafe-inline';
-style-src 'self' 'unsafe-inline';
-connect-src 'self' wss: ws:;
-img-src 'self' data:;
-font-src 'self';
-frame-ancestors 'none';
-form-action 'self';
-base-uri 'self';
-object-src 'none'
-```
-
-`unsafe-inline` is required for Blazor initialization scripts and Bootstrap inline styles. `wss:` and `ws:` allow SignalR WebSocket connections.
+It does not set a `Content-Security-Policy`; the host owns that. See
+[Content Security Policy](security.md#content-security-policy) for a starting policy.
 
 ## AuthenticationTokenMiddleware
 

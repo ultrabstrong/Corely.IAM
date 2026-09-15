@@ -1,6 +1,7 @@
 # Security Features
 
-Security headers, cookie protection, and content security policy provided out of the box by `UseIAMWebAuthentication()`.
+Security headers and cookie protection provided out of the box by `UseIAMWebAuthentication()`. The
+Content-Security-Policy is not among them - the host sets its own.
 
 ## Cookie Security
 
@@ -40,37 +41,38 @@ All authentication cookies use:
 
 ## Content Security Policy
 
-```
-default-src 'self';
-script-src 'self' 'unsafe-inline';
-style-src 'self' 'unsafe-inline';
-connect-src 'self' wss: ws:;
-img-src 'self' data:;
-font-src 'self';
-frame-ancestors 'none';
-form-action 'self';
-base-uri 'self';
-object-src 'none'
-```
-
-### Why `unsafe-inline`?
-
-Blazor Server requires inline scripts for initialization and reconnection. Bootstrap uses inline styles for dynamic components. Both require `'unsafe-inline'` in their respective directives.
-
-### Why `wss:` and `ws:`?
-
-Blazor Server communicates with the server via SignalR WebSocket connections. The `connect-src` directive must allow WebSocket protocols.
-
-## CSP Customization
-
-If the host app adds external scripts or styles (e.g., Google Fonts, analytics), override the CSP by registering a custom `SecurityHeadersMiddleware` or by adding headers after `UseIAMWebAuthentication()`:
+This package sets no Content-Security-Policy. A policy has to list every source a page loads -
+analytics, a CDN, Google sign-in - and only the host knows those. Set one in the host:
 
 ```csharp
 app.Use(async (context, next) =>
 {
-    context.Response.Headers["Content-Security-Policy"] = "your-custom-csp";
+    context.Response.Headers.ContentSecurityPolicy =
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+        + "connect-src 'self' wss: ws:; img-src 'self' data:; font-src 'self'; "
+        + "frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'";
     await next();
 });
+app.UseIAMWebAuthentication();
 ```
 
-Note: This replaces the entire CSP header. There is no merge mechanism.
+That is a working starting point for this package's pages on Blazor Server:
+
+- `'unsafe-inline'` - Blazor Server's startup and reconnection scripts are inline, and Bootstrap
+  sets inline styles.
+- `wss:` and `ws:` - Blazor Server talks to the server over a SignalR WebSocket.
+
+### Google sign-in
+
+With `SecurityOptions:GoogleClientId` set, the sign-in, register, and profile pages load Google
+Identity Services, which renders its button in an iframe. Add Google's sources to the directives
+above:
+
+| Directive | Add |
+|-----------|-----|
+| `script-src` | `https://accounts.google.com/gsi/client` |
+| `frame-src` | `https://accounts.google.com/gsi/` |
+| `connect-src` | `https://accounts.google.com/gsi/` |
+| `style-src` | `https://accounts.google.com/gsi/style` |
+
+Without them the browser blocks the script and the Google button never appears.

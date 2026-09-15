@@ -43,22 +43,8 @@ public class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvironment
         if (!env.IsDevelopment())
             headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
 
-        // CSP for Blazor Server + SignalR
-        headers["Content-Security-Policy"] = string.Join(
-            "; ",
-            [
-                "default-src 'self'",
-                "script-src 'self' 'unsafe-inline'", // Blazor requires inline scripts for initialization
-                "style-src 'self' 'unsafe-inline'", // Bootstrap uses inline styles
-                "connect-src 'self' wss: ws:", // SignalR WebSocket connections
-                "img-src 'self' data:", // data: URIs for inline images and favicons
-                "font-src 'self'",
-                "frame-ancestors 'none'", // CSP equivalent of X-Frame-Options: DENY
-                "form-action 'self'",
-                "base-uri 'self'",
-                "object-src 'none'",
-            ]
-        );
+        // No Content-Security-Policy: it must list every source the app loads, which only the host
+        // knows. A policy set here blocked Google sign-in on this package's own pages.
 
         await next(context);
     }

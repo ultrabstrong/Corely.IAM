@@ -1,4 +1,4 @@
-﻿using Corely.DataAccess.Interfaces.Repos;
+using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
@@ -12,7 +12,7 @@ namespace Corely.IAM.UnitTests.BasicAuths.Processors;
 
 public class BasicAuthProcessorTests
 {
-    private const string VALID_PASSWORD = "Password1!";
+    private const string VALID_PASSWORD = "Test1234";
 
     private readonly ServiceFactory _serviceFactory = new();
     private readonly BasicAuthProcessor _basicAuthProcessor;

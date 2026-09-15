@@ -22,7 +22,7 @@ To start with users already there, seed once before running:
 dotnet run --project Corely.IAM.Demos.UsersOnly -- --seed
 ```
 
-That creates `alice` and `marcus`, each with a few notes, password `Demo-Pass1!`. Rerunning skips
+That creates `alice` and `marcus`, each with a few notes, password `Test1234`. Rerunning skips
 users that already exist.
 
 `appsettings.Development.json` holds a committed system key. It exists so the demo runs without

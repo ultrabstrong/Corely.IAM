@@ -11,7 +11,7 @@ namespace Corely.IAM.Demos.UsersOnly;
 /// </summary>
 internal static class DemoSeed
 {
-    public const string PASSWORD = "Demo-Pass1!";
+    public const string PASSWORD = "Test1234";
 
     private static readonly (string Username, string Email, string[] Notes)[] Users =
     [

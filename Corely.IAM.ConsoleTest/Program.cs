@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 using Corely.Common.Providers.Redaction;
 using Corely.IAM.Accounts.Models;
@@ -112,7 +112,7 @@ internal class Program
 
             // ========= REGISTER USER 2 ==========
             var registerUser2Result = await registrationService.RegisterUserAsync(
-                new RegisterUserRequest("user2", "email2@x.y", "password2")
+                new RegisterUserRequest("user2", "email2@x.y", "Test1234")
             );
 
             // Add user2 to account (owner action)
@@ -648,7 +648,7 @@ internal class Program
 
             // sign in as user 2 and deregister user 2
             signInResult = await authenticationService.SignInAsync(
-                new SignInRequest("user2", "password2", TEST_DEVICE_ID)
+                new SignInRequest("user2", "Test1234", TEST_DEVICE_ID)
             );
             await deregistrationService.DeregisterUserAsync();
         }

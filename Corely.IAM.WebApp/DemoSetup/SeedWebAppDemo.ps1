@@ -215,7 +215,7 @@ function Sign-InUser {
 
     $payload = [ordered]@{
         Username = $Username
-        Password = 'admin'
+        Password = 'Test1234'
         DeviceId = $DeviceId
     }
 
@@ -567,7 +567,7 @@ if ($pendingUsers.Count -gt 0) {
             [ordered]@{
                 Username = $_.Username
                 Email = $_.Email
-                Password = 'admin'
+                Password = 'Test1234'
             }
         }
     )

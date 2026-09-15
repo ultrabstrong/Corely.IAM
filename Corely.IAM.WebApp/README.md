@@ -48,7 +48,7 @@ From the WebApp folder:
 .\DemoSetup\SeedWebAppDemo.ps1
 ```
 
-This seeds the WebApp's configured IAM database with the demo users/accounts used for local dogfooding. Demo users, including `admin` and `alice.johnson`, use the password `admin`.
+This seeds the WebApp's configured IAM database with the demo users/accounts used for local dogfooding. Demo users, including `admin` and `alice.johnson`, use the password `Test1234`.
 
 **5. Run the app**
 

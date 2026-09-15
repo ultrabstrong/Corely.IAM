@@ -172,7 +172,7 @@ The library's CSS is served from the RCL's static asset path. Bootstrap and Boot
     "RequireUppercase": true,
     "RequireLowercase": true,
     "RequireDigit": true,
-    "RequireSpecialCharacter": true
+    "RequireNonAlphanumeric": true
   }
 }
 ```

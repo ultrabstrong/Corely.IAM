@@ -14,7 +14,7 @@ namespace Corely.IAM.UnitTests.BasicAuths.Processors;
 
 public class BasicAuthPasswordRehashTests
 {
-    private const string VALID_PASSWORD = "Password1!";
+    private const string VALID_PASSWORD = "Test1234";
 
     private readonly ServiceFactory _serviceFactory = new();
     private readonly IRepo<BasicAuthEntity> _basicAuthRepo;

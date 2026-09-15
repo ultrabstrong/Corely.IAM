@@ -13,7 +13,7 @@ namespace Corely.IAM.IntegrationTests.Providers;
 
 public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLifetime
 {
-    private const string Password = "Provider!Pass123";
+    private const string Password = "Test1234";
 
     private Guid _ownerUserId;
     private Guid _accountId;

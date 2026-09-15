@@ -12,7 +12,7 @@ namespace Corely.IAM.IntegrationTests.Infrastructure;
 
 public sealed class IamScenario : IAsyncLifetime
 {
-    public const string Password = "Scenario!Pass123";
+    public const string Password = "Test1234";
 
     public IamTestHost Host { get; private set; } = null!;
 

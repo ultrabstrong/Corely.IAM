@@ -12,7 +12,7 @@ namespace Corely.IAM.UnitTests.BasicAuths.Processors;
 
 public class BasicAuthProcessorDeleteTests
 {
-    private const string VALID_PASSWORD = "Password1!";
+    private const string VALID_PASSWORD = "Test1234";
 
     private readonly ServiceFactory _serviceFactory = new();
     private readonly BasicAuthProcessor _basicAuthProcessor;

@@ -18,7 +18,6 @@
 
 @if (_items == null)
 {
-    @* Absence of data means loading, unless the load failed - then the alert above is the answer. *@
     @if (!_loadFailed)
     {
         <LoadingSpinner />

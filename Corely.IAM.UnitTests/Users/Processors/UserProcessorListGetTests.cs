@@ -180,14 +180,12 @@ public class UserProcessorListGetTests
         Assert.Equal("limiteduser@test.com", user.Email);
         Assert.NotEqual(Guid.Empty, user.Id);
 
-        // Login stats should not be populated
         Assert.Equal(0, user.TotalSuccessfulLogins);
         Assert.Null(user.LastSuccessfulLoginUtc);
         Assert.Equal(0, user.FailedLoginsSinceLastSuccess);
         Assert.Equal(0, user.TotalFailedLogins);
         Assert.Null(user.LastFailedLoginUtc);
 
-        // Keys and child refs should not be populated
         Assert.Null(user.SymmetricKeys);
         Assert.Null(user.AsymmetricKeys);
         Assert.Null(user.Accounts);

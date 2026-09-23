@@ -353,11 +353,6 @@ internal class UserProcessor(
             );
         }
 
-        // Role removal rules:
-        // 1. If all roles are not the owner role -> proceed with removal
-        // 2. If any role is owner role and user IS NOT sole owner -> remove the role
-        // 3. If any role is owner role and user IS sole owner and user has multiple ownership sources -> remove the role
-        // 4. If any role is owner role and user IS sole owner and user has single ownership source -> block
         var blockedOwnerRoleIds = new List<Guid>();
         var ownerRoles = rolesToRemove
             .Where(r => r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined)
@@ -372,7 +367,6 @@ internal class UserProcessor(
                     ownerRole.AccountId
                 );
 
-                // Block if: user is sole owner AND has only single ownership source (the direct role being removed)
                 if (soleOwnerResult.IsSoleOwner && soleOwnerResult.HasSingleOwnershipSource)
                 {
                     blockedOwnerRoleIds.Add(ownerRole.Id);
@@ -385,7 +379,6 @@ internal class UserProcessor(
                 }
             }
 
-            // If ALL roles being removed are blocked owner roles, return error
             if (blockedOwnerRoleIds.Count == rolesToRemove.Count)
             {
                 return new RemoveRolesFromUserResult(
@@ -397,7 +390,6 @@ internal class UserProcessor(
                 );
             }
 
-            // Filter out blocked roles
             rolesToRemove = [.. rolesToRemove.Where(r => !blockedOwnerRoleIds.Contains(r.Id))];
         }
 
@@ -411,13 +403,11 @@ internal class UserProcessor(
             await _userRepo.UpdateAsync(userEntity);
         }
 
-        // Calculate invalid IDs (requested but not actually removed, excluding blocked)
         var invalidRoleIds = request
             .RoleIds.Except(rolesToRemove.Select(r => r.Id))
             .Except(blockedOwnerRoleIds)
             .ToList();
 
-        // Return appropriate result
         if (blockedOwnerRoleIds.Count > 0 || invalidRoleIds.Count > 0)
         {
             _logger.LogInformation(
@@ -483,7 +473,6 @@ internal class UserProcessor(
             }
         }
 
-        // Clear join tables (NoAction side - must do manually for SQL Server compatibility)
         userEntity.Accounts?.Clear();
         userEntity.Groups?.Clear();
         userEntity.Roles?.Clear();
@@ -538,9 +527,6 @@ internal class UserProcessor(
                 u =>
                     u.Id == userId
                     && (accountId == default || u.Accounts!.Any(a => a.Id == accountId)),
-                // When account context is known, use a filtered include to avoid loading
-                // groups/roles from other accounts at the DB level. The in-memory filter
-                // below acts as a fallback (e.g. for mock repos in tests).
                 include: currentAccountId == null
                     ? q => q.Include(u => u.Accounts).Include(u => u.Groups).Include(u => u.Roles)
                     : q =>
@@ -573,9 +559,7 @@ internal class UserProcessor(
             user.Accounts = userEntity
                 .Accounts?.Select(a => new ChildRef(a.Id, a.AccountName))
                 .ToList();
-            // Filter to current account — Groups and Roles are account-scoped, so a user in
-            // multiple accounts would otherwise leak data from other accounts.
-            // This also serves as a fallback for environments that don't apply filtered includes.
+            // Also filtered in memory: mock repos ignore filtered includes.
             user.Groups = userEntity
                 .Groups?.Where(g => currentAccountId == null || g.AccountId == currentAccountId)
                 .Select(g => new ChildRef(g.Id, g.Name))

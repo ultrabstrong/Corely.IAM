@@ -229,7 +229,6 @@ public class AccountProcessorAuthorizationDecoratorTests
             RemoveUserFromAccountResultCode.Success,
             ""
         );
-        // User is authorized for their own user
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedForOwnUser(request.UserId, It.IsAny<bool>()))
             .Returns(true);
@@ -240,7 +239,6 @@ public class AccountProcessorAuthorizationDecoratorTests
         var result = await _decorator.RemoveUserFromAccountAsync(request);
 
         Assert.Equal(expectedResult, result);
-        // Should not check account update authorization when user is removing themselves
         _mockAuthorizationProvider.Verify(
             x =>
                 x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
@@ -260,11 +258,9 @@ public class AccountProcessorAuthorizationDecoratorTests
             RemoveUserFromAccountResultCode.Success,
             ""
         );
-        // User is NOT removing themselves
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedForOwnUser(request.UserId, It.IsAny<bool>()))
             .Returns(false);
-        // But user has update permission on the account
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(
@@ -300,11 +296,9 @@ public class AccountProcessorAuthorizationDecoratorTests
             Guid.CreateVersion7(),
             Guid.CreateVersion7()
         );
-        // User is NOT removing themselves
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedForOwnUser(request.UserId, It.IsAny<bool>()))
             .Returns(false);
-        // And user does NOT have update permission on the account
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(

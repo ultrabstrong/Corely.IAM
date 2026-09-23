@@ -63,7 +63,6 @@ internal class InvitationProcessorAuthorizationDecorator(
 
     public async Task<ListResult<Invitation>> ListInvitationsAsync(
         ListInvitationsRequest request,
-        // Authorized by account membership, so permitted ids would be account ids, not these rows.
         IReadOnlySet<Guid>? authorizedResourceIds = null
     ) =>
         _authorizationProvider.HasAccountContext(request.AccountId)

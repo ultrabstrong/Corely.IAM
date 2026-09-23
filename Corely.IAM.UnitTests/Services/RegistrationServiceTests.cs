@@ -77,7 +77,6 @@ public class RegistrationServiceTests
         _roleProcessorMock = GetMockRoleProcessor();
         _permissionProcessorMock = GetMockPermissionProcessor();
 
-        // Setup user context provider to return a valid context with account ID
         _userContextProviderMock
             .Setup(x => x.GetUserContext())
             .Returns(

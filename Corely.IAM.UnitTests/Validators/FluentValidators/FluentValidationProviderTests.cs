@@ -69,8 +69,6 @@ public class FluentValidationProviderTests
     [Fact]
     public void Validate_MessageSaysWhichRulesFailed()
     {
-        // The message is what reaches the person filling in the form. "Validation failed" gives
-        // them nothing to correct, and the rules themselves are not secret.
         var result = _provider.Validate(INVALID_STRING);
 
         Assert.Contains("Username is too short.", result.Message);

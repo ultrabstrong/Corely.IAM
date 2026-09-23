@@ -31,10 +31,6 @@ internal abstract class DbCommandBase(string name, string description)
     )]
     private string HistoryTable { get; init; } = null!;
 
-    /// <summary>
-    /// Script generation resolves entirely from the migrations assembly, so it needs a provider
-    /// but never opens a connection.
-    /// </summary>
     protected virtual bool RequiresConnectionString => true;
 
     protected bool TryCreateDbContext(out IamDbContext dbContext)
@@ -109,7 +105,6 @@ internal abstract class DbCommandBase(string name, string description)
         return false;
     }
 
-    // EF needs a syntactically valid connection string to build options, even unopened.
     private static string PlaceholderConnectionString(DatabaseProvider provider) =>
         provider switch
         {

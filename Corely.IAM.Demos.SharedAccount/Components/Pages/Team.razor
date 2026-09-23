@@ -15,8 +15,6 @@
 }
 else if (!_canManage)
 {
-    @* IAM's own permission check, not the app's: a member has no roles, so listing users and
-       creating invitations are refused. Only the owner holds a role that grants them. *@
     <p class="text-muted">Only the team's owner can see the member list and invite people.</p>
 }
 else
@@ -38,7 +36,6 @@ else
 
     @if (_token != null)
     {
-        @* A real app emails this. The invitation only works for the account with that email. *@
         <div class="alert alert-info">
             Send this token to <strong>@_invitedEmail</strong>. They sign up with that email, then paste
             it under "Join a team".

@@ -60,9 +60,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// The app's Content-Security-Policy is the app's to set; Corely.IAM.Web sets none. This allows
-// Blazor Server (inline bootstrap script, SignalR over WebSockets) and nothing external. An app
-// using Google sign-in adds Google's sources - see Corely.IAM.Web/Docs/security.md.
 app.Use(
     async (context, next) =>
     {
@@ -85,5 +82,4 @@ app.MapRazorComponents<App>()
 
 app.Run();
 
-// Exposed so Corely.IAM.Web.FunctionalTests can boot this host with WebApplicationFactory.
 public partial class Program { }

@@ -9,7 +9,6 @@ public class PermissionMapperTests
     [Fact]
     public void ToPermission_ShouldMapAllProperties()
     {
-        // Arrange
         var request = new CreatePermissionRequest(
             OwnerAccountId: Guid.CreateVersion7(),
             ResourceType: "TestResource",
@@ -22,10 +21,8 @@ public class PermissionMapperTests
             Description: "Test Description"
         );
 
-        // Act
         var result = request.ToPermission();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(request.OwnerAccountId, result.AccountId);
         Assert.Equal(request.ResourceType, result.ResourceType);
@@ -41,17 +38,14 @@ public class PermissionMapperTests
     [Fact]
     public void ToPermission_ShouldSetDefaultValues()
     {
-        // Arrange
         var request = new CreatePermissionRequest(
             OwnerAccountId: Guid.CreateVersion7(),
             ResourceType: "TestResource",
             ResourceId: Guid.CreateVersion7()
         );
 
-        // Act
         var result = request.ToPermission();
 
-        // Assert
         Assert.Equal(Guid.Empty, result.Id);
         Assert.Null(result.Description);
         Assert.False(result.Create);
@@ -76,7 +70,6 @@ public class PermissionMapperTests
     {
         var accountId = Guid.CreateVersion7();
         var resourceId = Guid.CreateVersion7();
-        // Arrange
         var request = new CreatePermissionRequest(
             OwnerAccountId: accountId,
             ResourceType: resourceType,
@@ -88,10 +81,8 @@ public class PermissionMapperTests
             Execute: execute
         );
 
-        // Act
         var result = request.ToPermission();
 
-        // Assert
         Assert.Equal(accountId, result.AccountId);
         Assert.Equal(resourceType, result.ResourceType);
         Assert.Equal(resourceId, result.ResourceId);
@@ -105,7 +96,6 @@ public class PermissionMapperTests
     [Fact]
     public void ToEntity_ShouldMapAllProperties()
     {
-        // Arrange
         var permission = new Permission
         {
             Id = Guid.CreateVersion7(),
@@ -120,10 +110,8 @@ public class PermissionMapperTests
             Execute = true,
         };
 
-        // Act
         var result = permission.ToEntity();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(permission.Id, result.Id);
         Assert.Equal(permission.Description, result.Description);
@@ -142,7 +130,6 @@ public class PermissionMapperTests
     [Fact]
     public void ToModel_ShouldMapAllProperties()
     {
-        // Arrange
         var entity = new PermissionEntity
         {
             Id = Guid.CreateVersion7(),
@@ -159,10 +146,8 @@ public class PermissionMapperTests
             ModifiedUtc = DateTime.UtcNow,
         };
 
-        // Act
         var result = entity.ToModel();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(entity.Id, result.Id);
         Assert.Equal(entity.Description, result.Description);
@@ -179,7 +164,6 @@ public class PermissionMapperTests
     [Fact]
     public void ToModel_ToEntity_RoundTrip_ShouldPreserveData()
     {
-        // Arrange
         var originalPermission = new Permission
         {
             Id = Guid.CreateVersion7(),
@@ -194,11 +178,9 @@ public class PermissionMapperTests
             Execute = true,
         };
 
-        // Act
         var entity = originalPermission.ToEntity();
         var resultPermission = entity.ToModel();
 
-        // Assert
         Assert.Equal(originalPermission.Id, resultPermission.Id);
         Assert.Equal(originalPermission.Description, resultPermission.Description);
         Assert.Equal(originalPermission.AccountId, resultPermission.AccountId);
@@ -229,7 +211,6 @@ public class PermissionMapperTests
         var accountId = Guid.CreateVersion7();
         var resourceId = Guid.CreateVersion7();
 
-        // Arrange
         var permission = new Permission
         {
             Id = permissionId,
@@ -244,10 +225,8 @@ public class PermissionMapperTests
             Execute = execute,
         };
 
-        // Act
         var result = permission.ToEntity();
 
-        // Assert
         Assert.Equal(permissionId, result.Id);
         Assert.Equal(description, result.Description);
         Assert.Equal(accountId, result.AccountId);
@@ -278,7 +257,6 @@ public class PermissionMapperTests
         var accountId = Guid.CreateVersion7();
         var resourceId = Guid.CreateVersion7();
 
-        // Arrange
         var entity = new PermissionEntity
         {
             Id = permissionId,
@@ -293,10 +271,8 @@ public class PermissionMapperTests
             Execute = execute,
         };
 
-        // Act
         var result = entity.ToModel();
 
-        // Assert
         Assert.Equal(permissionId, result.Id);
         Assert.Equal(description, result.Description);
         Assert.Equal(accountId, result.AccountId);
@@ -312,7 +288,6 @@ public class PermissionMapperTests
     [Fact]
     public void DisplayName_ShouldFormatCorrectly_WhenResourceIdIsZero()
     {
-        // Arrange
         var permission = new Permission
         {
             ResourceType = "group",
@@ -324,14 +299,12 @@ public class PermissionMapperTests
             Execute = false,
         };
 
-        // Act & Assert
         Assert.Equal("group - all CRudx", permission.DisplayName);
     }
 
     [Fact]
     public void DisplayName_ShouldFormatCorrectly_WhenResourceIdIsSpecific()
     {
-        // Arrange
         var permission = new Permission
         {
             ResourceType = "group",
@@ -343,14 +316,12 @@ public class PermissionMapperTests
             Execute = false,
         };
 
-        // Act & Assert
         Assert.Equal($"group - {permission.ResourceId} cRudx", permission.DisplayName);
     }
 
     [Fact]
     public void DisplayName_ShouldShowAllCrudxFlags()
     {
-        // Arrange
         var permission = new Permission
         {
             ResourceType = "user",
@@ -362,7 +333,6 @@ public class PermissionMapperTests
             Execute = true,
         };
 
-        // Act & Assert
         Assert.Equal("user - all CRUDX", permission.DisplayName);
     }
 }

@@ -26,8 +26,6 @@ public class PermissionViewTests : TestContext
     {
         _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(() => _userContext);
 
-        // Mirrors AuthorizationProvider: with no user context there is nothing to authorize
-        // against, so every check is denied.
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>())
@@ -38,10 +36,6 @@ public class PermissionViewTests : TestContext
         Services.AddSingleton(_mockUserContextProvider.Object);
     }
 
-    /// <summary>
-    /// Stands in for AuthenticatedPageBase: its OnInitializedAsync yields before the user context
-    /// exists, which makes Blazor paint an interim render of the children first.
-    /// </summary>
     private sealed class DeferredContextPage : ComponentBase
     {
         [Parameter]
@@ -117,7 +111,6 @@ public class PermissionViewTests : TestContext
 
         var cut = RenderDeferredPage(gate);
 
-        // Not yet known is not the same as denied - nothing should be committed either way.
         Assert.Empty(cut.FindAll($"#{AUTHORIZED_MARKER}"));
         _mockAuthorizationProvider.Verify(
             x =>

@@ -60,7 +60,6 @@ public class UserOwnershipProcessorTests
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
 
-        // Get direct users
         var directUsers = new List<UserEntity>();
         foreach (var userId in directUserIds)
         {
@@ -71,7 +70,6 @@ public class UserOwnershipProcessorTests
             }
         }
 
-        // Get/create group users and group
         var groups = new List<GroupEntity>();
         if (groupUserIds.Length > 0)
         {
@@ -116,7 +114,6 @@ public class UserOwnershipProcessorTests
     {
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
-        // Don't create any owner role
 
         var result = await _userOwnershipProcessor.IsSoleOwnerOfAccountAsync(user.Id, account.Id);
 
@@ -129,9 +126,8 @@ public class UserOwnershipProcessorTests
     {
         var account = await CreateAccountAsync();
         var otherAccount = await CreateAccountAsync();
-        var user = await CreateUserInAccountAsync(otherAccount.Id); // User in different account
+        var user = await CreateUserInAccountAsync(otherAccount.Id);
 
-        // Create owner role for the account, but user is in different account
         await CreateOwnerRoleAsync(account.Id, directUserIds: [], groupUserIds: []);
 
         var result = await _userOwnershipProcessor.IsSoleOwnerOfAccountAsync(user.Id, account.Id);
@@ -223,7 +219,7 @@ public class UserOwnershipProcessorTests
         var account = await CreateAccountAsync();
         var otherAccount = await CreateAccountAsync();
         var user1 = await CreateUserInAccountAsync(account.Id);
-        var user2 = await CreateUserInAccountAsync(otherAccount.Id); // User2 in different account
+        var user2 = await CreateUserInAccountAsync(otherAccount.Id);
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
 
@@ -233,7 +229,7 @@ public class UserOwnershipProcessorTests
             AccountId = account.Id,
             Name = RoleConstants.OWNER_ROLE_NAME,
             IsSystemDefined = true,
-            Users = [user1!, user2!], // Both have role, but user2 not in account
+            Users = [user1!, user2!],
             Groups = [],
             Permissions = [],
         };
@@ -241,7 +237,6 @@ public class UserOwnershipProcessorTests
 
         var result = await _userOwnershipProcessor.IsSoleOwnerOfAccountAsync(user1.Id, account.Id);
 
-        // userId1 should be sole owner because userId2 is not in the account
         Assert.True(result.IsSoleOwner);
         Assert.True(result.UserHasOwnerRole);
     }
@@ -252,7 +247,6 @@ public class UserOwnershipProcessorTests
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
 
-        // Create a non-owner role
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
 
         var regularRole = new RoleEntity
@@ -279,10 +273,8 @@ public class UserOwnershipProcessorTests
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
 
-        // Create owner role with direct user assignment
         await CreateOwnerRoleAsync(account.Id, directUserIds: [user.Id], groupUserIds: []);
 
-        // Create a group (the one we're "excluding")
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var group = new GroupEntity
         {
@@ -309,7 +301,6 @@ public class UserOwnershipProcessorTests
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
 
-        // Create two groups
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
 
@@ -333,7 +324,6 @@ public class UserOwnershipProcessorTests
         };
         var createdGroup2 = await groupRepo.CreateAsync(group2);
 
-        // Create owner role assigned to group2 (not group1)
         var ownerRole = new RoleEntity
         {
             Id = Guid.CreateVersion7(),
@@ -346,7 +336,6 @@ public class UserOwnershipProcessorTests
         };
         await roleRepo.CreateAsync(ownerRole);
 
-        // Check if user has ownership outside of group1 (they do, via group2)
         var result = await _userOwnershipProcessor.HasOwnershipOutsideGroupAsync(
             user.Id,
             account.Id,
@@ -365,7 +354,6 @@ public class UserOwnershipProcessorTests
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
 
-        // Create a group with the user
         var group = new GroupEntity
         {
             Id = Guid.CreateVersion7(),
@@ -376,7 +364,6 @@ public class UserOwnershipProcessorTests
         };
         var createdGroup = await groupRepo.CreateAsync(group);
 
-        // Create owner role assigned only to this group
         var ownerRole = new RoleEntity
         {
             Id = Guid.CreateVersion7(),
@@ -389,7 +376,6 @@ public class UserOwnershipProcessorTests
         };
         await roleRepo.CreateAsync(ownerRole);
 
-        // Check if user has ownership outside of this group (they don't)
         var result = await _userOwnershipProcessor.HasOwnershipOutsideGroupAsync(
             user.Id,
             account.Id,
@@ -405,7 +391,6 @@ public class UserOwnershipProcessorTests
         var account = await CreateAccountAsync();
         var user = await CreateUserInAccountAsync(account.Id);
 
-        // Create a group but no owner role
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var group = new GroupEntity
         {
@@ -435,7 +420,6 @@ public class UserOwnershipProcessorTests
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
 
-        // Create a group with the user
         var group = new GroupEntity
         {
             Id = Guid.CreateVersion7(),
@@ -446,20 +430,18 @@ public class UserOwnershipProcessorTests
         };
         var createdGroup = await groupRepo.CreateAsync(group);
 
-        // Create owner role with both direct assignment AND group assignment
         var ownerRole = new RoleEntity
         {
             Id = Guid.CreateVersion7(),
             AccountId = account.Id,
             Name = RoleConstants.OWNER_ROLE_NAME,
             IsSystemDefined = true,
-            Users = [user!], // Direct assignment
-            Groups = [createdGroup], // Also via group
+            Users = [user!],
+            Groups = [createdGroup],
             Permissions = [],
         };
         await roleRepo.CreateAsync(ownerRole);
 
-        // Even though user is in the excluded group, they have direct ownership
         var result = await _userOwnershipProcessor.HasOwnershipOutsideGroupAsync(
             user.Id,
             account.Id,
@@ -476,10 +458,8 @@ public class UserOwnershipProcessorTests
         var user1 = await CreateUserInAccountAsync(account.Id);
         var user2 = await CreateUserInAccountAsync(account.Id);
 
-        // Create owner role with direct assignment for user1 only
         await CreateOwnerRoleAsync(account.Id, directUserIds: [user1.Id], groupUserIds: []);
 
-        // Create a group (the one we're "excluding")
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var group = new GroupEntity
         {
@@ -510,7 +490,6 @@ public class UserOwnershipProcessorTests
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
 
-        // Create a group with both users
         var group = new GroupEntity
         {
             Id = Guid.CreateVersion7(),
@@ -521,7 +500,6 @@ public class UserOwnershipProcessorTests
         };
         var createdGroup = await groupRepo.CreateAsync(group);
 
-        // Create owner role assigned only to this group
         var ownerRole = new RoleEntity
         {
             Id = Guid.CreateVersion7(),
@@ -534,7 +512,6 @@ public class UserOwnershipProcessorTests
         };
         await roleRepo.CreateAsync(ownerRole);
 
-        // Neither user has ownership outside the group
         var result = await _userOwnershipProcessor.AnyUserHasOwnershipOutsideGroupAsync(
             [user1.Id, user2.Id],
             account.Id,
@@ -577,7 +554,6 @@ public class UserOwnershipProcessorTests
         var user2 = await CreateUserInAccountAsync(account.Id);
         var user3 = await CreateUserInAccountAsync(account.Id);
 
-        // Create owner role with direct assignment for user3 only (last in list)
         await CreateOwnerRoleAsync(account.Id, directUserIds: [user3.Id], groupUserIds: []);
 
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();

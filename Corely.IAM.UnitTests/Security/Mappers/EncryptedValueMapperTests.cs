@@ -21,16 +21,13 @@ public class EncryptedValueMapperTests
     [Fact]
     public void ToEncryptedString_ShouldReturnSecret_WhenSourceIsValid()
     {
-        // Arrange
         var encryptedValue = new SymmetricEncryptedValue(_encryptionProvider)
         {
             Secret = "encrypted_test_data",
         };
 
-        // Act
         var result = encryptedValue.ToEncryptedString();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal("encrypted_test_data", result);
     }
@@ -38,26 +35,20 @@ public class EncryptedValueMapperTests
     [Fact]
     public void ToEncryptedString_ShouldReturnNull_WhenSourceIsNull()
     {
-        // Arrange
         ISymmetricEncryptedValue? encryptedValue = null;
 
-        // Act
         var result = encryptedValue.ToEncryptedString();
 
-        // Assert
         Assert.Null(result);
     }
 
     [Fact]
     public void ToEncryptedValue_ShouldCreateEncryptedValue_WhenSourceIsValid()
     {
-        // Arrange
         var encryptedString = "encrypted_test_secret";
 
-        // Act
         var result = encryptedString.ToEncryptedValue(_encryptionProviderFactory);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(encryptedString, result.Secret);
     }
@@ -65,18 +56,15 @@ public class EncryptedValueMapperTests
     [Fact]
     public void ToEncryptedString_ToEncryptedValue_RoundTrip_ShouldPreserveSecret()
     {
-        // Arrange
         var originalValue = new SymmetricEncryptedValue(_encryptionProvider)
         {
             Secret = "original_encrypted_secret",
         };
         var originalSecret = originalValue.Secret;
 
-        // Act
         var encryptedString = originalValue.ToEncryptedString();
         var resultValue = encryptedString!.ToEncryptedValue(_encryptionProviderFactory);
 
-        // Assert
         Assert.Equal(originalSecret, resultValue.Secret);
     }
 
@@ -86,10 +74,8 @@ public class EncryptedValueMapperTests
     [InlineData("encrypted_complex_data")]
     public void ToEncryptedValue_ShouldHandleVariousInputs(string encryptedString)
     {
-        // Arrange & Act
         var result = encryptedString.ToEncryptedValue(_encryptionProviderFactory);
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(encryptedString, result.Secret);
     }

@@ -43,7 +43,6 @@ public class TotpAuthProcessorTests
         return enableResult.Secret!;
     }
 
-    // Mock repos don't support EF Core Include — manually wire the navigation property
     private async Task WireRecoveryCodesNavPropertyAsync(Guid userId)
     {
         var totpAuthRepo = _serviceFactory.GetRequiredService<IRepo<TotpAuthEntity>>();

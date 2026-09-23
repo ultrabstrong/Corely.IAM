@@ -44,8 +44,6 @@ public static class ServiceRegistrationExtensions
 
         if (options.EFConfigurationFactory != null)
         {
-            // Keyed so a container holding another library's (or the host's own) configuration
-            // cannot hand it to IamDbContext, and IAM's cannot leak into theirs.
             var efConfigurationFactory = options.EFConfigurationFactory;
             serviceCollection.AddKeyedScoped(
                 EFConfigurationKeys.IAM,
@@ -122,9 +120,6 @@ public static class ServiceRegistrationExtensions
             sp.GetRequiredService<AuthorizationProvider>()
         );
 
-        // Auth boundary: retain service decorators only where pre-call user-context checks are
-        // still required. CRUDX permission checks happen at the processor level via
-        // IsAuthorizedAsync, so services that no longer add a boundary are left undecorated.
         serviceCollection.AddScoped<IRegistrationService, RegistrationService>();
         serviceCollection.Decorate<
             IRegistrationService,

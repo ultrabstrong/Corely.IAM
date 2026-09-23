@@ -139,7 +139,6 @@ public class RoleProcessorListGetTests
     {
         await CreateRoleAsync("ScopedRole");
 
-        // Create a role in a different account
         var otherAccountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var otherAccount = await otherAccountRepo.CreateAsync(
             new AccountEntity { Id = Guid.CreateVersion7(), AccountName = "OtherAccount" }
@@ -159,7 +158,6 @@ public class RoleProcessorListGetTests
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
-        // Only roles from the user's account should be returned
         Assert.All(result.Data.Items, role => Assert.Equal(_accountId, role.AccountId));
         Assert.DoesNotContain(result.Data.Items, role => role.Name == "OtherRole");
     }

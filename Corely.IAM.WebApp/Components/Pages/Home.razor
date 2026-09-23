@@ -16,7 +16,6 @@
 
 @if (_userContext?.AvailableAccounts.Count == 0)
 {
-    @* State 1: No accounts — onboarding *@
     <div class="d-flex justify-content-center align-items-center mt-5">
         <div class="onboarding-card card border-0 shadow">
             <div class="card-body p-4 text-center">
@@ -49,7 +48,6 @@
 }
 else if (_userContext?.CurrentAccount != null)
 {
-    @* State 2: Account selected — header + entity grid *@
     <AccountHeader />
 
     <div class="row g-3">

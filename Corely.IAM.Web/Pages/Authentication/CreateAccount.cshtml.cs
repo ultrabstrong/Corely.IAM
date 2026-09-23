@@ -54,14 +54,12 @@ public class CreateAccountModel(
             return Page();
         }
 
-        // Auto-switch into the newly created account
         var switchResult = await authenticationService.SwitchAccountAsync(
             new SwitchAccountRequest(createResult.CreatedAccountId)
         );
 
         if (switchResult.ResultCode != SignInResultCode.Success)
         {
-            // Account was created but switch failed — let them pick it from the list
             return Redirect(AppRoutes.SelectAccount);
         }
 

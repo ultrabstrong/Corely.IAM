@@ -38,7 +38,7 @@
     }
     else
     {
-        @* Google's own button, rendered by their script - their terms do not allow a look-alike. *@
+        @* Google's own button: their terms forbid look-alikes. *@
         <div id="google-link-button"></div>
     }
 </div>
@@ -76,8 +76,6 @@
     {
         var needsButton = !HasGoogleAuth && !string.IsNullOrWhiteSpace(_googleClientId);
 
-        // Re-rendered after an unlink, so the button has to appear then too - not only on first
-        // render.
         if (!needsButton)
         {
             _linkButtonRendered = false;
@@ -178,7 +176,6 @@
             }
             catch (JSDisconnectedException)
             {
-                // The circuit is already gone; there is nothing left to dispose.
             }
         }
     }

@@ -78,7 +78,7 @@ else
     private async Task DeleteAsync(Guid noteId)
     {
         await using var db = await DbFactory.CreateDbContextAsync();
-        // Scoped to the user even though the id came from their own list - the id is client input.
+        // The id is client input.
         await db.Notes.Where(n => n.Id == noteId && n.UserId == _userId).ExecuteDeleteAsync();
         await LoadAsync();
     }

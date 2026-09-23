@@ -9,16 +9,13 @@ public class RoleMapperTests
     [Fact]
     public void ToRole_ShouldMapAllProperties()
     {
-        // Arrange
         var request = new CreateRoleRequest(
             RoleName: "TestRole",
             OwnerAccountId: Guid.CreateVersion7()
         );
 
-        // Act
         var result = request.ToRole();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal("TestRole", result.Name);
         Assert.Equal(request.OwnerAccountId, result.AccountId);
@@ -27,16 +24,13 @@ public class RoleMapperTests
     [Fact]
     public void ToRole_ShouldSetDefaultValues()
     {
-        // Arrange
         var request = new CreateRoleRequest(
             RoleName: "TestRole",
             OwnerAccountId: Guid.CreateVersion7()
         );
 
-        // Act
         var result = request.ToRole();
 
-        // Assert
         Assert.Equal(Guid.Empty, result.Id);
         Assert.Null(result.Description);
         Assert.False(result.IsSystemDefined);
@@ -45,7 +39,6 @@ public class RoleMapperTests
     [Fact]
     public void ToEntity_ShouldMapAllProperties()
     {
-        // Arrange
         var role = new Role
         {
             Id = Guid.CreateVersion7(),
@@ -55,10 +48,8 @@ public class RoleMapperTests
             AccountId = Guid.CreateVersion7(),
         };
 
-        // Act
         var result = role.ToEntity();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(role.Id, result.Id);
         Assert.Equal(role.Name, result.Name);
@@ -74,7 +65,6 @@ public class RoleMapperTests
     [Fact]
     public void ToModel_ShouldMapAllProperties()
     {
-        // Arrange
         var entity = new RoleEntity
         {
             Id = Guid.CreateVersion7(),
@@ -86,10 +76,8 @@ public class RoleMapperTests
             ModifiedUtc = DateTime.UtcNow,
         };
 
-        // Act
         var result = entity.ToModel();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(entity.Id, result.Id);
         Assert.Equal(entity.Name, result.Name);

@@ -9,13 +9,10 @@ public class UserMapperTests
     [Fact]
     public void ToUser_ShouldMapAllProperties()
     {
-        // Arrange
         var request = new CreateUserRequest(Username: "testuser", Email: "test@example.com");
 
-        // Act
         var result = request.ToUser();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal("testuser", result.Username);
         Assert.Equal("test@example.com", result.Email);
@@ -24,13 +21,10 @@ public class UserMapperTests
     [Fact]
     public void ToUser_ShouldSetDefaultValues()
     {
-        // Arrange
         var request = new CreateUserRequest(Username: "testuser", Email: "test@example.com");
 
-        // Act
         var result = request.ToUser();
 
-        // Assert
         Assert.Equal(Guid.Empty, result.Id);
         Assert.Null(result.LockedUtc);
         Assert.Equal(0, result.TotalSuccessfulLogins);
@@ -46,13 +40,10 @@ public class UserMapperTests
     [InlineData("", "")]
     public void ToUser_ShouldMapVariousInputs(string username, string email)
     {
-        // Arrange
         var request = new CreateUserRequest(Username: username, Email: email);
 
-        // Act
         var result = request.ToUser();
 
-        // Assert
         Assert.Equal(username, result.Username);
         Assert.Equal(email, result.Email);
     }
@@ -60,7 +51,6 @@ public class UserMapperTests
     [Fact]
     public void ToEntity_ShouldMapAllProperties()
     {
-        // Arrange
         var user = new User
         {
             Id = Guid.CreateVersion7(),
@@ -76,10 +66,8 @@ public class UserMapperTests
             ModifiedUtc = DateTime.UtcNow,
         };
 
-        // Act
         var result = user.ToEntity();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(user.Id, result.Id);
         Assert.Equal("testuser", result.Username);
@@ -101,7 +89,6 @@ public class UserMapperTests
     [Fact]
     public void ToModel_ShouldMapAllProperties()
     {
-        // Arrange
         var entity = new UserEntity
         {
             Id = Guid.CreateVersion7(),
@@ -117,10 +104,8 @@ public class UserMapperTests
             ModifiedUtc = DateTime.UtcNow,
         };
 
-        // Act
         var result = entity.ToModel();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(entity.Id, result.Id);
         Assert.Equal("testuser", result.Username);

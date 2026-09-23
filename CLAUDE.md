@@ -290,25 +290,6 @@ New services go in `Services/` with an interface, registered in `ServiceRegistra
 
 Favor brevity over verbosity when planning and writing code. Code that isn't written cannot break, and doesn't need to be maintained.
 
-### Comments
-
-Comments should explain *why*, not *what*. Do not add comments that describe exactly what the code below them does — the code itself should be self-documenting. Good comments explain:
-- Non-obvious business logic or domain rules
-- Why a particular approach was chosen over alternatives
-- Edge cases or gotchas that aren't apparent from the code
-
-```csharp
-// BAD - describes what the code does
-// Create the user
-await CreateUserAsync(request);
-// Get the account
-var account = await GetAccountAsync(accountId);
-
-// GOOD - explains why (when needed)
-// Wildcard permission — Guid.Empty grants access to all resources of this type
-if (permission.ResourceId == Guid.Empty) return true;
-```
-
 ### Primary Constructors
 
 Use primary constructors — all projects support C# 12+:

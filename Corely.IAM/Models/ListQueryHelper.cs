@@ -24,8 +24,6 @@ internal static class ListQueryHelper
         if (take <= 0)
             throw new ArgumentOutOfRangeException(nameof(take), "Must be positive.");
 
-        // Folded into the predicate so the page and the count agree; filtering the results
-        // afterwards would short the page and inflate the total. Null means a wildcard grant.
         if (authorizedResourceIds != null)
         {
             scopePredicate = AndAlso(
@@ -95,7 +93,7 @@ internal static class ListQueryHelper
                 $"Entity type '{typeof(TEntity).Name}' does not have an 'Id' property required for authorization scoping."
             );
 
-        // Materialised so the provider emits IN (...) rather than closing over the set.
+        // Materialized so the provider emits IN (...).
         var idList = ids.ToList();
         var param = Expression.Parameter(typeof(TEntity), "e");
         var contains = Expression.Call(

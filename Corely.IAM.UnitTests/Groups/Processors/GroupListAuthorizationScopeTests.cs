@@ -20,11 +20,6 @@ using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.UnitTests.Groups.Processors;
 
-/// <summary>
-/// A list must return only what the caller is permitted to see. Authorizing the call as a whole
-/// and then returning every row leaks resources the caller cannot open, and makes paging wrong -
-/// a page of 50 filtered afterwards is no longer a page of 50.
-/// </summary>
 public class GroupListAuthorizationScopeTests
 {
     private readonly ServiceFactory _serviceFactory = new();
@@ -90,8 +85,6 @@ public class GroupListAuthorizationScopeTests
 
         var result = await _decorator.ListGroupsAsync(new(_accountId, Take: 10));
 
-        // Paging is computed from the total, so a total that counts rows the caller cannot see
-        // reports pages that do not exist.
         Assert.Equal(1, result.Data!.TotalCount);
     }
 

@@ -217,7 +217,6 @@ internal class InvitationProcessor(
             );
         }
 
-        // Add user to account (handles already-in-account case)
         var addResult = await _accountProcessor.AddUserToAccountForInvitationAsync(
             new AddUserToAccountRequest(userId, invitationEntity.AccountId)
         );
@@ -234,12 +233,10 @@ internal class InvitationProcessor(
             );
         }
 
-        // Mark this invitation as accepted
         invitationEntity.AcceptedByUserId = userId;
         invitationEntity.AcceptedUtc = utcNow;
         await _invitationRepo.UpdateAsync(invitationEntity);
 
-        // Burn sibling invitations for same account + email
         var siblingInvitations = await _invitationRepo.ListAsync(i =>
             i.AccountId == invitationEntity.AccountId
             && i.Email == invitationEntity.Email

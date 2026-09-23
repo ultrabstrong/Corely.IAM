@@ -2,7 +2,6 @@ namespace Corely.IAM.Web;
 
 public static class AppRoutes
 {
-    // Auth (Razor Pages)
     public const string SignIn = "/signin";
     public const string Register = "/register";
     public const string SignOut = "/signout";
@@ -12,11 +11,9 @@ public static class AppRoutes
     public const string GoogleCallback = "/google-callback";
     public const string RegisterWithGoogle = "/register-with-google";
 
-    // Legal (Razor Pages)
     public const string Privacy = "/privacy";
     public const string Terms = "/terms";
 
-    // Management (Blazor)
     public const string Dashboard = "/";
     public const string AcceptInvitation = "/accept-invitation";
     public const string Profile = "/profile";

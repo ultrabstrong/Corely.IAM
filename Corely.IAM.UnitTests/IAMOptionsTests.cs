@@ -145,7 +145,6 @@ public class IAMOptionsTests
             options.AsymmetricSignatureCode
         );
 
-        // Passwords get a deliberately slow hash; generated tokens are high-entropy and do not.
         Assert.Equal(HashConstants.PBKDF2_SHA256_CODE, options.HashCode);
         Assert.Equal(HashConstants.SALTED_SHA256_CODE, options.TokenHashCode);
     }

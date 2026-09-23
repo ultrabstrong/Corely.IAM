@@ -18,7 +18,6 @@ public class BlazorUserContextAccessor(
 
     public async Task<UserContext?> GetUserContextAsync()
     {
-        // Fast path: provider already has context from middleware
         var existingContext = userContextProvider.GetUserContext();
         if (existingContext != null)
         {
@@ -29,7 +28,6 @@ public class BlazorUserContextAccessor(
 
         try
         {
-            // Double-check after acquiring lock
             existingContext = userContextProvider.GetUserContext();
             if (existingContext != null)
             {

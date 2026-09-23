@@ -322,8 +322,6 @@ internal class RoleProcessor(
             );
         }
 
-        // Only the owner system permission on the owner role is protected — removing it would
-        // leave the account without an owner, breaking the ownerless-account invariant.
         var blockedSystemPermissionIds = new List<Guid>();
 
         if (roleEntity.IsSystemDefined && roleEntity.Name == RoleConstants.OWNER_ROLE_NAME)
@@ -366,13 +364,11 @@ internal class RoleProcessor(
             await _roleRepo.UpdateAsync(roleEntity);
         }
 
-        // Calculate invalid IDs (requested but not actually removed)
         var invalidPermissionIds = request
             .PermissionIds.Except(permissionsToRemove.Select(p => p.Id))
             .Except(blockedSystemPermissionIds)
             .ToList();
 
-        // Return appropriate result based on what happened
         if (blockedSystemPermissionIds.Count > 0 || invalidPermissionIds.Count > 0)
         {
             _logger.LogInformation(
@@ -467,7 +463,6 @@ internal class RoleProcessor(
             );
         }
 
-        // Clear join tables (NoAction side - must do manually for SQL Server compatibility)
         roleEntity.Users?.Clear();
         roleEntity.Groups?.Clear();
         roleEntity.Permissions?.Clear();
@@ -478,8 +473,6 @@ internal class RoleProcessor(
         return new DeleteRoleResult(DeleteRoleResultCode.Success, string.Empty);
     }
 
-    // The owner permission is identified by full CRUDX on all resource types — removing it
-    // from the owner role would leave the account unable to satisfy ownership checks.
     private static bool IsOwnerSystemPermission(PermissionEntity permission) =>
         permission.IsSystemDefined
         && permission.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES

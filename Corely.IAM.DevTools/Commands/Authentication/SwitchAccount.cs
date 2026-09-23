@@ -32,7 +32,6 @@ internal partial class Authentication : CommandBase
                 return;
             }
 
-            // Set context from saved auth token before switching
             var authToken = await ReadAuthTokenAsync();
             if (string.IsNullOrEmpty(authToken))
                 return;

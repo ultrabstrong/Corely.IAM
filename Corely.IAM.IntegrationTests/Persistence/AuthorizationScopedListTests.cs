@@ -6,17 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Persistence;
 
-/// <summary>
-/// The permitted-id scope is a hand-built expression tree, so it has to be proven against real SQL
-/// translation rather than only against the in-memory repo, which happily evaluates any expression
-/// that compiles.
-/// </summary>
-/// <remarks>
-/// These run as the group member deliberately. That user reaches the Editor role through a group,
-/// and the Editor role carries a grant on one specific role id rather than a wildcard - so the
-/// scope is a real id set and the query gets an IN clause. Running as the owner would take the
-/// wildcard path, add no clause at all, and prove nothing about translation.
-/// </remarks>
 public class AuthorizationScopedListTests(IamScenario scenario) : IClassFixture<IamScenario>
 {
     [Fact]
@@ -35,8 +24,6 @@ public class AuthorizationScopedListTests(IamScenario scenario) : IClassFixture<
     {
         var result = await ListRolesAsync();
 
-        // The account holds more roles than this. A total that counted them would report pages
-        // that do not exist.
         Assert.Equal(result.Data!.Items.Count, result.Data.TotalCount);
     }
 
@@ -57,7 +44,6 @@ public class AuthorizationScopedListTests(IamScenario scenario) : IClassFixture<
     [Fact]
     public async Task AWildcardGrant_AddsNoScopeAndListsEverything()
     {
-        // The owner takes the null-scope path, which must stay unfiltered.
         var result = await scenario.ActAsAsync(
             scenario.OwnerUsername,
             scenario.AccountId,

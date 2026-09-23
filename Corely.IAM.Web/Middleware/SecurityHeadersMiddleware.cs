@@ -39,13 +39,10 @@ public class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvironment
         headers["X-Permitted-Cross-Domain-Policies"] = "none";
         ApplyCacheHeaders(context);
 
-        // HSTS only applies over HTTPS; skip in development to avoid locking out HTTP
         if (!env.IsDevelopment())
             headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
 
-        // No Content-Security-Policy: it must list every source the app loads, which only the host
-        // knows. A policy set here blocked Google sign-in on this package's own pages.
-
+        // No CSP: only the host knows its sources.
         await next(context);
     }
 

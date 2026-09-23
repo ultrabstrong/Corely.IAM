@@ -37,8 +37,6 @@ internal class SecurityProvider(
         string encryptedKey;
         try
         {
-            // Keys are stored Base64-encoded, so the encoded copy is what gets encrypted. The
-            // generated array is zeroed here; the string it produced belongs to the ciphertext.
             encryptedKey = symmetricEncryptionProvider.Encrypt(
                 Convert.ToBase64String(decryptedKey),
                 systemKeyStoreProvider
@@ -147,9 +145,7 @@ internal class SecurityProvider(
 
         var systemKeyStoreProvider = _securityConfigurationProvider.GetSystemSymmetricKey();
 
-        // The stored value names the provider that wrote it. Reading it with the current default
-        // instead fails as an authentication tag mismatch, which is indistinguishable from a wrong
-        // key - so a changed default looks like a key problem.
+        // The provider that wrote it, not the current default: a mismatch looks like a wrong key.
         var symmetricEncryptionProvider =
             _symmetricEncryptionProviderFactory.GetProviderForDecrypting(encryptedValue);
         return symmetricEncryptionProvider.Decrypt(encryptedValue, systemKeyStoreProvider);
@@ -177,8 +173,6 @@ internal class SecurityProvider(
         var systemKeyStore = _securityConfigurationProvider.GetSystemSymmetricKey();
         var decryptedKey = symmetricKey.Key.GetDecrypted(systemKeyStore);
         var keyStore = new InMemorySymmetricKeyStoreProvider(decryptedKey);
-        // Key material is algorithm-specific — must use the provider that matches
-        // the algorithm used to generate the key, not the current default
         var provider = _symmetricEncryptionProviderFactory.GetProvider(symmetricKey.ProviderName);
         return new IamSymmetricEncryptionProvider(provider, keyStore, symmetricKey.ProviderName);
     }
@@ -193,8 +187,6 @@ internal class SecurityProvider(
             asymmetricKey.PublicKey,
             decryptedPrivateKey
         );
-        // Key material is algorithm-specific — must use the provider that matches
-        // the algorithm used to generate the key, not the current default
         var provider = _asymmetricEncryptionProviderFactory.GetProvider(asymmetricKey.ProviderName);
         return new IamAsymmetricEncryptionProvider(
             provider,
@@ -214,8 +206,6 @@ internal class SecurityProvider(
             asymmetricKey.PublicKey,
             decryptedPrivateKey
         );
-        // Key material is algorithm-specific — must use the provider that matches
-        // the algorithm used to generate the key, not the current default
         var provider = _asymmetricSignatureProviderFactory.GetProvider(asymmetricKey.ProviderName);
         return new IamAsymmetricSignatureProvider(
             provider,

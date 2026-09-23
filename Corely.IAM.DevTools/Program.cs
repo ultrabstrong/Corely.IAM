@@ -127,8 +127,6 @@ internal class Program
         }
         catch
         {
-            // Service couldn't be resolved (missing dependencies)
-            // This is expected when IAM services aren't configured
             return null;
         }
     }

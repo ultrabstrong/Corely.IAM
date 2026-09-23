@@ -7,12 +7,11 @@ public static class IamWebAppExtensions
 {
     public static IApplicationBuilder UseIAMWebAuthentication(this IApplicationBuilder app)
     {
-        // Order matters — each middleware builds on the previous:
-        app.UseMiddleware<CorrelationIdMiddleware>(); // 1. Assigns correlation ID for request tracing
-        app.UseMiddleware<SecurityHeadersMiddleware>(); // 2. Adds security headers (X-Frame-Options, etc.); CSP is the host's
-        app.UseMiddleware<AuthenticationTokenMiddleware>(); // 3. Validates JWT cookie → sets UserContext + ClaimsPrincipal
-        app.UseAuthentication(); // 4. ASP.NET Core authentication middleware
-        app.UseAuthorization(); // 5. ASP.NET Core authorization middleware
+        app.UseMiddleware<CorrelationIdMiddleware>();
+        app.UseMiddleware<SecurityHeadersMiddleware>();
+        app.UseMiddleware<AuthenticationTokenMiddleware>();
+        app.UseAuthentication();
+        app.UseAuthorization();
 
         return app;
     }

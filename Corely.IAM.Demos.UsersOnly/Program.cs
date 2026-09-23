@@ -20,14 +20,12 @@ builder.Services.AddIAMServices(
     )
 );
 
-// A factory, not a scoped context: a Blazor Server circuit is one long-lived scope.
 builder.Services.AddDbContextFactory<NotesDbContext>(options =>
     options.UseSqlServer(RequiredConnectionString(builder.Configuration, "Notes"))
 );
 
 var app = builder.Build();
 
-// The app's own tables only. IAM's schema is created by the corely-iam-db tool, never at startup.
 using (var scope = app.Services.CreateScope())
 {
     scope.ServiceProvider.GetRequiredService<NotesDbContext>().Database.EnsureCreated();
@@ -39,7 +37,6 @@ if (args.Contains("--seed"))
     return;
 }
 
-// The app sets its own Content-Security-Policy; Corely.IAM.Web sets none.
 app.Use(
     async (context, next) =>
     {
@@ -57,8 +54,7 @@ app.UseAntiforgery();
 
 app.MapRazorPages();
 
-// The Corely.IAM.Web assembly is deliberately not added here: that would route its admin pages
-// (/users, /groups, /roles, /permissions). The sign-in pages are Razor Pages and come regardless.
+// Corely.IAM.Web's assembly omitted on purpose: it would route the admin pages.
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.Run();

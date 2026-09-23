@@ -2,11 +2,6 @@ using Corely.IAM.Web.FunctionalTests.Infrastructure;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
-/// <summary>
-/// The busy state is a script, so what it does in a browser is out of reach here. What this tier
-/// can hold is the contract the script depends on: that it is served, and that the markup carries
-/// the hook it looks for.
-/// </summary>
 public class FormBusyStateTests : FunctionalTestBase
 {
     [Fact]

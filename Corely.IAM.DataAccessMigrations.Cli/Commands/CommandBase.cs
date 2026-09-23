@@ -8,8 +8,6 @@ internal abstract class CommandBase : Command
 {
     private const string _helpFlag = "--help";
 
-    // Property name -> the parse-result name of the symbol bound to it. Options are looked up by
-    // their primary alias, arguments by the property name.
     private readonly Dictionary<PropertyInfo, string> _boundNames = [];
 
     protected CommandBase(string name, string description, string additionalDescription)
@@ -23,7 +21,6 @@ internal abstract class CommandBase : Command
             var optionAttribute = property.GetCustomAttribute<OptionAttribute>();
             if (optionAttribute == null)
             {
-                // Unattributed properties on a base class are ordinary state, not arguments.
                 var argumentAttribute = property.GetCustomAttribute<ArgumentAttribute>();
                 if (argumentAttribute == null)
                 {
@@ -46,8 +43,6 @@ internal abstract class CommandBase : Command
         SetAction((parseResult, _) => InvokeExecute(parseResult));
     }
 
-    // Walks the hierarchy because the properties are private, so a derived command would not
-    // otherwise see the options its base declares.
     private IEnumerable<PropertyInfo> DeclaredProperties()
     {
         for (
@@ -77,7 +72,6 @@ internal abstract class CommandBase : Command
         var isRequired = argumentAttribute?.IsRequired ?? false;
         var optionalText = isRequired ? string.Empty : "[Optional] ";
 
-        // The name is the only constructor parameter now; description is a property.
         if (Activator.CreateInstance(argumentGenericType, [property.Name]) is not Argument arg)
         {
             argument = null!;
@@ -92,8 +86,6 @@ internal abstract class CommandBase : Command
         }
         else if (!isRequired)
         {
-            // beta4 inferred optionality from the presence of a default value, including a null
-            // one. 2.0 takes it from arity alone, so an optional argument has to say so.
             arg.Arity = ArgumentArity.ZeroOrOne;
         }
 
@@ -114,8 +106,6 @@ internal abstract class CommandBase : Command
     {
         var optionGenericType = typeof(Option<>).MakeGenericType(property.PropertyType);
 
-        // Option<T> now takes a mandatory name plus a params array of aliases. The longest alias
-        // is used as the name so help renders "--verbose" rather than "-v" as the primary form.
         var aliases = optionAttribute.Aliases;
         var name = aliases.OrderByDescending(a => a.Length).First();
         var rest = aliases.Where(a => a != name).ToArray();
@@ -138,8 +128,6 @@ internal abstract class CommandBase : Command
         return true;
     }
 
-    // DefaultValueFactory is Func<ArgumentResult, T>, so the delegate has to be built against the
-    // property's own type rather than object.
     private static void SetDefaultValue(object symbol, Type valueType, object? value)
     {
         typeof(CommandBase)
@@ -222,10 +210,7 @@ internal abstract class CommandBase : Command
             Console.WriteLine();
         }
 
-        // Showing help re-invokes this command. If the help option is not reachable - a command
-        // parsed on its own rather than through the root command - that lands back in the action
-        // that failed, which calls ShowHelp again. Guard so the second attempt stops instead of
-        // recursing until the stack runs out.
+        // Help re-invokes this command; guard against recursing when help isn't reachable.
         if (_showingHelp)
         {
             return;

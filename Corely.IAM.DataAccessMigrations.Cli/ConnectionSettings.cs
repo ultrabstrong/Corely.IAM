@@ -1,12 +1,5 @@
 namespace Corely.IAM.DataAccessMigrations.Cli;
 
-/// <summary>
-/// Resolves the provider and connection string from command-line options, falling back to
-/// environment variables.
-/// </summary>
-/// <remarks>
-/// No settings file: an installed tool's would sit in its install directory, shared machine-wide.
-/// </remarks>
 internal static class ConnectionSettings
 {
     public const string PROVIDER_VARIABLE = "CORELY_IAM_DB_PROVIDER";

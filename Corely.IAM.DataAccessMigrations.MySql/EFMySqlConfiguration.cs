@@ -9,8 +9,6 @@ internal class EFMySqlConfiguration(string connectionString, string? historyTabl
 {
     public override void Configure(DbContextOptionsBuilder optionsBuilder)
     {
-        // Oracle's provider resolves server capabilities from the connection, so unlike Pomelo
-        // there is no ServerVersion to declare - and no design-time stand-in needed for one.
         optionsBuilder.UseMySQL(
             connectionString,
             b =>

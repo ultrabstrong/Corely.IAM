@@ -5,10 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Corely.IAM.Demos.SharedAccount;
 
-/// <summary>
-/// Seeds one team with an owner and two members, plus a user with no team so the create-or-join
-/// screen can be seen. Uses the same services the pages call. Skipped entirely once the owner exists.
-/// </summary>
 internal static class DemoSeed
 {
     public const string PASSWORD = "Test1234";
@@ -42,7 +38,6 @@ internal static class DemoSeed
             memberIds.Add((await RegisterAsync(services, username, email))!.Value);
         await RegisterAsync(services, "dana.solo", "dana.solo@example.com");
 
-        // Creating an account needs a signed-in user; that user becomes its owner.
         Guid accountId;
         using (var scope = services.CreateScope())
         {
@@ -53,8 +48,6 @@ internal static class DemoSeed
             accountId = account.CreatedAccountId;
         }
 
-        // Adding members directly needs the owner signed in to that account. The app itself uses
-        // invitations; a seed has no one to hand a token to.
         using (var scope = services.CreateScope())
         {
             await SignInAsync(scope.ServiceProvider, "olivia", accountId);

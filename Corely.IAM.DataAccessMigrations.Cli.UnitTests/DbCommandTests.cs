@@ -2,10 +2,6 @@ using Corely.IAM.DataAccessMigrations.Cli.Commands.DatabaseCommands;
 
 namespace Corely.IAM.DataAccessMigrations.Cli.UnitTests;
 
-/// <summary>
-/// Drives the commands through the real parse-and-invoke pipeline, which is the only place the
-/// options declared on DbCommandBase are actually bound.
-/// </summary>
 public class DbCommandTests : IDisposable
 {
     private readonly string? _originalProvider;
@@ -96,7 +92,6 @@ public class DbCommandTests : IDisposable
 
         var output = CommandRunner.Run(new Script(), "--provider", "MsSql");
 
-        // Bracket-quoted identifiers are SQL Server syntax; MySQL would render backticks.
         Assert.Contains("[__CorelyIamMigrationsHistory]", output);
     }
 }

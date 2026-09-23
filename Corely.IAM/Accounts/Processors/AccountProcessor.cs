@@ -178,7 +178,6 @@ internal class AccountProcessor(
 
     public async Task<DeleteAccountResult> DeleteAccountAsync(Guid accountId)
     {
-        // Include all entities and their join tables that need to be cleared before cascade delete
         var accountEntity = await _accountRepo.GetAsync(
             a => a.Id == accountId,
             include: q =>
@@ -205,10 +204,6 @@ internal class AccountProcessor(
             );
         }
 
-        // Clear all join tables (NoAction side - must do manually for SQL Server compatibility)
-        // Order matters: clear child join tables before parent join tables
-
-        // Clear Permission -> Role relationships
         if (accountEntity.Permissions != null)
         {
             foreach (var permission in accountEntity.Permissions)
@@ -217,7 +212,6 @@ internal class AccountProcessor(
             }
         }
 
-        // Clear Role -> User, Group, Permission relationships
         if (accountEntity.Roles != null)
         {
             foreach (var role in accountEntity.Roles)
@@ -228,7 +222,6 @@ internal class AccountProcessor(
             }
         }
 
-        // Clear Group -> User, Role relationships
         if (accountEntity.Groups != null)
         {
             foreach (var group in accountEntity.Groups)
@@ -238,7 +231,6 @@ internal class AccountProcessor(
             }
         }
 
-        // Clear Account -> User relationships
         accountEntity.Users?.Clear();
 
         await _accountRepo.DeleteAsync(accountEntity);
@@ -366,7 +358,6 @@ internal class AccountProcessor(
         accountEntity.Users!.Remove(userToRemove);
         await _accountRepo.UpdateAsync(accountEntity);
 
-        // Bulk-revoke pending invitations created by the removed user
         var pendingInvitations = await _invitationRepo.ListAsync(i =>
             i.AccountId == request.AccountId
             && i.CreatedByUserId == request.UserId

@@ -172,8 +172,7 @@ internal class RegistrationService(
             );
         }
 
-        // Sign-in is intentionally not gated on this: it resolves by Google subject and binds no
-        // address, so gating it would lock out already-linked accounts.
+        // Sign-in skips this on purpose: it binds by Google subject, not address.
         if (!payload.EmailVerified)
         {
             _logger.LogInformation(
@@ -228,7 +227,6 @@ internal class RegistrationService(
                     );
                 }
 
-                // UserExistsError — if email collision, no point retrying
                 if (userResult.Message.Contains("Email"))
                 {
                     return new RegisterUserWithGoogleResult(

@@ -164,7 +164,6 @@ public class AccountProcessorListGetTests
     [Fact]
     public async Task ListAccounts_AppliesPaging()
     {
-        // Set up user context with multiple accounts
         var accountId2 = Guid.CreateVersion7();
         var accountId3 = Guid.CreateVersion7();
         var userContextSetter = _serviceFactory.GetRequiredService<IUserContextSetter>();
@@ -197,8 +196,6 @@ public class AccountProcessorListGetTests
     [Fact]
     public async Task ListAccounts_ReturnsEmptyWhenNoAccounts()
     {
-        // User context has _accountId but no entity created for it
-        // Need a fresh service factory with no accounts
         var serviceFactory = new ServiceFactory();
         var emptyAccountId = Guid.CreateVersion7();
         var userContextSetter = serviceFactory.GetRequiredService<IUserContextSetter>();

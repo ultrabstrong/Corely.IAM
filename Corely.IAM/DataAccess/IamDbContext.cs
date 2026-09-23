@@ -18,16 +18,13 @@ internal class IamDbContext(
 {
     private readonly IEFConfiguration _efConfiguration = efConfiguration;
 
-#pragma warning disable IDE0060 // Remove unused parameter
+#pragma warning disable IDE0060
     public IamDbContext(
         DbContextOptions<IamDbContext> opts,
         [FromKeyedServices(EFConfigurationKeys.IAM)] IEFConfiguration efConfiguration
     )
-#pragma warning restore IDE0060 // Remove unused parameter
-        : this(efConfiguration)
-    {
-        // Options are passed to the base class via OnConfiguring
-    }
+#pragma warning restore IDE0060
+        : this(efConfiguration) { }
 
     public DbSet<AccountEntity> Accounts { get; set; } = null!;
     public DbSet<UserEntity> Users { get; set; } = null!;

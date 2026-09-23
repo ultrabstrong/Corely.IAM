@@ -36,7 +36,6 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.CreateBasicAuthAsync(request), Times.Once);
-        // Should not call any authorization methods
         _mockAuthorizationProvider.Verify(
             x => x.IsAuthorizedForOwnUser(It.IsAny<Guid>(), It.IsAny<bool>()),
             Times.Never
@@ -96,7 +95,6 @@ public class BasicAuthProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.VerifyBasicAuthAsync(request), Times.Once);
-        // Should not call any authorization methods
         _mockAuthorizationProvider.Verify(
             x => x.IsAuthorizedForOwnUser(It.IsAny<Guid>(), It.IsAny<bool>()),
             Times.Never

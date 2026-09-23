@@ -2,10 +2,6 @@ using Corely.IAM.DevTools.Commands;
 
 namespace Corely.IAM.DevTools.UnitTests;
 
-/// <summary>
-/// The asymmetric commands write their keys to a file, which is where a rendering fault does the
-/// most damage: a run that reports success can leave a file holding no usable key.
-/// </summary>
 public sealed class AsymmetricCommandTests : IDisposable
 {
     private readonly string _keyFile = Path.Combine(

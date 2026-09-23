@@ -5,10 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Corely.IAM.Demos.UsersOnly;
 
-/// <summary>
-/// Registers demo users through the same service the sign-up page calls, then gives each a few
-/// notes. Safe to rerun: a user who already exists is skipped along with their notes.
-/// </summary>
 internal static class DemoSeed
 {
     public const string PASSWORD = "Test1234";

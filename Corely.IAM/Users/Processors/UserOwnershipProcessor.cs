@@ -20,7 +20,6 @@ internal class UserOwnershipProcessor(
         Guid accountId
     )
     {
-        // Check if user has the owner role directly
         var hasDirectOwnership = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
             && r.Name == RoleConstants.OWNER_ROLE_NAME
@@ -28,7 +27,6 @@ internal class UserOwnershipProcessor(
             && r.Users!.Any(u => u.Id == userId)
         );
 
-        // Check if user has the owner role via group
         var hasGroupOwnership = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
             && r.Name == RoleConstants.OWNER_ROLE_NAME
@@ -52,10 +50,8 @@ internal class UserOwnershipProcessor(
             );
         }
 
-        // User has ownership - determine if from single or multiple sources
         var hasSingleOwnershipSource = !(hasDirectOwnership && hasGroupOwnership);
 
-        // Check if another owner exists (directly or via group) who is also in the account
         var otherOwnerExists = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
             && r.Name == RoleConstants.OWNER_ROLE_NAME
@@ -103,7 +99,6 @@ internal class UserOwnershipProcessor(
         Guid excludeGroupId
     )
     {
-        // Check if user has the owner role directly assigned
         var hasDirectOwnership = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
             && r.Name == RoleConstants.OWNER_ROLE_NAME
@@ -121,7 +116,6 @@ internal class UserOwnershipProcessor(
             return true;
         }
 
-        // Check if user has the owner role via a different group
         var hasOwnershipViaOtherGroup = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
             && r.Name == RoleConstants.OWNER_ROLE_NAME

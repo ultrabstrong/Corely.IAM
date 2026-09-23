@@ -11,8 +11,6 @@
 
 <PageTitle>Profile</PageTitle>
 
-@* Composed from Corely.IAM.Web's public sections rather than routing its /profile page, which
-   would bring the admin pages with it. *@
 <h1 class="h3 mb-3">Profile</h1>
 
 <div class="props-grid mb-3">
@@ -83,7 +81,6 @@ else
             return;
         }
 
-        // IAM knows nothing about the app's tables, so the app removes its own data.
         await using var db = await DbFactory.CreateDbContextAsync();
         await db.Notes.Where(n => n.UserId == _userId).ExecuteDeleteAsync();
 

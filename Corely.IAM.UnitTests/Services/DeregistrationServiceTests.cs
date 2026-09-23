@@ -44,7 +44,6 @@ public class DeregistrationServiceTests
             [new Account() { Id = Guid.CreateVersion7() }, new Account() { Id = currentAccountId }]
         );
 
-        // Setup user context provider to return a valid context with account ID
         _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(() => _userContext);
 
         _service = new DeregistrationService(

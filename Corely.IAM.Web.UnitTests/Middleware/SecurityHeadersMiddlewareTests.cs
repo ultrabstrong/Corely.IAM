@@ -86,8 +86,6 @@ public class SecurityHeadersMiddlewareTests
     [Fact]
     public async Task Invoke_LeavesContentSecurityPolicyToTheHost()
     {
-        // A page's policy depends on every script, style, and frame the app loads - Google sign-in,
-        // analytics, a CDN. The library cannot know those, and a policy it set would block them.
         var middleware = CreateMiddleware();
         var httpContext = new DefaultHttpContext();
 

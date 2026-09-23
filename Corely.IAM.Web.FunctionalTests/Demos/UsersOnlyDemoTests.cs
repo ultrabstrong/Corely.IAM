@@ -1,4 +1,3 @@
-// Aliased: every host's top-level Program is public and shares one global name.
 extern alias UsersOnlyDemo;
 
 using UsersOnlyDemo::Corely.IAM.Demos.UsersOnly.Notes;

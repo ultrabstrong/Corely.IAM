@@ -160,14 +160,12 @@ public class GroupProcessorTests
         Assert.NotEqual(Guid.Empty, result.CreatedId);
         Assert.Equal(CreateGroupResultCode.Success, result.ResultCode);
 
-        // Verify group is linked to account id
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var groupEntity = await groupRepo.GetAsync(
             g => g.Id == result.CreatedId,
             include: q => q.Include(g => g.Account)
         );
         Assert.NotNull(groupEntity);
-        //Assert.NotNull(groupEntity.Account); // Account not available for memory mock repo
         Assert.Equal(account.Id, groupEntity.AccountId);
     }
 
@@ -631,7 +629,6 @@ public class GroupProcessorTests
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
 
-        // Create users in the account
         var userIds = new List<Guid>();
         var users = new List<UserEntity>();
         for (int i = 0; i < userCount; i++)
@@ -649,7 +646,6 @@ public class GroupProcessorTests
             users.Add(createdUser);
         }
 
-        // Create group with users
         var group = new GroupEntity
         {
             Id = Guid.CreateVersion7(),
@@ -660,7 +656,6 @@ public class GroupProcessorTests
         };
         var createdGroup = await groupRepo.CreateAsync(group);
 
-        // Create owner role and optionally assign to group
         if (assignOwnerRoleToGroup)
         {
             var ownerRole = new RoleEntity
@@ -675,7 +670,6 @@ public class GroupProcessorTests
             };
             await roleRepo.CreateAsync(ownerRole);
 
-            // Update group with role reference
             createdGroup.Roles = [ownerRole];
             await groupRepo.UpdateAsync(createdGroup);
         }
@@ -706,7 +700,6 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveUsersFromGroup_Succeeds_WhenGroupHasNoOwnerRole()
     {
-        // Create group WITHOUT owner role
         var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(
             userCount: 2,
             assignOwnerRoleToGroup: false
@@ -724,7 +717,6 @@ public class GroupProcessorTests
     {
         var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 3);
 
-        // Remove only 2 of 3 users - one remains to hold the owner role
         var request = new RemoveUsersFromGroupRequest([userIds[0], userIds[1]], groupId);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
@@ -739,10 +731,8 @@ public class GroupProcessorTests
             userCount: 2
         );
 
-        // Give one user direct owner role (outside the group)
         await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
 
-        // Remove all users - should succeed because userId[0] has direct ownership
         var request = new RemoveUsersFromGroupRequest(userIds, groupId);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
@@ -755,9 +745,6 @@ public class GroupProcessorTests
     {
         var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 2);
 
-        // Don't give any user ownership elsewhere - all ownership is via this group
-
-        // Try to remove all users - should fail
         var request = new RemoveUsersFromGroupRequest(userIds, groupId);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
@@ -771,7 +758,6 @@ public class GroupProcessorTests
     {
         var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 1);
 
-        // Single user, only ownership via group - should fail
         var request = new RemoveUsersFromGroupRequest(userIds, groupId);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
@@ -787,10 +773,8 @@ public class GroupProcessorTests
             userCount: 1
         );
 
-        // Give the single user direct owner role
         await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
 
-        // Remove the user - should succeed because they have direct ownership
         var request = new RemoveUsersFromGroupRequest(userIds, groupId);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
@@ -814,7 +798,6 @@ public class GroupProcessorTests
     [Fact]
     public async Task DeleteGroup_Succeeds_WhenGroupHasOwnerRoleButNoUsers()
     {
-        // Create a group with owner role but no users
         var account = await CreateAccountAsync();
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
@@ -855,7 +838,6 @@ public class GroupProcessorTests
             userCount: 1
         );
 
-        // Give the user direct owner role
         await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
 
         var result = await _groupProcessor.DeleteGroupAsync(groupId);
@@ -868,8 +850,6 @@ public class GroupProcessorTests
     {
         var (groupId, _, _) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 2);
 
-        // Don't give any user ownership elsewhere
-
         var result = await _groupProcessor.DeleteGroupAsync(groupId);
 
         Assert.Equal(DeleteGroupResultCode.GroupHasSoleOwnersError, result.ResultCode);
@@ -881,7 +861,6 @@ public class GroupProcessorTests
     {
         var (groupId, _, _) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 1);
 
-        // Single user, only ownership via group - should fail
         var result = await _groupProcessor.DeleteGroupAsync(groupId);
 
         Assert.Equal(DeleteGroupResultCode.GroupHasSoleOwnersError, result.ResultCode);
@@ -894,7 +873,6 @@ public class GroupProcessorTests
             userCount: 3
         );
 
-        // Give one user direct owner role
         await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
 
         var result = await _groupProcessor.DeleteGroupAsync(groupId);
@@ -932,7 +910,6 @@ public class GroupProcessorTests
         var (group, account) = await CreateGroupAsync();
         var role = await CreateRoleAsync(account.Id, group.Id);
 
-        // Assign role to group
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         group!.Roles = [role];
         await groupRepo.UpdateAsync(group);
@@ -947,7 +924,6 @@ public class GroupProcessorTests
     [Fact]
     public async Task RemoveRolesFromGroup_Succeeds_WhenOwnerRoleRemovedFromGroupWithNoUsers()
     {
-        // Create group with owner role but no users
         var account = await CreateAccountAsync();
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
@@ -990,10 +966,8 @@ public class GroupProcessorTests
             userCount: 1
         );
 
-        // Give the user direct owner role
         await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
 
-        // Get the owner role assigned to the group
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var group = await groupRepo.GetAsync(
             g => g.Id == groupId,
@@ -1015,9 +989,6 @@ public class GroupProcessorTests
             userCount: 2
         );
 
-        // Don't give any user ownership elsewhere
-
-        // Get the owner role assigned to the group
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var group = await groupRepo.GetAsync(
             g => g.Id == groupId,
@@ -1043,9 +1014,6 @@ public class GroupProcessorTests
             userCount: 1
         );
 
-        // Don't give user ownership elsewhere - owner role removal should be blocked
-
-        // Create and assign a regular role to the group
         var groupRepo = _serviceFactory.GetRequiredService<IRepo<GroupEntity>>();
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var group = await groupRepo.GetAsync(
@@ -1075,7 +1043,6 @@ public class GroupProcessorTests
         );
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
 
-        // Should remove regular role but block owner role
         Assert.Equal(RemoveRolesFromGroupResultCode.PartialSuccess, result.ResultCode);
         Assert.Equal(1, result.RemovedRoleCount);
         Assert.Contains(ownerRoleId, result.BlockedOwnerRoleIds);

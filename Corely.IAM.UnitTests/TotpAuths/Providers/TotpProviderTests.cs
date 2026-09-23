@@ -22,10 +22,8 @@ public class TotpProviderTests
         Assert.NotNull(secret);
         Assert.NotEmpty(secret);
 
-        // 20 bytes = 160 bits, base32 encodes 5 bits per char => 32 chars
         Assert.Equal(32, secret.Length);
 
-        // Verify all characters are valid base32
         foreach (var c in secret)
         {
             Assert.True(
@@ -71,7 +69,6 @@ public class TotpProviderTests
         var uri = _totpProvider.GenerateSetupUri(secret, issuer, userLabel);
 
         Assert.StartsWith("otpauth://totp/", uri);
-        // Special characters should be URI-encoded
         Assert.DoesNotContain("&", uri.Split('?')[0]);
     }
 
@@ -105,8 +102,6 @@ public class TotpProviderTests
 
         var result = _totpProvider.ValidateCode(secret, "000000");
 
-        // While theoretically possible to collide, statistically near-zero chance
-        // Generate the actual code to ensure we're testing with a different one
         var validCode = _totpProvider.GenerateCode(secret);
         if (validCode == "000000")
         {
@@ -136,12 +131,10 @@ public class TotpProviderTests
     {
         var secret = _totpProvider.GenerateSecret();
 
-        // Generate code at time T
         var baseTime = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
         _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(baseTime);
         var codeAtT = _totpProvider.GenerateCode(secret);
 
-        // Validate code at time T+30s (one period later) — should still be valid due to tolerance
         var nextPeriod = baseTime.AddSeconds(30);
         _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(nextPeriod);
 
@@ -155,12 +148,10 @@ public class TotpProviderTests
     {
         var secret = _totpProvider.GenerateSecret();
 
-        // Generate code at time T
         var baseTime = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
         _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(baseTime);
         var codeAtT = _totpProvider.GenerateCode(secret);
 
-        // Validate code at time T+90s (three periods later) — outside tolerance
         var distantPeriod = baseTime.AddSeconds(90);
         _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(distantPeriod);
 

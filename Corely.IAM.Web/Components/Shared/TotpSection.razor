@@ -131,9 +131,7 @@
 
         _pendingQrRender = false;
 
-        // Enrolment has already succeeded server-side by the time this runs. Letting a rendering
-        // failure escape would strand the user with a stored secret and no way to finish, so the
-        // QR degrades to the secret shown beside it.
+        // Enrolment is already stored; a QR failure must not strand the user.
         try
         {
             _qrModule ??= await JSRuntime.InvokeAsync<IJSObjectReference>(
@@ -165,7 +163,6 @@
             }
             catch (JSDisconnectedException)
             {
-                // The circuit is already gone; there is nothing left to dispose.
             }
         }
     }

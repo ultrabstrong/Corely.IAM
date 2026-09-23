@@ -174,7 +174,6 @@ public class AccountProcessorTests
 
         Assert.Equal(CreateAccountResultCode.Success, result.ResultCode);
 
-        // Verify account is linked to owner user id
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var accountEntity = await accountRepo.GetAsync(
             a => a.Id == result.CreatedId,
@@ -320,7 +319,6 @@ public class AccountProcessorTests
         var createAccountRequest = new CreateAccountRequest(VALID_ACCOUNT_NAME, ownerUser.Id);
         var createAccountResult = await _accountProcessor.CreateAccountAsync(createAccountRequest);
 
-        // Try to add the owner user again
         var request = new AddUserToAccountRequest(ownerUser.Id, createAccountResult.CreatedId);
         var result = await _accountProcessor.AddUserToAccountAsync(request);
 

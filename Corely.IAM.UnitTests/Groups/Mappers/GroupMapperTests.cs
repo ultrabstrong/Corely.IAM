@@ -9,16 +9,13 @@ public class GroupMapperTests
     [Fact]
     public void ToGroup_ShouldMapAllProperties()
     {
-        // Arrange
         var request = new CreateGroupRequest(
             GroupName: "TestGroup",
             OwnerAccountId: Guid.CreateVersion7()
         );
 
-        // Act
         var result = request.ToGroup();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(request.GroupName, result.Name);
         Assert.Equal(request.OwnerAccountId, result.AccountId);
@@ -27,16 +24,13 @@ public class GroupMapperTests
     [Fact]
     public void ToGroup_ShouldSetDefaultValues()
     {
-        // Arrange
         var request = new CreateGroupRequest(
             GroupName: "TestGroup",
             OwnerAccountId: Guid.CreateVersion7()
         );
 
-        // Act
         var result = request.ToGroup();
 
-        // Assert
         Assert.Equal(Guid.Empty, result.Id);
         Assert.Null(result.Description);
     }
@@ -44,7 +38,6 @@ public class GroupMapperTests
     [Fact]
     public void ToEntity_ShouldMapAllProperties()
     {
-        // Arrange
         var group = new Group
         {
             Id = Guid.CreateVersion7(),
@@ -53,10 +46,8 @@ public class GroupMapperTests
             AccountId = Guid.CreateVersion7(),
         };
 
-        // Act
         var result = group.ToEntity();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(group.Id, result.Id);
         Assert.Equal(group.Name, result.Name);
@@ -70,7 +61,6 @@ public class GroupMapperTests
     [Fact]
     public void ToModel_ShouldMapAllProperties()
     {
-        // Arrange
         var entity = new GroupEntity
         {
             Id = Guid.CreateVersion7(),
@@ -81,10 +71,8 @@ public class GroupMapperTests
             ModifiedUtc = DateTime.UtcNow,
         };
 
-        // Act
         var result = entity.ToModel();
 
-        // Assert
         Assert.NotNull(result);
         Assert.Equal(entity.Id, result.Id);
         Assert.Equal(entity.Name, result.Name);

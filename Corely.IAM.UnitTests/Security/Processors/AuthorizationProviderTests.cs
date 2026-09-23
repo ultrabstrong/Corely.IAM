@@ -69,7 +69,7 @@ public class AuthorizationProviderTests
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
-            resourceId: Guid.Empty, // Wildcard - applies to all
+            resourceId: Guid.Empty,
             read: true
         );
 
@@ -86,7 +86,6 @@ public class AuthorizationProviderTests
     public async Task IsAuthorized_ReturnsFalse_WhenNoUserContext()
     {
         var provider = CreateProvider();
-        // Don't set user context
 
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Create,
@@ -101,7 +100,6 @@ public class AuthorizationProviderTests
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
-        // Don't setup any permissions
 
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Create,
@@ -119,7 +117,7 @@ public class AuthorizationProviderTests
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
             resourceId: Guid.Empty,
-            read: true // Only has Read
+            read: true
         );
 
         var result = await provider.IsAuthorizedAsync(
@@ -136,7 +134,7 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.ROLE_RESOURCE_TYPE, // Has role permission
+            resourceType: PermissionConstants.ROLE_RESOURCE_TYPE,
             resourceId: Guid.Empty,
             create: true
         );
@@ -156,7 +154,7 @@ public class AuthorizationProviderTests
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
             resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
-            resourceId: Guid.CreateVersion7(), // Only for resource 5
+            resourceId: Guid.CreateVersion7(),
             update: true
         );
 
@@ -175,7 +173,7 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.ALL_RESOURCE_TYPES, // Wildcard - applies to all resource types
+            resourceType: PermissionConstants.ALL_RESOURCE_TYPES,
             resourceId: Guid.Empty,
             create: true
         );
@@ -242,7 +240,6 @@ public class AuthorizationProviderTests
     public void IsAuthorizedForOwnUser_ReturnsFalse_WhenNoUserContext()
     {
         var provider = CreateProvider();
-        // Don't set user context
 
         var result = provider.IsAuthorizedForOwnUser(Guid.CreateVersion7());
 
@@ -301,7 +298,6 @@ public class AuthorizationProviderTests
     public void HasAccountContext_ReturnsFalse_WhenNoUserContext()
     {
         var provider = CreateProvider();
-        // Don't set user context
 
         var result = provider.HasAccountContext(Guid.CreateVersion7());
 
@@ -387,7 +383,6 @@ public class AuthorizationProviderTests
             read: true
         );
 
-        // Request access to resources - user only has permission for one of them
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.USER_RESOURCE_TYPE,
@@ -410,7 +405,6 @@ public class AuthorizationProviderTests
             create: true
         );
 
-        // Warm up the cache
         Assert.True(
             await provider.IsAuthorizedAsync(
                 AuthAction.Create,
@@ -418,7 +412,6 @@ public class AuthorizationProviderTests
             )
         );
 
-        // Clear the cache and verify permissions are reloaded (still works with same data)
         ((IAuthorizationCacheClearer)provider).ClearCache();
         Assert.True(
             await provider.IsAuthorizedAsync(
@@ -483,7 +476,6 @@ public class AuthorizationProviderTests
         };
         await permissionRepo.CreateAsync(permission);
 
-        // User should be authorized via group membership
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.ROLE_RESOURCE_TYPE
@@ -507,7 +499,6 @@ public class AuthorizationProviderTests
             create: true
         );
 
-        // Warm up cache for account1
         Assert.True(
             await provider.IsAuthorizedAsync(
                 AuthAction.Create,
@@ -515,10 +506,8 @@ public class AuthorizationProviderTests
             )
         );
 
-        // Switch to account2 (no permissions in account2)
         SetUserContext(userId, account2, [account1, account2]);
 
-        // Cache should be invalidated — account2 has no permissions
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Create,
             PermissionConstants.GROUP_RESOURCE_TYPE
@@ -541,7 +530,6 @@ public class AuthorizationProviderTests
             read: true
         );
 
-        // Request access to all resources that user has permissions for
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
             PermissionConstants.USER_RESOURCE_TYPE,
@@ -665,15 +653,7 @@ public class AuthorizationProviderTests
         }
     }
 
-    /// <summary>
-    /// Revokes in the repository only, leaving whatever the provider already cached untouched -
-    /// which is what a permission change made by someone else looks like to a live scope.
-    /// </summary>
-    /// <remarks>
-    /// Deletes rather than clearing the CRUDX flags. MockRepo hands back the same entity
-    /// instances the cache is holding, so mutating them would edit the cache in place and the
-    /// test would prove nothing.
-    /// </remarks>
+    // Deletes rather than clearing flags: MockRepo shares instances with the cache.
     private async Task RevokeAllPermissionsAsync()
     {
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
@@ -703,7 +683,6 @@ public class AuthorizationProviderTests
             )
         );
 
-        // Revoked in the database, but the cache has not expired yet
         await RevokeAllPermissionsAsync();
         _timeProvider.Advance(TimeSpan.FromSeconds(CACHE_TTL_SECONDS - 1));
 
@@ -761,8 +740,6 @@ public class AuthorizationProviderTests
         );
         await RevokeAllPermissionsAsync();
 
-        // Checking continuously must not hold the entry alive past the window - an active user is
-        // exactly who needs the refresh.
         for (var i = 0; i < CACHE_TTL_SECONDS; i++)
         {
             _timeProvider.Advance(TimeSpan.FromSeconds(1));

@@ -13,8 +13,6 @@ public abstract class EntityPageBase : AuthenticatedPageBase
     protected AlertType _messageType = AlertType.Info;
     protected bool _loading;
 
-    // Distinguishes "still loading" from "load failed and there is nothing to show", so a page
-    // whose data never arrived stops spinning instead of waiting forever.
     protected bool _loadFailed;
     protected Guid _confirmItemId;
     protected string _confirmMessage = "";

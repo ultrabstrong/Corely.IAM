@@ -15,11 +15,9 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLogging_LogsEntryAndExit()
     {
-        // Arrange
         var request = "test-request";
         var result = "test-result";
 
-        // Act
         var actualResult = await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             request,
@@ -27,10 +25,8 @@ public class LoggerExtensionsTests
             logResult: false
         );
 
-        // Assert
         Assert.Equal(result, actualResult);
 
-        // Verify entry log
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -43,7 +39,6 @@ public class LoggerExtensionsTests
             Times.Once
         );
 
-        // Verify exit log (without result)
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -64,11 +59,9 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLogging_LogsResult_WhenLogResultIsTrue()
     {
-        // Arrange
         var request = "test-request";
         var result = "test-result";
 
-        // Act
         var actualResult = await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             request,
@@ -76,10 +69,8 @@ public class LoggerExtensionsTests
             logResult: true
         );
 
-        // Assert
         Assert.Equal(result, actualResult);
 
-        // Verify exit log includes result
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -96,11 +87,9 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLogging_DoesNotLogResult_WhenLogResultIsFalse()
     {
-        // Arrange
         var request = "test-request";
         var result = "test-result";
 
-        // Act
         await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             request,
@@ -108,7 +97,6 @@ public class LoggerExtensionsTests
             logResult: false
         );
 
-        // Assert - verify "with result" message is NOT logged
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -129,11 +117,9 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLogging_LogsException_WhenOperationThrows()
     {
-        // Arrange
         var request = "test-request";
         var expectedException = new InvalidOperationException("Test exception");
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _mockLogger.Object.ExecuteWithLoggingAsync(
                 "TestClass",
@@ -144,7 +130,6 @@ public class LoggerExtensionsTests
 
         Assert.Equal(expectedException, ex);
 
-        // Verify error log
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -161,7 +146,6 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLogging_ThrowsArgumentNullException_WhenRequestIsNull()
     {
-        // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
             _mockLogger.Object.ExecuteWithLoggingAsync<string?, string>(
                 "TestClass",
@@ -174,23 +158,20 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLogging_IncludesElapsedTime()
     {
-        // Arrange
         var request = "test-request";
         var result = "test-result";
 
-        // Act
         await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             request,
             async () =>
             {
-                await Task.Delay(10); // Small delay to ensure measurable time
+                await Task.Delay(10);
                 return result;
             },
             logResult: false
         );
 
-        // Assert - verify timing is logged
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -207,14 +188,11 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLogging_UsesCallerMemberName()
     {
-        // Arrange
         var request = "test-request";
         var result = "test-result";
 
-        // Act
         await ExecuteWithLoggingWrapper(request, result);
 
-        // Assert - verify method name is captured
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -233,11 +211,9 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLoggingVoid_LogsEntryAndExit()
     {
-        // Arrange
         var request = "test-request";
         var operationExecuted = false;
 
-        // Act
         await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             request,
@@ -248,10 +224,8 @@ public class LoggerExtensionsTests
             }
         );
 
-        // Assert
         Assert.True(operationExecuted);
 
-        // Verify entry log
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -264,7 +238,6 @@ public class LoggerExtensionsTests
             Times.Once
         );
 
-        // Verify exit log
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -281,11 +254,9 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLoggingVoid_LogsException_WhenOperationThrows()
     {
-        // Arrange
         var request = "test-request";
         var expectedException = new InvalidOperationException("Test exception");
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _mockLogger.Object.ExecuteWithLoggingAsync(
                 "TestClass",
@@ -296,7 +267,6 @@ public class LoggerExtensionsTests
 
         Assert.Equal(expectedException, ex);
 
-        // Verify error log
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -313,7 +283,6 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLoggingVoid_ThrowsArgumentNullException_WhenRequestIsNull()
     {
-        // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
             _mockLogger.Object.ExecuteWithLoggingAsync<string?>(
                 "TestClass",
@@ -326,20 +295,16 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLoggingNoRequest_LogsEntryAndExit()
     {
-        // Arrange
         var result = "test-result";
 
-        // Act
         var actualResult = await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             () => Task.FromResult(result),
             logResult: false
         );
 
-        // Assert
         Assert.Equal(result, actualResult);
 
-        // Verify entry log (without request)
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -356,7 +321,6 @@ public class LoggerExtensionsTests
             Times.Once
         );
 
-        // Verify exit log (without result)
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -377,20 +341,16 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLoggingNoRequest_LogsResult_WhenLogResultIsTrue()
     {
-        // Arrange
         var result = "test-result";
 
-        // Act
         var actualResult = await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             () => Task.FromResult(result),
             logResult: true
         );
 
-        // Assert
         Assert.Equal(result, actualResult);
 
-        // Verify exit log includes result
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -407,17 +367,14 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLoggingNoRequest_DoesNotLogResult_WhenLogResultIsFalse()
     {
-        // Arrange
         var result = "test-result";
 
-        // Act
         await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             () => Task.FromResult(result),
             logResult: false
         );
 
-        // Assert - verify "with result" message is NOT logged
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -438,10 +395,8 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLoggingNoRequest_LogsException_WhenOperationThrows()
     {
-        // Arrange
         var expectedException = new InvalidOperationException("Test exception");
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _mockLogger.Object.ExecuteWithLoggingAsync(
                 "TestClass",
@@ -451,7 +406,6 @@ public class LoggerExtensionsTests
 
         Assert.Equal(expectedException, ex);
 
-        // Verify error log
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -468,21 +422,18 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLoggingNoRequest_IncludesElapsedTime()
     {
-        // Arrange
         var result = "test-result";
 
-        // Act
         await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             async () =>
             {
-                await Task.Delay(10); // Small delay to ensure measurable time
+                await Task.Delay(10);
                 return result;
             },
             logResult: false
         );
 
-        // Assert - verify timing is logged
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -499,10 +450,8 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLoggingVoidNoRequest_LogsEntryAndExit()
     {
-        // Arrange
         var operationExecuted = false;
 
-        // Act
         await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             () =>
@@ -512,10 +461,8 @@ public class LoggerExtensionsTests
             }
         );
 
-        // Assert
         Assert.True(operationExecuted);
 
-        // Verify entry log (without request)
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -532,7 +479,6 @@ public class LoggerExtensionsTests
             Times.Once
         );
 
-        // Verify exit log
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -549,10 +495,8 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLoggingVoidNoRequest_LogsException_WhenOperationThrows()
     {
-        // Arrange
         var expectedException = new InvalidOperationException("Test exception");
 
-        // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _mockLogger.Object.ExecuteWithLoggingAsync(
                 "TestClass",
@@ -562,7 +506,6 @@ public class LoggerExtensionsTests
 
         Assert.Equal(expectedException, ex);
 
-        // Verify error log
         _mockLogger.Verify(
             x =>
                 x.Log(
@@ -579,16 +522,14 @@ public class LoggerExtensionsTests
     [Fact]
     public async Task ExecuteWithLoggingVoidNoRequest_IncludesElapsedTime()
     {
-        // Act
         await _mockLogger.Object.ExecuteWithLoggingAsync(
             "TestClass",
             async () =>
             {
-                await Task.Delay(10); // Small delay to ensure measurable time
+                await Task.Delay(10);
             }
         );
 
-        // Assert - verify timing is logged
         _mockLogger.Verify(
             x =>
                 x.Log(

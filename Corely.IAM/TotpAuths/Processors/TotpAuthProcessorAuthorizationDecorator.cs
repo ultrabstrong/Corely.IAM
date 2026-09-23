@@ -63,14 +63,13 @@ internal class TotpAuthProcessorAuthorizationDecorator(
         VerifyTotpOrRecoveryCodeRequest request
     )
     {
-        // No authorization required - called during MFA verification
-        // before the user has a full authenticated context
+        // No authorization check, by design: runs before sign-in completes.
         return _inner.VerifyTotpOrRecoveryCodeAsync(request);
     }
 
     public Task<bool> IsTotpEnabledAsync(Guid userId)
     {
-        // No authorization required - called by AuthenticationService during sign-in
+        // No authorization check, by design: runs before sign-in completes.
         return _inner.IsTotpEnabledAsync(userId);
     }
 }

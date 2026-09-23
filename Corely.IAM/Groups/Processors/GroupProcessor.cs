@@ -189,11 +189,6 @@ internal class GroupProcessor(
         var totalUsersInGroup = groupEntity.Users?.Count ?? 0;
         var usersRemainingAfterRemoval = totalUsersInGroup - usersToRemove.Count;
 
-        // Ownership check logic:
-        // Disallow this action if it results in account not having an owner
-        // 1. If group does not have owner role -> allow removal
-        // 2. If group has owner role AND some users remain -> allow removal (remaining users still have owner role)
-        // 3. If group has owner role AND all users being removed -> check if any user has ownership elsewhere
         if (groupHasOwnerRole && usersRemainingAfterRemoval == 0 && usersToRemove.Count > 0)
         {
             var anyUserHasOwnershipElsewhere =
@@ -361,11 +356,6 @@ internal class GroupProcessor(
             );
         }
 
-        // Role removal rules:
-        // 1. If owner role is not being removed -> allow removal
-        // 2. If owner role is being removed AND group has no users -> allow removal
-        // 3. If owner role is being removed AND at least one user has ownership elsewhere -> allow removal
-        // 4. If owner role is being removed AND no users have ownership elsewhere -> block
         var blockedOwnerRoleIds = new List<Guid>();
         var ownerRole = rolesToRemove.FirstOrDefault(r =>
             r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined
@@ -390,7 +380,6 @@ internal class GroupProcessor(
                     request.GroupId
                 );
 
-                // If only the owner role is being removed, return error
                 if (rolesToRemove.Count == 1)
                 {
                     return new RemoveRolesFromGroupResult(
@@ -403,7 +392,6 @@ internal class GroupProcessor(
                     );
                 }
 
-                // Filter out the blocked owner role
                 rolesToRemove = [.. rolesToRemove.Where(r => r.Id != ownerRole.Id)];
             }
         }
@@ -418,13 +406,11 @@ internal class GroupProcessor(
             await _groupRepo.UpdateAsync(groupEntity);
         }
 
-        // Calculate invalid IDs (requested but not actually removed, excluding blocked)
         var invalidRoleIds = request
             .RoleIds.Except(rolesToRemove.Select(r => r.Id))
             .Except(blockedOwnerRoleIds)
             .ToList();
 
-        // Return appropriate result
         if (blockedOwnerRoleIds.Count > 0 || invalidRoleIds.Count > 0)
         {
             _logger.LogInformation(
@@ -493,8 +479,6 @@ internal class GroupProcessor(
             );
         }
 
-        // Ownership check logic (same as removing all users from the group):
-        // If group has owner role AND no user has ownership elsewhere -> block deletion
         var groupHasOwnerRole =
             groupEntity.Roles?.Any(r =>
                 r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined
@@ -524,7 +508,6 @@ internal class GroupProcessor(
             }
         }
 
-        // Clear join tables (NoAction side - must do manually for SQL Server compatibility)
         groupEntity.Users?.Clear();
         groupEntity.Roles?.Clear();
 

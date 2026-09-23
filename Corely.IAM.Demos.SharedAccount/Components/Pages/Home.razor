@@ -15,8 +15,6 @@
 }
 else if (_context.CurrentAccount == null)
 {
-    @* No team yet. Sign-in switches a user with exactly one account into it automatically, so this
-       is a new user - or one who belongs to several and has not picked. *@
     <div class="row justify-content-center">
         <div class="col-md-6">
             <h1 class="h3 mb-3">Welcome, @_context.User!.Username</h1>
@@ -75,7 +73,6 @@ else
 }
 
 @code {
-    // Corely.IAM.Web's Razor Page; AppRoutes has no constant for it.
     private const string SWITCH_ACCOUNT_PATH = "/switch-account";
 
     private UserContext? _context;
@@ -101,7 +98,6 @@ else
             return;
 
         _busy = true;
-        // The creator becomes the account's owner, and the only member IAM lets invite others.
         var result = await RegistrationService.RegisterAccountAsync(
             new RegisterAccountRequest(_teamName.Trim(), _context!.User!.Id)
         );
@@ -130,7 +126,6 @@ else
             _message = result.Message;
     }
 
-    // Membership changes land in a fresh auth token, which only the switch-account page can issue.
     private void SwitchInto(Guid accountId) =>
         NavigationManager.NavigateTo($"{SWITCH_ACCOUNT_PATH}?accountId={accountId}&returnUrl=/", forceLoad: true);
 
@@ -165,7 +160,7 @@ else
     private async Task DeleteNoteAsync(Guid noteId)
     {
         await using var db = await DbFactory.CreateDbContextAsync();
-        // Scoped to the team even though the id came from its own list - the id is client input.
+        // The id is client input.
         await db.Notes.Where(n => n.Id == noteId && n.AccountId == AccountId).ExecuteDeleteAsync();
         await LoadNotesAsync();
     }

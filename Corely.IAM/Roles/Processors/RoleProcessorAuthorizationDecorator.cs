@@ -78,7 +78,7 @@ internal class RoleProcessorAuthorizationDecorator(
             );
         }
 
-        // Resolved here, never taken from the caller - an inbound scope could only widen it.
+        // Never the caller's scope: it could only widen it.
         return await _inner.ListRolesAsync(
             request,
             await _authorizationProvider.GetAuthorizedResourceIdsAsync(

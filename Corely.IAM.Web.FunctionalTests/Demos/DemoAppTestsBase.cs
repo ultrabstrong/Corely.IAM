@@ -4,11 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Corely.IAM.Web.FunctionalTests.Demos;
 
-/// <summary>
-/// Keeps the demo apps from rotting unnoticed: each must start, let someone sign up through the
-/// library's pages, and route none of the library's admin pages. What the demos do once signed in
-/// is Blazor over a circuit and is not reachable from this tier.
-/// </summary>
 public abstract class DemoAppTestsBase<TNotesContext> : IAsyncLifetime
     where TNotesContext : DbContext
 {

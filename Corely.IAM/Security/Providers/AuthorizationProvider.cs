@@ -31,8 +31,7 @@ internal class AuthorizationProvider(
         .ThrowIfNull(nameof(securityOptions))
         .Value.PermissionCacheTtlSeconds;
 
-    // Absolute rather than sliding: a sliding window would never expire for an active user, who
-    // is exactly who needs the refresh.
+    // Absolute, not sliding: active users must still refresh.
     private IReadOnlyList<PermissionEntity>? _cachedPermissions;
     private Guid? _cachedAccountId;
     private DateTimeOffset _cachedAtUtc;
@@ -77,12 +76,8 @@ internal class AuthorizationProvider(
             )
             .ToList();
 
-        // Check if user has a wildcard permission (ResourceId == Guid.Empty)
         var hasWildcardPermission = relevantPermissions.Any(p => p.ResourceId == Guid.Empty);
 
-        // If no specific resource IDs requested, just need any relevant permission
-        // If user has wildcard permission, all resources are authorized
-        // Otherwise, verify ALL requested resource IDs have a matching permission
         var hasPermission =
             (hasWildcardPermission || resourceIds.Length == 0)
                 ? relevantPermissions.Count > 0
@@ -115,7 +110,6 @@ internal class AuthorizationProvider(
         if (!TryGetUserContext(out var userContext, $"act on user {requestUserId}"))
             return false;
 
-        // System context is NOT a user — cannot perform self-operations
         if (userContext.IsSystemContext)
             return false;
 
@@ -210,7 +204,6 @@ internal class AuthorizationProvider(
         if (!TryGetUserContext(out var userContext, $"list {resourceType}"))
             return new HashSet<Guid>();
 
-        // System context bypasses permission checks entirely, so every resource is in scope.
         if (userContext.IsSystemContext)
             return null;
 
@@ -223,9 +216,6 @@ internal class AuthorizationProvider(
             )
             .ToList();
 
-        // A wildcard grant covers every resource of the type, so there is nothing to filter by -
-        // and returning ids here would wrongly narrow the query to resources that happen to have
-        // their own grant as well.
         if (relevant.Any(p => p.ResourceId == Guid.Empty))
             return null;
 
@@ -241,22 +231,17 @@ internal class AuthorizationProvider(
     {
         var userContext = _userContextProvider.GetUserContext();
 
-        // System context bypasses at IsAuthorizedAsync level, so this shouldn't be called
-        // but return empty as a safe fallback
         if (userContext?.IsSystemContext == true)
             return [];
 
         var currentAccountId = userContext?.CurrentAccount?.Id;
 
-        // Fast path - cache already populated for the same account and not yet expired
         if (IsCacheValidFor(currentAccountId))
             return _cachedPermissions!;
 
-        // Serialize access to prevent concurrent DbContext usage
         await _cacheLock.WaitAsync();
         try
         {
-            // Double-check after acquiring lock
             if (IsCacheValidFor(currentAccountId))
                 return _cachedPermissions!;
 

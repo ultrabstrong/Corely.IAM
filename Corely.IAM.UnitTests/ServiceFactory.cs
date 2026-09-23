@@ -34,14 +34,6 @@ public class ServiceFactory
         UseFastPasswordHashing(_serviceProvider);
     }
 
-    /// <summary>
-    /// Swaps the production PBKDF2 work factor for a trivial one.
-    ///
-    /// The real default is 600,000 iterations, which is the point of the algorithm but costs
-    /// roughly 200ms per hash - and this suite hashes passwords in hundreds of tests. What is
-    /// under test here is behaviour, not cost; the work factor itself is asserted in
-    /// Corely.Security's own tests.
-    /// </summary>
     internal static void UseFastPasswordHashing(IServiceProvider serviceProvider) =>
         serviceProvider
             .GetRequiredService<IHashProviderFactory>()

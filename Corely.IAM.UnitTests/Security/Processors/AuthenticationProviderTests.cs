@@ -906,7 +906,6 @@ public class AuthenticationProviderTests
         Assert.Equal("device-b", renewB.DeviceId);
         Assert.NotEqual(renewA.TokenId, renewB.TokenId);
 
-        // Both renewed tokens must remain independently usable.
         var validationA = await _authenticationProvider.ValidateUserAuthTokenAsync(renewA.Token!);
         var validationB = await _authenticationProvider.ValidateUserAuthTokenAsync(renewB.Token!);
         Assert.Equal(UserAuthTokenValidationResultCode.Success, validationA.ResultCode);

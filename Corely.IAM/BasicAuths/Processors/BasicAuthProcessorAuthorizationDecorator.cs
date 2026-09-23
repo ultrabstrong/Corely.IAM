@@ -15,8 +15,7 @@ internal class BasicAuthProcessorAuthorizationDecorator(
 
     public Task<CreateBasicAuthResult> CreateBasicAuthAsync(CreateBasicAuthRequest request)
     {
-        // No authorization required - this is called during user registration
-        // before the user has an authenticated context.
+        // No authorization check, by design: runs before sign-in completes.
         return _inner.CreateBasicAuthAsync(request);
     }
 
@@ -30,8 +29,7 @@ internal class BasicAuthProcessorAuthorizationDecorator(
 
     public Task<VerifyBasicAuthResult> VerifyBasicAuthAsync(VerifyBasicAuthRequest request)
     {
-        // No authorization required - this is the authentication mechanism itself.
-        // Users must be able to verify credentials before they have an authenticated context.
+        // No authorization check, by design: runs before sign-in completes.
         return _inner.VerifyBasicAuthAsync(request);
     }
 

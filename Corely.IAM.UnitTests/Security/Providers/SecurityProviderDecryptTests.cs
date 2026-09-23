@@ -6,12 +6,6 @@ using Corely.Security.Signature.Factories;
 
 namespace Corely.IAM.UnitTests.Security.Providers;
 
-/// <summary>
-/// A stored value names the provider that wrote it, so it must be read back by that provider
-/// rather than by whichever provider happens to be the default now. Deliberately phrased in terms
-/// of "an older default" rather than naming CBC, so the test keeps its meaning the next time the
-/// default moves.
-/// </summary>
 public class SecurityProviderDecryptTests
 {
     private const string NON_DEFAULT_PROVIDER = SymmetricEncryptionConstants.AES_CODE;
@@ -48,7 +42,6 @@ public class SecurityProviderDecryptTests
     {
         const string plaintext = "value written before the default changed";
 
-        // Written when the default was something else - the shape every 1.x database is in.
         var encrypted = new SymmetricEncryptionProviderFactory(NON_DEFAULT_PROVIDER)
             .GetDefaultProvider()
             .Encrypt(plaintext, _systemKeyStore);

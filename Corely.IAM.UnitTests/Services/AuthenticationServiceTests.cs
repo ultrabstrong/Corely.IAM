@@ -199,10 +199,8 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.Success, result.ResultCode);
         Assert.NotNull(result.AuthToken);
 
-        // Verify context was set
         _userContextSetterMock.Verify(m => m.SetUserContext(It.IsAny<UserContext>()), Times.Once);
 
-        // Verify the user was updated in the repo
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var updatedUser = await userRepo.GetAsync(u => u.Id == userEntity.Id);
         Assert.NotNull(updatedUser);
@@ -335,7 +333,6 @@ public class AuthenticationServiceTests
         Assert.Equal("Invalid password", result.Message);
         Assert.Null(result.AuthToken);
 
-        // Verify the user was updated with failed login info
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var updatedUser = await userRepo.GetAsync(u => u.Id == userEntity.Id);
         Assert.NotNull(updatedUser);
@@ -848,7 +845,6 @@ public class AuthenticationServiceTests
         var userEntity = await CreateTestUserAsync();
         _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(true);
 
-        // First sign in to create the MFA challenge
         var signInRequest = new SignInRequest(
             userEntity.Username,
             _fixture.Create<string>(),
@@ -858,7 +854,6 @@ public class AuthenticationServiceTests
         Assert.Equal(SignInResultCode.MfaRequiredChallenge, signInResult.ResultCode);
         var challengeToken = signInResult.MfaChallengeToken!;
 
-        // Set up TOTP verification to succeed
         _totpAuthProcessorMock
             .Setup(m =>
                 m.VerifyTotpOrRecoveryCodeAsync(
@@ -887,7 +882,6 @@ public class AuthenticationServiceTests
         var userEntity = await CreateTestUserAsync();
         _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(true);
 
-        // First sign in to create the MFA challenge
         var signInRequest = new SignInRequest(
             userEntity.Username,
             _fixture.Create<string>(),
@@ -896,7 +890,6 @@ public class AuthenticationServiceTests
         var signInResult = await _authenticationService.SignInAsync(signInRequest);
         var challengeToken = signInResult.MfaChallengeToken!;
 
-        // Set up recovery code verification to succeed
         _totpAuthProcessorMock
             .Setup(m =>
                 m.VerifyTotpOrRecoveryCodeAsync(
@@ -925,7 +918,6 @@ public class AuthenticationServiceTests
         var userEntity = await CreateTestUserAsync();
         _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(true);
 
-        // First sign in to create the MFA challenge
         var signInRequest = new SignInRequest(
             userEntity.Username,
             _fixture.Create<string>(),
@@ -934,7 +926,6 @@ public class AuthenticationServiceTests
         var signInResult = await _authenticationService.SignInAsync(signInRequest);
         var challengeToken = signInResult.MfaChallengeToken!;
 
-        // Set up TOTP verification to fail
         _totpAuthProcessorMock
             .Setup(m =>
                 m.VerifyTotpOrRecoveryCodeAsync(It.IsAny<VerifyTotpOrRecoveryCodeRequest>())
@@ -962,7 +953,6 @@ public class AuthenticationServiceTests
         var userEntity = await CreateTestUserAsync();
         _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(true);
 
-        // Sign in to create the MFA challenge
         var signInRequest = new SignInRequest(
             userEntity.Username,
             _fixture.Create<string>(),
@@ -971,7 +961,6 @@ public class AuthenticationServiceTests
         var signInResult = await _authenticationService.SignInAsync(signInRequest);
         var challengeToken = signInResult.MfaChallengeToken!;
 
-        // Move time forward past the challenge timeout
         var expiredTime = now.AddSeconds(301);
         _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(expiredTime);
 
@@ -1008,7 +997,6 @@ public class AuthenticationServiceTests
                 )
             );
 
-        // Sign in to create the MFA challenge
         var signInRequest = new SignInRequest(
             userEntity.Username,
             _fixture.Create<string>(),
@@ -1017,11 +1005,9 @@ public class AuthenticationServiceTests
         var signInResult = await _authenticationService.SignInAsync(signInRequest);
         var challengeToken = signInResult.MfaChallengeToken!;
 
-        // Complete the challenge
         var verifyRequest = new VerifyMfaRequest(challengeToken, "123456");
         await _authenticationService.VerifyMfaAsync(verifyRequest);
 
-        // Try to use the same challenge again
         var result = await _authenticationService.VerifyMfaAsync(verifyRequest);
 
         Assert.Equal(SignInResultCode.MfaChallengeExpiredError, result.ResultCode);

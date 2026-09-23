@@ -19,8 +19,6 @@ internal static class ServiceFactory
             builder.AddSerilog(logger: Log.Logger, dispose: false);
         });
 
-        // Only register IAM services if configuration is available
-        // This allows config commands to work without a settings file
         var encryptionKey = configuration["SystemSymmetricEncryptionKey"];
         var connectionString = configuration.GetConnectionString("DataRepoConnection");
         var provider = ConfigurationProvider.TryGetProvider();

@@ -83,7 +83,7 @@ internal class AccountProcessorAuthorizationDecorator(
                 $"Unauthorized to update account {request.AccountId}"
             );
 
-    // Auth bypass — invitation token was already validated by InvitationProcessor
+    // No authorization check, by design: the invitation token was already validated.
     public Task<AddUserToAccountResult> AddUserToAccountForInvitationAsync(
         AddUserToAccountRequest request
     ) => _inner.AddUserToAccountForInvitationAsync(request);
@@ -91,8 +91,8 @@ internal class AccountProcessorAuthorizationDecorator(
     public async Task<RemoveUserFromAccountResult> RemoveUserFromAccountAsync(
         RemoveUserFromAccountRequest request
     ) =>
-        _authorizationProvider.IsAuthorizedForOwnUser(request.UserId, true) // users can de-register themselves
-        || await _authorizationProvider.IsAuthorizedAsync( // users with update access to account can de-register other users
+        _authorizationProvider.IsAuthorizedForOwnUser(request.UserId, true)
+        || await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             PermissionConstants.ACCOUNT_RESOURCE_TYPE,
             request.AccountId
@@ -103,11 +103,9 @@ internal class AccountProcessorAuthorizationDecorator(
                 $"Unauthorized to update account {request.AccountId}"
             );
 
-    // No permission check — results are already scoped to the user's own accounts inside
-    // AccountProcessor, and listing accounts is required before any account context exists.
+    // No authorization check, by design: scoped to the caller's own accounts, and needed before any account context exists.
     public Task<ListResult<Account>> ListAccountsAsync(
         ListAccountsRequest request,
-        // Authorized by account membership, so permitted ids would be account ids, not these rows.
         IReadOnlySet<Guid>? authorizedResourceIds = null
     ) =>
         _authorizationProvider.HasUserContext()

@@ -14,11 +14,6 @@ using TestContext = Bunit.TestContext;
 
 namespace Corely.IAM.Web.UnitTests.Pages.Users;
 
-/// <summary>
-/// A list must not claim to be empty before it knows. This is the same defect as the one
-/// PermissionView had - an unknown state rendered as a known one - and it reached users twice, so
-/// it is worth a test rather than a careful reading.
-/// </summary>
 public class UserListLoadingStateTests : TestContext
 {
     private const string EMPTY_STATE_TEXT = "No users found";
@@ -32,8 +27,6 @@ public class UserListLoadingStateTests : TestContext
         _mockUserContextAccessor
             .Setup(x => x.GetUserContextAsync())
             .ReturnsAsync(
-                // The page reads UserContext.CurrentAccount.Id, so a context without one throws
-                // before the service is ever called.
                 PageTestHelpers.CreateUserContext(
                     currentAccount: new Account { Id = Guid.CreateVersion7(), AccountName = "Test" }
                 )
@@ -53,10 +46,7 @@ public class UserListLoadingStateTests : TestContext
     [Fact]
     public void BeforeTheUserContextResolves_ShowsNothingRatherThanAnEmptyState()
     {
-        // The page awaits its user context before it can even ask for data. That await yields, so
-        // Blazor paints an interim render first - which is the frame the empty state used to leak
-        // into. A synchronously-completing mock never produces that frame, so the gate has to be
-        // held open deliberately.
+        // Held open: a synchronous mock never produces the interim render the bug lived in.
         var contextGate = new TaskCompletionSource<UserContext?>();
         _mockUserContextAccessor.Setup(x => x.GetUserContextAsync()).Returns(contextGate.Task);
 
@@ -74,7 +64,6 @@ public class UserListLoadingStateTests : TestContext
     [Fact]
     public void WhileTheResultIsUnknown_ShowsLoadingRatherThanAnEmptyState()
     {
-        // Never completes, so the component stays in the state it is in before an answer arrives.
         _mockRetrievalService
             .Setup(x => x.ListUsersAsync(It.IsAny<ListUsersRequest>()))
             .Returns(new TaskCompletionSource<RetrieveListResult<User>>().Task);

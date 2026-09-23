@@ -212,7 +212,6 @@ public class PermissionProcessorTests
         Assert.Equal(DeletePermissionResultCode.SystemDefinedPermissionError, result.ResultCode);
         Assert.Contains("system-defined", result.Message);
 
-        // Verify permission still exists
         var permissionStillExists = await permissionRepo.GetAsync(p => p.Id == systemPermission.Id);
         Assert.NotNull(permissionStillExists);
     }

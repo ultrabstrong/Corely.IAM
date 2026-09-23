@@ -62,7 +62,6 @@ public class InvitationProcessorTests
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
         var created = await userRepo.CreateAsync(user);
 
-        // Also update the account's Users collection so EvaluateAsync queries via _accountRepo find the member
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var accountEntity = await accountRepo.GetAsync(
             a => a.Id == account.Id,
@@ -134,10 +133,6 @@ public class InvitationProcessorTests
         return await repo.CreateAsync(entity);
     }
 
-    // ─────────────────────────────────────────────
-    // CreateInvitationAsync
-    // ─────────────────────────────────────────────
-
     [Fact]
     public async Task CreateInvitation_ReturnsSuccess_WithValidRequest()
     {
@@ -206,10 +201,6 @@ public class InvitationProcessorTests
         Assert.Null(result.InvitationId);
     }
 
-    // ─────────────────────────────────────────────
-    // AcceptInvitationAsync
-    // ─────────────────────────────────────────────
-
     [Fact]
     public async Task AcceptInvitation_ReturnsSuccess_AndAddsUserToAccount()
     {
@@ -236,7 +227,6 @@ public class InvitationProcessorTests
         Assert.Equal(AcceptInvitationResultCode.Success, result.ResultCode);
         Assert.Equal(account.Id, result.AccountId);
 
-        // Verify user was added to the account
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var accountEntity = await accountRepo.GetAsync(
             a => a.Id == account.Id,
@@ -253,14 +243,12 @@ public class InvitationProcessorTests
         var user = await CreateUserAsync("user@test.com");
         var account = await CreateAccountAsync();
 
-        // Create invitation before user is in the account
         var invitation = await CreateInvitationEntityAsync(
             account.Id,
             creator.Id,
             email: "user@test.com"
         );
 
-        // Then add user to the account
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var accountEntity = await accountRepo.GetAsync(
             a => a.Id == account.Id,
@@ -290,7 +278,6 @@ public class InvitationProcessorTests
 
         var email = "sibling@test.com";
 
-        // Create multiple invitations for same account+email
         var result1 = await _invitationProcessor.CreateInvitationAsync(
             new CreateInvitationRequest(
                 account.Id,
@@ -310,13 +297,11 @@ public class InvitationProcessorTests
 
         SetUserContext(acceptor);
 
-        // Accept the first invitation
         var acceptResult = await _invitationProcessor.AcceptInvitationAsync(
             new AcceptInvitationRequest(result1.Token!)
         );
         Assert.Equal(AcceptInvitationResultCode.Success, acceptResult.ResultCode);
 
-        // The second invitation should now be burned (accepted)
         var invitationRepo = _serviceFactory.GetRequiredService<IRepo<InvitationEntity>>();
         var siblingEntity = await invitationRepo.GetAsync(i => i.Id == result2.InvitationId);
         Assert.NotNull(siblingEntity);
@@ -350,7 +335,6 @@ public class InvitationProcessorTests
         Assert.Equal(AcceptInvitationResultCode.EmailMismatchError, result.ResultCode);
         Assert.Null(result.AccountId);
 
-        // Verify user was NOT added to the account
         var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
         var accountEntity = await accountRepo.GetAsync(
             a => a.Id == account.Id,
@@ -473,10 +457,6 @@ public class InvitationProcessorTests
         Assert.Equal(AcceptInvitationResultCode.InvitationAlreadyAcceptedError, result.ResultCode);
     }
 
-    // ─────────────────────────────────────────────
-    // RevokeInvitationAsync
-    // ─────────────────────────────────────────────
-
     [Fact]
     public async Task RevokeInvitation_ReturnsSuccess_WhenInvitationExists()
     {
@@ -491,7 +471,6 @@ public class InvitationProcessorTests
 
         Assert.Equal(RevokeInvitationResultCode.Success, result.ResultCode);
 
-        // Verify the invitation entity has RevokedUtc set
         var repo = _serviceFactory.GetRequiredService<IRepo<InvitationEntity>>();
         var entity = await repo.GetAsync(i => i.Id == invitation.Id);
         Assert.NotNull(entity);
@@ -543,10 +522,6 @@ public class InvitationProcessorTests
 
         Assert.Equal(RevokeInvitationResultCode.InvitationNotFoundError, result.ResultCode);
     }
-
-    // ─────────────────────────────────────────────
-    // ListInvitationsAsync
-    // ─────────────────────────────────────────────
 
     [Fact]
     public async Task ListInvitations_ReturnsInvitations_ForAccount()

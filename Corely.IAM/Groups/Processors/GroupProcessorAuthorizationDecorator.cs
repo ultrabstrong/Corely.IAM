@@ -161,7 +161,7 @@ internal class GroupProcessorAuthorizationDecorator(
             );
         }
 
-        // Resolved here, never taken from the caller - an inbound scope could only widen it.
+        // Never the caller's scope: it could only widen it.
         return await _inner.ListGroupsAsync(
             request,
             await _authorizationProvider.GetAuthorizedResourceIdsAsync(

@@ -11,10 +11,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.TotpAuths.Processors;
 
-/// <summary>
-/// A TOTP secret stored by an older default must stay verifiable after the default changes. The
-/// encrypt/decrypt pair is private, so this drives it through the public verify path.
-/// </summary>
 public class TotpAuthProcessorDecryptTests
 {
     private const string NON_DEFAULT_PROVIDER = SymmetricEncryptionConstants.AES_CODE;
@@ -51,7 +47,6 @@ public class TotpAuthProcessorDecryptTests
         var userId = Guid.CreateVersion7();
         var secret = _totpProvider.GenerateSecret();
 
-        // Stored when the default was something else - the shape every 1.x database is in.
         var encryptedSecret = new SymmetricEncryptionProviderFactory(NON_DEFAULT_PROVIDER)
             .GetDefaultProvider()
             .Encrypt(secret, _securityConfig.GetSystemSymmetricKey());

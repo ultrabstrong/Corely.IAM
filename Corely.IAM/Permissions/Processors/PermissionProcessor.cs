@@ -114,7 +114,6 @@ internal class PermissionProcessor(
 
         PermissionEntity[] permissionEntities =
         [
-            // Owner Role: CRUDX on all resources
             new()
             {
                 Id = Guid.CreateVersion7(),
@@ -280,7 +279,6 @@ internal class PermissionProcessor(
             );
         }
 
-        // Clear join table (NoAction side - must do manually for SQL Server compatibility)
         permissionEntity.Roles?.Clear();
 
         await _permissionRepo.DeleteAsync(permissionEntity);

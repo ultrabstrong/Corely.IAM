@@ -69,7 +69,6 @@ public class RegisterModel(
             return Page();
         }
 
-        // Auto sign-in after registration
         var deviceId = authCookieManager.GetOrCreateDeviceId(HttpContext);
         var signInResult = await authenticationService.SignInAsync(
             new SignInRequest(Username, Password, deviceId)
@@ -87,7 +86,6 @@ public class RegisterModel(
             return Redirect(AppRoutes.Dashboard);
         }
 
-        // Registration succeeded but auto sign-in failed — send to sign-in page
         return Redirect(AppRoutes.SignIn);
     }
 }

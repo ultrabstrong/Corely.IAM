@@ -22,7 +22,7 @@ internal sealed class UserAuthTokenEntityConfiguration
 
         builder.Property(e => e.ExpiresUtc).IsRequired();
 
-        builder.HasIndex(e => e.ExpiresUtc); // For cleanup queries
+        builder.HasIndex(e => e.ExpiresUtc);
 
         builder
             .HasOne(e => e.User)

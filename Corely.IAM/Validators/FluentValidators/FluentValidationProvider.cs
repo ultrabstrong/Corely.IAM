@@ -28,7 +28,6 @@ internal sealed class FluentValidationProvider(
             corelyResult = fluentResult.ToValidationResult();
         }
 
-        // Processors pass this message straight to the caller, so it has to say what to fix.
         corelyResult.Message = corelyResult.IsValid
             ? $"Validation for {typeof(T).Name} succeeded"
             : string.Join(" ", corelyResult.Errors!.Select(e => e.Message));

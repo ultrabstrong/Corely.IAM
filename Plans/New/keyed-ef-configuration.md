@@ -92,6 +92,11 @@ of the library's registration, now gets nothing.
 3. Full suite, including the Functions host tier and the admin portal functional tier, since they are
    the ones that build the real container.
 
+## Relation to other plans
+
+Corely.Billing's `Plans/New/iam-permissions-package.md` changes the same registration code in
+Corely.Billing. Land one before starting the other.
+
 ## Done when
 
 Each library's DbContext resolves only its own keyed configuration, proven by a test that registers a

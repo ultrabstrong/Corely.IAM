@@ -50,6 +50,9 @@ Func<IServiceProvider, IEFConfiguration> efConfig = sp =>
 | SQL Server | `MsSqlEFConfiguration` | `Server=(localdb)\MSSQLLocalDB;Database=CorelIAM;Trusted_Connection=True;` |
 | MySQL | `MySqlEFConfiguration` | `Server=localhost;Database=CorelIAM;Uid=root;Pwd=password;` |
 
+The factory serves IAM's DbContext only. If the host has DbContexts of its own that take an
+`IEFConfiguration`, register one for them — IAM does not.
+
 ## 4) Configure IAMOptions
 
 ```csharp

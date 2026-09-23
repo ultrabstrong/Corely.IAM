@@ -2,6 +2,7 @@ using System;
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.DataAccess;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Processors;
@@ -17,6 +18,7 @@ using Corely.Security.Encryption.Factories;
 using Corely.Security.Hashing.Factories;
 using Corely.Security.PasswordValidation.Providers;
 using Corely.Security.Signature.Factories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -302,15 +304,46 @@ public class ServiceRegistrationExtensionsTests
     }
 
     [Fact]
-    public void AddIAMServices_WithEF_RegistersIEFConfiguration()
+    public void AddIAMServices_WithEF_RegistersKeyedIEFConfigurationOnly()
     {
         var services = CreateServiceCollection();
 
         services.AddIAMServices(_efOptions);
         var serviceProvider = services.BuildServiceProvider();
 
-        var efConfiguration = serviceProvider.GetService<IEFConfiguration>();
-        Assert.NotNull(efConfiguration);
+        Assert.NotNull(serviceProvider.GetKeyedService<IEFConfiguration>(EFConfigurationKeys.IAM));
+        Assert.Null(serviceProvider.GetService<IEFConfiguration>());
+    }
+
+    [Fact]
+    public void AddIAMServices_WithEF_IamDbContextIgnoresHostUnkeyedIEFConfiguration()
+    {
+        var iamConfiguration = new Mock<EFInMemoryConfigurationBase> { CallBase = true };
+        iamConfiguration
+            .Setup(c => c.Configure(It.IsAny<DbContextOptionsBuilder>()))
+            .Callback<DbContextOptionsBuilder>(b =>
+                b.UseInMemoryDatabase(Guid.NewGuid().ToString())
+            );
+        var decoyConfiguration = new Mock<IEFConfiguration>();
+        var services = CreateServiceCollection();
+        services.AddIAMServices(
+            IAMOptions.Create(
+                _configuration,
+                _securityConfigurationProvider,
+                _ => iamConfiguration.Object
+            )
+        );
+        services.AddScoped(_ => decoyConfiguration.Object);
+        using var scope = services.BuildServiceProvider().CreateScope();
+
+        var context = scope.ServiceProvider.GetRequiredService<IamDbContext>();
+        _ = context.Database.ProviderName;
+
+        iamConfiguration.Verify(c => c.Configure(It.IsAny<DbContextOptionsBuilder>()), Times.Once);
+        decoyConfiguration.Verify(
+            c => c.Configure(It.IsAny<DbContextOptionsBuilder>()),
+            Times.Never
+        );
     }
 
     [Fact]

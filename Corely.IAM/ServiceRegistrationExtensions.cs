@@ -44,7 +44,13 @@ public static class ServiceRegistrationExtensions
 
         if (options.EFConfigurationFactory != null)
         {
-            serviceCollection.AddScoped(options.EFConfigurationFactory);
+            // Keyed so a container holding another library's (or the host's own) configuration
+            // cannot hand it to IamDbContext, and IAM's cannot leak into theirs.
+            var efConfigurationFactory = options.EFConfigurationFactory;
+            serviceCollection.AddKeyedScoped(
+                EFConfigurationKeys.IAM,
+                (sp, _) => efConfigurationFactory(sp)
+            );
             serviceCollection.AddDbContext<IamDbContext>();
             serviceCollection.RegisterEntityFrameworkReposAndUoW();
         }

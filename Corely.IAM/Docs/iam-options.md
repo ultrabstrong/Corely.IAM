@@ -19,6 +19,9 @@ var options = IAMOptions.Create(configuration, securityConfigProvider, efConfigF
 services.AddIAMServices(options);
 ```
 
+The configuration `efConfigFactory` builds is private to IAM: it is registered under a key only IAM's
+DbContext resolves, never as a plain `IEFConfiguration`. A host's own DbContexts register their own.
+
 ### Test Setup (Mock Repositories)
 
 ```csharp

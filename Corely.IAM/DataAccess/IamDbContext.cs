@@ -8,15 +8,21 @@ using Corely.IAM.PasswordRecoveries.Entities;
 using Corely.IAM.TotpAuths.Entities;
 using Corely.IAM.Users.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.DataAccess;
 
-internal class IamDbContext(IEFConfiguration efConfiguration) : DbContext
+internal class IamDbContext(
+    [FromKeyedServices(EFConfigurationKeys.IAM)] IEFConfiguration efConfiguration
+) : DbContext
 {
     private readonly IEFConfiguration _efConfiguration = efConfiguration;
 
 #pragma warning disable IDE0060 // Remove unused parameter
-    public IamDbContext(DbContextOptions<IamDbContext> opts, IEFConfiguration efConfiguration)
+    public IamDbContext(
+        DbContextOptions<IamDbContext> opts,
+        [FromKeyedServices(EFConfigurationKeys.IAM)] IEFConfiguration efConfiguration
+    )
 #pragma warning restore IDE0060 // Remove unused parameter
         : this(efConfiguration)
     {

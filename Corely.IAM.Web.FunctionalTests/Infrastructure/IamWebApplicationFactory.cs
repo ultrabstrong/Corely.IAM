@@ -53,8 +53,11 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
-            services.RemoveAll<IEFConfiguration>();
-            services.AddSingleton<IEFConfiguration>(_ => new SqliteEFConfiguration(_connection));
+            services.RemoveAllKeyed<IEFConfiguration>(EFConfigurationKeys.IAM);
+            services.AddKeyedSingleton<IEFConfiguration>(
+                EFConfigurationKeys.IAM,
+                (_, _) => new SqliteEFConfiguration(_connection)
+            );
 
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(TimeProvider);

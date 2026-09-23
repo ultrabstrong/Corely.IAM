@@ -36,8 +36,11 @@ public sealed class DemoAppFactory<TNotesContext> : WebApplicationFactory<TNotes
 
         builder.ConfigureTestServices(services =>
         {
-            services.RemoveAll<IEFConfiguration>();
-            services.AddScoped<IEFConfiguration>(_ => new SqliteEFConfiguration(_iamConnection));
+            services.RemoveAllKeyed<IEFConfiguration>(EFConfigurationKeys.IAM);
+            services.AddKeyedScoped<IEFConfiguration>(
+                EFConfigurationKeys.IAM,
+                (_, _) => new SqliteEFConfiguration(_iamConnection)
+            );
 
             services.RemoveAll<DbContextOptions<TNotesContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<TNotesContext>>();

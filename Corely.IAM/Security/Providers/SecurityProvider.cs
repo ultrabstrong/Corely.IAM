@@ -145,7 +145,6 @@ internal class SecurityProvider(
 
         var systemKeyStoreProvider = _securityConfigurationProvider.GetSystemSymmetricKey();
 
-        // The provider that wrote it, not the current default: a mismatch looks like a wrong key.
         var symmetricEncryptionProvider =
             _symmetricEncryptionProviderFactory.GetProviderForDecrypting(encryptedValue);
         return symmetricEncryptionProvider.Decrypt(encryptedValue, systemKeyStoreProvider);

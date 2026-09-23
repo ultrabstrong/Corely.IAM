@@ -42,7 +42,6 @@ internal class GoogleAuthProcessorAuthorizationDecorator(
 
     public Task<Guid?> GetUserIdByGoogleSubjectAsync(string googleSubjectId)
     {
-        // No authorization check, by design: runs before sign-in completes.
         return _inner.GetUserIdByGoogleSubjectAsync(googleSubjectId);
     }
 }

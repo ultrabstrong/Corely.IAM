@@ -653,7 +653,6 @@ public class AuthorizationProviderTests
         }
     }
 
-    // Deletes rather than clearing flags: MockRepo shares instances with the cache.
     private async Task RevokeAllPermissionsAsync()
     {
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();

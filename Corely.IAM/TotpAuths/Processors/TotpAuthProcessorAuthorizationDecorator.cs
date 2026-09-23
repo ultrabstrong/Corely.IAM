@@ -63,13 +63,11 @@ internal class TotpAuthProcessorAuthorizationDecorator(
         VerifyTotpOrRecoveryCodeRequest request
     )
     {
-        // No authorization check, by design: runs before sign-in completes.
         return _inner.VerifyTotpOrRecoveryCodeAsync(request);
     }
 
     public Task<bool> IsTotpEnabledAsync(Guid userId)
     {
-        // No authorization check, by design: runs before sign-in completes.
         return _inner.IsTotpEnabledAsync(userId);
     }
 }

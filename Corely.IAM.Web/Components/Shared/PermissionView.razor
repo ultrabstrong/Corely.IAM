@@ -54,7 +54,6 @@ else if (Undetermined != null)
 
     protected override async Task OnParametersSetAsync()
     {
-        // Blazor's interim render has no user context yet: unknown, not denied, so don't cache it.
         if (UserContextProvider.GetUserContext() == null)
         {
             _checkComplete = false;

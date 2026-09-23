@@ -304,5 +304,126 @@ Two differences from the list above:
 - One CSS comment inside a `<style>` block in `DocumentWorkflowEditor.razor` stays. CSS is out of
   scope; it just happens to live in a Razor file.
 
-The ECDSA mismatch in Corely.Security (`ProviderDescription` says DER, the output is P1363) is still
-open and was not touched here.
+## Phase 2: verify every kept comment
+
+Phase 1 picked the keepers from the comment text plus the one line of code after it. No claim was
+checked against the code it describes, so the list rewarded comments that *sounded* hard-won. The
+ECDSA row proves the cost: `ECDsaSignatureProvider.ProviderDescription` already says P1363 and
+"not a DER sequence", and `Ecdsa_EmitsP1363NotDer` asserts it. The comment was stale before phase
+1 kept it, and the "open bug" recorded in the Outcome above does not exist.
+
+Each of the 109 kept comments is checked against the code, and anything it names outside the code
+(an SDK, a library, another file), on three questions:
+
+1. **Is it true?** Read the code it sits on and whatever it claims about. A claim that cannot be
+   confirmed from the code or a primary source counts as false.
+2. **Is it needed?** If a name, a type, or a test name already says it, the comment goes.
+3. **Would a reasonable cleanup break something without it?** If not, it goes.
+
+A comment survives only with three yeses. A true and needed comment with wrong wording is rewritten.
+Results go in the table below, then the edits are made, each repository rebuilt and tested, and
+committed.
+
+In practice, question 3 decided most cases. A cleanup that makes a test fail by name, or makes the
+compiler warn, is not a silent break, so the comment is redundant. What survives guards a change
+that would pass every test and still do harm.
+
+### Results
+
+32 of 109 survive. 77 are removed. One moves, and one is reworded.
+
+**False or unconfirmable (removed)**
+
+| Comment | Why |
+|---|---|
+| `AsymmetricKnownAnswerTests`, "not the DER that ProviderDescription claims" | The description already says P1363. |
+| `AccountProcessorAuthorizationDecorator.ListAccountsAsync`, "No authorization check" | It checks `HasUserContext()`. |
+| Both demos' `Home.razor`, "The id is client input" | Blazor Server binds `note.Id` in a server-side closure. The client cannot supply it. |
+| `ReservationOptions.ReservationTtl`, "must outlive a next-day replay" | It is six hours. |
+| `ConsumptionProcessor`, "a retry fails on the tracker" | Re-adding the same tracked instance is a no-op in EF, so a retry hits the same unique index. Nothing breaks without the exclusion either: it only saves pointless retries. |
+| `GrantEditor`, "PermissionView won't recheck once the context arrives" | `PermissionView` no longer caches a null-context check and rechecks on the next parameter set. |
+| `ProcessRunner`, "These throw once the process has exited" | Not true of `Id`; the empty catches explain themselves. |
+| `LinkedAccountsSection`, "their terms forbid look-alikes" | Google's branding guidelines permit custom buttons that follow them. |
+| `ListQueryHelper`, "so the provider emits IN (...)" | Not confirmed for EF 10's parameterized collections. Translation is covered by `AuthorizationScopedListTests` either way. |
+| `AmazonTextractClientExecutor`, "signing still needs it" | Not confirmed, and only emulators ever take this path; none checks signatures. |
+| `OcrRequestDtos.cs`, the API link | A reference, not a guard. |
+
+**True, but a test, the compiler or a name already guards it (removed)**
+
+| Comment | Guarded by |
+|---|---|
+| `ProviderName` on `ISymmetricEncryptionProvider`, `IAsymmetricEncryptionProvider`, `IHashProvider` | `StoredFormatCompatibilityTests` pins the prefixes; `ProviderNamingTests` pins the names |
+| The prefix split in both encryption provider bases | `ProviderRenameTests.AProviderReadsValuesWrittenUnderAnEarlierName` |
+| `RsaEncryptionProvider.PaddingName` | `ProviderNamingTests.RsaEncryption_NameReflectsTheConfiguredPadding` |
+| `AsyncQueryProviderTests`, the explicit `ToListAsync` | The compiler: the call is ambiguous without it |
+| `EFUoWProvider` registration | `ServiceRegistrationTests.UoW_InterfaceAndConcrete_AreSameScopedInstance` |
+| `IRepo.ExecuteUpdateAsync` | `Docs/repositories.md` says it, and consumers read the docs |
+| `CommandBase._showingHelp`, all three CLIs | The field name and `try`/`finally` read as a reentrancy guard |
+| `ConsumptionProcessor`, the insert race | `ConsumptionProcessorTests`, both `DbUpdateException` cases |
+| `IdempotencyKeyFactory`, composed and never truncated | `Create_ReturnsAReadableKey_ForATypicalScope`, `Create_Throws_ForAScopeTooLongToStore` |
+| `ExpiringFirstGrantSelectionPolicy`, total order | `Split_BreaksFullTiesByGrantId_ForIdenticalGrantsInEitherOrder` |
+| The five "No authorization check" methods on BasicAuth, Google and TOTP decorators | `*_BypassesAuthorization_*` tests for each |
+| `AddUserToAccountForInvitationAsync` | Its name, and its only caller validates the invitation first |
+| `AuthorizationProvider`, absolute TTL | `CacheTtl_IsAbsolute_NotSliding` |
+| `IAuthorizationProvider.GetAuthorizedResourceIdsAsync`, null = wildcard | `ListGroups_ReturnsEverything_WhenPermissionIsWildcard`, and `CLAUDE.md` |
+| `SecurityProvider` and `TotpAuthProcessor`, provider that wrote it | `GetProviderForDecrypting`, plus `SecurityProviderDecryptTests`, `TotpAuthProcessorDecryptTests` |
+| `UserProcessor`, the in-memory filter | `GetUserById_Hydrate_FiltersGroupsAndRolesToCurrentAccount` |
+| `UserConstants.EMAIL_MAX_LENGTH` | Its name; no cleanup changes 254 |
+| `SecurityHeadersMiddleware`, no CSP | `Invoke_LeavesContentSecurityPolicyToTheHost` |
+| `PermissionView`, the interim render | `PermissionViewTests` |
+| `TotpSection`, the QR `try` | The `_qrUnavailable` fallback it sets |
+| Both demos' `_AuthLayout.cshtml` and `Program.cs` | `DemoAppTestsBase` asserts `form-busy.js` and that no admin page routes |
+| `AuthorizationProviderTests.RevokeAllPermissionsAsync` | Clearing flags instead turns `Permissions_AreCached_WithinTheTtl` red |
+| `DocumentExtractionService`, User is null | `UserContext.User` is `User?`, so the compiler warns |
+| `DocumentExtractionService`, one code for both refusals | A deliberate product choice, not something a cleanup breaks |
+| `DocumentExtractionService`, higher count | `ExtractDataAsync_SettlesTheHigherCount_ForAProviderThatDisagrees` |
+| `IDocumentPageCounter.TryGetPageCountAsync` | The `Try` name and `int?` return |
+| `DocumentWorkflowExecutionService`, all four | `DocumentWorkflowExecutionServiceTests`: same scope per attempt, no republish on a stale message, failure propagates |
+| `DocumentWorkflowFinalizationService`, parent directory | `DocumentWorkflowFinalizationServiceTests` asserts the parent is created |
+| `ExtractionStepRunner`, rename order and stem fallback | `ExtractionStepRunnerTests`; the fallback's log message says it |
+| `SplitStepRunner`, both | `SplitStepRunnerTests` |
+| `ChildJobIdFactory`, both | `ChildJobIdFactoryTests` |
+| `MistralDocumentExtractionProvider`, local-only logging and page counts | The `IsLocal` guard; `RecordedResponseTests` |
+| `MistralOcrResponse`, optional members | `RecordedResponseTests` (OCR 4 omits `content_filter_results`) |
+| `MistralDocumentAIOptions`, word confidence | `MistralProfileTests` |
+| `PdfSharpDocumentPageCounter`, `Import` | The compiler: `InformationOnly` is `[Obsolete]` |
+| `PortalDatabase`, script regeneration | The test csproj says where the scripts come from; a process note, not a guard |
+| `PortalDatabase`, `HostDatabase`, interpolated `CREATE DATABASE` | Parameterizing fails at once; nothing silent |
+| `FunctionsHostFixture`, both | `HostStartedButBrokenException` says it; a missing App Insights string fails the tier |
+| `WorkflowPipelineTests`, stub reset | It sits in a `finally` |
+| `DocumentJobRelationshipTests`, foreign keys | The test name |
+| `MistralOcrStub`, `TextractAnalyzeStub` | `MistralOcrStubFidelityTests`; the stub error body is low stakes |
+
+**Survive (32)**
+
+| Where | Comment | The silent break it prevents |
+|---|---|---|
+| `StoredFormatCompatibilityTests` | Shipped formats; never update these literals to pass | Updating a literal to match a format change passes and strands stored data |
+| `FileSymmetricKeyStoreProvider.GetCurrentKey`, `FileAsymmetricKeyStoreProvider.ReadKeys` | Bytes, not `ReadAllText` | `ReadAllText` passes every test and leaves the key in an unzeroable string |
+| `EFContextResolver._cache` | Per instance, not static | Static is the usual shape for a cache and no test covers two containers |
+| `AsyncLocalOperationContextAccessor._current` | Instance, not static | Static is the usual shape for `AsyncLocal` |
+| `{Group,Role,Permission,User}ProcessorAuthorizationDecorator` list methods | Never the caller's scope | Passing the unused parameter through lets a caller widen its own scope; no test covers it |
+| `AuthenticationService.SignInWithGoogleAsync` (moved from `RegistrationService`) | No `EmailVerified` check here | Adding it "for consistency" locks out linked accounts; no test covers it |
+| `UserListLoadingStateTests`, `contextGate` | Held open | A completed mock makes the test pass without exercising the bug |
+| `AdminPortalWebApp.Tests/AssemblyInfo.cs` | Tiers share one container | Re-enabling parallelism flakes rather than fails |
+| `PortalFactory`, `PortalBrowserFixture`, `AzureStorage__AccountName` | Explicitly blank | Omitting it points local test runs at real Azure |
+| `PortalFactory` class | Env vars, not `ConfigureAppConfiguration` | Locally the portal would read a developer's real settings |
+| `AdminPortalWebApp/Program.cs` | `local` is not `Development` | Removing the "redundant" calls blanks every page locally |
+| `AdminPortalWebApp/Program.cs` | Rethrow | The Serilog template swallows it, and startup failures exit 0 |
+| Both editors, `!_loading` | Not while loading | Removing the "redundant" check kills the circuit |
+| `ExtractionTemplateEditor`, reorder before render | Match Sortable's DOM | No test; the list scrambles after a drag |
+| `JsonEditor` | Don't echo the editor's value back | No test; the caret jumps on every keystroke |
+| `Usage.razor.cs` | Sequential: one `DbContext` | `Task.WhenAll` throws at runtime only |
+| `QuotaAuthorizationDecorator` | Unknown, not Exhausted | No test; a denial would refuse all work |
+| `TextractOptions.MaxPages` | AWS's synchronous limit is 1 page | Confirmed in AWS's Textract docs; "fixing" it sends documents that fail at AWS |
+| `DocumentBuffer.OpenReadAsync` | Callers must not dispose it | A `using` compiles and breaks the next reader |
+| `DocsToDataEnvironments` | Never `IsDevelopment`/`IsProduction` | Both compile and are always false here |
+| `Functions/Program.cs` | App Insights Warning+ filter | Removing the rule removal silently drops logs |
+| `MistralDocumentExtractionProvider`, `documentUrl = null!` | Release the ~15 MB string | The IDE flags it as an unused assignment |
+| `MistralOcrRequestContent`, relaxed escaping (reworded) | Safe for a JSON body | "Unsafe" invites a revert that escapes every `+` in the base64 |
+| `RecoverySweepTests`, `Task.Delay` | Waiting for nothing to happen | Replacing it with a wait-until passes immediately |
+| `LocalStubs/Program.cs` | Ports match the settings files | Changing one breaks local runs with a provider error |
+| `TestPdf` | Blank pages | Text passes on Windows and fails on the Linux runner |
+
+Not changed here: `EFContextResolverTests.ClearResolverCache` reflects on a *static* `_cache` field
+that no longer exists, so it clears nothing. Dead test code, noted for a later pass.

@@ -5,7 +5,6 @@ public static class UserConstants
     public const int USERNAME_MIN_LENGTH = 5;
     public const int USERNAME_MAX_LENGTH = 30;
 
-    // RFC 5321
     public const int EMAIL_MAX_LENGTH = 254;
 
     public const string JWT_AUDIENCE = "Corely.IAM";

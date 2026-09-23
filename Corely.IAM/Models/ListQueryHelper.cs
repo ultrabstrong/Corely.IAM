@@ -93,7 +93,6 @@ internal static class ListQueryHelper
                 $"Entity type '{typeof(TEntity).Name}' does not have an 'Id' property required for authorization scoping."
             );
 
-        // Materialized so the provider emits IN (...).
         var idList = ids.ToList();
         var param = Expression.Parameter(typeof(TEntity), "e");
         var contains = Expression.Call(

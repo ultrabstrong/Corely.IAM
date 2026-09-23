@@ -31,7 +31,6 @@ internal class AuthorizationProvider(
         .ThrowIfNull(nameof(securityOptions))
         .Value.PermissionCacheTtlSeconds;
 
-    // Absolute, not sliding: active users must still refresh.
     private IReadOnlyList<PermissionEntity>? _cachedPermissions;
     private Guid? _cachedAccountId;
     private DateTimeOffset _cachedAtUtc;

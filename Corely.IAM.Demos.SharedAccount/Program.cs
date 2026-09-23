@@ -54,7 +54,6 @@ app.UseAntiforgery();
 
 app.MapRazorPages();
 
-// Corely.IAM.Web's assembly omitted on purpose: it would route the admin pages.
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.Run();

@@ -172,7 +172,6 @@ internal class RegistrationService(
             );
         }
 
-        // Sign-in skips this on purpose: it binds by Google subject, not address.
         if (!payload.EmailVerified)
         {
             _logger.LogInformation(

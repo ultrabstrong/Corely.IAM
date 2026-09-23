@@ -15,7 +15,6 @@ internal class BasicAuthProcessorAuthorizationDecorator(
 
     public Task<CreateBasicAuthResult> CreateBasicAuthAsync(CreateBasicAuthRequest request)
     {
-        // No authorization check, by design: runs before sign-in completes.
         return _inner.CreateBasicAuthAsync(request);
     }
 
@@ -29,7 +28,6 @@ internal class BasicAuthProcessorAuthorizationDecorator(
 
     public Task<VerifyBasicAuthResult> VerifyBasicAuthAsync(VerifyBasicAuthRequest request)
     {
-        // No authorization check, by design: runs before sign-in completes.
         return _inner.VerifyBasicAuthAsync(request);
     }
 

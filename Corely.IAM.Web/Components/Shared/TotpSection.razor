@@ -131,7 +131,6 @@
 
         _pendingQrRender = false;
 
-        // Enrolment is already stored; a QR failure must not strand the user.
         try
         {
             _qrModule ??= await JSRuntime.InvokeAsync<IJSObjectReference>(

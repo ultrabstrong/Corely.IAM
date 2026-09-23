@@ -294,7 +294,6 @@ internal class TotpAuthProcessor(
             .Encrypt(plaintext, systemKeyProvider);
     }
 
-    // The provider that wrote it, not the current default: a mismatch looks like a wrong key.
     private string DecryptWithSystemKey(string encryptedValue)
     {
         var systemKeyProvider = _securityConfigProvider.GetSystemSymmetricKey();

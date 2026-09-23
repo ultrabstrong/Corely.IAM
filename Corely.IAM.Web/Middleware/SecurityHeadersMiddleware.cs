@@ -42,7 +42,6 @@ public class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvironment
         if (!env.IsDevelopment())
             headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
 
-        // No CSP: only the host knows its sources.
         await next(context);
     }
 

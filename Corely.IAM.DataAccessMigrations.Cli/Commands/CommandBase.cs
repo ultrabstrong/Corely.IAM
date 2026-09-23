@@ -210,7 +210,6 @@ internal abstract class CommandBase : Command
             Console.WriteLine();
         }
 
-        // Help re-invokes this command; guard against recursing when help isn't reachable.
         if (_showingHelp)
         {
             return;

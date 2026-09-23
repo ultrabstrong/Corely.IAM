@@ -559,7 +559,6 @@ internal class UserProcessor(
             user.Accounts = userEntity
                 .Accounts?.Select(a => new ChildRef(a.Id, a.AccountName))
                 .ToList();
-            // Also filtered in memory: mock repos ignore filtered includes.
             user.Groups = userEntity
                 .Groups?.Where(g => currentAccountId == null || g.AccountId == currentAccountId)
                 .Select(g => new ChildRef(g.Id, g.Name))

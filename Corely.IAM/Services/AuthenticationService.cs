@@ -178,6 +178,7 @@ internal class AuthenticationService(
             );
         }
 
+        // No EmailVerified check, unlike register and link: it would lock out already-linked accounts.
         var userId = await _googleAuthProcessor.GetUserIdByGoogleSubjectAsync(payload.Subject);
         if (userId == null)
         {

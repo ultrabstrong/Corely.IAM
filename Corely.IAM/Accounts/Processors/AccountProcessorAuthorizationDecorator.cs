@@ -83,7 +83,6 @@ internal class AccountProcessorAuthorizationDecorator(
                 $"Unauthorized to update account {request.AccountId}"
             );
 
-    // No authorization check, by design: the invitation token was already validated.
     public Task<AddUserToAccountResult> AddUserToAccountForInvitationAsync(
         AddUserToAccountRequest request
     ) => _inner.AddUserToAccountForInvitationAsync(request);
@@ -103,7 +102,6 @@ internal class AccountProcessorAuthorizationDecorator(
                 $"Unauthorized to update account {request.AccountId}"
             );
 
-    // No authorization check, by design: scoped to the caller's own accounts, and needed before any account context exists.
     public Task<ListResult<Account>> ListAccountsAsync(
         ListAccountsRequest request,
         IReadOnlySet<Guid>? authorizedResourceIds = null

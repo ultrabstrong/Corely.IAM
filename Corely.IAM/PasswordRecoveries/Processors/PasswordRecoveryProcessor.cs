@@ -107,7 +107,7 @@ internal class PasswordRecoveryProcessor(
         return new RequestPasswordRecoveryResult(
             RequestPasswordRecoveryResultCode.Success,
             string.Empty,
-            CreateToken(recoveryEntity.Id, secret)
+            new PasswordRecoveryToken(recoveryEntity.Id, secret).ToString()
         );
     }
 
@@ -231,7 +231,7 @@ internal class PasswordRecoveryProcessor(
         string Message
     )> ValidateRecoveryTokenAsync(string token)
     {
-        if (!TryParseToken(token, out var recoveryId, out var secret))
+        if (!PasswordRecoveryToken.TryParse(token, out var recoveryToken))
         {
             return (
                 null,
@@ -240,6 +240,7 @@ internal class PasswordRecoveryProcessor(
             );
         }
 
+        var recoveryId = recoveryToken.RecoveryId;
         var recoveryEntity = await _passwordRecoveryRepo.GetAsync(r => r.Id == recoveryId);
         if (recoveryEntity == null)
         {
@@ -251,7 +252,7 @@ internal class PasswordRecoveryProcessor(
         }
 
         var storedHash = recoveryEntity.SecretHash.ToHashedValue(_hashProviderFactory);
-        if (!storedHash.Verify(secret))
+        if (!storedHash.Verify(recoveryToken.Secret))
         {
             return (
                 null,
@@ -348,29 +349,5 @@ internal class PasswordRecoveryProcessor(
                 updateResult.Message
             ),
         };
-    }
-
-    private static string CreateToken(Guid recoveryId, string secret) => $"{recoveryId:N}.{secret}";
-
-    private static bool TryParseToken(string token, out Guid recoveryId, out string secret)
-    {
-        recoveryId = Guid.Empty;
-        secret = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(token))
-            return false;
-
-        var parts = token.Split('.', 2, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length != 2)
-            return false;
-
-        if (!Guid.TryParseExact(parts[0], "N", out recoveryId))
-            return false;
-
-        if (string.IsNullOrWhiteSpace(parts[1]))
-            return false;
-
-        secret = parts[1];
-        return true;
     }
 }

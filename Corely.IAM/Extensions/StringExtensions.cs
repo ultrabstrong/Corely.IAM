@@ -35,5 +35,11 @@ internal static class StringExtensions
         }
 
         public string ToDisplayRecoveryCode() => $"{value[..4]}-{value[4..]}";
+
+        public string EmailLocalPart()
+        {
+            var atIndex = value.IndexOf('@');
+            return atIndex > 0 ? value[..atIndex] : value;
+        }
     }
 }

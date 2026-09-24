@@ -32,6 +32,16 @@ public class StringExtensionsTests
         Assert.Throws<ArgumentException>(() => input.FromBase32());
     }
 
+    [Theory]
+    [InlineData("jane@example.com", "jane")]
+    [InlineData("a.b+c@x@y", "a.b+c")]
+    [InlineData("@example.com", "@example.com")]
+    [InlineData("no-at-sign", "no-at-sign")]
+    public void EmailLocalPart_ReturnsTextBeforeTheFirstAt(string email, string expected)
+    {
+        Assert.Equal(expected, email.EmailLocalPart());
+    }
+
     [Fact]
     public void ToDisplayRecoveryCode_SplitsAfterTheFourthCharacter()
     {

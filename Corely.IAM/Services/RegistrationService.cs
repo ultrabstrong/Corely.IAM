@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using Corely.Common.Extensions;
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
@@ -8,6 +8,7 @@ using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.Extensions;
 using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.GoogleAuths.Providers;
@@ -202,7 +203,7 @@ internal class RegistrationService(
         {
             await _uowProvider.BeginAsync();
 
-            var username = GenerateUsernameFromEmail(payload.Email);
+            var username = payload.Email.EmailLocalPart();
             CreateUserResult? userResult = null;
 
             for (var i = 0; i <= MAX_USERNAME_RETRIES; i++)
@@ -755,12 +756,6 @@ internal class RegistrationService(
             ),
             _ => new SetPasswordResult(SetPasswordResultCode.ValidationError, updateResult.Message),
         };
-    }
-
-    private static string GenerateUsernameFromEmail(string email)
-    {
-        var atIndex = email.IndexOf('@');
-        return atIndex > 0 ? email[..atIndex] : email;
     }
 
     private static string GenerateRandomSuffix()

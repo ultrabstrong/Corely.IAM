@@ -6,28 +6,37 @@ namespace Corely.IAM.Accounts.Mappers;
 
 internal static class AccountMapper
 {
-    public static Account ToAccount(this CreateAccountRequest request)
+    extension(CreateAccountRequest request)
     {
-        return new Account { AccountName = request.AccountName };
-    }
-
-    public static AccountEntity ToEntity(this Account account)
-    {
-        return new AccountEntity
+        public Account ToAccount()
         {
-            Id = account.Id,
-            AccountName = account.AccountName,
-            SymmetricKeys = account
-                .SymmetricKeys?.Select(k => k.ToAccountEntity(account.Id))
-                .ToList(),
-            AsymmetricKeys = account
-                .AsymmetricKeys?.Select(k => k.ToAccountEntity(account.Id))
-                .ToList(),
-        };
+            return new Account { AccountName = request.AccountName };
+        }
     }
 
-    public static Account ToModel(this AccountEntity entity)
+    extension(Account account)
     {
-        return new Account { Id = entity.Id, AccountName = entity.AccountName };
+        public AccountEntity ToEntity()
+        {
+            return new AccountEntity
+            {
+                Id = account.Id,
+                AccountName = account.AccountName,
+                SymmetricKeys = account
+                    .SymmetricKeys?.Select(k => k.ToAccountEntity(account.Id))
+                    .ToList(),
+                AsymmetricKeys = account
+                    .AsymmetricKeys?.Select(k => k.ToAccountEntity(account.Id))
+                    .ToList(),
+            };
+        }
+    }
+
+    extension(AccountEntity entity)
+    {
+        public Account ToModel()
+        {
+            return new Account { Id = entity.Id, AccountName = entity.AccountName };
+        }
     }
 }

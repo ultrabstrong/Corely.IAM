@@ -6,22 +6,26 @@ namespace Corely.IAM.Validators.Mappers;
 
 internal static class ValidationMapper
 {
-    public static CorelyValidationError ToValidationError(this ValidationFailure failure)
+    extension(ValidationFailure failure)
     {
-        return new CorelyValidationError
+        public CorelyValidationError ToValidationError()
         {
-            Message = failure.ErrorMessage,
-            PropertyName = failure.PropertyName,
-        };
+            return new CorelyValidationError
+            {
+                Message = failure.ErrorMessage,
+                PropertyName = failure.PropertyName,
+            };
+        }
     }
 
-    public static CorelyValidationResult ToValidationResult(
-        this FluentValidation.Results.ValidationResult fluentResult
-    )
+    extension(FluentValidation.Results.ValidationResult fluentResult)
     {
-        return new CorelyValidationResult
+        public CorelyValidationResult ToValidationResult()
         {
-            Errors = fluentResult.Errors?.Select(e => e.ToValidationError()).ToList(),
-        };
+            return new CorelyValidationResult
+            {
+                Errors = fluentResult.Errors?.Select(e => e.ToValidationError()).ToList(),
+            };
+        }
     }
 }

@@ -5,14 +5,17 @@ namespace Corely.IAM.Web.Extensions;
 
 public static class IamWebAppExtensions
 {
-    public static IApplicationBuilder UseIAMWebAuthentication(this IApplicationBuilder app)
+    extension(IApplicationBuilder app)
     {
-        app.UseMiddleware<CorrelationIdMiddleware>();
-        app.UseMiddleware<SecurityHeadersMiddleware>();
-        app.UseMiddleware<AuthenticationTokenMiddleware>();
-        app.UseAuthentication();
-        app.UseAuthorization();
+        public IApplicationBuilder UseIAMWebAuthentication()
+        {
+            app.UseMiddleware<CorrelationIdMiddleware>();
+            app.UseMiddleware<SecurityHeadersMiddleware>();
+            app.UseMiddleware<AuthenticationTokenMiddleware>();
+            app.UseAuthentication();
+            app.UseAuthorization();
 
-        return app;
+            return app;
+        }
     }
 }

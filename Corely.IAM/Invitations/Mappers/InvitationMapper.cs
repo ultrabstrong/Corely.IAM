@@ -5,20 +5,23 @@ namespace Corely.IAM.Invitations.Mappers;
 
 internal static class InvitationMapper
 {
-    public static Invitation ToModel(this InvitationEntity entity)
+    extension(InvitationEntity entity)
     {
-        return new Invitation
+        public Invitation ToModel()
         {
-            Id = entity.Id,
-            AccountId = entity.AccountId,
-            CreatedByUserId = entity.CreatedByUserId,
-            Email = entity.Email,
-            Description = entity.Description,
-            ExpiresUtc = entity.ExpiresUtc,
-            AcceptedByUserId = entity.AcceptedByUserId,
-            AcceptedUtc = entity.AcceptedUtc,
-            RevokedUtc = entity.RevokedUtc,
-            CreatedUtc = entity.CreatedUtc,
-        };
+            return new Invitation
+            {
+                Id = entity.Id,
+                AccountId = entity.AccountId,
+                CreatedByUserId = entity.CreatedByUserId,
+                Email = entity.Email,
+                Description = entity.Description,
+                ExpiresUtc = entity.ExpiresUtc,
+                AcceptedByUserId = entity.AcceptedByUserId,
+                AcceptedUtc = entity.AcceptedUtc,
+                RevokedUtc = entity.RevokedUtc,
+                CreatedUtc = entity.CreatedUtc,
+            };
+        }
     }
 }

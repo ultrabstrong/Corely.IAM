@@ -429,7 +429,7 @@ test it directly.
 - write a helper class not attached to a type — `MessageHelper`, `MappingUtils`, a grab-bag
   `Extensions.cs` or `...Messages` class holding readings of several unrelated types;
 - name it for the receiver or the mechanics — `RemainingRatioOf`, `GetRatioFromContext`;
-- use `this T` parameters in new code (existing ones convert when next touched), or make anything
+- use `this T` parameters, or make anything
   `public` purely so a test can reach it. Public is for real API only.
 
 This covers conversions and derived readings, not every private method: a helper that only

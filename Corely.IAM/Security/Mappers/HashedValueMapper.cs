@@ -5,40 +5,39 @@ namespace Corely.IAM.Security.Mappers;
 
 internal static class HashedValueMapper
 {
-    public static string? ToHashString(this IHashedValue? source)
+    extension(IHashedValue? source)
     {
-        return source?.Hash;
+        public string? ToHashString()
+        {
+            return source?.Hash;
+        }
     }
 
-    public static IHashedValue ToHashedValue(
-        this string source,
-        IHashProviderFactory hashProviderFactory
-    )
+    extension(string source)
     {
-        var hashProvider = hashProviderFactory.GetProviderToVerify(source);
-        return new HashedValue(hashProvider) { Hash = source };
-    }
+        public IHashedValue ToHashedValue(IHashProviderFactory hashProviderFactory)
+        {
+            var hashProvider = hashProviderFactory.GetProviderToVerify(source);
+            return new HashedValue(hashProvider) { Hash = source };
+        }
 
-    public static IHashedValue ToHashedValueFromPlainText(
-        this string source,
-        IHashProviderFactory hashProviderFactory
-    )
-    {
-        var hashProvider = hashProviderFactory.GetDefaultProvider();
-        var hashedValue = new HashedValue(hashProvider);
-        hashedValue.Set(source);
-        return hashedValue;
-    }
+        public IHashedValue ToHashedValueFromPlainText(IHashProviderFactory hashProviderFactory)
+        {
+            var hashProvider = hashProviderFactory.GetDefaultProvider();
+            var hashedValue = new HashedValue(hashProvider);
+            hashedValue.Set(source);
+            return hashedValue;
+        }
 
-    public static IHashedValue ToHashedValueFromPlainText(
-        this string source,
-        IHashProviderFactory hashProviderFactory,
-        string providerCode
-    )
-    {
-        var hashProvider = hashProviderFactory.GetProvider(providerCode);
-        var hashedValue = new HashedValue(hashProvider);
-        hashedValue.Set(source);
-        return hashedValue;
+        public IHashedValue ToHashedValueFromPlainText(
+            IHashProviderFactory hashProviderFactory,
+            string providerCode
+        )
+        {
+            var hashProvider = hashProviderFactory.GetProvider(providerCode);
+            var hashedValue = new HashedValue(hashProvider);
+            hashedValue.Set(source);
+            return hashedValue;
+        }
     }
 }

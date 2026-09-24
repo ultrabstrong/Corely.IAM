@@ -7,77 +7,74 @@ namespace Corely.IAM.Security.Mappers;
 
 internal static class AsymmetricKeyMapper
 {
-    public static UserAsymmetricKeyEntity ToUserEntity(
-        this AsymmetricKey asymmetricKey,
-        Guid userId
-    )
+    extension(AsymmetricKey asymmetricKey)
     {
-        return new UserAsymmetricKeyEntity
+        public UserAsymmetricKeyEntity ToUserEntity(Guid userId)
         {
-            Id = asymmetricKey.Id,
-            UserId = userId,
-            KeyUsedFor = asymmetricKey.KeyUsedFor,
-            ProviderName = asymmetricKey.ProviderName,
-            Version = asymmetricKey.Version,
-            PublicKey = asymmetricKey.PublicKey,
-            EncryptedPrivateKey = asymmetricKey.PrivateKey.ToEncryptedString()!,
-            CreatedUtc = asymmetricKey.CreatedUtc,
-            ModifiedUtc = asymmetricKey.ModifiedUtc,
-        };
+            return new UserAsymmetricKeyEntity
+            {
+                Id = asymmetricKey.Id,
+                UserId = userId,
+                KeyUsedFor = asymmetricKey.KeyUsedFor,
+                ProviderName = asymmetricKey.ProviderName,
+                Version = asymmetricKey.Version,
+                PublicKey = asymmetricKey.PublicKey,
+                EncryptedPrivateKey = asymmetricKey.PrivateKey.ToEncryptedString()!,
+                CreatedUtc = asymmetricKey.CreatedUtc,
+                ModifiedUtc = asymmetricKey.ModifiedUtc,
+            };
+        }
+
+        public AccountAsymmetricKeyEntity ToAccountEntity(Guid accountId)
+        {
+            return new AccountAsymmetricKeyEntity
+            {
+                Id = asymmetricKey.Id,
+                AccountId = accountId,
+                KeyUsedFor = asymmetricKey.KeyUsedFor,
+                ProviderName = asymmetricKey.ProviderName,
+                Version = asymmetricKey.Version,
+                PublicKey = asymmetricKey.PublicKey,
+                EncryptedPrivateKey = asymmetricKey.PrivateKey.ToEncryptedString()!,
+                CreatedUtc = asymmetricKey.CreatedUtc,
+                ModifiedUtc = asymmetricKey.ModifiedUtc,
+            };
+        }
     }
 
-    public static AccountAsymmetricKeyEntity ToAccountEntity(
-        this AsymmetricKey asymmetricKey,
-        Guid accountId
-    )
+    extension(UserAsymmetricKeyEntity entity)
     {
-        return new AccountAsymmetricKeyEntity
+        public AsymmetricKey ToModel(ISymmetricEncryptionProviderFactory encryptionProviderFactory)
         {
-            Id = asymmetricKey.Id,
-            AccountId = accountId,
-            KeyUsedFor = asymmetricKey.KeyUsedFor,
-            ProviderName = asymmetricKey.ProviderName,
-            Version = asymmetricKey.Version,
-            PublicKey = asymmetricKey.PublicKey,
-            EncryptedPrivateKey = asymmetricKey.PrivateKey.ToEncryptedString()!,
-            CreatedUtc = asymmetricKey.CreatedUtc,
-            ModifiedUtc = asymmetricKey.ModifiedUtc,
-        };
+            return new AsymmetricKey
+            {
+                Id = entity.Id,
+                KeyUsedFor = entity.KeyUsedFor,
+                ProviderName = entity.ProviderName,
+                Version = entity.Version,
+                PublicKey = entity.PublicKey,
+                PrivateKey = entity.EncryptedPrivateKey.ToEncryptedValue(encryptionProviderFactory),
+                CreatedUtc = entity.CreatedUtc,
+                ModifiedUtc = entity.ModifiedUtc,
+            };
+        }
     }
 
-    public static AsymmetricKey ToModel(
-        this UserAsymmetricKeyEntity entity,
-        ISymmetricEncryptionProviderFactory encryptionProviderFactory
-    )
+    extension(AccountAsymmetricKeyEntity entity)
     {
-        return new AsymmetricKey
+        public AsymmetricKey ToModel(ISymmetricEncryptionProviderFactory encryptionProviderFactory)
         {
-            Id = entity.Id,
-            KeyUsedFor = entity.KeyUsedFor,
-            ProviderName = entity.ProviderName,
-            Version = entity.Version,
-            PublicKey = entity.PublicKey,
-            PrivateKey = entity.EncryptedPrivateKey.ToEncryptedValue(encryptionProviderFactory),
-            CreatedUtc = entity.CreatedUtc,
-            ModifiedUtc = entity.ModifiedUtc,
-        };
-    }
-
-    public static AsymmetricKey ToModel(
-        this AccountAsymmetricKeyEntity entity,
-        ISymmetricEncryptionProviderFactory encryptionProviderFactory
-    )
-    {
-        return new AsymmetricKey
-        {
-            Id = entity.Id,
-            KeyUsedFor = entity.KeyUsedFor,
-            ProviderName = entity.ProviderName,
-            Version = entity.Version,
-            PublicKey = entity.PublicKey,
-            PrivateKey = entity.EncryptedPrivateKey.ToEncryptedValue(encryptionProviderFactory),
-            CreatedUtc = entity.CreatedUtc,
-            ModifiedUtc = entity.ModifiedUtc,
-        };
+            return new AsymmetricKey
+            {
+                Id = entity.Id,
+                KeyUsedFor = entity.KeyUsedFor,
+                ProviderName = entity.ProviderName,
+                Version = entity.Version,
+                PublicKey = entity.PublicKey,
+                PrivateKey = entity.EncryptedPrivateKey.ToEncryptedValue(encryptionProviderFactory),
+                CreatedUtc = entity.CreatedUtc,
+                ModifiedUtc = entity.ModifiedUtc,
+            };
+        }
     }
 }

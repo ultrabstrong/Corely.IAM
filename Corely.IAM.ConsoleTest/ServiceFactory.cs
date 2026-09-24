@@ -1,4 +1,4 @@
-﻿using Corely.DataAccess.EntityFramework.Configurations;
+using Corely.DataAccess.EntityFramework.Configurations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,36 +8,38 @@ namespace Corely.IAM.ConsoleApp;
 
 internal static class ServiceFactory
 {
-    public static IServiceCollection RegisterServices(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    extension(IServiceCollection services)
     {
-        services.AddLogging(builder =>
+        public IServiceCollection RegisterServices(IConfiguration configuration)
         {
-            builder.ClearProviders();
-            builder.AddSerilog(logger: Log.Logger, dispose: false);
-        });
+            services.AddLogging(builder =>
+            {
+                builder.ClearProviders();
+                builder.AddSerilog(logger: Log.Logger, dispose: false);
+            });
 
-        var securityConfigurationProvider = new SecurityConfigurationProvider(
-            configuration["SystemSymmetricEncryptionKey"]
-                ?? throw new Exception($"SystemSymmetricEncryptionKey not found in configuration")
-        );
+            var securityConfigurationProvider = new SecurityConfigurationProvider(
+                configuration["SystemSymmetricEncryptionKey"]
+                    ?? throw new Exception(
+                        $"SystemSymmetricEncryptionKey not found in configuration"
+                    )
+            );
 
-        Func<IServiceProvider, IEFConfiguration> efConfig;
+            Func<IServiceProvider, IEFConfiguration> efConfig;
 
-        var connectionString =
-            configuration.GetConnectionString("DataRepoConnection")
-            ?? throw new Exception($"DataRepoConnection string not found in configuration");
+            var connectionString =
+                configuration.GetConnectionString("DataRepoConnection")
+                ?? throw new Exception($"DataRepoConnection string not found in configuration");
 
-        efConfig = sp => new MsSqlEFConfiguration(
-            connectionString,
-            sp.GetRequiredService<ILoggerFactory>()
-        );
+            efConfig = sp => new MsSqlEFConfiguration(
+                connectionString,
+                sp.GetRequiredService<ILoggerFactory>()
+            );
 
-        var options = IAMOptions.Create(configuration, securityConfigurationProvider, efConfig);
-        services.AddIAMServices(options);
+            var options = IAMOptions.Create(configuration, securityConfigurationProvider, efConfig);
+            services.AddIAMServices(options);
 
-        return services;
+            return services;
+        }
     }
 }

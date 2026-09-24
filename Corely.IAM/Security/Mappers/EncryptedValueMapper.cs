@@ -5,17 +5,22 @@ namespace Corely.IAM.Security.Mappers;
 
 internal static class EncryptedValueMapper
 {
-    public static string? ToEncryptedString(this ISymmetricEncryptedValue? source)
+    extension(ISymmetricEncryptedValue? source)
     {
-        return source?.Secret;
+        public string? ToEncryptedString()
+        {
+            return source?.Secret;
+        }
     }
 
-    public static ISymmetricEncryptedValue ToEncryptedValue(
-        this string source,
-        ISymmetricEncryptionProviderFactory encryptionProviderFactory
-    )
+    extension(string source)
     {
-        var encryptionProvider = encryptionProviderFactory.GetProviderForDecrypting(source);
-        return new SymmetricEncryptedValue(encryptionProvider) { Secret = source };
+        public ISymmetricEncryptedValue ToEncryptedValue(
+            ISymmetricEncryptionProviderFactory encryptionProviderFactory
+        )
+        {
+            var encryptionProvider = encryptionProviderFactory.GetProviderForDecrypting(source);
+            return new SymmetricEncryptedValue(encryptionProvider) { Secret = source };
+        }
     }
 }

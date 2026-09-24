@@ -7,52 +7,55 @@ namespace Corely.IAM.BasicAuths.Mappers;
 
 internal static class BasicAuthMapper
 {
-    public static BasicAuth ToBasicAuth(
-        this CreateBasicAuthRequest request,
-        IHashProviderFactory hashProviderFactory
-    )
+    extension(CreateBasicAuthRequest request)
     {
-        return new BasicAuth
+        public BasicAuth ToBasicAuth(IHashProviderFactory hashProviderFactory)
         {
-            UserId = request.UserId,
-            Password = request.Password.ToHashedValueFromPlainText(hashProviderFactory),
-        };
+            return new BasicAuth
+            {
+                UserId = request.UserId,
+                Password = request.Password.ToHashedValueFromPlainText(hashProviderFactory),
+            };
+        }
     }
 
-    public static BasicAuth ToBasicAuth(
-        this UpdateBasicAuthRequest request,
-        IHashProviderFactory hashProviderFactory
-    )
+    extension(UpdateBasicAuthRequest request)
     {
-        return new BasicAuth
+        public BasicAuth ToBasicAuth(IHashProviderFactory hashProviderFactory)
         {
-            UserId = request.UserId,
-            Password = request.Password.ToHashedValueFromPlainText(hashProviderFactory),
-        };
+            return new BasicAuth
+            {
+                UserId = request.UserId,
+                Password = request.Password.ToHashedValueFromPlainText(hashProviderFactory),
+            };
+        }
     }
 
-    public static BasicAuthEntity ToEntity(this BasicAuth basicAuth)
+    extension(BasicAuth basicAuth)
     {
-        return new BasicAuthEntity
+        public BasicAuthEntity ToEntity()
         {
-            Id = basicAuth.Id,
-            UserId = basicAuth.UserId,
-            Password = basicAuth.Password.ToHashString()!,
-            ModifiedUtc = basicAuth.ModifiedUtc,
-        };
+            return new BasicAuthEntity
+            {
+                Id = basicAuth.Id,
+                UserId = basicAuth.UserId,
+                Password = basicAuth.Password.ToHashString()!,
+                ModifiedUtc = basicAuth.ModifiedUtc,
+            };
+        }
     }
 
-    public static BasicAuth ToModel(
-        this BasicAuthEntity entity,
-        IHashProviderFactory hashProviderFactory
-    )
+    extension(BasicAuthEntity entity)
     {
-        return new BasicAuth
+        public BasicAuth ToModel(IHashProviderFactory hashProviderFactory)
         {
-            Id = entity.Id,
-            UserId = entity.UserId,
-            Password = entity.Password.ToHashedValue(hashProviderFactory),
-            ModifiedUtc = entity.ModifiedUtc,
-        };
+            return new BasicAuth
+            {
+                Id = entity.Id,
+                UserId = entity.UserId,
+                Password = entity.Password.ToHashedValue(hashProviderFactory),
+                ModifiedUtc = entity.ModifiedUtc,
+            };
+        }
     }
 }

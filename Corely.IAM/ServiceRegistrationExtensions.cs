@@ -34,192 +34,218 @@ namespace Corely.IAM;
 
 public static class ServiceRegistrationExtensions
 {
-    public static IServiceCollection AddIAMServices(
-        this IServiceCollection serviceCollection,
-        IAMOptions options
-    )
+    extension(IServiceCollection serviceCollection)
     {
-        ArgumentNullException.ThrowIfNull(serviceCollection);
-        ArgumentNullException.ThrowIfNull(options);
-
-        if (options.EFConfigurationFactory != null)
+        public IServiceCollection AddIAMServices(IAMOptions options)
         {
-            var efConfigurationFactory = options.EFConfigurationFactory;
-            serviceCollection.AddKeyedScoped(
-                EFConfigurationKeys.IAM,
-                (sp, _) => efConfigurationFactory(sp)
+            ArgumentNullException.ThrowIfNull(serviceCollection);
+            ArgumentNullException.ThrowIfNull(options);
+
+            if (options.EFConfigurationFactory != null)
+            {
+                var efConfigurationFactory = options.EFConfigurationFactory;
+                serviceCollection.AddKeyedScoped(
+                    EFConfigurationKeys.IAM,
+                    (sp, _) => efConfigurationFactory(sp)
+                );
+                serviceCollection.AddDbContext<IamDbContext>();
+                serviceCollection.RegisterEntityFrameworkReposAndUoW();
+            }
+            else
+            {
+                serviceCollection.RegisterMockReposAndUoW();
+            }
+
+            serviceCollection.AddSingleton(TimeProvider.System);
+
+            var registry = new ResourceTypeRegistry();
+            foreach (var (name, description) in options.CustomResourceTypes)
+                registry.Register(name, description);
+            serviceCollection.AddSingleton<IResourceTypeRegistry>(registry);
+
+            serviceCollection.AddValidatorsFromAssemblyContaining<FluentValidationProvider>(
+                includeInternalTypes: true
             );
-            serviceCollection.AddDbContext<IamDbContext>();
-            serviceCollection.RegisterEntityFrameworkReposAndUoW();
+            serviceCollection.AddScoped<IFluentValidatorFactory, FluentValidatorFactory>();
+            serviceCollection.AddScoped<IValidationProvider, FluentValidationProvider>();
+
+            serviceCollection.AddSingleton<
+                ISymmetricEncryptionProviderFactory,
+                SymmetricEncryptionProviderFactory
+            >(_ => new SymmetricEncryptionProviderFactory(options.SymmetricEncryptionCode));
+
+            serviceCollection.AddSingleton<
+                IAsymmetricEncryptionProviderFactory,
+                AsymmetricEncryptionProviderFactory
+            >(_ => new AsymmetricEncryptionProviderFactory(options.AsymmetricEncryptionCode));
+
+            serviceCollection.AddSingleton<
+                IAsymmetricSignatureProviderFactory,
+                AsymmetricSignatureProviderFactory
+            >(_ => new AsymmetricSignatureProviderFactory(options.AsymmetricSignatureCode));
+
+            serviceCollection.AddSingleton<IHashProviderFactory, HashProviderFactory>(
+                _ => new HashProviderFactory(options.HashCode)
+            );
+            serviceCollection.AddSingleton(
+                new IamHashCodes(options.HashCode, options.TokenHashCode)
+            );
+            serviceCollection.AddSingleton<ISecretProvider>(_ => new RandomSecretProvider(
+                PasswordRecoveryConstants.TOKEN_SECRET_LENGTH
+            ));
+
+            serviceCollection.AddSingleton<ISecurityProvider, SecurityProvider>();
+            serviceCollection.AddScoped<IPasswordValidationProvider, PasswordValidationProvider>();
+
+            serviceCollection.AddSingleton(_ => options.SecurityConfigurationProvider);
+            serviceCollection.Configure<SecurityOptions>(
+                options.Configuration.GetSection(SecurityOptions.NAME)
+            );
+            serviceCollection.Configure<PasswordValidationOptions>(
+                options.Configuration.GetSection(PasswordValidationOptions.NAME)
+            );
+
+            serviceCollection.AddScoped<IAuthenticationProvider, AuthenticationProvider>();
+            serviceCollection.AddScoped<UserContextProvider>();
+            serviceCollection.AddScoped<IUserContextProvider>(sp =>
+                sp.GetRequiredService<UserContextProvider>()
+            );
+            serviceCollection.AddScoped<IUserContextSetter>(sp =>
+                sp.GetRequiredService<UserContextProvider>()
+            );
+            serviceCollection.AddScoped<AuthorizationProvider>();
+            serviceCollection.AddScoped<IAuthorizationProvider>(sp =>
+                sp.GetRequiredService<AuthorizationProvider>()
+            );
+            serviceCollection.AddScoped<IAuthorizationCacheClearer>(sp =>
+                sp.GetRequiredService<AuthorizationProvider>()
+            );
+
+            serviceCollection.AddScoped<IRegistrationService, RegistrationService>();
+            serviceCollection.Decorate<
+                IRegistrationService,
+                RegistrationServiceAuthorizationDecorator
+            >();
+            serviceCollection.Decorate<
+                IRegistrationService,
+                RegistrationServiceTelemetryDecorator
+            >();
+            serviceCollection.AddScoped<IDeregistrationService, DeregistrationService>();
+            serviceCollection.Decorate<
+                IDeregistrationService,
+                DeregistrationServiceAuthorizationDecorator
+            >();
+            serviceCollection.Decorate<
+                IDeregistrationService,
+                DeregistrationServiceTelemetryDecorator
+            >();
+            serviceCollection.AddScoped<IRetrievalService, RetrievalService>();
+            serviceCollection.Decorate<IRetrievalService, RetrievalServiceTelemetryDecorator>();
+            serviceCollection.AddScoped<IModificationService, ModificationService>();
+            serviceCollection.Decorate<
+                IModificationService,
+                ModificationServiceTelemetryDecorator
+            >();
+            serviceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
+            serviceCollection.Decorate<
+                IAuthenticationService,
+                AuthenticationServiceTelemetryDecorator
+            >();
+
+            serviceCollection.AddScoped<IMfaService, MfaService>();
+            serviceCollection.Decorate<IMfaService, MfaServiceAuthorizationDecorator>();
+            serviceCollection.Decorate<IMfaService, MfaServiceTelemetryDecorator>();
+
+            serviceCollection.AddScoped<IGoogleAuthService, GoogleAuthService>();
+            serviceCollection.Decorate<
+                IGoogleAuthService,
+                GoogleAuthServiceAuthorizationDecorator
+            >();
+            serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceTelemetryDecorator>();
+
+            serviceCollection.AddScoped<IInvitationService, InvitationService>();
+            serviceCollection.Decorate<IInvitationService, InvitationServiceTelemetryDecorator>();
+
+            serviceCollection.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
+            serviceCollection.Decorate<
+                IPasswordRecoveryService,
+                PasswordRecoveryServiceTelemetryDecorator
+            >();
+
+            serviceCollection.AddScoped<IUserOwnershipProcessor, UserOwnershipProcessor>();
+
+            serviceCollection.AddScoped<IAccountProcessor, AccountProcessor>();
+            serviceCollection.Decorate<IAccountProcessor, AccountProcessorAuthorizationDecorator>();
+            serviceCollection.Decorate<IAccountProcessor, AccountProcessorTelemetryDecorator>();
+
+            serviceCollection.AddScoped<IUserProcessor, UserProcessor>();
+            serviceCollection.Decorate<IUserProcessor, UserProcessorAuthorizationDecorator>();
+            serviceCollection.Decorate<IUserProcessor, UserProcessorTelemetryDecorator>();
+
+            serviceCollection.AddScoped<BasicAuthProcessor>();
+            serviceCollection.AddScoped<IBasicAuthProcessor>(sp =>
+                sp.GetRequiredService<BasicAuthProcessor>()
+            );
+            serviceCollection.Decorate<
+                IBasicAuthProcessor,
+                BasicAuthProcessorAuthorizationDecorator
+            >();
+            serviceCollection.Decorate<IBasicAuthProcessor, BasicAuthProcessorTelemetryDecorator>();
+
+            serviceCollection.AddScoped<IGroupProcessor, GroupProcessor>();
+            serviceCollection.Decorate<IGroupProcessor, GroupProcessorAuthorizationDecorator>();
+            serviceCollection.Decorate<IGroupProcessor, GroupProcessorTelemetryDecorator>();
+
+            serviceCollection.AddScoped<IRoleProcessor, RoleProcessor>();
+            serviceCollection.Decorate<IRoleProcessor, RoleProcessorAuthorizationDecorator>();
+            serviceCollection.Decorate<IRoleProcessor, RoleProcessorTelemetryDecorator>();
+
+            serviceCollection.AddScoped<IPermissionProcessor, PermissionProcessor>();
+            serviceCollection.Decorate<
+                IPermissionProcessor,
+                PermissionProcessorAuthorizationDecorator
+            >();
+            serviceCollection.Decorate<
+                IPermissionProcessor,
+                PermissionProcessorTelemetryDecorator
+            >();
+
+            serviceCollection.AddScoped<IInvitationProcessor, InvitationProcessor>();
+            serviceCollection.Decorate<
+                IInvitationProcessor,
+                InvitationProcessorAuthorizationDecorator
+            >();
+            serviceCollection.Decorate<
+                IInvitationProcessor,
+                InvitationProcessorTelemetryDecorator
+            >();
+
+            serviceCollection.AddScoped<IPasswordRecoveryProcessor, PasswordRecoveryProcessor>();
+            serviceCollection.Decorate<
+                IPasswordRecoveryProcessor,
+                PasswordRecoveryProcessorTelemetryDecorator
+            >();
+
+            serviceCollection.AddSingleton<ITotpProvider, TotpProvider>();
+            serviceCollection.AddScoped<ITotpAuthProcessor, TotpAuthProcessor>();
+            serviceCollection.Decorate<
+                ITotpAuthProcessor,
+                TotpAuthProcessorAuthorizationDecorator
+            >();
+            serviceCollection.Decorate<ITotpAuthProcessor, TotpAuthProcessorTelemetryDecorator>();
+
+            serviceCollection.AddScoped<IGoogleIdTokenValidator, GoogleIdTokenValidator>();
+            serviceCollection.AddScoped<IGoogleAuthProcessor, GoogleAuthProcessor>();
+            serviceCollection.Decorate<
+                IGoogleAuthProcessor,
+                GoogleAuthProcessorAuthorizationDecorator
+            >();
+            serviceCollection.Decorate<
+                IGoogleAuthProcessor,
+                GoogleAuthProcessorTelemetryDecorator
+            >();
+
+            return serviceCollection;
         }
-        else
-        {
-            serviceCollection.RegisterMockReposAndUoW();
-        }
-
-        serviceCollection.AddSingleton(TimeProvider.System);
-
-        var registry = new ResourceTypeRegistry();
-        foreach (var (name, description) in options.CustomResourceTypes)
-            registry.Register(name, description);
-        serviceCollection.AddSingleton<IResourceTypeRegistry>(registry);
-
-        serviceCollection.AddValidatorsFromAssemblyContaining<FluentValidationProvider>(
-            includeInternalTypes: true
-        );
-        serviceCollection.AddScoped<IFluentValidatorFactory, FluentValidatorFactory>();
-        serviceCollection.AddScoped<IValidationProvider, FluentValidationProvider>();
-
-        serviceCollection.AddSingleton<
-            ISymmetricEncryptionProviderFactory,
-            SymmetricEncryptionProviderFactory
-        >(_ => new SymmetricEncryptionProviderFactory(options.SymmetricEncryptionCode));
-
-        serviceCollection.AddSingleton<
-            IAsymmetricEncryptionProviderFactory,
-            AsymmetricEncryptionProviderFactory
-        >(_ => new AsymmetricEncryptionProviderFactory(options.AsymmetricEncryptionCode));
-
-        serviceCollection.AddSingleton<
-            IAsymmetricSignatureProviderFactory,
-            AsymmetricSignatureProviderFactory
-        >(_ => new AsymmetricSignatureProviderFactory(options.AsymmetricSignatureCode));
-
-        serviceCollection.AddSingleton<IHashProviderFactory, HashProviderFactory>(
-            _ => new HashProviderFactory(options.HashCode)
-        );
-        serviceCollection.AddSingleton(new IamHashCodes(options.HashCode, options.TokenHashCode));
-        serviceCollection.AddSingleton<ISecretProvider>(_ => new RandomSecretProvider(
-            PasswordRecoveryConstants.TOKEN_SECRET_LENGTH
-        ));
-
-        serviceCollection.AddSingleton<ISecurityProvider, SecurityProvider>();
-        serviceCollection.AddScoped<IPasswordValidationProvider, PasswordValidationProvider>();
-
-        serviceCollection.AddSingleton(_ => options.SecurityConfigurationProvider);
-        serviceCollection.Configure<SecurityOptions>(
-            options.Configuration.GetSection(SecurityOptions.NAME)
-        );
-        serviceCollection.Configure<PasswordValidationOptions>(
-            options.Configuration.GetSection(PasswordValidationOptions.NAME)
-        );
-
-        serviceCollection.AddScoped<IAuthenticationProvider, AuthenticationProvider>();
-        serviceCollection.AddScoped<UserContextProvider>();
-        serviceCollection.AddScoped<IUserContextProvider>(sp =>
-            sp.GetRequiredService<UserContextProvider>()
-        );
-        serviceCollection.AddScoped<IUserContextSetter>(sp =>
-            sp.GetRequiredService<UserContextProvider>()
-        );
-        serviceCollection.AddScoped<AuthorizationProvider>();
-        serviceCollection.AddScoped<IAuthorizationProvider>(sp =>
-            sp.GetRequiredService<AuthorizationProvider>()
-        );
-        serviceCollection.AddScoped<IAuthorizationCacheClearer>(sp =>
-            sp.GetRequiredService<AuthorizationProvider>()
-        );
-
-        serviceCollection.AddScoped<IRegistrationService, RegistrationService>();
-        serviceCollection.Decorate<
-            IRegistrationService,
-            RegistrationServiceAuthorizationDecorator
-        >();
-        serviceCollection.Decorate<IRegistrationService, RegistrationServiceTelemetryDecorator>();
-        serviceCollection.AddScoped<IDeregistrationService, DeregistrationService>();
-        serviceCollection.Decorate<
-            IDeregistrationService,
-            DeregistrationServiceAuthorizationDecorator
-        >();
-        serviceCollection.Decorate<
-            IDeregistrationService,
-            DeregistrationServiceTelemetryDecorator
-        >();
-        serviceCollection.AddScoped<IRetrievalService, RetrievalService>();
-        serviceCollection.Decorate<IRetrievalService, RetrievalServiceTelemetryDecorator>();
-        serviceCollection.AddScoped<IModificationService, ModificationService>();
-        serviceCollection.Decorate<IModificationService, ModificationServiceTelemetryDecorator>();
-        serviceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
-        serviceCollection.Decorate<
-            IAuthenticationService,
-            AuthenticationServiceTelemetryDecorator
-        >();
-
-        serviceCollection.AddScoped<IMfaService, MfaService>();
-        serviceCollection.Decorate<IMfaService, MfaServiceAuthorizationDecorator>();
-        serviceCollection.Decorate<IMfaService, MfaServiceTelemetryDecorator>();
-
-        serviceCollection.AddScoped<IGoogleAuthService, GoogleAuthService>();
-        serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceAuthorizationDecorator>();
-        serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceTelemetryDecorator>();
-
-        serviceCollection.AddScoped<IInvitationService, InvitationService>();
-        serviceCollection.Decorate<IInvitationService, InvitationServiceTelemetryDecorator>();
-
-        serviceCollection.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
-        serviceCollection.Decorate<
-            IPasswordRecoveryService,
-            PasswordRecoveryServiceTelemetryDecorator
-        >();
-
-        serviceCollection.AddScoped<IUserOwnershipProcessor, UserOwnershipProcessor>();
-
-        serviceCollection.AddScoped<IAccountProcessor, AccountProcessor>();
-        serviceCollection.Decorate<IAccountProcessor, AccountProcessorAuthorizationDecorator>();
-        serviceCollection.Decorate<IAccountProcessor, AccountProcessorTelemetryDecorator>();
-
-        serviceCollection.AddScoped<IUserProcessor, UserProcessor>();
-        serviceCollection.Decorate<IUserProcessor, UserProcessorAuthorizationDecorator>();
-        serviceCollection.Decorate<IUserProcessor, UserProcessorTelemetryDecorator>();
-
-        serviceCollection.AddScoped<BasicAuthProcessor>();
-        serviceCollection.AddScoped<IBasicAuthProcessor>(sp =>
-            sp.GetRequiredService<BasicAuthProcessor>()
-        );
-        serviceCollection.Decorate<IBasicAuthProcessor, BasicAuthProcessorAuthorizationDecorator>();
-        serviceCollection.Decorate<IBasicAuthProcessor, BasicAuthProcessorTelemetryDecorator>();
-
-        serviceCollection.AddScoped<IGroupProcessor, GroupProcessor>();
-        serviceCollection.Decorate<IGroupProcessor, GroupProcessorAuthorizationDecorator>();
-        serviceCollection.Decorate<IGroupProcessor, GroupProcessorTelemetryDecorator>();
-
-        serviceCollection.AddScoped<IRoleProcessor, RoleProcessor>();
-        serviceCollection.Decorate<IRoleProcessor, RoleProcessorAuthorizationDecorator>();
-        serviceCollection.Decorate<IRoleProcessor, RoleProcessorTelemetryDecorator>();
-
-        serviceCollection.AddScoped<IPermissionProcessor, PermissionProcessor>();
-        serviceCollection.Decorate<
-            IPermissionProcessor,
-            PermissionProcessorAuthorizationDecorator
-        >();
-        serviceCollection.Decorate<IPermissionProcessor, PermissionProcessorTelemetryDecorator>();
-
-        serviceCollection.AddScoped<IInvitationProcessor, InvitationProcessor>();
-        serviceCollection.Decorate<
-            IInvitationProcessor,
-            InvitationProcessorAuthorizationDecorator
-        >();
-        serviceCollection.Decorate<IInvitationProcessor, InvitationProcessorTelemetryDecorator>();
-
-        serviceCollection.AddScoped<IPasswordRecoveryProcessor, PasswordRecoveryProcessor>();
-        serviceCollection.Decorate<
-            IPasswordRecoveryProcessor,
-            PasswordRecoveryProcessorTelemetryDecorator
-        >();
-
-        serviceCollection.AddSingleton<ITotpProvider, TotpProvider>();
-        serviceCollection.AddScoped<ITotpAuthProcessor, TotpAuthProcessor>();
-        serviceCollection.Decorate<ITotpAuthProcessor, TotpAuthProcessorAuthorizationDecorator>();
-        serviceCollection.Decorate<ITotpAuthProcessor, TotpAuthProcessorTelemetryDecorator>();
-
-        serviceCollection.AddScoped<IGoogleIdTokenValidator, GoogleIdTokenValidator>();
-        serviceCollection.AddScoped<IGoogleAuthProcessor, GoogleAuthProcessor>();
-        serviceCollection.Decorate<
-            IGoogleAuthProcessor,
-            GoogleAuthProcessorAuthorizationDecorator
-        >();
-        serviceCollection.Decorate<IGoogleAuthProcessor, GoogleAuthProcessorTelemetryDecorator>();
-
-        return serviceCollection;
     }
 }

@@ -9,39 +9,39 @@ namespace Corely.IAM.Web.Extensions;
 
 public static class IamWebServiceExtensions
 {
-    public static IServiceCollection AddIAMWeb(
-        this IServiceCollection services,
-        Action<IAMWebOptions>? configure = null
-    )
+    extension(IServiceCollection services)
     {
-        services.AddRazorPages();
-        services.AddHttpContextAccessor();
-        services.Configure(configure ?? (_ => { }));
+        public IServiceCollection AddIAMWeb(Action<IAMWebOptions>? configure = null)
+        {
+            services.AddRazorPages();
+            services.AddHttpContextAccessor();
+            services.Configure(configure ?? (_ => { }));
 
-        services.AddSingleton<IAuthCookieManager, AuthCookieManager>();
-        services.AddSingleton<IUserContextClaimsBuilder, UserContextClaimsBuilder>();
-        services.AddScoped<IPostAuthenticationFlowService, PostAuthenticationFlowService>();
+            services.AddSingleton<IAuthCookieManager, AuthCookieManager>();
+            services.AddSingleton<IUserContextClaimsBuilder, UserContextClaimsBuilder>();
+            services.AddScoped<IPostAuthenticationFlowService, PostAuthenticationFlowService>();
 
-        services
-            .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(options =>
-            {
-                options.LoginPath = "/signin";
-                options.LogoutPath = "/signout";
-            });
+            services
+                .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/signin";
+                    options.LogoutPath = "/signout";
+                });
 
-        services.AddAuthorization();
+            services.AddAuthorization();
 
-        return services;
-    }
+            return services;
+        }
 
-    public static IServiceCollection AddIAMWebBlazor(this IServiceCollection services)
-    {
-        services.AddScoped<IBlazorUserContextAccessor, BlazorUserContextAccessor>();
-        services.AddScoped<AuthenticationStateProvider, IamAuthenticationStateProvider>();
-        services.AddScoped<IAccountDisplayState, AccountDisplayState>();
-        services.AddCascadingAuthenticationState();
+        public IServiceCollection AddIAMWebBlazor()
+        {
+            services.AddScoped<IBlazorUserContextAccessor, BlazorUserContextAccessor>();
+            services.AddScoped<AuthenticationStateProvider, IamAuthenticationStateProvider>();
+            services.AddScoped<IAccountDisplayState, AccountDisplayState>();
+            services.AddCascadingAuthenticationState();
 
-        return services;
+            return services;
+        }
     }
 }

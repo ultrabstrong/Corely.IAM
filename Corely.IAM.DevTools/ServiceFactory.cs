@@ -1,4 +1,4 @@
-﻿using Corely.DataAccess.EntityFramework.Configurations;
+using Corely.DataAccess.EntityFramework.Configurations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,46 +8,52 @@ namespace Corely.IAM.DevTools;
 
 internal static class ServiceFactory
 {
-    public static IServiceCollection RegisterServices(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    extension(IServiceCollection services)
     {
-        services.AddLogging(builder =>
+        public IServiceCollection RegisterServices(IConfiguration configuration)
         {
-            builder.ClearProviders();
-            builder.AddSerilog(logger: Log.Logger, dispose: false);
-        });
-
-        var encryptionKey = configuration["SystemSymmetricEncryptionKey"];
-        var connectionString = configuration.GetConnectionString("DataRepoConnection");
-        var provider = ConfigurationProvider.TryGetProvider();
-
-        if (
-            !string.IsNullOrEmpty(encryptionKey)
-            && !string.IsNullOrEmpty(connectionString)
-            && provider.HasValue
-        )
-        {
-            var securityConfigurationProvider = new SecurityConfigurationProvider(encryptionKey);
-
-            Func<IServiceProvider, IEFConfiguration> efConfig = provider.Value switch
+            services.AddLogging(builder =>
             {
-                DatabaseProvider.MySql => sp => new MySqlEFConfiguration(
-                    connectionString,
-                    sp.GetRequiredService<ILoggerFactory>()
-                ),
-                DatabaseProvider.MsSql => sp => new MsSqlEFConfiguration(
-                    connectionString,
-                    sp.GetRequiredService<ILoggerFactory>()
-                ),
-                _ => throw new InvalidOperationException($"Unsupported provider: {provider}"),
-            };
+                builder.ClearProviders();
+                builder.AddSerilog(logger: Log.Logger, dispose: false);
+            });
 
-            var options = IAMOptions.Create(configuration, securityConfigurationProvider, efConfig);
-            services.AddIAMServices(options);
+            var encryptionKey = configuration["SystemSymmetricEncryptionKey"];
+            var connectionString = configuration.GetConnectionString("DataRepoConnection");
+            var provider = ConfigurationProvider.TryGetProvider();
+
+            if (
+                !string.IsNullOrEmpty(encryptionKey)
+                && !string.IsNullOrEmpty(connectionString)
+                && provider.HasValue
+            )
+            {
+                var securityConfigurationProvider = new SecurityConfigurationProvider(
+                    encryptionKey
+                );
+
+                Func<IServiceProvider, IEFConfiguration> efConfig = provider.Value switch
+                {
+                    DatabaseProvider.MySql => sp => new MySqlEFConfiguration(
+                        connectionString,
+                        sp.GetRequiredService<ILoggerFactory>()
+                    ),
+                    DatabaseProvider.MsSql => sp => new MsSqlEFConfiguration(
+                        connectionString,
+                        sp.GetRequiredService<ILoggerFactory>()
+                    ),
+                    _ => throw new InvalidOperationException($"Unsupported provider: {provider}"),
+                };
+
+                var options = IAMOptions.Create(
+                    configuration,
+                    securityConfigurationProvider,
+                    efConfig
+                );
+                services.AddIAMServices(options);
+            }
+
+            return services;
         }
-
-        return services;
     }
 }

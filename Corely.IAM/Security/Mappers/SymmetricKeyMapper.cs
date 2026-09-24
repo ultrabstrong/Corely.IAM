@@ -7,70 +7,70 @@ namespace Corely.IAM.Security.Mappers;
 
 internal static class SymmetricKeyMapper
 {
-    public static UserSymmetricKeyEntity ToUserEntity(this SymmetricKey symmetricKey, Guid userId)
+    extension(SymmetricKey symmetricKey)
     {
-        return new UserSymmetricKeyEntity
+        public UserSymmetricKeyEntity ToUserEntity(Guid userId)
         {
-            Id = symmetricKey.Id,
-            UserId = userId,
-            KeyUsedFor = symmetricKey.KeyUsedFor,
-            ProviderName = symmetricKey.ProviderName,
-            Version = symmetricKey.Version,
-            EncryptedKey = symmetricKey.Key.ToEncryptedString()!,
-            CreatedUtc = symmetricKey.CreatedUtc,
-            ModifiedUtc = symmetricKey.ModifiedUtc,
-        };
+            return new UserSymmetricKeyEntity
+            {
+                Id = symmetricKey.Id,
+                UserId = userId,
+                KeyUsedFor = symmetricKey.KeyUsedFor,
+                ProviderName = symmetricKey.ProviderName,
+                Version = symmetricKey.Version,
+                EncryptedKey = symmetricKey.Key.ToEncryptedString()!,
+                CreatedUtc = symmetricKey.CreatedUtc,
+                ModifiedUtc = symmetricKey.ModifiedUtc,
+            };
+        }
+
+        public AccountSymmetricKeyEntity ToAccountEntity(Guid accountId)
+        {
+            return new AccountSymmetricKeyEntity
+            {
+                Id = symmetricKey.Id,
+                AccountId = accountId,
+                KeyUsedFor = symmetricKey.KeyUsedFor,
+                ProviderName = symmetricKey.ProviderName,
+                Version = symmetricKey.Version,
+                EncryptedKey = symmetricKey.Key.ToEncryptedString()!,
+                CreatedUtc = symmetricKey.CreatedUtc,
+                ModifiedUtc = symmetricKey.ModifiedUtc,
+            };
+        }
     }
 
-    public static AccountSymmetricKeyEntity ToAccountEntity(
-        this SymmetricKey symmetricKey,
-        Guid accountId
-    )
+    extension(UserSymmetricKeyEntity entity)
     {
-        return new AccountSymmetricKeyEntity
+        public SymmetricKey ToModel(ISymmetricEncryptionProviderFactory encryptionProviderFactory)
         {
-            Id = symmetricKey.Id,
-            AccountId = accountId,
-            KeyUsedFor = symmetricKey.KeyUsedFor,
-            ProviderName = symmetricKey.ProviderName,
-            Version = symmetricKey.Version,
-            EncryptedKey = symmetricKey.Key.ToEncryptedString()!,
-            CreatedUtc = symmetricKey.CreatedUtc,
-            ModifiedUtc = symmetricKey.ModifiedUtc,
-        };
+            return new SymmetricKey
+            {
+                Id = entity.Id,
+                KeyUsedFor = entity.KeyUsedFor,
+                ProviderName = entity.ProviderName,
+                Version = entity.Version,
+                Key = entity.EncryptedKey.ToEncryptedValue(encryptionProviderFactory),
+                CreatedUtc = entity.CreatedUtc,
+                ModifiedUtc = entity.ModifiedUtc,
+            };
+        }
     }
 
-    public static SymmetricKey ToModel(
-        this UserSymmetricKeyEntity entity,
-        ISymmetricEncryptionProviderFactory encryptionProviderFactory
-    )
+    extension(AccountSymmetricKeyEntity entity)
     {
-        return new SymmetricKey
+        public SymmetricKey ToModel(ISymmetricEncryptionProviderFactory encryptionProviderFactory)
         {
-            Id = entity.Id,
-            KeyUsedFor = entity.KeyUsedFor,
-            ProviderName = entity.ProviderName,
-            Version = entity.Version,
-            Key = entity.EncryptedKey.ToEncryptedValue(encryptionProviderFactory),
-            CreatedUtc = entity.CreatedUtc,
-            ModifiedUtc = entity.ModifiedUtc,
-        };
-    }
-
-    public static SymmetricKey ToModel(
-        this AccountSymmetricKeyEntity entity,
-        ISymmetricEncryptionProviderFactory encryptionProviderFactory
-    )
-    {
-        return new SymmetricKey
-        {
-            Id = entity.Id,
-            KeyUsedFor = entity.KeyUsedFor,
-            ProviderName = entity.ProviderName,
-            Version = entity.Version,
-            Key = entity.EncryptedKey.ToEncryptedValue(encryptionProviderFactory),
-            CreatedUtc = entity.CreatedUtc,
-            ModifiedUtc = entity.ModifiedUtc,
-        };
+            return new SymmetricKey
+            {
+                Id = entity.Id,
+                KeyUsedFor = entity.KeyUsedFor,
+                ProviderName = entity.ProviderName,
+                Version = entity.Version,
+                Key = entity.EncryptedKey.ToEncryptedValue(encryptionProviderFactory),
+                CreatedUtc = entity.CreatedUtc,
+                ModifiedUtc = entity.ModifiedUtc,
+            };
+        }
     }
 }

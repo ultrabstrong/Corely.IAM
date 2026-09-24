@@ -5,32 +5,41 @@ namespace Corely.IAM.Roles.Mappers;
 
 internal static class RoleMapper
 {
-    public static Role ToRole(this CreateRoleRequest request)
+    extension(CreateRoleRequest request)
     {
-        return new Role { Name = request.RoleName, AccountId = request.OwnerAccountId };
+        public Role ToRole()
+        {
+            return new Role { Name = request.RoleName, AccountId = request.OwnerAccountId };
+        }
     }
 
-    public static RoleEntity ToEntity(this Role role)
+    extension(Role role)
     {
-        return new RoleEntity
+        public RoleEntity ToEntity()
         {
-            Id = role.Id,
-            Name = role.Name,
-            Description = role.Description,
-            IsSystemDefined = role.IsSystemDefined,
-            AccountId = role.AccountId,
-        };
+            return new RoleEntity
+            {
+                Id = role.Id,
+                Name = role.Name,
+                Description = role.Description,
+                IsSystemDefined = role.IsSystemDefined,
+                AccountId = role.AccountId,
+            };
+        }
     }
 
-    public static Role ToModel(this RoleEntity entity)
+    extension(RoleEntity entity)
     {
-        return new Role
+        public Role ToModel()
         {
-            Id = entity.Id,
-            Name = entity.Name,
-            Description = entity.Description,
-            IsSystemDefined = entity.IsSystemDefined,
-            AccountId = entity.AccountId,
-        };
+            return new Role
+            {
+                Id = entity.Id,
+                Name = entity.Name,
+                Description = entity.Description,
+                IsSystemDefined = entity.IsSystemDefined,
+                AccountId = entity.AccountId,
+            };
+        }
     }
 }

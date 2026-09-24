@@ -55,9 +55,9 @@ internal class RetrievalService(
         nameof(userContextProvider)
     );
 
-    public Task<RetrieveListResult<Permission>> ListPermissionsAsync(
+    public async Task<RetrieveListResult<Permission>> ListPermissionsAsync(
         ListPermissionsRequest request
-    ) => WrapListResultAsync(_permissionProcessor.ListPermissionsAsync(request));
+    ) => (await _permissionProcessor.ListPermissionsAsync(request)).ToRetrieveListResult();
 
     public async Task<RetrieveSingleResult<Permission>> GetPermissionAsync(
         Guid permissionId,
@@ -81,8 +81,8 @@ internal class RetrievalService(
         );
     }
 
-    public Task<RetrieveListResult<Group>> ListGroupsAsync(ListGroupsRequest request) =>
-        WrapListResultAsync(_groupProcessor.ListGroupsAsync(request));
+    public async Task<RetrieveListResult<Group>> ListGroupsAsync(ListGroupsRequest request) =>
+        (await _groupProcessor.ListGroupsAsync(request)).ToRetrieveListResult();
 
     public async Task<RetrieveSingleResult<Group>> GetGroupAsync(Guid groupId, bool hydrate = false)
     {
@@ -103,8 +103,8 @@ internal class RetrievalService(
         );
     }
 
-    public Task<RetrieveListResult<Role>> ListRolesAsync(ListRolesRequest request) =>
-        WrapListResultAsync(_roleProcessor.ListRolesAsync(request));
+    public async Task<RetrieveListResult<Role>> ListRolesAsync(ListRolesRequest request) =>
+        (await _roleProcessor.ListRolesAsync(request)).ToRetrieveListResult();
 
     public async Task<RetrieveSingleResult<Role>> GetRoleAsync(Guid roleId, bool hydrate = false)
     {
@@ -121,8 +121,8 @@ internal class RetrievalService(
         );
     }
 
-    public Task<RetrieveListResult<User>> ListUsersAsync(ListUsersRequest request) =>
-        WrapListResultAsync(_userProcessor.ListUsersAsync(request));
+    public async Task<RetrieveListResult<User>> ListUsersAsync(ListUsersRequest request) =>
+        (await _userProcessor.ListUsersAsync(request)).ToRetrieveListResult();
 
     public async Task<RetrieveSingleResult<User>> GetUserAsync(Guid userId, bool hydrate = false)
     {
@@ -139,8 +139,8 @@ internal class RetrievalService(
         );
     }
 
-    public Task<RetrieveListResult<Account>> ListAccountsAsync(ListAccountsRequest request) =>
-        WrapListResultAsync(_accountProcessor.ListAccountsAsync(request));
+    public async Task<RetrieveListResult<Account>> ListAccountsAsync(ListAccountsRequest request) =>
+        (await _accountProcessor.ListAccountsAsync(request)).ToRetrieveListResult();
 
     public async Task<RetrieveSingleResult<Account>> GetAccountAsync(
         Guid accountId,
@@ -183,14 +183,6 @@ internal class RetrievalService(
 
     private Guid GetCurrentAccountId() =>
         _userContextProvider.GetUserContext()?.CurrentAccount?.Id ?? Guid.Empty;
-
-    private static async Task<RetrieveListResult<T>> WrapListResultAsync<T>(
-        Task<ListResult<T>> resultTask
-    )
-    {
-        var result = await resultTask;
-        return new RetrieveListResult<T>(result.ResultCode, result.Message, result.Data);
-    }
 
     public async Task<
         RetrieveSingleResult<IIamSymmetricEncryptionProvider>

@@ -118,6 +118,42 @@ Public static signatures verified identical against pushed `master` by reflectio
 
 The one `this T` (a test-file helper) converted.
 
+### Corely.IAM
+
+| Where | Method | Verdict |
+|---|---|---|
+| `AuthenticationProvider` | `GetSignatureKey`, `GetAccountModels` | `UserEntity` readings in `UserMapper`: `SignatureKey`, `AccountModels` |
+| `AuthenticationProvider` | `GetClaimValue`, `GetSessionStartedUtc`, the claim parse in `ExtractSignedInAccountFromToken` | Extension on `JwtSecurityToken`: `ClaimValue`, `SessionStartedUtc`, `SignedInAccountId` |
+| `AuthenticationProvider` | `BuildTokenClaims` | Member of `TokenIssueContext`, now its own internal record: `Claims` |
+| `AuthenticationProvider` | `CreateFailedTokenResult`, `CreateFailedRenewTokenResult`, `CreateFailedValidationResult` | Internal `Failed(code)` on each result record |
+| `AuthenticationProvider` | `FindAccountById`, `IsWithinLifetime`, `ValidateJwtToken`, `CreateUserAuthTokenAsync`, `GetUserWithKeysAndAccountsAsync`, `RevokeExistingTokensForUserAccountDeviceAsync`, rest of `ExtractSignedInAccountFromToken` | Stays: structures token issue and validation |
+| `AuthenticationService` | `MapAuthTokenResultCode` + `CreateFailedSignInResult`, `MapRenewAuthTokenResultCode` + `CreateFailedRenewAuthTokenResult` | Extensions on the provider codes: `ToFailedSignInResult`, `ToFailedRenewAuthTokenResult`; internal `Failed(code, message)` on `SignInResult`, `RenewAuthTokenResult` |
+| `AuthenticationService` | `CreateMfaChallengeAsync`, `GenerateAuthTokenAndSetContextAsync`, `GetUserSessionContext` | Stays: structures sign-in |
+| `AuthorizationProvider` | `HasAction` | `PermissionEntity.Allows` in `PermissionMapper` |
+| `AuthorizationProvider` | `TryGetUserContext`, `IsCacheValidFor`, `GetPermissionsAsync`, `TryGetUserId` | Stays: the provider's cache and context |
+| `RoleProcessor` | `IsOwnerSystemPermission` | `PermissionEntity.IsOwnerSystemPermission` in `PermissionMapper` |
+| `TotpProvider` | `Base32Encode`, `Base32Decode` | `byte[].ToBase32`, `string.FromBase32` in `Corely.IAM/Extensions` |
+| `TotpProvider` | `ComputeCode`, `GetCurrentTimeStep` | Stays: the provider's HOTP step, covered through `GenerateCode`/`ValidateCode` with a fake clock |
+| `TotpAuthProcessor` | `FormatRecoveryCode` | `string.ToDisplayRecoveryCode` |
+| `TotpAuthProcessor` | `EncryptWithSystemKey`, `DecryptWithSystemKey`, `GenerateRecoveryCodesAsync`, `GenerateRecoveryCode` | Stays: wraps injected services and randomness |
+| `PasswordRecoveryProcessor` | `CreateToken`, `TryParseToken` | New internal record `PasswordRecoveryToken` with `ToString` and `TryParse` |
+| `PasswordRecoveryProcessor` | `InvalidatePendingRecoveriesAsync`, `SetPasswordAsync`, `ValidateRecoveryTokenAsync` | Stays: structures recovery |
+| `RegistrationService` | `GenerateUsernameFromEmail` | `string.EmailLocalPart` |
+| `RegistrationService` | `GenerateRandomSuffix` | Stays: randomness |
+| `RetrievalService` | `WrapListResultAsync` | `ListResult<T>.ToRetrieveListResult` |
+| `RetrievalService` | `GetEffectivePermissionsAsync`, `GetCurrentAccountId` | Stays: reads the injected context |
+| `InvitationProcessor`, `BasicAuthProcessor`, `GoogleIdTokenValidator` | `GetRequiredUserContext`, `UpgradeStoredHashIfNeededAsync`, `GetConfigurationManager` | Stays: structures the class |
+| `DataAccessMigrations.Cli/DbCommandBase` | `PlaceholderConnectionString` | Extension on `DatabaseProvider` |
+| `DataAccessMigrations.Cli` | `FirstNonBlank`, `Report`, `CommandBase` reflection helpers | Stays: structures command building |
+| `Web/SecurityHeadersMiddleware` | `IsStaticAssetRequest` | `PathString.IsCacheableStaticAsset`. Extension matching is case-sensitive, so `/img/logo.PNG` is not cached; kept as found and recorded in a test |
+| `Web/PermissionView` | `ResourceIdsEqual` | `Guid[]?.SameIdsAs` |
+| `Web` middleware, pages and Razor components | event handlers, loaders, `RunSafeAsync`, `SetMessage`, sort icons | Stays: UI state and handlers |
+
+`Corely.IAM.Web` gained `InternalsVisibleTo` for its unit tests. Every `this T` converted, including
+the Web registration classes and the tool service factories; `LoggerExtensions` keeps its method type
+parameters on the members. Public static signatures of `Corely.IAM` and `Corely.IAM.Web` verified
+identical against pushed `master` by reflection.
+
 ## Decisions (owner)
 
 1. **Sweep all `this T` extensions now**, in all four repositories, public ones included. Skip one

@@ -73,7 +73,9 @@ dashboard, the permissions list and a role detail page with the effective permis
 browser with the OS in dark mode starts dark, the choice survives reloads and navigation, and the
 toggle's label names the theme it switches to. `ThemeToggleTests` covers the component.
 
-Not looked at page by page: the modals, the MFA and account-picker pages, the phone layout, and the
-two demos in a browser (their layouts build and their smoke tests pass). Those use the same tokens
-and Bootstrap classes as the pages checked, but they have not been seen.
-
+The rest was looked at afterwards, in dark: the create, confirm and entity-picker modals, the
+MFA verify page, the account picker, the profile page with an authenticator being enrolled, the
+phone layout (the toggle sits in the collapsed menu), and both demos' sign-in and Blazor pages. One
+fix came out of it: Bootstrap's `text-danger` on the dark modal measured about 3.5:1, below the 4.5:1
+text minimum, so dark mode draws red prose (`p`, `h2`, `code`) in Bootstrap's danger emphasis color
+(#ea868f, about 6.7:1). Icons keep the stock red, which clears the 3:1 bar for non-text.

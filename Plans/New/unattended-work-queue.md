@@ -18,8 +18,7 @@ bump versions or push tags.
   where DocsToData's plan or `CLAUDE.md` differs, follow this repository's and update theirs to match.
 - [x] **DocsToData cancellation audit.** Rule written, release fix pushed; plan open for two owner decisions. `DocsToData\Plans\New\cancellation-audit.md`. Fix dropped
   tokens; for the Blazor page cancellation question, record the options in the plan, do not decide.
-- [x] **Dark mode for the demos.** Built and pushed; the plan stays in `New` until the owner has
-  looked at the pages its Outcome lists as unchecked.
+- [x] **Dark mode for the demos.** Built, every page checked in dark, plan completed.
 
 Not to be picked up: `per-package-release-tags`, Billing's `iam-permissions-package`,
 `github-access-review`, `recreate-sftp-logins`, `corely-billing-web-and-unlimited-grants`.

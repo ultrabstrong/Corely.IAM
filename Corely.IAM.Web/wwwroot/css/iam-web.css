@@ -491,6 +491,10 @@ th.sortable.active .sort-icon {
     color: #fff;
 }
 
+[data-bs-theme="dark"] :is(p, h2, code).text-danger {
+    color: var(--bs-danger-text-emphasis) !important;
+}
+
 [data-bs-theme="dark"] .navbar.bg-dark {
     border-bottom: 1px solid var(--bs-border-color);
 }

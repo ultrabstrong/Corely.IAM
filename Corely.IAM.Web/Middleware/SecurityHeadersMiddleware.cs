@@ -1,3 +1,4 @@
+using Corely.IAM.Web.Extensions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
@@ -7,24 +8,6 @@ namespace Corely.IAM.Web.Middleware;
 public class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvironment env)
 {
     private const int STATIC_ASSET_CACHE_SECONDS = 86400;
-    private static readonly HashSet<string> CacheableStaticExtensions =
-    [
-        ".css",
-        ".js",
-        ".map",
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".gif",
-        ".svg",
-        ".ico",
-        ".webp",
-        ".woff",
-        ".woff2",
-        ".ttf",
-        ".eot",
-        ".webmanifest",
-    ];
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -48,7 +31,7 @@ public class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvironment
     private static void ApplyCacheHeaders(HttpContext context)
     {
         var headers = context.Response.Headers;
-        if (IsStaticAssetRequest(context.Request.Path))
+        if (context.Request.Path.IsCacheableStaticAsset())
         {
             headers["Cache-Control"] = $"public, max-age={STATIC_ASSET_CACHE_SECONDS}";
             headers.Remove("Pragma");
@@ -57,26 +40,5 @@ public class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvironment
 
         headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
         headers["Pragma"] = "no-cache";
-    }
-
-    private static bool IsStaticAssetRequest(PathString path)
-    {
-        if (!path.HasValue)
-        {
-            return false;
-        }
-
-        var pathValue = path.Value!;
-        if (
-            pathValue.StartsWith("/_framework", StringComparison.OrdinalIgnoreCase)
-            || pathValue.StartsWith("/_content", StringComparison.OrdinalIgnoreCase)
-        )
-        {
-            return true;
-        }
-
-        var extension = System.IO.Path.GetExtension(pathValue);
-        return !string.IsNullOrWhiteSpace(extension)
-            && CacheableStaticExtensions.Contains(extension);
     }
 }

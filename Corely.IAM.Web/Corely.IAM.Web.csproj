@@ -43,4 +43,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Corely.IAM.Web.UnitTests" />
+  </ItemGroup>
 </Project>

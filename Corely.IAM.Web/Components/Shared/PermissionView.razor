@@ -1,3 +1,4 @@
+@using Corely.IAM.Web.Extensions
 @inject IAuthorizationProvider AuthorizationProvider
 @inject IUserContextProvider UserContextProvider
 
@@ -64,7 +65,7 @@ else if (Undetermined != null)
             _checkComplete
             && Action == _lastAction
             && Resource == _lastResource
-            && ResourceIdsEqual(ResourceIds, _lastResourceIds)
+            && ResourceIds.SameIdsAs(_lastResourceIds)
         )
         {
             return;
@@ -79,14 +80,5 @@ else if (Undetermined != null)
             ResourceIds ?? []
         );
         _checkComplete = true;
-    }
-
-    private static bool ResourceIdsEqual(Guid[]? a, Guid[]? b)
-    {
-        if (ReferenceEquals(a, b))
-            return true;
-        if (a is null || b is null)
-            return false;
-        return a.AsSpan().SequenceEqual(b);
     }
 }

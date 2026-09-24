@@ -9,6 +9,7 @@ public class PathStringExtensionsTests
     [InlineData("/_framework/blazor.web.js")]
     [InlineData("/_FRAMEWORK/anything")]
     [InlineData("/_content/Corely.IAM.Web/app.css")]
+    [InlineData("/_content/Corely.IAM.Web/lib/no-extension")]
     [InlineData("/css/site.css")]
     [InlineData("/img/logo.png")]
     [InlineData("/fonts/x.woff2")]

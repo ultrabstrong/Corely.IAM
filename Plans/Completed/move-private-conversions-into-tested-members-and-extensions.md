@@ -168,9 +168,11 @@ Done in all four repositories, each pushed with `RebuildAndTest.ps1` green; no p
 no versions bumped. Every census row has a verdict above, every move has direct tests, and the only
 `this T` left is `ConfigureIdPk` in DataAccess, for the reason recorded there.
 
-Still open for the owner: the break-and-restore check of each new test (Work step 2) was not run.
-Auto mode refused to run tests against deliberately broken redaction code, and that refusal covers
-the technique, so it was not tried on the other moves either.
+The break-and-restore check (Work step 2) was run afterwards, on the owner's say-so: one deliberate
+bug per move, the move's own tests run, the file restored. 58 of 60 across these repositories,
+Billing and DocsToData went red first time. The two that did not were test gaps, now closed:
+`NameWithoutExtension` had no name whose extension text repeats, and `IsCacheableStaticAsset` had no
+`/_content` path without a cacheable extension.
 
 ## Done when
 

@@ -1,57 +1,89 @@
+using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Constants;
 
 namespace Corely.IAM.Permissions.Mappers;
 
 internal static class PermissionMapper
 {
-    public static Permission ToPermission(this CreatePermissionRequest request)
+    extension(CreatePermissionRequest request)
     {
-        return new Permission
+        public Permission ToPermission()
         {
-            AccountId = request.OwnerAccountId,
-            ResourceType = request.ResourceType,
-            ResourceId = request.ResourceId,
-            Create = request.Create,
-            Read = request.Read,
-            Update = request.Update,
-            Delete = request.Delete,
-            Execute = request.Execute,
-            Description = request.Description,
-        };
+            return new Permission
+            {
+                AccountId = request.OwnerAccountId,
+                ResourceType = request.ResourceType,
+                ResourceId = request.ResourceId,
+                Create = request.Create,
+                Read = request.Read,
+                Update = request.Update,
+                Delete = request.Delete,
+                Execute = request.Execute,
+                Description = request.Description,
+            };
+        }
     }
 
-    public static PermissionEntity ToEntity(this Permission permission)
+    extension(Permission permission)
     {
-        return new PermissionEntity
+        public PermissionEntity ToEntity()
         {
-            Id = permission.Id,
-            Description = permission.Description,
-            AccountId = permission.AccountId,
-            ResourceType = permission.ResourceType,
-            ResourceId = permission.ResourceId,
-            Create = permission.Create,
-            Read = permission.Read,
-            Update = permission.Update,
-            Delete = permission.Delete,
-            Execute = permission.Execute,
-        };
+            return new PermissionEntity
+            {
+                Id = permission.Id,
+                Description = permission.Description,
+                AccountId = permission.AccountId,
+                ResourceType = permission.ResourceType,
+                ResourceId = permission.ResourceId,
+                Create = permission.Create,
+                Read = permission.Read,
+                Update = permission.Update,
+                Delete = permission.Delete,
+                Execute = permission.Execute,
+            };
+        }
     }
 
-    public static Permission ToModel(this PermissionEntity entity)
+    extension(PermissionEntity entity)
     {
-        return new Permission
+        public Permission ToModel()
         {
-            Id = entity.Id,
-            Description = entity.Description,
-            AccountId = entity.AccountId,
-            ResourceType = entity.ResourceType,
-            ResourceId = entity.ResourceId,
-            Create = entity.Create,
-            Read = entity.Read,
-            Update = entity.Update,
-            Delete = entity.Delete,
-            Execute = entity.Execute,
-        };
+            return new Permission
+            {
+                Id = entity.Id,
+                Description = entity.Description,
+                AccountId = entity.AccountId,
+                ResourceType = entity.ResourceType,
+                ResourceId = entity.ResourceId,
+                Create = entity.Create,
+                Read = entity.Read,
+                Update = entity.Update,
+                Delete = entity.Delete,
+                Execute = entity.Execute,
+            };
+        }
+
+        public bool Allows(AuthAction action) =>
+            action switch
+            {
+                AuthAction.Create => entity.Create,
+                AuthAction.Read => entity.Read,
+                AuthAction.Update => entity.Update,
+                AuthAction.Delete => entity.Delete,
+                AuthAction.Execute => entity.Execute,
+                _ => false,
+            };
+
+        public bool IsOwnerSystemPermission() =>
+            entity.IsSystemDefined
+            && entity.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
+            && entity.ResourceId == Guid.Empty
+            && entity.Create
+            && entity.Read
+            && entity.Update
+            && entity.Delete
+            && entity.Execute;
     }
 }

@@ -2,6 +2,7 @@ using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
+using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
@@ -71,7 +72,7 @@ internal class AuthorizationProvider(
                 (
                     p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
                     || p.ResourceType == resourceType
-                ) && HasAction(p, action)
+                ) && p.Allows(action)
             )
             .ToList();
 
@@ -211,7 +212,7 @@ internal class AuthorizationProvider(
                 (
                     p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
                     || p.ResourceType == resourceType
-                ) && HasAction(p, action)
+                ) && p.Allows(action)
             )
             .ToList();
 
@@ -270,17 +271,6 @@ internal class AuthorizationProvider(
             _cacheLock.Release();
         }
     }
-
-    private static bool HasAction(PermissionEntity permission, AuthAction action) =>
-        action switch
-        {
-            AuthAction.Create => permission.Create,
-            AuthAction.Read => permission.Read,
-            AuthAction.Update => permission.Update,
-            AuthAction.Delete => permission.Delete,
-            AuthAction.Execute => permission.Execute,
-            _ => false,
-        };
 
     private bool TryGetUserId(UserContext userContext, string operation, out Guid userId)
     {

@@ -1,6 +1,8 @@
+using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Constants;
 
 namespace Corely.IAM.UnitTests.Permissions.Mappers;
 
@@ -335,4 +337,103 @@ public class PermissionMapperTests
 
         Assert.Equal("user - all CRUDX", permission.DisplayName);
     }
+
+    [Theory]
+    [InlineData(AuthAction.Create)]
+    [InlineData(AuthAction.Read)]
+    [InlineData(AuthAction.Update)]
+    [InlineData(AuthAction.Delete)]
+    [InlineData(AuthAction.Execute)]
+    public void Allows_ReadsOnlyTheFlagForTheAction(AuthAction action)
+    {
+        var only = new PermissionEntity
+        {
+            Create = action == AuthAction.Create,
+            Read = action == AuthAction.Read,
+            Update = action == AuthAction.Update,
+            Delete = action == AuthAction.Delete,
+            Execute = action == AuthAction.Execute,
+        };
+
+        Assert.True(only.Allows(action));
+        Assert.All(
+            Enum.GetValues<AuthAction>().Where(a => a != action),
+            other => Assert.False(only.Allows(other))
+        );
+    }
+
+    [Fact]
+    public void Allows_IsFalse_ForAnUnknownAction()
+    {
+        var all = OwnerSystemPermission();
+
+        Assert.False(all.Allows((AuthAction)999));
+    }
+
+    [Fact]
+    public void IsOwnerSystemPermission_IsTrue_ForSystemWildcardWithEveryAction()
+    {
+        Assert.True(OwnerSystemPermission().IsOwnerSystemPermission());
+    }
+
+    public static TheoryData<string> OwnerPermissionVariants() =>
+        [
+            "notSystem",
+            "resourceType",
+            "resourceId",
+            "create",
+            "read",
+            "update",
+            "delete",
+            "execute",
+        ];
+
+    [Theory]
+    [MemberData(nameof(OwnerPermissionVariants))]
+    public void IsOwnerSystemPermission_IsFalse_WhenAnyPartDiffers(string variant)
+    {
+        var p = OwnerSystemPermission();
+        switch (variant)
+        {
+            case "notSystem":
+                p.IsSystemDefined = false;
+                break;
+            case "resourceType":
+                p.ResourceType = "group";
+                break;
+            case "resourceId":
+                p.ResourceId = Guid.CreateVersion7();
+                break;
+            case "create":
+                p.Create = false;
+                break;
+            case "read":
+                p.Read = false;
+                break;
+            case "update":
+                p.Update = false;
+                break;
+            case "delete":
+                p.Delete = false;
+                break;
+            case "execute":
+                p.Execute = false;
+                break;
+        }
+
+        Assert.False(p.IsOwnerSystemPermission());
+    }
+
+    private static PermissionEntity OwnerSystemPermission() =>
+        new()
+        {
+            IsSystemDefined = true,
+            ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
+            ResourceId = Guid.Empty,
+            Create = true,
+            Read = true,
+            Update = true,
+            Delete = true,
+            Execute = true,
+        };
 }

@@ -7,6 +7,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
+using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Mappers;
@@ -326,7 +327,9 @@ internal class RoleProcessor(
 
         if (roleEntity.IsSystemDefined && roleEntity.Name == RoleConstants.OWNER_ROLE_NAME)
         {
-            var ownerPermissions = permissionsToRemove.Where(IsOwnerSystemPermission).ToList();
+            var ownerPermissions = permissionsToRemove
+                .Where(p => p.IsOwnerSystemPermission())
+                .ToList();
             if (ownerPermissions.Count > 0)
             {
                 blockedSystemPermissionIds = [.. ownerPermissions.Select(p => p.Id)];
@@ -349,7 +352,7 @@ internal class RoleProcessor(
 
                 permissionsToRemove =
                 [
-                    .. permissionsToRemove.Where(p => !IsOwnerSystemPermission(p)),
+                    .. permissionsToRemove.Where(p => !p.IsOwnerSystemPermission()),
                 ];
             }
         }
@@ -472,14 +475,4 @@ internal class RoleProcessor(
         _logger.LogInformation("Role with Id {RoleId} deleted", roleId);
         return new DeleteRoleResult(DeleteRoleResultCode.Success, string.Empty);
     }
-
-    private static bool IsOwnerSystemPermission(PermissionEntity permission) =>
-        permission.IsSystemDefined
-        && permission.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
-        && permission.ResourceId == Guid.Empty
-        && permission.Create
-        && permission.Read
-        && permission.Update
-        && permission.Delete
-        && permission.Execute;
 }

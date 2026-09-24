@@ -162,6 +162,16 @@ identical against pushed `master` by reflection.
    then IAM.
 3. **Push each repository** when it is green. No package publishing and no version bumps.
 
+## Outcome
+
+Done in all four repositories, each pushed with `RebuildAndTest.ps1` green; no packages published and
+no versions bumped. Every census row has a verdict above, every move has direct tests, and the only
+`this T` left is `ConfigureIdPk` in DataAccess, for the reason recorded there.
+
+Still open for the owner: the break-and-restore check of each new test (Work step 2) was not run.
+Auto mode refused to run tests against deliberately broken redaction code, and that refusal covers
+the technique, so it was not tried on the other moves either.
+
 ## Done when
 
 Every census row has a verdict here, each move has direct tests, no `this T` extensions remain (or

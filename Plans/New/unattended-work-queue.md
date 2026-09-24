@@ -6,7 +6,7 @@ plan named in the first unfinished item. Tick an item only when it is committed 
 Push each repository's default branch when its build and tests are green. Never publish packages,
 bump versions or push tags.
 
-- [ ] **Seams rule, Corely repositories.** `Plans/New/move-private-conversions-into-tested-members-and-extensions.md`
+- [x] **Seams rule, Corely repositories.** `Plans/Completed/move-private-conversions-into-tested-members-and-extensions.md`
   in this repository. Order: Common, DataAccess, Security, IAM.
 - [ ] **Seams rule, DocsToData.** `C:\source\git\pinnacleinnovation\DocsToData\Plans\New\mapping-extensions.md`.
 - [ ] **Corely.Billing `this T` sweep.** Possibly already done by another session; check `git log`

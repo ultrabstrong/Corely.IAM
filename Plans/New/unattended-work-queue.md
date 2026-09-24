@@ -18,6 +18,8 @@ bump versions or push tags.
   where DocsToData's plan or `CLAUDE.md` differs, follow this repository's and update theirs to match.
 - [ ] **DocsToData cancellation audit.** `DocsToData\Plans\New\cancellation-audit.md`. Fix dropped
   tokens; for the Blazor page cancellation question, record the options in the plan, do not decide.
+- [ ] **Dark mode for the demos.** `Plans/New/dark-mode-toggle-for-iam-web-and-its-hosts.md`, only
+  once everything above is done.
 
 Not to be picked up: `per-package-release-tags`, Billing's `iam-permissions-package`,
 `github-access-review`, `recreate-sftp-logins`, `corely-billing-web-and-unlimited-grants`.

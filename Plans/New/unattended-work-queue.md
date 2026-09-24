@@ -8,8 +8,9 @@ bump versions or push tags.
 
 - [x] **Seams rule, Corely repositories.** `Plans/Completed/move-private-conversions-into-tested-members-and-extensions.md`
   in this repository. Order: Common, DataAccess, Security, IAM.
-- [ ] **Seams rule, DocsToData.** `C:\source\git\pinnacleinnovation\DocsToData\Plans\New\mapping-extensions.md`.
-- [ ] **Corely.Billing `this T` sweep.** Possibly already done by another session; check `git log`
+- [ ] **Seams rule, DocsToData.** Committed; waiting for the single DocsToData push below, since each
+  push to `main` runs metered CI and deploys to dev. `C:\source\git\pinnacleinnovation\DocsToData\Plans\New\mapping-extensions.md`.
+- [x] **Corely.Billing `this T` sweep.** Done in `66c5f02`, pushed. Possibly already done by another session; check `git log`
   first and skip if so. Otherwise convert every `this T` to an `extension(T)` block and drop
   "(existing ones convert when next touched)" from its `CLAUDE.md`.
 - [ ] **DocsToData comment cleanup.** `DocsToData\Plans\New\comment-cleanup.md`, but judge comments by

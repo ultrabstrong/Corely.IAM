@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.Extensions;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.TotpAuths.Constants;
@@ -309,7 +310,7 @@ internal class TotpAuthProcessor(
         for (var i = 0; i < codes.Length; i++)
         {
             var rawCode = GenerateRecoveryCode();
-            codes[i] = FormatRecoveryCode(rawCode);
+            codes[i] = rawCode.ToDisplayRecoveryCode();
 
             var hashedValue = rawCode.ToHashedValueFromPlainText(_hashProviderFactory);
             var entity = new TotpRecoveryCodeEntity
@@ -329,6 +330,4 @@ internal class TotpAuthProcessor(
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         return RandomNumberGenerator.GetString(chars, TotpAuthConstants.RECOVERY_CODE_LENGTH);
     }
-
-    private static string FormatRecoveryCode(string code) => $"{code[..4]}-{code[4..]}";
 }

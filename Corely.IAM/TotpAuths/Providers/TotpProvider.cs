@@ -1,5 +1,5 @@
 using System.Security.Cryptography;
-using System.Text;
+using Corely.IAM.Extensions;
 
 namespace Corely.IAM.TotpAuths.Providers;
 
@@ -14,7 +14,7 @@ internal class TotpProvider(TimeProvider timeProvider) : ITotpProvider
     public string GenerateSecret()
     {
         var bytes = RandomNumberGenerator.GetBytes(SECRET_BYTES);
-        return Base32Encode(bytes);
+        return bytes.ToBase32();
     }
 
     public string GenerateSetupUri(string secret, string issuer, string userLabel)
@@ -54,7 +54,7 @@ internal class TotpProvider(TimeProvider timeProvider) : ITotpProvider
 
     private static string ComputeCode(string base32Secret, long timeStep)
     {
-        var keyBytes = Base32Decode(base32Secret);
+        var keyBytes = base32Secret.FromBase32();
         var timeBytes = BitConverter.GetBytes(timeStep);
         if (BitConverter.IsLittleEndian)
             Array.Reverse(timeBytes);
@@ -71,61 +71,5 @@ internal class TotpProvider(TimeProvider timeProvider) : ITotpProvider
 
         var otp = binaryCode % _pow10[DIGITS];
         return otp.ToString().PadLeft(DIGITS, '0');
-    }
-
-    private static string Base32Encode(byte[] data)
-    {
-        const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-        var sb = new StringBuilder((data.Length * 8 + 4) / 5);
-        var buffer = 0;
-        var bitsLeft = 0;
-
-        foreach (var b in data)
-        {
-            buffer = (buffer << 8) | b;
-            bitsLeft += 8;
-            while (bitsLeft >= 5)
-            {
-                bitsLeft -= 5;
-                sb.Append(alphabet[(buffer >> bitsLeft) & 0x1F]);
-            }
-        }
-
-        if (bitsLeft > 0)
-        {
-            sb.Append(alphabet[(buffer << (5 - bitsLeft)) & 0x1F]);
-        }
-
-        return sb.ToString();
-    }
-
-    private static byte[] Base32Decode(string base32)
-    {
-        var cleanInput = base32.TrimEnd('=').ToUpperInvariant();
-        var output = new byte[cleanInput.Length * 5 / 8];
-        var buffer = 0;
-        var bitsLeft = 0;
-        var index = 0;
-
-        foreach (var c in cleanInput)
-        {
-            var value = c switch
-            {
-                >= 'A' and <= 'Z' => c - 'A',
-                >= '2' and <= '7' => c - '2' + 26,
-                _ => throw new ArgumentException($"Invalid base32 character: {c}"),
-            };
-
-            buffer = (buffer << 5) | value;
-            bitsLeft += 5;
-
-            if (bitsLeft >= 8)
-            {
-                bitsLeft -= 8;
-                output[index++] = (byte)(buffer >> bitsLeft);
-            }
-        }
-
-        return output;
     }
 }

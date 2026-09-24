@@ -20,6 +20,7 @@ csharp_style_expression_bodied_lambdas = true:silent
 csharp_style_expression_bodied_local_functions = false:silent
 
 [*.{cs,vb}]
+dotnet_diagnostic.CA2016.severity = warning
 #### Naming styles ####
 
 # Naming rules

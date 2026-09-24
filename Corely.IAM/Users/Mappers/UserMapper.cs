@@ -1,3 +1,6 @@
+using Corely.IAM.Accounts.Mappers;
+using Corely.IAM.Accounts.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
@@ -6,46 +9,61 @@ namespace Corely.IAM.Users.Mappers;
 
 internal static class UserMapper
 {
-    public static User ToUser(this CreateUserRequest request)
+    extension(CreateUserRequest request)
     {
-        return new User { Username = request.Username, Email = request.Email };
+        public User ToUser()
+        {
+            return new User { Username = request.Username, Email = request.Email };
+        }
     }
 
-    public static UserEntity ToEntity(this User user)
+    extension(User user)
     {
-        return new UserEntity
+        public UserEntity ToEntity()
         {
-            Id = user.Id,
-            Username = user.Username,
-            Email = user.Email,
-            LockedUtc = user.LockedUtc,
-            TotalSuccessfulLogins = user.TotalSuccessfulLogins,
-            LastSuccessfulLoginUtc = user.LastSuccessfulLoginUtc,
-            FailedLoginsSinceLastSuccess = user.FailedLoginsSinceLastSuccess,
-            TotalFailedLogins = user.TotalFailedLogins,
-            LastFailedLoginUtc = user.LastFailedLoginUtc,
-            CreatedUtc = user.CreatedUtc,
-            ModifiedUtc = user.ModifiedUtc,
-            SymmetricKeys = user.SymmetricKeys?.Select(k => k.ToUserEntity(user.Id)).ToList(),
-            AsymmetricKeys = user.AsymmetricKeys?.Select(k => k.ToUserEntity(user.Id)).ToList(),
-        };
+            return new UserEntity
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                LockedUtc = user.LockedUtc,
+                TotalSuccessfulLogins = user.TotalSuccessfulLogins,
+                LastSuccessfulLoginUtc = user.LastSuccessfulLoginUtc,
+                FailedLoginsSinceLastSuccess = user.FailedLoginsSinceLastSuccess,
+                TotalFailedLogins = user.TotalFailedLogins,
+                LastFailedLoginUtc = user.LastFailedLoginUtc,
+                CreatedUtc = user.CreatedUtc,
+                ModifiedUtc = user.ModifiedUtc,
+                SymmetricKeys = user.SymmetricKeys?.Select(k => k.ToUserEntity(user.Id)).ToList(),
+                AsymmetricKeys = user.AsymmetricKeys?.Select(k => k.ToUserEntity(user.Id)).ToList(),
+            };
+        }
     }
 
-    public static User ToModel(this UserEntity entity)
+    extension(UserEntity entity)
     {
-        return new User
+        public User ToModel()
         {
-            Id = entity.Id,
-            Username = entity.Username,
-            Email = entity.Email,
-            LockedUtc = entity.LockedUtc,
-            TotalSuccessfulLogins = entity.TotalSuccessfulLogins,
-            LastSuccessfulLoginUtc = entity.LastSuccessfulLoginUtc,
-            FailedLoginsSinceLastSuccess = entity.FailedLoginsSinceLastSuccess,
-            TotalFailedLogins = entity.TotalFailedLogins,
-            LastFailedLoginUtc = entity.LastFailedLoginUtc,
-            CreatedUtc = entity.CreatedUtc,
-            ModifiedUtc = entity.ModifiedUtc,
-        };
+            return new User
+            {
+                Id = entity.Id,
+                Username = entity.Username,
+                Email = entity.Email,
+                LockedUtc = entity.LockedUtc,
+                TotalSuccessfulLogins = entity.TotalSuccessfulLogins,
+                LastSuccessfulLoginUtc = entity.LastSuccessfulLoginUtc,
+                FailedLoginsSinceLastSuccess = entity.FailedLoginsSinceLastSuccess,
+                TotalFailedLogins = entity.TotalFailedLogins,
+                LastFailedLoginUtc = entity.LastFailedLoginUtc,
+                CreatedUtc = entity.CreatedUtc,
+                ModifiedUtc = entity.ModifiedUtc,
+            };
+        }
+
+        public UserAsymmetricKeyEntity? SignatureKey() =>
+            entity.AsymmetricKeys?.FirstOrDefault(k => k.KeyUsedFor == KeyUsedFor.Signature);
+
+        public List<Account> AccountModels() =>
+            entity.Accounts?.Select(a => a.ToModel()).ToList() ?? [];
     }
 }

@@ -4,6 +4,7 @@ using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Extensions;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Constants;
@@ -26,13 +27,6 @@ internal class AuthenticationProvider(
     TimeProvider timeProvider
 ) : IAuthenticationProvider
 {
-    private sealed record TokenIssueContext(
-        UserEntity UserEntity,
-        UserAsymmetricKeyEntity SignatureKey,
-        List<Account> Accounts,
-        Account? SignedInAccount
-    );
-
     private readonly IRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
     private readonly IRepo<UserAuthTokenEntity> _authTokenRepo = authTokenRepo.ThrowIfNull(
         nameof(authTokenRepo)
@@ -52,7 +46,7 @@ internal class AuthenticationProvider(
 
         var tokenIssueContext = await GetTokenIssueContextAsync(request.UserId, request.AccountId);
         if (tokenIssueContext.ResultCode.HasValue)
-            return CreateFailedTokenResult(tokenIssueContext.ResultCode.Value);
+            return UserAuthTokenResult.Failed(tokenIssueContext.ResultCode.Value);
 
         await RevokeExistingTokensForUserAccountDeviceAsync(
             request.UserId,
@@ -75,30 +69,34 @@ internal class AuthenticationProvider(
         if (!tokenHandler.CanReadToken(authToken))
         {
             _logger.LogInformation("Auth token is in invalid format");
-            return CreateFailedRenewTokenResult(RenewUserAuthTokenResultCode.InvalidTokenFormat);
+            return RenewUserAuthTokenResult.Failed(RenewUserAuthTokenResultCode.InvalidTokenFormat);
         }
 
         var jwtToken = tokenHandler.ReadJwtToken(authToken);
 
-        var subClaim = GetClaimValue(jwtToken, JwtRegisteredClaimNames.Sub);
+        var subClaim = jwtToken.ClaimValue(JwtRegisteredClaimNames.Sub);
         if (string.IsNullOrWhiteSpace(subClaim) || !Guid.TryParse(subClaim, out var userId))
         {
             _logger.LogInformation("Auth token does not contain valid sub (userId) claim");
-            return CreateFailedRenewTokenResult(RenewUserAuthTokenResultCode.MissingUserIdClaim);
+            return RenewUserAuthTokenResult.Failed(RenewUserAuthTokenResultCode.MissingUserIdClaim);
         }
 
-        var deviceId = GetClaimValue(jwtToken, UserConstants.DEVICE_ID_CLAIM);
+        var deviceId = jwtToken.ClaimValue(UserConstants.DEVICE_ID_CLAIM);
         if (string.IsNullOrWhiteSpace(deviceId))
         {
             _logger.LogInformation("Auth token does not contain device ID");
-            return CreateFailedRenewTokenResult(RenewUserAuthTokenResultCode.MissingDeviceIdClaim);
+            return RenewUserAuthTokenResult.Failed(
+                RenewUserAuthTokenResultCode.MissingDeviceIdClaim
+            );
         }
 
-        var jti = GetClaimValue(jwtToken, JwtRegisteredClaimNames.Jti);
+        var jti = jwtToken.ClaimValue(JwtRegisteredClaimNames.Jti);
         if (string.IsNullOrWhiteSpace(jti) || !Guid.TryParse(jti, out var tokenId))
         {
             _logger.LogInformation("Auth token does not contain a valid jti claim");
-            return CreateFailedRenewTokenResult(RenewUserAuthTokenResultCode.TokenValidationFailed);
+            return RenewUserAuthTokenResult.Failed(
+                RenewUserAuthTokenResultCode.TokenValidationFailed
+            );
         }
 
         var trackedToken = await _authTokenRepo.GetAsync(t =>
@@ -107,7 +105,9 @@ internal class AuthenticationProvider(
         if (trackedToken == null || trackedToken.RevokedUtc != null)
         {
             _logger.LogInformation("Auth token not found or already revoked in server tracking");
-            return CreateFailedRenewTokenResult(RenewUserAuthTokenResultCode.TokenValidationFailed);
+            return RenewUserAuthTokenResult.Failed(
+                RenewUserAuthTokenResultCode.TokenValidationFailed
+            );
         }
 
         if (!string.Equals(trackedToken.DeviceId, deviceId, StringComparison.Ordinal))
@@ -116,13 +116,15 @@ internal class AuthenticationProvider(
                 "Auth token device ID mismatch for tracked token {TokenId}",
                 trackedToken.Id
             );
-            return CreateFailedRenewTokenResult(RenewUserAuthTokenResultCode.TokenValidationFailed);
+            return RenewUserAuthTokenResult.Failed(
+                RenewUserAuthTokenResultCode.TokenValidationFailed
+            );
         }
 
         var tokenIssueContext = await GetTokenIssueContextAsync(userId, trackedToken.AccountId);
         if (tokenIssueContext.ResultCode.HasValue)
         {
-            return CreateFailedRenewTokenResult(
+            return RenewUserAuthTokenResult.Failed(
                 tokenIssueContext.ResultCode.Value switch
                 {
                     UserAuthTokenResultCode.UserNotFoundError =>
@@ -137,13 +139,17 @@ internal class AuthenticationProvider(
         }
 
         if (!ValidateJwtToken(authToken, tokenIssueContext.Context!.SignatureKey, false))
-            return CreateFailedRenewTokenResult(RenewUserAuthTokenResultCode.TokenValidationFailed);
+            return RenewUserAuthTokenResult.Failed(
+                RenewUserAuthTokenResultCode.TokenValidationFailed
+            );
 
-        var sessionStartedUtc = GetSessionStartedUtc(jwtToken);
+        var sessionStartedUtc = jwtToken.SessionStartedUtc();
         if (!sessionStartedUtc.HasValue)
         {
             _logger.LogInformation("Auth token does not contain a valid session start timestamp");
-            return CreateFailedRenewTokenResult(RenewUserAuthTokenResultCode.TokenValidationFailed);
+            return RenewUserAuthTokenResult.Failed(
+                RenewUserAuthTokenResultCode.TokenValidationFailed
+            );
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
@@ -151,7 +157,9 @@ internal class AuthenticationProvider(
         {
             trackedToken.RevokedUtc = now;
             await _authTokenRepo.UpdateAsync(trackedToken);
-            return CreateFailedRenewTokenResult(RenewUserAuthTokenResultCode.SessionExpiredError);
+            return RenewUserAuthTokenResult.Failed(
+                RenewUserAuthTokenResultCode.SessionExpiredError
+            );
         }
 
         trackedToken.RevokedUtc = now;
@@ -179,16 +187,18 @@ internal class AuthenticationProvider(
                 deviceId,
                 renewedTokenResult.AvailableAccounts
             ),
-            UserAuthTokenResultCode.UserNotFoundError => CreateFailedRenewTokenResult(
+            UserAuthTokenResultCode.UserNotFoundError => RenewUserAuthTokenResult.Failed(
                 RenewUserAuthTokenResultCode.UserNotFoundError
             ),
-            UserAuthTokenResultCode.SignatureKeyNotFoundError => CreateFailedRenewTokenResult(
+            UserAuthTokenResultCode.SignatureKeyNotFoundError => RenewUserAuthTokenResult.Failed(
                 RenewUserAuthTokenResultCode.SignatureKeyNotFoundError
             ),
-            UserAuthTokenResultCode.AccountNotFoundError => CreateFailedRenewTokenResult(
+            UserAuthTokenResultCode.AccountNotFoundError => RenewUserAuthTokenResult.Failed(
                 RenewUserAuthTokenResultCode.AccountNotFoundError
             ),
-            _ => CreateFailedRenewTokenResult(RenewUserAuthTokenResultCode.TokenValidationFailed),
+            _ => RenewUserAuthTokenResult.Failed(
+                RenewUserAuthTokenResultCode.TokenValidationFailed
+            ),
         };
     }
 
@@ -201,18 +211,18 @@ internal class AuthenticationProvider(
         if (!tokenHandler.CanReadToken(authToken))
         {
             _logger.LogInformation("Auth token is in invalid format");
-            return CreateFailedValidationResult(
+            return UserAuthTokenValidationResult.Failed(
                 UserAuthTokenValidationResultCode.InvalidTokenFormat
             );
         }
 
         var jwtToken = tokenHandler.ReadJwtToken(authToken);
 
-        var subClaim = GetClaimValue(jwtToken, JwtRegisteredClaimNames.Sub);
+        var subClaim = jwtToken.ClaimValue(JwtRegisteredClaimNames.Sub);
         if (string.IsNullOrEmpty(subClaim) || !Guid.TryParse(subClaim, out var userId))
         {
             _logger.LogInformation("Auth token does not contain valid sub (userId) claim");
-            return CreateFailedValidationResult(
+            return UserAuthTokenValidationResult.Failed(
                 UserAuthTokenValidationResultCode.MissingUserIdClaim
             );
         }
@@ -221,16 +231,16 @@ internal class AuthenticationProvider(
         if (userEntity == null)
         {
             _logger.LogInformation("User with Id {UserId} not found", userId);
-            return CreateFailedValidationResult(
+            return UserAuthTokenValidationResult.Failed(
                 UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
 
-        var jti = GetClaimValue(jwtToken, JwtRegisteredClaimNames.Jti);
+        var jti = jwtToken.ClaimValue(JwtRegisteredClaimNames.Jti);
         if (string.IsNullOrWhiteSpace(jti))
         {
             _logger.LogInformation("Auth token does not contain jti claim");
-            return CreateFailedValidationResult(
+            return UserAuthTokenValidationResult.Failed(
                 UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
@@ -238,7 +248,7 @@ internal class AuthenticationProvider(
         if (!Guid.TryParse(jti, out var tokenId))
         {
             _logger.LogInformation("Auth token jti claim is not a valid GUID");
-            return CreateFailedValidationResult(
+            return UserAuthTokenValidationResult.Failed(
                 UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
@@ -254,12 +264,12 @@ internal class AuthenticationProvider(
         if (trackedToken == null)
         {
             _logger.LogInformation("Auth token not found, revoked, or expired in server tracking");
-            return CreateFailedValidationResult(
+            return UserAuthTokenValidationResult.Failed(
                 UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
 
-        var signatureKey = GetSignatureKey(userEntity);
+        var signatureKey = userEntity.SignatureKey();
         if (signatureKey == null)
         {
             _logger.LogWarning(
@@ -267,7 +277,7 @@ internal class AuthenticationProvider(
                 userEntity.Id,
                 KeyUsedFor.Signature
             );
-            return CreateFailedValidationResult(
+            return UserAuthTokenValidationResult.Failed(
                 UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
@@ -298,21 +308,21 @@ internal class AuthenticationProvider(
         catch (Exception ex)
         {
             _logger.LogInformation("Token validation failed: {Error}", ex.Message);
-            return CreateFailedValidationResult(
+            return UserAuthTokenValidationResult.Failed(
                 UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
 
-        var deviceId = GetClaimValue(jwtToken, UserConstants.DEVICE_ID_CLAIM);
+        var deviceId = jwtToken.ClaimValue(UserConstants.DEVICE_ID_CLAIM);
         if (string.IsNullOrWhiteSpace(deviceId))
         {
             _logger.LogInformation("Auth token does not contain device ID");
-            return CreateFailedValidationResult(
+            return UserAuthTokenValidationResult.Failed(
                 UserAuthTokenValidationResultCode.TokenValidationFailed
             );
         }
 
-        var accounts = GetAccountModels(userEntity);
+        var accounts = userEntity.AccountModels();
         var signedInAccount = ExtractSignedInAccountFromToken(jwtToken, userEntity);
 
         return new UserAuthTokenValidationResult(
@@ -458,17 +468,8 @@ internal class AuthenticationProvider(
             include: q => q.Include(u => u.AsymmetricKeys).Include(u => u.Accounts)
         );
 
-    private static UserAsymmetricKeyEntity? GetSignatureKey(UserEntity userEntity) =>
-        userEntity.AsymmetricKeys?.FirstOrDefault(k => k.KeyUsedFor == KeyUsedFor.Signature);
-
-    private static List<Account> GetAccountModels(UserEntity userEntity) =>
-        userEntity.Accounts?.Select(a => a.ToModel()).ToList() ?? [];
-
     private static Account? FindAccountById(List<Account> accounts, Guid accountId) =>
         accounts.FirstOrDefault(a => a.Id == accountId);
-
-    private static string? GetClaimValue(JwtSecurityToken token, string claimType) =>
-        token.Claims.FirstOrDefault(c => c.Type == claimType)?.Value;
 
     private async Task<(
         UserAuthTokenResultCode? ResultCode,
@@ -482,7 +483,7 @@ internal class AuthenticationProvider(
             return (UserAuthTokenResultCode.UserNotFoundError, null);
         }
 
-        var signatureKey = GetSignatureKey(userEntity);
+        var signatureKey = userEntity.SignatureKey();
         if (signatureKey == null)
         {
             _logger.LogWarning(
@@ -492,7 +493,7 @@ internal class AuthenticationProvider(
             return (UserAuthTokenResultCode.SignatureKeyNotFoundError, null);
         }
 
-        var accounts = GetAccountModels(userEntity);
+        var accounts = userEntity.AccountModels();
         Account? signedInAccount = null;
         if (accountId.HasValue)
         {
@@ -536,14 +537,11 @@ internal class AuthenticationProvider(
             expires = sessionExpiresUtc;
 
         var tokenId = Guid.CreateVersion7();
-        var claims = BuildTokenClaims(
-            tokenIssueContext.UserEntity.Id,
+        var claims = tokenIssueContext.Claims(
             tokenId.ToString(),
             now,
             resolvedSessionStartedUtc,
-            deviceId,
-            tokenIssueContext.Accounts,
-            tokenIssueContext.SignedInAccount?.Id
+            deviceId
         );
 
         var token = new JwtSecurityToken(
@@ -625,98 +623,24 @@ internal class AuthenticationProvider(
         }
     }
 
-    private static List<Claim> BuildTokenClaims(
-        Guid userId,
-        string jti,
-        DateTime issuedAt,
-        DateTime sessionStartedUtc,
-        string deviceId,
-        List<Account> accounts,
-        Guid? signedInAccountId
-    )
-    {
-        var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new(JwtRegisteredClaimNames.Jti, jti),
-            new(
-                JwtRegisteredClaimNames.Iat,
-                new DateTimeOffset(issuedAt).ToUnixTimeSeconds().ToString(),
-                ClaimValueTypes.Integer64
-            ),
-            new(
-                UserConstants.SESSION_STARTED_AT_CLAIM,
-                new DateTimeOffset(sessionStartedUtc).ToUnixTimeSeconds().ToString(),
-                ClaimValueTypes.Integer64
-            ),
-            new(UserConstants.DEVICE_ID_CLAIM, deviceId),
-        };
-
-        foreach (var account in accounts)
-        {
-            claims.Add(new Claim(UserConstants.ACCOUNT_ID_CLAIM, account.Id.ToString()));
-        }
-
-        if (signedInAccountId.HasValue)
-        {
-            claims.Add(
-                new Claim(
-                    UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM,
-                    signedInAccountId.Value.ToString()
-                )
-            );
-        }
-
-        return claims;
-    }
-
-    private DateTime? GetSessionStartedUtc(JwtSecurityToken jwtToken)
-    {
-        var sessionStartedClaim = GetClaimValue(jwtToken, UserConstants.SESSION_STARTED_AT_CLAIM);
-        if (
-            !string.IsNullOrWhiteSpace(sessionStartedClaim)
-            && long.TryParse(sessionStartedClaim, out var sessionStartedUnix)
-        )
-        {
-            return DateTimeOffset.FromUnixTimeSeconds(sessionStartedUnix).UtcDateTime;
-        }
-
-        var issuedAtClaim = GetClaimValue(jwtToken, JwtRegisteredClaimNames.Iat);
-        if (
-            !string.IsNullOrWhiteSpace(issuedAtClaim)
-            && long.TryParse(issuedAtClaim, out var issuedAt)
-        )
-            return DateTimeOffset.FromUnixTimeSeconds(issuedAt).UtcDateTime;
-
-        return null;
-    }
-
     private Account? ExtractSignedInAccountFromToken(
         JwtSecurityToken jwtToken,
         UserEntity userEntity
     )
     {
-        var signedInAccountIdClaim = GetClaimValue(
-            jwtToken,
-            UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM
-        );
-        if (
-            !string.IsNullOrEmpty(signedInAccountIdClaim)
-            && Guid.TryParse(signedInAccountIdClaim, out var accountId)
-        )
-        {
-            var matchingAccount = userEntity.Accounts?.FirstOrDefault(a => a.Id == accountId);
-            if (matchingAccount != null)
-            {
-                return matchingAccount.ToModel();
-            }
+        if (jwtToken.SignedInAccountId() is not { } accountId)
+            return null;
 
-            _logger.LogWarning(
-                "Account with Id {AccountId} not found in user's accounts during token validation",
-                accountId
-            );
+        var matchingAccount = userEntity.Accounts?.FirstOrDefault(a => a.Id == accountId);
+        if (matchingAccount != null)
+        {
+            return matchingAccount.ToModel();
         }
 
+        _logger.LogWarning(
+            "Account with Id {AccountId} not found in user's accounts during token validation",
+            accountId
+        );
         return null;
     }
 
@@ -749,16 +673,4 @@ internal class AuthenticationProvider(
             deviceId
         );
     }
-
-    private static UserAuthTokenResult CreateFailedTokenResult(
-        UserAuthTokenResultCode resultCode
-    ) => new(resultCode, null, null, null, null, []);
-
-    private static RenewUserAuthTokenResult CreateFailedRenewTokenResult(
-        RenewUserAuthTokenResultCode resultCode
-    ) => new(resultCode, null, null, null, null, null, []);
-
-    private static UserAuthTokenValidationResult CreateFailedValidationResult(
-        UserAuthTokenValidationResultCode resultCode
-    ) => new(resultCode, null, null, null, null, []);
 }

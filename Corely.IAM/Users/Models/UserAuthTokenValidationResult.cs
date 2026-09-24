@@ -18,4 +18,9 @@ internal record UserAuthTokenValidationResult(
     string? DeviceId,
     Guid? TokenId,
     List<Account> AvailableAccounts
-);
+)
+{
+    internal static UserAuthTokenValidationResult Failed(
+        UserAuthTokenValidationResultCode resultCode
+    ) => new(resultCode, null, null, null, null, []);
+}

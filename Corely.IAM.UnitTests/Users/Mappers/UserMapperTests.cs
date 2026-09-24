@@ -1,3 +1,5 @@
+using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Mappers;
 using Corely.IAM.Users.Models;
@@ -118,5 +120,58 @@ public class UserMapperTests
         Assert.Equal(entity.LastFailedLoginUtc, result.LastFailedLoginUtc);
         Assert.Equal(entity.CreatedUtc, result.CreatedUtc);
         Assert.Equal(entity.ModifiedUtc, result.ModifiedUtc);
+    }
+
+    [Fact]
+    public void SignatureKey_ReturnsTheSignatureKey()
+    {
+        var signature = new UserAsymmetricKeyEntity { KeyUsedFor = KeyUsedFor.Signature };
+        var entity = new UserEntity
+        {
+            AsymmetricKeys =
+            [
+                new UserAsymmetricKeyEntity { KeyUsedFor = KeyUsedFor.Encryption },
+                signature,
+            ],
+        };
+
+        Assert.Same(signature, entity.SignatureKey());
+    }
+
+    [Fact]
+    public void SignatureKey_ReturnsNull_WhenNoSignatureKey()
+    {
+        var entity = new UserEntity
+        {
+            AsymmetricKeys = [new UserAsymmetricKeyEntity { KeyUsedFor = KeyUsedFor.Encryption }],
+        };
+
+        Assert.Null(entity.SignatureKey());
+    }
+
+    [Fact]
+    public void SignatureKey_ReturnsNull_WhenKeysNotLoaded()
+    {
+        Assert.Null(new UserEntity().SignatureKey());
+    }
+
+    [Fact]
+    public void AccountModels_MapsEachAccount()
+    {
+        var id = Guid.CreateVersion7();
+        var entity = new UserEntity
+        {
+            Accounts = [new AccountEntity { Id = id, AccountName = "acme" }],
+        };
+
+        var account = Assert.Single(entity.AccountModels());
+        Assert.Equal(id, account.Id);
+        Assert.Equal("acme", account.AccountName);
+    }
+
+    [Fact]
+    public void AccountModels_ReturnsEmpty_WhenAccountsNotLoaded()
+    {
+        Assert.Empty(new UserEntity().AccountModels());
     }
 }

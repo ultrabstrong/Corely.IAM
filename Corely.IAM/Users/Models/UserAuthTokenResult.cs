@@ -17,4 +17,8 @@ public record UserAuthTokenResult(
     User? User,
     Account? CurrentAccount,
     List<Account> AvailableAccounts
-);
+)
+{
+    internal static UserAuthTokenResult Failed(UserAuthTokenResultCode resultCode) =>
+        new(resultCode, null, null, null, null, []);
+}

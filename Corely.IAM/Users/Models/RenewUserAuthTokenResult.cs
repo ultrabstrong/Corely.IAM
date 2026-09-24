@@ -23,4 +23,8 @@ internal record RenewUserAuthTokenResult(
     Account? CurrentAccount,
     string? DeviceId,
     List<Account> AvailableAccounts
-);
+)
+{
+    internal static RenewUserAuthTokenResult Failed(RenewUserAuthTokenResultCode resultCode) =>
+        new(resultCode, null, null, null, null, null, []);
+}

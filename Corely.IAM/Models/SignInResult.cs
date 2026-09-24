@@ -22,4 +22,8 @@ public record SignInResult(
     string? AuthToken,
     Guid? AuthTokenId,
     string? MfaChallengeToken = null
-);
+)
+{
+    internal static SignInResult Failed(SignInResultCode resultCode, string message) =>
+        new(resultCode, message, null, null);
+}

@@ -14,6 +14,7 @@ using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Models.Extensions;
 using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -77,7 +78,7 @@ internal class AuthenticationService(
         if (userEntity == null)
         {
             _logger.LogDebug("User {Username} not found", request.Username);
-            return CreateFailedSignInResult(SignInResultCode.UserNotFoundError, "User not found");
+            return SignInResult.Failed(SignInResultCode.UserNotFoundError, "User not found");
         }
 
         if (userEntity.LockedUtc != null)
@@ -90,10 +91,7 @@ internal class AuthenticationService(
             if (cooldownExpiry > now)
             {
                 _logger.LogDebug("User {Username} is locked out", request.Username);
-                return CreateFailedSignInResult(
-                    SignInResultCode.UserLockedError,
-                    "User is locked out"
-                );
+                return SignInResult.Failed(SignInResultCode.UserLockedError, "User is locked out");
             }
 
             userEntity.LockedUtc = null;
@@ -122,10 +120,7 @@ internal class AuthenticationService(
                 request.Username
             );
 
-            return CreateFailedSignInResult(
-                SignInResultCode.PasswordMismatchError,
-                "Invalid password"
-            );
+            return SignInResult.Failed(SignInResultCode.PasswordMismatchError, "Invalid password");
         }
 
         var successNow = _timeProvider.GetUtcNow().UtcDateTime;
@@ -172,7 +167,7 @@ internal class AuthenticationService(
         if (payload == null)
         {
             _logger.LogDebug("Google ID token validation failed");
-            return CreateFailedSignInResult(
+            return SignInResult.Failed(
                 SignInResultCode.InvalidGoogleTokenError,
                 "Invalid Google ID token"
             );
@@ -183,7 +178,7 @@ internal class AuthenticationService(
         if (userId == null)
         {
             _logger.LogDebug("No user linked to Google subject {Subject}", payload.Subject);
-            return CreateFailedSignInResult(
+            return SignInResult.Failed(
                 SignInResultCode.GoogleAuthNotLinkedError,
                 "No account linked to this Google identity"
             );
@@ -193,7 +188,7 @@ internal class AuthenticationService(
         if (userEntity == null)
         {
             _logger.LogDebug("User {UserId} not found for Google sign-in", userId.Value);
-            return CreateFailedSignInResult(SignInResultCode.UserNotFoundError, "User not found");
+            return SignInResult.Failed(SignInResultCode.UserNotFoundError, "User not found");
         }
 
         if (userEntity.LockedUtc != null)
@@ -206,10 +201,7 @@ internal class AuthenticationService(
             if (cooldownExpiry > now)
             {
                 _logger.LogDebug("User {UserId} is locked out", userId.Value);
-                return CreateFailedSignInResult(
-                    SignInResultCode.UserLockedError,
-                    "User is locked out"
-                );
+                return SignInResult.Failed(SignInResultCode.UserLockedError, "User is locked out");
             }
 
             userEntity.LockedUtc = null;
@@ -262,7 +254,7 @@ internal class AuthenticationService(
         if (challenge == null)
         {
             _logger.LogDebug("MFA challenge not found");
-            return CreateFailedSignInResult(
+            return SignInResult.Failed(
                 SignInResultCode.MfaChallengeExpiredError,
                 "MFA challenge not found or expired"
             );
@@ -273,7 +265,7 @@ internal class AuthenticationService(
         if (challenge.CompletedUtc != null)
         {
             _logger.LogDebug("MFA challenge already completed");
-            return CreateFailedSignInResult(
+            return SignInResult.Failed(
                 SignInResultCode.MfaChallengeExpiredError,
                 "MFA challenge already completed"
             );
@@ -282,7 +274,7 @@ internal class AuthenticationService(
         if (challenge.ExpiresUtc <= now)
         {
             _logger.LogDebug("MFA challenge expired");
-            return CreateFailedSignInResult(
+            return SignInResult.Failed(
                 SignInResultCode.MfaChallengeExpiredError,
                 "MFA challenge expired"
             );
@@ -291,7 +283,7 @@ internal class AuthenticationService(
         if (challenge.FailedAttempts >= MfaChallengeConstants.MAX_ATTEMPTS)
         {
             _logger.LogDebug("MFA challenge max attempts exceeded");
-            return CreateFailedSignInResult(
+            return SignInResult.Failed(
                 SignInResultCode.MfaChallengeExpiredError,
                 "MFA challenge max attempts exceeded"
             );
@@ -315,10 +307,7 @@ internal class AuthenticationService(
                 challenge.FailedAttempts
             );
 
-            return CreateFailedSignInResult(
-                SignInResultCode.InvalidMfaCodeError,
-                "Invalid MFA code"
-            );
+            return SignInResult.Failed(SignInResultCode.InvalidMfaCodeError, "Invalid MFA code");
         }
 
         challenge.CompletedUtc = now;
@@ -352,13 +341,12 @@ internal class AuthenticationService(
             || renewResult.User == null
         )
         {
-            var (resultCode, message) = MapRenewAuthTokenResultCode(renewResult.ResultCode);
-            return CreateFailedRenewAuthTokenResult(resultCode, message);
+            return renewResult.ResultCode.ToFailedRenewAuthTokenResult();
         }
 
         if (string.IsNullOrWhiteSpace(renewResult.DeviceId))
         {
-            return CreateFailedRenewAuthTokenResult(
+            return RenewAuthTokenResult.Failed(
                 RenewAuthTokenResultCode.MissingDeviceIdClaim,
                 "Device ID claim is missing"
             );
@@ -390,7 +378,7 @@ internal class AuthenticationService(
         if (context == null)
         {
             _logger.LogDebug("No user context available for account switch");
-            return CreateFailedSignInResult(
+            return SignInResult.Failed(
                 SignInResultCode.InvalidAuthTokenError,
                 "No user context available"
             );
@@ -398,7 +386,7 @@ internal class AuthenticationService(
 
         if (context.IsSystemContext)
         {
-            return CreateFailedSignInResult(
+            return SignInResult.Failed(
                 SignInResultCode.InvalidAuthTokenError,
                 "System context cannot switch accounts"
             );
@@ -617,18 +605,13 @@ internal class AuthenticationService(
 
         if (authTokenResult.ResultCode != UserAuthTokenResultCode.Success)
         {
-            var (signInResultCode, message) = MapAuthTokenResultCode(
-                authTokenResult.ResultCode,
-                accountId
-            );
-
             _logger.LogWarning(
                 "Failed to create auth token for {OperationName}: {ResultCode}",
                 operationName,
                 authTokenResult.ResultCode
             );
 
-            return CreateFailedSignInResult(signInResultCode, message);
+            return authTokenResult.ResultCode.ToFailedSignInResult(accountId);
         }
 
         var userContext = new UserContext(
@@ -648,73 +631,6 @@ internal class AuthenticationService(
             authTokenResult.TokenId
         );
     }
-
-    private static (SignInResultCode, string) MapAuthTokenResultCode(
-        UserAuthTokenResultCode resultCode,
-        Guid? accountId
-    ) =>
-        resultCode switch
-        {
-            UserAuthTokenResultCode.UserNotFoundError => (
-                SignInResultCode.UserNotFoundError,
-                "User not found"
-            ),
-            UserAuthTokenResultCode.SignatureKeyNotFoundError => (
-                SignInResultCode.SignatureKeyNotFoundError,
-                "User signature key not found"
-            ),
-            UserAuthTokenResultCode.AccountNotFoundError => (
-                SignInResultCode.AccountNotFoundError,
-                $"Account {accountId} not found for user"
-            ),
-            _ => (SignInResultCode.UserNotFoundError, "Unknown error creating auth token"),
-        };
-
-    private static SignInResult CreateFailedSignInResult(
-        SignInResultCode resultCode,
-        string message
-    ) => new(resultCode, message, null, null);
-
-    private static (RenewAuthTokenResultCode, string) MapRenewAuthTokenResultCode(
-        RenewUserAuthTokenResultCode resultCode
-    ) =>
-        resultCode switch
-        {
-            RenewUserAuthTokenResultCode.InvalidTokenFormat => (
-                RenewAuthTokenResultCode.InvalidTokenFormat,
-                "Auth token is in an invalid format"
-            ),
-            RenewUserAuthTokenResultCode.MissingUserIdClaim => (
-                RenewAuthTokenResultCode.MissingUserIdClaim,
-                "User ID claim is missing"
-            ),
-            RenewUserAuthTokenResultCode.MissingDeviceIdClaim => (
-                RenewAuthTokenResultCode.MissingDeviceIdClaim,
-                "Device ID claim is missing"
-            ),
-            RenewUserAuthTokenResultCode.UserNotFoundError => (
-                RenewAuthTokenResultCode.UserNotFoundError,
-                "User not found"
-            ),
-            RenewUserAuthTokenResultCode.SignatureKeyNotFoundError => (
-                RenewAuthTokenResultCode.SignatureKeyNotFoundError,
-                "User signature key not found"
-            ),
-            RenewUserAuthTokenResultCode.AccountNotFoundError => (
-                RenewAuthTokenResultCode.AccountNotFoundError,
-                "Account not found for user"
-            ),
-            RenewUserAuthTokenResultCode.SessionExpiredError => (
-                RenewAuthTokenResultCode.SessionExpiredError,
-                "Auth session has expired"
-            ),
-            _ => (RenewAuthTokenResultCode.InvalidAuthTokenError, "Auth token is invalid"),
-        };
-
-    private static RenewAuthTokenResult CreateFailedRenewAuthTokenResult(
-        RenewAuthTokenResultCode resultCode,
-        string message
-    ) => new(resultCode, message, null, null);
 
     public async Task<UserAuthTokenValidationResultCode> AuthenticateWithTokenAsync(
         string authToken

@@ -18,4 +18,10 @@ public record RenewAuthTokenResult(
     string? Message,
     string? AuthToken,
     Guid? AuthTokenId
-);
+)
+{
+    internal static RenewAuthTokenResult Failed(
+        RenewAuthTokenResultCode resultCode,
+        string message
+    ) => new(resultCode, message, null, null);
+}

@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
-  <!-- Bootstrap for the demo apps, served at _content/Corely.IAM.Demos.Assets/. One copy instead of
+  <!-- Bootstrap for the demo apps, served at _content/Corely.IAM.Demos.Bootstrap/. One copy instead of
        one per demo. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>

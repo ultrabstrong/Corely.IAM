@@ -15,6 +15,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Corely.IAM.Web\Corely.IAM.Web.csproj" />
     <ProjectReference Include="..\Corely.IAM\Corely.IAM.csproj" />
-    <ProjectReference Include="..\Corely.IAM.Demos.Assets\Corely.IAM.Demos.Assets.csproj" />
+    <ProjectReference Include="..\Corely.IAM.Demos.Bootstrap\Corely.IAM.Demos.Bootstrap.csproj" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,24 @@
+@inject IJSRuntime JS
+
+<button type="button" class="btn btn-sm btn-outline-light theme-toggle" @onclick="ToggleAsync"
+        aria-label="@NextLabel" title="@NextLabel">
+    <i class="bi @(_theme == DARK ? "bi-sun" : "bi-moon-stars")" aria-hidden="true"></i>
+</button>
+
+@code {
+    private const string DARK = "dark";
+    private string _theme = "light";
+
+    private string NextLabel => _theme == DARK ? "Use light theme" : "Use dark theme";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        _theme = await JS.InvokeAsync<string>("corelyTheme.current");
+        StateHasChanged();
+    }
+
+    private async Task ToggleAsync() => _theme = await JS.InvokeAsync<string>("corelyTheme.toggle");
+}

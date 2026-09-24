@@ -57,3 +57,23 @@ that.
 
 Corely.Billing.Web already follows `data-bs-theme`, so an IAM host gets both libraries in dark mode
 from one toggle. DocsToData has its own plan for the admin portal, and it waits for this one.
+
+## Outcome
+
+All five deliverables are in. `theme.js` loads in `<head>` of every IAM layout and host, `ThemeToggle`
+sits in the IAM.Web navbar and both demos' navbars, and the Razor Pages layouts (auth, legal, both
+demos' auth) carry the plain-HTML button. `iam-web.css` draws from `--iam-*` tokens whose light values
+are the original colors, so light mode is unchanged; the colors left as literals are the dark
+surfaces, shadows and overlays that look the same in both themes. In dark mode the navbar and footer
+get a border so they don't merge with the page. The WebApp's own `app.css` background follows the
+theme too.
+
+Checked in the running WebApp, in both themes: sign-in, sign-up, the no-account dashboard, the
+dashboard, the permissions list and a role detail page with the effective permissions panel. A new
+browser with the OS in dark mode starts dark, the choice survives reloads and navigation, and the
+toggle's label names the theme it switches to. `ThemeToggleTests` covers the component.
+
+Not looked at page by page: the modals, the MFA and account-picker pages, the phone layout, and the
+two demos in a browser (their layouts build and their smoke tests pass). Those use the same tokens
+and Bootstrap classes as the pages checked, but they have not been seen.
+

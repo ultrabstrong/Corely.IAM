@@ -1,7 +1,13 @@
 /* App-specific overrides */
-html, body {
+html,
+body {
     min-height: 100vh;
     background-color: #f0f9ff;
+}
+
+[data-bs-theme="dark"],
+[data-bs-theme="dark"] body {
+    background-color: var(--bs-body-bg);
 }
 
 #blazor-error-ui {

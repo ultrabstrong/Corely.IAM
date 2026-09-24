@@ -2,13 +2,68 @@
    Corely IAM Web — Minimal custom CSS (Bootstrap-first approach)
    ============================================================= */
 
+/* Theme tokens: light values are the original palette; dark values follow Bootstrap's dark theme */
+:root {
+    --iam-border-subtle: #e9ecef;
+    --iam-card-border: #e2eaf6;
+    --iam-muted: #6c757d;
+    --iam-faint: #9ca3af;
+    --iam-heading: #495057;
+    --iam-strong: #343a40;
+    --iam-accent: #0d6efd;
+    --iam-danger: #dc3545;
+    --iam-danger-border: #f1aeb5;
+    --iam-hover: rgba(0, 0, 0, 0.06);
+    --iam-hover-soft: rgba(0, 0, 0, 0.04);
+    --iam-hover-faint: rgba(0, 0, 0, 0.03);
+    --iam-badge-neutral-bg: #e9ecef;
+    --iam-badge-neutral-fg: #6c757d;
+    --iam-badge-off-fg: #adb5bd;
+    --iam-badge-info-bg: #d1ecf1;
+    --iam-badge-info-fg: #0c5460;
+    --iam-badge-direct-bg: #d4edda;
+    --iam-badge-direct-fg: #155724;
+    --iam-badge-group-bg: #e2e3f1;
+    --iam-badge-group-fg: #383d6e;
+}
+
+[data-bs-theme="dark"] {
+    --iam-border-subtle: #343a40;
+    --iam-card-border: #3a4048;
+    --iam-muted: #adb5bd;
+    --iam-faint: #8b929a;
+    --iam-heading: #ced4da;
+    --iam-strong: #dee2e6;
+    --iam-accent: #6ea8fe;
+    --iam-danger: #ea868f;
+    --iam-danger-border: #842029;
+    --iam-hover: rgba(255, 255, 255, 0.08);
+    --iam-hover-soft: rgba(255, 255, 255, 0.06);
+    --iam-hover-faint: rgba(255, 255, 255, 0.04);
+    --iam-badge-neutral-bg: #343a40;
+    --iam-badge-neutral-fg: #adb5bd;
+    --iam-badge-off-fg: #6c757d;
+    --iam-badge-info-bg: #032830;
+    --iam-badge-info-fg: #6edff6;
+    --iam-badge-direct-bg: #051b11;
+    --iam-badge-direct-fg: #75b798;
+    --iam-badge-group-bg: #1f2340;
+    --iam-badge-group-fg: #a3a8e0;
+}
+
+/* Theme toggle: show the icon for the theme a click switches to */
+[data-bs-theme="dark"] .theme-toggle-static .bi-moon-stars,
+:root:not([data-bs-theme="dark"]) .theme-toggle-static .bi-sun {
+    display: none;
+}
+
 /* Auth pages */
 .auth-container {
     margin-top: 15vh;
 }
 
 .auth-card {
-    background: #fff;
+    background: var(--bs-body-bg);
     border-radius: 0.75rem;
     box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
     padding: 2rem;
@@ -16,7 +71,7 @@
 
 .auth-card .nav-tabs {
     display: flex;
-    border-bottom: 2px solid #dee2e6;
+    border-bottom: 2px solid var(--bs-border-color);
 }
 
 .auth-card .nav-tabs .nav-item {
@@ -32,13 +87,13 @@
     border: none;
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;
-    color: #6c757d;
+    color: var(--iam-muted);
     font-weight: 500;
 }
 
 .auth-card .nav-tabs .nav-link.active {
-    color: #0d6efd;
-    border-bottom-color: #0d6efd;
+    color: var(--iam-accent);
+    border-bottom-color: var(--iam-accent);
     background: transparent;
 }
 
@@ -60,7 +115,7 @@
 .management-header .resource-label {
     font-size: 0.85rem;
     font-weight: 400;
-    color: #9ca3af;
+    color: var(--iam-faint);
     margin-left: 0.5rem;
 }
 
@@ -76,7 +131,7 @@
 .props-grid .prop-label {
     font-weight: 600;
     font-size: 0.82rem;
-    color: #6c757d;
+    color: var(--iam-muted);
     text-transform: uppercase;
     letter-spacing: 0.03em;
     white-space: nowrap;
@@ -99,7 +154,7 @@
     padding: 0.5rem 0;
     margin-top: 1.5rem;
     margin-bottom: 0.5rem;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--iam-border-subtle);
 }
 
 .section-bar h6 {
@@ -108,7 +163,7 @@
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: #495057;
+    color: var(--iam-heading);
 }
 
 /* Detail page section cards */
@@ -117,7 +172,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 0.75rem;
-    background-color: #f8f9fa;
+    background-color: var(--bs-tertiary-bg);
 }
 
 .detail-section .card-section-title {
@@ -125,7 +180,7 @@
     font-size: 0.82rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: #495057;
+    color: var(--iam-heading);
     margin-bottom: 0;
 }
 
@@ -147,17 +202,17 @@
 }
 
 .icon-btn:hover {
-    background-color: rgba(0, 0, 0, 0.06);
+    background-color: var(--iam-hover);
 }
 
 .icon-btn.text-danger:hover {
     background-color: rgba(220, 53, 69, 0.1);
-    color: #dc3545;
+    color: var(--iam-danger);
 }
 
 .icon-btn.text-primary:hover {
     background-color: rgba(13, 110, 253, 0.1);
-    color: #0d6efd;
+    color: var(--iam-accent);
 }
 
 /* Dashboard account header */
@@ -216,11 +271,11 @@ th.sortable {
 }
 
 th.sortable:hover {
-    background-color: rgba(0, 0, 0, 0.04);
+    background-color: var(--iam-hover-soft);
 }
 
 th.sortable.active {
-    color: #0d6efd;
+    color: var(--iam-accent);
 }
 
 th.sortable .sort-icon {
@@ -246,7 +301,7 @@ th.sortable.active .sort-icon {
 /* GUID display */
 .guid-text {
     font-size: 0.72rem;
-    color: #9ca3af;
+    color: var(--iam-faint);
     font-family: monospace;
     letter-spacing: -0.02em;
 }
@@ -269,8 +324,8 @@ th.sortable.active .sort-icon {
 }
 
 .permission-badge.inactive {
-    background-color: #e9ecef;
-    color: #adb5bd;
+    background-color: var(--iam-badge-neutral-bg);
+    color: var(--iam-badge-off-fg);
 }
 
 /* Managed-by badges */
@@ -287,13 +342,13 @@ th.sortable.active .sort-icon {
 }
 
 .sys-badge {
-    background: #e9ecef;
-    color: #6c757d;
+    background: var(--iam-badge-neutral-bg);
+    color: var(--iam-badge-neutral-fg);
 }
 
 .user-badge {
-    background: #d1ecf1;
-    color: #0c5460;
+    background: var(--iam-badge-info-bg);
+    color: var(--iam-badge-info-fg);
 }
 
 /* Effective permissions panel */
@@ -303,8 +358,8 @@ th.sortable.active .sort-icon {
 
 /* List page table card */
 .list-card {
-    background-color: #fff;
-    border: 1px solid #e2eaf6;
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--iam-card-border);
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     padding: 0.75rem;
@@ -312,8 +367,8 @@ th.sortable.active .sort-icon {
 
 .section-divider {
     padding: 1.25rem;
-    background-color: #fff;
-    border: 1px solid #e2eaf6;
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--iam-card-border);
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
@@ -327,7 +382,7 @@ th.sortable.active .sort-icon {
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: #343a40;
+    color: var(--iam-strong);
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -338,7 +393,7 @@ th.sortable.active .sort-icon {
     content: "";
     flex: 1;
     height: 2px;
-    background: #dee2e6;
+    background: var(--bs-border-color);
     order: 1;
 }
 
@@ -351,10 +406,10 @@ th.sortable.active .sort-icon {
     font-size: 0.82rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: #495057;
+    color: var(--iam-heading);
     padding-bottom: 0.4rem;
     margin-bottom: 0.5rem;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--iam-border-subtle);
 }
 
 .ep-grant-row {
@@ -366,7 +421,7 @@ th.sortable.active .sort-icon {
 }
 
 .ep-grant-row:hover {
-    background-color: rgba(0, 0, 0, 0.03);
+    background-color: var(--iam-hover-faint);
 }
 
 .ep-via-badge {
@@ -379,13 +434,13 @@ th.sortable.active .sort-icon {
 }
 
 .ep-via-badge.direct {
-    background: #d4edda;
-    color: #155724;
+    background: var(--iam-badge-direct-bg);
+    color: var(--iam-badge-direct-fg);
 }
 
 .ep-via-badge.group {
-    background: #e2e3f1;
-    color: #383d6e;
+    background: var(--iam-badge-group-bg);
+    color: var(--iam-badge-group-fg);
 }
 
 .ep-via-badge.group a {
@@ -395,7 +450,7 @@ th.sortable.active .sort-icon {
 .ep-crudx-mini {
     font-size: 0.7rem;
     font-weight: 600;
-    color: #6c757d;
+    color: var(--iam-muted);
     letter-spacing: 0.15em;
     font-family: monospace;
 }
@@ -404,7 +459,7 @@ th.sortable.active .sort-icon {
 .danger-zone {
     padding: 0.75rem 0;
     margin-top: 2rem;
-    border-top: 1px solid #f1aeb5;
+    border-top: 1px solid var(--iam-danger-border);
 }
 
 /* Navbar toggler — CSP-safe icon instead of inline SVG */
@@ -434,6 +489,14 @@ th.sortable.active .sort-icon {
 
 .site-footer a:hover {
     color: #fff;
+}
+
+[data-bs-theme="dark"] .navbar.bg-dark {
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .site-footer {
+    border-top: 1px solid var(--bs-border-color);
 }
 
 /* Modals — positioned lower on screen */

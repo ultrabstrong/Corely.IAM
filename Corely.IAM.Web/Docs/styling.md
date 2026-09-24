@@ -39,6 +39,45 @@ Auth pages use a tabbed card layout:
 - Active tab: blue bottom border, transparent background
 - Tab items centered with `flex: 1`
 
+## Light and Dark Themes
+
+The theme is Bootstrap 5.3's `data-bs-theme` attribute on `<html>`. `js/theme.js` sets it before the
+page paints: the visitor's saved choice from `localStorage` (`corely-theme`), otherwise the
+operating system's `prefers-color-scheme`. Load it in `<head>`, not at the end of `<body>`, or dark
+users see a white flash:
+
+```html
+<script src="_content/Corely.IAM.Web/js/theme.js"></script>
+```
+
+Put the toggle in the navbar. In Blazor:
+
+```razor
+<ThemeToggle />
+```
+
+On a Razor Page, the same button as plain HTML; the script handles clicks on anything marked
+`data-theme-toggle`:
+
+```html
+<button type="button" class="btn btn-sm btn-outline-light theme-toggle-static" data-theme-toggle aria-label="Use dark theme">
+    <i class="bi bi-moon-stars" aria-hidden="true"></i><i class="bi bi-sun" aria-hidden="true"></i>
+</button>
+```
+
+`iam-web.css` draws every color from Bootstrap variables or `--iam-*` tokens with a dark value under
+`[data-bs-theme="dark"]`. To restyle either theme, override the tokens:
+
+```css
+[data-bs-theme="dark"] {
+    --iam-accent: #8bb9fe;
+}
+```
+
+Scripts read or change the theme through `window.corelyTheme.current()` and
+`window.corelyTheme.toggle()`. Corely.Billing.Web follows the same attribute, so one toggle themes
+both.
+
 ## Customization
 
 Override CSS variables or add a custom stylesheet after the IAM.Web reference:
@@ -51,6 +90,4 @@ Override CSS variables or add a custom stylesheet after the IAM.Web reference:
 ## Notes
 
 - Bootstrap 5 is the primary framework — most styling uses Bootstrap utility classes directly
-- Dark mode is not currently supported
-- The CSS file is approximately 450 lines
 - Blazor reconnect overlay styles are included for connection loss handling

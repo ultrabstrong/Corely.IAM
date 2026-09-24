@@ -1,4 +1,4 @@
-# Apply the seam rule for readings and conversions across the Corely repositories
+# Move private conversions and readings into tested members and extensions, in IAM, Common, DataAccess and Security
 
 ## Starting cold
 
@@ -50,23 +50,29 @@ One repository at a time, one commit per moved type, tests alongside.
    methods; Billing had one (`BillingMessages`).
 2. **Move and test.** Name each for what it returns. Prove each new test catches the bug it guards:
    break the moved code, watch the test fail, restore.
-3. **Convert `this T` in any file the move touches** to an `extension(T)` block. A C# 14 extension
-   block compiles to the same static method, so public extensions in Common and DataAccess stay
-   binary-compatible; confirm that with a consumer build before releasing.
-4. **Version.** A move that stays internal needs only a patch bump when the package next ships.
-   Anything that becomes public API, as `TimeBucketExtensions` did in Billing, is a minor bump and
-   gets a line in the docs.
+3. **Convert every `this T` extension** in the repository to an `extension(T)` block, public ones
+   included, not only files a move touches. Re-count first: the census above came from a
+   single-line search and misses signatures that wrap. A C# 14 extension block compiles to the same
+   static method, so public extensions in Common and DataAccess stay binary-compatible; prove it by
+   building IAM against locally built Common and DataAccess, without publishing anything.
+4. **Update `CLAUDE.md`.** Once a repository has no `this T` left, drop "(existing ones convert
+   when next touched)" from its seams rule, so it simply says new code uses `extension(T)`.
+5. **Push.** When `RebuildAndTest.ps1` is green, push the repository's `master`. Do not publish
+   packages and do not bump versions: this is code organisation, not a change to how the packages
+   are used. A move that stays internal needs only a patch bump when the package next ships;
+   anything that becomes public API, as `TimeBucketExtensions` did in Billing, is a minor bump and
+   gets a line in the docs at that point.
 
-## Open questions for the owner
+## Decisions (owner)
 
-1. **Sweep the remaining `this T` extensions now, or when next touched?** The rule says when next
-   touched. The IAM mappers are mechanical and number 14; doing them in one pass keeps the
-   repository consistent. Recommend: sweep IAM's mappers in this work, leave Common's and
-   DataAccess's public ones until those files change for another reason.
-2. **Order.** Recommend Common, DataAccess and Security first, because they are small and IAM
-   depends on them, then IAM.
+1. **Sweep all `this T` extensions now**, in all four repositories, public ones included. Skip one
+   only for a really good reason, and record the reason here.
+2. **Order:** Common, DataAccess and Security first, because they are small and IAM depends on them,
+   then IAM.
+3. **Push each repository** when it is green. No package publishing and no version bumps.
 
 ## Done when
 
-Every census row has a verdict here, each move has direct tests, every repository's
-`RebuildAndTest.ps1` is green, and this plan moves to `Plans/Completed/` with an Outcome section.
+Every census row has a verdict here, each move has direct tests, no `this T` extensions remain (or
+each survivor has a recorded reason), every repository's `RebuildAndTest.ps1` is green and pushed,
+and this plan moves to `Plans/Completed/` with an Outcome section.

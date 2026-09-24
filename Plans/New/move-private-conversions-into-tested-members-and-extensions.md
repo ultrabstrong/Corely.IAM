@@ -63,6 +63,61 @@ One repository at a time, one commit per moved type, tests alongside.
    anything that becomes public API, as `TimeBucketExtensions` did in Billing, is a minor bump and
    gets a line in the docs at that point.
 
+## Audit
+
+### Corely.Common
+
+| Where | Method | Verdict |
+|---|---|---|
+| `HttpRequestResponseLoggingHandler` | `OmitJsonFields`, `TruncateJsonFields` | Extension on `string`: `WithJsonFieldsOmitted`, `WithJsonFieldTruncated` in `StringExtensions` |
+| `HttpRequestResponseLoggingHandler` | `BuildHeadersSnapshot` | Extension on `HttpHeaders`: `ToLoggingSnapshot` in new internal `HttpHeadersExtensions`; `MaskIfSensitive` stays private there as a step of it |
+| `HttpRequestResponseLoggingHandler` | `LogRequestAsync`, `LogResponseAsync` | Stays: structures `SendAsync` |
+| `FilePathProvider` | `GetOverwriteProtectedFileName`, `RemoveLastExtensionOccurrence` | Extension on `FileInfo`: `NumberedName`, `NameWithoutExtension` in new internal `FileInfoExtensions` |
+| `ByteArrayBomExtensions` | `IsMatch` | Stays: a private step inside the extension class |
+| `ComparableFilter`, `EnumFilter`, `GuidFilter`, `StringFilter` | `Build…Expression`, `Constant` | Stays: each builds the filter's own expression from its own state |
+| `FilterBuilder` | `ValidateMemberAccess`, `ParameterReplacer` | Stays: structures `Where`/`OrderBy` building |
+| `ExpressionMapper` | `PropertyRemappingVisitor` | Stays: the mapper's own visitor |
+| `DelimitedTextProvider` | `ReadNextRecord`, `WriteRecord`, `AppendTokenLiteral` | Stays: the provider's parse and write loop |
+| `PagedResult` | `UpdatePage` | Stays: structures its own paging |
+| `PasswordRedactionProvider` | generated `Regex` partials | Stays |
+
+Every `this T` converted; public signatures verified identical against pushed `master` by
+reflection. Mutation checks for the new tests were not run: auto mode blocked running tests against
+deliberately broken redaction code, so that step waits for the owner.
+
+### Corely.DataAccess
+
+| Where | Method | Verdict |
+|---|---|---|
+| `EFEventDataLogger` | `GetEffectiveLevel` | Extension on `LogLevel`: `WithInformationWrittenAs` in new internal `LogLevelExtensions` |
+| `EFEventDataLogger` | `BuildParameterDictionary` | Extension on `DbParameterCollection`: `ToLoggingDictionary` in new internal `DbParameterCollectionExtensions` |
+| `EFEventDataLogger` | `LogCommandExecuted`, `LogBasicEvent` | Stays: structures `Write` |
+| `MockUpdateSetters` | `ResolveProperty` | Extension on `Expression<Func<TEntity, TProperty>>`: `SelectedProperty` in new internal `ExpressionExtensions` |
+| `MockRepo` | `TryGetId`, `GetIdOrNull`, `IsCreatedUtcUnset`, `EnsureCreatedUtc` | Stays: the receiver is `object`, and an extension on `object` would surface on every type; the typed receiver, `IHasGeneratedIdPk<>`, is open generic. They are the mock's own emulation of EF identity and are covered through `MockRepo`'s public API |
+| `EFContextResolver` | `ResolveContextType`, `DiscoverRegisteredContextTypes` | Stays: structures the resolver's cache |
+
+`this T` converted everywhere except `EntityTypeBuilderExtensions.ConfigureIdPk<TEntity, TKey>`:
+`TKey` cannot come from the receiver, so a block member would change every call site from
+`ConfigureIdPk<TEntity, TKey>()` to `ConfigureIdPk<TKey>()`. `CLAUDE.md` records the exception.
+Public static signatures verified identical against pushed `master` by reflection.
+
+### Corely.Security
+
+| Where | Method | Verdict |
+|---|---|---|
+| `FileSymmetricKeyStoreProvider` | `TrimWhitespace`, `IsWhitespace` | Extension on `byte[]`: `WithoutSurroundingWhitespace` in new internal `KeyStore/ByteArrayExtensions`; `IsWhitespace` stays private there |
+| `FileAsymmetricKeyStoreProvider` | `SplitLines` | Extension on `byte[]`: `NonEmptyLineRanges` |
+| `FileAsymmetricKeyStoreProvider`, `FileSymmetricKeyStoreProvider` | `Decode`, and the same code inline | Extension on `ReadOnlySpan<byte>`: `DecodedBase64Key`, shared by both |
+| `RsaEncryptionProvider` | `PaddingName` | Extension on `RSAEncryptionPadding`: `ShortName` |
+| `SaltedHashProviderBase`, `Pbkdf2HashProvider` | `FormatHashedValue`, `TryParse`, `CreateSalt`, `CreateSaltedValue`, `Derive` | Stays: the provider's own hash format and derivation, bound to its provider code and covered by the public hash/verify round trip |
+| `SymmetricEncryptionProviderBase`, `AsymmetricEncryptionProviderBase` | `FormatEncryptedValue`, `NamesADifferentProvider` | Stays: same reason, the provider's own encrypted-value format |
+| The five provider factories | `Validate` | Stays: structures `AddProvider` |
+| `PasswordValidationProvider` | `CreateRegex`, `DetailedValidation` | Stays: structures `ValidatePassword` |
+| `SymmetricEncryptionRewriter`, `AsymmetricEncryptionRewriter` | `VerifyReadsBack` | Stays: structures the rewrite |
+| `Corely.Security.DemoApp/Program.cs` | 11 demo steps | Skipped: demo |
+
+The one `this T` (a test-file helper) converted.
+
 ## Decisions (owner)
 
 1. **Sweep all `this T` extensions now**, in all four repositories, public ones included. Skip one

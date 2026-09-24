@@ -55,7 +55,7 @@ internal abstract class DbCommandBase(string name, string description)
                 Report(connectionResolution);
                 return false;
             }
-            connectionString = PlaceholderConnectionString(provider);
+            connectionString = provider.PlaceholderConnectionString();
         }
 
         var historyTable = string.IsNullOrWhiteSpace(HistoryTable) ? null : HistoryTable;
@@ -104,11 +104,4 @@ internal abstract class DbCommandBase(string name, string description)
             Info(resolution.Guidance);
         return false;
     }
-
-    private static string PlaceholderConnectionString(DatabaseProvider provider) =>
-        provider switch
-        {
-            DatabaseProvider.MsSql => "Server=.;Database=CorelyIam;Trusted_Connection=True;",
-            _ => "Server=localhost;Database=CorelyIam;Uid=root;Pwd=;",
-        };
 }

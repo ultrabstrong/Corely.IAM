@@ -35,10 +35,19 @@
         });
     }
 
+    var applied = null;
+
     function apply(theme) {
+        applied = theme;
         root.setAttribute("data-bs-theme", theme);
         labelToggles();
     }
+
+    new MutationObserver(function () {
+        if (applied && root.getAttribute("data-bs-theme") !== applied) {
+            apply(applied);
+        }
+    }).observe(root, { attributes: true, attributeFilter: ["data-bs-theme"] });
 
     function toggle() {
         var next = current() === "dark" ? "light" : "dark";

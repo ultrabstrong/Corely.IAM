@@ -56,8 +56,9 @@ Put the toggle in the navbar. In Blazor:
 <ThemeToggle />
 ```
 
-On a Razor Page, the same button as plain HTML; the script handles clicks on anything marked
-`data-theme-toggle`:
+On a Razor Page, or a Blazor layout rendered statically, the same button as plain HTML; the script
+handles clicks on anything marked `data-theme-toggle`, and puts the theme back after enhanced
+navigation rewrites `<html>`:
 
 ```html
 <button type="button" class="btn btn-sm btn-outline-light theme-toggle-static" data-theme-toggle aria-label="Use dark theme">

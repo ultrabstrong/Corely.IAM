@@ -98,3 +98,24 @@ One repository at a time, one commit each, pushed when done:
 - Nothing needs a version bump. Corely.IAM's `check-package-versions.sh` excludes `Docs/`, but a
   package README counts as a package change there; the next real release carries the bump, and the
   script only fails at release time.
+
+## Outcome
+
+Done in all six repositories, one commit each, pushed: Corely.IAM `13ebf559`, Corely.Billing
+`c9e73b0`, Corely.Common `d13fa9b`, Corely.Security `30eb38c`, Corely.DataAccess `1a0a84e`,
+DocsToData `3a3d6cd`. Every `CLAUDE.md` carries the rule, and both style guides now use the colon.
+
+Bold-lead bullets were converted by rule and sampled; everything else was rewritten by hand, including
+dashes inside code-sample comments. Three docs were saved as Windows-1252, which GitHub showed as
+garbled characters, and are now UTF-8: `The IAM Difference.md`, Common's
+`request-response-handler.md` and DataAccess's `context-configuration.md`.
+
+Left on purpose, because they are quoted rather than written here:
+
+- DataAccess `DESIGN-RATIONALE.md`: two sentences quoted verbatim from Microsoft's documentation.
+- IAM `Docs/Permission Model.md`: the default permission descriptions, which are data values.
+- DocsToData `iac/docstodata-sftp/README.md`: the Azure image name, as Azure spells it.
+
+One slip: the DocsToData commit also picked up `Plans/InProgress/github-access-review.md`, another
+session's in-progress move of that plan, because it had unstaged edits. Its staged deletion of the
+`Plans/New` copy still completes the move when that session commits.

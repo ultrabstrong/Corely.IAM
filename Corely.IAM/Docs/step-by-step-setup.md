@@ -51,7 +51,7 @@ Func<IServiceProvider, IEFConfiguration> efConfig = sp =>
 | MySQL | `MySqlEFConfiguration` | `Server=localhost;Database=CorelIAM;Uid=root;Pwd=password;` |
 
 The factory serves IAM's DbContext only. If the host has DbContexts of its own that take an
-`IEFConfiguration`, register one for them — IAM does not.
+`IEFConfiguration`, register one for them. IAM does not.
 
 ## 4) Configure IAMOptions
 
@@ -138,15 +138,15 @@ To enable Google Sign-In, set the `GoogleClientId` in `appsettings.json`:
 
 Obtain a client ID from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials). Add your app's domain to the authorized origins and redirect URIs.
 
-When `GoogleClientId` is not set, Google Sign-In is disabled — all Google-related service calls return an error.
+When `GoogleClientId` is not set, Google Sign-In is disabled and all Google-related service calls return an error.
 
 See [Google Sign-In](google-signin.md) for full setup details.
 
 ## 10) Where to Next?
 
-- [IAMOptions Configuration](iam-options.md) — full builder API reference
-- [Authentication](authentication.md) — sign-in, tokens, account switching
-- [Authorization](authorization.md) — CRUDX model, effective permissions
-- [Services](services/index.md) — all five service interfaces
-- [Domains](domains/index.md) — entity models and relationships
-- [Security](security/index.md) — key management, user context
+- [IAMOptions Configuration](iam-options.md): full builder API reference
+- [Authentication](authentication.md): sign-in, tokens, account switching
+- [Authorization](authorization.md): CRUDX model, effective permissions
+- [Services](services/index.md): all five service interfaces
+- [Domains](domains/index.md): entity models and relationships
+- [Security](security/index.md): key management, user context

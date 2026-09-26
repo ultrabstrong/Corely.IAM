@@ -10,8 +10,8 @@ Confirmation dialog for destructive or important actions.
 | `Message` | `string` | `"Are you sure?"` | Body text (red if `Type == Danger`) |
 | `ConfirmText` | `string` | `"Confirm"` | Confirm button label |
 | `Type` | `ConfirmModalType` | `Danger` | Button style: `Danger`, `Warning`, `Primary` |
-| `OnConfirm` | `EventCallback` | — | Fired on confirm |
-| `OnCancel` | `EventCallback` | — | Fired on cancel or backdrop click |
+| `OnConfirm` | `EventCallback` | none | Fired on confirm |
+| `OnCancel` | `EventCallback` | none | Fired on cancel or backdrop click |
 
 ## Usage
 

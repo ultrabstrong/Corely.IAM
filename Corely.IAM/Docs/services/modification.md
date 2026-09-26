@@ -35,6 +35,6 @@ var result = await modificationService.ModifyUserAsync(
 
 ## Notes
 
-- There is no `ModifyPermissionAsync` — permissions are immutable after creation (delete and recreate instead)
+- There is no `ModifyPermissionAsync`. Permissions are immutable after creation (delete and recreate instead)
 - Update requests include the entity ID and the new property values
-- Validation runs before the update — invalid data returns a validation error code
+- Validation runs before the update, and invalid data returns a validation error code

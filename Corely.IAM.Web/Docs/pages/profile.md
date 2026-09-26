@@ -1,40 +1,40 @@
 # Profile
 
-## Profile — `/profile`
+## Profile (`/profile`)
 
-Self-service user profile page. No permission gates — any authenticated user can access their own profile.
+Self-service user profile page. No permission gates: any authenticated user can access their own profile.
 
 **Base class**: `EntityPageBase`
 
 **Features:**
 
 ### Profile Section
-- **Edit fields** — username, email (toggleable edit mode)
-- **Delete account** — confirmation modal, redirects to `/signout`
+- **Edit fields**: username, email (toggleable edit mode)
+- **Delete account**: confirmation modal, redirects to `/signout`
 
 ### Accounts Section
 - Lists all accounts from `UserContext.AvailableAccounts` (in-memory, no server call)
 - Paginated (10 per page)
-- **View** — navigates to account detail
-- **Leave** — confirmation modal, removes user from account, redirects to `/select-account`
+- **View**: navigates to account detail
+- **Leave**: confirmation modal, removes user from account, redirects to `/select-account`
 - Only displayed when the user belongs to at least one account
 
 ### Two-Factor Authentication Section
-- **Disabled state** — shows "Enable Two-Factor Authentication" button
-- **Setup phase** — QR code (via JS interop with qrcodejs), secret display, recovery codes, confirmation input
-- **Enabled state** — status with remaining recovery codes count, regenerate button, disable with code confirmation
+- **Disabled state**: shows "Enable Two-Factor Authentication" button
+- **Setup phase**: QR code (via JS interop with qrcodejs), secret display, recovery codes, confirmation input
+- **Enabled state**: status with remaining recovery codes count, regenerate button, disable with code confirmation
 - Uses `IMfaService` for enable/confirm/disable/regenerate/status
 
 ### Password Section
-- **Has password + has Google** — "Password is set" with "Remove Password" button (confirmation toggle)
-- **Has password only** — "Password is set" with note to add another method first
-- **No password (Google only)** — "Set Password" form (new password + confirm)
+- **Has password + has Google**: "Password is set" with "Remove Password" button (confirmation toggle)
+- **Has password only**: "Password is set" with note to add another method first
+- **No password (Google only)**: "Set Password" form (new password + confirm)
 - Remove calls `IDeregistrationService.DeregisterBasicAuthAsync()`
 - Set calls `IRegistrationService.SetPasswordAsync()`
 
 ### Linked Accounts Section
 - Shows linked Google email when Google auth is active
-- **Unlink** — confirmation modal, calls `IDeregistrationService.UnlinkGoogleAuthAsync()`
+- **Unlink**: confirmation modal, calls `IDeregistrationService.UnlinkGoogleAuthAsync()`
 - Placeholder when no Google account linked
 - Uses `IRetrievalService.GetAuthMethodsAsync()` for status
 
@@ -44,7 +44,7 @@ Self-service user profile page. No permission gates — any authenticated user c
 - User's asymmetric signature provider
 
 **Behavior:**
-- No authorization gates — this is a self-service page
+- No authorization gates; this is a self-service page
 - Deleting user calls `DeregisterUserAsync()` and redirects to sign-out
 - Leaving account calls `DeregisterUserFromAccountAsync(new DeregisterUserFromAccountRequest(UserContext.User.Id, accountId))` and redirects to account selection
 - Key providers loaded asynchronously from `IRetrievalService`

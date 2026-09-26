@@ -13,12 +13,12 @@ Username/password credentials for a user. Password is hashed using `Corely.Secur
 
 ## Relationships
 
-- **User** — 1:1 (each user has exactly one BasicAuth record)
+- **User**: 1:1 (each user has exactly one BasicAuth record)
 
 ## Key Behaviors
 
 - Password is hashed on creation using the configured hash algorithm (default: Salted SHA-256)
-- Verification uses `IHashedValue.Verify()` — timing-safe comparison
+- Verification uses `IHashedValue.Verify()`, a timing-safe comparison
 - Failed attempts increment `User.FailedLoginsSinceLastSuccess`
 - After `MaxLoginAttempts` consecutive failures, `User.LockedUtc` is set (lockout)
 - Lockout clears after `LockoutCooldownSeconds` or on successful login

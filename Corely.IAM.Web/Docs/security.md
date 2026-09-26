@@ -1,7 +1,7 @@
 # Security Features
 
 Security headers and cookie protection provided out of the box by `UseIAMWebAuthentication()`. The
-Content-Security-Policy is not among them - the host sets its own.
+Content-Security-Policy is not among them; the host sets its own.
 
 ## Cookie Security
 
@@ -9,10 +9,10 @@ All authentication cookies use:
 
 | Flag | Value |
 |------|-------|
-| `HttpOnly` | `true` — not accessible from JavaScript |
-| `Secure` | `true` (when HTTPS) — only sent over encrypted connections |
-| `SameSite` | `Strict` — not sent with cross-site requests |
-| `Path` | `/` — available site-wide |
+| `HttpOnly` | `true`: not accessible from JavaScript |
+| `Secure` | `true` (when HTTPS): only sent over encrypted connections |
+| `SameSite` | `Strict`: not sent with cross-site requests |
+| `Path` | `/`: available site-wide |
 
 ## Auth Cookies
 
@@ -37,12 +37,12 @@ All authentication cookies use:
 
 ## HSTS
 
-`Strict-Transport-Security: max-age=31536000; includeSubDomains` — enabled in non-development environments only.
+`Strict-Transport-Security: max-age=31536000; includeSubDomains`, enabled in non-development environments only.
 
 ## Content Security Policy
 
-This package sets no Content-Security-Policy. A policy has to list every source a page loads -
-analytics, a CDN, Google sign-in - and only the host knows those. Set one in the host:
+This package sets no Content-Security-Policy. A policy has to list every source a page loads
+(analytics, a CDN, Google sign-in), and only the host knows those. Set one in the host:
 
 ```csharp
 app.Use(async (context, next) =>
@@ -58,9 +58,9 @@ app.UseIAMWebAuthentication();
 
 That is a working starting point for this package's pages on Blazor Server:
 
-- `'unsafe-inline'` - Blazor Server's startup and reconnection scripts are inline, and Bootstrap
+- `'unsafe-inline'`: Blazor Server's startup and reconnection scripts are inline, and Bootstrap
   sets inline styles.
-- `wss:` and `ws:` - Blazor Server talks to the server over a SignalR WebSocket.
+- `wss:` and `ws:`: Blazor Server talks to the server over a SignalR WebSocket.
 
 ### Google sign-in
 

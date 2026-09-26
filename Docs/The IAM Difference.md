@@ -4,7 +4,7 @@
 
 Corely.IAM is a host-agnostic, multi-tenant identity and access management 
 library for .NET. It gives you users, accounts, roles, permissions, and 
-JWT authentication out of the box—so you can focus on your actual product.
+JWT authentication out of the box, so you can focus on your actual product.
 
 ## Why?
 
@@ -14,7 +14,7 @@ same IAM foundation as enterprise software.
 
 ## Features
 
-- **Host-agnostic**: Works in ASP.NET, console apps, desktop, mobile—anywhere
+- **Host-agnostic**: Works in ASP.NET, console apps, desktop, mobile, anywhere
 - **Multi-tenant native**: Account-scoped everything, from day one
 - **Resource-level permissions**: CRUDX on specific resources, not just roles
 - **Algorithm-agile crypto**: Swap encryption/hashing providers without code changes

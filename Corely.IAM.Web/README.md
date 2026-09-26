@@ -6,23 +6,23 @@ Reusable Razor Class Library (RCL) that provides a complete Blazor Server UI for
 
 ## What the library provides
 
-- **Blazor pages** — Users, Groups, Roles, Permissions, Account detail, Profile, Dashboard, Home
-- **Razor Pages** — Sign In, Register, Sign Out, Select Account, Switch Account, Create Account
-- **Shared components** — Alert, Pagination, ConfirmModal, FormModal, EntityPickerModal, EffectivePermissionsPanel, PermissionView, LoadingSpinner, and more
-- **Middleware** — correlation ID, security headers (X-Frame-Options, etc. - the host sets its own CSP), JWT cookie → UserContext
-- **Authentication** — cookie-based auth wired to Corely.IAM's JWT token system
-- **Static assets** — `iam-web.css` (custom styles), `modal-keyboard.js`
-- **Route constants** — `AppRoutes` class with all page paths
+- **Blazor pages**: Users, Groups, Roles, Permissions, Account detail, Profile, Dashboard, Home
+- **Razor Pages**: Sign In, Register, Sign Out, Select Account, Switch Account, Create Account
+- **Shared components**: Alert, Pagination, ConfirmModal, FormModal, EntityPickerModal, EffectivePermissionsPanel, PermissionView, LoadingSpinner, and more
+- **Middleware**: correlation ID, security headers (X-Frame-Options, etc.; the host sets its own CSP), JWT cookie → UserContext
+- **Authentication**: cookie-based auth wired to Corely.IAM's JWT token system
+- **Static assets**: `iam-web.css` (custom styles), `modal-keyboard.js`
+- **Route constants**: `AppRoutes` class with all page paths
 
 ---
 
 ## What the host is responsible for
 
-- **`SecurityConfigurationProvider`** — reads the system encryption key from config and implements `ISecurityConfigurationProvider`. The library defines the interface; the host provides the implementation.
-- **Database / EF configuration** — choosing and wiring the EF provider (SQL Server, MySQL)
-- **Blazor host shell** — `App.razor`, `Routes.razor`, `Program.cs`
-- **Static asset references** — Bootstrap, Bootstrap Icons (must be served by the host)
-- **Logging** — Serilog or any other provider of your choice
+- **`SecurityConfigurationProvider`**: reads the system encryption key from config and implements `ISecurityConfigurationProvider`. The library defines the interface; the host provides the implementation.
+- **Database / EF configuration**: choosing and wiring the EF provider (SQL Server, MySQL)
+- **Blazor host shell**: `App.razor`, `Routes.razor`, `Program.cs`
+- **Static asset references**: Bootstrap, Bootstrap Icons (must be served by the host)
+- **Logging**: Serilog or any other provider of your choice
 
 ---
 
@@ -36,7 +36,7 @@ Reusable Razor Class Library (RCL) that provides a complete Blazor Server UI for
 
 ### 2. Implement `SecurityConfigurationProvider`
 
-The host must provide an implementation of `ISecurityConfigurationProvider` that returns the system symmetric key. Create this in your host project — the library intentionally does not provide it so the host controls how the key is sourced (config, key vault, environment variable, etc.).
+The host must provide an implementation of `ISecurityConfigurationProvider` that returns the system symmetric key. Create this in your host project. The library intentionally does not provide it, so the host controls how the key is sourced (config, key vault, environment variable, etc.).
 
 ```csharp
 // YourHost/Security/SecurityConfigurationProvider.cs
@@ -72,20 +72,20 @@ builder.Services.AddIAMServicesWithEF(builder.Configuration, securityConfigProvi
 ```
 
 `AddIAMWeb()` registers:
-- `IAuthCookieManager` — reads/writes the auth JWT cookie
-- `IUserContextClaimsBuilder` — converts `UserContext` to `ClaimsPrincipal`
+- `IAuthCookieManager`: reads/writes the auth JWT cookie
+- `IUserContextClaimsBuilder`: converts `UserContext` to `ClaimsPrincipal`
 - Cookie authentication scheme (login path `/signin`, logout path `/signout`)
 - Authorization services
 
 `AddIAMWebBlazor()` registers:
-- `IBlazorUserContextAccessor` — access the current user context from Blazor components
-- `AuthenticationStateProvider` — Blazor auth state backed by the cookie
-- `IAccountDisplayState` — reactive state for displaying the current account name in the navbar
+- `IBlazorUserContextAccessor`: access the current user context from Blazor components
+- `AuthenticationStateProvider`: Blazor auth state backed by the cookie
+- `IAccountDisplayState`: reactive state for displaying the current account name in the navbar
 - Cascading authentication state
 
 ### 4. Set up the middleware pipeline
 
-Order matters — call `UseIAMWebAuthentication()` before static files and routing:
+Order matters. Call `UseIAMWebAuthentication()` before static files and routing:
 
 ```csharp
 using Corely.IAM.Web.Extensions;
@@ -102,11 +102,11 @@ app.MapRazorComponents<App>()
 ```
 
 `UseIAMWebAuthentication()` applies middleware in this order:
-1. `CorrelationIdMiddleware` — assigns a correlation ID to every request
-2. `SecurityHeadersMiddleware` — sets X-Frame-Options, X-Content-Type-Options, etc. It sets no Content-Security-Policy; the host owns that
-3. `AuthenticationTokenMiddleware` — validates the JWT auth cookie and populates `UserContext`
-4. `UseAuthentication()` — ASP.NET Core authentication
-5. `UseAuthorization()` — ASP.NET Core authorization
+1. `CorrelationIdMiddleware`: assigns a correlation ID to every request
+2. `SecurityHeadersMiddleware`: sets X-Frame-Options, X-Content-Type-Options, etc. It sets no Content-Security-Policy; the host owns that
+3. `AuthenticationTokenMiddleware`: validates the JWT auth cookie and populates `UserContext`
+4. `UseAuthentication()`: ASP.NET Core authentication
+5. `UseAuthorization()`: ASP.NET Core authorization
 
 ### 5. Set up the Blazor router (`Routes.razor`)
 
@@ -160,7 +160,7 @@ The library's CSS is served from the RCL's static asset path. Bootstrap and Boot
     "Provider": "mssql"
   },
   "Security": {
-    "SystemKey": "<hex key — generate with Corely.IAM.DevTools: dotnet run -- sym-encrypt --create>"
+    "SystemKey": "<hex key, generated with Corely.IAM.DevTools: dotnet run -- sym-encrypt --create>"
   },
   "SecurityOptions": {
     "MaxLoginAttempts": 5,
@@ -181,7 +181,7 @@ The library's CSS is served from the RCL's static asset path. Bootstrap and Boot
 |-----|:--------:|-------|
 | `ConnectionStrings:DefaultConnection` | ✅ | Database connection string |
 | `Database:Provider` | ✅ | `mssql` or `mysql` |
-| `Security:SystemKey` | ✅ | Base64 symmetric key — generate with DevTools |
+| `Security:SystemKey` | ✅ | Base64 symmetric key, generated with DevTools |
 | `SecurityOptions:*` | ✅ | Login lockout, access-token TTL, and renewable session TTL |
 | `PasswordValidationOptions:*` | ✅ | Password rules |
 

@@ -457,6 +457,9 @@ exists. It is not a log of every decision: add an entry only when the user asks 
   never cite one as the reason something is the way it is.
 - **Match the house style.** Terse and code-forward: a short orienting paragraph, then examples.
   Not an essay with nested headings. Read the neighbouring files in `Docs/` before adding one.
+- **No dashes as punctuation, in anything written.** No em dash, no en dash, and no hyphen standing in
+  for one, in docs, plans, READMEs or comments. Use a colon, a comma, parentheses or a new sentence;
+  write a range with "to". Hyphens inside words (`host-agnostic`) are fine.
 - **Legacy identifiers may be named, versions may not.** "The legacy name `X` stays registered as an
   alias" is fine; "the 1.x name `X`" is not.
 

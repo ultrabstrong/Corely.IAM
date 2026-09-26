@@ -78,6 +78,6 @@ var acceptResult = await registrationService.AcceptInvitationAsync(
 
 ## Notes
 
-- `RegisterUserAsync` does not require authentication — it is the initial registration endpoint
+- `RegisterUserAsync` does not require authentication. It is the initial registration endpoint
 - `RegisterAccountAsync` bootstraps an Owner role with full permissions and assigns it to the creating user
 - Relationship methods (e.g., `RegisterUsersWithGroupAsync`) are idempotent for already-existing relationships

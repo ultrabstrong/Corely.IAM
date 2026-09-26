@@ -8,23 +8,23 @@ All commands support `--help` for full argument and option details.
 
 | Group | Purpose |
 |-------|---------|
-| `sym-encrypt` | Symmetric encryption — create keys, encrypt/decrypt values |
-| `asym-encrypt` | Asymmetric encryption — create key pairs, encrypt/decrypt values |
-| `sym-sign` | Symmetric signatures — create keys, sign/verify messages |
-| `asym-sign` | Asymmetric signatures — create key pairs, sign/verify messages |
-| `shash` | Salted hashing — list providers, hash values |
+| `sym-encrypt` | Symmetric encryption: create keys, encrypt/decrypt values |
+| `asym-encrypt` | Asymmetric encryption: create key pairs, encrypt/decrypt values |
+| `sym-sign` | Symmetric signatures: create keys, sign/verify messages |
+| `asym-sign` | Asymmetric signatures: create key pairs, sign/verify messages |
+| `shash` | Salted hashing: list providers, hash values |
 | `base64` | Base64 encode/decode |
 | `url` | URL encode/decode |
 | `config` | Local settings file management (provider, connection string, system key) |
 | `provider` | Database provider selection |
-| `auth` | Authentication — sign in, sign out, switch accounts, MFA, Google |
-| `totp` | TOTP operations — enable, confirm, disable, status, code generation |
-| `google` | Google auth — link, unlink, status |
-| `register` | Entity registration — users, accounts, groups, roles, permissions |
-| `retrieval` | Entity retrieval — list/get with pagination, hydration, key providers |
-| `deregister` | Entity deregistration — remove entities and relationships |
-| `modify` | Entity modification — update users, accounts, groups, roles |
-| `invitation` | Invitation management — create, accept, revoke, list |
+| `auth` | Authentication: sign in, sign out, switch accounts, MFA, Google |
+| `totp` | TOTP operations: enable, confirm, disable, status, code generation |
+| `google` | Google auth: link, unlink, status |
+| `register` | Entity registration: users, accounts, groups, roles, permissions |
+| `retrieval` | Entity retrieval: list/get with pagination, hydration, key providers |
+| `deregister` | Entity deregistration: remove entities and relationships |
+| `modify` | Entity modification: update users, accounts, groups, roles |
+| `invitation` | Invitation management: create, accept, revoke, list |
 
 ## Setup
 
@@ -37,9 +37,9 @@ dotnet run -- config init -p mssql -c "Server=(localdb)\MSSQLLocalDB;Database=Co
 ```
 
 Options:
-- `-p, --provider` — database provider (`MySql`, `MsSql`)
-- `-c, --connection` — connection string
-- `-f, --force` — overwrite existing settings file
+- `-p, --provider`: database provider (`MySql`, `MsSql`)
+- `-c, --connection`: connection string
+- `-f, --force`: overwrite existing settings file
 
 ### 2) Set the System Key
 
@@ -159,7 +159,7 @@ dotnet run -- url -d "value%20with%20spaces"
 
 ## IAM Service Commands
 
-Commands that interact with the database through the full IAM service stack. Require a configured settings file (see Setup above) and — for most operations — an authenticated session.
+Commands that interact with the database through the full IAM service stack. Require a configured settings file (see Setup above) and, for most operations, an authenticated session.
 
 ### Authentication
 
@@ -193,7 +193,7 @@ dotnet run -- auth verify-mfa "challenge-token" "123456"
 Manage TOTP-based multi-factor authentication. Most commands require an authenticated session.
 
 ```bash
-# Enable TOTP — outputs secret, setup URI, and recovery codes
+# Enable TOTP: outputs secret, setup URI, and recovery codes
 dotnet run -- totp enable
 
 # Confirm TOTP setup with a code from your authenticator app
@@ -352,7 +352,7 @@ dotnet run -- invitation list --skip 0 --take 25
 ## Notes
 
 - All commands support `--help` for full argument and option details
-- Crypto commands work standalone — no database required
+- Crypto commands work standalone, with no database required
 - IAM service commands require `config init` + `auth signin` first
 - JSON request files can be generated with the `--create` flag on registration commands
 - Key file format for asymmetric operations: public key on line 1, private key on line 2

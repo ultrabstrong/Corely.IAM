@@ -157,7 +157,7 @@ Complete reference of all result code enums across Corely.IAM.
 | `SignatureKeyNotFoundError` | User signature key missing |
 | `AccountNotFoundError` | Target account not found |
 | `InvalidAuthTokenError` | Token generation failed |
-| `MfaRequiredChallenge` | TOTP is enabled — MFA challenge issued |
+| `MfaRequiredChallenge` | TOTP is enabled; MFA challenge issued |
 | `InvalidMfaCodeError` | TOTP or recovery code is invalid |
 | `MfaChallengeExpiredError` | MFA challenge expired or already used |
 | `InvalidGoogleTokenError` | Google ID token validation failed |

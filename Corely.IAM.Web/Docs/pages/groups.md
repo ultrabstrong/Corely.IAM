@@ -1,39 +1,39 @@
 # Groups
 
-## GroupList — `/groups`
+## GroupList (`/groups`)
 
 Group table with search, sort, pagination, and create/delete operations.
 
 **Base class**: `EntityListPageBase<Group>`
 
 **Features:**
-- **Search** — name, description (debounced 300ms)
-- **Sort** — ascending/descending on name or description
-- **Pagination** — 25 items per page
-- **Create** — modal form with group name field
-- **Delete** — confirmation modal per row
+- **Search**: name, description (debounced 300ms)
+- **Sort**: ascending/descending on name or description
+- **Pagination**: 25 items per page
+- **Create**: modal form with group name field
+- **Delete**: confirmation modal per row
 
 **Authorization gates:**
-- `AuthAction.Create` + `GROUP_RESOURCE_TYPE` — Create button
-- `AuthAction.Delete` + `GROUP_RESOURCE_TYPE` + `ResourceIds: [groupId]` — Delete button per row
+- `AuthAction.Create` + `GROUP_RESOURCE_TYPE`: Create button
+- `AuthAction.Delete` + `GROUP_RESOURCE_TYPE` + `ResourceIds: [groupId]`: Delete button per row
 
 ---
 
-## GroupDetail — `/groups/{Id:guid}`
+## GroupDetail (`/groups/{Id:guid}`)
 
 Group properties with user and role management.
 
 **Base class**: `EntityDetailPageBase`
 
 **Features:**
-- **Edit properties** — name, description (toggleable edit mode with cancel support)
-- **Users section** — paginated (10 per page), add/remove via `EntityPickerModal`
-- **Roles section** — paginated (10 per page), add/remove via `EntityPickerModal`
-- **Effective permissions panel** — inherited permissions through assigned roles
+- **Edit properties**: name, description (toggleable edit mode with cancel support)
+- **Users section**: paginated (10 per page), add/remove via `EntityPickerModal`
+- **Roles section**: paginated (10 per page), add/remove via `EntityPickerModal`
+- **Effective permissions panel**: inherited permissions through assigned roles
 
 **Authorization gates:**
-- `AuthAction.Update` + `GROUP_RESOURCE_TYPE` + `ResourceIds: [Id]` — Edit, Add Users, Add Roles, Remove User, Remove Role
-- `AuthAction.Delete` + `GROUP_RESOURCE_TYPE` + `ResourceIds: [Id]` — Delete button
+- `AuthAction.Update` + `GROUP_RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit, Add Users, Add Roles, Remove User, Remove Role
+- `AuthAction.Delete` + `GROUP_RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete button
 
 **Behavior:**
 - Loads with `hydrate: true` for user and role relations

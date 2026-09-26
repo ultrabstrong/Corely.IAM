@@ -8,8 +8,8 @@ Generic modal wrapper for create forms with confirm/cancel buttons.
 |-----------|------|---------|-------------|
 | `Title` | `string` | `"Create"` | Modal header |
 | `ConfirmText` | `string` | `"Create"` | Confirm button label |
-| `ChildContent` | `RenderFragment?` | — | Form HTML in modal body |
-| `OnConfirm` | `EventCallback` | — | Fired on confirm click |
+| `ChildContent` | `RenderFragment?` | none | Form HTML in modal body |
+| `OnConfirm` | `EventCallback` | none | Fired on confirm click |
 
 ## Usage
 

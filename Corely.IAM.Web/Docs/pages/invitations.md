@@ -1,18 +1,18 @@
 # Invitations
 
-## AcceptInvitation — `/accept-invitation`
+## AcceptInvitation (`/accept-invitation`)
 
 Token-based invitation acceptance page.
 
 **Base class**: `AuthenticatedPageBase`
 
 **Features:**
-- **Token input** — text field, pre-populated from `?token=` query parameter
-- **Accept button** — with loading spinner during processing
-- **Status messages** — dismissible alerts for success/error
+- **Token input**: text field, pre-populated from `?token=` query parameter
+- **Accept button**: with loading spinner during processing
+- **Status messages**: dismissible alerts for success/error
 
 **Query parameters:**
-- `token` — invitation token (optional, pre-fills the input)
+- `token`: invitation token (optional, pre-fills the input)
 
 **Behavior:**
 - Calls `IRegistrationService.AcceptInvitationAsync()` with the token

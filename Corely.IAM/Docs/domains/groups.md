@@ -1,6 +1,6 @@
 # Groups
 
-Container for users and roles, scoped to an account. Groups provide indirect permission inheritance — users in a group receive all permissions from the group's assigned roles.
+Container for users and roles, scoped to an account. Groups provide indirect permission inheritance: users in a group receive all permissions from the group's assigned roles.
 
 ## Model Properties
 
@@ -15,9 +15,9 @@ Container for users and roles, scoped to an account. Groups provide indirect per
 
 ## Relationships
 
-- **Account** — belongs to one account
-- **Users** — M:M
-- **Roles** — M:M
+- **Account**: belongs to one account
+- **Users**: M:M
+- **Roles**: M:M
 
 ## Key Behaviors
 

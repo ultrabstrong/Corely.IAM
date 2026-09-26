@@ -1,7 +1,7 @@
 # Corely IAM Database Migration CLI
 
 Creates and migrates the Corely IAM database schema. This is the supported way to stand up the IAM
-tables — the library itself never applies migrations at runtime.
+tables. The library itself never applies migrations at runtime.
 
 The tool ships both provider migration sets, so nothing beyond it needs to be referenced.
 
@@ -31,7 +31,7 @@ variables:
 | `-p, --provider` | `CORELY_IAM_DB_PROVIDER` |
 | `-c, --connection-string` | `CORELY_IAM_DB_CONNECTION` |
 
-The option wins when both are present. There is no settings file — an installed tool would have to
+The option wins when both are present. There is no settings file: an installed tool would have to
 keep one in its own install directory, shared by every repository and CI job on the machine.
 
 ```bash
@@ -124,6 +124,6 @@ at the repository root, which target both providers:
 
 ## Notes
 
-- `db create` is safe to run against an existing database — it applies whatever is pending.
+- `db create` is safe to run against an existing database. It applies whatever is pending.
 - `db migrate 0` reverts all migrations but does not drop the database.
 - `db drop` is destructive and cannot be undone.

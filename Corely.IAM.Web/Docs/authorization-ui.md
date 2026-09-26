@@ -16,12 +16,12 @@ The button only renders if the current user has `Create` permission on the `perm
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `Action` | `AuthAction` | — | CRUDX action to check |
+| `Action` | `AuthAction` | none | CRUDX action to check |
 | `Resource` | `string` | `""` | Resource type constant |
 | `ResourceIds` | `Guid[]?` | `null` | Specific resource IDs to check (optional) |
-| `ChildContent` | `RenderFragment?` | — | Default content shown when authorized |
-| `Authorized` | `RenderFragment?` | — | Content shown when authorized (overrides `ChildContent`) |
-| `NotAuthorized` | `RenderFragment?` | — | Content shown when NOT authorized |
+| `ChildContent` | `RenderFragment?` | none | Default content shown when authorized |
+| `Authorized` | `RenderFragment?` | none | Content shown when authorized (overrides `ChildContent`) |
+| `NotAuthorized` | `RenderFragment?` | none | Content shown when NOT authorized |
 
 ### Authorized/NotAuthorized Fragments
 
@@ -43,7 +43,7 @@ If only `ChildContent` is provided (no `Authorized` fragment), it is used as the
 ## How It Works
 
 1. On parameter change, `PermissionView` calls `IAuthorizationProvider.IsAuthorizedAsync()`
-2. The result is cached — re-evaluation only happens when `Action`, `Resource`, or `ResourceIds` change
+2. The result is cached. Re-evaluation only happens when `Action`, `Resource`, or `ResourceIds` change
 3. Parameter equality uses span comparison for `ResourceIds` arrays (performance optimization)
 4. Nothing renders until the first authorization check completes (`_checkComplete` flag)
 
@@ -79,6 +79,6 @@ If only `ChildContent` is provided (no `Authorized` fragment), it is used as the
 
 ## Notes
 
-- `PermissionView` injects `IAuthorizationProvider` directly — it does not use the Blazor `AuthorizeView` component
+- `PermissionView` injects `IAuthorizationProvider` directly. It does not use the Blazor `AuthorizeView` component
 - The component is in the `Corely.IAM.Web.Components.Shared` namespace
 - Use `PermissionConstants` for resource type values to avoid magic strings

@@ -16,7 +16,7 @@ Short-lived, user-scoped recovery records used to reset a password without an au
 
 ## Relationships
 
-- **User** — 1:M (a user can have many recovery records over time)
+- **User**: 1:M (a user can have many recovery records over time)
 
 ## Key Behaviors
 

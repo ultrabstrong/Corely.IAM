@@ -11,7 +11,7 @@ This guide defines how documentation should be written for Corely libraries so t
 ### Repository Layout
 
 - Documentation lives in a `Docs/` folder at the repository root
-- `Docs/index.md` is the entry point — a landing page with overview + table of contents
+- `Docs/index.md` is the entry point: a landing page with overview + table of contents
 - Each major feature/domain gets its own `.md` file
 - Related features can be grouped in subdirectories with their own `index.md` (e.g., `Docs/extensions/index.md`, `Docs/http-handlers/index.md`)
 
@@ -25,7 +25,7 @@ This guide defines how documentation should be written for Corely libraries so t
 ## {Optional: Concept Map / Architecture Diagram}
 {Mermaid diagram if the library has enough moving parts to warrant one.}
 
-{Optional: Bullet list of key capabilities — 4-7 items, bold lead with em-dash description.}
+{Optional: Bullet list of key capabilities, 4-7 items, bold lead with a colon before the description.}
 
 ## Topics
 - [Topic Name](topic-name.md)
@@ -48,12 +48,12 @@ This guide defines how documentation should be written for Corely libraries so t
 {1-2 sentence description of what this feature is/does. Start with the noun, not "This feature...".}
 
 ## Features
-- **Bold lead** — description of capability
-- **Bold lead** — description of capability
+- **Bold lead**: description of capability
+- **Bold lead**: description of capability
 
 ## Usage
 
-{Primary code example — the happy path.}
+{Primary code example: the happy path.}
 
 ### {Sub-section for variant usage, if needed}
 
@@ -63,13 +63,13 @@ This guide defines how documentation should be written for Corely libraries so t
 {Interface definitions, behavior notes, registration, configuration, etc.}
 
 ## Notes / Tips
-{Bullet list of caveats, edge cases, customization points — if any.}
+{Bullet list of caveats, edge cases, customization points, if any.}
 ```
 
 ### When to Deviate
 
-- **Step-by-step guides** use numbered sections (`## 1) Step Name`) instead of topic sections — see Corely.DataAccess's `step-by-step-setup.md`
-- **Complex features** (like Corely.Common's filtering) can have deeper `###` sub-sections and a "Why" rationale section — but this is the exception, not the norm
+- **Step-by-step guides** use numbered sections (`## 1) Step Name`) instead of topic sections. See Corely.DataAccess's `step-by-step-setup.md`
+- **Complex features** (like Corely.Common's filtering) can have deeper `###` sub-sections and a "Why" rationale section, but this is the exception, not the norm
 - **Simple utilities** (extensions, converters) can skip `## Features` and go straight to usage
 
 ---
@@ -101,7 +101,7 @@ This guide defines how documentation should be written for Corely libraries so t
 
 - Always use fenced code blocks with language tags: ` ```csharp `, ` ```bash `
 - **3-15 lines** per code block. Stay under 25 lines for complex examples. If it's longer, you're probably showing too much.
-- **Self-contained snippets** — show the minimum code to demonstrate one concept. No class scaffolding unless you're showing a complete file (step-by-step guides).
+- **Self-contained snippets**: show the minimum code to demonstrate one concept. No class scaffolding unless you're showing a complete file (step-by-step guides).
 - **Omit `using` statements** in short snippets. Include them only when the namespace matters for discoverability.
 - **No `Console.WriteLine`** or expected output unless the output itself is the point.
 
@@ -137,12 +137,12 @@ Use tables for:
 - **Options/configuration properties** (Property | Default | Description)
 - **Comparison matrices** (Feature | Implementation A | Implementation B)
 
-Keep tables clean — pipe-delimited, no excessive column widths. 2-4 columns is ideal.
+Keep tables clean: pipe-delimited, no excessive column widths. 2-4 columns is ideal.
 
 ### Bullet Lists
 
 - Use for **feature inventories** (`## Features` sections)
-- **Bold lead with em-dash description**: `- **Type-safe selection** — lambda expressions verified at compile time`
+- **Bold lead with a colon**: `- **Type-safe selection**: lambda expressions verified at compile time`
 - Use for **behavior notes**, **caveats**, and **method/property references**
 - Indent nested bullets one level only
 
@@ -162,7 +162,9 @@ Keep tables clean — pipe-delimited, no excessive column widths. 2-4 columns is
 
 - **Bold** for emphasis on key concepts, especially in bullet lists
 - `` `backtick` `` for all type names, method names, property names, string values, and file paths
-- Em-dash (`—`) for inline elaboration within bullet points
+- **No dashes as punctuation.** No em dash, no en dash, and no hyphen standing in for one. Use a colon,
+  a comma, parentheses or a new sentence. A range is written with "to". Hyphens inside words
+  (`host-agnostic`) are fine.
 - Parenthetical asides for secondary information: `(+ nullable)`, `(only when X is configured)`
 
 ---
@@ -173,7 +175,7 @@ Keep tables clean — pipe-delimited, no excessive column widths. 2-4 columns is
 - **Standard phrasing**: "See the [Feature Name](feature-name.md) docs for details." or "Learn more in the [Feature](feature.md) docs."
 - **Bidirectional links** between related features when practical (A links to B, B links to A)
 - **No anchor links** within documents (no `#section-name` references)
-- **No "back to index" links** — navigation relies on the reader using the index
+- **No "back to index" links**: navigation relies on the reader using the index
 - **Demo/test references** use plain text method names, not links: "See demo: `RunEncryptionDemo`"
 
 ---
@@ -191,11 +193,11 @@ Keep tables clean — pipe-delimited, no excessive column widths. 2-4 columns is
 
 - **Implementation internals** that only matter if you're modifying the library itself
 - **Auto-generated code** (migrations, designer files)
-- **Things the code already says** — don't describe what a method does if the signature is self-explanatory
-- **Changelog or version history** — that belongs in git, not docs
-- **Version numbers of this library** — no "since 2.1", "fixed in 3.0.2", "1.x behaviour". Docs describe how the current version works, full stop. A reader on an older version is served by that version's docs. Migration guides are the one exception, and they live at the repository root, not in `Docs/`
-- **Plan files** — `Plans/` is working material. Never link to it from documentation, and never cite it as the reason something is the way it is
-- **Badges, front matter, or metadata** — keep docs clean
+- **Things the code already says**: don't describe what a method does if the signature is self-explanatory
+- **Changelog or version history**: that belongs in git, not docs
+- **Version numbers of this library**: no "since 2.1", "fixed in 3.0.2", "1.x behaviour". Docs describe how the current version works, full stop. A reader on an older version is served by that version's docs. Migration guides are the one exception, and they live at the repository root, not in `Docs/`
+- **Plan files**: `Plans/` is working material. Never link to it from documentation, and never cite it as the reason something is the way it is
+- **Badges, front matter, or metadata**: keep docs clean
 
 ---
 

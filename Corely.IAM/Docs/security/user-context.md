@@ -34,7 +34,7 @@ public interface IUserContextProvider
 }
 ```
 
-- `GetUserContext()` — returns the current context, or `null` if not authenticated
+- `GetUserContext()`: returns the current context, or `null` if not authenticated
 
 `IUserContextProvider` is read-only. All context-setting goes through `IAuthenticationService`.
 
@@ -51,8 +51,8 @@ public interface IAuthenticationService
 }
 ```
 
-- `AuthenticateWithTokenAsync(token)` — validates a JWT token, extracts claims, and stores the user context
-- `AuthenticateAsSystem(deviceId)` — creates a fully-permissioned system context for headless processes
+- `AuthenticateWithTokenAsync(token)`: validates a JWT token, extracts claims, and stores the user context
+- `AuthenticateAsSystem(deviceId)`: creates a fully-permissioned system context for headless processes
 
 ### System Context Usage
 
@@ -67,8 +67,8 @@ var users = await retrievalService.ListUsersAsync(request);
 ### System Context Behavior
 
 - System context passes `HasUserContext()`, `HasAccountContext()`, and `IsAuthorizedAsync()` checks
-- System context is blocked by `IsNonSystemUserContext()` — "self" operations (MFA, password, Google auth) require a real user
-- System context has no `User`, `CurrentAccount`, or `AvailableAccounts` — services that extract user identity from context will fail if called from system context
+- System context is blocked by `IsNonSystemUserContext()`, because "self" operations (MFA, password, Google auth) require a real user
+- System context has no `User`, `CurrentAccount`, or `AvailableAccounts`. Services that extract user identity from context will fail if called from system context
 
 ## IUserContextSetter (Internal)
 
@@ -81,7 +81,7 @@ internal interface IUserContextSetter
 }
 ```
 
-`IUserContextSetter` is `internal` — only `AuthenticationService` and test infrastructure use it directly.
+`IUserContextSetter` is `internal`. Only `AuthenticationService` and test infrastructure use it directly.
 
 ## Flow
 
@@ -101,7 +101,7 @@ If using `Corely.IAM.Web`, the `AuthenticationTokenMiddleware` handles steps 1-2
 
 ## Host-Agnostic Design
 
-`UserContextProvider` is registered as scoped — one instance per request. It has no dependency on `HttpContext`, `ClaimsPrincipal`, or any web framework type. This allows Corely.IAM to work in console apps, background services, or any .NET host.
+`UserContextProvider` is registered as scoped, one instance per request. It has no dependency on `HttpContext`, `ClaimsPrincipal`, or any web framework type. This allows Corely.IAM to work in console apps, background services, or any .NET host.
 
 ## Token Validation Result Codes
 

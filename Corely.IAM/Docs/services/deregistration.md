@@ -6,7 +6,7 @@ Deletes entities and removes relationships between entities.
 
 | Method | Parameters | Returns |
 |--------|-----------|---------|
-| `DeregisterUserAsync` | *(none — uses current user context)* | `DeregisterUserResult` |
+| `DeregisterUserAsync` | *(none; uses current user context)* | `DeregisterUserResult` |
 | `DeregisterAccountAsync` | `DeregisterAccountRequest` | `DeregisterAccountResult` |
 | `DeregisterGroupAsync` | `DeregisterGroupRequest` | `DeregisterGroupResult` |
 | `DeregisterRoleAsync` | `DeregisterRoleRequest` | `DeregisterRoleResult` |
@@ -16,7 +16,7 @@ Deletes entities and removes relationships between entities.
 | `DeregisterRolesFromGroupAsync` | `DeregisterRolesFromGroupRequest` | `DeregisterRolesFromGroupResult` |
 | `DeregisterRolesFromUserAsync` | `DeregisterRolesFromUserRequest` | `DeregisterRolesFromUserResult` |
 | `DeregisterPermissionsFromRoleAsync` | `DeregisterPermissionsFromRoleRequest` | `DeregisterPermissionsFromRoleResult` |
-| `DeregisterBasicAuthAsync` | *(none — uses current user context)* | `DeregisterBasicAuthResult` |
+| `DeregisterBasicAuthAsync` | *(none; uses current user context)* | `DeregisterBasicAuthResult` |
 
 > **Note:** `UnlinkGoogleAuthAsync` has been moved to `IGoogleAuthService`. See [Google Sign-In](../google-signin.md).
 
@@ -28,7 +28,7 @@ Deletes entities and removes relationships between entities.
 var result = await deregistrationService.DeregisterUserAsync();
 ```
 
-Operates on the authenticated user — no user ID parameter needed.
+Operates on the authenticated user, so no user ID parameter is needed.
 
 ### Delete the Current Account
 
@@ -53,7 +53,7 @@ var result = await deregistrationService.DeregisterUserFromAccountAsync(
     new DeregisterUserFromAccountRequest(userId, accountId));
 ```
 
-Removes the specified user from the specified account. The same API supports both self-service removal and admin removal — self-removal passes the current user's ID, while admin removal targets another user in the account.
+Removes the specified user from the specified account. The same API supports both self-service removal and admin removal: self-removal passes the current user's ID, while admin removal targets another user in the account.
 
 ## Authorization
 
@@ -63,5 +63,5 @@ Removes the specified user from the specified account. The same API supports bot
 ## Notes
 
 - Entity deletion manually clears M:M relationship collections before deleting (SQL Server constraint: no cascade deletes on M:M)
-- `DeregisterUserAsync` and `DeregisterAccountAsync` use the current context — they cannot target arbitrary users/accounts
+- `DeregisterUserAsync` and `DeregisterAccountAsync` use the current context, so they cannot target arbitrary users/accounts
 - `DeregisterUserFromAccountAsync` is the single account-removal API for both self-service and admin flows

@@ -32,8 +32,8 @@ Each permission grants one or more of five actions:
 
 ## Wildcard Support
 
-- **Resource type `"*"`** — grants the action on all resource types
-- **Resource ID `Guid.Empty`** — grants the action on all resources of the specified type
+- **Resource type `"*"`**: grants the action on all resource types
+- **Resource ID `Guid.Empty`**: grants the action on all resources of the specified type
 - Combining both (`"*"` + `Guid.Empty`) grants full access for the specified actions
 
 ## Effective Permission Tree
@@ -47,17 +47,17 @@ EffectivePermission (CRUDX flags, ResourceType, ResourceId)
 └── ...
 ```
 
-- `IsDirect = true` — role assigned directly to the user
-- `Groups` — groups through which the role is inherited
+- `IsDirect = true`: role assigned directly to the user
+- `Groups`: groups through which the role is inherited
 
 Retrieve effective permissions by passing `hydrate: true` to `IRetrievalService` get methods.
 
 ## Key Behaviors
 
-- Permissions are immutable after creation — delete and recreate to change
+- Permissions are immutable after creation. Delete and recreate to change
 - At least one CRUDX flag must be `true` (validated by `PermissionValidator`)
 - Resource type must exist in `IResourceTypeRegistry` (validated by `PermissionValidator`)
-- Permissions are account-scoped — they cannot cross account boundaries
+- Permissions are account-scoped and cannot cross account boundaries
 
 ## Result Codes
 

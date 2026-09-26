@@ -4,7 +4,7 @@ Corely.IAM.Web builds on Bootstrap 5 with minimal custom CSS for layout and comp
 
 ## CSS File
 
-`wwwroot/css/iam-web.css` — auto-served from `_content/Corely.IAM.Web/css/iam-web.css`.
+`wwwroot/css/iam-web.css`, auto-served from `_content/Corely.IAM.Web/css/iam-web.css`.
 
 ## Key Utility Classes
 
@@ -15,7 +15,7 @@ Corely.IAM.Web builds on Bootstrap 5 with minimal custom CSS for layout and comp
 | `.management-header` | Flexbox header with title + action buttons for management pages |
 | `.props-grid` | CSS Grid for property label/value pairs on detail pages |
 | `.section-bar` | Flexbox header for relation tables (Users, Roles, etc.) |
-| `.permission-badge` (`.active` / `.inactive`) | CRUDX status indicators — green for granted, gray for not |
+| `.permission-badge` (`.active` / `.inactive`) | CRUDX status indicators: green for granted, gray for not |
 | `.sys-badge` / `.user-badge` | System-defined (gray) vs user-defined (blue) entity badges |
 | `.entity-card` | Hover-animated cards with translateY and shadow transition |
 | `.icon-btn` | Small 28x28px icon buttons for table row actions |
@@ -26,16 +26,16 @@ Corely.IAM.Web builds on Bootstrap 5 with minimal custom CSS for layout and comp
 
 ## Table Enhancements
 
-- `th.sortable` — clickable column headers with hover effect
-- `th.sortable.active` — blue text for active sort column
-- `.sort-icon` — chevron icons (up/down/expand) for sort state
-- `.th-search` — compact search inputs in table headers
-- `.table-actions` — right-aligned action column with nowrap
+- `th.sortable`: clickable column headers with hover effect
+- `th.sortable.active`: blue text for active sort column
+- `.sort-icon`: chevron icons (up/down/expand) for sort state
+- `.th-search`: compact search inputs in table headers
+- `.table-actions`: right-aligned action column with nowrap
 
 ## Auth Page Styling
 
 Auth pages use a tabbed card layout:
-- `.auth-card .nav-tabs` — full-width tabs with bottom border highlight
+- `.auth-card .nav-tabs`: full-width tabs with bottom border highlight
 - Active tab: blue bottom border, transparent background
 - Tab items centered with `flex: 1`
 
@@ -90,5 +90,5 @@ Override CSS variables or add a custom stylesheet after the IAM.Web reference:
 
 ## Notes
 
-- Bootstrap 5 is the primary framework — most styling uses Bootstrap utility classes directly
+- Bootstrap 5 is the primary framework; most styling uses Bootstrap utility classes directly
 - Blazor reconnect overlay styles are included for connection loss handling

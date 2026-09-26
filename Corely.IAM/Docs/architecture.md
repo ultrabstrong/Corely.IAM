@@ -8,10 +8,10 @@ Layered architecture with decorator-based cross-cutting concerns and a typed res
 Services (public) → Processors (internal) → Repositories/UoW → EF Core DbContext → Database
 ```
 
-- **Services** — public API surface, orchestration and coordination
-- **Processors** — internal business logic, domain rules, authorization checks
-- **Repositories** — data access via `IRepo<T>` and `IReadonlyRepo<T>`
-- **DbContext** — `IamDbContext`, single context for all providers
+- **Services**: public API surface, orchestration and coordination
+- **Processors**: internal business logic, domain rules, authorization checks
+- **Repositories**: data access via `IRepo<T>` and `IReadonlyRepo<T>`
+- **DbContext**: `IamDbContext`, single context for all providers
 
 ## Decorator Pattern
 
@@ -21,8 +21,8 @@ Every service and processor is wrapped with decorators registered via Scrutor:
 TelemetryDecorator → [AuthorizationDecorator] → Implementation
 ```
 
-- **Authorization decorators** — service level decorators are only used where a context gate is still required; processor level decorators enforce CRUDX permissions
-- **Telemetry decorators** — structured logging of method entry/exit
+- **Authorization decorators**: service level decorators are only used where a context gate is still required; processor level decorators enforce CRUDX permissions
+- **Telemetry decorators**: structured logging of method entry/exit
 
 Registration order in `ServiceRegistrationExtensions.cs` matters: last registered = outermost (first to execute).
 
@@ -30,8 +30,8 @@ Registration order in `ServiceRegistrationExtensions.cs` matters: last registere
 
 Authorization decorators distinguish between two categories of operations:
 
-- **"Self" operations** (MFA, password, Google auth, deregister self) — require a real user, blocked for system context via `IsNonSystemUserContext()`
-- **"Targeting" operations** (register group, list users, etc.) — system context passes through via `HasUserContext()` or `HasAccountContext()`
+- **"Self" operations** (MFA, password, Google auth, deregister self): require a real user, blocked for system context via `IsNonSystemUserContext()`
+- **"Targeting" operations** (register group, list users, etc.): system context passes through via `HasUserContext()` or `HasAccountContext()`
 
 System context also bypasses CRUDX permission checks at the processor layer (`IsAuthorizedAsync()` returns `true`).
 
@@ -51,9 +51,9 @@ public enum CreateUserResultCode
 ```
 
 Common result types:
-- `RetrieveSingleResult<T>` — single entity with optional effective permissions
-- `RetrieveListResult<T>` — paginated list via `PagedResult<T>`
-- `ModifyResult` — generic success/failure for updates
+- `RetrieveSingleResult<T>`: single entity with optional effective permissions
+- `RetrieveListResult<T>`: paginated list via `PagedResult<T>`
+- `ModifyResult`: generic success/failure for updates
 
 ## Validation
 
@@ -63,7 +63,7 @@ FluentValidation is used for all input validation. Validators are auto-discovere
 
 - **Entity Framework Core** with two providers: MySQL, SQL Server
 - Entity configurations auto-discovered via reflection in `IamDbContext.OnModelCreating`
-- **SQL Server constraint**: no cascade deletes on M:M relationships — processors manually clear collections before deleting
+- **SQL Server constraint**: no cascade deletes on M:M relationships, so processors manually clear collections before deleting
 - Migrations are in separate projects per provider
 
 ## Target Framework

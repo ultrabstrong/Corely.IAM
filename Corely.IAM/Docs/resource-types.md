@@ -4,11 +4,11 @@ Resource types are compile-time concepts that categorize what a permission grant
 
 ## Features
 
-- **Pre-registered IAM types** — all built-in types available at startup
-- **Custom types** — host apps register additional types during DI setup
-- **Case-insensitive** — `"account"`, `"Account"`, and `"ACCOUNT"` are treated as the same type
-- **Validation integration** — `PermissionValidator` rejects unknown resource types
-- **No persistence** — resource types are not stored in the database; they exist only in memory
+- **Pre-registered IAM types**: all built-in types available at startup
+- **Custom types**: host apps register additional types during DI setup
+- **Case-insensitive**: `"account"`, `"Account"`, and `"ACCOUNT"` are treated as the same type
+- **Validation integration**: `PermissionValidator` rejects unknown resource types
+- **No persistence**: resource types are not stored in the database; they exist only in memory
 
 ## Built-in Resource Types
 
@@ -65,7 +65,7 @@ In `Corely.IAM.Web`, the permission creation form uses a `<select>` dropdown pop
 
 ## Notes
 
-- Resource types are registered during DI setup only — no runtime add/remove
+- Resource types are registered during DI setup only; there is no runtime add/remove
 - The registry uses `ConcurrentDictionary` with `StringComparer.OrdinalIgnoreCase`
 - Existing permission data (the `ResourceType` string column) is unaffected by the registry
-- The `AuthorizationProvider` still compares resource type strings directly — the registry is for discoverability, not enforcement
+- The `AuthorizationProvider` still compares resource type strings directly. The registry is for discoverability, not enforcement

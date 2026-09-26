@@ -12,7 +12,7 @@
 5. UseAuthorization()
 ```
 
-Order matters — each middleware builds on the previous.
+Order matters: each middleware builds on the previous.
 
 ## CorrelationIdMiddleware
 
@@ -51,7 +51,7 @@ Validates JWT cookies and sets user context.
 3. On success: builds `ClaimsPrincipal` via `IUserContextClaimsBuilder` and sets `HttpContext.User`
 4. On failure: clears all auth cookies via `IAuthCookieManager.DeleteAuthCookies()`
 
-Note: Both `IAuthenticationService` and `IUserContextProvider` are scoped — they must be resolved from the request scope, not constructor-injected.
+Note: Both `IAuthenticationService` and `IUserContextProvider` are scoped. They must be resolved from the request scope, not constructor-injected.
 
 ## Configuration
 

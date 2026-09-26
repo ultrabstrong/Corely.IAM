@@ -5,7 +5,7 @@ Blazor Server host app for the Corely.IAM management portal.
 ## Prerequisites
 
 1. **.NET 10.0 SDK** (or 9.0)
-2. **SQL Server** (LocalDB or full instance) — or MySQL if you change the provider
+2. **SQL Server** (LocalDB or full instance): or MySQL if you change the provider
 
 ## Setup
 
@@ -16,7 +16,7 @@ From the repo root:
 ```powershell
 cd Corely.IAM.DevTools
 dotnet run -- sym-encrypt --create
-# Outputs a hex key string — copy it
+# Outputs a hex key string; copy it
 ```
 
 **2. Configure `appsettings.json`**
@@ -73,4 +73,4 @@ The preview page is controlled by `DemoFeatures:EnablePasswordRecoveryPreview` i
 
 ## Optional: Seq Logging
 
-The default config sends structured logs to [Seq](https://datalust.co/seq) at `http://localhost:5341`. If Seq isn't running, the app still works — console logging is unaffected. Remove the Seq entry from `Serilog:WriteTo` in `appsettings.json` to suppress connection warnings.
+The default config sends structured logs to [Seq](https://datalust.co/seq) at `http://localhost:5341`. If Seq isn't running, the app still works and console logging is unaffected. Remove the Seq entry from `Serilog:WriteTo` in `appsettings.json` to suppress connection warnings.

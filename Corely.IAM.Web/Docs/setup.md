@@ -31,7 +31,7 @@ See the [Corely.IAM setup guide](../../Corely.IAM/Docs/step-by-step-setup.md) fo
 
 ## 4) Configure Middleware
 
-Order matters — `UseIAMWebAuthentication()` must come before `UseHttpsRedirection()`. The package
+Order matters: `UseIAMWebAuthentication()` must come before `UseHttpsRedirection()`. The package
 sets no Content-Security-Policy, so set your own first; [Security](security.md#content-security-policy)
 has a starting policy.
 
@@ -89,13 +89,13 @@ CSS is auto-served from `_content/Corely.IAM.Web/`. Reference it in your layout:
 
 ## Simple Apps
 
-An app that uses IAM for sign-in only - users without accounts, or one shared account - usually
+An app that uses IAM for sign-in only (users without accounts, or one shared account) usually
 wants the sign-in pages and none of the management portal. See
 [Usage Shapes](../../Corely.IAM/Docs/usage-shapes.md) for the IAM side.
 
 **Leave out `AddAdditionalAssemblies`.** It routes every Blazor page in this package, including
-`/users`, `/groups`, `/roles`, and `/permissions`. Without it the Razor Pages - sign in, register,
-sign out, account switching - still work, because `MapRazorPages()` maps them regardless.
+`/users`, `/groups`, `/roles`, and `/permissions`. Without it the Razor Pages (sign in, register,
+sign out, account switching) still work, because `MapRazorPages()` maps them regardless.
 
 ```csharp
 app.MapRazorPages();
@@ -137,12 +137,12 @@ Working examples: `Corely.IAM.Demos.UsersOnly` and `Corely.IAM.Demos.SharedAccou
 
 | Service | Lifetime | Purpose |
 |---------|----------|---------|
-| Razor Pages | — | Pre-authentication page routing |
+| Razor Pages | none | Pre-authentication page routing |
 | `IHttpContextAccessor` | Singleton | HTTP context for cookie management |
 | `IAuthCookieManager` | Singleton | Set/delete auth cookies (HttpOnly, Secure, SameSite=Strict) |
 | `IUserContextClaimsBuilder` | Singleton | Maps `UserContext` to `ClaimsPrincipal` |
-| Cookie Authentication | — | ASP.NET Core cookie auth with `/signin` and `/signout` paths |
-| Authorization | — | ASP.NET Core authorization middleware |
+| Cookie Authentication | none | ASP.NET Core cookie auth with `/signin` and `/signout` paths |
+| Authorization | none | ASP.NET Core authorization middleware |
 
 ## What AddIAMWebBlazor() Registers
 
@@ -151,17 +151,17 @@ Working examples: `Corely.IAM.Demos.UsersOnly` and `Corely.IAM.Demos.SharedAccou
 | `IBlazorUserContextAccessor` | Scoped | Cached user context for Blazor components |
 | `AuthenticationStateProvider` | Scoped | Blazor auth state derived from `UserContext` |
 | `IAccountDisplayState` | Scoped | Account name display + change notifications for NavBar |
-| Cascading Auth State | — | Propagates auth state to all Blazor components |
+| Cascading Auth State | none | Propagates auth state to all Blazor components |
 
 ## What UseIAMWebAuthentication() Adds
 
 Middleware pipeline in order:
 
-1. **CorrelationIdMiddleware** — assigns `X-Correlation-ID` header, enriches Serilog context
-2. **SecurityHeadersMiddleware** — adds HSTS, X-Frame-Options, Permissions-Policy (the Content-Security-Policy is the host's)
-3. **AuthenticationTokenMiddleware** — reads `authentication_token` cookie, validates JWT, sets `UserContext` + `ClaimsPrincipal`
-4. **UseAuthentication()** — ASP.NET Core authentication
-5. **UseAuthorization()** — ASP.NET Core authorization
+1. **CorrelationIdMiddleware**: assigns `X-Correlation-ID` header, enriches Serilog context
+2. **SecurityHeadersMiddleware**: adds HSTS, X-Frame-Options, Permissions-Policy (the Content-Security-Policy is the host's)
+3. **AuthenticationTokenMiddleware**: reads `authentication_token` cookie, validates JWT, sets `UserContext` + `ClaimsPrincipal`
+4. **UseAuthentication()**: ASP.NET Core authentication
+5. **UseAuthorization()**: ASP.NET Core authorization
 
 ## Complete Example
 

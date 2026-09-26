@@ -1,6 +1,6 @@
 # Corely.IAM
 
-Host-agnostic, multi-tenant identity and access management for .NET applications. Drop-in authentication, authorization, RBAC, and permission management — no external service dependencies.
+Host-agnostic, multi-tenant identity and access management for .NET applications. Drop-in authentication, authorization, RBAC, and permission management, with no external service dependencies.
 
 > **Upgrading from 1.x?** See [MIGRATION-2.0.md](https://github.com/ultrabstrong/Corely.IAM/blob/master/MIGRATION-2.0.md). MariaDB support is removed,
 > MySQL moved to Oracle's provider and its databases must be recreated, and the target framework is
@@ -34,17 +34,17 @@ graph LR
 
 ## Highlights
 
-- **Multi-tenant accounts** — users belong to multiple accounts with scoped RBAC
-- **CRUDX permissions** — fine-grained Create / Read / Update / Delete / Execute per resource type
-- **Token-based auth** — JWT with custom claims, no HttpContext dependency
-- **System context** — headless processes (Azure Functions, background services) can call APIs without user authentication
-- **Password recovery** — email-based recovery tokens for unauthenticated password reset
-- **Multi-factor authentication** — TOTP (authenticator apps) with recovery codes
-- **Google Sign-In** — link Google accounts as an alternative auth method
-- **Invitation system** — token-based onboarding with expiry and revocation
-- **Per-entity encryption** — account and user-scoped key pairs, stored encrypted
-- **Pluggable crypto** — configure algorithms via the `IAMOptions` builder
-- **Two database providers** — SQL Server and MySQL via EF Core
+- **Multi-tenant accounts**: users belong to multiple accounts with scoped RBAC
+- **CRUDX permissions**: fine-grained Create / Read / Update / Delete / Execute per resource type
+- **Token-based auth**: JWT with custom claims, no HttpContext dependency
+- **System context**: headless processes (Azure Functions, background services) can call APIs without user authentication
+- **Password recovery**: email-based recovery tokens for unauthenticated password reset
+- **Multi-factor authentication**: TOTP (authenticator apps) with recovery codes
+- **Google Sign-In**: link Google accounts as an alternative auth method
+- **Invitation system**: token-based onboarding with expiry and revocation
+- **Per-entity encryption**: account and user-scoped key pairs, stored encrypted
+- **Pluggable crypto**: configure algorithms via the `IAMOptions` builder
+- **Two database providers**: SQL Server and MySQL via EF Core
 
 ## Quick Start
 
@@ -83,8 +83,8 @@ var accountResult = await registrationService.RegisterAccountAsync(
 
 | Docs | Description |
 |------|-------------|
-| **[Corely.IAM](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM/Docs/index.md)** | Core library — setup, services, domains, security, architecture |
-| **[Corely.IAM.Web](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM.Web/Docs/index.md)** | Pre-built Blazor UI — auth pages, account management, RBAC visualization |
+| **[Corely.IAM](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM/Docs/index.md)** | Core library: setup, services, domains, security, architecture |
+| **[Corely.IAM.Web](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM.Web/Docs/index.md)** | Pre-built Blazor UI: auth pages, account management, RBAC visualization |
 | [DevTools CLI](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM.DevTools/Docs/index.md) | Crypto operations and IAM service interaction from the command line |
 | [Migration CLI](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM.DataAccessMigrations.Cli/Docs/index.md) | Database creation, migrations, and scripting |
 
@@ -92,14 +92,14 @@ var accountResult = await registrationService.RegisterAccountAsync(
 
 | Project | Purpose |
 |---------|---------|
-| `Corely.IAM` | Core library — business logic, data access, security |
-| `Corely.IAM.Web` | Blazor Server UI — pages, components, auth flow |
+| `Corely.IAM` | Core library: business logic, data access, security |
+| `Corely.IAM.Web` | Blazor Server UI: pages, components, auth flow |
 | `Corely.IAM.WebApp` | Host application (reference implementation) |
-| `Corely.IAM.Demos.UsersOnly` | Demo app — users sign up and own their data, no accounts or roles |
-| `Corely.IAM.Demos.SharedAccount` | Demo app — one team account shared by invited users, no roles to manage |
+| `Corely.IAM.Demos.UsersOnly` | Demo app: users sign up and own their data, no accounts or roles |
+| `Corely.IAM.Demos.SharedAccount` | Demo app: one team account shared by invited users, no roles to manage |
 | `Corely.IAM.UnitTests` | Test suite (xUnit, Moq, AutoFixture, FluentAssertions) |
 | `Corely.IAM.DevTools` | Developer CLI for crypto and IAM operations |
-| `Corely.IAM.DataAccessMigrations.Cli` | Migration CLI — creates and migrates the IAM schema (published as a .NET tool) |
+| `Corely.IAM.DataAccessMigrations.Cli` | Migration CLI that creates and migrates the IAM schema (published as a .NET tool) |
 | `Corely.IAM.DataAccessMigrations.MsSql` / `.MySql` | EF Core migrations per database provider, bundled into the CLI |
 
 ## License

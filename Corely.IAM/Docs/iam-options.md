@@ -4,11 +4,11 @@
 
 ## Features
 
-- **Static factory** — `Create()` enforces required parameters via method signature, not runtime surprises
-- **Fluent chaining** — optional configuration methods return `this` for chaining
-- **Crypto defaults** — sensible defaults for all algorithms; override only when needed
-- **Custom resource types** — register host-app resource types for validation and UI dropdowns
-- **Two paths** — EF production path and mock testing path from the same API
+- **Static factory**: `Create()` enforces required parameters via method signature, not runtime surprises
+- **Fluent chaining**: optional configuration methods return `this` for chaining
+- **Crypto defaults**: sensible defaults for all algorithms; override only when needed
+- **Custom resource types**: register host-app resource types for validation and UI dropdowns
+- **Two paths**: EF production path and mock testing path from the same API
 
 ## Usage
 
@@ -63,7 +63,7 @@ var options = IAMOptions.Create(configuration, securityConfigProvider, efConfigF
 
 | Method | Parameter | Default | Description |
 |--------|-----------|---------|-------------|
-| `RegisterResourceType` | `name`, `description` | — | Adds a custom resource type to the registry |
+| `RegisterResourceType` | `name`, `description` | none | Adds a custom resource type to the registry |
 | `UseSymmetricEncryption` | `code` | `AES_CODE` | Symmetric encryption algorithm |
 | `UseAsymmetricEncryption` | `code` | `RSA_CODE` | Asymmetric encryption algorithm |
 | `UseAsymmetricSignature` | `code` | `ECDSA_SHA256_CODE` | Asymmetric signature algorithm |

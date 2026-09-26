@@ -6,7 +6,7 @@ Displays effective permissions aggregated by role, showing how permissions are d
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `Permissions` | `List<EffectivePermission>?` | — | Permissions to display |
+| `Permissions` | `List<EffectivePermission>?` | none | Permissions to display |
 | `UseCard` | `bool` | `true` | Wrap in card layout (vs. section divider) |
 
 ## Usage
@@ -17,12 +17,12 @@ Displays effective permissions aggregated by role, showing how permissions are d
 
 ## Display
 
-- **Aggregated CRUDX badges** — green for granted, gray for not granted (across all permissions)
-- **Per-role breakdown** — each role listed with:
+- **Aggregated CRUDX badges**: green for granted, gray for not granted (across all permissions)
+- **Per-role breakdown**: each role listed with:
     - Role name (linked to role detail page)
-    - **"direct"** badge — green, shown when role is directly assigned
-    - **"via GroupName"** badges — indigo, one per group the role comes through
-    - **CRUDX mini-label** — monospace text showing the permission flags
+    - **"direct"** badge: green, shown when role is directly assigned
+    - **"via GroupName"** badges: indigo, one per group the role comes through
+    - **CRUDX mini-label**: monospace text showing the permission flags
 
 ## Behavior
 

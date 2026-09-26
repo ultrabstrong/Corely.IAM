@@ -25,14 +25,14 @@ Host-agnostic user model with M:M account membership, login tracking, and per-us
 
 ## Relationships
 
-- **Accounts** — M:M (users exist independently of accounts)
-- **Groups** — M:M (scoped to the current account)
-- **Roles** — M:M (scoped to the current account)
-- **BasicAuth** — 1:1 (password credentials)
+- **Accounts**: M:M (users exist independently of accounts)
+- **Groups**: M:M (scoped to the current account)
+- **Roles**: M:M (scoped to the current account)
+- **BasicAuth**: 1:1 (password credentials)
 
 ## Key Behaviors
 
-- Users exist independently of accounts — there is no concept of "user A administrates user B"
+- Users exist independently of accounts. There is no concept of "user A administrates user B"
 - Account owners can add/remove users from their account but cannot read or modify other users directly
 - Login metrics are updated on every authentication attempt
 - User deletion requires no sole-ownership of any account (checked via `IsSoleOwnerOfAccountResult`)

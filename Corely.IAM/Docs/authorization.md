@@ -4,12 +4,12 @@ Two-layer authorization model with context validation at the service level and f
 
 ## Features
 
-- **CRUDX model** — five discrete actions per resource type: Create, Read, Update, Delete, Execute
-- **Wildcard support** — `"*"` matches all resource types; `Guid.Empty` matches all resources of a type
-- **Two authorization layers** — services validate context, processors check permissions
-- **Self-ownership** — users can act on their own resources without explicit permission
-- **System context** — headless processes bypass permission checks while "self" operations are blocked
-- **Effective permissions** — aggregated view of permissions through roles and groups
+- **CRUDX model**: five discrete actions per resource type: Create, Read, Update, Delete, Execute
+- **Wildcard support**: `"*"` matches all resource types; `Guid.Empty` matches all resources of a type
+- **Two authorization layers**: services validate context, processors check permissions
+- **Self-ownership**: users can act on their own resources without explicit permission
+- **System context**: headless processes bypass permission checks while "self" operations are blocked
+- **Effective permissions**: aggregated view of permissions through roles and groups
 
 ## AuthAction Enum
 
@@ -51,9 +51,9 @@ public interface IAuthorizationProvider
 
 Service authorization decorators check only that the required context exists:
 
-- **`HasUserContext()`** — user is authenticated (or system context is active)
-- **`HasAccountContext(accountId)`** — user is authenticated and the requested `accountId` matches the current active account (or system context, which bypasses the account-match requirement)
-- **`IsNonSystemUserContext()`** — user is a real authenticated user, NOT system context
+- **`HasUserContext()`**: user is authenticated (or system context is active)
+- **`HasAccountContext(accountId)`**: user is authenticated and the requested `accountId` matches the current active account (or system context, which bypasses the account-match requirement)
+- **`IsNonSystemUserContext()`**: user is a real authenticated user, NOT system context
 
 These are coarse-grained gates. They do not check specific CRUDX permissions.
 
@@ -78,7 +78,7 @@ if (!await authorizationProvider.IsAuthorizedAsync(
 }
 ```
 
-System context automatically passes `IsAuthorizedAsync()` checks — no permissions need to be provisioned.
+System context automatically passes `IsAuthorizedAsync()` checks. No permissions need to be provisioned.
 
 ## Resource Types
 
@@ -91,7 +91,7 @@ Permissions are scoped to resource types defined as string constants:
 | `GROUP_RESOURCE_TYPE` | `"group"` | Groups |
 | `ROLE_RESOURCE_TYPE` | `"role"` | Roles |
 | `PERMISSION_RESOURCE_TYPE` | `"permission"` | Permissions |
-| `ALL_RESOURCE_TYPES` | `"*"` | Wildcard — all resource types |
+| `ALL_RESOURCE_TYPES` | `"*"` | Wildcard: all resource types |
 
 See [Resource Types](resource-types.md) for custom type registration.
 
@@ -99,8 +99,8 @@ See [Resource Types](resource-types.md) for custom type registration.
 
 Two levels of wildcard:
 
-- **Resource type wildcard** (`"*"`) — grants access to all resource types for the specified action
-- **Resource ID wildcard** (`Guid.Empty`) — grants access to all resources of the specified type
+- **Resource type wildcard** (`"*"`): grants access to all resource types for the specified action
+- **Resource ID wildcard** (`Guid.Empty`): grants access to all resources of the specified type
 
 ```csharp
 // Permission with resource type "*" and ID Guid.Empty = full admin access for that action
@@ -146,6 +146,6 @@ Use `IRetrievalService` with `hydrate: true` to retrieve entities with their eff
 ## Notes
 
 - Service methods that appear "unguarded" are protected at the processor level where the actual work happens
-- Authorization decorators are registered via Scrutor — registration order in `ServiceRegistrationExtensions.cs` determines decorator nesting
+- Authorization decorators are registered via Scrutor. Registration order in `ServiceRegistrationExtensions.cs` determines decorator nesting
 - Permission cache is scoped to the current account and cleared on account switch
-- The `IAuthorizationCacheClearer` interface is `internal` — used when roles/permissions change within a request
+- The `IAuthorizationCacheClearer` interface is `internal`, used when roles/permissions change within a request

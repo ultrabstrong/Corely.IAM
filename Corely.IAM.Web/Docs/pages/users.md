@@ -1,19 +1,19 @@
 # Users
 
-## UserList — `/users`
+## UserList (`/users`)
 
 User table for the current account with search, sort, and pagination.
 
 **Base class**: `EntityListPageBase<User>`
 
 **Features:**
-- **Search** — username and email (debounced 300ms)
-- **Sort** — ascending/descending on username or email
-- **Pagination** — 25 items per page
-- **Remove** — removes user from current account (not a user delete)
+- **Search**: username and email (debounced 300ms)
+- **Sort**: ascending/descending on username or email
+- **Pagination**: 25 items per page
+- **Remove**: removes user from current account (not a user delete)
 
 **Authorization gates:**
-- `AuthAction.Update` + `ACCOUNT_RESOURCE_TYPE` — Remove button
+- `AuthAction.Update` + `ACCOUNT_RESOURCE_TYPE`: Remove button
 
 **Behavior:**
 - Displays only users in the current account
@@ -22,21 +22,21 @@ User table for the current account with search, sort, and pagination.
 
 ---
 
-## UserDetail — `/users/{Id:guid}`
+## UserDetail (`/users/{Id:guid}`)
 
 Read-only user properties with group and role assignment. When viewing your own user detail, the page also exposes your personal encryption/signing providers.
 
 **Base class**: `EntityDetailPageBase`
 
 **Features:**
-- **Properties** — username, email (read-only)
-- **Groups section** — paginated (10 per page), add via `EntityPickerModal`
-- **Roles section** — paginated (10 per page), add/remove via `EntityPickerModal`
-- **Encryption & Signing** — only shown when `Id == UserContext.User.Id`; uses the current user's symmetric, asymmetric encryption, and signature providers
-- **Effective permissions panel** — inherited permissions through roles and groups
+- **Properties**: username, email (read-only)
+- **Groups section**: paginated (10 per page), add via `EntityPickerModal`
+- **Roles section**: paginated (10 per page), add/remove via `EntityPickerModal`
+- **Encryption & Signing**: only shown when `Id == UserContext.User.Id`; uses the current user's symmetric, asymmetric encryption, and signature providers
+- **Effective permissions panel**: inherited permissions through roles and groups
 
 **Authorization gates:**
-- `AuthAction.Update` + `USER_RESOURCE_TYPE` + `ResourceIds: [Id]` — Add Groups, Add Roles, Remove Role buttons
+- `AuthAction.Update` + `USER_RESOURCE_TYPE` + `ResourceIds: [Id]`: Add Groups, Add Roles, Remove Role buttons
 
 **Behavior:**
 - Loads with `hydrate: true` to include group and role relations

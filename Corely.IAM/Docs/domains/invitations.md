@@ -36,7 +36,7 @@ Created (Pending) → Accepted
 
 ## Key Behaviors
 
-- Token is generated on creation and returned once — it cannot be retrieved again
+- Token is generated on creation and returned once. It cannot be retrieved again
 - Accepting an invitation adds the user to the account
 - Email must match the authenticated user's email when accepting
 - Creating an invitation for a user already in the account returns `UserAlreadyInAccountError`

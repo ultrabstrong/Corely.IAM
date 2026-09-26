@@ -58,13 +58,13 @@ var result = await retrievalService.GetUserSymmetricEncryptionProviderAsync();
 
 All three provider interfaces follow a consistent pattern:
 
-- **`IIamSymmetricEncryptionProvider`** — `Encrypt(string)`, `Decrypt(string)`, `ReEncrypt(string)`
-- **`IIamAsymmetricEncryptionProvider`** — `Encrypt(string)`, `Decrypt(string)`, `GetPublicKey()`
-- **`IIamAsymmetricSignatureProvider`** — `Sign(string)`, `Verify(string, string)`, `GetPublicKey()`
+- **`IIamSymmetricEncryptionProvider`**: `Encrypt(string)`, `Decrypt(string)`, `ReEncrypt(string)`
+- **`IIamAsymmetricEncryptionProvider`**: `Encrypt(string)`, `Decrypt(string)`, `GetPublicKey()`
+- **`IIamAsymmetricSignatureProvider`**: `Sign(string)`, `Verify(string, string)`, `GetPublicKey()`
 
 ## Notes
 
-- Private keys are stored encrypted in the database — they are decrypted in memory only when a provider is requested
-- Key providers are returned as ready-to-use objects — no additional setup required
+- Private keys are stored encrypted in the database and are decrypted in memory only when a provider is requested
+- Key providers are returned as ready-to-use objects, with no additional setup required
 - The system key must be provisioned externally (environment variable, key vault, etc.)
 - See [Corely.Security docs](https://github.com/ultrabstrong/Corely/tree/master/Corely.Security/Docs) for the underlying crypto primitives

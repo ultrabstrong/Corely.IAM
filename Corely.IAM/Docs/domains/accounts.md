@@ -17,8 +17,8 @@ Top-level multi-tenant container. All groups, roles, permissions, and invitation
 
 ## Relationships
 
-- **Users** — M:M (users can belong to multiple accounts)
-- **Groups, Roles, Permissions, Invitations** — 1:M (scoped to this account)
+- **Users**: M:M (users can belong to multiple accounts)
+- **Groups, Roles, Permissions, Invitations**: 1:M (scoped to this account)
 
 ## Key Behaviors
 

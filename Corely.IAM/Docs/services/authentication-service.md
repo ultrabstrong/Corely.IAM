@@ -94,7 +94,7 @@ Accepts either a 6-digit TOTP code or a recovery code in `XXXX-XXXX` format. See
 | `AccountLockedError` | Too many failed attempts |
 | `AccountNotFoundError` | Target account not found (switch) |
 | `AuthorizationError` | Not authorized |
-| `MfaRequiredChallenge` | TOTP enabled — MFA challenge issued |
+| `MfaRequiredChallenge` | TOTP enabled; MFA challenge issued |
 | `InvalidMfaCodeError` | TOTP or recovery code invalid |
 | `MfaChallengeExpiredError` | Challenge expired or already used |
 | `InvalidGoogleTokenError` | Google ID token validation failed |
@@ -108,6 +108,6 @@ Accepts either a 6-digit TOTP code or a recovery code in `XXXX-XXXX` format. See
 
 ## Notes
 
-- `SignInAsync` does not require prior authentication — it is the entry point
+- `SignInAsync` does not require prior authentication. It is the entry point
 - Only the telemetry decorator is applied (no authorization decorator) since sign-in must work without existing context
 - Login failure counting and lockout are handled at the processor level

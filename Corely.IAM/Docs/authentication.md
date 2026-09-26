@@ -1,19 +1,19 @@
 # Authentication
 
-JWT-based authentication with custom claims, device tracking, and multi-account support. No HttpContext dependency — works in any .NET host.
+JWT-based authentication with custom claims, device tracking, and multi-account support. No HttpContext dependency, so it works in any .NET host.
 
 ## Features
 
-- **JWT tokens** — signed with per-user asymmetric keys, validated on every request
-- **Custom claims** — `account_id`, `signed_in_account_id`, `device_id` embedded in token
-- **Account switching** — issue new tokens scoped to a different account without re-authenticating
-- **Device tracking** — tokens bound to device IDs for session management
-- **Session management** — list active sessions, revoke one session, or revoke all other sessions
-- **Login metrics** — failed attempt counting and lockout cooldown
-- **Bulk sign-out** — revoke all tokens for a user across all devices
-- **Password recovery** — email-based token flow for unauthenticated password reset
-- **MFA (TOTP)** — optional second factor via authenticator apps (see [mfa.md](mfa.md))
-- **Google Sign-In** — alternative auth method via Google ID tokens (see [google-signin.md](google-signin.md))
+- **JWT tokens**: signed with per-user asymmetric keys, validated on every request
+- **Custom claims**: `account_id`, `signed_in_account_id`, `device_id` embedded in token
+- **Account switching**: issue new tokens scoped to a different account without re-authenticating
+- **Device tracking**: tokens bound to device IDs for session management
+- **Session management**: list active sessions, revoke one session, or revoke all other sessions
+- **Login metrics**: failed attempt counting and lockout cooldown
+- **Bulk sign-out**: revoke all tokens for a user across all devices
+- **Password recovery**: email-based token flow for unauthenticated password reset
+- **MFA (TOTP)**: optional second factor via authenticator apps (see [mfa.md](mfa.md))
+- **Google Sign-In**: alternative auth method via Google ID tokens (see [google-signin.md](google-signin.md))
 
 ## Sign-In Flow
 
@@ -69,7 +69,7 @@ await authenticationService.RevokeSessionAsync(new RevokeSessionRequest(sessionI
 await authenticationService.RevokeOtherSessionsAsync();
 ```
 
-`ListSessionsAsync()` returns the current user's active sessions only — revoked and expired tokens are excluded. Each session includes its tracked token ID, device ID, signed-in account ID, issued/expiry timestamps, and whether it is the current session.
+`ListSessionsAsync()` returns the current user's active sessions only; revoked and expired tokens are excluded. Each session includes its tracked token ID, device ID, signed-in account ID, issued/expiry timestamps, and whether it is the current session.
 
 ## Password Recovery
 
@@ -127,8 +127,8 @@ Configure in `appsettings.json` under the `SecurityOptions` section.
 
 - Tokens are signed with per-user asymmetric keys (not a shared secret)
 - Renewals rotate tracked tokens while preserving the original session start so sessions stay bounded
-- The system key encrypts stored private keys — it is never embedded in tokens
-- `IUserContextSetter` is `internal` — only `AuthenticationService` and test infrastructure can set context directly
+- The system key encrypts stored private keys. It is never embedded in tokens
+- `IUserContextSetter` is `internal`. Only `AuthenticationService` and test infrastructure can set context directly
 - If using `Corely.IAM.Web`, the `AuthenticationTokenMiddleware` handles token validation and context setup automatically
 
 ## System Context (Headless Processes)

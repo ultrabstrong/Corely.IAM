@@ -1,6 +1,6 @@
 # Dashboard
 
-## Dashboard — `/`
+## Dashboard (`/`)
 
 Landing page after authentication and account selection. Serves as the navigation hub for all management pages.
 

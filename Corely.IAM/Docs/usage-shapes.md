@@ -1,7 +1,7 @@
 # Usage Shapes
 
 Corely.IAM does not require accounts, groups, roles, or permissions. An app uses as much of it as it
-needs, and the rest of the schema sits empty. The full schema is always deployed - the tables an app
+needs, and the rest of the schema sits empty. The full schema is always deployed: the tables an app
 does not use cost nothing, and an app can grow into them later without a migration.
 
 | Shape | Uses | App data keyed by |
@@ -64,8 +64,8 @@ var accountId = userContextProvider.GetUserContext()!.CurrentAccount!.Id;
 var notes = await db.Notes.Where(n => n.AccountId == accountId).ToListAsync();
 ```
 
-A member who joins by invitation has no roles. IAM refuses them anything guarded by a permission -
-listing users, creating invitations, changing the account - which leaves the owner as the only one
+A member who joins by invitation has no roles. IAM refuses them anything guarded by a permission
+(listing users, creating invitations, changing the account), which leaves the owner as the only one
 who manages the team. An app that wants every member to be an admin assigns them the owner role
 after they accept, with `IRegistrationService.RegisterRolesWithUserAsync`.
 

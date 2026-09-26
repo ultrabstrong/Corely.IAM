@@ -4,10 +4,10 @@ Users can link a Google account as an alternative authentication method. When li
 
 ## Features
 
-- **Link/unlink Google accounts** — users can link one Google account to their user profile
-- **Google ID token validation** — server-side JWT validation via Google's OIDC discovery endpoint
-- **MFA support** — if TOTP is enabled, Google sign-in also requires MFA
-- **Auth method safety** — cannot unlink the last authentication method
+- **Link/unlink Google accounts**: users can link one Google account to their user profile
+- **Google ID token validation**: server-side JWT validation via Google's OIDC discovery endpoint
+- **MFA support**: if TOTP is enabled, Google sign-in also requires MFA
+- **Auth method safety**: cannot unlink the last authentication method
 
 ## Linking a Google Account
 
@@ -25,7 +25,7 @@ var methods = await retrievalService.GetAuthMethodsAsync();
 
 - Each user can link **one** Google account
 - Each Google account (by subject ID) can be linked to **one** user
-- At least one auth method must remain linked — cannot unlink Google if no password exists
+- At least one auth method must remain linked, so Google cannot be unlinked if no password exists
 
 ## Sign Up with Google
 
@@ -38,7 +38,7 @@ var result = await registrationService.RegisterUserWithGoogleAsync(
 if (result.ResultCode == RegisterUserWithGoogleResultCode.Success)
 {
     var userId = result.CreatedUserId;
-    // User is created with Google as their sole auth method — no password set
+    // User is created with Google as their sole auth method, with no password set
 }
 ```
 
@@ -66,7 +66,7 @@ if (result.ResultCode == SignInResultCode.Success)
 }
 else if (result.ResultCode == SignInResultCode.MfaRequiredChallenge)
 {
-    // TOTP is enabled — verify MFA to complete sign-in
+    // TOTP is enabled: verify MFA to complete sign-in
     var mfaResult = await authService.VerifyMfaAsync(
         new VerifyMfaRequest(result.MfaChallengeToken!, totpCode));
 }
@@ -77,7 +77,7 @@ else if (result.ResultCode == SignInResultCode.MfaRequiredChallenge)
 | Code | Meaning |
 |------|---------|
 | `Success` | Sign-in complete, JWT issued |
-| `MfaRequiredChallenge` | TOTP enabled — verify MFA to complete |
+| `MfaRequiredChallenge` | TOTP enabled; verify MFA to complete |
 | `InvalidGoogleTokenError` | Google ID token validation failed |
 | `GoogleAuthNotLinkedError` | No user linked to this Google account |
 

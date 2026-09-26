@@ -1,25 +1,25 @@
 # Multi-Factor Authentication (TOTP)
 
-Time-based One-Time Password (TOTP) support per RFC 6238. Users can enable TOTP as a second factor — when enabled, all sign-in methods (password and Google) require a TOTP code after initial authentication.
+Time-based One-Time Password (TOTP) support per RFC 6238. Users can enable TOTP as a second factor. When enabled, all sign-in methods (password and Google) require a TOTP code after initial authentication.
 
 ## Features
 
-- **TOTP (RFC 6238)** — HMAC-SHA1, 6-digit codes, 30-second period, 1-step tolerance
-- **Recovery codes** — 10 single-use backup codes in `XXXX-XXXX` format
-- **Two-phase sign-in** — credential verification → MFA challenge → JWT
-- **MFA challenges** — short-lived (5 min), single-use tokens stored in the database
-- **Applies to all auth methods** — password sign-in and Google sign-in both trigger MFA when enabled
+- **TOTP (RFC 6238)**: HMAC-SHA1, 6-digit codes, 30-second period, 1-step tolerance
+- **Recovery codes**: 10 single-use backup codes in `XXXX-XXXX` format
+- **Two-phase sign-in**: credential verification → MFA challenge → JWT
+- **MFA challenges**: short-lived (5 min), single-use tokens stored in the database
+- **Applies to all auth methods**: password sign-in and Google sign-in both trigger MFA when enabled
 
 ## Enabling TOTP
 
 ```csharp
-// 1. Enable — generates secret and recovery codes
+// 1. Enable: generates secret and recovery codes
 var enableResult = await registrationService.EnableTotpAsync();
-// enableResult.Secret — base32-encoded secret for authenticator app
-// enableResult.SetupUri — otpauth:// URI for QR code scanning
-// enableResult.RecoveryCodes — 10 single-use backup codes
+// enableResult.Secret: base32-encoded secret for authenticator app
+// enableResult.SetupUri: otpauth:// URI for QR code scanning
+// enableResult.RecoveryCodes: 10 single-use backup codes
 
-// 2. Confirm — user enters a code from their authenticator app
+// 2. Confirm: user enters a code from their authenticator app
 var confirmResult = await registrationService.ConfirmTotpAsync(
     new ConfirmTotpRequest("123456"));
 ```
@@ -46,7 +46,7 @@ if (signInResult.ResultCode == SignInResultCode.MfaRequiredChallenge)
 }
 ```
 
-The same flow applies to `SignInWithGoogleAsync` — if TOTP is enabled, it returns `MfaRequiredChallenge`.
+The same flow applies to `SignInWithGoogleAsync`: if TOTP is enabled, it returns `MfaRequiredChallenge`.
 
 ## Managing TOTP
 
@@ -67,7 +67,7 @@ var disableResult = await registrationService.DisableTotpAsync(
 
 - 10 codes generated on enable
 - Format: `XXXX-XXXX` (8 alphanumeric characters)
-- Each code is single-use — marked as used after verification
+- Each code is single-use and is marked as used after verification
 - Stored as salted hashes in the database
 - Can be regenerated at any time (invalidates previous codes)
 - Accepted anywhere a TOTP code is accepted (MFA verification, disable)
@@ -77,7 +77,7 @@ var disableResult = await registrationService.DisableTotpAsync(
 | Property | Value |
 |----------|-------|
 | Timeout | 300 seconds (5 minutes) |
-| Usage | Single-use — consumed on successful verification |
+| Usage | Single-use, consumed on successful verification |
 | Storage | `MfaChallenges` table with `UserId`, `Token`, `ExpiresUtc`, `CompletedUtc` |
 
 Expired or already-completed challenges return `MfaChallengeExpiredError`.

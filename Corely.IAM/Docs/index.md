@@ -28,22 +28,22 @@ graph LR
     style J fill:#9b59b6,color:#fff
 ```
 
-- **Multi-tenant accounts** — users belong to multiple accounts with scoped RBAC
-- **CRUDX permissions** — fine-grained Create/Read/Update/Delete/Execute per resource type
-- **Token-based authentication** — JWT with custom claims, no HttpContext dependency
-- **System context** — headless processes (Azure Functions, background services) can call APIs without user authentication
-- **Password recovery** — email-based recovery tokens for unauthenticated password reset
-- **Multi-factor authentication** — TOTP (authenticator apps) with recovery codes
-- **Google Sign-In** — link Google accounts as an alternative auth method
-- **Invitation system** — token-based onboarding with expiry and revocation
-- **Per-entity encryption keys** — account and user-scoped key pairs, stored encrypted
-- **Pluggable crypto** — configure algorithms via the `IAMOptions` builder
-- **Resource type registry** — built-in + custom resource types for validation and UI
+- **Multi-tenant accounts**: users belong to multiple accounts with scoped RBAC
+- **CRUDX permissions**: fine-grained Create/Read/Update/Delete/Execute per resource type
+- **Token-based authentication**: JWT with custom claims, no HttpContext dependency
+- **System context**: headless processes (Azure Functions, background services) can call APIs without user authentication
+- **Password recovery**: email-based recovery tokens for unauthenticated password reset
+- **Multi-factor authentication**: TOTP (authenticator apps) with recovery codes
+- **Google Sign-In**: link Google accounts as an alternative auth method
+- **Invitation system**: token-based onboarding with expiry and revocation
+- **Per-entity encryption keys**: account and user-scoped key pairs, stored encrypted
+- **Pluggable crypto**: configure algorithms via the `IAMOptions` builder
+- **Resource type registry**: built-in + custom resource types for validation and UI
 
 ## Topics
 
 - [Step-by-Step Setup](step-by-step-setup.md)
-- [Usage Shapes](usage-shapes.md) — users only, one shared account, or full RBAC
+- [Usage Shapes](usage-shapes.md): users only, one shared account, or full RBAC
 - [IAMOptions Configuration](iam-options.md)
 - [Authentication](authentication.md)
 - [Authorization](authorization.md)
@@ -76,8 +76,8 @@ graph LR
 
 ### Tools
 
-- [DevTools CLI](../../Corely.IAM.DevTools/Docs/index.md) — crypto operations, IAM service interaction
-- [Migration CLI](../../Corely.IAM.DataAccessMigrations.Cli/Docs/index.md) — database creation, migrations, scripting
+- [DevTools CLI](../../Corely.IAM.DevTools/Docs/index.md): crypto operations, IAM service interaction
+- [Migration CLI](../../Corely.IAM.DataAccessMigrations.Cli/Docs/index.md): database creation, migrations, scripting
 
 ## Quick Start
 

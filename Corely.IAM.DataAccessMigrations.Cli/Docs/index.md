@@ -1,6 +1,6 @@
 # Corely.IAM.DataAccessMigrations.Cli
 
-Command-line tool for managing the Corely.IAM database — creation, migration, scripting, and status. Built on `System.CommandLine` and distributed as a .NET tool.
+Command-line tool for managing the Corely.IAM database: creation, migration, scripting, and status. Built on `System.CommandLine` and distributed as a .NET tool.
 
 All commands support `--help` for full argument and option details.
 
@@ -8,7 +8,7 @@ All commands support `--help` for full argument and option details.
 
 | Group | Purpose |
 |-------|---------|
-| `db` | Database operations — create, migrate, drop, script, status |
+| `db` | Database operations: create, migrate, drop, script, status |
 | `provider` | Lists the available database providers |
 
 ## Install
@@ -17,7 +17,7 @@ All commands support `--help` for full argument and option details.
 dotnet tool install --global Corely.IAM.DataAccessMigrations.Cli
 ```
 
-The command is `corely-iam-db`. Running from a clone of this repository works too — substitute `dotnet run --project Corely.IAM.DataAccessMigrations.Cli --` for `corely-iam-db` in every example below.
+The command is `corely-iam-db`. Running from a clone of this repository works too: substitute `dotnet run --project Corely.IAM.DataAccessMigrations.Cli --` for `corely-iam-db` in every example below.
 
 ## Configuration
 
@@ -47,7 +47,7 @@ Creates the database (if it does not exist) and applies all pending migrations i
 corely-iam-db db create
 ```
 
-This is the recommended command for initial setup, and it is safe to re-run — it applies whatever is pending.
+This is the recommended command for initial setup, and it is safe to re-run. It applies whatever is pending.
 
 ### Check Migration Status
 
@@ -102,8 +102,8 @@ corely-iam-db db script "FromMigration" "ToMigration"
 ```
 
 Options:
-- `-o, --output` — write to a file instead of console
-- `-i, --idempotent` — generate an idempotent script safe to run multiple times
+- `-o, --output`: write to a file instead of console
+- `-i, --idempotent`: generate an idempotent script safe to run multiple times
 
 Production deployments typically use idempotent scripts:
 
@@ -137,7 +137,7 @@ IAM records its migrations in `__CorelyIamMigrationsHistory` rather than the def
 corely-iam-db db migrate --history-table __EFMigrationsHistory
 ```
 
-The alternative is to copy the records into the new table once — see the [tool README](../README.md) for the statements and how to verify the result.
+The alternative is to copy the records into the new table once. See the [tool README](../README.md) for the statements and how to verify the result.
 
 ## Providers
 
@@ -180,7 +180,7 @@ corely-iam-db db script -i -o "deploy.sql" -p MsSql
 
 ## Notes
 
-- `db create` is idempotent — safe to run on an existing database
+- `db create` is idempotent and safe to run on an existing database
 - `db migrate 0` reverts all migrations but does not drop the database
 - `db drop` is destructive and cannot be undone
-- Migration assemblies are provider-specific — changing the provider changes which migrations are available
+- Migration assemblies are provider-specific, so changing the provider changes which migrations are available

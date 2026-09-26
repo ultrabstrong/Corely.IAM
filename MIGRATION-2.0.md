@@ -10,7 +10,7 @@ is a recompile.
 
 MariaDB was supported because Pomelo happened to support it, not because it was a deliberate
 target. Pomelo has no EF Core 10 release, no preview, and no commits since August 2025, so it
-blocked the framework upgrade outright. Its replacement - Oracle's `MySql.EntityFrameworkCore` -
+blocked the framework upgrade outright. Its replacement, Oracle's `MySql.EntityFrameworkCore`,
 does not support MariaDB.
 
 If you are running on MariaDB, you need to move to MySQL or SQL Server. There is no in-place path.
@@ -29,7 +29,7 @@ dotnet run -- db drop
 dotnet run -- db create
 ```
 
-SQL Server is unaffected - its migration history is unchanged.
+SQL Server is unaffected; its migration history is unchanged.
 
 ## Provider configuration changed shape
 
@@ -67,7 +67,7 @@ Expression<Func<SetPropertyCalls<T>, SetPropertyCalls<T>>> setProperties
 Action<IUpdateSetters<T>> setProperties
 ```
 
-Call sites are unchanged in practice - `s => s.SetProperty(x => x.Prop, value)` compiles against
+Call sites are unchanged in practice: `s => s.SetProperty(x => x.Prop, value)` compiles against
 both. Only code that built those expressions programmatically needs rewriting.
 
 ## Creating the schema
@@ -112,7 +112,7 @@ CREATE TABLE __CorelyIamMigrationsHistory AS SELECT * FROM __EFMigrationsHistory
 ```
 
 Copy everything when IAM is the only context in the database. When it shares the database, restrict
-the copy to the migration ids `corely-iam-db db list` reports. Run `db status` afterwards - every
+the copy to the migration ids `corely-iam-db db list` reports. Run `db status` afterwards; every
 IAM migration should read as applied.
 
 ## Permission caching now expires
@@ -143,7 +143,7 @@ rewritten.
 
 This is called out because it did bite once. Before 2.1.0, two decrypt paths in this library used
 the default provider instead of the one the value named, so a 1.x database upgraded to 2.0.x failed
-sign-in with `AuthenticationTagMismatchException` - which looks exactly like a wrong key and sent
+sign-in with `AuthenticationTagMismatchException`, which looks exactly like a wrong key and sent
 the investigation after the key rather than the provider. Fixed in 2.1.0; if you are on 2.0.x with
 data written before 1.3.0, upgrade.
 

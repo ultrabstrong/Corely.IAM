@@ -61,7 +61,7 @@ When a user signs in with Google but has no linked account, they are redirected 
 
 1. `/google-callback` receives `GoogleAuthNotLinkedError` from `SignInWithGoogleAsync`
 2. Stores the Google ID token in `TempData` and redirects to `/register-with-google`
-3. User sees "No account found — create one?" confirmation page
+3. User sees "No account found. Create one?" confirmation page
 4. On confirm: `IRegistrationService.RegisterUserWithGoogleAsync()` creates the user (username auto-generated from email)
 5. Auto-signs in via `SignInWithGoogleAsync` → cookies set → dashboard
 6. The same Google button on `/register` follows the same flow via `/google-callback`
@@ -120,7 +120,7 @@ Buttons marked `data-busy-spinner` also swap their label for a spinner after 150
 The delay means an action that completes quickly shows nothing rather than flashing a spinner. The
 button's width is pinned before the swap so the card does not resize.
 
-Buttons without the attribute are disabled but keep their label - correct where the label is content
+Buttons without the attribute are disabled but keep their label. That is correct where the label is content
 rather than a verb, as on the account list in Select Account. `method="get"` forms are left alone.
 
 Progressive enhancement: with scripting unavailable the forms still post normally.

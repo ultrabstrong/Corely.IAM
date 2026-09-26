@@ -83,4 +83,4 @@ List requests accept `FilterBuilder<T>` and `OrderBuilder<T>` from `Corely.Commo
 
 - All list methods return `RetrieveListResult<T>` with `PagedResult<T>` containing `Items` and `TotalCount`
 - All get methods return `RetrieveSingleResult<T>` with `Data` and `ResultCode`
-- Key provider methods decrypt stored keys using the system key — the returned providers are ready to use
+- Key provider methods decrypt stored keys using the system key, so the returned providers are ready to use

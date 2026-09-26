@@ -29,10 +29,10 @@ The **Owner Role** is created automatically when an account is registered. It ha
 
 ## Relationships
 
-- **Account** — belongs to one account
-- **Users** — M:M (direct assignment)
-- **Groups** — M:M (indirect assignment)
-- **Permissions** — M:M
+- **Account**: belongs to one account
+- **Users**: M:M (direct assignment)
+- **Groups**: M:M (indirect assignment)
+- **Permissions**: M:M
 
 ## Result Codes
 

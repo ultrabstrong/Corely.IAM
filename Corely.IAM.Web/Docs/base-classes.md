@@ -20,7 +20,7 @@ Ensures user context is loaded. Redirects unauthenticated users to `/signin`.
 |--------|------|-------------|
 | `UserContext` | `UserContext?` | Current authenticated user context |
 | `IsAuthenticated` | `bool` | `true` if `UserContext?.User != null` |
-| `OnInitializedAuthenticatedAsync()` | `virtual Task` | Override point — called after successful authentication |
+| `OnInitializedAuthenticatedAsync()` | `virtual Task` | Override point, called after successful authentication |
 
 **Behavior:** Sealed `OnInitializedAsync()` calls `BlazorUserContextAccessor.GetUserContextAsync()`. If not authenticated, redirects to sign-in with `forceLoad: true`.
 
@@ -38,7 +38,7 @@ Centralized error handling, loading state, and confirmation dialog support.
 
 | Method | Description |
 |--------|-------------|
-| `LoadCoreAsync()` | Abstract — load page data |
+| `LoadCoreAsync()` | Abstract: load page data |
 | `ReloadAsync()` | Wraps `LoadCoreAsync()` with loading state and error handling |
 | `ExecuteSafeAsync(action)` | Wraps any async action with try-catch and loading state |
 | `SetResultMessage(success, msg, failMsg)` | Sets alert state from operation result |
@@ -53,18 +53,18 @@ Pagination, search, and sort for entity list pages. Implements `IAsyncDisposable
 
 | Member | Type | Default | Description |
 |--------|------|---------|-------------|
-| `_items` | `List<T>?` | — | Current page of items |
+| `_items` | `List<T>?` | none | Current page of items |
 | `_skip` | `int` | `0` | Pagination offset |
 | `_take` | `int` | `25` | Page size |
-| `_totalCount` | `int` | — | Total items from server |
+| `_totalCount` | `int` | none | Total items from server |
 | `_searchText` | `string` | `""` | Current search filter |
-| `_sortColumn` | `string?` | — | Active sort column |
-| `_sortDirection` | `SortDirection?` | — | Sort order |
+| `_sortColumn` | `string?` | none | Active sort column |
+| `_sortDirection` | `SortDirection?` | none | Sort order |
 
 | Method | Description |
 |--------|-------------|
 | `OnPageChangedAsync(newSkip)` | Updates offset and reloads |
-| `OnSearchChangedAsync()` | Debounced (300ms) search — resets offset and reloads |
+| `OnSearchChangedAsync()` | Debounced (300ms) search that resets offset and reloads |
 | `CycleSortAsync(column)` | Cycles through ascending → descending → none |
 | `GetSortIcon(column)` | Returns Bootstrap icon class for sort state |
 | `GetSortClass(column)` | Returns CSS class for sort state |

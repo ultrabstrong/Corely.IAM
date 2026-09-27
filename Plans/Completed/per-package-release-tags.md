@@ -22,10 +22,13 @@ keeps its own `<Version>` in its csproj.
 
 ## Progress
 
-**Implemented and committed locally on 2026-09-26, nothing pushed.** What is left is the owner's
-review and the pushes, in this order:
+**Done and pushed on 2026-09-26.** The owner reviewed it; the baseline tags went up first and
+started no release run, then the commits. What remains is the first real release under the new
+scheme, which is the end to end proof, whenever the owner next releases a package.
 
-1. **Push the baseline tags first, in both repositories.** They point at the commits that shipped
+The push order that was followed:
+
+1. **Push the baseline tags first, in every repository.** They point at the commits that shipped
    what is on nuget.org, whose `release.yml` still triggers on `v*`, so pushing them publishes
    nothing:
    - Corely.IAM, all at `11fa1e87` (`v2.8.0`): `Corely.IAM-v2.3.1`, `Corely.IAM.Web-v2.4.0`,
@@ -39,8 +42,12 @@ review and the pushes, in this order:
 
    `git push origin <tag> ...` names each one; never `--tags`.
 2. **Then push each repository's commit** with the new `release.yml`.
-3. **The first real release under the new scheme** is the end to end proof. Ask the owner before
-   tagging it.
+
+Decided with the owner at review: a release that fails partway and is re-run after its package
+reached nuget.org fails again rather than going green, since the version is already published; the
+owner prefers the strict rule, with an exception only if a real need appears. Releasing several
+packages from one commit is several tags, and so several release runs; free on these public
+repositories.
 
 Done so far:
 

@@ -2,13 +2,17 @@
 
 ## Starting cold
 
-For a session picking this up with no history. The change spans two repositories, done in the same
-way:
+For a session picking this up with no history. The change spans every Corely repository that
+publishes, done in the same way. The owner extended it from the first two to all five: same
+ecosystem, same CI rules, whether a repository ships one package or five.
 
 | Repository | Path |
 |---|---|
 | Corely.IAM | `C:\source\git\ultrabstrong\Corely.IAM` |
 | Corely.Billing | `C:\source\git\ultrabstrong\Corely.Billing` |
+| Corely.Common | `C:\source\git\ultrabstrong\Corely.Common` |
+| Corely.Security | `C:\source\git\ultrabstrong\Corely.Security` |
+| Corely.DataAccess | `C:\source\git\ultrabstrong\Corely.DataAccess` |
 
 Read each repository's `CLAUDE.md` before touching it. Tags are pushed only with the owner's say-so,
 since a published package version cannot be deleted.
@@ -29,6 +33,9 @@ review and the pushes, in this order:
    - Corely.Billing, all at `c59fd4e` (`v2.0.0`): `Corely.Billing-v2.0.0`,
      `Corely.Billing.Web-v2.0.0`, `Corely.Billing.IAM-v1.0.0`, `Corely.Billing.Web.IAM-v1.0.0`,
      `Corely.Billing.DataAccessMigrations.Cli-v2.0.0`.
+   - Corely.Common `Corely.Common-v2.0.3` at `8af28cc` (`v2.0.3`), Corely.Security
+     `Corely.Security-v3.1.1` at `6bc8ffa` (`v3.1.1`), Corely.DataAccess `Corely.DataAccess-v3.1.0`
+     at `02798bd` (`v3.1.0`).
 
    `git push origin <tag> ...` names each one; never `--tags`.
 2. **Then push each repository's commit** with the new `release.yml`.
@@ -52,15 +59,18 @@ Done so far:
 - The GitHub `release-tags` ruleset on both repositories (no deletion, update or force-move of a
   release tag) was widened on GitHub to cover the new tag names alongside `v*`.
 - Corely.Billing ships five packages, not the two this plan first listed; all five are covered.
-- Elsewhere: Corely.Common, Corely.Security and Corely.DataAccess say `git tag vX.Y.Z`, which is
-  still right for them, since each publishes one package. Nothing in `pinnacleinnovation` says it.
+- Corely.Common, Corely.Security and Corely.DataAccess got the same change with a one-package list
+  and no CLI rule, their `CLAUDE.md` "Releasing" text rewritten (DataAccess had none), their
+  rulesets widened, and each full suite green. Nothing in `pinnacleinnovation` said `git tag v`.
 - `ci.yml`'s comment ("only on a version tag") was left as is: a per-package tag is still a version
   tag.
 
 Found while verifying: the check reports `Corely.IAM.Web`, `Corely.IAM.DataAccessMigrations.Cli`,
 `Corely.Billing.Web.IAM` and `Corely.Billing.DataAccessMigrations.Cli` as changed without a bump.
 The only change in each is the README dash cleanup, and the README ships as the package's nuget.org
-page. The old script reported the same. Whether that is worth a patch release is the owner's call.
+page. Corely.Common, Corely.Security and Corely.DataAccess have real unreleased code changes since
+their last release (the extension-block and seam refactors, comment removal). The old script
+reported all of these the same way. Whether any is worth a release is the owner's call.
 
 ## The problem
 

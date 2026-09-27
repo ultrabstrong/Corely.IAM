@@ -28,9 +28,9 @@
 }
 else
 {
-    <div class="list-card">
-        <table class="table table-sm table-hover mb-0">
-            <thead>
+    <div>
+        <table class="table table-striped table-hover table-cards">
+            <thead class="table-dark">
                 <tr>
                     <th class="@GetSortClass(nameof(Role.Name))" @onclick="() => CycleSortAsync(nameof(Role.Name))">
                         <span>Name <i class="bi @(GetSortIcon(nameof(Role.Name))) sort-icon"></i></span>
@@ -66,12 +66,12 @@ else
                     @foreach (var role in _items)
                     {
                         <tr>
-                            <td>
+                            <td class="cell-title">
                                 @role.Name
                                 <br /><small class="guid-text">@role.Id</small>
                             </td>
-                            <td>@(role.Description ?? "—")</td>
-                            <td>
+                            <td class="@(role.Description is null ? "cell-hide" : "text-muted")">@(role.Description ?? "—")</td>
+                            <td class="cell-badge">
                                 @if (role.IsSystemDefined)
                                 {
                                     <span class="sys-badge">System</span>
@@ -81,14 +81,16 @@ else
                                     <span class="user-badge">User</span>
                                 }
                             </td>
-                            <td class="table-actions">
-                                <a href="@AppRoutes.Roles/@role.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                                @if (!role.IsSystemDefined)
-                                {
-                                    <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { role.Id }">
-                                        <button class="icon-btn text-danger" @onclick="() => ConfirmDelete(role.Id, role.Name)" title="Delete"><i class="bi bi-trash"></i></button>
-                                    </PermissionView>
-                                }
+                            <td class="table-actions cell-actions">
+                                <div class="row-actions">
+                                    <a href="@AppRoutes.Roles/@role.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    @if (!role.IsSystemDefined)
+                                    {
+                                        <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { role.Id }">
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(role.Id, role.Name)" title="Delete"><i class="bi bi-trash"></i></button>
+                                        </PermissionView>
+                                    }
+                                </div>
                             </td>
                         </tr>
                     }

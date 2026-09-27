@@ -25,9 +25,9 @@
 }
 else
 {
-    <div class="list-card">
-        <table class="table table-sm table-hover mb-0">
-            <thead>
+    <div>
+        <table class="table table-striped table-hover table-cards">
+            <thead class="table-dark">
                 <tr>
                     <th class="@GetSortClass(nameof(User.Username))" @onclick="() => CycleSortAsync(nameof(User.Username))">
                         <span>Username <i class="bi @(GetSortIcon(nameof(User.Username))) sort-icon"></i></span>
@@ -62,16 +62,18 @@ else
                     @foreach (var user in _items)
                     {
                         <tr>
-                            <td>
+                            <td class="cell-title">
                                 @user.Username
                                 <br /><small class="guid-text">@user.Id</small>
                             </td>
                             <td>@user.Email</td>
-                            <td class="table-actions">
-                                <a href="@AppRoutes.Users/@user.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE">
-                                    <button class="icon-btn text-danger" @onclick="() => ConfirmRemove(user.Id, user.Username)" title="Remove"><i class="bi bi-person-dash"></i></button>
-                                </PermissionView>
+                            <td class="table-actions cell-actions">
+                                <div class="row-actions">
+                                    <a href="@AppRoutes.Users/@user.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE">
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemove(user.Id, user.Username)" title="Remove"><i class="bi bi-person-dash"></i></button>
+                                    </PermissionView>
+                                </div>
                             </td>
                         </tr>
                     }

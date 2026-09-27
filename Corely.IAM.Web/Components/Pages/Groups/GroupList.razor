@@ -28,9 +28,9 @@
 }
 else
 {
-    <div class="list-card">
-        <table class="table table-sm table-hover mb-0">
-            <thead>
+    <div>
+        <table class="table table-striped table-hover table-cards">
+            <thead class="table-dark">
                 <tr>
                     <th class="@GetSortClass(nameof(Group.Name))" @onclick="() => CycleSortAsync(nameof(Group.Name))">
                         <span>Name <i class="bi @(GetSortIcon(nameof(Group.Name))) sort-icon"></i></span>
@@ -65,16 +65,18 @@ else
                     @foreach (var group in _items)
                     {
                         <tr>
-                            <td>
+                            <td class="cell-title">
                                 @group.Name
                                 <br /><small class="guid-text">@group.Id</small>
                             </td>
-                            <td>@(group.Description ?? "—")</td>
-                            <td class="table-actions">
-                                <a href="@AppRoutes.Groups/@group.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                                <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { group.Id }">
-                                    <button class="icon-btn text-danger" @onclick="() => ConfirmDelete(group.Id, group.Name)" title="Delete"><i class="bi bi-trash"></i></button>
-                                </PermissionView>
+                            <td class="@(group.Description is null ? "cell-hide" : "text-muted")">@(group.Description ?? "—")</td>
+                            <td class="table-actions cell-actions">
+                                <div class="row-actions">
+                                    <a href="@AppRoutes.Groups/@group.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { group.Id }">
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(group.Id, group.Name)" title="Delete"><i class="bi bi-trash"></i></button>
+                                    </PermissionView>
+                                </div>
                             </td>
                         </tr>
                     }

@@ -55,8 +55,8 @@ else
             else
             {
                 <div class="props-grid">
-                    <span class="prop-label">Account Name</span>
-                    <span class="prop-value">@_accountName</span>
+                    <span class="prop-label cell-hide">Account Name</span>
+                    <span class="prop-value cell-title">@_accountName</span>
                 </div>
             }
         </div>
@@ -68,7 +68,7 @@ else
                     <button class="btn btn-primary btn-sm" @onclick="ShowCreateInvitation" disabled="@_loading">Create Invitation</button>
                 </PermissionView>
             </div>
-            <table class="table table-sm table-hover mb-0">
+            <table class="table table-striped table-hover table-cards mb-0">
                 <thead>
                     <tr>
                         <th class="@GetInvSortClass(nameof(Invitation.Email))" @onclick="() => CycleInvSortAsync(nameof(Invitation.Email))">
@@ -120,9 +120,9 @@ else
                     @foreach (var inv in _invitations)
                     {
                         <tr>
-                            <td>@inv.Email</td>
-                            <td>@(inv.Description ?? "")</td>
-                            <td>
+                            <td class="cell-title">@inv.Email</td>
+                            <td class="@(string.IsNullOrWhiteSpace(inv.Description) ? "cell-hide" : "text-muted")">@(inv.Description ?? "")</td>
+                            <td class="cell-badge">
                                 @if (inv.IsAccepted)
                                 {
                                     <span class="badge bg-info">Accepted</span>
@@ -140,15 +140,18 @@ else
                                     <span class="badge bg-success">Pending</span>
                                 }
                             </td>
-                            <td><small>@inv.CreatedUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
-                            <td><small>@inv.ExpiresUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
-                            <td class="table-actions">
-                                @if (inv.IsPending(DateTime.UtcNow))
-                                {
-                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                                        <button class="icon-btn text-danger" @onclick="() => ConfirmRevokeInvitation(inv.Id, inv.Email)" title="Revoke"><i class="bi bi-x-circle"></i></button>
-                                    </PermissionView>
-                                }
+                            <td class="cell-hide"><small>@inv.CreatedUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
+                            <td class="cell-hide"><small>@inv.ExpiresUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
+                            <td class="cell-only text-muted"><small>Expires @inv.ExpiresUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
+                            <td class="table-actions cell-actions">
+                                <div class="row-actions">
+                                    @if (inv.IsPending(DateTime.UtcNow))
+                                    {
+                                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRevokeInvitation(inv.Id, inv.Email)" title="Revoke"><i class="bi bi-x-circle"></i></button>
+                                        </PermissionView>
+                                    }
+                                </div>
                             </td>
                         </tr>
                     }
@@ -162,7 +165,7 @@ else
             <div class="section-divider-label">
                 Users
             </div>
-            <table class="table table-sm table-hover mb-0">
+            <table class="table table-striped table-hover table-cards mb-0">
                 <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
                 <tbody>
                     @if (_users.Count == 0)
@@ -172,15 +175,17 @@ else
                     @foreach (var user in PagedUsers)
                     {
                         <tr>
-                            <td>
+                            <td class="cell-title">
                                 @user.Name
                                 <br /><small class="guid-text">@user.Id</small>
                             </td>
-                            <td class="table-actions">
-                                <a href="@AppRoutes.Users/@user.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                                    <button class="icon-btn text-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
-                                </PermissionView>
+                            <td class="table-actions cell-actions">
+                                <div class="row-actions">
+                                    <a href="@AppRoutes.Users/@user.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                                    </PermissionView>
+                                </div>
                             </td>
                         </tr>
                     }

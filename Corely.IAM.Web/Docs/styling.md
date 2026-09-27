@@ -31,6 +31,45 @@ Corely.IAM.Web builds on Bootstrap 5 with minimal custom CSS for layout and comp
 - `.sort-icon`: chevron icons (up/down/expand) for sort state
 - `.th-search`: compact search inputs in table headers
 - `.table-actions`: right-aligned action column with nowrap
+- `.row-actions`: the row's buttons, spaced by one flex gap
+
+## Tables on a Phone
+
+Below 768px a `.table-cards` table turns each row into a card. Cells say which role they play, and
+the card is laid out from those roles instead of labelling every value:
+
+| Class | In the card |
+|-------|-------------|
+| `.cell-title` | Top left, bold: what the row is |
+| `.cell-badge` | Top right: status or type |
+| `.cell-actions` | The buttons, right-aligned |
+| `.cell-hide` | Shown in the table only |
+| `.cell-only` | Shown in the card only; the actions share its line |
+
+Any other cell is a full-width line. Header search boxes stay above the cards.
+
+```razor
+<table class="table table-striped table-hover table-cards">
+    <thead class="table-dark">...</thead>
+    <tbody>
+        <tr>
+            <td class="cell-title">@role.Name<br /><small class="guid-text">@role.Id</small></td>
+            <td class="cell-badge"><span class="sys-badge">System</span></td>
+            <td class="table-actions cell-actions"><div class="row-actions">...</div></td>
+        </tr>
+    </tbody>
+</table>
+```
+
+A `.props-grid` (or a `<dl class="detail-cards">`) does the same for a details section: labels
+become small captions, `.cell-title` becomes the heading, `.cell-sub` a muted line under it, and
+`.cell-hide` drops a label the value makes obvious.
+
+## Password Fields
+
+`js/password-toggle.js` adds a show/hide button to every `input[type="password"]` on the page. The
+sign in and register pages load it in their `Scripts` section, so a host layout only has to render
+that section.
 
 ## Auth Page Styling
 

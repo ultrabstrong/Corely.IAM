@@ -39,7 +39,7 @@
                 </div>
             </div>
         </div>
-        <div class="d-flex gap-2 align-items-center justify-content-center justify-content-md-start mt-4">
+        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-center justify-content-md-start mt-4">
             <input type="text" class="form-control form-control-sm" style="max-width: 200px;"
                    @bind="_confirmCode" placeholder="Enter code to confirm" />
             <button class="btn btn-primary btn-sm" @onclick="ConfirmAsync" disabled="@_busy">Confirm</button>
@@ -66,7 +66,7 @@
         }
         @if (_showDisableInput)
         {
-            <div class="d-flex gap-2 align-items-center mb-2">
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
                 <input type="text" class="form-control form-control-sm" style="max-width: 200px;"
                        @bind="_disableCode" placeholder="Enter current TOTP code" />
                 <button class="btn btn-danger btn-sm" @onclick="DisableAsync" disabled="@_busy">Confirm Disable</button>

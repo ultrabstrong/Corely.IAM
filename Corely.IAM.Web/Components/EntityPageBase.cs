@@ -11,7 +11,7 @@ public abstract class EntityPageBase : AuthenticatedPageBase
 
     protected string? _message;
     protected AlertType _messageType = AlertType.Info;
-    protected bool _loading;
+    protected bool _loading = true;
 
     protected bool _loadFailed;
     protected Guid _confirmItemId;

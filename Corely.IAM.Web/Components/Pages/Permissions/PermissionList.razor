@@ -29,9 +29,9 @@
 }
 else
 {
-    <div class="list-card">
-        <table class="table table-sm table-hover mb-0">
-            <thead>
+    <div>
+        <table class="table table-striped table-hover table-cards">
+            <thead class="table-dark">
                 <tr>
                     <th class="@GetSortClass(nameof(Permission.ResourceType))" @onclick="() => CycleSortAsync(nameof(Permission.ResourceType))">
                         <span>Resource Type <i class="bi @(GetSortIcon(nameof(Permission.ResourceType))) sort-icon"></i></span>
@@ -62,7 +62,7 @@ else
                     @foreach (var perm in _items)
                     {
                         <tr>
-                            <td>
+                            <td class="cell-title">
                                 @perm.ResourceType
                                 @if (!string.IsNullOrWhiteSpace(perm.Description))
                                 {
@@ -70,17 +70,27 @@ else
                                 }
                                 <br /><small class="guid-text">@perm.Id</small>
                             </td>
-                            <td><code>@(perm.ResourceId == Guid.Empty ? "all" : perm.ResourceId)</code></td>
-                            <td><span class="permission-badge @(perm.Create ? "active" : "inactive")">C</span></td>
-                            <td><span class="permission-badge @(perm.Read ? "active" : "inactive")">R</span></td>
-                            <td><span class="permission-badge @(perm.Update ? "active" : "inactive")">U</span></td>
-                            <td><span class="permission-badge @(perm.Delete ? "active" : "inactive")">D</span></td>
-                            <td><span class="permission-badge @(perm.Execute ? "active" : "inactive")">X</span></td>
-                            <td class="table-actions">
-                                <a href="@AppRoutes.Permissions/@perm.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                                <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { perm.Id }">
-                                    <button class="icon-btn text-danger" @onclick="() => ConfirmDelete(perm.Id, perm.DisplayName)" title="Delete"><i class="bi bi-trash"></i></button>
-                                </PermissionView>
+                            <td class="cell-hide"><code>@(perm.ResourceId == Guid.Empty ? "all" : perm.ResourceId)</code></td>
+                            <td class="cell-hide"><span class="permission-badge @(perm.Create ? "active" : "inactive")">C</span></td>
+                            <td class="cell-hide"><span class="permission-badge @(perm.Read ? "active" : "inactive")">R</span></td>
+                            <td class="cell-hide"><span class="permission-badge @(perm.Update ? "active" : "inactive")">U</span></td>
+                            <td class="cell-hide"><span class="permission-badge @(perm.Delete ? "active" : "inactive")">D</span></td>
+                            <td class="cell-hide"><span class="permission-badge @(perm.Execute ? "active" : "inactive")">X</span></td>
+                            <td class="cell-only">
+                                <span class="permission-badge @(perm.Create ? "active" : "inactive")">C</span>
+                                <span class="permission-badge @(perm.Read ? "active" : "inactive")">R</span>
+                                <span class="permission-badge @(perm.Update ? "active" : "inactive")">U</span>
+                                <span class="permission-badge @(perm.Delete ? "active" : "inactive")">D</span>
+                                <span class="permission-badge @(perm.Execute ? "active" : "inactive")">X</span>
+                                <code class="ms-2">@(perm.ResourceId == Guid.Empty ? "all" : perm.ResourceId)</code>
+                            </td>
+                            <td class="table-actions cell-actions">
+                                <div class="row-actions">
+                                    <a href="@AppRoutes.Permissions/@perm.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { perm.Id }">
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(perm.Id, perm.DisplayName)" title="Delete"><i class="bi bi-trash"></i></button>
+                                    </PermissionView>
+                                </div>
                             </td>
                         </tr>
                     }

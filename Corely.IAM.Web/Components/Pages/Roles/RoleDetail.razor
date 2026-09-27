@@ -58,16 +58,16 @@ else
             else
             {
                 <div class="props-grid">
-                    <span class="prop-label">Name</span>
-                    <span class="prop-value">
+                    <span class="prop-label cell-hide">Name</span>
+                    <span class="prop-value cell-title">
                         @_role.Name
                         @if (_role.IsSystemDefined)
                         {
                             <span class="sys-badge ms-2">System</span>
                         }
                     </span>
-                    <span class="prop-label">Description</span>
-                    <span class="prop-value">@(_role.Description ?? "—")</span>
+                    <span class="prop-label cell-hide">Description</span>
+                    <span class="prop-value cell-sub @(_role.Description is null ? "cell-hide" : null)">@(_role.Description ?? "—")</span>
                 </div>
             }
         </div>
@@ -79,7 +79,7 @@ else
                     <button class="btn btn-primary btn-sm" @onclick="() => _permissionPickerModal.ShowAsync()" disabled="@_loading">Add Permissions</button>
                 </PermissionView>
             </div>
-            <table class="table table-sm table-hover mb-0">
+            <table class="table table-striped table-hover table-cards mb-0">
                 <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
                 <tbody>
                     @if (_role.Permissions == null || _role.Permissions.Count == 0)
@@ -91,14 +91,16 @@ else
                         @foreach (var permission in PagedPermissions)
                         {
                             <tr>
-                                <td>
+                                <td class="cell-title">
                                     @permission.Name
                                     <br /><small class="guid-text">@permission.Id</small>
                                 </td>
-                                <td class="table-actions">
-                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                                        <button class="icon-btn text-danger" @onclick="() => ConfirmRemovePermission(permission.Id, permission.Name)" title="Remove"><i class="bi bi-trash"></i></button>
-                                    </PermissionView>
+                                <td class="table-actions cell-actions">
+                                    <div class="row-actions">
+                                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemovePermission(permission.Id, permission.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                                        </PermissionView>
+                                    </div>
                                 </td>
                             </tr>
                         }

@@ -40,10 +40,10 @@ else
     else
     {
         <div class="props-grid mb-3">
-            <span class="prop-label">Username</span>
-            <span class="prop-value">@_username</span>
-            <span class="prop-label">Email</span>
-            <span class="prop-value">@_email</span>
+            <span class="prop-label cell-hide">Username</span>
+            <span class="prop-value cell-title">@_username</span>
+            <span class="prop-label cell-hide">Email</span>
+            <span class="prop-value cell-sub">@_email</span>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
@@ -55,19 +55,21 @@ else
     {
         <div class="section-divider mb-4 mt-4">
             <div class="section-divider-label">Accounts</div>
-            <table class="table table-sm table-hover mb-0">
+            <table class="table table-striped table-hover table-cards mb-0">
                 <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
                 <tbody>
                     @foreach (var account in PagedAccounts)
                     {
                         <tr>
-                            <td>
+                            <td class="cell-title">
                                 @account.AccountName
                                 <br /><small class="guid-text">@account.Id</small>
                             </td>
-                            <td class="table-actions">
-                                <a href="@AppRoutes.Accounts/@account.Id" class="icon-btn text-primary" title="View"><i class="bi bi-eye"></i></a>
-                                <button class="icon-btn text-danger" @onclick="() => ConfirmLeaveAccount(account.Id, account.AccountName)" title="Leave"><i class="bi bi-box-arrow-right"></i></button>
+                            <td class="table-actions cell-actions">
+                                <div class="row-actions">
+                                    <a href="@AppRoutes.Accounts/@account.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmLeaveAccount(account.Id, account.AccountName)" title="Leave"><i class="bi bi-box-arrow-right"></i></button>
+                                </div>
                             </td>
                         </tr>
                     }

@@ -112,7 +112,8 @@ function Invoke-CorelyJson {
     )
 
     $text = Invoke-CorelyText -Label $Label -Arguments $Arguments
-    $trimmedText = $text.Trim()
+    $trimmedText = (($text -split "`r?`n") | Where-Object { $_ -notmatch '^\[\d{2}:\d{2}:\d{2} [A-Z]{3}\]' }) -join "`n"
+    $trimmedText = $trimmedText.Trim()
     $arrayStart = $trimmedText.IndexOf('[')
     $objectStart = $trimmedText.IndexOf('{')
 

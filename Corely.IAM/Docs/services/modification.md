@@ -1,6 +1,6 @@
 # IModificationService
 
-Updates entity properties for accounts, users, groups, and roles.
+Updates entity properties for accounts, users, groups, and roles, and rotates account and user keys.
 
 ## Methods
 
@@ -10,6 +10,8 @@ Updates entity properties for accounts, users, groups, and roles.
 | `ModifyUserAsync` | `UpdateUserRequest` | `ModifyResult` |
 | `ModifyGroupAsync` | `UpdateGroupRequest` | `ModifyResult` |
 | `ModifyRoleAsync` | `UpdateRoleRequest` | `ModifyResult` |
+| `RotateAccountKeyAsync` | `RotateAccountKeyRequest` | `ModifyResult` |
+| `RotateCurrentUserKeyAsync` | `KeyType` | `ModifyResult` |
 
 ## Usage
 
@@ -28,10 +30,18 @@ var result = await modificationService.ModifyUserAsync(
     new UpdateUserRequest(userId, "newusername", "newemail@example.com"));
 ```
 
+```csharp
+var result = await modificationService.RotateAccountKeyAsync(
+    new RotateAccountKeyRequest(accountId, KeyType.AsymmetricSignature));
+```
+
+Rotation is covered in [Key Management](../security/key-management.md#rotation).
+
 ## Authorization
 
 - **Service level**: requires account context
 - **Processor level**: CRUDX Update permission on the target resource type
+- **Key rotation**: account keys need Update on the account; user keys are a self operation, so only the signed in user rotates their own and system context is refused
 
 ## Notes
 

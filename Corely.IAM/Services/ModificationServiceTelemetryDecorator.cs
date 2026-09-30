@@ -4,6 +4,8 @@ using Corely.IAM.Extensions;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
 
@@ -48,6 +50,22 @@ internal class ModificationServiceTelemetryDecorator(
             nameof(ModificationService),
             request,
             () => _inner.ModifyRoleAsync(request),
+            logResult: true
+        );
+
+    public async Task<ModifyResult> RotateAccountKeyAsync(RotateAccountKeyRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(ModificationService),
+            request,
+            () => _inner.RotateAccountKeyAsync(request),
+            logResult: true
+        );
+
+    public async Task<ModifyResult> RotateCurrentUserKeyAsync(KeyType keyType) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(ModificationService),
+            keyType,
+            () => _inner.RotateCurrentUserKeyAsync(keyType),
             logResult: true
         );
 }

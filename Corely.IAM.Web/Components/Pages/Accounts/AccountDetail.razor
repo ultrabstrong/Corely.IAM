@@ -196,8 +196,16 @@ else
         </div>
 
         <PermissionView Action="AuthAction.Read" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-            <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
-                                    DescriptionText="This account has its own symmetric and asymmetric encryption keys plus a signing key." />
+            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <Authorized>
+                    <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
+                                            DescriptionText="@KEYS_DESCRIPTION" RotateKeyAsync="RotateKeyAsync" />
+                </Authorized>
+                <NotAuthorized>
+                    <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
+                                            DescriptionText="@KEYS_DESCRIPTION" />
+                </NotAuthorized>
+            </PermissionView>
         </PermissionView>
 
         <EffectivePermissionsPanel Permissions="_effectivePermissions" UseCard="false" />
@@ -537,6 +545,19 @@ else
             SetResultMessage(result.ResultCode == RevokeInvitationResultCode.Success, "Invitation revoked.", result.Message);
             await ReloadAsync();
         });
+    }
+
+    private const string KEYS_DESCRIPTION =
+        "This account has its own symmetric and asymmetric encryption keys plus a signing key.";
+
+    private async Task<ModifyResult> RotateKeyAsync(KeyType keyType)
+    {
+        var result = await ModificationService.RotateAccountKeyAsync(
+            new RotateAccountKeyRequest(Id, keyType)
+        );
+        if (result.ResultCode == ModifyResultCode.Success)
+            await LoadKeyProvidersAsync();
+        return result;
     }
 
     private async Task LoadKeyProvidersAsync()

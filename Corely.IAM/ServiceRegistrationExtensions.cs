@@ -12,6 +12,7 @@ using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Processors;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.TotpAuths.Processors;
@@ -177,6 +178,16 @@ public static class ServiceRegistrationExtensions
             serviceCollection.AddScoped<IAccountProcessor, AccountProcessor>();
             serviceCollection.Decorate<IAccountProcessor, AccountProcessorAuthorizationDecorator>();
             serviceCollection.Decorate<IAccountProcessor, AccountProcessorTelemetryDecorator>();
+
+            serviceCollection.AddScoped<IKeyRotationProcessor, KeyRotationProcessor>();
+            serviceCollection.Decorate<
+                IKeyRotationProcessor,
+                KeyRotationProcessorAuthorizationDecorator
+            >();
+            serviceCollection.Decorate<
+                IKeyRotationProcessor,
+                KeyRotationProcessorTelemetryDecorator
+            >();
 
             serviceCollection.AddScoped<IUserProcessor, UserProcessor>();
             serviceCollection.Decorate<IUserProcessor, UserProcessorAuthorizationDecorator>();

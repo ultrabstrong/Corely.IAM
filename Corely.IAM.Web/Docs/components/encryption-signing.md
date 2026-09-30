@@ -9,6 +9,7 @@ Tabbed interface for testing encryption and signing operations using account or 
 | `SymProvider` | `IIamSymmetricEncryptionProvider?` | none | Symmetric encryption provider |
 | `AsymProvider` | `IIamAsymmetricEncryptionProvider?` | none | Asymmetric encryption provider |
 | `SigProvider` | `IIamAsymmetricSignatureProvider?` | none | Digital signature provider |
+| `RotateKeyAsync` | `Func<KeyType, Task<ModifyResult>>?` | none | Rotates the key on the current tab. The Rotate button shows only when set |
 
 ## Usage
 
@@ -17,6 +18,16 @@ Tabbed interface for testing encryption and signing operations using account or 
     SymProvider="@_symProvider"
     AsymProvider="@_asymProvider"
     SigProvider="@_sigProvider" />
+```
+
+Profile passes `RotateKeyAsync` for the signed in user's keys. Account Detail passes it only to users with Update permission on the account. Both reload their providers after a successful rotation:
+
+```razor
+<EncryptionSigningPanel
+    SymProvider="@_symProvider"
+    AsymProvider="@_asymProvider"
+    SigProvider="@_sigProvider"
+    RotateKeyAsync="RotateKeyAsync" />
 ```
 
 ## Tabs
@@ -46,3 +57,4 @@ Tabbed interface for testing encryption and signing operations using account or 
 - Each tab operates independently with its own state
 - Error messages displayed as inline alerts
 - Provider name and description shown as badges
+- **Rotate key** asks for confirmation first, explaining that earlier ciphertext still decrypts and earlier signatures still verify, then reports success or the failure message

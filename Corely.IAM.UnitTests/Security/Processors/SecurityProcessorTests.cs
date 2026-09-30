@@ -170,7 +170,7 @@ public class SecurityProcessorTests
     {
         var symmetricKey = _securityProcessor.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
 
-        var provider = _securityProcessor.BuildSymmetricEncryptionProvider(symmetricKey);
+        var provider = _securityProcessor.BuildSymmetricEncryptionProvider([symmetricKey]);
 
         Assert.NotNull(provider);
         var plaintext = "Hello, World!";
@@ -184,7 +184,7 @@ public class SecurityProcessorTests
     public void BuildSymmetricEncryptionProvider_ReturnsProvider_ThatCanReEncrypt()
     {
         var symmetricKey = _securityProcessor.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
-        var provider = _securityProcessor.BuildSymmetricEncryptionProvider(symmetricKey);
+        var provider = _securityProcessor.BuildSymmetricEncryptionProvider([symmetricKey]);
         var plaintext = "ReEncrypt test";
         var encrypted = provider.Encrypt(plaintext);
 
@@ -200,7 +200,7 @@ public class SecurityProcessorTests
     {
         var asymmetricKey = _securityProcessor.GetAsymmetricEncryptionKeyEncryptedWithSystemKey();
 
-        var provider = _securityProcessor.BuildAsymmetricEncryptionProvider(asymmetricKey);
+        var provider = _securityProcessor.BuildAsymmetricEncryptionProvider([asymmetricKey]);
 
         Assert.NotNull(provider);
         var plaintext = "Hello, World!";
@@ -215,7 +215,7 @@ public class SecurityProcessorTests
     {
         var asymmetricKey = _securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey();
 
-        var provider = _securityProcessor.BuildAsymmetricSignatureProvider(asymmetricKey);
+        var provider = _securityProcessor.BuildAsymmetricSignatureProvider([asymmetricKey]);
 
         Assert.NotNull(provider);
         var payload = "Hello, World!";
@@ -228,10 +228,77 @@ public class SecurityProcessorTests
     public void BuildAsymmetricSignatureProvider_ReturnsFalse_ForTamperedPayload()
     {
         var asymmetricKey = _securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey();
-        var provider = _securityProcessor.BuildAsymmetricSignatureProvider(asymmetricKey);
+        var provider = _securityProcessor.BuildAsymmetricSignatureProvider([asymmetricKey]);
         var payload = "Original payload";
         var signature = provider.Sign(payload);
 
         Assert.False(provider.Verify("Tampered payload", signature));
     }
+
+    [Fact]
+    public void BuildSymmetricEncryptionProvider_DecryptsEarlierGeneration_AfterRotation()
+    {
+        var first = _securityProcessor.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
+        var second = _securityProcessor.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
+        second.Generation = 2;
+        var before = _securityProcessor.BuildSymmetricEncryptionProvider([first]).Encrypt("old");
+
+        var provider = _securityProcessor.BuildSymmetricEncryptionProvider([first, second]);
+
+        Assert.Equal("old", provider.Decrypt(before));
+        Assert.Contains(":2:", provider.Encrypt("new"));
+        Assert.Contains(":2:", provider.ReEncrypt(before));
+        Assert.Equal("old", provider.Decrypt(provider.ReEncrypt(before)));
+    }
+
+    [Fact]
+    public void BuildAsymmetricEncryptionProvider_DecryptsEarlierGeneration_AfterRotation()
+    {
+        var first = _securityProcessor.GetAsymmetricEncryptionKeyEncryptedWithSystemKey();
+        var second = _securityProcessor.GetAsymmetricEncryptionKeyEncryptedWithSystemKey();
+        second.Generation = 2;
+        var before = _securityProcessor.BuildAsymmetricEncryptionProvider([first]).Encrypt("old");
+
+        var provider = _securityProcessor.BuildAsymmetricEncryptionProvider([first, second]);
+
+        Assert.Equal("old", provider.Decrypt(before));
+        Assert.Equal(second.PublicKey, provider.PublicKey);
+        Assert.Contains(":2:", provider.ReEncrypt(before));
+    }
+
+    [Fact]
+    public void BuildAsymmetricSignatureProvider_VerifiesEarlierGeneration_AndSignsWithNewest()
+    {
+        var first = _securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey();
+        var second = _securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey();
+        second.Generation = 2;
+        var firstOnly = _securityProcessor.BuildAsymmetricSignatureProvider([first]);
+        var oldSignature = firstOnly.Sign("payload");
+
+        var provider = _securityProcessor.BuildAsymmetricSignatureProvider([first, second]);
+        var newSignature = provider.Sign("payload");
+
+        Assert.True(provider.Verify("payload", oldSignature));
+        Assert.True(provider.Verify("payload", newSignature));
+        Assert.False(firstOnly.Verify("payload", newSignature));
+        Assert.Equal(second.PublicKey, provider.PublicKey);
+    }
+
+    [Fact]
+    public void BuildSymmetricEncryptionProvider_Throws_ForGenerationGap()
+    {
+        var first = _securityProcessor.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
+        var third = _securityProcessor.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
+        third.Generation = 3;
+
+        Assert.Throws<InvalidOperationException>(() =>
+            _securityProcessor.BuildSymmetricEncryptionProvider([first, third])
+        );
+    }
+
+    [Fact]
+    public void BuildAsymmetricSignatureProvider_Throws_ForNoGenerations() =>
+        Assert.Throws<ArgumentException>(() =>
+            _securityProcessor.BuildAsymmetricSignatureProvider([])
+        );
 }

@@ -413,7 +413,7 @@ public class RetrievalServiceTests
         SetupSymmetricEncryptionFactory();
         var mockIamProvider = new Mock<IIamSymmetricEncryptionProvider>();
         _mockSecurityProvider
-            .Setup(x => x.BuildSymmetricEncryptionProvider(It.IsAny<SymmetricKey>()))
+            .Setup(x => x.BuildSymmetricEncryptionProvider(It.IsAny<IReadOnlyList<SymmetricKey>>()))
             .Returns(mockIamProvider.Object);
 
         var result = await _service.GetAccountSymmetricEncryptionProviderAsync(accountId);
@@ -422,7 +422,7 @@ public class RetrievalServiceTests
         Assert.NotNull(result.Item);
         _mockAccountProcessor.Verify(x => x.GetAccountKeysAsync(accountId), Times.Once);
         _mockSecurityProvider.Verify(
-            x => x.BuildSymmetricEncryptionProvider(It.IsAny<SymmetricKey>()),
+            x => x.BuildSymmetricEncryptionProvider(It.IsAny<IReadOnlyList<SymmetricKey>>()),
             Times.Once
         );
     }
@@ -436,7 +436,9 @@ public class RetrievalServiceTests
         SetupSymmetricEncryptionFactory();
         var mockIamProvider = new Mock<IIamAsymmetricEncryptionProvider>();
         _mockSecurityProvider
-            .Setup(x => x.BuildAsymmetricEncryptionProvider(It.IsAny<AsymmetricKey>()))
+            .Setup(x =>
+                x.BuildAsymmetricEncryptionProvider(It.IsAny<IReadOnlyList<AsymmetricKey>>())
+            )
             .Returns(mockIamProvider.Object);
 
         var result = await _service.GetAccountAsymmetricEncryptionProviderAsync(accountId);
@@ -445,7 +447,7 @@ public class RetrievalServiceTests
         Assert.NotNull(result.Item);
         _mockAccountProcessor.Verify(x => x.GetAccountKeysAsync(accountId), Times.Once);
         _mockSecurityProvider.Verify(
-            x => x.BuildAsymmetricEncryptionProvider(It.IsAny<AsymmetricKey>()),
+            x => x.BuildAsymmetricEncryptionProvider(It.IsAny<IReadOnlyList<AsymmetricKey>>()),
             Times.Once
         );
     }
@@ -459,7 +461,9 @@ public class RetrievalServiceTests
         SetupSymmetricEncryptionFactory();
         var mockIamProvider = new Mock<IIamAsymmetricSignatureProvider>();
         _mockSecurityProvider
-            .Setup(x => x.BuildAsymmetricSignatureProvider(It.IsAny<AsymmetricKey>()))
+            .Setup(x =>
+                x.BuildAsymmetricSignatureProvider(It.IsAny<IReadOnlyList<AsymmetricKey>>())
+            )
             .Returns(mockIamProvider.Object);
 
         var result = await _service.GetAccountAsymmetricSignatureProviderAsync(accountId);
@@ -468,7 +472,7 @@ public class RetrievalServiceTests
         Assert.NotNull(result.Item);
         _mockAccountProcessor.Verify(x => x.GetAccountKeysAsync(accountId), Times.Once);
         _mockSecurityProvider.Verify(
-            x => x.BuildAsymmetricSignatureProvider(It.IsAny<AsymmetricKey>()),
+            x => x.BuildAsymmetricSignatureProvider(It.IsAny<IReadOnlyList<AsymmetricKey>>()),
             Times.Once
         );
     }
@@ -598,7 +602,7 @@ public class RetrievalServiceTests
         SetupSymmetricEncryptionFactory();
         var mockIamProvider = new Mock<IIamSymmetricEncryptionProvider>();
         _mockSecurityProvider
-            .Setup(x => x.BuildSymmetricEncryptionProvider(It.IsAny<SymmetricKey>()))
+            .Setup(x => x.BuildSymmetricEncryptionProvider(It.IsAny<IReadOnlyList<SymmetricKey>>()))
             .Returns(mockIamProvider.Object);
 
         var result = await _service.GetUserSymmetricEncryptionProviderAsync();
@@ -607,7 +611,7 @@ public class RetrievalServiceTests
         Assert.NotNull(result.Item);
         _mockUserProcessor.Verify(x => x.GetCurrentUserKeysAsync(), Times.Once);
         _mockSecurityProvider.Verify(
-            x => x.BuildSymmetricEncryptionProvider(It.IsAny<SymmetricKey>()),
+            x => x.BuildSymmetricEncryptionProvider(It.IsAny<IReadOnlyList<SymmetricKey>>()),
             Times.Once
         );
     }
@@ -620,7 +624,9 @@ public class RetrievalServiceTests
         SetupSymmetricEncryptionFactory();
         var mockIamProvider = new Mock<IIamAsymmetricEncryptionProvider>();
         _mockSecurityProvider
-            .Setup(x => x.BuildAsymmetricEncryptionProvider(It.IsAny<AsymmetricKey>()))
+            .Setup(x =>
+                x.BuildAsymmetricEncryptionProvider(It.IsAny<IReadOnlyList<AsymmetricKey>>())
+            )
             .Returns(mockIamProvider.Object);
 
         var result = await _service.GetUserAsymmetricEncryptionProviderAsync();
@@ -629,7 +635,7 @@ public class RetrievalServiceTests
         Assert.NotNull(result.Item);
         _mockUserProcessor.Verify(x => x.GetCurrentUserKeysAsync(), Times.Once);
         _mockSecurityProvider.Verify(
-            x => x.BuildAsymmetricEncryptionProvider(It.IsAny<AsymmetricKey>()),
+            x => x.BuildAsymmetricEncryptionProvider(It.IsAny<IReadOnlyList<AsymmetricKey>>()),
             Times.Once
         );
     }
@@ -642,7 +648,9 @@ public class RetrievalServiceTests
         SetupSymmetricEncryptionFactory();
         var mockIamProvider = new Mock<IIamAsymmetricSignatureProvider>();
         _mockSecurityProvider
-            .Setup(x => x.BuildAsymmetricSignatureProvider(It.IsAny<AsymmetricKey>()))
+            .Setup(x =>
+                x.BuildAsymmetricSignatureProvider(It.IsAny<IReadOnlyList<AsymmetricKey>>())
+            )
             .Returns(mockIamProvider.Object);
 
         var result = await _service.GetUserAsymmetricSignatureProviderAsync();
@@ -651,7 +659,7 @@ public class RetrievalServiceTests
         Assert.NotNull(result.Item);
         _mockUserProcessor.Verify(x => x.GetCurrentUserKeysAsync(), Times.Once);
         _mockSecurityProvider.Verify(
-            x => x.BuildAsymmetricSignatureProvider(It.IsAny<AsymmetricKey>()),
+            x => x.BuildAsymmetricSignatureProvider(It.IsAny<IReadOnlyList<AsymmetricKey>>()),
             Times.Once
         );
     }

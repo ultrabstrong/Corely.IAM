@@ -15,13 +15,22 @@ internal class AccountAsymmetricKeyEntityConfiguration
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).ValueGeneratedNever();
 
-        builder.HasIndex(e => new { e.AccountId, e.KeyUsedFor }).IsUnique();
+        builder
+            .HasIndex(e => new
+            {
+                e.AccountId,
+                e.KeyUsedFor,
+                e.Generation,
+            })
+            .IsUnique();
 
         builder.Property(e => e.KeyUsedFor).HasConversion<string>();
 
         builder.Property(e => e.ProviderName).IsRequired();
 
         builder.Property(e => e.Version).IsRequired();
+
+        builder.Property(e => e.Generation).IsRequired();
 
         builder.Property(e => e.PublicKey).IsRequired();
 

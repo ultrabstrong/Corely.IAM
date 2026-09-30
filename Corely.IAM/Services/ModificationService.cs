@@ -6,6 +6,9 @@ using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Processors;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Microsoft.Extensions.Logging;
@@ -17,7 +20,8 @@ internal class ModificationService(
     IAccountProcessor accountProcessor,
     IUserProcessor userProcessor,
     IGroupProcessor groupProcessor,
-    IRoleProcessor roleProcessor
+    IRoleProcessor roleProcessor,
+    IKeyRotationProcessor keyRotationProcessor
 ) : IModificationService
 {
     private readonly ILogger<ModificationService> _logger = logger.ThrowIfNull(nameof(logger));
@@ -32,6 +36,9 @@ internal class ModificationService(
     );
     private readonly IRoleProcessor _roleProcessor = roleProcessor.ThrowIfNull(
         nameof(roleProcessor)
+    );
+    private readonly IKeyRotationProcessor _keyRotationProcessor = keyRotationProcessor.ThrowIfNull(
+        nameof(keyRotationProcessor)
     );
 
     public async Task<ModifyResult> ModifyAccountAsync(UpdateAccountRequest request)
@@ -60,5 +67,22 @@ internal class ModificationService(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Modifying role {RoleId}", request.RoleId);
         return await _roleProcessor.UpdateRoleAsync(request);
+    }
+
+    public async Task<ModifyResult> RotateAccountKeyAsync(RotateAccountKeyRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Rotating {KeyType} key for account {AccountId}",
+            request.KeyType,
+            request.AccountId
+        );
+        return await _keyRotationProcessor.RotateAccountKeyAsync(request);
+    }
+
+    public async Task<ModifyResult> RotateCurrentUserKeyAsync(KeyType keyType)
+    {
+        _logger.LogInformation("Rotating {KeyType} key for the current user", keyType);
+        return await _keyRotationProcessor.RotateCurrentUserKeyAsync(keyType);
     }
 }

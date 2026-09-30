@@ -5,6 +5,9 @@ using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Processors;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
@@ -18,6 +21,7 @@ public class ModificationServiceTests
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
     private readonly Mock<IGroupProcessor> _mockGroupProcessor = new();
     private readonly Mock<IRoleProcessor> _mockRoleProcessor = new();
+    private readonly Mock<IKeyRotationProcessor> _mockKeyRotationProcessor = new();
     private readonly Mock<ILogger<ModificationService>> _mockLogger = new();
     private readonly ModificationService _service;
 
@@ -28,7 +32,8 @@ public class ModificationServiceTests
             _mockAccountProcessor.Object,
             _mockUserProcessor.Object,
             _mockGroupProcessor.Object,
-            _mockRoleProcessor.Object
+            _mockRoleProcessor.Object,
+            _mockKeyRotationProcessor.Object
         );
     }
 
@@ -227,4 +232,42 @@ public class ModificationServiceTests
     }
 
     #endregion
+
+    [Fact]
+    public async Task RotateAccountKey_ReturnsProcessorResult()
+    {
+        var request = new RotateAccountKeyRequest(
+            Guid.CreateVersion7(),
+            KeyType.AsymmetricSignature
+        );
+        var processorResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
+        _mockKeyRotationProcessor
+            .Setup(x => x.RotateAccountKeyAsync(request))
+            .ReturnsAsync(processorResult);
+
+        var result = await _service.RotateAccountKeyAsync(request);
+
+        Assert.Same(processorResult, result);
+    }
+
+    [Fact]
+    public async Task RotateAccountKey_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() => _service.RotateAccountKeyAsync(null!));
+
+        Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    [Fact]
+    public async Task RotateCurrentUserKey_ReturnsProcessorResult()
+    {
+        var processorResult = new ModifyResult(ModifyResultCode.Success, string.Empty);
+        _mockKeyRotationProcessor
+            .Setup(x => x.RotateCurrentUserKeyAsync(KeyType.SymmetricEncryption))
+            .ReturnsAsync(processorResult);
+
+        var result = await _service.RotateCurrentUserKeyAsync(KeyType.SymmetricEncryption);
+
+        Assert.Same(processorResult, result);
+    }
 }

@@ -84,7 +84,7 @@ else
     <PasswordSection HasBasicAuth="_hasBasicAuth" HasGoogleAuth="_hasGoogleAuth" OnStatusChanged="ReloadAuthMethodsAsync" />
     <LinkedAccountsSection HasGoogleAuth="_hasGoogleAuth" GoogleEmail="@_googleEmail" OnStatusChanged="ReloadAuthMethodsAsync" />
 
-    <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider" />
+    <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider" RotateKeyAsync="RotateKeyAsync" />
 }
 
 <ConfirmModal @ref="_deleteModal"
@@ -137,6 +137,14 @@ else
 
         await LoadKeyProvidersAsync();
         await LoadAuthMethodsAsync();
+    }
+
+    private async Task<ModifyResult> RotateKeyAsync(KeyType keyType)
+    {
+        var result = await ModificationService.RotateCurrentUserKeyAsync(keyType);
+        if (result.ResultCode == ModifyResultCode.Success)
+            await LoadKeyProvidersAsync();
+        return result;
     }
 
     private async Task LoadKeyProvidersAsync()

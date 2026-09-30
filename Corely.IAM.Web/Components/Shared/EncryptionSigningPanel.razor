@@ -1,3 +1,4 @@
+@using Corely.IAM.Web.Extensions
 @inject IJSRuntime JSRuntime
 
 <div class="section-divider mb-4">
@@ -24,13 +25,21 @@
         </li>
     </ul>
     <div class="tab-content pt-3">
+        @if (_rotateResult != null)
+        {
+            <div class="alert @(_rotateFailed ? "alert-danger" : "alert-success") py-2">@_rotateResult</div>
+        }
         @if (_activeKeyTab == 0)
         {
             @if (SymProvider != null)
             {
-                <div class="mb-3">
+                <div class="mb-3 d-flex align-items-center gap-2">
                     <span class="badge bg-secondary">@SymProvider.ProviderName</span>
-                    <small class="text-muted ms-2">@SymProvider.ProviderDescription</small>
+                    <small class="text-muted">@SymProvider.ProviderDescription</small>
+                    @if (RotateKeyAsync != null)
+                    {
+                        <button class="btn btn-outline-warning btn-sm ms-auto" @onclick="() => ConfirmRotate(KeyType.SymmetricEncryption)" disabled="@_busy">Rotate key</button>
+                    }
                 </div>
             }
             <div class="mb-3">
@@ -64,9 +73,13 @@
         {
             @if (AsymProvider != null)
             {
-                <div class="mb-3">
+                <div class="mb-3 d-flex align-items-center gap-2">
                     <span class="badge bg-secondary">@AsymProvider.ProviderName</span>
-                    <small class="text-muted ms-2">@AsymProvider.ProviderDescription</small>
+                    <small class="text-muted">@AsymProvider.ProviderDescription</small>
+                    @if (RotateKeyAsync != null)
+                    {
+                        <button class="btn btn-outline-warning btn-sm ms-auto" @onclick="() => ConfirmRotate(KeyType.AsymmetricEncryption)" disabled="@_busy">Rotate key</button>
+                    }
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Public Key</label>
@@ -109,9 +122,13 @@
         {
             @if (SigProvider != null)
             {
-                <div class="mb-3">
+                <div class="mb-3 d-flex align-items-center gap-2">
                     <span class="badge bg-secondary">@SigProvider.ProviderName</span>
-                    <small class="text-muted ms-2">@SigProvider.ProviderDescription</small>
+                    <small class="text-muted">@SigProvider.ProviderDescription</small>
+                    @if (RotateKeyAsync != null)
+                    {
+                        <button class="btn btn-outline-warning btn-sm ms-auto" @onclick="() => ConfirmRotate(KeyType.AsymmetricSignature)" disabled="@_busy">Rotate key</button>
+                    }
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Public Key</label>
@@ -149,6 +166,8 @@
     </div>
 </div>
 
+<ConfirmModal @ref="_rotateModal" Title="Rotate Key" Message="@_rotateConfirmMessage" ConfirmText="Rotate" Type="ConfirmModalType.Warning" OnConfirm="RotateAsync" />
+
 @code {
     [Parameter]
     public string DescriptionText { get; set; } =
@@ -162,6 +181,33 @@
 
     [Parameter]
     public IIamAsymmetricSignatureProvider? SigProvider { get; set; }
+
+    [Parameter]
+    public Func<KeyType, Task<ModifyResult>>? RotateKeyAsync { get; set; }
+
+    private ConfirmModal _rotateModal = null!;
+    private KeyType _rotateKeyType;
+    private string _rotateConfirmMessage = string.Empty;
+    private string? _rotateResult;
+    private bool _rotateFailed;
+
+    private void ConfirmRotate(KeyType keyType)
+    {
+        _rotateKeyType = keyType;
+        _rotateConfirmMessage = keyType.RotationWarning();
+        _rotateResult = null;
+        _rotateModal.Show();
+    }
+
+    private async Task RotateAsync()
+    {
+        if (RotateKeyAsync == null) return;
+        var result = await RotateKeyAsync(_rotateKeyType);
+        _rotateFailed = result.ResultCode != ModifyResultCode.Success;
+        _rotateResult = _rotateFailed
+            ? $"Rotation failed: {result.Message}"
+            : "Key rotated. Everything below now uses the new key.";
+    }
 
     private int _activeKeyTab;
     private bool _busy;

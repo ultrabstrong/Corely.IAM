@@ -42,6 +42,7 @@ Self-service user profile page. No permission gates: any authenticated user can 
 - User's symmetric encryption provider
 - User's asymmetric encryption provider
 - User's asymmetric signature provider
+- **Rotate key** on each tab calls `RotateCurrentUserKeyAsync(keyType)` and reloads the providers
 
 **Behavior:**
 - No authorization gates; this is a self-service page

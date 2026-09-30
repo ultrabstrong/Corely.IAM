@@ -15,13 +15,22 @@ internal class UserAsymmetricKeyEntityConfiguration
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).ValueGeneratedNever();
 
-        builder.HasIndex(e => new { e.UserId, e.KeyUsedFor }).IsUnique();
+        builder
+            .HasIndex(e => new
+            {
+                e.UserId,
+                e.KeyUsedFor,
+                e.Generation,
+            })
+            .IsUnique();
 
         builder.Property(m => m.KeyUsedFor).HasConversion<string>();
 
         builder.Property(m => m.ProviderName).IsRequired();
 
         builder.Property(m => m.Version).IsRequired();
+
+        builder.Property(m => m.Generation).IsRequired();
 
         builder.Property(m => m.PublicKey).IsRequired();
 

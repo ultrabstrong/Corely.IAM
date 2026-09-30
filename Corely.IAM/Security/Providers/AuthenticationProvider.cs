@@ -6,6 +6,7 @@ using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Extensions;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Mappers;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Constants;
 using Corely.IAM.Users.Entities;
@@ -138,7 +139,7 @@ internal class AuthenticationProvider(
             );
         }
 
-        if (!ValidateJwtToken(authToken, tokenIssueContext.Context!.SignatureKey, false))
+        if (!ValidateJwtToken(authToken, tokenIssueContext.Context!.UserEntity, false))
             return RenewUserAuthTokenResult.Failed(
                 RenewUserAuthTokenResultCode.TokenValidationFailed
             );
@@ -269,8 +270,8 @@ internal class AuthenticationProvider(
             );
         }
 
-        var signatureKey = userEntity.SignatureKey();
-        if (signatureKey == null)
+        var signingKeys = SignatureVerificationKeys(userEntity);
+        if (signingKeys.Count == 0)
         {
             _logger.LogWarning(
                 "User with Id {UserId} does not have an asymmetric key for {KeyUse}",
@@ -282,16 +283,10 @@ internal class AuthenticationProvider(
             );
         }
 
-        var credentials = _securityProcessor.GetAsymmetricSigningCredentials(
-            signatureKey.ProviderName,
-            signatureKey.PublicKey,
-            false
-        );
-
         var validationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = credentials.Key,
+            IssuerSigningKeys = signingKeys,
             ValidateIssuer = true,
             ValidIssuer = typeof(AuthenticationProvider).FullName,
             ValidateAudience = true,
@@ -586,22 +581,23 @@ internal class AuthenticationProvider(
         return (notBefore == null || notBefore <= now) && expires != null && expires > now;
     }
 
-    private bool ValidateJwtToken(
-        string authToken,
-        UserAsymmetricKeyEntity signatureKey,
-        bool validateLifetime
-    )
-    {
-        var credentials = _securityProcessor.GetAsymmetricSigningCredentials(
-            signatureKey.ProviderName,
-            signatureKey.PublicKey,
-            false
-        );
+    private List<SecurityKey> SignatureVerificationKeys(UserEntity userEntity) =>
+        [
+            .. userEntity
+                .AsymmetricKeys.Generations(KeyUsedFor.Signature)
+                .Select(k =>
+                    _securityProcessor
+                        .GetAsymmetricSigningCredentials(k.ProviderName, k.PublicKey, false)
+                        .Key
+                ),
+        ];
 
+    private bool ValidateJwtToken(string authToken, UserEntity userEntity, bool validateLifetime)
+    {
         var validationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = credentials.Key,
+            IssuerSigningKeys = SignatureVerificationKeys(userEntity),
             ValidateIssuer = true,
             ValidIssuer = typeof(AuthenticationProvider).FullName,
             ValidateAudience = true,

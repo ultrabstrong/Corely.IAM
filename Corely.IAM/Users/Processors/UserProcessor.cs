@@ -188,9 +188,7 @@ internal class UserProcessor(
             );
         }
 
-        var signatureKey = userEntity.AsymmetricKeys?.FirstOrDefault(k =>
-            k.KeyUsedFor == Security.Enums.KeyUsedFor.Signature
-        );
+        var signatureKey = userEntity.SignatureKey();
         if (signatureKey == null)
         {
             _logger.LogWarning(

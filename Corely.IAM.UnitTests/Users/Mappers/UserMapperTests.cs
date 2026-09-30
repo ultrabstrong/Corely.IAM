@@ -139,6 +139,26 @@ public class UserMapperTests
     }
 
     [Fact]
+    public void SignatureKey_ReturnsNewestGeneration_ForRotatedKey()
+    {
+        var newest = new UserAsymmetricKeyEntity
+        {
+            KeyUsedFor = KeyUsedFor.Signature,
+            Generation = 2,
+        };
+        var entity = new UserEntity
+        {
+            AsymmetricKeys =
+            [
+                newest,
+                new UserAsymmetricKeyEntity { KeyUsedFor = KeyUsedFor.Signature, Generation = 1 },
+            ],
+        };
+
+        Assert.Same(newest, entity.SignatureKey());
+    }
+
+    [Fact]
     public void SignatureKey_ReturnsNull_WhenNoSignatureKey()
     {
         var entity = new UserEntity

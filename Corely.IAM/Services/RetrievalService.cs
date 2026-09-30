@@ -199,10 +199,8 @@ internal class RetrievalService(
             );
         }
 
-        var symmetricKeyEntity = keysResult.Data.SymmetricKeys?.FirstOrDefault(k =>
-            k.KeyUsedFor == KeyUsedFor.Encryption
-        );
-        if (symmetricKeyEntity == null)
+        var symmetricKeyEntities = keysResult.Data.SymmetricKeys.Generations(KeyUsedFor.Encryption);
+        if (symmetricKeyEntities.Count == 0)
         {
             return new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
                 RetrieveResultCode.NotFoundError,
@@ -212,8 +210,9 @@ internal class RetrievalService(
             );
         }
 
-        var symmetricKey = symmetricKeyEntity.ToModel(_symmetricEncryptionProviderFactory);
-        var provider = _securityProvider.BuildSymmetricEncryptionProvider(symmetricKey);
+        var provider = _securityProvider.BuildSymmetricEncryptionProvider([
+            .. symmetricKeyEntities.Select(k => k.ToModel(_symmetricEncryptionProviderFactory)),
+        ]);
         return new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
             RetrieveResultCode.Success,
             string.Empty,
@@ -237,10 +236,10 @@ internal class RetrievalService(
             );
         }
 
-        var asymmetricKeyEntity = keysResult.Data.AsymmetricKeys?.FirstOrDefault(k =>
-            k.KeyUsedFor == KeyUsedFor.Encryption
+        var asymmetricKeyEntities = keysResult.Data.AsymmetricKeys.Generations(
+            KeyUsedFor.Encryption
         );
-        if (asymmetricKeyEntity == null)
+        if (asymmetricKeyEntities.Count == 0)
         {
             return new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
                 RetrieveResultCode.NotFoundError,
@@ -250,8 +249,9 @@ internal class RetrievalService(
             );
         }
 
-        var asymmetricKey = asymmetricKeyEntity.ToModel(_symmetricEncryptionProviderFactory);
-        var provider = _securityProvider.BuildAsymmetricEncryptionProvider(asymmetricKey);
+        var provider = _securityProvider.BuildAsymmetricEncryptionProvider([
+            .. asymmetricKeyEntities.Select(k => k.ToModel(_symmetricEncryptionProviderFactory)),
+        ]);
         return new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
             RetrieveResultCode.Success,
             string.Empty,
@@ -275,10 +275,10 @@ internal class RetrievalService(
             );
         }
 
-        var asymmetricKeyEntity = keysResult.Data.AsymmetricKeys?.FirstOrDefault(k =>
-            k.KeyUsedFor == KeyUsedFor.Signature
+        var asymmetricKeyEntities = keysResult.Data.AsymmetricKeys.Generations(
+            KeyUsedFor.Signature
         );
-        if (asymmetricKeyEntity == null)
+        if (asymmetricKeyEntities.Count == 0)
         {
             return new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
                 RetrieveResultCode.NotFoundError,
@@ -288,8 +288,9 @@ internal class RetrievalService(
             );
         }
 
-        var asymmetricKey = asymmetricKeyEntity.ToModel(_symmetricEncryptionProviderFactory);
-        var provider = _securityProvider.BuildAsymmetricSignatureProvider(asymmetricKey);
+        var provider = _securityProvider.BuildAsymmetricSignatureProvider([
+            .. asymmetricKeyEntities.Select(k => k.ToModel(_symmetricEncryptionProviderFactory)),
+        ]);
         return new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
             RetrieveResultCode.Success,
             string.Empty,
@@ -313,10 +314,8 @@ internal class RetrievalService(
             );
         }
 
-        var symmetricKeyEntity = keysResult.Data.SymmetricKeys?.FirstOrDefault(k =>
-            k.KeyUsedFor == KeyUsedFor.Encryption
-        );
-        if (symmetricKeyEntity == null)
+        var symmetricKeyEntities = keysResult.Data.SymmetricKeys.Generations(KeyUsedFor.Encryption);
+        if (symmetricKeyEntities.Count == 0)
         {
             return new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
                 RetrieveResultCode.NotFoundError,
@@ -326,8 +325,9 @@ internal class RetrievalService(
             );
         }
 
-        var symmetricKey = symmetricKeyEntity.ToModel(_symmetricEncryptionProviderFactory);
-        var provider = _securityProvider.BuildSymmetricEncryptionProvider(symmetricKey);
+        var provider = _securityProvider.BuildSymmetricEncryptionProvider([
+            .. symmetricKeyEntities.Select(k => k.ToModel(_symmetricEncryptionProviderFactory)),
+        ]);
         return new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
             RetrieveResultCode.Success,
             string.Empty,
@@ -351,10 +351,10 @@ internal class RetrievalService(
             );
         }
 
-        var asymmetricKeyEntity = keysResult.Data.AsymmetricKeys?.FirstOrDefault(k =>
-            k.KeyUsedFor == KeyUsedFor.Encryption
+        var asymmetricKeyEntities = keysResult.Data.AsymmetricKeys.Generations(
+            KeyUsedFor.Encryption
         );
-        if (asymmetricKeyEntity == null)
+        if (asymmetricKeyEntities.Count == 0)
         {
             return new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
                 RetrieveResultCode.NotFoundError,
@@ -364,8 +364,9 @@ internal class RetrievalService(
             );
         }
 
-        var asymmetricKey = asymmetricKeyEntity.ToModel(_symmetricEncryptionProviderFactory);
-        var provider = _securityProvider.BuildAsymmetricEncryptionProvider(asymmetricKey);
+        var provider = _securityProvider.BuildAsymmetricEncryptionProvider([
+            .. asymmetricKeyEntities.Select(k => k.ToModel(_symmetricEncryptionProviderFactory)),
+        ]);
         return new RetrieveSingleResult<IIamAsymmetricEncryptionProvider>(
             RetrieveResultCode.Success,
             string.Empty,
@@ -389,10 +390,10 @@ internal class RetrievalService(
             );
         }
 
-        var asymmetricKeyEntity = keysResult.Data.AsymmetricKeys?.FirstOrDefault(k =>
-            k.KeyUsedFor == KeyUsedFor.Signature
+        var asymmetricKeyEntities = keysResult.Data.AsymmetricKeys.Generations(
+            KeyUsedFor.Signature
         );
-        if (asymmetricKeyEntity == null)
+        if (asymmetricKeyEntities.Count == 0)
         {
             return new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
                 RetrieveResultCode.NotFoundError,
@@ -402,8 +403,9 @@ internal class RetrievalService(
             );
         }
 
-        var asymmetricKey = asymmetricKeyEntity.ToModel(_symmetricEncryptionProviderFactory);
-        var provider = _securityProvider.BuildAsymmetricSignatureProvider(asymmetricKey);
+        var provider = _securityProvider.BuildAsymmetricSignatureProvider([
+            .. asymmetricKeyEntities.Select(k => k.ToModel(_symmetricEncryptionProviderFactory)),
+        ]);
         return new RetrieveSingleResult<IIamAsymmetricSignatureProvider>(
             RetrieveResultCode.Success,
             string.Empty,

@@ -1,3 +1,4 @@
+using Corely.Security.Encryption.Factories;
 using Corely.Security.Encryption.Providers;
 using Corely.Security.KeyStore;
 
@@ -7,7 +8,8 @@ public class IamAsymmetricEncryptionProvider(
     IAsymmetricEncryptionProvider provider,
     IAsymmetricKeyStoreProvider keyStore,
     string providerName,
-    string publicKey
+    string publicKey,
+    IAsymmetricEncryptionProviderFactory? decryptingProviders = null
 ) : IIamAsymmetricEncryptionProvider
 {
     public string ProviderName => providerName;
@@ -17,7 +19,17 @@ public class IamAsymmetricEncryptionProvider(
 
     public string Encrypt(string plaintext) => provider.Encrypt(plaintext, keyStore);
 
-    public string Decrypt(string ciphertext) => provider.Decrypt(ciphertext, keyStore);
+    public string Decrypt(string ciphertext) =>
+        ProviderFor(ciphertext).Decrypt(ciphertext, keyStore);
 
-    public string ReEncrypt(string ciphertext) => provider.ReEncrypt(ciphertext, keyStore);
+    public string ReEncrypt(string ciphertext)
+    {
+        var source = ProviderFor(ciphertext);
+        return source.ProviderName == provider.ProviderName
+            ? provider.ReEncrypt(ciphertext, keyStore)
+            : provider.Encrypt(source.Decrypt(ciphertext, keyStore), keyStore);
+    }
+
+    private IAsymmetricEncryptionProvider ProviderFor(string ciphertext) =>
+        decryptingProviders?.GetProviderForDecrypting(ciphertext) ?? provider;
 }

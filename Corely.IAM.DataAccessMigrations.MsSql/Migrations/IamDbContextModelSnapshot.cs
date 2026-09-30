@@ -17,7 +17,7 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.10")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -39,6 +39,9 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("Generation")
+                        .HasColumnType("int");
+
                     b.Property<string>("KeyUsedFor")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -59,7 +62,7 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AccountId", "KeyUsedFor")
+                    b.HasIndex("AccountId", "KeyUsedFor", "Generation")
                         .IsUnique();
 
                     b.ToTable("AccountAsymmetricKeys", (string)null);
@@ -109,6 +112,9 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<int>("Generation")
+                        .HasColumnType("int");
+
                     b.Property<string>("KeyUsedFor")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -125,7 +131,7 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AccountId", "KeyUsedFor")
+                    b.HasIndex("AccountId", "KeyUsedFor", "Generation")
                         .IsUnique();
 
                     b.ToTable("AccountSymmetricKeys", (string)null);
@@ -607,6 +613,9 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("Generation")
+                        .HasColumnType("int");
+
                     b.Property<string>("KeyUsedFor")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -630,7 +639,7 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "KeyUsedFor")
+                    b.HasIndex("UserId", "KeyUsedFor", "Generation")
                         .IsUnique();
 
                     b.ToTable("UserAsymmetricKeys", (string)null);
@@ -741,6 +750,9 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<int>("Generation")
+                        .HasColumnType("int");
+
                     b.Property<string>("KeyUsedFor")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -760,7 +772,7 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "KeyUsedFor")
+                    b.HasIndex("UserId", "KeyUsedFor", "Generation")
                         .IsUnique();
 
                     b.ToTable("UserSymmetricKeys", (string)null);

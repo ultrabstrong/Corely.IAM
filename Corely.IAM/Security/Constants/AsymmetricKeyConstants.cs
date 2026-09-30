@@ -2,5 +2,5 @@
 
 internal class AsymmetricKeyConstants
 {
-    public const int VERSION_MIN_VALUE = 0;
+    public const int VERSION_MIN_VALUE = 1;
 }

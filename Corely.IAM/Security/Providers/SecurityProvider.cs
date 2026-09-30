@@ -52,7 +52,6 @@ internal class SecurityProvider(
             Id = Guid.CreateVersion7(),
             KeyUsedFor = KeyUsedFor.Encryption,
             ProviderName = symmetricEncryptionProvider.ProviderName,
-            Version = systemKeyStoreProvider.GetCurrentVersion(),
             Key = new SymmetricEncryptedValue(symmetricEncryptionProvider)
             {
                 Secret = encryptedKey,
@@ -89,7 +88,6 @@ internal class SecurityProvider(
             Id = Guid.CreateVersion7(),
             KeyUsedFor = KeyUsedFor.Encryption,
             ProviderName = asymmetricEncryptionProvider.ProviderName,
-            Version = systemKeyStoreProvider.GetCurrentVersion(),
             PublicKey = Convert.ToBase64String(publickey),
             PrivateKey = new SymmetricEncryptedValue(symmetricEncryptionProvider)
             {
@@ -126,7 +124,6 @@ internal class SecurityProvider(
             Id = Guid.CreateVersion7(),
             KeyUsedFor = KeyUsedFor.Signature,
             ProviderName = asymmetricSignatureProvider.ProviderName,
-            Version = systemKeyStoreProvider.GetCurrentVersion(),
             PublicKey = Convert.ToBase64String(publickey),
             PrivateKey = new SymmetricEncryptedValue(symmetricEncryptionProvider)
             {
@@ -166,20 +163,20 @@ internal class SecurityProvider(
     }
 
     public IIamSymmetricEncryptionProvider BuildSymmetricEncryptionProvider(
-        IReadOnlyList<SymmetricKey> generations
+        IReadOnlyList<SymmetricKey> versions
     )
     {
-        EnsureGenerationsStartAtOne(generations.Select(k => k.Generation));
+        EnsureVersionsStartAtOne(versions.Select(k => k.Version));
         var systemKeyStore = _securityConfigurationProvider.GetSystemSymmetricKey();
         var keyStore = new InMemorySymmetricKeyStoreProvider(
-            generations[0].Key.GetDecrypted(systemKeyStore)
+            versions[0].Key.GetDecrypted(systemKeyStore)
         );
-        foreach (var key in generations.Skip(1))
+        foreach (var key in versions.Skip(1))
         {
             keyStore.Add(key.Key.GetDecrypted(systemKeyStore));
         }
 
-        var current = generations[^1];
+        var current = versions[^1];
         var provider = _symmetricEncryptionProviderFactory.GetProvider(current.ProviderName);
         return new IamSymmetricEncryptionProvider(
             provider,
@@ -190,21 +187,21 @@ internal class SecurityProvider(
     }
 
     public IIamAsymmetricEncryptionProvider BuildAsymmetricEncryptionProvider(
-        IReadOnlyList<AsymmetricKey> generations
+        IReadOnlyList<AsymmetricKey> versions
     )
     {
-        EnsureGenerationsStartAtOne(generations.Select(k => k.Generation));
+        EnsureVersionsStartAtOne(versions.Select(k => k.Version));
         var systemKeyStore = _securityConfigurationProvider.GetSystemSymmetricKey();
         var keyStore = new InMemoryAsymmetricKeyStoreProvider(
-            generations[0].PublicKey,
-            generations[0].PrivateKey.GetDecrypted(systemKeyStore)
+            versions[0].PublicKey,
+            versions[0].PrivateKey.GetDecrypted(systemKeyStore)
         );
-        foreach (var key in generations.Skip(1))
+        foreach (var key in versions.Skip(1))
         {
             keyStore.Add(key.PublicKey, key.PrivateKey.GetDecrypted(systemKeyStore));
         }
 
-        var current = generations[^1];
+        var current = versions[^1];
         var provider = _asymmetricEncryptionProviderFactory.GetProvider(current.ProviderName);
         return new IamAsymmetricEncryptionProvider(
             provider,
@@ -216,19 +213,19 @@ internal class SecurityProvider(
     }
 
     public IIamAsymmetricSignatureProvider BuildAsymmetricSignatureProvider(
-        IReadOnlyList<AsymmetricKey> generations
+        IReadOnlyList<AsymmetricKey> versions
     )
     {
-        EnsureGenerationsStartAtOne(generations.Select(k => k.Generation));
+        EnsureVersionsStartAtOne(versions.Select(k => k.Version));
         var systemKeyStore = _securityConfigurationProvider.GetSystemSymmetricKey();
-        var current = generations[^1];
+        var current = versions[^1];
         var keyStore = new InMemoryAsymmetricKeyStoreProvider(
             current.PublicKey,
             current.PrivateKey.GetDecrypted(systemKeyStore)
         );
         var provider = _asymmetricSignatureProviderFactory.GetProvider(current.ProviderName);
-        var previousGenerations = generations
-            .Take(generations.Count - 1)
+        var previousVersions = versions
+            .Take(versions.Count - 1)
             .Select(k =>
                 (
                     _asymmetricSignatureProviderFactory.GetProvider(k.ProviderName),
@@ -242,26 +239,26 @@ internal class SecurityProvider(
             keyStore,
             current.ProviderName,
             current.PublicKey,
-            previousGenerations
+            previousVersions
         );
     }
 
-    private static void EnsureGenerationsStartAtOne(IEnumerable<int> generations)
+    private static void EnsureVersionsStartAtOne(IEnumerable<int> versions)
     {
         var expected = 1;
-        foreach (var generation in generations)
+        foreach (var version in versions)
         {
-            if (generation != expected++)
+            if (version != expected++)
             {
                 throw new InvalidOperationException(
-                    $"Key generations must run from 1 without gaps; found {generation} where {expected - 1} was expected"
+                    $"Key versions must run from 1 without gaps; found {version} where {expected - 1} was expected"
                 );
             }
         }
 
         if (expected == 1)
         {
-            throw new ArgumentException("At least one key generation is required");
+            throw new ArgumentException("At least one key version is required");
         }
     }
 }

@@ -584,7 +584,7 @@ internal class AuthenticationProvider(
     private List<SecurityKey> SignatureVerificationKeys(UserEntity userEntity) =>
         [
             .. userEntity
-                .AsymmetricKeys.Generations(KeyUsedFor.Signature)
+                .AsymmetricKeys.Versions(KeyUsedFor.Signature)
                 .Select(k =>
                     _securityProcessor
                         .GetAsymmetricSigningCredentials(k.ProviderName, k.PublicKey, false)

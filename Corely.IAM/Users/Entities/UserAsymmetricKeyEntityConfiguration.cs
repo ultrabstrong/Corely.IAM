@@ -20,7 +20,7 @@ internal class UserAsymmetricKeyEntityConfiguration
             {
                 e.UserId,
                 e.KeyUsedFor,
-                e.Generation,
+                e.Version,
             })
             .IsUnique();
 
@@ -29,8 +29,6 @@ internal class UserAsymmetricKeyEntityConfiguration
         builder.Property(m => m.ProviderName).IsRequired();
 
         builder.Property(m => m.Version).IsRequired();
-
-        builder.Property(m => m.Generation).IsRequired();
 
         builder.Property(m => m.PublicKey).IsRequired();
 

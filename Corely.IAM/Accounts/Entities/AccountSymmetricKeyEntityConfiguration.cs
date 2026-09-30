@@ -21,7 +21,7 @@ internal class AccountSymmetricKeyEntityConfiguration
             {
                 e.AccountId,
                 e.KeyUsedFor,
-                e.Generation,
+                e.Version,
             })
             .IsUnique();
 
@@ -30,8 +30,6 @@ internal class AccountSymmetricKeyEntityConfiguration
         builder.Property(e => e.ProviderName).IsRequired();
 
         builder.Property(e => e.Version).IsRequired();
-
-        builder.Property(e => e.Generation).IsRequired();
 
         builder
             .Property(e => e.EncryptedKey)

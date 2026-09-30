@@ -236,11 +236,11 @@ public class SecurityProcessorTests
     }
 
     [Fact]
-    public void BuildSymmetricEncryptionProvider_DecryptsEarlierGeneration_AfterRotation()
+    public void BuildSymmetricEncryptionProvider_DecryptsEarlierVersion_AfterRotation()
     {
         var first = _securityProcessor.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
         var second = _securityProcessor.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
-        second.Generation = 2;
+        second.Version = 2;
         var before = _securityProcessor.BuildSymmetricEncryptionProvider([first]).Encrypt("old");
 
         var provider = _securityProcessor.BuildSymmetricEncryptionProvider([first, second]);
@@ -252,11 +252,11 @@ public class SecurityProcessorTests
     }
 
     [Fact]
-    public void BuildAsymmetricEncryptionProvider_DecryptsEarlierGeneration_AfterRotation()
+    public void BuildAsymmetricEncryptionProvider_DecryptsEarlierVersion_AfterRotation()
     {
         var first = _securityProcessor.GetAsymmetricEncryptionKeyEncryptedWithSystemKey();
         var second = _securityProcessor.GetAsymmetricEncryptionKeyEncryptedWithSystemKey();
-        second.Generation = 2;
+        second.Version = 2;
         var before = _securityProcessor.BuildAsymmetricEncryptionProvider([first]).Encrypt("old");
 
         var provider = _securityProcessor.BuildAsymmetricEncryptionProvider([first, second]);
@@ -267,11 +267,11 @@ public class SecurityProcessorTests
     }
 
     [Fact]
-    public void BuildAsymmetricSignatureProvider_VerifiesEarlierGeneration_AndSignsWithNewest()
+    public void BuildAsymmetricSignatureProvider_VerifiesEarlierVersion_AndSignsWithNewest()
     {
         var first = _securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey();
         var second = _securityProcessor.GetAsymmetricSignatureKeyEncryptedWithSystemKey();
-        second.Generation = 2;
+        second.Version = 2;
         var firstOnly = _securityProcessor.BuildAsymmetricSignatureProvider([first]);
         var oldSignature = firstOnly.Sign("payload");
 
@@ -285,11 +285,11 @@ public class SecurityProcessorTests
     }
 
     [Fact]
-    public void BuildSymmetricEncryptionProvider_Throws_ForGenerationGap()
+    public void BuildSymmetricEncryptionProvider_Throws_ForVersionGap()
     {
         var first = _securityProcessor.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
         var third = _securityProcessor.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
-        third.Generation = 3;
+        third.Version = 3;
 
         Assert.Throws<InvalidOperationException>(() =>
             _securityProcessor.BuildSymmetricEncryptionProvider([first, third])
@@ -297,7 +297,7 @@ public class SecurityProcessorTests
     }
 
     [Fact]
-    public void BuildAsymmetricSignatureProvider_Throws_ForNoGenerations() =>
+    public void BuildAsymmetricSignatureProvider_Throws_ForNoVersions() =>
         Assert.Throws<ArgumentException>(() =>
             _securityProcessor.BuildAsymmetricSignatureProvider([])
         );

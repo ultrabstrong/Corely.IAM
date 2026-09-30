@@ -139,19 +139,15 @@ public class UserMapperTests
     }
 
     [Fact]
-    public void SignatureKey_ReturnsNewestGeneration_ForRotatedKey()
+    public void SignatureKey_ReturnsNewestVersion_ForRotatedKey()
     {
-        var newest = new UserAsymmetricKeyEntity
-        {
-            KeyUsedFor = KeyUsedFor.Signature,
-            Generation = 2,
-        };
+        var newest = new UserAsymmetricKeyEntity { KeyUsedFor = KeyUsedFor.Signature, Version = 2 };
         var entity = new UserEntity
         {
             AsymmetricKeys =
             [
                 newest,
-                new UserAsymmetricKeyEntity { KeyUsedFor = KeyUsedFor.Signature, Generation = 1 },
+                new UserAsymmetricKeyEntity { KeyUsedFor = KeyUsedFor.Signature, Version = 1 },
             ],
         };
 

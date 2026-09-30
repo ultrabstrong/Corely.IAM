@@ -69,27 +69,27 @@ internal class KeyRotationProcessor(
             );
         }
 
-        int generation;
+        int version;
         if (request.KeyType == KeyType.SymmetricEncryption)
         {
             var key = _securityProvider.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
-            key.Generation = account.SymmetricKeys.NextGeneration(key.KeyUsedFor);
+            key.Version = account.SymmetricKeys.NextVersion(key.KeyUsedFor);
             await _accountSymmetricKeyRepo.CreateAsync(key.ToAccountEntity(account.Id));
-            generation = key.Generation;
+            version = key.Version;
         }
         else
         {
             var key = NewAsymmetricKey(request.KeyType);
-            key.Generation = account.AsymmetricKeys.NextGeneration(key.KeyUsedFor);
+            key.Version = account.AsymmetricKeys.NextVersion(key.KeyUsedFor);
             await _accountAsymmetricKeyRepo.CreateAsync(key.ToAccountEntity(account.Id));
-            generation = key.Generation;
+            version = key.Version;
         }
 
         _logger.LogInformation(
-            "Rotated {KeyType} key for account {AccountId} to generation {Generation}",
+            "Rotated {KeyType} key for account {AccountId} to version {Version}",
             request.KeyType,
             account.Id,
-            generation
+            version
         );
         return new ModifyResult(ModifyResultCode.Success, string.Empty);
     }
@@ -122,27 +122,27 @@ internal class KeyRotationProcessor(
             );
         }
 
-        int generation;
+        int version;
         if (keyType == KeyType.SymmetricEncryption)
         {
             var key = _securityProvider.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
-            key.Generation = user.SymmetricKeys.NextGeneration(key.KeyUsedFor);
+            key.Version = user.SymmetricKeys.NextVersion(key.KeyUsedFor);
             await _userSymmetricKeyRepo.CreateAsync(key.ToUserEntity(user.Id));
-            generation = key.Generation;
+            version = key.Version;
         }
         else
         {
             var key = NewAsymmetricKey(keyType);
-            key.Generation = user.AsymmetricKeys.NextGeneration(key.KeyUsedFor);
+            key.Version = user.AsymmetricKeys.NextVersion(key.KeyUsedFor);
             await _userAsymmetricKeyRepo.CreateAsync(key.ToUserEntity(user.Id));
-            generation = key.Generation;
+            version = key.Version;
         }
 
         _logger.LogInformation(
-            "Rotated {KeyType} key for user {UserId} to generation {Generation}",
+            "Rotated {KeyType} key for user {UserId} to version {Version}",
             keyType,
             user.Id,
-            generation
+            version
         );
         return new ModifyResult(ModifyResultCode.Success, string.Empty);
     }

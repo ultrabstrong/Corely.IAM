@@ -11,7 +11,7 @@ public class IamAsymmetricSignatureProvider(
     IReadOnlyList<(
         IAsymmetricSignatureProvider Provider,
         IAsymmetricKeyStoreProvider KeyStore
-    )>? previousGenerations = null
+    )>? previousVersions = null
 ) : IIamAsymmetricSignatureProvider
 {
     public string ProviderName => providerName;
@@ -23,8 +23,5 @@ public class IamAsymmetricSignatureProvider(
 
     public bool Verify(string payload, string signature) =>
         provider.Verify(payload, signature, keyStore)
-        || (
-            previousGenerations?.Any(g => g.Provider.Verify(payload, signature, g.KeyStore))
-            ?? false
-        );
+        || (previousVersions?.Any(g => g.Provider.Verify(payload, signature, g.KeyStore)) ?? false);
 }

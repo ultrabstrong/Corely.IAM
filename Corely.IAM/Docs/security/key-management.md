@@ -56,7 +56,7 @@ var result = await retrievalService.GetUserSymmetricEncryptionProviderAsync();
 
 ## Rotation
 
-Each key has generations. Rotating adds the next generation, and the newest one encrypts and signs:
+Each key has versions, starting at 1. Rotating adds the next version, and the newest one encrypts and signs:
 
 ```csharp
 await modificationService.RotateAccountKeyAsync(
@@ -71,12 +71,12 @@ await modificationService.RotateCurrentUserKeyAsync(KeyType.AsymmetricSignature)
 | `AsymmetricEncryption` | The asymmetric encryption key pair |
 | `AsymmetricSignature` | The signing key pair |
 
-Earlier generations are kept, never deleted:
+Earlier versions are kept, never deleted:
 
-- **Ciphertext** carries the key version it was made with (`provider:version:data`), so a provider decrypts values from any generation. `ReEncrypt` moves a value onto the newest generation; data encrypted outside IAM is re-encrypted by whoever holds it, when they choose.
+- **Ciphertext** carries the key version it was made with (`provider:version:data`), which is the `Version` of the key row that made it, so a provider decrypts values from any version. `ReEncrypt` moves a value onto the newest version; data encrypted outside IAM is re-encrypted by whoever holds it, when they choose.
 - **Signatures** made with an earlier signing key still pass `Verify`. `PublicKey` is the newest key, so anyone verifying outside IAM needs it for new signatures.
-- **Sign in tokens** are signed with the user's newest signing key and validated against every generation, so rotating a user's signing key does not end their sessions.
-- **The algorithm may change between generations.** Each generation records its provider, and a value is decrypted with the provider it names.
+- **Sign in tokens** are signed with the user's newest signing key and validated against every version, so rotating a user's signing key does not end their sessions.
+- **The algorithm may change between versions.** Each version records its provider, and a value is decrypted with the provider it names.
 
 Account keys need Update permission on the account. User keys are a self operation: only the signed in user rotates their own, and system context is refused.
 
@@ -91,7 +91,7 @@ All three provider interfaces follow a consistent pattern:
 ## Notes
 
 - Private keys are stored encrypted in the database and are decrypted in memory only when a provider is requested
-- A provider holds every generation of its key; an earlier signing key contributes only its public key
+- A provider holds every version of its key; an earlier signing key contributes only its public key
 - Key providers are returned as ready-to-use objects, with no additional setup required
 - The system key must be provisioned externally (environment variable, key vault, etc.)
 - See [Corely.Security docs](https://github.com/ultrabstrong/Corely/tree/master/Corely.Security/Docs) for the underlying crypto primitives

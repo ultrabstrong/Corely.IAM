@@ -15,12 +15,12 @@ internal interface ISecurityProvider
         bool isKeyPrivate
     );
     IIamSymmetricEncryptionProvider BuildSymmetricEncryptionProvider(
-        IReadOnlyList<SymmetricKey> generations
+        IReadOnlyList<SymmetricKey> versions
     );
     IIamAsymmetricEncryptionProvider BuildAsymmetricEncryptionProvider(
-        IReadOnlyList<AsymmetricKey> generations
+        IReadOnlyList<AsymmetricKey> versions
     );
     IIamAsymmetricSignatureProvider BuildAsymmetricSignatureProvider(
-        IReadOnlyList<AsymmetricKey> generations
+        IReadOnlyList<AsymmetricKey> versions
     );
 }

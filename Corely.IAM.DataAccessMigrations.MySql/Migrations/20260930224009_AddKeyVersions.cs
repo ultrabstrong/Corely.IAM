@@ -2,71 +2,44 @@
 
 #nullable disable
 
-namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
+namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
 {
     /// <inheritdoc />
-    public partial class AddKeyGenerations : Migration
+    public partial class AddKeyVersions : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "Generation",
+            migrationBuilder.Sql("UPDATE UserSymmetricKeys SET Version = 1");
+            migrationBuilder.Sql("UPDATE UserAsymmetricKeys SET Version = 1");
+            migrationBuilder.Sql("UPDATE AccountSymmetricKeys SET Version = 1");
+            migrationBuilder.Sql("UPDATE AccountAsymmetricKeys SET Version = 1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserSymmetricKeys_UserId_KeyUsedFor_Version",
                 table: "UserSymmetricKeys",
-                type: "int",
-                nullable: false,
-                defaultValue: 1
+                columns: new[] { "UserId", "KeyUsedFor", "Version" },
+                unique: true
             );
 
-            migrationBuilder.AddColumn<int>(
-                name: "Generation",
+            migrationBuilder.CreateIndex(
+                name: "IX_UserAsymmetricKeys_UserId_KeyUsedFor_Version",
                 table: "UserAsymmetricKeys",
-                type: "int",
-                nullable: false,
-                defaultValue: 1
+                columns: new[] { "UserId", "KeyUsedFor", "Version" },
+                unique: true
             );
 
-            migrationBuilder.AddColumn<int>(
-                name: "Generation",
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountSymmetricKeys_AccountId_KeyUsedFor_Version",
                 table: "AccountSymmetricKeys",
-                type: "int",
-                nullable: false,
-                defaultValue: 1
+                columns: new[] { "AccountId", "KeyUsedFor", "Version" },
+                unique: true
             );
 
-            migrationBuilder.AddColumn<int>(
-                name: "Generation",
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountAsymmetricKeys_AccountId_KeyUsedFor_Version",
                 table: "AccountAsymmetricKeys",
-                type: "int",
-                nullable: false,
-                defaultValue: 1
-            );
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserSymmetricKeys_UserId_KeyUsedFor_Generation",
-                table: "UserSymmetricKeys",
-                columns: new[] { "UserId", "KeyUsedFor", "Generation" },
-                unique: true
-            );
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserAsymmetricKeys_UserId_KeyUsedFor_Generation",
-                table: "UserAsymmetricKeys",
-                columns: new[] { "UserId", "KeyUsedFor", "Generation" },
-                unique: true
-            );
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AccountSymmetricKeys_AccountId_KeyUsedFor_Generation",
-                table: "AccountSymmetricKeys",
-                columns: new[] { "AccountId", "KeyUsedFor", "Generation" },
-                unique: true
-            );
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AccountAsymmetricKeys_AccountId_KeyUsedFor_Generation",
-                table: "AccountAsymmetricKeys",
-                columns: new[] { "AccountId", "KeyUsedFor", "Generation" },
+                columns: new[] { "AccountId", "KeyUsedFor", "Version" },
                 unique: true
             );
 
@@ -123,32 +96,24 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
             );
 
             migrationBuilder.DropIndex(
-                name: "IX_UserSymmetricKeys_UserId_KeyUsedFor_Generation",
+                name: "IX_UserSymmetricKeys_UserId_KeyUsedFor_Version",
                 table: "UserSymmetricKeys"
             );
 
             migrationBuilder.DropIndex(
-                name: "IX_UserAsymmetricKeys_UserId_KeyUsedFor_Generation",
+                name: "IX_UserAsymmetricKeys_UserId_KeyUsedFor_Version",
                 table: "UserAsymmetricKeys"
             );
 
             migrationBuilder.DropIndex(
-                name: "IX_AccountSymmetricKeys_AccountId_KeyUsedFor_Generation",
+                name: "IX_AccountSymmetricKeys_AccountId_KeyUsedFor_Version",
                 table: "AccountSymmetricKeys"
             );
 
             migrationBuilder.DropIndex(
-                name: "IX_AccountAsymmetricKeys_AccountId_KeyUsedFor_Generation",
+                name: "IX_AccountAsymmetricKeys_AccountId_KeyUsedFor_Version",
                 table: "AccountAsymmetricKeys"
             );
-
-            migrationBuilder.DropColumn(name: "Generation", table: "UserSymmetricKeys");
-
-            migrationBuilder.DropColumn(name: "Generation", table: "UserAsymmetricKeys");
-
-            migrationBuilder.DropColumn(name: "Generation", table: "AccountSymmetricKeys");
-
-            migrationBuilder.DropColumn(name: "Generation", table: "AccountAsymmetricKeys");
         }
     }
 }

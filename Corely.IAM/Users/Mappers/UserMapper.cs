@@ -61,7 +61,7 @@ internal static class UserMapper
         }
 
         public UserAsymmetricKeyEntity? SignatureKey() =>
-            entity.AsymmetricKeys.CurrentGeneration(KeyUsedFor.Signature);
+            entity.AsymmetricKeys.CurrentVersion(KeyUsedFor.Signature);
 
         public List<Account> AccountModels() =>
             entity.Accounts?.Select(a => a.ToModel()).ToList() ?? [];

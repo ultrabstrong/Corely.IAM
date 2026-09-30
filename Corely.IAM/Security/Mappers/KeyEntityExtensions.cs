@@ -8,13 +8,13 @@ internal static class KeyEntityExtensions
     extension<TKey>(IEnumerable<TKey>? keys)
         where TKey : class, IKeyEntity
     {
-        public List<TKey> Generations(KeyUsedFor keyUsedFor) =>
-            keys?.Where(k => k.KeyUsedFor == keyUsedFor).OrderBy(k => k.Generation).ToList() ?? [];
+        public List<TKey> Versions(KeyUsedFor keyUsedFor) =>
+            keys?.Where(k => k.KeyUsedFor == keyUsedFor).OrderBy(k => k.Version).ToList() ?? [];
 
-        public TKey? CurrentGeneration(KeyUsedFor keyUsedFor) =>
-            keys.Generations(keyUsedFor).LastOrDefault();
+        public TKey? CurrentVersion(KeyUsedFor keyUsedFor) =>
+            keys.Versions(keyUsedFor).LastOrDefault();
 
-        public int NextGeneration(KeyUsedFor keyUsedFor) =>
-            (keys.CurrentGeneration(keyUsedFor)?.Generation ?? 0) + 1;
+        public int NextVersion(KeyUsedFor keyUsedFor) =>
+            (keys.CurrentVersion(keyUsedFor)?.Version ?? 0) + 1;
     }
 }

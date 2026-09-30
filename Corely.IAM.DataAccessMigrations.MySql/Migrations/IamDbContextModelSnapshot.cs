@@ -36,9 +36,6 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("Generation")
-                        .HasColumnType("int");
-
                     b.Property<string>("KeyUsedFor")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -59,7 +56,7 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AccountId", "KeyUsedFor", "Generation")
+                    b.HasIndex("AccountId", "KeyUsedFor", "Version")
                         .IsUnique();
 
                     b.ToTable("AccountAsymmetricKeys", (string)null);
@@ -109,9 +106,6 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
 
-                    b.Property<int>("Generation")
-                        .HasColumnType("int");
-
                     b.Property<string>("KeyUsedFor")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -128,7 +122,7 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AccountId", "KeyUsedFor", "Generation")
+                    b.HasIndex("AccountId", "KeyUsedFor", "Version")
                         .IsUnique();
 
                     b.ToTable("AccountSymmetricKeys", (string)null);
@@ -610,9 +604,6 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("Generation")
-                        .HasColumnType("int");
-
                     b.Property<string>("KeyUsedFor")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -636,7 +627,7 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "KeyUsedFor", "Generation")
+                    b.HasIndex("UserId", "KeyUsedFor", "Version")
                         .IsUnique();
 
                     b.ToTable("UserAsymmetricKeys", (string)null);
@@ -747,9 +738,6 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
 
-                    b.Property<int>("Generation")
-                        .HasColumnType("int");
-
                     b.Property<string>("KeyUsedFor")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -769,7 +757,7 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "KeyUsedFor", "Generation")
+                    b.HasIndex("UserId", "KeyUsedFor", "Version")
                         .IsUnique();
 
                     b.ToTable("UserSymmetricKeys", (string)null);

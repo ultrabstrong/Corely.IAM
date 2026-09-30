@@ -41,7 +41,7 @@ public class KeyRotationTests(IamScenario scenario) : IClassFixture<IamScenario>
                 db.Users.AsNoTracking()
                     .Where(u => u.Id == scenario.DirectMemberUserId)
                     .SelectMany(u => u.SymmetricKeys!)
-                    .Select(k => k.Generation)
+                    .Select(k => k.Version)
                     .OrderBy(g => g)
                     .ToListAsync()
             )

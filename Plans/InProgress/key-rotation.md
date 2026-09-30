@@ -41,25 +41,25 @@ These settle whether this is a small change or a large one.
 
 ## Decided
 
-1. **Keep old versions.** Rotation adds a generation; nothing is deleted. Old ciphertext decrypts,
-   and `ReEncrypt` moves a value onto the newest generation when its holder chooses.
+1. **Keep old versions.** Rotation adds a version; nothing is deleted. Old ciphertext decrypts, and
+   `ReEncrypt` moves a value onto the newest version when its holder chooses.
 2. **Keep old public keys.** Earlier signatures still verify, and sign in tokens are validated against
-   every signing generation, so rotating your own signing key does not end your sessions.
+   every signing version, so rotating your own signing key does not end your sessions.
 3. **Permissions as proposed.** Account keys need `account` Update; user keys are a self operation.
 4. **Service and UI in the first pass.**
 
 ## What was built
 
-- A `Generation` column on the four key tables, with the unique index moved to (owner, purpose,
-  generation). Existing keys become generation 1. The migration creates the new index before dropping
-  the old one, because MySQL will not drop an index a foreign key relies on. Rolling it back fails
-  once any key has been rotated, rather than silently dropping a generation.
-- The existing `Version` column is the system key's version, not the key's own, which is why a new
-  column was needed.
-- Providers hold every generation in a Corely.Security in-memory key store, so the version in each
-  ciphertext maps to its generation. Generations must run from 1 without gaps; anything else is a
-  fault.
-- Each generation keeps its own provider name, so a rotation that also changes the default algorithm
+- The key tables' `Version` column now means the key's own version: 1 for the key made at
+  registration, 2 after the first rotation. It is the number in `provider:version:data` for anything
+  encrypted with that key. The column used to hold the system key's version, which the encrypted key
+  string already records, and nothing read it; the migration resets every existing key to 1.
+- The unique index moved from (owner, purpose) to (owner, purpose, version). The migration creates the
+  new index before dropping the old one, because MySQL will not drop an index a foreign key relies on.
+  Rolling it back fails once any key has been rotated, rather than silently dropping a version.
+- Providers hold every version in a Corely.Security in-memory key store, so the version in each
+  ciphertext maps to its key row. Versions must run from 1 without gaps; anything else is a fault.
+- Each version keeps its own provider name, so a rotation that also changes the default algorithm
   still decrypts and verifies what came before.
 - `IModificationService.RotateAccountKeyAsync` and `RotateCurrentUserKeyAsync`, through a new
   `KeyRotationProcessor` with authorization and telemetry decorators.

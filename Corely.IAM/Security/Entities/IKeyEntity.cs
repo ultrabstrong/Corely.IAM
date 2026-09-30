@@ -5,5 +5,5 @@ namespace Corely.IAM.Security.Entities;
 internal interface IKeyEntity
 {
     KeyUsedFor KeyUsedFor { get; }
-    int Generation { get; }
+    int Version { get; }
 }

@@ -6,25 +6,25 @@ namespace Corely.IAM.UnitTests.Security.Mappers;
 
 public class KeyEntityExtensionsTests
 {
-    private static UserAsymmetricKeyEntity Key(KeyUsedFor use, int generation) =>
-        new() { KeyUsedFor = use, Generation = generation };
+    private static UserAsymmetricKeyEntity Key(KeyUsedFor use, int version) =>
+        new() { KeyUsedFor = use, Version = version };
 
     [Fact]
-    public void Generations_ReturnsOnlyThePurpose_InGenerationOrder()
+    public void Versions_ReturnsOnlyThePurpose_InVersionOrder()
     {
         var second = Key(KeyUsedFor.Signature, 2);
         var first = Key(KeyUsedFor.Signature, 1);
         List<UserAsymmetricKeyEntity> keys = [second, Key(KeyUsedFor.Encryption, 1), first];
 
-        Assert.Equal([first, second], keys.Generations(KeyUsedFor.Signature));
+        Assert.Equal([first, second], keys.Versions(KeyUsedFor.Signature));
     }
 
     [Fact]
-    public void Generations_ReturnsEmpty_ForUnloadedKeys() =>
-        Assert.Empty(((List<UserAsymmetricKeyEntity>?)null).Generations(KeyUsedFor.Signature));
+    public void Versions_ReturnsEmpty_ForUnloadedKeys() =>
+        Assert.Empty(((List<UserAsymmetricKeyEntity>?)null).Versions(KeyUsedFor.Signature));
 
     [Fact]
-    public void CurrentGeneration_ReturnsHighestGeneration_ForPurpose()
+    public void CurrentVersion_ReturnsHighestVersion_ForPurpose()
     {
         var newest = Key(KeyUsedFor.Encryption, 3);
         List<UserAsymmetricKeyEntity> keys =
@@ -35,19 +35,19 @@ public class KeyEntityExtensionsTests
             Key(KeyUsedFor.Encryption, 2),
         ];
 
-        Assert.Same(newest, keys.CurrentGeneration(KeyUsedFor.Encryption));
+        Assert.Same(newest, keys.CurrentVersion(KeyUsedFor.Encryption));
     }
 
     [Fact]
-    public void CurrentGeneration_ReturnsNull_ForMissingPurpose() =>
+    public void CurrentVersion_ReturnsNull_ForMissingPurpose() =>
         Assert.Null(
-            new List<UserAsymmetricKeyEntity> { Key(KeyUsedFor.Encryption, 1) }.CurrentGeneration(
+            new List<UserAsymmetricKeyEntity> { Key(KeyUsedFor.Encryption, 1) }.CurrentVersion(
                 KeyUsedFor.Signature
             )
         );
 
     [Fact]
-    public void NextGeneration_CountsOnlyThePurpose_ForMixedKeys()
+    public void NextVersion_CountsOnlyThePurpose_ForMixedKeys()
     {
         List<UserAsymmetricKeyEntity> keys =
         [
@@ -56,11 +56,11 @@ public class KeyEntityExtensionsTests
             Key(KeyUsedFor.Signature, 1),
         ];
 
-        Assert.Equal(3, keys.NextGeneration(KeyUsedFor.Encryption));
-        Assert.Equal(2, keys.NextGeneration(KeyUsedFor.Signature));
+        Assert.Equal(3, keys.NextVersion(KeyUsedFor.Encryption));
+        Assert.Equal(2, keys.NextVersion(KeyUsedFor.Signature));
     }
 
     [Fact]
-    public void NextGeneration_ReturnsOne_ForNoKeys() =>
-        Assert.Equal(1, new List<UserAsymmetricKeyEntity>().NextGeneration(KeyUsedFor.Signature));
+    public void NextVersion_ReturnsOne_ForNoKeys() =>
+        Assert.Equal(1, new List<UserAsymmetricKeyEntity>().NextVersion(KeyUsedFor.Signature));
 }

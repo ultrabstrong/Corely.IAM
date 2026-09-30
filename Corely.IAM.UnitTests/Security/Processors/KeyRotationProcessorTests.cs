@@ -110,7 +110,7 @@ public class KeyRotationProcessorTests
     }
 
     [Fact]
-    public async Task RotateCurrentUserKey_CreatesSecondGeneration_ForSymmetricEncryption()
+    public async Task RotateCurrentUserKey_CreatesSecondVersion_ForSymmetricEncryption()
     {
         var user = await CreateSignedInUserAsync();
 
@@ -122,13 +122,13 @@ public class KeyRotationProcessorTests
             .ListAsync(k => k.UserId == user.Id);
         var key = Assert.Single(created);
         Assert.Equal(KeyUsedFor.Encryption, key.KeyUsedFor);
-        Assert.Equal(2, key.Generation);
+        Assert.Equal(2, key.Version);
     }
 
     [Theory]
     [InlineData(KeyType.AsymmetricEncryption, KeyUsedFor.Encryption)]
     [InlineData(KeyType.AsymmetricSignature, KeyUsedFor.Signature)]
-    public async Task RotateCurrentUserKey_CreatesSecondGeneration_ForAsymmetricKeyType(
+    public async Task RotateCurrentUserKey_CreatesSecondVersion_ForAsymmetricKeyType(
         KeyType keyType,
         KeyUsedFor expectedUse
     )
@@ -143,7 +143,7 @@ public class KeyRotationProcessorTests
             .ListAsync(k => k.UserId == user.Id);
         var key = Assert.Single(created);
         Assert.Equal(expectedUse, key.KeyUsedFor);
-        Assert.Equal(2, key.Generation);
+        Assert.Equal(2, key.Version);
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public class KeyRotationProcessorTests
     }
 
     [Fact]
-    public async Task RotateAccountKey_CreatesSecondGeneration_ForSymmetricEncryption()
+    public async Task RotateAccountKey_CreatesSecondVersion_ForSymmetricEncryption()
     {
         var account = await CreateAccountAsync();
 
@@ -195,13 +195,13 @@ public class KeyRotationProcessorTests
             .GetRequiredService<IRepo<AccountSymmetricKeyEntity>>()
             .ListAsync(k => k.AccountId == account.Id);
         var key = Assert.Single(created);
-        Assert.Equal(2, key.Generation);
+        Assert.Equal(2, key.Version);
     }
 
     [Theory]
     [InlineData(KeyType.AsymmetricEncryption, KeyUsedFor.Encryption)]
     [InlineData(KeyType.AsymmetricSignature, KeyUsedFor.Signature)]
-    public async Task RotateAccountKey_CreatesSecondGeneration_ForAsymmetricKeyType(
+    public async Task RotateAccountKey_CreatesSecondVersion_ForAsymmetricKeyType(
         KeyType keyType,
         KeyUsedFor expectedUse
     )
@@ -218,7 +218,7 @@ public class KeyRotationProcessorTests
             .ListAsync(k => k.AccountId == account.Id);
         var key = Assert.Single(created);
         Assert.Equal(expectedUse, key.KeyUsedFor);
-        Assert.Equal(2, key.Generation);
+        Assert.Equal(2, key.Version);
     }
 
     [Fact]

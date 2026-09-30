@@ -8,8 +8,7 @@ public class AsymmetricKey
     public Guid Id { get; set; }
     public KeyUsedFor KeyUsedFor { get; set; }
     public string ProviderName { get; set; } = null!;
-    public int Version { get; set; }
-    public int Generation { get; set; } = 1;
+    public int Version { get; set; } = 1;
     public string PublicKey { get; set; } = null!;
     public ISymmetricEncryptedValue PrivateKey { get; set; } = null!;
     public DateTime CreatedUtc { get; set; }

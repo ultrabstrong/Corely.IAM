@@ -34,6 +34,7 @@ public class KeyRotationTests(IamScenario scenario) : IClassFixture<IamScenario>
         );
 
         Assert.Equal("kept", after.Decrypt(before));
+        Assert.Equal(2, after.Version);
         Assert.Contains(":2:", after.Encrypt("new"));
         Assert.Equal(
             [1, 2],

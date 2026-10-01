@@ -8,11 +8,13 @@ public class IamSymmetricEncryptionProvider(
     ISymmetricEncryptionProvider provider,
     ISymmetricKeyStoreProvider keyStore,
     string providerName,
-    ISymmetricEncryptionProviderFactory? decryptingProviders = null
+    ISymmetricEncryptionProviderFactory? decryptingProviders = null,
+    int version = 1
 ) : IIamSymmetricEncryptionProvider
 {
     public string ProviderName => providerName;
     public string ProviderDescription => provider.ProviderDescription;
+    public int Version => version;
 
     public string Encrypt(string plaintext) => provider.Encrypt(plaintext, keyStore);
 

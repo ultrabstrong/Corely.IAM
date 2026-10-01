@@ -11,11 +11,13 @@ public class IamAsymmetricSignatureProvider(
     IReadOnlyList<(
         IAsymmetricSignatureProvider Provider,
         IAsymmetricKeyStoreProvider KeyStore
-    )>? previousVersions = null
+    )>? previousVersions = null,
+    int version = 1
 ) : IIamAsymmetricSignatureProvider
 {
     public string ProviderName => providerName;
     public string ProviderDescription => provider.ProviderDescription;
+    public int Version => version;
 
     public string PublicKey => publicKey;
 

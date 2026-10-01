@@ -56,5 +56,5 @@ Profile passes `RotateKeyAsync` for the signed in user's keys. Account Detail pa
 - Copy buttons show a green checkmark for 1.5 seconds, then revert
 - Each tab operates independently with its own state
 - Error messages displayed as inline alerts
-- Provider name and description shown as badges
+- Provider name, the current key version and the provider description shown at the top of each tab
 - **Rotate key** asks for confirmation first, explaining that earlier ciphertext still decrypts and earlier signatures still verify, then reports success or the failure message

@@ -9,11 +9,13 @@ public class IamAsymmetricEncryptionProvider(
     IAsymmetricKeyStoreProvider keyStore,
     string providerName,
     string publicKey,
-    IAsymmetricEncryptionProviderFactory? decryptingProviders = null
+    IAsymmetricEncryptionProviderFactory? decryptingProviders = null,
+    int version = 1
 ) : IIamAsymmetricEncryptionProvider
 {
     public string ProviderName => providerName;
     public string ProviderDescription => provider.ProviderDescription;
+    public int Version => version;
 
     public string PublicKey => publicKey;
 

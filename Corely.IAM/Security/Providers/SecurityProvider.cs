@@ -182,7 +182,8 @@ internal class SecurityProvider(
             provider,
             keyStore,
             current.ProviderName,
-            _symmetricEncryptionProviderFactory
+            _symmetricEncryptionProviderFactory,
+            current.Version
         );
     }
 
@@ -208,7 +209,8 @@ internal class SecurityProvider(
             keyStore,
             current.ProviderName,
             current.PublicKey,
-            _asymmetricEncryptionProviderFactory
+            _asymmetricEncryptionProviderFactory,
+            current.Version
         );
     }
 
@@ -239,7 +241,8 @@ internal class SecurityProvider(
             keyStore,
             current.ProviderName,
             current.PublicKey,
-            previousVersions
+            previousVersions,
+            current.Version
         );
     }
 

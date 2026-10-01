@@ -246,6 +246,7 @@ public class SecurityProcessorTests
         var provider = _securityProcessor.BuildSymmetricEncryptionProvider([first, second]);
 
         Assert.Equal("old", provider.Decrypt(before));
+        Assert.Equal(2, provider.Version);
         Assert.Contains(":2:", provider.Encrypt("new"));
         Assert.Contains(":2:", provider.ReEncrypt(before));
         Assert.Equal("old", provider.Decrypt(provider.ReEncrypt(before)));
@@ -263,6 +264,7 @@ public class SecurityProcessorTests
 
         Assert.Equal("old", provider.Decrypt(before));
         Assert.Equal(second.PublicKey, provider.PublicKey);
+        Assert.Equal(2, provider.Version);
         Assert.Contains(":2:", provider.ReEncrypt(before));
     }
 
@@ -282,6 +284,8 @@ public class SecurityProcessorTests
         Assert.True(provider.Verify("payload", newSignature));
         Assert.False(firstOnly.Verify("payload", newSignature));
         Assert.Equal(second.PublicKey, provider.PublicKey);
+        Assert.Equal(2, provider.Version);
+        Assert.Equal(1, firstOnly.Version);
     }
 
     [Fact]

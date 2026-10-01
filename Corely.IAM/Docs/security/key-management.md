@@ -82,7 +82,7 @@ Account keys need Update permission on the account. User keys are a self operati
 
 ## Provider Interfaces
 
-All three provider interfaces follow a consistent pattern:
+All three provider interfaces follow a consistent pattern, and each has `Version`, the version of the key it encrypts or signs with:
 
 - **`IIamSymmetricEncryptionProvider`**: `Encrypt(string)`, `Decrypt(string)`, `ReEncrypt(string)`
 - **`IIamAsymmetricEncryptionProvider`**: `Encrypt(string)`, `Decrypt(string)`, `GetPublicKey()`

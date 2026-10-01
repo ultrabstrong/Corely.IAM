@@ -18,6 +18,18 @@ public class EncryptionSigningPanelTests : TestContext
     }
 
     [Fact]
+    public void Panel_ShowsTheCurrentKeyVersion()
+    {
+        _symProvider.Setup(x => x.Version).Returns(3);
+
+        var cut = Render<EncryptionSigningPanel>(p =>
+            p.Add(x => x.SymProvider, _symProvider.Object)
+        );
+
+        Assert.Contains("Version 3", cut.Markup);
+    }
+
+    [Fact]
     public void Panel_HidesRotate_WithoutRotateCallback()
     {
         var cut = Render<EncryptionSigningPanel>(p =>

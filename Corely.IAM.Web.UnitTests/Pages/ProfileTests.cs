@@ -51,10 +51,14 @@ public class ProfileTests : TestContext
         ComponentFactories.AddStub<LinkedAccountsSection>();
     }
 
-    private static IIamSymmetricEncryptionProvider SymmetricProvider(string description)
+    private static IIamSymmetricEncryptionProvider SymmetricProvider(
+        string description,
+        int version
+    )
     {
         var provider = new Mock<IIamSymmetricEncryptionProvider>();
         provider.Setup(x => x.ProviderName).Returns("AES");
+        provider.Setup(x => x.Version).Returns(version);
         provider.Setup(x => x.ProviderDescription).Returns(description);
         return provider.Object;
     }
@@ -82,7 +86,7 @@ public class ProfileTests : TestContext
                 new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
                     RetrieveResultCode.Success,
                     string.Empty,
-                    SymmetricProvider("version one"),
+                    SymmetricProvider("version one", 1),
                     null
                 )
             )
@@ -90,7 +94,7 @@ public class ProfileTests : TestContext
                 new RetrieveSingleResult<IIamSymmetricEncryptionProvider>(
                     RetrieveResultCode.Success,
                     string.Empty,
-                    SymmetricProvider("version two"),
+                    SymmetricProvider("version two", 2),
                     null
                 )
             );
@@ -119,7 +123,11 @@ public class ProfileTests : TestContext
             .ReturnsAsync(new ModifyResult(ModifyResultCode.Success, string.Empty));
 
         var cut = Render<Profile>();
-        cut.WaitForAssertion(() => Assert.Contains("version one", cut.Markup));
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("version one", cut.Markup);
+            Assert.Contains("Version 1", cut.Markup);
+        });
 
         cut.FindAll("button").Single(b => b.TextContent == "Rotate key").Click();
         cut.FindAll("button").Single(b => b.TextContent.Trim() == "Rotate").Click();
@@ -127,6 +135,7 @@ public class ProfileTests : TestContext
         cut.WaitForAssertion(() =>
         {
             Assert.Contains("version two", cut.Markup);
+            Assert.Contains("Version 2", cut.Markup);
             Assert.DoesNotContain("version one", cut.Markup);
         });
     }

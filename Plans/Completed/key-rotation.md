@@ -1,10 +1,9 @@
 # Rotate user and account keys
 
-**Status: built, not yet clicked through.** Built in a cloud session with every test tier green,
-including the provider matrix against the new migration. Before this moves to `Completed/`, click
-through Rotate key in the WebApp on Profile and on Account Detail: rotate each of the three keys,
-confirm text encrypted before still decrypts and a signature made before still verifies, and that
-you stay signed in after rotating your own signing key.
+**Status: done.** Released in Corely.IAM 2.4.0, Corely.IAM.Web 2.6.0 and the migration CLI 2.1.0,
+and taken by DocsToData, whose deploy now applies IAM's migrations. Clicked through in the WebApp:
+rotating each key, earlier ciphertext still decrypting, earlier signatures still verifying, staying
+signed in after rotating your own signing key, and the version badge moving from 1 to 2.
 
 ## The ask
 

@@ -143,7 +143,10 @@ else
     {
         var result = await ModificationService.RotateCurrentUserKeyAsync(keyType);
         if (result.ResultCode == ModifyResultCode.Success)
+        {
             await LoadKeyProvidersAsync();
+            StateHasChanged();
+        }
         return result;
     }
 

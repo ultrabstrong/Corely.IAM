@@ -9,6 +9,29 @@ Blazor Server host app for the Corely.IAM management portal.
 
 ## Setup
 
+One command, from the repository root, in PowerShell 7:
+
+```powershell
+.\Start-LocalStack.ps1
+```
+
+It creates `appsettings.json` for LocalDB with a fresh system key if there is none,
+starts LocalDB, builds, creates or migrates the database (finding the migration history in
+`__EFMigrationsHistory` on a database migrated before IAM had its own table), seeds the demo users
+into a new database, then runs the WebApp with its startup log visible and opens the browser. Sign in
+as `admin` / `Test1234`; every seeded demo user uses `Test1234`. Ctrl+C stops it.
+
+| Switch | Does |
+|--------|------|
+| `-Reset` | Drops the database first, so it is recreated and reseeded |
+| `-NoSeed` | Skips the demo seed |
+| `-NoRun` | Stops once the database is ready |
+
+The seed only runs against a database the script created, because registering a user that already
+exists fails. A database with data is migrated and left as it is.
+
+The steps it automates, for doing them by hand:
+
 **1. Generate a system encryption key**
 
 From the repo root:

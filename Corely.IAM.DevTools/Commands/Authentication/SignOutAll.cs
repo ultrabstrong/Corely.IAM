@@ -26,6 +26,9 @@ internal partial class Authentication : CommandBase
 
         protected override async Task ExecuteAsync()
         {
+            if (!await SetUserContextFromAuthTokenFileAsync(_authenticationService))
+                return;
+
             var currentContext = _userContextProvider.GetUserContext();
             var userId =
                 currentContext?.User?.Id

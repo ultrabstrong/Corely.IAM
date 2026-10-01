@@ -172,6 +172,29 @@ git push origin Corely.IAM-v2.3.2
 
 ## Running the WebApp Locally
 
+One command, from the repository root, in PowerShell 7:
+
+```powershell
+.\Start-LocalStack.ps1
+```
+
+It creates `Corely.IAM.WebApp/appsettings.json` for LocalDB with a fresh system key if there is none,
+starts LocalDB, builds, creates or migrates the database (finding the migration history in
+`__EFMigrationsHistory` on a database migrated before IAM had its own table), seeds the demo users
+into a new database, then runs the WebApp with its startup log visible and opens the browser. Sign in
+as `admin` / `Test1234`; every seeded demo user uses `Test1234`. Ctrl+C stops it.
+
+| Switch | Does |
+|--------|------|
+| `-Reset` | Drops the database first, so it is recreated and reseeded |
+| `-NoSeed` | Skips the demo seed |
+| `-NoRun` | Stops once the database is ready |
+
+The seed only runs against a database the script created, because registering a user that already
+exists fails. A database with data is migrated and left as it is.
+
+The steps it automates, for doing them by hand:
+
 ### Prerequisites
 
 1. **.NET 10.0 SDK**

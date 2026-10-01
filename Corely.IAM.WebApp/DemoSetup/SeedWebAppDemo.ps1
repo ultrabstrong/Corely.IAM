@@ -2,7 +2,8 @@
 param(
     [switch]$Resume,
     [string]$SeedRoot = (Join-Path $env:TEMP 'corely-webapp-demo'),
-    [string]$DeviceId = 'webapp-demo-seed'
+    [string]$DeviceId = 'webapp-demo-seed',
+    [string]$AuthTokenFile = (Join-Path $env:USERPROFILE 'Corely\corely-iam-auth-token.json')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -11,7 +12,6 @@ $ProgressPreference = 'SilentlyContinue'
 $seedRoot = $SeedRoot
 $requestsDir = Join-Path $seedRoot 'requests'
 $resultsDir = Join-Path $seedRoot 'results'
-$authTokenFile = Join-Path $env:USERPROFILE 'Corely\corely-iam-auth-token.json'
 $statePath = Join-Path $resultsDir 'state.json'
 
 if ((-not $Resume) -and (Test-Path $seedRoot)) {

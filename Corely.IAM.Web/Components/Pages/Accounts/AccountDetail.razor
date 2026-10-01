@@ -556,7 +556,10 @@ else
             new RotateAccountKeyRequest(Id, keyType)
         );
         if (result.ResultCode == ModifyResultCode.Success)
+        {
             await LoadKeyProvidersAsync();
+            StateHasChanged();
+        }
         return result;
     }
 

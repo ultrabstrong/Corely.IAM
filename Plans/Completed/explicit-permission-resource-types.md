@@ -18,6 +18,12 @@ What was built, beyond the plan below:
 - Regression tests proven: reintroducing full owner access to host types fails three
   `OwnerDefaultsTests`; disabling the coverage check fails eight `GrantOnlyWhatYouHoldTests`.
 - `MIGRATION-3.0.md` covers both phases and how to fix an existing database by hand.
+- Consumers moved: Corely.Billing.IAM and Corely.Billing.Web.IAM 2.0.0 (grant Read, consumption Read,
+  quota Read and Execute), then DocsToData. The DocsToData dev and local databases were fixed with an
+  idempotent script: 22 owner default rows on dev across two accounts, no `*` rows left. DocsToData's
+  local seed `iam.sql` was edited by hand to match, not regenerated.
+- Gap this opens in DocsToData: nobody can create grants outside system context. Recorded in
+  DocsToData's `Plans/New/operator-grant-provisioning.md`.
 
 ## The ask
 

@@ -17,6 +17,9 @@ public class UserProcessorAuthorizationDecoratorTests
     public UserProcessorAuthorizationDecoratorTests()
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.CanGrantRolesAsync(It.IsAny<IEnumerable<Guid>>()))
+            .ReturnsAsync(true);
         _mockAuthorizationProvider.Setup(x => x.HasUserContext()).Returns(true);
         _decorator = new UserProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
@@ -600,4 +603,27 @@ public class UserProcessorAuthorizationDecoratorTests
         Assert.Throws<ArgumentNullException>(() =>
             new UserProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
         );
+
+    [Fact]
+    public async Task AssignRolesToUser_RefusesWithoutCallingInner_ForUncoveredGrant()
+    {
+        var request = new AssignRolesToUserRequest([Guid.CreateVersion7()], Guid.CreateVersion7());
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>())
+            )
+            .ReturnsAsync(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.CanGrantRolesAsync(request.RoleIds))
+            .ReturnsAsync(false);
+
+        var result = await _decorator.AssignRolesToUserAsync(request);
+
+        Assert.Equal(AssignRolesToUserResultCode.UnauthorizedError, result.ResultCode);
+        Assert.Equal("Cannot grant permissions you do not hold", result.Message);
+        _mockInnerProcessor.Verify(
+            x => x.AssignRolesToUserAsync(It.IsAny<AssignRolesToUserRequest>()),
+            Times.Never
+        );
+    }
 }

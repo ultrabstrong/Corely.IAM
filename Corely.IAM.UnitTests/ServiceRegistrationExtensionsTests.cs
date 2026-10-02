@@ -8,6 +8,7 @@ using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Processors;
@@ -225,7 +226,6 @@ public class ServiceRegistrationExtensionsTests
     [InlineData(PermissionConstants.GROUP_RESOURCE_TYPE)]
     [InlineData(PermissionConstants.ROLE_RESOURCE_TYPE)]
     [InlineData(PermissionConstants.PERMISSION_RESOURCE_TYPE)]
-    [InlineData(PermissionConstants.ALL_RESOURCE_TYPES)]
     public void AddIAMServices_WithMockDb_ResourceTypeRegistry_ContainsIAMDefinedTypes(
         string resourceType
     )
@@ -245,7 +245,7 @@ public class ServiceRegistrationExtensionsTests
         var services = CreateServiceCollection();
         var options = IAMOptions
             .Create(_configuration, _securityConfigurationProvider)
-            .RegisterResourceType("invoice", "Invoices");
+            .RegisterResourceType("invoice", "Invoices", AuthAction.Read, AuthAction.Update);
 
         services.AddIAMServices(options);
         var serviceProvider = services.BuildServiceProvider();
@@ -256,6 +256,18 @@ public class ServiceRegistrationExtensionsTests
         Assert.NotNull(info);
         Assert.Equal("invoice", info.Name);
         Assert.Equal("Invoices", info.Description);
+        Assert.Equal([AuthAction.Read, AuthAction.Update], info.OwnerActions);
+    }
+
+    [Fact]
+    public void AddIAMServices_Throws_ForWildcardResourceType()
+    {
+        var services = CreateServiceCollection();
+        var options = IAMOptions
+            .Create(_configuration, _securityConfigurationProvider)
+            .RegisterResourceType("*", "Everything", AuthAction.Read);
+
+        Assert.Throws<ArgumentException>(() => services.AddIAMServices(options));
     }
 
     [Fact]

@@ -553,31 +553,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRole_Succeeds_WhenOwnerRoleAndNonOwnerSystemPermission()
-    {
-        var account = await CreateAccountAsync();
-        await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
-
-        var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
-        var ownerRole = await roleRepo.GetAsync(r =>
-            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
-        );
-
-        var permission = await CreatePermissionAsync(account.Id, isSystemDefined: true);
-
-        ownerRole!.Permissions = [permission];
-        await roleRepo.UpdateAsync(ownerRole);
-
-        var request = new RemovePermissionsFromRoleRequest([permission.Id], ownerRole.Id);
-        var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
-
-        Assert.Equal(RemovePermissionsFromRoleResultCode.Success, result.ResultCode);
-        Assert.Equal(1, result.RemovedPermissionCount);
-        Assert.Empty(result.SystemPermissionIds);
-    }
-
-    [Fact]
-    public async Task RemovePermissionsFromRole_Succeeds_WhenOwnerRoleAndMixedNonOwnerPermissions()
+    public async Task RemovePermissionsFromRole_RemovesOnlyOrdinaryRows_ForMixedPermissionsOnOwnerRole()
     {
         var account = await CreateAccountAsync();
         await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
@@ -599,13 +575,13 @@ public class RoleProcessorTests
         );
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
 
-        Assert.Equal(RemovePermissionsFromRoleResultCode.Success, result.ResultCode);
-        Assert.Equal(2, result.RemovedPermissionCount);
-        Assert.Empty(result.SystemPermissionIds);
+        Assert.Equal(RemovePermissionsFromRoleResultCode.PartialSuccess, result.ResultCode);
+        Assert.Equal(1, result.RemovedPermissionCount);
+        Assert.Equal([systemPermission.Id], result.SystemPermissionIds);
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRole_Fails_WhenOwnerRoleAndOwnerSystemPermission()
+    public async Task RemovePermissionsFromRole_Fails_ForSystemDefinedPermissionOnOwnerRole()
     {
         var account = await CreateAccountAsync();
         await _roleProcessor.CreateDefaultSystemRolesAsync(account.Id);
@@ -622,13 +598,9 @@ public class RoleProcessorTests
                 Id = Guid.CreateVersion7(),
                 AccountId = account.Id,
                 Account = new AccountEntity { Id = account.Id },
-                ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
+                ResourceType = "invoice",
                 ResourceId = Guid.Empty,
-                Create = true,
                 Read = true,
-                Update = true,
-                Delete = true,
-                Execute = true,
                 IsSystemDefined = true,
                 Roles = [new RoleEntity { Id = ownerRole!.Id }],
             }
@@ -649,7 +621,7 @@ public class RoleProcessorTests
     }
 
     [Fact]
-    public async Task RemovePermissionsFromRole_Succeeds_WhenNonOwnerRoleAndOwnerSystemPermission()
+    public async Task RemovePermissionsFromRole_Succeeds_ForSystemDefinedPermissionOnNonOwnerRole()
     {
         var account2 = await CreateAccountAsync();
 
@@ -662,7 +634,7 @@ public class RoleProcessorTests
                 Id = Guid.CreateVersion7(),
                 AccountId = account2.Id,
                 Account = new AccountEntity { Id = account2.Id },
-                ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
+                ResourceType = PermissionConstants.GROUP_RESOURCE_TYPE,
                 ResourceId = Guid.Empty,
                 Create = true,
                 Read = true,

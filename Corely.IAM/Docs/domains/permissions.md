@@ -10,12 +10,13 @@ CRUDX permission model scoped to a resource type and optional resource ID. Permi
 | `Description` | `string?` | Optional description |
 | `AccountId` | `Guid` | Owning account |
 | `ResourceType` | `string` | Resource type (see [Resource Types](../resource-types.md)) |
-| `ResourceId` | `Guid` | Specific resource ID, or `Guid.Empty` for wildcard |
+| `ResourceId` | `Guid` | Specific resource ID, or `Guid.Empty` for every resource of the type |
 | `Create` | `bool` | Create action granted |
 | `Read` | `bool` | Read action granted |
 | `Update` | `bool` | Update action granted |
 | `Delete` | `bool` | Delete action granted |
 | `Execute` | `bool` | Execute action granted |
+| `IsSystemDefined` | `bool` | An Owner role default; cannot be deleted or detached from the Owner role |
 | `Roles` | `List<ChildRef>?` | Roles that include this permission (hydrated) |
 
 ## CRUDX Model
@@ -30,11 +31,17 @@ Each permission grants one or more of five actions:
 | Delete | Remove entities |
 | Execute | Perform non-CRUD operations |
 
-## Wildcard Support
+## Resource Scope
 
-- **Resource type `"*"`**: grants the action on all resource types
+- **Resource type**: always exactly one type. There is no wildcard type, and `"*"` is rejected
 - **Resource ID `Guid.Empty`**: grants the action on all resources of the specified type
-- Combining both (`"*"` + `Guid.Empty`) grants full access for the specified actions
+
+## Granting
+
+Creating a permission succeeds only if the caller already holds every action it allows, on the same
+type, covering the same resource ID. Otherwise the result is `UnauthorizedError` with "Cannot grant
+permissions you do not hold". System context bypasses the rule. See
+[Granting](../authorization.md#granting).
 
 ## Effective Permission Tree
 
@@ -66,4 +73,5 @@ Retrieve effective permissions by passing `hydrate: true` to `IRetrievalService`
 | `CreatePermissionResultCode.Success` | Permission created |
 | `CreatePermissionResultCode.PermissionExistsError` | Duplicate resource type + ID in account |
 | `CreatePermissionResultCode.ValidationError` | Invalid resource type or no CRUDX flags |
+| `CreatePermissionResultCode.UnauthorizedError` | No permission to create permissions, or the caller does not hold what it grants |
 | `DeletePermissionResultCode.SystemDefinedPermissionError` | Cannot delete system permission |

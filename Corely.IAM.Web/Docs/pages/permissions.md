@@ -17,10 +17,12 @@ Permission table with search, sort, pagination, and create. CRUDX flags displaye
 **Authorization gates:**
 - `AuthAction.Create` + `PERMISSION_RESOURCE_TYPE`: Create button
 - `AuthAction.Delete` + `PERMISSION_RESOURCE_TYPE` + `ResourceIds: [permissionId]`: Delete button per row
+- System-defined permissions (the Owner role's defaults) show a System badge instead of Delete
 
 **Create form:**
-- **Resource Type**: `<select>` dropdown populated from `IResourceTypeRegistry` (excludes wildcard `"*"`)
-- **Resource ID**: text input for GUID; empty defaults to `Guid.Empty` (wildcard)
+- **Resource Type**: `<select>` dropdown populated from `IResourceTypeRegistry`
+- **Resource ID**: text input for GUID; empty defaults to `Guid.Empty` (all resources of the type)
+- Creating a permission the caller does not hold shows the refusal "Cannot grant permissions you do not hold"
 - **Description**: auto-populated from registry when resource type is selected (editable)
 - **CRUDX checkboxes**: five individual checkboxes
 
@@ -45,6 +47,7 @@ Read-only permission detail. Permissions are immutable after creation.
 
 **Authorization gates:**
 - `AuthAction.Delete` + `PERMISSION_RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete button
+- A system-defined permission shows a System badge and no Delete button
 
 **Behavior:**
 - No edit capability, because permissions are immutable (delete and recreate)

@@ -60,8 +60,8 @@ public static class ServiceRegistrationExtensions
             serviceCollection.AddSingleton(TimeProvider.System);
 
             var registry = new ResourceTypeRegistry();
-            foreach (var (name, description) in options.CustomResourceTypes)
-                registry.Register(name, description);
+            foreach (var type in options.CustomResourceTypes.Values)
+                registry.Register(type.Name, type.Description, type.OwnerActions);
             serviceCollection.AddSingleton<IResourceTypeRegistry>(registry);
 
             serviceCollection.AddValidatorsFromAssemblyContaining<FluentValidationProvider>(

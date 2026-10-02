@@ -35,11 +35,15 @@ The `Create()` overload without `efConfigFactory` registers in-memory mock repos
 
 ```csharp
 var options = IAMOptions.Create(configuration, securityConfigProvider, efConfigFactory)
-    .RegisterResourceType("invoice", "Customer invoices")
+    .RegisterResourceType("invoice", "Customer invoices", AuthAction.Read, AuthAction.Update)
     .RegisterResourceType("report", "Financial reports");
 ```
 
-Resource type names are case-insensitive. Duplicates (including case variants like `"Account"` and `"account"`) are silently overwritten with the latest value. IAM-defined types are pre-registered in the `IResourceTypeRegistry` and do not need to be added here.
+The actions after the description are what an account's Owner role gets on that type; none means
+the owner gets nothing on it. Resource type names are case-insensitive. Duplicates (including case
+variants like `"Invoice"` and `"invoice"`) are overwritten with the latest value. IAM-defined types
+are pre-registered in the `IResourceTypeRegistry` and do not need to be added here. See
+[Resource Types](resource-types.md).
 
 ### With Custom Crypto Algorithms
 
@@ -63,7 +67,7 @@ var options = IAMOptions.Create(configuration, securityConfigProvider, efConfigF
 
 | Method | Parameter | Default | Description |
 |--------|-----------|---------|-------------|
-| `RegisterResourceType` | `name`, `description` | none | Adds a custom resource type to the registry |
+| `RegisterResourceType` | `name`, `description`, `params ownerActions` | none | Adds a custom resource type to the registry, with the actions an account owner gets on it |
 | `UseSymmetricEncryption` | `code` | `AES_CODE` | Symmetric encryption algorithm |
 | `UseAsymmetricEncryption` | `code` | `RSA_CODE` | Asymmetric encryption algorithm |
 | `UseAsymmetricSignature` | `code` | `ECDSA_SHA256_CODE` | Asymmetric signature algorithm |

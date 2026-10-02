@@ -14,6 +14,7 @@ public class Permission
     public bool Update { get; set; }
     public bool Delete { get; set; }
     public bool Execute { get; set; }
+    public bool IsSystemDefined { get; internal set; }
     public List<ChildRef>? Roles { get; set; }
 
     public string DisplayName =>

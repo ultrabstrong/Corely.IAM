@@ -108,25 +108,42 @@ internal class RoleProcessorAuthorizationDecorator(
 
     public async Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(
         AssignPermissionsToRoleRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Update,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
-            request.RoleId
+    )
+    {
+        if (
+            !_authorizationProvider.HasAccountContext(request.AccountId)
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Update,
+                PermissionConstants.ROLE_RESOURCE_TYPE,
+                request.RoleId
+            )
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                [.. request.PermissionIds]
+            )
         )
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.PERMISSION_RESOURCE_TYPE,
-            [.. request.PermissionIds]
-        )
-            ? await _inner.AssignPermissionsToRoleAsync(request)
-            : new AssignPermissionsToRoleResult(
+        {
+            return new AssignPermissionsToRoleResult(
                 AssignPermissionsToRoleResultCode.UnauthorizedError,
                 $"Unauthorized to update role {request.RoleId} or read permissions",
                 0,
                 []
             );
+        }
+
+        if (!await _authorizationProvider.CanGrantPermissionsAsync(request.PermissionIds))
+        {
+            return new AssignPermissionsToRoleResult(
+                AssignPermissionsToRoleResultCode.UnauthorizedError,
+                "Cannot grant permissions you do not hold",
+                0,
+                []
+            );
+        }
+
+        return await _inner.AssignPermissionsToRoleAsync(request);
+    }
 
     public async Task<RemovePermissionsFromRoleResult> RemovePermissionsFromRoleAsync(
         RemovePermissionsFromRoleRequest request

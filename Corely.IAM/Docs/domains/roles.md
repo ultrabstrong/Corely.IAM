@@ -25,7 +25,9 @@ Named collection of permissions, scoped to an account. Roles can be assigned dir
 
 ## System-Defined Roles
 
-The **Owner Role** is created automatically when an account is registered. It has full CRUDX permissions on all resource types (wildcard). System-defined roles cannot be deleted or renamed.
+The **Owner Role** is created automatically when an account is registered. It holds one system-defined permission per resource type with owner actions: full CRUDX on the five IAM types, and what each host type registers (see [Resource Types](../resource-types.md)). Those permissions cannot be removed from it; other permissions can be added and removed as on any role. System-defined roles cannot be deleted or renamed.
+
+Attaching permissions to a role, and assigning roles to a user or a group, succeed only if the caller holds every permission handed out. Assigning the Owner role therefore needs everything it holds. See [Granting](../authorization.md#granting).
 
 ## Relationships
 

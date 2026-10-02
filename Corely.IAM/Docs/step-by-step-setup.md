@@ -63,10 +63,13 @@ Optionally register custom resource types or override crypto algorithms:
 
 ```csharp
 var options = IAMOptions.Create(builder.Configuration, securityConfigProvider, efConfig)
-    .RegisterResourceType("invoice", "Customer invoices")
+    .RegisterResourceType("invoice", "Customer invoices", AuthAction.Read, AuthAction.Update)
     .RegisterResourceType("report", "Financial reports")
     .UseSymmetricEncryption(SymmetricEncryptionConstants.AES_CODE);
 ```
+
+The actions after a type's description are what an account owner gets on it. A type registered with
+none gives the owner no access to it.
 
 See [IAMOptions Configuration](iam-options.md) for all options.
 

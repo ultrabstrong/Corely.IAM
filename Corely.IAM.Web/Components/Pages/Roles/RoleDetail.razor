@@ -97,9 +97,16 @@ else
                                 </td>
                                 <td class="table-actions cell-actions">
                                     <div class="row-actions">
-                                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemovePermission(permission.Id, permission.Name)" title="Remove"><i class="bi bi-trash"></i></button>
-                                        </PermissionView>
+                                        @if (_role.SystemDefinedPermissionIds.Contains(permission.Id))
+                                        {
+                                            <span class="sys-badge">System</span>
+                                        }
+                                        else
+                                        {
+                                            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemovePermission(permission.Id, permission.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                                            </PermissionView>
+                                        }
                                     </div>
                                 </td>
                             </tr>

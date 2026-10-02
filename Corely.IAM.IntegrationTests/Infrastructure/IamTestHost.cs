@@ -21,7 +21,7 @@ public sealed class IamTestHost : IDisposable
     public TestTimeProvider TimeProvider { get; } =
         new(new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
 
-    public IamTestHost()
+    public IamTestHost(Action<IAMOptions>? configureOptions = null)
     {
         _connection.Open();
 
@@ -49,6 +49,7 @@ public sealed class IamTestHost : IDisposable
             new TestSecurityConfigurationProvider(),
             _ => new SqliteEFConfiguration(_connection)
         );
+        configureOptions?.Invoke(options);
 
         services.AddIAMServices(options);
 

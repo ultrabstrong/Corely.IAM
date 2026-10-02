@@ -13,6 +13,8 @@ namespace Corely.IAM.IntegrationTests.Infrastructure;
 public sealed class IamScenario : IAsyncLifetime
 {
     public const string Password = "Test1234";
+    public const string INVOICE_RESOURCE_TYPE = "invoice";
+    public const string REPORT_RESOURCE_TYPE = "report";
 
     public IamTestHost Host { get; private set; } = null!;
 
@@ -39,7 +41,11 @@ public sealed class IamScenario : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        Host = new IamTestHost();
+        Host = new IamTestHost(options =>
+            options
+                .RegisterResourceType(INVOICE_RESOURCE_TYPE, "Invoices", AuthAction.Read)
+                .RegisterResourceType(REPORT_RESOURCE_TYPE, "Reports")
+        );
 
         OwnerUserId = await RegisterUserAsync(OwnerUsername);
         DirectMemberUserId = await RegisterUserAsync(DirectMemberUsername);

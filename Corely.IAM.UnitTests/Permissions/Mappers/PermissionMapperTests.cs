@@ -365,70 +365,91 @@ public class PermissionMapperTests
     [Fact]
     public void Allows_IsFalse_ForAnUnknownAction()
     {
-        var all = OwnerSystemPermission();
+        var all = EveryActionPermission();
 
         Assert.False(all.Allows((AuthAction)999));
     }
 
-    [Fact]
-    public void IsOwnerSystemPermission_IsTrue_ForSystemWildcardWithEveryAction()
-    {
-        Assert.True(OwnerSystemPermission().IsOwnerSystemPermission());
-    }
-
-    public static TheoryData<string> OwnerPermissionVariants() =>
-        [
-            "notSystem",
-            "resourceType",
-            "resourceId",
-            "create",
-            "read",
-            "update",
-            "delete",
-            "execute",
-        ];
-
     [Theory]
-    [MemberData(nameof(OwnerPermissionVariants))]
-    public void IsOwnerSystemPermission_IsFalse_WhenAnyPartDiffers(string variant)
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ToModel_CarriesIsSystemDefined_ForEitherValue(bool isSystemDefined)
     {
-        var p = OwnerSystemPermission();
-        switch (variant)
-        {
-            case "notSystem":
-                p.IsSystemDefined = false;
-                break;
-            case "resourceType":
-                p.ResourceType = "group";
-                break;
-            case "resourceId":
-                p.ResourceId = Guid.CreateVersion7();
-                break;
-            case "create":
-                p.Create = false;
-                break;
-            case "read":
-                p.Read = false;
-                break;
-            case "update":
-                p.Update = false;
-                break;
-            case "delete":
-                p.Delete = false;
-                break;
-            case "execute":
-                p.Execute = false;
-                break;
-        }
+        var entity = EveryActionPermission();
+        entity.IsSystemDefined = isSystemDefined;
 
-        Assert.False(p.IsOwnerSystemPermission());
+        Assert.Equal(isSystemDefined, entity.ToModel().IsSystemDefined);
     }
 
-    private static PermissionEntity OwnerSystemPermission() =>
+    [Fact]
+    public void IsCoveredBy_IsTrue_ForActionsSplitAcrossRows()
+    {
+        var grant = Grant(Guid.Empty, read: true, update: true);
+
+        Assert.True(
+            grant.IsCoveredBy([Grant(Guid.Empty, read: true), Grant(Guid.Empty, update: true)])
+        );
+    }
+
+    [Fact]
+    public void IsCoveredBy_IsTrue_ForSpecificIdUnderAllIds()
+    {
+        Assert.True(
+            Grant(Guid.CreateVersion7(), read: true).IsCoveredBy([Grant(Guid.Empty, read: true)])
+        );
+    }
+
+    [Fact]
+    public void IsCoveredBy_IsFalse_ForAllIdsUnderSpecificId()
+    {
+        Assert.False(
+            Grant(Guid.Empty, read: true).IsCoveredBy([Grant(Guid.CreateVersion7(), read: true)])
+        );
+    }
+
+    [Fact]
+    public void IsCoveredBy_IsFalse_ForAnotherResourceType()
+    {
+        var held = Grant(Guid.Empty, read: true);
+        held.ResourceType = PermissionConstants.ROLE_RESOURCE_TYPE;
+
+        Assert.False(Grant(Guid.Empty, read: true).IsCoveredBy([held]));
+    }
+
+    [Fact]
+    public void IsCoveredBy_IsFalse_ForAnActionNotHeld()
+    {
+        Assert.False(
+            Grant(Guid.Empty, read: true, delete: true).IsCoveredBy([Grant(Guid.Empty, read: true)])
+        );
+    }
+
+    [Fact]
+    public void IsCoveredBy_IsTrue_ForGrantWithNoActions()
+    {
+        Assert.True(Grant(Guid.Empty).IsCoveredBy([]));
+    }
+
+    private static PermissionEntity Grant(
+        Guid resourceId,
+        bool read = false,
+        bool update = false,
+        bool delete = false
+    ) =>
+        new()
+        {
+            ResourceType = PermissionConstants.GROUP_RESOURCE_TYPE,
+            ResourceId = resourceId,
+            Read = read,
+            Update = update,
+            Delete = delete,
+        };
+
+    private static PermissionEntity EveryActionPermission() =>
         new()
         {
             IsSystemDefined = true,
-            ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
+            ResourceType = PermissionConstants.GROUP_RESOURCE_TYPE,
             ResourceId = Guid.Empty,
             Create = true,
             Read = true,

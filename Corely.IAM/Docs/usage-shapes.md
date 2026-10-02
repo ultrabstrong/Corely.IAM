@@ -39,7 +39,8 @@ app deletes its own.
 ## One Shared Account
 
 The account is the team. Whoever creates it becomes its owner, holding the account's system-defined
-owner role (`RoleConstants.OWNER_ROLE_NAME`) and its wildcard permission:
+owner role (`RoleConstants.OWNER_ROLE_NAME`) and its owner defaults, full control of the account's
+users, groups, roles and permissions plus the owner actions each host type registers:
 
 ```csharp
 var account = await registrationService.RegisterAccountAsync(

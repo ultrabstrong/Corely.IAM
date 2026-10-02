@@ -15,6 +15,12 @@ public class GroupProcessorAuthorizationDecoratorTests
     public GroupProcessorAuthorizationDecoratorTests()
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.CanGrantRolesAsync(It.IsAny<IEnumerable<Guid>>()))
+            .ReturnsAsync(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.CanGrantGroupAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(true);
         _decorator = new GroupProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
             _mockAuthorizationProvider.Object
@@ -621,4 +627,50 @@ public class GroupProcessorAuthorizationDecoratorTests
         Assert.Throws<ArgumentNullException>(() =>
             new GroupProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
         );
+
+    [Fact]
+    public async Task AssignRolesToGroup_RefusesWithoutCallingInner_ForUncoveredGrant()
+    {
+        var request = new AssignRolesToGroupRequest([Guid.CreateVersion7()], Guid.CreateVersion7());
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>())
+            )
+            .ReturnsAsync(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.CanGrantRolesAsync(request.RoleIds))
+            .ReturnsAsync(false);
+
+        var result = await _decorator.AssignRolesToGroupAsync(request);
+
+        Assert.Equal(AssignRolesToGroupResultCode.UnauthorizedError, result.ResultCode);
+        Assert.Equal("Cannot grant permissions you do not hold", result.Message);
+        _mockInnerProcessor.Verify(
+            x => x.AssignRolesToGroupAsync(It.IsAny<AssignRolesToGroupRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task AddUsersToGroup_RefusesWithoutCallingInner_ForUncoveredGrant()
+    {
+        var request = new AddUsersToGroupRequest([Guid.CreateVersion7()], Guid.CreateVersion7());
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>())
+            )
+            .ReturnsAsync(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.CanGrantGroupAsync(request.GroupId))
+            .ReturnsAsync(false);
+
+        var result = await _decorator.AddUsersToGroupAsync(request);
+
+        Assert.Equal(AddUsersToGroupResultCode.UnauthorizedError, result.ResultCode);
+        Assert.Equal("Cannot grant permissions you do not hold", result.Message);
+        _mockInnerProcessor.Verify(
+            x => x.AddUsersToGroupAsync(It.IsAny<AddUsersToGroupRequest>()),
+            Times.Never
+        );
+    }
 }

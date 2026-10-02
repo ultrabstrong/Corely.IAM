@@ -28,9 +28,16 @@ else
         <div class="section-divider mb-4">
             <div class="section-divider-label">
                 Details
-                <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                    <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
-                </PermissionView>
+                @if (_permission.IsSystemDefined)
+                {
+                    <span class="sys-badge">System</span>
+                }
+                else
+                {
+                    <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                        <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
+                    </PermissionView>
+                }
             </div>
             <div class="props-grid">
                 <span class="prop-label">Resource Type</span>

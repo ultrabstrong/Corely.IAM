@@ -1,5 +1,6 @@
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Providers;
+using Corely.IAM.Security.Constants;
 
 namespace Corely.IAM.UnitTests.Permissions.Providers;
 
@@ -13,7 +14,6 @@ public class ResourceTypeRegistryTests
     [InlineData(PermissionConstants.GROUP_RESOURCE_TYPE, "Groups")]
     [InlineData(PermissionConstants.ROLE_RESOURCE_TYPE, "Roles")]
     [InlineData(PermissionConstants.PERMISSION_RESOURCE_TYPE, "Permissions")]
-    [InlineData(PermissionConstants.ALL_RESOURCE_TYPES, "All resource types (wildcard)")]
     public void Constructor_PreRegistersIAMType(string name, string expectedDescription)
     {
         var info = _registry.Get(name);
@@ -23,12 +23,32 @@ public class ResourceTypeRegistryTests
         Assert.Equal(expectedDescription, info.Description);
     }
 
+    [Theory]
+    [InlineData(PermissionConstants.ACCOUNT_RESOURCE_TYPE)]
+    [InlineData(PermissionConstants.USER_RESOURCE_TYPE)]
+    [InlineData(PermissionConstants.GROUP_RESOURCE_TYPE)]
+    [InlineData(PermissionConstants.ROLE_RESOURCE_TYPE)]
+    [InlineData(PermissionConstants.PERMISSION_RESOURCE_TYPE)]
+    public void Constructor_GivesOwnersEveryAction_ForIAMType(string name)
+    {
+        var info = _registry.Get(name);
+
+        Assert.NotNull(info);
+        Assert.Equal(Enum.GetValues<AuthAction>(), info.OwnerActions);
+    }
+
     [Fact]
-    public void GetAll_ReturnsAllRegisteredTypes()
+    public void GetAll_ReturnsOnlyTheFiveIAMTypes_ForNewRegistry()
     {
         var all = _registry.GetAll();
 
-        Assert.Equal(6, all.Count);
+        Assert.Equal(5, all.Count);
+    }
+
+    [Fact]
+    public void Exists_IsFalse_ForWildcard()
+    {
+        Assert.False(_registry.Exists("*"));
     }
 
     [Fact]
@@ -73,19 +93,40 @@ public class ResourceTypeRegistryTests
     [Fact]
     public void Register_AddsNewType()
     {
-        _registry.Register("invoice", "Customer invoices");
+        _registry.Register("invoice", "Customer invoices", []);
 
         var info = _registry.Get("invoice");
         Assert.NotNull(info);
         Assert.Equal("invoice", info.Name);
         Assert.Equal("Customer invoices", info.Description);
+        Assert.Empty(info.OwnerActions);
+    }
+
+    [Fact]
+    public void Register_StoresOwnerActionsOnce_ForRepeatedActions()
+    {
+        _registry.Register(
+            "invoice",
+            "Customer invoices",
+            [AuthAction.Read, AuthAction.Update, AuthAction.Read]
+        );
+
+        Assert.Equal([AuthAction.Read, AuthAction.Update], _registry.Get("invoice")!.OwnerActions);
+    }
+
+    [Fact]
+    public void Register_Throws_ForWildcard()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            _registry.Register("*", "Everything", [AuthAction.Read])
+        );
     }
 
     [Fact]
     public void Register_WithDuplicateName_ThrowsInvalidOperationException()
     {
         Assert.Throws<InvalidOperationException>(() =>
-            _registry.Register(PermissionConstants.ACCOUNT_RESOURCE_TYPE, "Duplicate")
+            _registry.Register(PermissionConstants.ACCOUNT_RESOURCE_TYPE, "Duplicate", [])
         );
     }
 
@@ -95,7 +136,7 @@ public class ResourceTypeRegistryTests
     [InlineData("aCCOUNT")]
     public void Register_WithCaseVariantDuplicate_ThrowsInvalidOperationException(string name)
     {
-        Assert.Throws<InvalidOperationException>(() => _registry.Register(name, "Duplicate"));
+        Assert.Throws<InvalidOperationException>(() => _registry.Register(name, "Duplicate", []));
     }
 
     [Theory]
@@ -104,7 +145,7 @@ public class ResourceTypeRegistryTests
     [InlineData("   ")]
     public void Register_WithNullOrWhitespaceName_ThrowsArgumentException(string? name)
     {
-        Assert.ThrowsAny<ArgumentException>(() => _registry.Register(name!, "Description"));
+        Assert.ThrowsAny<ArgumentException>(() => _registry.Register(name!, "Description", []));
     }
 
     [Theory]
@@ -115,6 +156,6 @@ public class ResourceTypeRegistryTests
         string? description
     )
     {
-        Assert.ThrowsAny<ArgumentException>(() => _registry.Register("custom", description!));
+        Assert.ThrowsAny<ArgumentException>(() => _registry.Register("custom", description!, []));
     }
 }

@@ -62,6 +62,7 @@ internal static class PermissionMapper
                 Update = entity.Update,
                 Delete = entity.Delete,
                 Execute = entity.Execute,
+                IsSystemDefined = entity.IsSystemDefined,
             };
         }
 
@@ -76,14 +77,17 @@ internal static class PermissionMapper
                 _ => false,
             };
 
-        public bool IsOwnerSystemPermission() =>
-            entity.IsSystemDefined
-            && entity.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
-            && entity.ResourceId == Guid.Empty
-            && entity.Create
-            && entity.Read
-            && entity.Update
-            && entity.Delete
-            && entity.Execute;
+        public bool IsCoveredBy(IEnumerable<PermissionEntity> held)
+        {
+            var covering = held.Where(h =>
+                    h.ResourceType == entity.ResourceType
+                    && (h.ResourceId == Guid.Empty || h.ResourceId == entity.ResourceId)
+                )
+                .ToList();
+
+            return Enum.GetValues<AuthAction>()
+                .Where(entity.Allows)
+                .All(action => covering.Any(h => h.Allows(action)));
+        }
     }
 }

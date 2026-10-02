@@ -13,3 +13,9 @@ DocsToData only owners hold them today, so nobody can use it yet.
 Phase 2 of `explicit-permission-resource-types.md` (grant only what you hold) would refuse the
 assignment, because the caller would not hold every permission of the Owner role. Whether that is the
 whole answer, or the Owner role needs a rule of its own, is for this plan to decide.
+
+**Update: phase 2 shipped in Corely.IAM 3.0.0, and the case is refused.**
+`GrantOnlyWhatYouHoldTests.Delegate_CannotAssignTheOwnerRole_ToThemselves` holds a member with
+`permission: C`, `role: U`, `user: U` and `group: U` and shows assigning the Owner role to themselves
+is refused. What remains open is only whether a member who does hold everything the Owner role holds
+should still be stopped from taking it; nothing here decides that.

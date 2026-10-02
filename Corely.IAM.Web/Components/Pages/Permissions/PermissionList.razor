@@ -87,9 +87,16 @@ else
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     <a href="@AppRoutes.Permissions/@perm.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
-                                    <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { perm.Id }">
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(perm.Id, perm.DisplayName)" title="Delete"><i class="bi bi-trash"></i></button>
-                                    </PermissionView>
+                                    @if (perm.IsSystemDefined)
+                                    {
+                                        <span class="sys-badge">System</span>
+                                    }
+                                    else
+                                    {
+                                        <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { perm.Id }">
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(perm.Id, perm.DisplayName)" title="Delete"><i class="bi bi-trash"></i></button>
+                                        </PermissionView>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -163,10 +170,7 @@ else
     {
         if (_resourceTypes.Count == 0)
         {
-            _resourceTypes = ResourceTypeRegistry
-                .GetAll()
-                .Where(rt => rt.Name != PermissionConstants.ALL_RESOURCE_TYPES)
-                .ToList();
+            _resourceTypes = ResourceTypeRegistry.GetAll();
         }
 
         FilterBuilder<Permission>? filter = null;

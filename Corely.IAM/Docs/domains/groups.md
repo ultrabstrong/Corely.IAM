@@ -24,6 +24,7 @@ Container for users and roles, scoped to an account. Groups provide indirect per
 - Deleting a group that contains the sole owner of an account is blocked (`GroupHasSoleOwnersError`)
 - Groups are the primary mechanism for bulk permission assignment
 - Permission inheritance: User ← Group ← Role ← Permission
+- Assigning roles to a group, and adding users to a group, succeed only if the caller holds every permission of those roles (or of every role of the group). Otherwise the result is `UnauthorizedError` with "Cannot grant permissions you do not hold". See [Granting](../authorization.md#granting)
 
 ## Result Codes
 

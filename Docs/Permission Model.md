@@ -8,10 +8,10 @@ Corely.IAM uses a **CRUDX permission model** (Create, Read, Update, Delete, Exec
 
 Each permission entity defines:
 - **AccountId**: permissions are always scoped to an account
-- **ResourceType**: the kind of resource (e.g., `"group"`, `"role"`, `"user"`, or `"*"` for all types)
-- **ResourceId**: a specific resource (`Guid`) or wildcard (`Guid.Empty` = all resources of this type)
+- **ResourceType**: exactly one kind of resource (e.g., `"group"`, `"role"`, `"user"`, or a type the host registers). There is no wildcard type
+- **ResourceId**: a specific resource (`Guid`) or `Guid.Empty` for all resources of this type
 - **CRUDX flags**: five booleans: `Create`, `Read`, `Update`, `Delete`, `Execute`
-- **IsSystemDefined**: protects default permissions from deletion
+- **IsSystemDefined**: marks the Owner role's defaults, which cannot be deleted or detached from it
 
 ## Uniqueness Constraint
 
@@ -90,31 +90,31 @@ The tree is **permission-rooted** (not user-rooted) because:
 
 If the tree were inverted (user as root, permissions as leaves), the same permission would appear multiple times across different role branches, producing redundant, non-distinct leaves.
 
-## Wildcard Dimensions
+## All Resources of a Type
 
-Permissions support two independent wildcard dimensions:
+`ResourceId = Guid.Empty` grants access to **all resources** of the permission's one type: read any
+group, for example. A permission never reaches another type.
 
-| Wildcard | Meaning | Example |
-|----------|---------|---------|
-| `ResourceId = Guid.Empty` | Access to **all resources** of this type | Read any group |
-| `ResourceType = "*"` | Access to **all resource types** | Read any resource of any type |
+## Owner Defaults
 
-These can combine: `ResourceType = "*"` + `ResourceId = Guid.Empty` = full access to everything (used by the default Owner permission).
+When an account is created, its Owner role receives one system-defined permission per resource type
+that declares owner actions:
 
-## Default System Permissions
+| Scope | CRUDX | Role |
+|-------|-------|------|
+| `account : all`, `user : all`, `group : all`, `role : all`, `permission : all` | ✓✓✓✓✓ | Owner Role |
+| `<host type> : all` | The owner actions the host registered for that type | Owner Role |
 
-Three system-defined permissions are created automatically for each account:
+A host type registered without owner actions gives the owner nothing on it.
 
-| Permission | Scope | CRUDX | Default Role |
-|------------|-------|-------|-------------|
-| Owner Role - Full access | `* : *` | ✓✓✓✓✓ | Owner Role |
-| Admin Role - Manage | `* : *` | ✓✓✓✗✓ | Admin Role |
-| Reader Role - Read only | `* : *` | ✗✓✗✗✗ | Reader Role |
+System-defined permissions cannot be deleted, and cannot be detached from the Owner role, so an
+account keeps an owner who can manage it. Every other permission on any role, the Owner role
+included, can be added and removed freely.
 
-System-defined permissions cannot be deleted (`IsSystemDefined = true`).
+## Granting
 
-### Protected Assignment
-
-The **Owner permission on the Owner Role** is the only protected role-permission assignment. It cannot be removed because doing so would leave the account without an owner, breaking the ownerless-account invariant that underpins authorization checks.
-
-All other system permission assignments, including Admin Role and Reader Role, can be removed and replaced with custom permissions. Consumers have full control over which permissions are attached to system-defined roles, with the single exception above.
+Nobody can hand out access beyond their own. Creating a permission, attaching permissions to a role,
+assigning roles to a user or a group, and adding users to a group succeed only if the caller holds
+every action handed out, on the same type, covering the same resource. Owners are bounded by their
+owner defaults; system context is not bounded. See
+[Authorization](../Corely.IAM/Docs/authorization.md#granting).

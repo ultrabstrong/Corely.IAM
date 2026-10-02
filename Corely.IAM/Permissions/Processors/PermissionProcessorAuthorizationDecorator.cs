@@ -16,20 +16,40 @@ internal class PermissionProcessorAuthorizationDecorator(
     private readonly IAuthorizationProvider _authorizationProvider =
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
 
-    public async Task<CreatePermissionResult> CreatePermissionAsync(
-        CreatePermissionRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.OwnerAccountId)
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Create,
-            PermissionConstants.PERMISSION_RESOURCE_TYPE
+    public async Task<CreatePermissionResult> CreatePermissionAsync(CreatePermissionRequest request)
+    {
+        if (
+            !_authorizationProvider.HasAccountContext(request.OwnerAccountId)
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Create,
+                PermissionConstants.PERMISSION_RESOURCE_TYPE
+            )
         )
-            ? await _inner.CreatePermissionAsync(request)
-            : new CreatePermissionResult(
+        {
+            return new CreatePermissionResult(
                 CreatePermissionResultCode.UnauthorizedError,
                 "Unauthorized to create permission",
                 Guid.Empty
             );
+        }
+
+        if (
+            !await _authorizationProvider.CanGrantAsync(
+                request.ResourceType,
+                request.ResourceId,
+                request.AllowedActions()
+            )
+        )
+        {
+            return new CreatePermissionResult(
+                CreatePermissionResultCode.UnauthorizedError,
+                "Cannot grant permissions you do not hold",
+                Guid.Empty
+            );
+        }
+
+        return await _inner.CreatePermissionAsync(request);
+    }
 
     public Task CreateDefaultSystemPermissionsAsync(Guid accountId) =>
         _inner.CreateDefaultSystemPermissionsAsync(accountId);

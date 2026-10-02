@@ -15,6 +15,11 @@ public class PermissionProcessorAuthorizationDecoratorTests
     public PermissionProcessorAuthorizationDecoratorTests()
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext(It.IsAny<Guid>())).Returns(true);
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.CanGrantAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<AuthAction[]>())
+            )
+            .ReturnsAsync(true);
         _decorator = new PermissionProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
             _mockAuthorizationProvider.Object
@@ -170,4 +175,32 @@ public class PermissionProcessorAuthorizationDecoratorTests
         Assert.Throws<ArgumentNullException>(() =>
             new PermissionProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
         );
+
+    [Fact]
+    public async Task CreatePermission_RefusesWithoutCallingInner_ForUncoveredGrant()
+    {
+        var request = new CreatePermissionRequest(
+            Guid.CreateVersion7(),
+            "invoice",
+            Guid.Empty,
+            Create: true
+        );
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>())
+            )
+            .ReturnsAsync(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.CanGrantAsync("invoice", Guid.Empty, new[] { AuthAction.Create }))
+            .ReturnsAsync(false);
+
+        var result = await _decorator.CreatePermissionAsync(request);
+
+        Assert.Equal(CreatePermissionResultCode.UnauthorizedError, result.ResultCode);
+        Assert.Equal("Cannot grant permissions you do not hold", result.Message);
+        _mockInnerProcessor.Verify(
+            x => x.CreatePermissionAsync(It.IsAny<CreatePermissionRequest>()),
+            Times.Never
+        );
+    }
 }

@@ -22,7 +22,7 @@ Top-level multi-tenant container. All groups, roles, permissions, and invitation
 
 ## Key Behaviors
 
-- Creating an account bootstraps an **Owner Role** with full CRUDX permissions on all resource types
+- Creating an account bootstraps an **Owner Role** with its owner defaults: full CRUDX on the five IAM types, and the owner actions registered for each host type (see [Resource Types](../resource-types.md))
 - The creating user is automatically added to the account and assigned the Owner role
 - Account deletion requires all M:M relationships to be manually cleared (SQL Server constraint)
 - Account name is the only mutable property

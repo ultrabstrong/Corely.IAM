@@ -1,4 +1,6 @@
 using Corely.DataAccess.EntityFramework.Configurations;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
 using Corely.Security.Encryption;
 using Corely.Security.Hashing;
@@ -29,7 +31,7 @@ public class IAMOptions
 
     internal string TokenHashCode { get; private set; } = HashConstants.SALTED_SHA256_CODE;
 
-    internal Dictionary<string, string> CustomResourceTypes { get; } =
+    internal Dictionary<string, ResourceTypeInfo> CustomResourceTypes { get; } =
         new(StringComparer.OrdinalIgnoreCase);
 
     private IAMOptions() { }
@@ -65,11 +67,16 @@ public class IAMOptions
         };
     }
 
-    public IAMOptions RegisterResourceType(string name, string description)
+    public IAMOptions RegisterResourceType(
+        string name,
+        string description,
+        params AuthAction[] ownerActions
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(description);
-        CustomResourceTypes[name] = description;
+        ArgumentNullException.ThrowIfNull(ownerActions);
+        CustomResourceTypes[name] = new ResourceTypeInfo(name, description, ownerActions);
         return this;
     }
 

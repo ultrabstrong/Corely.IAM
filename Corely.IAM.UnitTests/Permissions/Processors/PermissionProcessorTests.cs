@@ -5,8 +5,10 @@ using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
+using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Security.Constants;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
@@ -22,10 +24,15 @@ public class PermissionProcessorTests
 
     public PermissionProcessorTests()
     {
+        var registry = new ResourceTypeRegistry();
+        registry.Register("invoice", "Invoices", [AuthAction.Read, AuthAction.Update]);
+        registry.Register("report", "Reports", []);
+
         _permissionProcessor = new PermissionProcessor(
             _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>(),
             _serviceFactory.GetRequiredService<IRepo<RoleEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
+            registry,
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<ILogger<PermissionProcessor>>()
@@ -123,7 +130,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemPermissions_CreatesOnePermission()
+    public async Task CreateDefaultSystemPermissions_CreatesOneRowPerTypeWithOwnerActions_ForRegisteredTypes()
     {
         var account = await CreateAccountAsync();
         await CreateDefaultRolesAsync(account.Id);
@@ -132,21 +139,30 @@ public class PermissionProcessorTests
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var permissions = await permissionRepo.ListAsync(p => p.AccountId == account.Id);
-        Assert.Single(permissions);
+        Assert.Equal(
+            [
+                PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                PermissionConstants.GROUP_RESOURCE_TYPE,
+                "invoice",
+                PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                PermissionConstants.ROLE_RESOURCE_TYPE,
+                PermissionConstants.USER_RESOURCE_TYPE,
+            ],
+            permissions.Select(p => p.ResourceType).Order()
+        );
         Assert.All(
             permissions,
             p =>
             {
                 Assert.NotEqual(Guid.Empty, p.Id);
                 Assert.Equal(Guid.Empty, p.ResourceId);
-                Assert.Equal(PermissionConstants.ALL_RESOURCE_TYPES, p.ResourceType);
+                Assert.True(p.IsSystemDefined);
             }
         );
-        Assert.All(permissions, p => Assert.True(p.IsSystemDefined));
     }
 
     [Fact]
-    public async Task CreateDefaultSystemPermissions_CreatesOwnerPermission_WithFullAccess()
+    public async Task CreateDefaultSystemPermissions_GivesEveryAction_ForIAMTypes()
     {
         var account = await CreateAccountAsync();
         await CreateDefaultRolesAsync(account.Id);
@@ -155,15 +171,42 @@ public class PermissionProcessorTests
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var permissions = await permissionRepo.ListAsync(
-            p => p.AccountId == account.Id,
+            p => p.AccountId == account.Id && p.ResourceType != "invoice",
             include: q => q.Include(p => p.Roles)
         );
 
-        var ownerPermission = permissions.Single(p =>
-            p.Create && p.Read && p.Update && p.Delete && p.Execute
+        Assert.Equal(5, permissions.Count);
+        Assert.All(
+            permissions,
+            p =>
+            {
+                Assert.True(p.Create && p.Read && p.Update && p.Delete && p.Execute);
+                Assert.Contains(p.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+            }
         );
-        Assert.NotNull(ownerPermission);
-        Assert.Contains(ownerPermission.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+    }
+
+    [Fact]
+    public async Task CreateDefaultSystemPermissions_GivesOnlyRegisteredOwnerActions_ForHostType()
+    {
+        var account = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(account.Id);
+
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(account.Id);
+
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var invoice = await permissionRepo.GetAsync(
+            p => p.AccountId == account.Id && p.ResourceType == "invoice",
+            include: q => q.Include(p => p.Roles)
+        );
+
+        Assert.NotNull(invoice);
+        Assert.False(invoice.Create);
+        Assert.True(invoice.Read);
+        Assert.True(invoice.Update);
+        Assert.False(invoice.Delete);
+        Assert.False(invoice.Execute);
+        Assert.Contains(invoice.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
     }
 
     [Fact]
@@ -228,7 +271,7 @@ public class PermissionProcessorTests
             p.AccountId == account.Id && p.IsSystemDefined
         );
 
-        Assert.Single(systemPermissions);
+        Assert.Equal(6, systemPermissions.Count);
 
         foreach (var permission in systemPermissions)
         {

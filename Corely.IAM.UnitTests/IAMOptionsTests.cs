@@ -1,4 +1,5 @@
 using Corely.DataAccess.EntityFramework.Configurations;
+using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
 using Corely.Security.Encryption;
 using Corely.Security.Hashing;
@@ -102,7 +103,18 @@ public class IAMOptionsTests
         options.RegisterResourceType("invoice", "Customer invoices");
 
         Assert.True(options.CustomResourceTypes.ContainsKey("invoice"));
-        Assert.Equal("Customer invoices", options.CustomResourceTypes["invoice"]);
+        Assert.Equal("Customer invoices", options.CustomResourceTypes["invoice"].Description);
+        Assert.Empty(options.CustomResourceTypes["invoice"].OwnerActions);
+    }
+
+    [Fact]
+    public void RegisterResourceType_StoresOwnerActions_ForActionsGiven()
+    {
+        var options = IAMOptions.Create(_configuration, Mock.Of<ISecurityConfigurationProvider>());
+
+        options.RegisterResourceType("invoice", "Customer invoices", AuthAction.Read);
+
+        Assert.Equal([AuthAction.Read], options.CustomResourceTypes["invoice"].OwnerActions);
     }
 
     [Theory]
@@ -208,7 +220,7 @@ public class IAMOptionsTests
         options.RegisterResourceType("Invoice", "Updated");
 
         Assert.Single(options.CustomResourceTypes);
-        Assert.Equal("Updated", options.CustomResourceTypes["invoice"]);
+        Assert.Equal("Updated", options.CustomResourceTypes["invoice"].Description);
     }
 
     [Fact]

@@ -68,12 +68,7 @@ internal class AuthorizationProvider(
         var permissions = await GetPermissionsAsync();
 
         var relevantPermissions = permissions
-            .Where(p =>
-                (
-                    p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
-                    || p.ResourceType == resourceType
-                ) && p.Allows(action)
-            )
+            .Where(p => p.ResourceType == resourceType && p.Allows(action))
             .ToList();
 
         var hasWildcardPermission = relevantPermissions.Any(p => p.ResourceId == Guid.Empty);
@@ -208,18 +203,111 @@ internal class AuthorizationProvider(
             return null;
 
         var relevant = (await GetPermissionsAsync())
-            .Where(p =>
-                (
-                    p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
-                    || p.ResourceType == resourceType
-                ) && p.Allows(action)
-            )
+            .Where(p => p.ResourceType == resourceType && p.Allows(action))
             .ToList();
 
         if (relevant.Any(p => p.ResourceId == Guid.Empty))
             return null;
 
         return relevant.Select(p => p.ResourceId).ToHashSet();
+    }
+
+    public Task<bool> CanGrantAsync(
+        string resourceType,
+        Guid resourceId,
+        params AuthAction[] actions
+    )
+    {
+        var grant = new PermissionEntity
+        {
+            ResourceType = resourceType,
+            ResourceId = resourceId,
+            Create = actions.Contains(AuthAction.Create),
+            Read = actions.Contains(AuthAction.Read),
+            Update = actions.Contains(AuthAction.Update),
+            Delete = actions.Contains(AuthAction.Delete),
+            Execute = actions.Contains(AuthAction.Execute),
+        };
+        return CanGrantAllAsync(
+            _ => Task.FromResult<IReadOnlyList<PermissionEntity>>([grant]),
+            $"grant {resourceType}"
+        );
+    }
+
+    public Task<bool> CanGrantPermissionsAsync(IEnumerable<Guid> permissionIds)
+    {
+        var ids = permissionIds.ToList();
+        return CanGrantAllAsync(
+            async accountId =>
+                await _permissionRepo.ListAsync(p =>
+                    p.AccountId == accountId && ids.Contains(p.Id)
+                ),
+            "grant permissions"
+        );
+    }
+
+    public Task<bool> CanGrantRolesAsync(IEnumerable<Guid> roleIds)
+    {
+        var ids = roleIds.ToList();
+        return CanGrantAllAsync(
+            async accountId =>
+                await _permissionRepo.ListAsync(p =>
+                    p.AccountId == accountId && p.Roles!.Any(r => ids.Contains(r.Id))
+                ),
+            "grant roles"
+        );
+    }
+
+    public Task<bool> CanGrantGroupAsync(Guid groupId) =>
+        CanGrantAllAsync(
+            async accountId =>
+                await _permissionRepo.ListAsync(p =>
+                    p.AccountId == accountId
+                    && p.Roles!.Any(r => r.Groups!.Any(g => g.Id == groupId))
+                ),
+            $"grant the roles of group {groupId}"
+        );
+
+    private async Task<bool> CanGrantAllAsync(
+        Func<Guid, Task<IReadOnlyList<PermissionEntity>>> loadGrants,
+        string operation
+    )
+    {
+        if (!TryGetUserContext(out var userContext, operation))
+            return false;
+
+        if (userContext.IsSystemContext)
+            return true;
+
+        if (!TryGetUserId(userContext, operation, out var userId))
+            return false;
+
+        if (userContext.CurrentAccount is not { } account)
+        {
+            _logger.LogInformation(
+                "Authorization denied: User {UserId} has no current account to {Operation}",
+                userId,
+                operation
+            );
+            return false;
+        }
+
+        var grants = await loadGrants(account.Id);
+        var held = await GetPermissionsAsync();
+        var uncovered = grants.Where(g => !g.IsCoveredBy(held)).Select(g => g.Id).ToList();
+
+        if (uncovered.Count > 0)
+        {
+            _logger.LogInformation(
+                "Authorization denied: User {UserId} cannot {Operation}; it hands out permissions they do not hold {@UncoveredPermissionIds}",
+                userId,
+                operation,
+                uncovered
+            );
+            return false;
+        }
+
+        return true;
     }
 
     private bool IsCacheValidFor(Guid? accountId) =>

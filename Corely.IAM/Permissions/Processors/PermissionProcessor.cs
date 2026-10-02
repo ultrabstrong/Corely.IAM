@@ -6,8 +6,10 @@ using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Security.Constants;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +21,7 @@ internal class PermissionProcessor(
     IRepo<PermissionEntity> permissionRepo,
     IRepo<RoleEntity> roleRepo,
     IReadonlyRepo<AccountEntity> accountRepo,
+    IResourceTypeRegistry resourceTypeRegistry,
     IValidationProvider validationProvider,
     IUserContextProvider userContextProvider,
     ILogger<PermissionProcessor> logger
@@ -30,6 +33,9 @@ internal class PermissionProcessor(
     private readonly IRepo<RoleEntity> _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
     private readonly IReadonlyRepo<AccountEntity> _accountRepo = accountRepo.ThrowIfNull(
         nameof(accountRepo)
+    );
+    private readonly IResourceTypeRegistry _resourceTypeRegistry = resourceTypeRegistry.ThrowIfNull(
+        nameof(resourceTypeRegistry)
     );
     private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
         nameof(validationProvider)
@@ -114,21 +120,24 @@ internal class PermissionProcessor(
 
         PermissionEntity[] permissionEntities =
         [
-            new()
-            {
-                Id = Guid.CreateVersion7(),
-                AccountId = accountId,
-                ResourceType = PermissionConstants.ALL_RESOURCE_TYPES,
-                ResourceId = Guid.Empty,
-                Create = true,
-                Read = true,
-                Update = true,
-                Delete = true,
-                Execute = true,
-                Description = "Owner Role - Full access to all resources",
-                IsSystemDefined = true,
-                Roles = ownerRole != null ? [ownerRole] : [],
-            },
+            .. _resourceTypeRegistry
+                .GetAll()
+                .Where(t => t.OwnerActions.Count > 0)
+                .Select(t => new PermissionEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    AccountId = accountId,
+                    ResourceType = t.Name,
+                    ResourceId = Guid.Empty,
+                    Create = t.OwnerActions.Contains(AuthAction.Create),
+                    Read = t.OwnerActions.Contains(AuthAction.Read),
+                    Update = t.OwnerActions.Contains(AuthAction.Update),
+                    Delete = t.OwnerActions.Contains(AuthAction.Delete),
+                    Execute = t.OwnerActions.Contains(AuthAction.Execute),
+                    Description = $"Owner Role - {t.Description}",
+                    IsSystemDefined = true,
+                    Roles = ownerRole != null ? [ownerRole] : [],
+                }),
         ];
 
         await _permissionRepo.CreateAsync(permissionEntities);
@@ -204,10 +213,7 @@ internal class PermissionProcessor(
         var effectivePermissions = await _permissionRepo.QueryAsync(q =>
             q.Where(p =>
                     p.AccountId == accountId
-                    && (
-                        p.ResourceType == resourceType
-                        || p.ResourceType == PermissionConstants.ALL_RESOURCE_TYPES
-                    )
+                    && p.ResourceType == resourceType
                     && (p.ResourceId == resourceId || p.ResourceId == Guid.Empty)
                     && p.Roles!.Any(r =>
                         r.Users!.Any(u => u.Id == userId)

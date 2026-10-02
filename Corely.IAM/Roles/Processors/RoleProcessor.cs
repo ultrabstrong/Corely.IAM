@@ -209,6 +209,9 @@ internal class RoleProcessor(
                     ))
                     .ToList()
                 ?? [];
+            role.SystemDefinedPermissionIds =
+                roleEntity.Permissions?.Where(p => p.IsSystemDefined).Select(p => p.Id).ToHashSet()
+                ?? [];
         }
 
         return new GetResult<Role>(RetrieveResultCode.Success, string.Empty, role);
@@ -327,14 +330,12 @@ internal class RoleProcessor(
 
         if (roleEntity.IsSystemDefined && roleEntity.Name == RoleConstants.OWNER_ROLE_NAME)
         {
-            var ownerPermissions = permissionsToRemove
-                .Where(p => p.IsOwnerSystemPermission())
-                .ToList();
+            var ownerPermissions = permissionsToRemove.Where(p => p.IsSystemDefined).ToList();
             if (ownerPermissions.Count > 0)
             {
                 blockedSystemPermissionIds = [.. ownerPermissions.Select(p => p.Id)];
                 _logger.LogWarning(
-                    "Cannot remove owner system permission {@OwnerPermissionIds} from owner role {RoleId}",
+                    "Cannot remove owner system permissions {@OwnerPermissionIds} from owner role {RoleId}",
                     blockedSystemPermissionIds,
                     request.RoleId
                 );
@@ -343,17 +344,14 @@ internal class RoleProcessor(
                 {
                     return new RemovePermissionsFromRoleResult(
                         RemovePermissionsFromRoleResultCode.SystemPermissionRemovalError,
-                        "Cannot remove the owner system permission from the owner role.",
+                        "Cannot remove system-defined permissions from the owner role.",
                         0,
                         [],
                         blockedSystemPermissionIds
                     );
                 }
 
-                permissionsToRemove =
-                [
-                    .. permissionsToRemove.Where(p => !p.IsOwnerSystemPermission()),
-                ];
+                permissionsToRemove = [.. permissionsToRemove.Where(p => !p.IsSystemDefined)];
             }
         }
 

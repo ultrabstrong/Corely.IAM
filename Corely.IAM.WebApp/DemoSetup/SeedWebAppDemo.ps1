@@ -317,8 +317,6 @@ foreach ($resourceType in @('account', 'user', 'group', 'role', 'permission')) {
         $naPermissions += New-PermissionSpec -Description "$resourceType.$action" -ResourceType $resourceType -Action $action
     }
 }
-$naPermissions += New-PermissionSpec -Description 'all.read' -ResourceType '*' -Action 'read'
-$naPermissions += New-PermissionSpec -Description 'all.execute' -ResourceType '*' -Action 'execute'
 
 $accounts = @(
     [ordered]@{
@@ -355,8 +353,8 @@ $accounts = @(
             'Billing Manager' = @('account.read', 'account.update', 'user.read', 'permission.read', 'permission.update')
             'Fulfillment Lead' = @('account.read', 'user.read', 'user.update', 'group.read', 'group.update')
             'Content Editor' = @('account.read', 'group.read', 'role.read', 'role.update', 'permission.read', 'permission.update')
-            'Read Only Analyst' = @('account.read', 'user.read', 'group.read', 'role.read', 'permission.read', 'all.read')
-            'Security Auditor' = @('account.read', 'user.read', 'group.read', 'role.read', 'permission.read', 'all.read', 'all.execute')
+            'Read Only Analyst' = @('account.read', 'user.read', 'group.read', 'role.read', 'permission.read')
+            'Security Auditor' = @('account.read', 'user.read', 'group.read', 'role.read', 'permission.read', 'account.execute', 'user.execute', 'group.execute', 'role.execute', 'permission.execute')
             'Contractor Limited' = @('account.read', 'user.read', 'group.read')
         }
         GroupRoles = [ordered]@{
@@ -445,13 +443,12 @@ $accounts = @(
             New-PermissionSpec -Description 'group.read' -ResourceType 'group' -Action 'read'
             New-PermissionSpec -Description 'role.read' -ResourceType 'role' -Action 'read'
             New-PermissionSpec -Description 'permission.read' -ResourceType 'permission' -Action 'read'
-            New-PermissionSpec -Description 'all.read' -ResourceType '*' -Action 'read'
         )
         RolePermissions = [ordered]@{
-            'Account Admin' = @('account.read', 'user.read', 'user.update', 'group.read', 'role.read', 'permission.read', 'all.read')
+            'Account Admin' = @('account.read', 'user.read', 'user.update', 'group.read', 'role.read', 'permission.read')
             'Plant Supervisor' = @('account.read', 'user.read', 'user.update', 'group.read')
-            'QA Reviewer' = @('user.read', 'group.read', 'permission.read', 'all.read')
-            'Read Only Analyst' = @('account.read', 'user.read', 'group.read', 'role.read', 'permission.read', 'all.read')
+            'QA Reviewer' = @('user.read', 'group.read', 'permission.read')
+            'Read Only Analyst' = @('account.read', 'user.read', 'group.read', 'role.read', 'permission.read')
         }
         GroupRoles = [ordered]@{
             'Leadership' = @('Account Admin')

@@ -67,25 +67,42 @@ internal class UserProcessorAuthorizationDecorator(
 
     public async Task<AssignRolesToUserResult> AssignRolesToUserAsync(
         AssignRolesToUserRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Update,
-            PermissionConstants.USER_RESOURCE_TYPE,
-            request.UserId
+    )
+    {
+        if (
+            !_authorizationProvider.HasAccountContext(request.AccountId)
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Update,
+                PermissionConstants.USER_RESOURCE_TYPE,
+                request.UserId
+            )
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.ROLE_RESOURCE_TYPE,
+                [.. request.RoleIds]
+            )
         )
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
-            [.. request.RoleIds]
-        )
-            ? await _inner.AssignRolesToUserAsync(request)
-            : new AssignRolesToUserResult(
+        {
+            return new AssignRolesToUserResult(
                 AssignRolesToUserResultCode.UnauthorizedError,
                 $"Unauthorized to update user {request.UserId} or read roles",
                 0,
                 []
             );
+        }
+
+        if (!await _authorizationProvider.CanGrantRolesAsync(request.RoleIds))
+        {
+            return new AssignRolesToUserResult(
+                AssignRolesToUserResultCode.UnauthorizedError,
+                "Cannot grant permissions you do not hold",
+                0,
+                []
+            );
+        }
+
+        return await _inner.AssignRolesToUserAsync(request);
+    }
 
     public Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(
         Guid roleId,

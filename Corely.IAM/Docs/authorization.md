@@ -5,7 +5,8 @@ Two-layer authorization model with context validation at the service level and f
 ## Features
 
 - **CRUDX model**: five discrete actions per resource type: Create, Read, Update, Delete, Execute
-- **Wildcard support**: `"*"` matches all resource types; `Guid.Empty` matches all resources of a type
+- **Exact resource types**: every permission names the one type it grants; `Guid.Empty` as the resource ID covers all resources of that type
+- **Grant only what you hold**: nobody can hand out a permission, role or group membership beyond their own
 - **Two authorization layers**: services validate context, processors check permissions
 - **Self-ownership**: users can act on their own resources without explicit permission
 - **System context**: headless processes bypass permission checks while "self" operations are blocked
@@ -30,6 +31,11 @@ public enum AuthAction
 public interface IAuthorizationProvider
 {
     Task<bool> IsAuthorizedAsync(AuthAction action, string resourceType, params Guid[] resourceIds);
+    Task<IReadOnlySet<Guid>?> GetAuthorizedResourceIdsAsync(AuthAction action, string resourceType);
+    Task<bool> CanGrantAsync(string resourceType, Guid resourceId, params AuthAction[] actions);
+    Task<bool> CanGrantPermissionsAsync(IEnumerable<Guid> permissionIds);
+    Task<bool> CanGrantRolesAsync(IEnumerable<Guid> roleIds);
+    Task<bool> CanGrantGroupAsync(Guid groupId);
     bool IsNonSystemUserContext();
     bool IsAuthorizedForOwnUser(Guid requestUserId, bool suppressLog = true);
     bool HasUserContext();
@@ -40,6 +46,8 @@ public interface IAuthorizationProvider
 | Method | Purpose |
 |--------|---------|
 | `IsAuthorizedAsync` | Checks CRUDX permission for specific resource types and IDs. Returns `true` for system context. |
+| `GetAuthorizedResourceIdsAsync` | The resource IDs of one type the caller may act on; `null` means all of them. |
+| `CanGrantAsync` and the other `CanGrant` methods | Whether the caller holds everything a grant would hand out. See [Granting](#granting). Returns `true` for system context. |
 | `IsNonSystemUserContext` | Returns `true` if a real (non-system) user context is present. Used for "self" operations. |
 | `IsAuthorizedForOwnUser` | Checks if the request targets the current user. Returns `false` for system context. |
 | `HasUserContext` | Returns `true` if any user context is present (including system context). |
@@ -91,25 +99,23 @@ Permissions are scoped to resource types defined as string constants:
 | `GROUP_RESOURCE_TYPE` | `"group"` | Groups |
 | `ROLE_RESOURCE_TYPE` | `"role"` | Roles |
 | `PERMISSION_RESOURCE_TYPE` | `"permission"` | Permissions |
-| `ALL_RESOURCE_TYPES` | `"*"` | Wildcard: all resource types |
 
-See [Resource Types](resource-types.md) for custom type registration.
+See [Resource Types](resource-types.md) for custom type registration and the actions an account owner gets on each type.
 
-## Wildcard Permissions
+## All Resources of a Type
 
-Two levels of wildcard:
-
-- **Resource type wildcard** (`"*"`): grants access to all resource types for the specified action
-- **Resource ID wildcard** (`Guid.Empty`): grants access to all resources of the specified type
+A permission always names exactly one resource type. There is no wildcard type: a permission on
+`"invoice"` grants nothing on `"report"`, and `"*"` is rejected as a type name. The resource ID can
+cover every resource of that type:
 
 ```csharp
-// Permission with resource type "*" and ID Guid.Empty = full admin access for that action
+// Read every group in the account
 await registrationService.RegisterPermissionAsync(
     new RegisterPermissionRequest(
-        resourceType: PermissionConstants.ALL_RESOURCE_TYPES,
-        resourceId: Guid.Empty,
-        create: true, read: true, update: true, delete: true, execute: true,
-        description: "Full admin"));
+        accountId,
+        PermissionConstants.GROUP_RESOURCE_TYPE,
+        Guid.Empty,
+        Read: true));
 ```
 
 ## Permission Resolution
@@ -118,10 +124,43 @@ When `IsAuthorizedAsync` is called:
 
 1. Fetch all permissions for the current user (cached per account)
 2. Permissions come from roles assigned directly to the user OR through groups
-3. Filter by resource type (exact match OR wildcard `"*"`)
+3. Filter by resource type (exact match)
 4. Check the requested action flag (Create/Read/Update/Delete/Execute)
 5. If `resourceIds` are specified, ALL must have matching permissions
 6. `Guid.Empty` as a permission's resource ID grants access to all resources of that type
+
+## Granting
+
+Anyone who manages permissions, roles or memberships can hand out only what they already hold.
+Each of these operations succeeds only if the caller holds every action it would hand out, on the
+same resource type, covering the same resource ID:
+
+| Operation | Hands out |
+|-----------|-----------|
+| Create a permission | The permission in the request |
+| Attach permissions to a role | Those permissions |
+| Assign roles to a user or a group | Every permission of those roles |
+| Add users to a group | Every permission of every role of that group |
+
+A grant is covered when, for each action it allows, the caller holds a permission of the same
+type that allows that action, on `Guid.Empty` or on the grant's own resource ID. A grant on
+`Guid.Empty` is covered only by the caller's own `Guid.Empty`. Actions can come from different
+rows: Read from one permission and Update from another cover a grant of both.
+
+- **All or nothing.** If any part of a request is not covered, the whole request is refused with the
+  operation's `UnauthorizedError` and the message "Cannot grant permissions you do not hold".
+- **System context bypasses the rule**, as it bypasses every check. It is the path for a host to
+  provision access, such as a starter grant, that no user may hand out.
+- **Removals are unrestricted.** Detaching a permission, removing a role or removing a member only
+  reduces access.
+- **Owners are bounded by their owner defaults.** An owner can hand out anything within CRUDX on the
+  five IAM types and the owner actions registered for each host type.
+- **Delegation is safe.** A member given `permission: C`, `role: U` and `user: U` can manage access
+  without being able to exceed their own, and cannot assign the Owner role without holding
+  everything it holds.
+- **Existing rows are untouched.** The rule applies when a grant is made.
+- **The permission cache applies**: a caller who just lost a permission can still grant it until
+  their cache expires.
 
 ## Self-Ownership
 

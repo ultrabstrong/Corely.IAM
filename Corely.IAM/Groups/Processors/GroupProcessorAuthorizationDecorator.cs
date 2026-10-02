@@ -29,25 +29,42 @@ internal class GroupProcessorAuthorizationDecorator(
                 Guid.Empty
             );
 
-    public async Task<AddUsersToGroupResult> AddUsersToGroupAsync(AddUsersToGroupRequest request) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Update,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
-            request.GroupId
+    public async Task<AddUsersToGroupResult> AddUsersToGroupAsync(AddUsersToGroupRequest request)
+    {
+        if (
+            !_authorizationProvider.HasAccountContext(request.AccountId)
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Update,
+                PermissionConstants.GROUP_RESOURCE_TYPE,
+                request.GroupId
+            )
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.USER_RESOURCE_TYPE,
+                [.. request.UserIds]
+            )
         )
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
-            [.. request.UserIds]
-        )
-            ? await _inner.AddUsersToGroupAsync(request)
-            : new AddUsersToGroupResult(
+        {
+            return new AddUsersToGroupResult(
                 AddUsersToGroupResultCode.UnauthorizedError,
                 $"Unauthorized to update group {request.GroupId} or read users",
                 0,
                 []
             );
+        }
+
+        if (!await _authorizationProvider.CanGrantGroupAsync(request.GroupId))
+        {
+            return new AddUsersToGroupResult(
+                AddUsersToGroupResultCode.UnauthorizedError,
+                "Cannot grant permissions you do not hold",
+                0,
+                []
+            );
+        }
+
+        return await _inner.AddUsersToGroupAsync(request);
+    }
 
     public async Task<RemoveUsersFromGroupResult> RemoveUsersFromGroupAsync(
         RemoveUsersFromGroupRequest request
@@ -73,25 +90,42 @@ internal class GroupProcessorAuthorizationDecorator(
 
     public async Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(
         AssignRolesToGroupRequest request
-    ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Update,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
-            request.GroupId
+    )
+    {
+        if (
+            !_authorizationProvider.HasAccountContext(request.AccountId)
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Update,
+                PermissionConstants.GROUP_RESOURCE_TYPE,
+                request.GroupId
+            )
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                PermissionConstants.ROLE_RESOURCE_TYPE,
+                [.. request.RoleIds]
+            )
         )
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
-            [.. request.RoleIds]
-        )
-            ? await _inner.AssignRolesToGroupAsync(request)
-            : new AssignRolesToGroupResult(
+        {
+            return new AssignRolesToGroupResult(
                 AssignRolesToGroupResultCode.UnauthorizedError,
                 $"Unauthorized to update group {request.GroupId} or read roles",
                 0,
                 []
             );
+        }
+
+        if (!await _authorizationProvider.CanGrantRolesAsync(request.RoleIds))
+        {
+            return new AssignRolesToGroupResult(
+                AssignRolesToGroupResultCode.UnauthorizedError,
+                "Cannot grant permissions you do not hold",
+                0,
+                []
+            );
+        }
+
+        return await _inner.AssignRolesToGroupAsync(request);
+    }
 
     public async Task<RemoveRolesFromGroupResult> RemoveRolesFromGroupAsync(
         RemoveRolesFromGroupRequest request

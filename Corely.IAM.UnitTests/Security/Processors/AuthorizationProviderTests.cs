@@ -168,30 +168,27 @@ public class AuthorizationProviderTests
     }
 
     [Fact]
-    public async Task IsAuthorized_ReturnsTrue_WhenUserHasWildcardResourceTypePermission()
+    public async Task IsAuthorized_ReturnsFalse_ForStarTreatedAsAnOrdinaryType()
     {
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
-        await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.ALL_RESOURCE_TYPES,
-            resourceId: Guid.Empty,
-            create: true
-        );
+        await SetupTestPermissionDataAsync(resourceType: "*", resourceId: Guid.Empty, create: true);
 
-        Assert.True(
+        Assert.False(
             await provider.IsAuthorizedAsync(
                 AuthAction.Create,
                 PermissionConstants.GROUP_RESOURCE_TYPE
             )
         );
-        Assert.True(
+        Assert.False(
             await provider.IsAuthorizedAsync(
                 AuthAction.Create,
                 PermissionConstants.ROLE_RESOURCE_TYPE
             )
         );
-        Assert.True(
-            await provider.IsAuthorizedAsync(
+        Assert.Equal(
+            new HashSet<Guid>(),
+            await provider.GetAuthorizedResourceIdsAsync(
                 AuthAction.Create,
                 PermissionConstants.USER_RESOURCE_TYPE
             )

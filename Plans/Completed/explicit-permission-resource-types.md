@@ -1,6 +1,23 @@
 # Explicit permission resource types
 
-**Status: both phases designed. Build phase 1 first; phase 2 follows and ships as 3.0.0.**
+**Status: done. Both phases built together and released as one 3.0.0** (Corely.IAM, Corely.IAM.Web
+and the migration CLI), rather than a 2.5.0 preflight followed by 3.0.0: they were finished in one
+session, and one breaking release meant Corely.Billing and DocsToData moved once instead of twice.
+
+What was built, beyond the plan below:
+
+- `ResourceTypeInfo` carries `OwnerActions`; `IAMOptions.CustomResourceTypes` holds `ResourceTypeInfo`
+  values. `"*"` is rejected by the registry, so `AddIAMServices` throws for it.
+- `Role.SystemDefinedPermissionIds`, filled when a role is hydrated, is how the role page hides the
+  remove button for system-defined rows (role permissions are `ChildRef`s, which carry no flags).
+- `CreatePermissionRequest.AllowedActions()` hands the request's actions to `CanGrantAsync`.
+- A refused grant returns the operation's `UnauthorizedError` with the message "Cannot grant
+  permissions you do not hold", separate from the existing "Unauthorized to ..." message.
+- Two tests encoded the old rule (a system-defined row on the Owner role that is not the `*` row
+  could be removed); they now assert it is refused.
+- Regression tests proven: reintroducing full owner access to host types fails three
+  `OwnerDefaultsTests`; disabling the coverage check fails eight `GrantOnlyWhatYouHoldTests`.
+- `MIGRATION-3.0.md` covers both phases and how to fix an existing database by hand.
 
 ## The ask
 

@@ -1,0 +1,124 @@
+# Explicit permission resource types
+
+**Status: phase 1 planned, phase 2 not yet designed.**
+
+## The ask
+
+Every account's Owner role holds one system-defined permission on resource type `*`: CRUDX on every
+resource type, including types a host registers later. That makes the owner the owner of everything
+in the app, not just of IAM in their account. Corely.Billing's grants showed the cost: an owner can
+write their own grants because `*` covers a type IAM knows nothing about. A host's SFTP accounts would
+be the same: the owner should read and update them, while the host creates and deletes them.
+
+- **Phase 1:** remove the resource type wildcard. Every permission names the exact resource type it
+  grants, so no layer can be granted access by accident.
+- **Phase 2:** stop anyone who manages permissions from granting what they should not have. Removing
+  `*` does not do this on its own (see Phase 2).
+
+The resource id wildcard (`ResourceId == Guid.Empty`, every resource of one type) stays. It is scoped
+to a single type and is how the owner covers all groups, roles and so on.
+
+## What exists
+
+| Where | What it does with `*` |
+|-------|----------------------|
+| `PermissionConstants.ALL_RESOURCE_TYPES` | Defines `"*"` |
+| `ResourceTypeRegistry` | Pre-registers `"*"`, so `PermissionValidator` accepts it |
+| `PermissionProcessor.CreateDefaultSystemPermissionsAsync` | Gives the Owner role one `*` CRUDX permission at account registration |
+| `PermissionMapper.IsOwnerSystemPermission` | Identifies that one row; `RoleProcessor` uses it to refuse removing it from the Owner role |
+| `AuthorizationProvider.IsAuthorizedAsync`, `GetAuthorizedResourceIdsAsync` | Match a permission whose type is the requested type or `*` |
+| `PermissionProcessor.GetEffectivePermissionsForUserAsync` | Same match, for effective permissions shown to users |
+| `Corely.IAM.Web` `PermissionList.razor` | Hides `*` from the resource type dropdown |
+| `Corely.IAM.WebApp/DemoSetup/SeedWebAppDemo.ps1` | Seeds `all.read` and `all.execute` permissions on `*` |
+
+Outside this repository, anything that relies on the owner reaching its own types through `*` loses
+that access. Corely.Billing.IAM's grants are the known case; for grants that is the intended outcome.
+
+## Phase 1: remove the resource type wildcard
+
+### Decide before building
+
+1. **How a host's own resource types get owner defaults.** Without `*`, an owner holds nothing on a
+   host type until something grants it. Recommendation: `RegisterResourceType` takes the owner's
+   default actions, defaulting to none:
+
+   ```csharp
+   options.RegisterResourceType("sftp", "SFTP access", ownerActions: "cRUdX");
+   ```
+
+   IAM's own five types register with CRUDX the same way, so `CreateDefaultSystemPermissionsAsync`
+   builds the Owner role's permissions from the registry and nothing else.
+
+2. **Existing accounts.** A migration can replace each Owner role's `*` row with the five IAM type
+   rows, because IAM knows those types. It cannot know a host's types or their owner defaults.
+   Recommendation: a migration guide step, run once by the host after upgrading, that applies its
+   registered owner defaults to existing accounts. Whether that step is a service method or a CLI
+   command is open.
+
+3. **`*` permissions people created themselves.** Accounts can hold their own `*` rows (the demo seed
+   does). Recommendation: the migration expands each into one row per IAM type with the same actions
+   and role links. Nobody gains access; access to host types is lost, which the migration guide says.
+
+4. **Which owner permissions are system-defined.** Recommendation: all of them, IAM and host defaults
+   alike, so an owner cannot strip the Owner role and lock the account out. `IsOwnerSystemPermission`
+   becomes "a system-defined permission linked to the Owner role" rather than a match on `*`.
+
+5. **The constant.** Recommendation: delete `ALL_RESOURCE_TYPES` rather than mark it obsolete. This is
+   a major version, and a constant that still compiles invites the next caller to use it.
+
+### Changes
+
+- **Constant and registry:** delete `ALL_RESOURCE_TYPES` and its registry entry. `RegisterResourceType`
+  rejects `"*"`, so a host cannot bring it back. `PermissionValidator` then rejects `"*"` with no change
+  of its own, since the type is no longer registered.
+- **Owner defaults:** `CreateDefaultSystemPermissionsAsync` creates one system-defined permission per
+  registered type that has owner actions, each with `ResourceId = Guid.Empty`, linked to the Owner role.
+- **Authorization:** `AuthorizationProvider` and `GetEffectivePermissionsForUserAsync` match the exact
+  resource type only.
+- **Owner role guard:** `IsOwnerSystemPermission` and the `RoleProcessor` guard follow decision 4.
+- **Migration:** `AddMigration.ps1` for both providers, with provider specific SQL for decisions 2 and 3,
+  including the `RolePermissions` join rows.
+- **Corely.IAM.Web:** drop the `*` filter in `PermissionList.razor`.
+- **Demo seed:** replace the `*` permissions in `SeedWebAppDemo.ps1` with explicit types.
+
+### Tests
+
+- **Unit:** registry (no `*`, `RegisterResourceType("*")` rejected, owner actions stored), validator
+  rejects `"*"`, `CreateDefaultSystemPermissionsAsync` creates one row per type with owner actions,
+  `AuthorizationProvider` no longer treats `"*"` as matching every type, the Owner role guard.
+  Existing tests that use `ALL_RESOURCE_TYPES` are rewritten or removed:
+  `AuthorizationProviderTests`, `RoleProcessorTests`, `ResourceTypeRegistryTests`,
+  `PermissionProcessorTests`, `PermissionMapperTests`, `ServiceRegistrationExtensionsTests`.
+- **Integration:** an owner can manage every IAM type in their account and has no access to a
+  registered host type without owner actions; the migration's SQL expands `*` rows correctly on both
+  providers (provider matrix).
+- **Functional:** none expected; nothing in the HTTP pipeline changes.
+
+### Docs
+
+Remove the resource type wildcard from `Corely.IAM/Docs/authorization.md`, `resource-types.md`,
+`iam-options.md`, `usage-shapes.md`, `domains/permissions.md`, `domains/roles.md`, `domains/accounts.md`,
+`Corely.IAM.Web/Docs/pages/permissions.md` and `Docs/Permission Model.md`, and document owner actions on
+`RegisterResourceType`. A `MIGRATION-3.0.md` at the repository root covers decisions 2 and 3.
+
+### Release
+
+Breaking: `ALL_RESOURCE_TYPES` is removed and owners lose implicit access to host types. Corely.IAM
+3.0.0 and the migration CLI 3.0.0 (its major tracks IAM's). Corely.IAM.Web needs a major too, since it
+requires Corely.IAM 3.
+
+Phase 1 ships on its own, ahead of phase 2. It is a large change in its own right and does not depend
+on phase 2's design, so it goes out as a preflight release that hosts can absorb before the
+escalation rules land. The cost is that phase 2, if breaking, is a second major.
+
+## Phase 2: permission to manage permissions
+
+**Not yet designed.** The problem, as the code stands:
+
+- Creating a permission checks only Create on resource type `permission`
+  (`PermissionProcessorAuthorizationDecorator`). It never checks what the new permission grants.
+- Attaching permissions to a role checks Update on the role and Read on the permissions
+  (`RoleProcessorAuthorizationDecorator`).
+
+So anyone who can manage permissions and roles can write `grant: C`, or any other type, and attach it
+to their own role. Phase 1 makes the owner's starting point explicit; phase 2 has to make it a limit.

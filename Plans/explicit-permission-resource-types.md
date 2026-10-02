@@ -38,16 +38,25 @@ that access. Corely.Billing.IAM's grants are the known case; for grants that is 
 
 ### Decide before building
 
-1. **How a host's own resource types get owner defaults.** Without `*`, an owner holds nothing on a
-   host type until something grants it. Recommendation: `RegisterResourceType` takes the owner's
-   default actions, defaulting to none:
+1. **How a host's own resource types get owner defaults.** Decided: the host gives the owner's default
+   actions when it registers the type, defaulting to none:
 
    ```csharp
    options.RegisterResourceType("sftp", "SFTP access", ownerActions: "cRUdX");
    ```
 
-   IAM's own five types register with CRUDX the same way, so `CreateDefaultSystemPermissionsAsync`
-   builds the Owner role's permissions from the registry and nothing else.
+   IAM applies them to the Owner role only, and only when the account is created, inside the same
+   unit of work as the rest of account registration. IAM's own five types register with CRUDX the same
+   way, so `CreateDefaultSystemPermissionsAsync` builds the Owner role's permissions from the registry
+   and nothing else.
+
+   Anything beyond the owner's defaults stays with the host: other roles, a starter grant, or
+   permissions added later by an async process. The host does that under system context, since it is
+   a system concern rather than something the creating user does.
+
+   Considered and set aside: a host decorator on account registration that adds the owner's
+   permissions afterwards. It needs IAM's internals to find the Owner role, every host with its own
+   types writes the same code, and its rows cannot be system-defined.
 
 2. **Existing accounts.** A migration can replace each Owner role's `*` row with the five IAM type
    rows, because IAM knows those types. It cannot know a host's types or their owner defaults.
@@ -127,3 +136,15 @@ phase 2, so one guide covers the whole path from 2.4.
 
 So anyone who can manage permissions and roles can write `grant: C`, or any other type, and attach it
 to their own role. Phase 1 makes the owner's starting point explicit; phase 2 has to make it a limit.
+
+Phase 2 has two halves, whatever mechanism carries them:
+
+- an owner cannot create or attach a permission more permissive than what they hold;
+- an owner cannot delete or detach the permissions their role needs. Today only system-defined rows
+  are protected (decision 4 in phase 1); permissions a host adds later through system context are
+  not.
+
+Owner enforcement itself is keyed on the role, not on what its permissions contain: "an account keeps
+at least one owner" (`UserOwnershipProcessor`, `UserProcessor`, `GroupProcessor`) matches the Owner
+role by name and `IsSystemDefined`. The one check keyed on composition is
+`PermissionMapper.IsOwnerSystemPermission`, which phase 1 already replaces.

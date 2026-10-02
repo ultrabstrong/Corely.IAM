@@ -1,6 +1,6 @@
 # Explicit permission resource types
 
-**Status: phase 1 ready to build. Phase 2 agreed in principle; design detail before building.**
+**Status: both phases designed. Build phase 1 first; phase 2 follows and ships as 3.0.0.**
 
 ## The ask
 
@@ -159,8 +159,6 @@ The preflight is breaking despite its minor version: owners lose implicit access
 
 ## Phase 2: grant only what you hold
 
-**Agreed in principle. Design detail before building.**
-
 ### Every path that grants access today
 
 | Operation | Checks today | How it escalates |
@@ -171,20 +169,115 @@ The preflight is breaking despite its minor version: owners lose implicit access
 | Assign roles to a group | Update on the group, Read on the roles | The same, through a group the caller belongs to |
 | Add users to a group | Update on the group, Read on the users | Joins a group whose roles hold more than the caller |
 
-Invitations carry no role, so they are not on the list.
+Checked and not on the list: creating a role or a group carries no permissions or members
+(`CreateRoleRequest`, `CreateGroupRequest`); adding a user to an account and accepting an invitation
+give no roles; `AssignOwnerRolesToUserAsync` runs only inside account registration, for the user
+creating the account.
 
 ### The rule
 
 Each operation above succeeds only if the caller already holds every action it would hand out, on that
-resource type, covering that resource id. A caller's `Guid.Empty` covers any id; a specific id covers
-only itself. For role assignment and group membership, "what it hands out" is every permission of the
-roles involved. This is how Kubernetes RBAC and SQL's `WITH GRANT OPTION` work. System context bypasses
-it, as it bypasses every check. Removals (detaching a permission, removing a role or a member) only
-reduce access and get no new rule.
+resource type, covering that resource id. The caller's own permissions are the ones
+`AuthorizationProvider` already loads: every permission in the current account reached through the
+caller's roles and groups.
 
-Owners keep full control of their Owner role's non-system permissions: they can add and remove them,
-within the rule. The only restriction on the Owner role is the one phase 1 already enforces: its
-system-defined permissions cannot be removed.
+A grant is covered when, for each action it allows, the caller holds a permission that:
+
+- has the same resource type;
+- allows that action;
+- has `ResourceId == Guid.Empty`, or the same resource id as the grant. A grant on `Guid.Empty` is
+  covered only by the caller's own `Guid.Empty`.
+
+The actions can come from different rows: Read from one permission and Update from another covers a
+grant of Read and Update.
+
+What each operation hands out:
+
+| Operation | Hands out |
+|-----------|-----------|
+| Create a permission | The permission in the request |
+| Attach permissions to a role | Those permissions |
+| Assign roles to a user or a group | Every permission of those roles |
+| Add users to a group | Every permission of every role of that group |
+
+Behavior:
+
+- **All or nothing.** If any part of a request is not covered, the whole request is refused with the
+  operation's existing `UnauthorizedError`, as every authorization decorator already does. The message
+  says the caller cannot grant permissions they do not hold.
+- **System context bypasses the rule**, as it bypasses every check.
+- **Removals get no rule.** Detaching a permission, removing a role or removing a member only reduces
+  access. Existing guards stay: system-defined permissions cannot leave the Owner role, and an account
+  keeps at least one owner.
+- **Owners are bounded by their owner defaults.** An owner holds CRUDX on the five IAM types and the
+  registered owner actions for host types, so they can hand out anything within those. With `grant`
+  registered for Read only, an owner cannot create `grant: C`, attach it, or reach it through a role.
+  Owners keep full control of the Owner role's non-system permissions, within the rule.
+- **Delegation becomes safe.** Giving a member `permission: C`, `role: U` and `user: U` lets them manage
+  access without being able to exceed their own. That closes the gap in
+  `owner-role-self-assignment.md` as a side effect: assigning the Owner role needs every permission it
+  holds.
+- **Existing rows are untouched.** The rule applies to new grants only.
+- **The 30 second permission cache applies,** as it does to every check: a caller who just lost a
+  permission can still grant it until their cache expires.
+
+### Where it lives
+
+The check needs the permissions being handed out, which the decorators do not have: no authorization
+decorator touches a repository, and no processor uses `IAuthorizationProvider`. The provider already
+holds `IReadonlyRepo<PermissionEntity>` and the caller's permissions, so it does the loading:
+
+- **`PermissionMapper`:** `entity.IsCoveredBy(IEnumerable<PermissionEntity> held)`, the coverage rule
+  above as a pure extension, tested directly.
+- **`IAuthorizationProvider`**, one method per shape of grant:
+  - `CanGrantAsync(string resourceType, Guid resourceId, params AuthAction[] actions)`, for creating a
+    permission;
+  - `CanGrantPermissionsAsync(IEnumerable<Guid> permissionIds)`;
+  - `CanGrantRolesAsync(IEnumerable<Guid> roleIds)`, loading every permission linked to those roles;
+  - `CanGrantGroupAsync(Guid groupId)`, loading every permission linked to that group's roles.
+
+  Each returns true under system context and false with no user context. Each loads only rows in the
+  current account; an id from another account or one that does not exist hands out nothing, and the
+  processor rejects it as invalid, as it does today.
+- **The five authorization decorators** add one call each, after their existing checks:
+  `PermissionProcessorAuthorizationDecorator.CreatePermissionAsync`,
+  `RoleProcessorAuthorizationDecorator.AssignPermissionsToRoleAsync`,
+  `UserProcessorAuthorizationDecorator.AssignRolesToUserAsync`,
+  `GroupProcessorAuthorizationDecorator.AssignRolesToGroupAsync` and
+  `GroupProcessorAuthorizationDecorator.AddUsersToGroupAsync`.
+
+The services (`RegisterPermissionAsync`, `RegisterPermissionsWithRoleAsync`,
+`RegisterRolesWithUserAsync`, `RegisterRolesWithGroupAsync`, `RegisterUsersWithGroupAsync`) reach these
+through the decorated processors and need no change.
+
+**Corely.IAM.Web** needs no change. The pickers keep listing every permission and role in the account;
+choosing one the caller cannot grant shows the refusal message. Filtering the pickers to what the caller
+can grant is a later improvement, not part of this.
+
+### Tests
+
+- **Unit:** `IsCoveredBy` (actions split across rows, `Guid.Empty` covers a specific id, a specific id
+  does not cover `Guid.Empty`, another type never covers); each
+  `CanGrant` method (system context, no context, fully covered, partly covered, ids from another account
+  or missing); each of the five decorators refuses without calling the inner processor when the grant
+  is not covered, and calls it when it is.
+- **Integration (SQLite):** the role and group queries translate. A member holding `permission: C`,
+  `role: U`, `user: U` and `group: U` can hand out what they hold and nothing more, cannot assign the
+  Owner role, and cannot add themselves to a group holding more; an owner can do all of it within the
+  owner defaults; an owner with `grant` registered for Read only cannot create `grant: C`.
+- **Functional:** none; nothing in the HTTP pipeline changes.
+
+### Docs
+
+`Corely.IAM/Docs/authorization.md` gains a section on granting: the rule, what each operation hands
+out, and delegation. `domains/permissions.md`, `domains/roles.md` and `domains/groups.md` note the
+refusal on their grant operations. `MIGRATION-3.0.md` is completed: callers that relied on granting
+beyond their own permissions are refused, and system context is the path for host provisioning.
+
+### Release
+
+Corely.IAM 3.0.0, Corely.IAM.Web 3.0.0 and the migration CLI 3.0.0, per the phase 1 release table.
+No schema change and no data change.
 
 ### System-defined permissions
 

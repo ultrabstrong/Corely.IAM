@@ -71,7 +71,7 @@ Retrieve effective permissions by passing `hydrate: true` to `IRetrievalService`
 | Code | Meaning |
 |------|---------|
 | `CreatePermissionResultCode.Success` | Permission created |
-| `CreatePermissionResultCode.PermissionExistsError` | Duplicate resource type + ID in account |
+| `CreatePermissionResultCode.PermissionExistsError` | The account already has a permission with the same type, resource ID and actions. The message names it and gives its ID |
 | `CreatePermissionResultCode.ValidationError` | Invalid resource type or no CRUDX flags |
 | `CreatePermissionResultCode.UnauthorizedError` | No permission to create permissions, or the caller does not hold what it grants |
 | `DeletePermissionResultCode.SystemDefinedPermissionError` | Cannot delete system permission |

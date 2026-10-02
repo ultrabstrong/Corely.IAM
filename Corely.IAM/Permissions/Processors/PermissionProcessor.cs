@@ -65,15 +65,17 @@ internal class PermissionProcessor(
                 await q.Where(a => a.Id == permission.AccountId)
                     .Select(a => new
                     {
-                        PermissionExists = a.Permissions!.Any(p =>
-                            p.ResourceType == permission.ResourceType
-                            && p.ResourceId == permission.ResourceId
-                            && p.Create == permission.Create
-                            && p.Read == permission.Read
-                            && p.Update == permission.Update
-                            && p.Delete == permission.Delete
-                            && p.Execute == permission.Execute
-                        ),
+                        Existing = a.Permissions!.Where(p =>
+                                p.ResourceType == permission.ResourceType
+                                && p.ResourceId == permission.ResourceId
+                                && p.Create == permission.Create
+                                && p.Read == permission.Read
+                                && p.Update == permission.Update
+                                && p.Delete == permission.Delete
+                                && p.Execute == permission.Execute
+                            )
+                            .Select(p => new { p.Id, p.Description })
+                            .FirstOrDefault(),
                     })
                     .FirstOrDefaultAsync(ct)
         );
@@ -87,16 +89,17 @@ internal class PermissionProcessor(
             );
         }
 
-        if (check.PermissionExists)
+        if (check.Existing != null)
         {
             _logger.LogWarning(
-                "Permission already exists for {ResourceType} - {ResourceId}",
+                "Permission {PermissionId} already grants {ResourceType} - {ResourceId}",
+                check.Existing.Id,
                 permission.ResourceType,
                 permission.ResourceId
             );
             return new CreatePermissionResult(
                 CreatePermissionResultCode.PermissionExistsError,
-                $"Permission already exists for {permission.ResourceType} - {permission.ResourceId}",
+                $"You already have this permission: \"{check.Existing.Description ?? permission.DisplayName}\" ({check.Existing.Id})",
                 Guid.Empty
             );
         }
@@ -134,7 +137,7 @@ internal class PermissionProcessor(
                     Update = t.OwnerActions.Contains(AuthAction.Update),
                     Delete = t.OwnerActions.Contains(AuthAction.Delete),
                     Execute = t.OwnerActions.Contains(AuthAction.Execute),
-                    Description = $"Owner Role - {t.Description}",
+                    Description = t.Description,
                     IsSystemDefined = true,
                     Roles = ownerRole != null ? [ownerRole] : [],
                 }),

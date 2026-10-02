@@ -105,6 +105,58 @@ public class PermissionProcessorTests
     }
 
     [Fact]
+    public async Task CreatePermission_NamesExistingPermission_ForDuplicateWithDescription()
+    {
+        var account = await CreateAccountAsync();
+        var first = await _permissionProcessor.CreatePermissionAsync(
+            new CreatePermissionRequest(
+                account.Id,
+                PermissionConstants.GROUP_RESOURCE_TYPE,
+                Guid.Empty,
+                Read: true,
+                Description: "Read groups"
+            )
+        );
+        await AddPermissionToAccountAsync(first.CreatedId, account.Id);
+
+        var result = await _permissionProcessor.CreatePermissionAsync(
+            new CreatePermissionRequest(
+                account.Id,
+                PermissionConstants.GROUP_RESOURCE_TYPE,
+                Guid.Empty,
+                Read: true,
+                Description: "Another name"
+            )
+        );
+
+        Assert.Equal(
+            $"You already have this permission: \"Read groups\" ({first.CreatedId})",
+            result.Message
+        );
+    }
+
+    [Fact]
+    public async Task CreatePermission_NamesExistingPermission_ForDuplicateWithoutDescription()
+    {
+        var account = await CreateAccountAsync();
+        var request = new CreatePermissionRequest(
+            account.Id,
+            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Guid.Empty,
+            Read: true
+        );
+        var first = await _permissionProcessor.CreatePermissionAsync(request);
+        await AddPermissionToAccountAsync(first.CreatedId, account.Id);
+
+        var result = await _permissionProcessor.CreatePermissionAsync(request);
+
+        Assert.Equal(
+            $"You already have this permission: \"group - all cRudx\" ({first.CreatedId})",
+            result.Message
+        );
+    }
+
+    [Fact]
     public async Task CreatePermission_ReturnsCreatePermissionResult()
     {
         var account = await CreateAccountAsync();
@@ -207,6 +259,21 @@ public class PermissionProcessorTests
         Assert.False(invoice.Delete);
         Assert.False(invoice.Execute);
         Assert.Contains(invoice.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+    }
+
+    [Fact]
+    public async Task CreateDefaultSystemPermissions_DescribesTypeNotRole_ForEachRow()
+    {
+        var account = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(account.Id);
+
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(account.Id);
+
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var invoice = await permissionRepo.GetAsync(p =>
+            p.AccountId == account.Id && p.ResourceType == "invoice"
+        );
+        Assert.Equal("Invoices", invoice!.Description);
     }
 
     [Fact]

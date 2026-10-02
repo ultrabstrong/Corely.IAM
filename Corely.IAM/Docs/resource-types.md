@@ -43,8 +43,10 @@ latest value. A name already taken by a built-in type, or `"*"`, throws when ser
 
 When an account is created, its Owner role receives one system-defined permission per registered
 type that has owner actions, on `Guid.Empty` (every resource of the type), with exactly those
-actions. These rows cannot be deleted or detached from the Owner role, under system context or
-otherwise.
+actions, described by the type's description. These rows cannot be deleted or detached from the
+Owner role, under system context or otherwise. They are ordinary permissions in every other way:
+any role can be given the same row, and since a permission is unique on type, resource ID and
+actions, a role that needs exactly those actions shares it rather than getting a copy.
 
 Anything beyond the owner defaults is the host's to provision, under system context: other roles, a
 starter grant, or permissions added later. Changing a type's owner actions affects accounts created

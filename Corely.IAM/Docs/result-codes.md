@@ -111,7 +111,7 @@ Complete reference of all result code enums across Corely.IAM.
 | Code | Meaning |
 |------|---------|
 | `Success` | Permission created |
-| `PermissionExistsError` | Duplicate resource type + ID in account |
+| `PermissionExistsError` | The account already has a permission with the same type, resource ID and actions. The message names it and gives its ID |
 | `AccountNotFoundError` | Account not found |
 | `UnauthorizedError` | Insufficient permissions |
 | `ValidationError` | Invalid resource type or no CRUDX flags |

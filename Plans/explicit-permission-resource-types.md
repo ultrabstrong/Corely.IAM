@@ -162,7 +162,7 @@ or owners lose access to all six.
 - **Owner defaults:** `CreateDefaultSystemPermissionsAsync` becomes the idempotent operation in
   decision 2: one system-defined row per registered type with owner actions, `ResourceId = Guid.Empty`,
   linked to the Owner role, reusing identical rows per decision 6. Account registration calls it as
-  today; the system context method calls it per account.
+  today; the system context method calls it per account, one unit of work per account.
 - **Authorization:** `AuthorizationProvider.IsAuthorizedAsync`, `GetAuthorizedResourceIdsAsync` and
   `PermissionProcessor.GetEffectivePermissionsForUserAsync` match the exact resource type only.
 - **Owner role protection:** the Owner role's permissions stay protected three ways, now that there are
@@ -184,7 +184,11 @@ or owners lose access to all six.
   nothing it needs, and the `*` rows cannot be rebuilt faithfully anyway. Every existing migration
   implements `Down`, so throwing would block rolling back past this point. The migration guide says to
   back up first.
-- **Corely.IAM.Web:** drop the `*` filter in `PermissionList.razor`.
+- **Corely.IAM.Web:** drop the `*` filter in `PermissionList.razor`. The role page shows a remove
+  button on every permission; today the Owner role has one row whose removal fails, after phase 1 it
+  has five or more. Give `Permission` an `IsSystemDefined` with an internal setter, as `Role` already
+  has, and hide remove and delete for system-defined permissions, showing the same System badge roles
+  use.
 - **Demo seed:** replace the `*` permissions in `SeedWebAppDemo.ps1` with explicit types.
 
 ### Tests

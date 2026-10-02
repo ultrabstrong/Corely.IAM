@@ -91,7 +91,8 @@ Outside this repository, owners reach these host types only through `*` today:
 | DocsToData | `extraction`, `document_workflows`, `sftp` | `DocsToData.Core/Extensions/IAMOptionsExtensions.cs` |
 
 Each needs owner actions declared (questions 6 and 7) and existing accounts need the step in decision 2,
-or owners lose access to all six.
+or owners lose access to all six. Order: Corely.IAM 2.5.0, then a Corely.Billing release that takes it
+and declares Billing's owner actions, then DocsToData taking both.
 
 ## Phase 1: remove the resource type wildcard
 

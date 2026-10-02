@@ -160,14 +160,18 @@ the owner default it gives in `RegisterResourceType` (phase 1, decision 1), whic
 registration. There is no API to create or remove a system-defined permission, under system context or
 otherwise. Broader rules wait for a real use case.
 
-What follows from it:
+What follows from it, with the call on each:
 
-- Permissions a host adds to the Owner role later, under system context, are ordinary rows. Whether an
-  owner can detach them is the second half above, not a system-defined question.
-- A system-defined row cannot be revoked by anyone. A host that needs to take an owner capability away
-  later (a downgraded plan) gives it as an ordinary permission rather than an owner default.
-- Changing a type's owner default affects accounts created afterwards. Existing accounts keep the rows
-  they were created with.
+1. Permissions a host adds to the Owner role later, under system context, are ordinary rows. Whether an
+   owner can detach them is the second half above, not a system-defined question. This is a real hole
+   when a host adds a new feature to existing accounts; it is left for later and recorded in
+   `owner-defaults-after-account-creation.md`.
+2. A system-defined row cannot be revoked by anyone. A host that needs to take an owner capability away
+   later (a downgraded plan) gives it as an ordinary permission rather than an owner default. Accepted:
+   system-defined permissions have a very thin surface, and only the owner depends on them. Every other
+   member can be given roles and permissions that carry no system-defined rows at all.
+3. Changing a type's owner default affects accounts created afterwards. Existing accounts keep the rows
+   they were created with. Worth solving, not now; recorded in the same plan.
 
 Owner enforcement itself is keyed on the role, not on what its permissions contain: "an account keeps
 at least one owner" (`UserOwnershipProcessor`, `UserProcessor`, `GroupProcessor`) matches the Owner

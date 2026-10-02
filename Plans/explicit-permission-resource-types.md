@@ -155,15 +155,19 @@ Phase 2 has two halves, whatever mechanism carries them:
   are protected (decision 4 in phase 1); permissions a host adds later through system context are
   not.
 
-Protecting what the host adds to the Owner role. A host running under system context may add a
-permission to the Owner role after the account exists (an SFTP permission once provisioning finishes).
-To be protected like the defaults, it has to be system-defined, and today only IAM can create a
-system-defined permission: `CreatePermissionRequest` has no such field. Open questions:
+**Decided: system-defined stays locked down.** The only way a host gets a system-defined permission is
+the owner default it gives in `RegisterResourceType` (phase 1, decision 1), which IAM creates at account
+registration. There is no API to create or remove a system-defined permission, under system context or
+otherwise. Broader rules wait for a real use case.
 
-- Should system context be able to create a system-defined permission, while users are refused?
-- Should system context be able to remove one? Today nobody can, system context included, so a host
-  could never revoke what it added (a downgraded plan losing SFTP). One option: system context may
-  remove host type rows, and IAM's own five type rows stay irremovable for everyone.
+What follows from it:
+
+- Permissions a host adds to the Owner role later, under system context, are ordinary rows. Whether an
+  owner can detach them is the second half above, not a system-defined question.
+- A system-defined row cannot be revoked by anyone. A host that needs to take an owner capability away
+  later (a downgraded plan) gives it as an ordinary permission rather than an owner default.
+- Changing a type's owner default affects accounts created afterwards. Existing accounts keep the rows
+  they were created with.
 
 Owner enforcement itself is keyed on the role, not on what its permissions contain: "an account keeps
 at least one owner" (`UserOwnershipProcessor`, `UserProcessor`, `GroupProcessor`) matches the Owner

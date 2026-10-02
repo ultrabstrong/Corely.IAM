@@ -63,8 +63,9 @@ that access. Corely.Billing.IAM's grants are the known case; for grants that is 
    alike, so an owner cannot strip the Owner role and lock the account out. `IsOwnerSystemPermission`
    becomes "a system-defined permission linked to the Owner role" rather than a match on `*`.
 
-5. **The constant.** Recommendation: delete `ALL_RESOURCE_TYPES` rather than mark it obsolete. This is
-   a major version, and a constant that still compiles invites the next caller to use it.
+5. **The constant.** Recommendation: delete `ALL_RESOURCE_TYPES` in the preflight rather than mark it
+   obsolete. The preflight already breaks behavior, we are the only consumers, and a constant that still
+   compiles invites the next caller to use it.
 
 ### Changes
 
@@ -99,17 +100,21 @@ that access. Corely.Billing.IAM's grants are the known case; for grants that is 
 Remove the resource type wildcard from `Corely.IAM/Docs/authorization.md`, `resource-types.md`,
 `iam-options.md`, `usage-shapes.md`, `domains/permissions.md`, `domains/roles.md`, `domains/accounts.md`,
 `Corely.IAM.Web/Docs/pages/permissions.md` and `Docs/Permission Model.md`, and document owner actions on
-`RegisterResourceType`. A `MIGRATION-3.0.md` at the repository root covers decisions 2 and 3.
+`RegisterResourceType`. `MIGRATION-3.0.md` at the repository root covers decisions 2 and 3 (see Release).
 
 ### Release
 
-Breaking: `ALL_RESOURCE_TYPES` is removed and owners lose implicit access to host types. Corely.IAM
-3.0.0 and the migration CLI 3.0.0 (its major tracks IAM's). Corely.IAM.Web needs a major too, since it
-requires Corely.IAM 3.
+One major for the whole change, not one per phase. We are the only consumers, so the breaking parts of
+phase 1 ship in a minor:
 
-Phase 1 ships on its own, ahead of phase 2. It is a large change in its own right and does not depend
-on phase 2's design, so it goes out as a preflight release that hosts can absorb before the
-escalation rules land. The cost is that phase 2, if breaking, is a second major.
+| Release | Corely.IAM | Migration CLI | Corely.IAM.Web |
+|---------|-----------|---------------|----------------|
+| Phase 1 (preflight) | 2.5.0 | 2.2.0 | 2.7.0 |
+| Phase 2 (final) | 3.0.0 | 3.0.0 | 3.0.0 |
+
+The preflight is breaking despite its minor version: owners lose implicit access to host types, and
+`*` rows are migrated away. `MIGRATION-3.0.md` is started with the preflight and completed with
+phase 2, so one guide covers the whole path from 2.4.
 
 ## Phase 2: permission to manage permissions
 

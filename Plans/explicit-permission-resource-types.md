@@ -85,7 +85,18 @@ that access. Corely.Billing.IAM's grants are the known case; for grants that is 
   registered type that has owner actions, each with `ResourceId = Guid.Empty`, linked to the Owner role.
 - **Authorization:** `AuthorizationProvider` and `GetEffectivePermissionsForUserAsync` match the exact
   resource type only.
-- **Owner role guard:** `IsOwnerSystemPermission` and the `RoleProcessor` guard follow decision 4.
+- **Owner role protection:** today the Owner role's one permission is protected three ways, and phase 1
+  keeps all three while there are several rows instead of one:
+
+  | Path | Today | Phase 1 |
+  |------|-------|---------|
+  | Delete the permission | `PermissionProcessor.DeletePermissionAsync` refuses any system-defined permission | Unchanged |
+  | Detach it from the Owner role | `RoleProcessor.RemovePermissionsFromRoleAsync` refuses `IsOwnerSystemPermission`, a match on the `*` row's exact makeup | Refuses any system-defined permission linked to the Owner role; `IsOwnerSystemPermission` goes |
+  | Weaken it in place | Not possible: there is no operation that updates a permission's actions | Unchanged |
+
+  These guards sit in the processors, not the authorization decorators, so they hold against system
+  context too. Deleting, renaming or emptying the Owner role itself is already refused
+  (`RoleProcessor` refuses changes to system-defined roles).
 - **Migration:** `AddMigration.ps1` for both providers, with provider specific SQL for decisions 2 and 3,
   including the `RolePermissions` join rows.
 - **Corely.IAM.Web:** drop the `*` filter in `PermissionList.razor`.
@@ -143,6 +154,16 @@ Phase 2 has two halves, whatever mechanism carries them:
 - an owner cannot delete or detach the permissions their role needs. Today only system-defined rows
   are protected (decision 4 in phase 1); permissions a host adds later through system context are
   not.
+
+Protecting what the host adds to the Owner role. A host running under system context may add a
+permission to the Owner role after the account exists (an SFTP permission once provisioning finishes).
+To be protected like the defaults, it has to be system-defined, and today only IAM can create a
+system-defined permission: `CreatePermissionRequest` has no such field. Open questions:
+
+- Should system context be able to create a system-defined permission, while users are refused?
+- Should system context be able to remove one? Today nobody can, system context included, so a host
+  could never revoke what it added (a downgraded plan losing SFTP). One option: system context may
+  remove host type rows, and IAM's own five type rows stay irremovable for everyone.
 
 Owner enforcement itself is keyed on the role, not on what its permissions contain: "an account keeps
 at least one owner" (`UserOwnershipProcessor`, `UserProcessor`, `GroupProcessor`) matches the Owner

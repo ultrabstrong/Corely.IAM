@@ -46,7 +46,7 @@ Domain/
 - **Result pattern**: all operations return typed result objects with result codes, not exceptions
 - **Account scoping**: groups, roles, permissions, and invitations are scoped to an account via `AccountId`
 - **M:M relationships**: use explicit join entities with `DeleteBehavior.NoAction` (SQL Server constraint)
-- **ChildRef**: lightweight `record ChildRef(Guid Id, string Name)` used in hydrated collections
+- **ChildRef**: lightweight `record ChildRef(Guid Id, string Name, bool IsSystemDefined = false)` used in hydrated collections. `IsSystemDefined` is set for roles and permissions; users, groups and accounts leave it false
 - **Constants**: `SCREAMING_SNAKE_CASE`, defined in `Constants/` folder per domain
 
 ## Topics

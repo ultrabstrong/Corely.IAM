@@ -577,7 +577,9 @@ internal class GroupProcessor(
         if (hydrate)
         {
             group.Users = groupEntity.Users?.Select(u => new ChildRef(u.Id, u.Username)).ToList();
-            group.Roles = groupEntity.Roles?.Select(r => new ChildRef(r.Id, r.Name)).ToList();
+            group.Roles = groupEntity
+                .Roles?.Select(r => new ChildRef(r.Id, r.Name, r.IsSystemDefined))
+                .ToList();
         }
 
         return new GetResult<Group>(RetrieveResultCode.Success, string.Empty, group);

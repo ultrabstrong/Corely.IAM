@@ -22,7 +22,7 @@ Role table with search, sort, pagination, and create/delete operations. System-d
 
 ## RoleDetail (`/roles/{Id:guid}`)
 
-Role properties with permission assignment. System-defined roles are read-only.
+Role properties with permission assignment. A system-defined role's name and description are read-only; its permissions can still be added and removed.
 
 **Base class**: `EntityDetailPageBase`
 
@@ -33,11 +33,12 @@ Role properties with permission assignment. System-defined roles are read-only.
 - **System role badge**: displayed for system-defined roles
 
 **Authorization gates:**
-- `AuthAction.Update` + `ROLE_RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit, Add Permissions, Remove Permission (hidden for system roles)
+- `AuthAction.Update` + `ROLE_RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit (hidden for system roles), Add Permissions, Remove Permission
 - `AuthAction.Delete` + `ROLE_RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete button (hidden for system roles)
 
 **Behavior:**
 - Edit/delete disabled when `IsSystemDefined = true`
 - Loads with `hydrate: true` for permissions relation
 - Uses `RegisterPermissionsWithRoleAsync()` for bulk permission assignment
+- On the Owner role, a system-defined permission (one of the owner defaults) shows a System badge instead of Remove; `ChildRef.IsSystemDefined` says which
 - Delete redirects to `/roles`

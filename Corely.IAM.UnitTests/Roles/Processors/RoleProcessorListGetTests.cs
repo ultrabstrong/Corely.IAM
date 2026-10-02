@@ -223,6 +223,42 @@ public class RoleProcessorListGetTests
     }
 
     [Fact]
+    public async Task GetRoleById_CarriesIsSystemDefined_ForHydratedPermissions()
+    {
+        var (role, account) = await CreateRoleAsync();
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var system = await permissionRepo.CreateAsync(
+            new PermissionEntity
+            {
+                Id = Guid.CreateVersion7(),
+                AccountId = account.Id,
+                ResourceType = "user",
+                ResourceId = Guid.Empty,
+                Read = true,
+                IsSystemDefined = true,
+            }
+        );
+        var custom = await permissionRepo.CreateAsync(
+            new PermissionEntity
+            {
+                Id = Guid.CreateVersion7(),
+                AccountId = account.Id,
+                ResourceType = "group",
+                ResourceId = Guid.Empty,
+                Read = true,
+            }
+        );
+        role.Permissions = [system, custom];
+        await _serviceFactory.GetRequiredService<IRepo<RoleEntity>>().UpdateAsync(role);
+
+        var result = await _roleProcessor.GetRoleByIdAsync(role.Id, hydrate: true);
+
+        Assert.NotNull(result.Data?.Permissions);
+        Assert.True(result.Data.Permissions.Single(p => p.Id == system.Id).IsSystemDefined);
+        Assert.False(result.Data.Permissions.Single(p => p.Id == custom.Id).IsSystemDefined);
+    }
+
+    [Fact]
     public async Task GetRoleById_ReturnsNotFoundWhenRoleBelongsToDifferentAccount()
     {
         await CreateRoleAsync("ScopedRole");

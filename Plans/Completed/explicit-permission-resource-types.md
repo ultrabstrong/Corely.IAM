@@ -8,8 +8,9 @@ What was built, beyond the plan below:
 
 - `ResourceTypeInfo` carries `OwnerActions`; `IAMOptions.CustomResourceTypes` holds `ResourceTypeInfo`
   values. `"*"` is rejected by the registry, so `AddIAMServices` throws for it.
-- `Role.SystemDefinedPermissionIds`, filled when a role is hydrated, is how the role page hides the
-  remove button for system-defined rows (role permissions are `ChildRef`s, which carry no flags).
+- `ChildRef` carries `IsSystemDefined` (3.1.0), which is how the role page hides the remove button
+  for the Owner role's system-defined rows. 3.0.0 shipped `Role.SystemDefinedPermissionIds` for this
+  instead; 3.1.0 removed it.
 - `CreatePermissionRequest.AllowedActions()` hands the request's actions to `CanGrantAsync`.
 - A refused grant returns the operation's `UnauthorizedError` with the message "Cannot grant
   permissions you do not hold", separate from the existing "Unauthorized to ..." message.

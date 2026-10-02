@@ -97,7 +97,7 @@ else
                                 </td>
                                 <td class="table-actions cell-actions">
                                     <div class="row-actions">
-                                        @if (_role.SystemDefinedPermissionIds.Contains(permission.Id))
+                                        @if (permission.IsSystemDefined && _role.IsSystemDefined && _role.Name == Corely.IAM.Roles.Constants.RoleConstants.OWNER_ROLE_NAME)
                                         {
                                             <span class="sys-badge">System</span>
                                         }

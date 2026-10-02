@@ -18,7 +18,7 @@ dotnet tool install --global Corely.IAM.DataAccessMigrations.Cli
 
 The command is `corely-iam-db`.
 
-The tool's major version tracks the library's: **CLI 2.x targets Corely.IAM 2.x**. Minor and patch
+The tool's major version tracks the library's: **CLI 3.x targets Corely.IAM 3.x**. Minor and patch
 versions move independently, since most IAM releases add no migrations.
 
 ## Configuration

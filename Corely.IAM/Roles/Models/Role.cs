@@ -13,6 +13,4 @@ public class Role
     public List<ChildRef>? Users { get; set; }
     public List<ChildRef>? Groups { get; set; }
     public List<ChildRef>? Permissions { get; set; }
-    public IReadOnlySet<Guid> SystemDefinedPermissionIds { get; internal set; } =
-        new HashSet<Guid>();
 }

@@ -563,7 +563,7 @@ internal class UserProcessor(
                 .ToList();
             user.Roles = userEntity
                 .Roles?.Where(r => currentAccountId == null || r.AccountId == currentAccountId)
-                .Select(r => new ChildRef(r.Id, r.Name))
+                .Select(r => new ChildRef(r.Id, r.Name, r.IsSystemDefined))
                 .ToList();
         }
 

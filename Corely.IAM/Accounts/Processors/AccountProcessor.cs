@@ -469,12 +469,15 @@ internal class AccountProcessor(
                 .Users?.Select(u => new ChildRef(u.Id, u.Username))
                 .ToList();
             account.Groups = accountEntity.Groups?.Select(g => new ChildRef(g.Id, g.Name)).ToList();
-            account.Roles = accountEntity.Roles?.Select(r => new ChildRef(r.Id, r.Name)).ToList();
+            account.Roles = accountEntity
+                .Roles?.Select(r => new ChildRef(r.Id, r.Name, r.IsSystemDefined))
+                .ToList();
             account.Permissions = accountEntity
                 .Permissions?.Select(p => new ChildRef(
                     p.Id,
                     p.Description
-                        ?? $"{p.ResourceType} - {(p.ResourceId == Guid.Empty ? "all" : p.ResourceId)} {PermissionLabelProvider.GetCrudxLabel(p.Create, p.Read, p.Update, p.Delete, p.Execute)}"
+                        ?? $"{p.ResourceType} - {(p.ResourceId == Guid.Empty ? "all" : p.ResourceId)} {PermissionLabelProvider.GetCrudxLabel(p.Create, p.Read, p.Update, p.Delete, p.Execute)}",
+                    p.IsSystemDefined
                 ))
                 .ToList();
         }

@@ -49,8 +49,8 @@ lose access until the data is fixed. No migration ships with the library. For ea
    so reuse a row that already exists rather than inserting a duplicate.
 3. Delete the `"*"` rows.
 
-`ResourceTypeInfo` gains `OwnerActions`, and `Permission` gains `IsSystemDefined`. `Role` gains
-`SystemDefinedPermissionIds` when hydrated.
+`ResourceTypeInfo` gains `OwnerActions`, and `Permission` gains `IsSystemDefined`. `ChildRef` gains
+`IsSystemDefined`, set for the roles and permissions in hydrated collections.
 
 ## Grant only what you hold
 

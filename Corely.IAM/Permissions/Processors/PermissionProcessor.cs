@@ -196,7 +196,7 @@ internal class PermissionProcessor(
         if (hydrate && permissionEntity.Roles != null)
         {
             permission.Roles = permissionEntity
-                .Roles.Select(r => new ChildRef(r.Id, r.Name))
+                .Roles.Select(r => new ChildRef(r.Id, r.Name, r.IsSystemDefined))
                 .ToList();
         }
 

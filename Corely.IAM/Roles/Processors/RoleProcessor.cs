@@ -205,12 +205,10 @@ internal class RoleProcessor(
                     .Permissions?.Select(p => new ChildRef(
                         p.Id,
                         p.Description
-                            ?? $"{p.ResourceType} - {(p.ResourceId == Guid.Empty ? "all" : p.ResourceId)} {PermissionLabelProvider.GetCrudxLabel(p.Create, p.Read, p.Update, p.Delete, p.Execute)}"
+                            ?? $"{p.ResourceType} - {(p.ResourceId == Guid.Empty ? "all" : p.ResourceId)} {PermissionLabelProvider.GetCrudxLabel(p.Create, p.Read, p.Update, p.Delete, p.Execute)}",
+                        p.IsSystemDefined
                     ))
                     .ToList()
-                ?? [];
-            role.SystemDefinedPermissionIds =
-                roleEntity.Permissions?.Where(p => p.IsSystemDefined).Select(p => p.Id).ToHashSet()
                 ?? [];
         }
 

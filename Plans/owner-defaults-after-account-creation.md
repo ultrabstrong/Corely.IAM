@@ -24,7 +24,6 @@ removed by anyone.
 
 - A way to apply the current owner defaults to existing accounts, as system-defined rows, run by the
   host on purpose. It has to be a service method: the migration CLI never sees a host's registered
-  types. Phase 1 of `explicit-permission-resource-types.md` proposes exactly this as its step for
-  existing accounts (add only, idempotent). If that is accepted, the first gap above is closed and only
-  the second remains.
+  types. Phase 1 of `explicit-permission-resource-types.md` does not build one; its only existing
+  database is fixed by hand.
 - Whether a changed default narrows existing rows, or only ever adds.

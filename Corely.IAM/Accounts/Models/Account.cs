@@ -1,4 +1,4 @@
-﻿using Corely.IAM.Models;
+using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 
 namespace Corely.IAM.Accounts.Models;
@@ -7,6 +7,7 @@ public class Account
 {
     public Guid Id { get; init; }
     public string AccountName { get; init; } = null!;
+    public bool IsPlatformAccount { get; init; }
     public List<SymmetricKey>? SymmetricKeys { get; set; } = null!;
     public List<AsymmetricKey>? AsymmetricKeys { get; set; } = null!;
     public List<ChildRef>? Users { get; set; }

@@ -2,6 +2,7 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Models;
+using Corely.IAM.Platform.Providers;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Accounts.Processors;

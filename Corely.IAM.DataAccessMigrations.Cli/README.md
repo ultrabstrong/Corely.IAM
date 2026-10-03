@@ -61,12 +61,35 @@ corely-iam-db db create
 | `db script [from] [to]` | Generate a SQL script from migrations |
 | `db drop [-f]` | Drop the database (`-f` skips confirmation) |
 | `db test-connection` | Test the database connection |
+| `platform bootstrap` | Create the platform account and its owner, once (below) |
 | `provider list` | List available database providers |
 
 `db status` and `db list` take `-a, --show-all` to include migrations belonging to other contexts
 in the same database. `db script` takes `-o, --output` to write to a file and `-i, --idempotent`
 for a script that is safe to run repeatedly.
 
+## Bootstrapping the platform account
+
+`platform bootstrap` creates the optional [platform account](../Corely.IAM/Docs/platform.md) and a
+dedicated owner user, once. Run it after `db migrate`. Besides the provider and connection string it
+needs the application's system key, because IAM encrypts each user's keys with it.
+
+| Option | Environment variable | Required |
+|--------|---------------------|----------|
+| `-s, --secrets` | | Yes: a file that does not exist yet |
+| `-e, --email` | | Yes: the owner's email address |
+| `-k, --system-key` | `CORELY_IAM_SYSTEM_KEY` | Yes |
+| `-u, --username` | | No: defaults to `platform-owner` |
+| `-a, --account-name` | | No: defaults to `Platform` |
+
+```powershell
+corely-iam-db platform bootstrap --email owner@example.com --secrets .\platform-owner.txt
+```
+
+The owner gets a generated password and two factor sign in enrolled. The username, password,
+authenticator secret and recovery codes go to the secrets file and nowhere else. A second run reports
+that the platform account exists and changes nothing. The application gives the platform owner its
+own resource types the next time it starts.
 ## Migrations history table
 
 IAM records its migrations in `__CorelyIamMigrationsHistory` rather than the default

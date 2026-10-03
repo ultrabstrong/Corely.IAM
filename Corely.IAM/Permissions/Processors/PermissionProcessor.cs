@@ -215,7 +215,7 @@ internal class PermissionProcessor(
     {
         var effectivePermissions = await _permissionRepo.QueryAsync(q =>
             q.Where(p =>
-                    p.AccountId == accountId
+                    (p.AccountId == accountId || (p.Account != null && p.Account.IsPlatformAccount))
                     && p.ResourceType == resourceType
                     && (p.ResourceId == resourceId || p.ResourceId == Guid.Empty)
                     && p.Roles!.Any(r =>
@@ -243,6 +243,7 @@ internal class PermissionProcessor(
                             RoleId = r.Id,
                             RoleName = r.Name,
                             IsDirect = r.Users!.Any(u => u.Id == userId),
+                            ViaPlatformAccount = r.AccountId != accountId,
                             Groups = r.Groups!.Where(g => g.Users!.Any(u => u.Id == userId))
                                 .Select(g => new EffectiveGroup
                                 {

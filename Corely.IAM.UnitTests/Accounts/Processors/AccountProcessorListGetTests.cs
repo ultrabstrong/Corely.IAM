@@ -6,6 +6,7 @@ using Corely.IAM.Groups.Entities;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Entities;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
@@ -42,6 +43,7 @@ public class AccountProcessorListGetTests
             _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
+            _serviceFactory.GetRequiredService<IPlatformAccessProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<TimeProvider>(),
             _serviceFactory.GetRequiredService<ILogger<AccountProcessor>>()
@@ -215,6 +217,7 @@ public class AccountProcessorListGetTests
             serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             serviceFactory.GetRequiredService<ISecurityProvider>(),
             serviceFactory.GetRequiredService<IUserContextProvider>(),
+            serviceFactory.GetRequiredService<IPlatformAccessProvider>(),
             serviceFactory.GetRequiredService<IValidationProvider>(),
             serviceFactory.GetRequiredService<TimeProvider>(),
             serviceFactory.GetRequiredService<ILogger<AccountProcessor>>()

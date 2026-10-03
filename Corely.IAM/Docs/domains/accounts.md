@@ -8,6 +8,7 @@ Top-level multi-tenant container. All groups, roles, permissions, and invitation
 |----------|------|-------------|
 | `Id` | `Guid` | Unique identifier |
 | `AccountName` | `string` | Display name |
+| `IsPlatformAccount` | `bool` | True for the one [platform account](../platform.md); set only by bootstrap |
 | `SymmetricKeys` | `List<SymmetricKey>?` | Account encryption keys (hydrated) |
 | `AsymmetricKeys` | `List<AsymmetricKey>?` | Account encryption/signature keys (hydrated) |
 | `Users` | `List<ChildRef>?` | Users in this account (hydrated) |
@@ -35,3 +36,4 @@ Top-level multi-tenant container. All groups, roles, permissions, and invitation
 | `CreateAccountResultCode.AccountExistsError` | Duplicate name |
 | `CreateAccountResultCode.UserOwnerNotFoundError` | Creating user not found |
 | `DeleteAccountResultCode.AccountNotFoundError` | Account not found |
+| `DeleteAccountResultCode.PlatformAccountError` | The platform account cannot be deleted |

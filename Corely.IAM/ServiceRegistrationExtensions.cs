@@ -10,6 +10,8 @@ using Corely.IAM.PasswordRecoveries.Constants;
 using Corely.IAM.PasswordRecoveries.Processors;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Permissions.Providers;
+using Corely.IAM.Platform;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Processors;
@@ -106,6 +108,7 @@ public static class ServiceRegistrationExtensions
                 options.Configuration.GetSection(PasswordValidationOptions.NAME)
             );
 
+            serviceCollection.AddScoped<IPlatformAccessProvider, PlatformAccessProvider>();
             serviceCollection.AddScoped<IAuthenticationProvider, AuthenticationProvider>();
             serviceCollection.AddScoped<UserContextProvider>();
             serviceCollection.AddScoped<IUserContextProvider>(sp =>
@@ -142,6 +145,8 @@ public static class ServiceRegistrationExtensions
             >();
             serviceCollection.AddScoped<IRetrievalService, RetrievalService>();
             serviceCollection.Decorate<IRetrievalService, RetrievalServiceTelemetryDecorator>();
+            serviceCollection.AddScoped<IPlatformService, PlatformService>();
+            serviceCollection.AddHostedService<PlatformOwnerPermissionsStartup>();
             serviceCollection.AddScoped<IModificationService, ModificationService>();
             serviceCollection.Decorate<
                 IModificationService,

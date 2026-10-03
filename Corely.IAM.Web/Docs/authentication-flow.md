@@ -73,7 +73,7 @@ When a user signs in with Google but has no linked account, they are redirected 
 3. `AuthCookieManager.SetAuthCookies()` replaces the existing cookies
 4. Redirect to dashboard
 
-The select-account page supports search by account name and pagination (10 per page).
+The select-account page supports search by account name and pagination (10 per page). A member of the [platform account](../../Corely.IAM/Docs/platform.md) holding Account Read there sees every account, and can switch into one they don't belong to.
 
 ## Cookie Details
 

@@ -22,6 +22,7 @@ Displays effective permissions aggregated by role, showing how permissions are d
     - Role name (linked to role detail page)
     - **"direct"** badge: green, shown when role is directly assigned
     - **"via GroupName"** badges: indigo, one per group the role comes through
+    - **"platform account"** badge: shown when the role is in the [platform account](../../../Corely.IAM/Docs/platform.md) rather than the current one. The role and its groups are shown as plain text, since they belong to another account
     - **CRUDX mini-label**: monospace text showing the permission flags
 
 ## Behavior

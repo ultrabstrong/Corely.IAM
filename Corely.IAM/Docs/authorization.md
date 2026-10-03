@@ -126,7 +126,7 @@ await registrationService.RegisterPermissionAsync(
 
 When `IsAuthorizedAsync` is called:
 
-1. Fetch all permissions for the current user (cached per account)
+1. Fetch all permissions for the current user (cached per account): those in the current account plus, for a member of the [platform account](platform.md), those in the platform account
 2. Permissions come from roles assigned directly to the user OR through groups
 3. Filter by resource type (exact match)
 4. Check the requested action flag (Create/Read/Update/Delete/Execute)

@@ -36,6 +36,7 @@ graph LR
 - **Multi-factor authentication**: TOTP (authenticator apps) with recovery codes
 - **Google Sign-In**: link Google accounts as an alternative auth method
 - **Invitation system**: token-based onboarding with expiry and revocation
+- **Platform account**: an optional, bootstrapped account whose members administer every account
 - **Per-entity encryption keys**: account and user-scoped key pairs, stored encrypted
 - **Pluggable crypto**: configure algorithms via the `IAMOptions` builder
 - **Resource type registry**: built-in + custom resource types for validation and UI
@@ -47,6 +48,7 @@ graph LR
 - [IAMOptions Configuration](iam-options.md)
 - [Authentication](authentication.md)
 - [Authorization](authorization.md)
+- [Platform Account](platform.md): administering every account from one
 - [Resource Types](resource-types.md)
 - [Services](services/index.md)
     - [Registration](services/registration.md)

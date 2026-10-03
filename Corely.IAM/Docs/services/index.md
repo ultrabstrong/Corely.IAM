@@ -6,10 +6,11 @@ Nine public services form the API surface of Corely.IAM. All are registered as s
 
 | Service | Purpose | Methods |
 |---------|---------|---------|
-| `IRegistrationService` | Create entities, manage relationships | 14 |
+| `IRegistrationService` | Create entities, manage relationships | 12 |
 | `IDeregistrationService` | Delete entities, remove relationships | 11 |
 | `IRetrievalService` | Query entities with filtering, ordering, pagination | 16 |
-| `IModificationService` | Update entity properties | 4 |
+| `IModificationService` | Update entity properties, rotate keys | 7 |
+| `IPlatformService` | Bootstrap the [platform account](../platform.md) and complete its owner's permissions | 2 |
 | `IAuthenticationService` | Sign in, sign out, account switching, session management | 9 |
 | `IPasswordRecoveryService` | Request recovery, validate tokens, reset passwords | 3 |
 | `IMfaService` | TOTP setup, confirmation, status, recovery codes | 5 |

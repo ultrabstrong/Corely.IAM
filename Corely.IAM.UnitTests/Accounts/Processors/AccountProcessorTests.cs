@@ -1,10 +1,11 @@
-﻿using AutoFixture;
+using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Invitations.Entities;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Providers;
@@ -34,6 +35,7 @@ public class AccountProcessorTests
             _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
+            _serviceFactory.GetRequiredService<IPlatformAccessProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<TimeProvider>(),
             _serviceFactory.GetRequiredService<ILogger<AccountProcessor>>()

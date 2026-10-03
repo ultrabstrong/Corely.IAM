@@ -4,6 +4,7 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Models;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
@@ -39,6 +40,7 @@ public class AccountProcessorUpdateTests
             _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
+            _serviceFactory.GetRequiredService<IPlatformAccessProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<TimeProvider>(),
             _serviceFactory.GetRequiredService<ILogger<AccountProcessor>>()

@@ -54,6 +54,7 @@
                     roleMap[role.RoleId] = derivation;
                 }
                 derivation.IsDirect |= role.IsDirect;
+                derivation.ViaPlatformAccount |= role.ViaPlatformAccount;
                 derivation.Create |= perm.Create;
                 derivation.Read |= perm.Read;
                 derivation.Update |= perm.Update;
@@ -84,7 +85,15 @@
                     <div class="ep-grant-row">
                         <div class="d-flex align-items-center gap-2">
                             <i class="bi bi-shield text-muted"></i>
-                            <a href="@AppRoutes.Roles/@role.RoleId" class="text-decoration-none">@role.RoleName</a>
+                            @if (role.ViaPlatformAccount)
+                            {
+                                <span>@role.RoleName</span>
+                                <span class="ep-via-badge platform">platform account</span>
+                            }
+                            else
+                            {
+                                <a href="@AppRoutes.Roles/@role.RoleId" class="text-decoration-none">@role.RoleName</a>
+                            }
                             @if (role.IsDirect)
                             {
                                 <span class="ep-via-badge direct">direct</span>
@@ -92,7 +101,14 @@
                             @foreach (var group in role.Groups)
                             {
                                 <span class="ep-via-badge group">
-                                    via <a href="@AppRoutes.Groups/@group.Key" class="text-decoration-none">@group.Value</a>
+                                    @if (role.ViaPlatformAccount)
+                                    {
+                                        <text>via @group.Value</text>
+                                    }
+                                    else
+                                    {
+                                        <text>via </text><a href="@AppRoutes.Groups/@group.Key" class="text-decoration-none">@group.Value</a>
+                                    }
                                 </span>
                             }
                         </div>
@@ -107,6 +123,7 @@
         public Guid RoleId { get; } = roleId;
         public string RoleName { get; } = roleName;
         public bool IsDirect { get; set; }
+        public bool ViaPlatformAccount { get; set; }
         public bool Create { get; set; }
         public bool Read { get; set; }
         public bool Update { get; set; }

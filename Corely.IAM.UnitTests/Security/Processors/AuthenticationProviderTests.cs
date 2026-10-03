@@ -3,6 +3,7 @@ using System.Security.Claims;
 using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
@@ -46,6 +47,8 @@ public class AuthenticationProviderTests
         new(
             _serviceFactory.GetRequiredService<IRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>(),
+            _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
+            _serviceFactory.GetRequiredService<IPlatformAccessProvider>(),
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
             Options.Create(securityOptions ?? new SecurityOptions()),
             _serviceFactory.GetRequiredService<ILogger<AuthenticationProvider>>(),

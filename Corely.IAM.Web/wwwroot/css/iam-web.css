@@ -663,6 +663,11 @@ th.sortable.active .sort-icon {
     color: var(--iam-badge-group-fg);
 }
 
+.ep-via-badge.platform {
+    background: var(--iam-badge-info-bg);
+    color: var(--iam-badge-info-fg);
+}
+
 .ep-via-badge.group a {
     color: inherit;
 }

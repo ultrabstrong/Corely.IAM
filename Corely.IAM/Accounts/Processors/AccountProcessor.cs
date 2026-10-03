@@ -6,6 +6,7 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Processors;
@@ -23,6 +24,7 @@ internal class AccountProcessor(
     IUserOwnershipProcessor userOwnershipProcessor,
     ISecurityProvider securityService,
     IUserContextProvider userContextProvider,
+    IPlatformAccessProvider platformAccessProvider,
     IValidationProvider validationProvider,
     TimeProvider timeProvider,
     ILogger<AccountProcessor> logger
@@ -43,6 +45,8 @@ internal class AccountProcessor(
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
     );
+    private readonly IPlatformAccessProvider _platformAccessProvider =
+        platformAccessProvider.ThrowIfNull(nameof(platformAccessProvider));
     private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
         nameof(validationProvider)
     );
@@ -201,6 +205,15 @@ internal class AccountProcessor(
             return new DeleteAccountResult(
                 DeleteAccountResultCode.AccountNotFoundError,
                 $"Account with Id {accountId} not found"
+            );
+        }
+
+        if (accountEntity.IsPlatformAccount)
+        {
+            _logger.LogWarning("Refused deleting the platform account {AccountId}", accountId);
+            return new DeleteAccountResult(
+                DeleteAccountResultCode.PlatformAccountError,
+                "The platform account cannot be deleted"
             );
         }
 
@@ -396,14 +409,15 @@ internal class AccountProcessor(
         IReadOnlySet<Guid>? authorizedResourceIds = null
     )
     {
-        var userAccountIds = _userContextProvider
-            .GetUserContext()!
-            .AvailableAccounts.Select(a => a.Id)
-            .ToList();
+        var userContext = _userContextProvider.GetUserContext()!;
+        var userAccountIds = userContext.AvailableAccounts.Select(a => a.Id).ToList();
+        var seesEveryAccount =
+            userContext.User is { } user
+            && await _platformAccessProvider.CanEnterAnyAccountAsync(user.Id);
 
         return await ListQueryHelper.ExecuteListAsync(
             _accountRepo,
-            a => userAccountIds.Contains(a.Id),
+            a => seesEveryAccount || userAccountIds.Contains(a.Id),
             request.Filter,
             request.Order,
             request.Skip,

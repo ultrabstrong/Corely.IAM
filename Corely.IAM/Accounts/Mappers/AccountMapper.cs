@@ -36,7 +36,12 @@ internal static class AccountMapper
     {
         public Account ToModel()
         {
-            return new Account { Id = entity.Id, AccountName = entity.AccountName };
+            return new Account
+            {
+                Id = entity.Id,
+                AccountName = entity.AccountName,
+                IsPlatformAccount = entity.IsPlatformAccount,
+            };
         }
     }
 }

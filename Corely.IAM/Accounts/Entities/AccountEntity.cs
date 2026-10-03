@@ -1,4 +1,4 @@
-﻿using Corely.DataAccess.Interfaces.Entities;
+using Corely.DataAccess.Interfaces.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Permissions.Entities;
@@ -11,6 +11,7 @@ internal class AccountEntity : IHasCreatedUtc, IHasModifiedUtc
 {
     public Guid Id { get; set; }
     public string AccountName { get; set; } = null!;
+    public bool IsPlatformAccount { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime? ModifiedUtc { get; set; }
     public virtual ICollection<UserEntity>? Users { get; set; }

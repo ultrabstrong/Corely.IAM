@@ -468,7 +468,10 @@ internal class AuthorizationProvider(
                     r.Users!.Any(u => u.Id == contextUserId)
                     || r.Groups!.Any(g => g.Users!.Any(u => u.Id == contextUserId))
                 )
-                && p.AccountId == contextAccountId
+                && (
+                    p.AccountId == contextAccountId
+                    || (p.Account != null && p.Account.IsPlatformAccount)
+                )
             );
 
             _cachedAccountId = contextAccountId;

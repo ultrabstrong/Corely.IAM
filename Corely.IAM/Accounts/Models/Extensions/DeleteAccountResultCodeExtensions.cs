@@ -14,6 +14,8 @@ internal static class DeleteAccountResultCodeExtensions
                     DeregisterAccountResultCode.AccountNotFoundError,
                 DeleteAccountResultCode.UnauthorizedError =>
                     DeregisterAccountResultCode.UnauthorizedError,
+                DeleteAccountResultCode.PlatformAccountError =>
+                    DeregisterAccountResultCode.PlatformAccountError,
                 _ => throw new ArgumentOutOfRangeException(
                     nameof(resultCode),
                     resultCode,

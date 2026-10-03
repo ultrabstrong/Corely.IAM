@@ -7,4 +7,5 @@ public enum DeleteAccountResultCode
     Success,
     AccountNotFoundError,
     UnauthorizedError,
+    PlatformAccountError,
 }

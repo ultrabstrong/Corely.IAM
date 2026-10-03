@@ -22,7 +22,7 @@ public record UserContext
 | `CurrentAccount` | Active account (null = no account selected) |
 | `DeviceId` | Device identifier from token (identifies the calling host for system context) |
 | `AuthTokenId` | Tracked auth-token/session ID for the current user context (null for system context) |
-| `AvailableAccounts` | All accounts the user can access (empty for system context) |
+| `AvailableAccounts` | The accounts the user belongs to, plus the current account when a [platform](../platform.md) member has entered one they don't belong to (empty for system context) |
 | `IsSystemContext` | `true` when context was set via `IAuthenticationService.AuthenticateAsSystem()` |
 
 ## IUserContextProvider (Read-Only)

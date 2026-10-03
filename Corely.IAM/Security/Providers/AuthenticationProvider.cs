@@ -2,9 +2,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Extensions;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Security.Models;
@@ -22,6 +24,8 @@ namespace Corely.IAM.Security.Providers;
 internal class AuthenticationProvider(
     IRepo<UserEntity> userRepo,
     IRepo<UserAuthTokenEntity> authTokenRepo,
+    IReadonlyRepo<AccountEntity> accountRepo,
+    IPlatformAccessProvider platformAccessProvider,
     ISecurityProvider securityProcessor,
     IOptions<SecurityOptions> securityOptions,
     ILogger<AuthenticationProvider> logger,
@@ -32,6 +36,11 @@ internal class AuthenticationProvider(
     private readonly IRepo<UserAuthTokenEntity> _authTokenRepo = authTokenRepo.ThrowIfNull(
         nameof(authTokenRepo)
     );
+    private readonly IReadonlyRepo<AccountEntity> _accountRepo = accountRepo.ThrowIfNull(
+        nameof(accountRepo)
+    );
+    private readonly IPlatformAccessProvider _platformAccessProvider =
+        platformAccessProvider.ThrowIfNull(nameof(platformAccessProvider));
     private readonly ISecurityProvider _securityProcessor = securityProcessor.ThrowIfNull(
         nameof(securityProcessor)
     );
@@ -317,8 +326,8 @@ internal class AuthenticationProvider(
             );
         }
 
-        var accounts = userEntity.AccountModels();
-        var signedInAccount = ExtractSignedInAccountFromToken(jwtToken, userEntity);
+        var signedInAccount = await ExtractSignedInAccountFromTokenAsync(jwtToken, userEntity);
+        var accounts = WithEnteredAccount(userEntity.AccountModels(), signedInAccount);
 
         return new UserAuthTokenValidationResult(
             UserAuthTokenValidationResultCode.Success,
@@ -492,7 +501,9 @@ internal class AuthenticationProvider(
         Account? signedInAccount = null;
         if (accountId.HasValue)
         {
-            signedInAccount = FindAccountById(accounts, accountId.Value);
+            signedInAccount =
+                FindAccountById(accounts, accountId.Value)
+                ?? await FindPlatformEnterableAccountAsync(userId, accountId.Value);
             if (signedInAccount == null)
             {
                 _logger.LogWarning(
@@ -504,7 +515,15 @@ internal class AuthenticationProvider(
             }
         }
 
-        return (null, new TokenIssueContext(userEntity, signatureKey, accounts, signedInAccount));
+        return (
+            null,
+            new TokenIssueContext(
+                userEntity,
+                signatureKey,
+                WithEnteredAccount(accounts, signedInAccount),
+                signedInAccount
+            )
+        );
     }
 
     private async Task<UserAuthTokenResult> CreateUserAuthTokenAsync(
@@ -619,7 +638,20 @@ internal class AuthenticationProvider(
         }
     }
 
-    private Account? ExtractSignedInAccountFromToken(
+    private static List<Account> WithEnteredAccount(
+        List<Account> accounts,
+        Account? signedInAccount
+    ) =>
+        signedInAccount is null || accounts.Any(a => a.Id == signedInAccount.Id)
+            ? accounts
+            : [.. accounts, signedInAccount];
+
+    private async Task<Account?> FindPlatformEnterableAccountAsync(Guid userId, Guid accountId) =>
+        await _platformAccessProvider.CanEnterAnyAccountAsync(userId)
+            ? (await _accountRepo.GetAsync(a => a.Id == accountId))?.ToModel()
+            : null;
+
+    private async Task<Account?> ExtractSignedInAccountFromTokenAsync(
         JwtSecurityToken jwtToken,
         UserEntity userEntity
     )
@@ -627,10 +659,12 @@ internal class AuthenticationProvider(
         if (jwtToken.SignedInAccountId() is not { } accountId)
             return null;
 
-        var matchingAccount = userEntity.Accounts?.FirstOrDefault(a => a.Id == accountId);
+        var matchingAccount =
+            userEntity.Accounts?.FirstOrDefault(a => a.Id == accountId)?.ToModel()
+            ?? await FindPlatformEnterableAccountAsync(userEntity.Id, accountId);
         if (matchingAccount != null)
         {
-            return matchingAccount.ToModel();
+            return matchingAccount;
         }
 
         _logger.LogWarning(

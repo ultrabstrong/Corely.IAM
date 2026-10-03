@@ -33,20 +33,17 @@ internal abstract class DbCommandBase(string name, string description)
 
     protected virtual bool RequiresConnectionString => true;
 
-    protected bool TryCreateDbContext(out IamDbContext dbContext)
+    protected bool TryResolveConnection(out DatabaseProvider provider, out string connectionString)
     {
-        dbContext = null!;
+        connectionString = null!;
 
-        var providerResolution = ConnectionSettings.TryResolveProvider(
-            ProviderName,
-            out var provider
-        );
+        var providerResolution = ConnectionSettings.TryResolveProvider(ProviderName, out provider);
         if (!Report(providerResolution))
             return false;
 
         var connectionResolution = ConnectionSettings.TryResolveConnectionString(
             ConnectionString,
-            out var connectionString
+            out connectionString
         );
         if (!connectionResolution.IsValid)
         {
@@ -57,6 +54,16 @@ internal abstract class DbCommandBase(string name, string description)
             }
             connectionString = provider.PlaceholderConnectionString();
         }
+
+        return true;
+    }
+
+    protected bool TryCreateDbContext(out IamDbContext dbContext)
+    {
+        dbContext = null!;
+
+        if (!TryResolveConnection(out var provider, out var connectionString))
+            return false;
 
         var historyTable = string.IsNullOrWhiteSpace(HistoryTable) ? null : HistoryTable;
 

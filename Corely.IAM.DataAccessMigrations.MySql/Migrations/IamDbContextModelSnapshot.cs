@@ -77,6 +77,9 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .HasColumnType("TIMESTAMP")
                         .HasDefaultValueSql("(UTC_TIMESTAMP)");
 
+                    b.Property<bool>("IsPlatformAccount")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("TIMESTAMP");
 

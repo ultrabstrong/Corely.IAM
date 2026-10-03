@@ -41,6 +41,7 @@ Complete reference of all result code enums across Corely.IAM.
 |------|---------|
 | `Success` | Account deleted |
 | `AccountNotFoundError` | Account not found |
+| `PlatformAccountError` | The platform account cannot be deleted |
 | `UnauthorizedError` | Insufficient permissions |
 
 ## User Result Codes
@@ -71,6 +72,7 @@ Complete reference of all result code enums across Corely.IAM.
 | `Success` | Group created |
 | `GroupExistsError` | Group name exists in account |
 | `AccountNotFoundError` | Account not found |
+| `PlatformAccountError` | The platform account cannot be deleted |
 | `UnauthorizedError` | Insufficient permissions |
 | `ValidationError` | Input validation failed |
 
@@ -92,6 +94,7 @@ Complete reference of all result code enums across Corely.IAM.
 | `Success` | Role created |
 | `RoleExistsError` | Role name exists in account |
 | `AccountNotFoundError` | Account not found |
+| `PlatformAccountError` | The platform account cannot be deleted |
 | `UnauthorizedError` | Insufficient permissions |
 | `ValidationError` | Input validation failed |
 
@@ -113,6 +116,7 @@ Complete reference of all result code enums across Corely.IAM.
 | `Success` | Permission created |
 | `PermissionExistsError` | The account already has a permission with the same type, resource ID and actions. The message names it and gives its ID |
 | `AccountNotFoundError` | Account not found |
+| `PlatformAccountError` | The platform account cannot be deleted |
 | `UnauthorizedError` | Insufficient permissions |
 | `ValidationError` | Invalid resource type or no CRUDX flags |
 
@@ -184,6 +188,7 @@ Complete reference of all result code enums across Corely.IAM.
 |------|---------|
 | `Success` | Invitation created |
 | `AccountNotFoundError` | Account not found |
+| `PlatformAccountError` | The platform account cannot be deleted |
 | `ValidationError` | Invalid email or parameters |
 | `UnauthorizedError` | Insufficient permissions |
 | `UserAlreadyInAccountError` | User already in account |

@@ -38,6 +38,7 @@ graph LR
 - **CRUDX permissions**: fine-grained Create / Read / Update / Delete / Execute per resource type
 - **Token-based auth**: JWT with custom claims, no HttpContext dependency
 - **System context**: headless processes (Azure Functions, background services) can call APIs without user authentication
+- **Platform account**: an optional, bootstrapped account whose members' permissions apply in every account ([docs](Corely.IAM/Docs/platform.md))
 - **Password recovery**: email-based recovery tokens for unauthenticated password reset
 - **Multi-factor authentication**: TOTP (authenticator apps) with recovery codes
 - **Google Sign-In**: link Google accounts as an alternative auth method

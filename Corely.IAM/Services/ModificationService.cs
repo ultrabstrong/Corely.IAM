@@ -4,6 +4,8 @@ using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Enums;
@@ -21,6 +23,7 @@ internal class ModificationService(
     IUserProcessor userProcessor,
     IGroupProcessor groupProcessor,
     IRoleProcessor roleProcessor,
+    IPermissionProcessor permissionProcessor,
     IKeyRotationProcessor keyRotationProcessor
 ) : IModificationService
 {
@@ -36,6 +39,9 @@ internal class ModificationService(
     );
     private readonly IRoleProcessor _roleProcessor = roleProcessor.ThrowIfNull(
         nameof(roleProcessor)
+    );
+    private readonly IPermissionProcessor _permissionProcessor = permissionProcessor.ThrowIfNull(
+        nameof(permissionProcessor)
     );
     private readonly IKeyRotationProcessor _keyRotationProcessor = keyRotationProcessor.ThrowIfNull(
         nameof(keyRotationProcessor)
@@ -67,6 +73,13 @@ internal class ModificationService(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Modifying role {RoleId}", request.RoleId);
         return await _roleProcessor.UpdateRoleAsync(request);
+    }
+
+    public async Task<ModifyResult> ModifyPermissionAsync(UpdatePermissionRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation("Modifying permission {PermissionId}", request.PermissionId);
+        return await _permissionProcessor.UpdatePermissionAsync(request);
     }
 
     public async Task<ModifyResult> RotateAccountKeyAsync(RotateAccountKeyRequest request)

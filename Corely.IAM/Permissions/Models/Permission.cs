@@ -1,4 +1,4 @@
-﻿using Corely.IAM.Models;
+using Corely.IAM.Models;
 
 namespace Corely.IAM.Permissions.Models;
 
@@ -18,8 +18,13 @@ public class Permission
     public List<ChildRef>? Roles { get; set; }
 
     public string DisplayName =>
-        $"{ResourceType} - {(ResourceId == Guid.Empty ? "all" : ResourceId)} {CrudxString}";
-
-    private string CrudxString =>
-        PermissionLabelProvider.GetCrudxLabel(Create, Read, Update, Delete, Execute);
+        PermissionLabelProvider.GetName(
+            ResourceType,
+            ResourceId,
+            Create,
+            Read,
+            Update,
+            Delete,
+            Execute
+        );
 }

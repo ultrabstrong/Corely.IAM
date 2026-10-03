@@ -137,7 +137,7 @@ internal class PermissionProcessor(
                     Update = t.OwnerActions.Contains(AuthAction.Update),
                     Delete = t.OwnerActions.Contains(AuthAction.Delete),
                     Execute = t.OwnerActions.Contains(AuthAction.Execute),
-                    Description = t.Description,
+                    Description = t.OwnerDefaultDescription(),
                     IsSystemDefined = true,
                     Roles = ownerRole != null ? [ownerRole] : [],
                 }),
@@ -256,6 +256,29 @@ internal class PermissionProcessor(
         );
 
         return effectivePermissions.ToList();
+    }
+
+    public async Task<ModifyResult> UpdatePermissionAsync(UpdatePermissionRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var entity = await _permissionRepo.GetAsync(p =>
+            p.Id == request.PermissionId && p.AccountId == request.AccountId
+        );
+        if (entity == null)
+        {
+            _logger.LogWarning("Permission with Id {PermissionId} not found", request.PermissionId);
+            return new ModifyResult(
+                ModifyResultCode.NotFoundError,
+                $"Permission with Id {request.PermissionId} not found"
+            );
+        }
+
+        entity.Description = string.IsNullOrWhiteSpace(request.Description)
+            ? null
+            : request.Description.Trim();
+        await _permissionRepo.UpdateAsync(entity);
+        return new ModifyResult(ModifyResultCode.Success, string.Empty);
     }
 
     public async Task<DeletePermissionResult> DeletePermissionAsync(

@@ -7,6 +7,7 @@ using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -267,6 +268,127 @@ internal class AuthorizationProvider(
                 ),
             $"grant the roles of group {groupId}"
         );
+
+    public async Task<IReadOnlySet<AuthAction>> GetGrantableActionsAsync(
+        string resourceType,
+        Guid resourceId
+    )
+    {
+        var held = await GetGrantingPermissionsAsync($"grant {resourceType}");
+        if (held is null)
+            return Enum.GetValues<AuthAction>().ToHashSet();
+
+        return Enum.GetValues<AuthAction>()
+            .Where(action =>
+                new PermissionEntity
+                {
+                    ResourceType = resourceType,
+                    ResourceId = resourceId,
+                    Create = action == AuthAction.Create,
+                    Read = action == AuthAction.Read,
+                    Update = action == AuthAction.Update,
+                    Delete = action == AuthAction.Delete,
+                    Execute = action == AuthAction.Execute,
+                }.IsCoveredBy(held)
+            )
+            .ToHashSet();
+    }
+
+    public async Task<IReadOnlySet<Guid>> GetGrantablePermissionIdsAsync(
+        IEnumerable<Guid> permissionIds
+    )
+    {
+        var ids = permissionIds.ToList();
+        return await GetGrantableIdsAsync(
+            ids,
+            async accountId =>
+                (
+                    await _permissionRepo.ListAsync(p =>
+                        p.AccountId == accountId && ids.Contains(p.Id)
+                    )
+                )
+                    .Select(p => (p.Id, p))
+                    .ToList(),
+            "list grantable permissions"
+        );
+    }
+
+    public async Task<IReadOnlySet<Guid>> GetGrantableRoleIdsAsync(IEnumerable<Guid> roleIds)
+    {
+        var ids = roleIds.ToList();
+        return await GetGrantableIdsAsync(
+            ids,
+            async accountId =>
+                (
+                    await _permissionRepo.ListAsync(
+                        p => p.AccountId == accountId && p.Roles!.Any(r => ids.Contains(r.Id)),
+                        include: q => q.Include(p => p.Roles)
+                    )
+                )
+                    .SelectMany(p => p.Roles!.Where(r => ids.Contains(r.Id)).Select(r => (r.Id, p)))
+                    .ToList(),
+            "list grantable roles"
+        );
+    }
+
+    public async Task<IReadOnlySet<Guid>> GetGrantableGroupIdsAsync(IEnumerable<Guid> groupIds)
+    {
+        var ids = groupIds.ToList();
+        return await GetGrantableIdsAsync(
+            ids,
+            async accountId =>
+                (
+                    await _permissionRepo.ListAsync(
+                        p =>
+                            p.AccountId == accountId
+                            && p.Roles!.Any(r => r.Groups!.Any(g => ids.Contains(g.Id))),
+                        include: q => q.Include(p => p.Roles!).ThenInclude(r => r.Groups)
+                    )
+                )
+                    .SelectMany(p =>
+                        p.Roles!.SelectMany(r => r.Groups!)
+                            .Where(g => ids.Contains(g.Id))
+                            .Select(g => (g.Id, p))
+                    )
+                    .ToList(),
+            "list grantable groups"
+        );
+    }
+
+    private async Task<IReadOnlySet<Guid>> GetGrantableIdsAsync(
+        IReadOnlyList<Guid> ids,
+        Func<Guid, Task<List<(Guid ItemId, PermissionEntity Permission)>>> loadHandedOut,
+        string operation
+    )
+    {
+        var held = await GetGrantingPermissionsAsync(operation);
+        if (held is null)
+            return ids.ToHashSet();
+
+        var accountId = _userContextProvider.GetUserContext()!.CurrentAccount!.Id;
+        var ungrantable = (await loadHandedOut(accountId))
+            .Where(x => !x.Permission.IsCoveredBy(held))
+            .Select(x => x.ItemId)
+            .ToHashSet();
+
+        return ids.Where(id => !ungrantable.Contains(id)).ToHashSet();
+    }
+
+    private async Task<IReadOnlyList<PermissionEntity>?> GetGrantingPermissionsAsync(
+        string operation
+    )
+    {
+        if (!TryGetUserContext(out var userContext, operation))
+            return [];
+
+        if (userContext.IsSystemContext)
+            return null;
+
+        if (!TryGetUserId(userContext, operation, out _) || userContext.CurrentAccount is null)
+            return [];
+
+        return await GetPermissionsAsync();
+    }
 
     private async Task<bool> CanGrantAllAsync(
         Func<Guid, Task<IReadOnlyList<PermissionEntity>>> loadGrants,

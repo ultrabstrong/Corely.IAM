@@ -252,7 +252,8 @@ function New-PermissionSpec {
     )
 
     $spec = [ordered]@{
-        Description = $Description
+        Key = $Description
+        Description = "$((Get-Culture).TextInfo.ToTitleCase($ResourceType)) : $((Get-Culture).TextInfo.ToTitleCase($Action))"
         ResourceType = $ResourceType
         ResourceId = '00000000-0000-0000-0000-000000000000'
         Create = $false
@@ -347,7 +348,7 @@ $accounts = @(
         )
         Permissions = $naPermissions
         RolePermissions = [ordered]@{
-            'Account Admin' = $naPermissions.Description
+            'Account Admin' = $naPermissions.Key
             'Operations Manager' = @('account.read', 'user.read', 'user.update', 'group.read', 'group.update', 'role.read', 'permission.read')
             'Support Agent' = @('account.read', 'user.read', 'user.update', 'group.read', 'permission.read')
             'Billing Manager' = @('account.read', 'account.update', 'user.read', 'permission.read', 'permission.update')
@@ -385,7 +386,7 @@ $accounts = @(
         ExpectedMembers = 30
         ExpectedRoles = 10
         ExpectedGroups = 8
-        ExpectedPermissions = 28
+        ExpectedPermissions = 30
     }
     [ordered]@{
         Key = 'eu'
@@ -427,7 +428,7 @@ $accounts = @(
         ExpectedMembers = 9
         ExpectedRoles = 5
         ExpectedGroups = 3
-        ExpectedPermissions = 9
+        ExpectedPermissions = 13
     }
     [ordered]@{
         Key = 'contoso'
@@ -467,7 +468,7 @@ $accounts = @(
         ExpectedMembers = 8
         ExpectedRoles = 5
         ExpectedGroups = 3
-        ExpectedPermissions = 8
+        ExpectedPermissions = 11
     }
     [ordered]@{
         Key = 'fabrikam'
@@ -503,7 +504,7 @@ $accounts = @(
         ExpectedMembers = 6
         ExpectedRoles = 4
         ExpectedGroups = 2
-        ExpectedPermissions = 7
+        ExpectedPermissions = 11
     }
     [ordered]@{
         Key = 'northwind'
@@ -539,7 +540,7 @@ $accounts = @(
         ExpectedMembers = 5
         ExpectedRoles = 4
         ExpectedGroups = 2
-        ExpectedPermissions = 7
+        ExpectedPermissions = 11
     }
 )
 
@@ -724,7 +725,7 @@ foreach ($account in $accounts) {
             $result = $results[$i]
             Assert-AllowedResultCode -ResultCode ([int]$result.ResultCode) -AllowedCodes @(0) -Context "Register permission $($permissionSpec.Description) for $($account.Name)"
             $createdPermissionId = Get-NonEmptyGuid -Value $result.CreatedPermissionId -Context "Register permission $($permissionSpec.Description) for $($account.Name)"
-            $accountState.Permissions[$permissionSpec.Description] = [string]$createdPermissionId
+            $accountState.Permissions[$permissionSpec.Key] = [string]$createdPermissionId
         }
 
         $accountState['PermissionsCreated'] = $true
@@ -879,9 +880,9 @@ Assert-True -Condition ($naUsersPage1.Data.HasMore -eq $true) -Message 'North Am
 Assert-True -Condition ($naUsersPage2.Data.Items.Count -eq 5) -Message 'North America users page 2 should contain 5 users'
 Assert-True -Condition ($naRoles.Data.TotalCount -eq 10) -Message 'North America should have 10 roles'
 Assert-True -Condition ($naGroups.Data.TotalCount -eq 8) -Message 'North America should have 8 groups'
-Assert-True -Condition ($naPermissionsPage1.Data.TotalCount -eq 28) -Message 'North America should have 28 permissions'
+Assert-True -Condition ($naPermissionsPage1.Data.TotalCount -eq 30) -Message 'North America should have 30 permissions'
 Assert-True -Condition ($naPermissionsPage1.Data.HasMore -eq $true) -Message 'North America permissions page 1 should indicate paging'
-Assert-True -Condition ($naPermissionsPage2.Data.Items.Count -eq 3) -Message 'North America permissions page 2 should contain 3 permissions'
+Assert-True -Condition ($naPermissionsPage2.Data.Items.Count -eq 5) -Message 'North America permissions page 2 should contain 5 permissions'
 
 $state.Validation['alice-accounts'] = [ordered]@{
     Accounts = $aliceAccounts.Data.TotalCount

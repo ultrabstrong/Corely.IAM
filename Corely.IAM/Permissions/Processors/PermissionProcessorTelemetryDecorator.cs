@@ -61,6 +61,14 @@ internal class PermissionProcessorTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<ModifyResult> UpdatePermissionAsync(UpdatePermissionRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(PermissionProcessor),
+            request,
+            () => _inner.UpdatePermissionAsync(request),
+            logResult: true
+        );
+
     public async Task<DeletePermissionResult> DeletePermissionAsync(
         Guid permissionId,
         Guid accountId = default

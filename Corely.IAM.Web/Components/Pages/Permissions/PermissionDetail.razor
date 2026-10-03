@@ -3,6 +3,7 @@
 @inherits EntityDetailPageBase
 @inject IRetrievalService RetrievalService
 @inject IDeregistrationService DeregistrationService
+@inject IModificationService ModificationService
 
 <PageTitle>Permission Detail - Corely IAM</PageTitle>
 
@@ -28,24 +29,47 @@ else
         <div class="section-divider mb-4">
             <div class="section-divider-label">
                 Details
-                @if (_permission.IsSystemDefined)
+                @if (!_isEditing)
                 {
-                    <span class="sys-badge">System</span>
-                }
-                else
-                {
-                    <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                        <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
-                    </PermissionView>
+                    <div class="d-flex gap-2">
+                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                            <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
+                        </PermissionView>
+                        @if (!_permission.IsSystemDefined)
+                        {
+                            <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
+                            </PermissionView>
+                        }
+                    </div>
                 }
             </div>
+            @if (_isEditing)
+            {
+                <div class="props-grid mb-3">
+                    <span class="prop-label">Name</span>
+                    <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editDescription" placeholder="@_permission.DisplayName" /></div>
+                </div>
+                <div class="d-flex gap-2 mb-3">
+                    <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
+                </div>
+            }
             <div class="props-grid">
+                <span class="prop-label">Name</span>
+                <span class="prop-value cell-title">
+                    @(_permission.Description ?? _permission.DisplayName)
+                </span>
                 <span class="prop-label">Resource Type</span>
-                <span class="prop-value">@_permission.ResourceType</span>
+                <span class="prop-value">
+                    <span class="type-badge ms-0">@_permission.ResourceType</span>
+                    @if (_permission.IsSystemDefined)
+                    {
+                        <span class="sys-badge">System</span>
+                    }
+                </span>
                 <span class="prop-label">Resource ID</span>
                 <span class="prop-value">@(_permission.ResourceId == Guid.Empty ? "all" : _permission.ResourceId)</span>
-                <span class="prop-label">Description</span>
-                <span class="prop-value">@(_permission.Description ?? "—")</span>
                 <span class="prop-label">CRUDX</span>
                 <span class="prop-value">
                     <span class="d-flex gap-2">
@@ -70,6 +94,8 @@ else
     private Permission? _permission;
     private List<EffectivePermission>? _effectivePermissions;
     private ConfirmModal _confirmModal = null!;
+    private bool _isEditing;
+    private string? _editDescription;
 
     protected override async Task LoadCoreAsync()
     {
@@ -79,6 +105,28 @@ else
             _permission = result.Item;
             _effectivePermissions = result.EffectivePermissions;
         }
+    }
+
+    private void StartEdit()
+    {
+        _editDescription = _permission?.Description;
+        _isEditing = true;
+    }
+
+    private void CancelEdit() => _isEditing = false;
+
+    private async Task SaveAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await ModificationService.ModifyPermissionAsync(new UpdatePermissionRequest(Id, UserContext!.CurrentAccount!.Id, _editDescription));
+            SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Permission updated.", result.Message);
+            if (result.ResultCode == ModifyResultCode.Success)
+            {
+                _isEditing = false;
+                await ReloadAsync();
+            }
+        });
     }
 
     private void ConfirmDelete()

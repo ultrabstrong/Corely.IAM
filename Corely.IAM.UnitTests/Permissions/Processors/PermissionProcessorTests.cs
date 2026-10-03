@@ -1,6 +1,7 @@
-﻿using AutoFixture;
+using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
@@ -151,7 +152,7 @@ public class PermissionProcessorTests
         var result = await _permissionProcessor.CreatePermissionAsync(request);
 
         Assert.Equal(
-            $"You already have this permission: \"group - all cRudx\" ({first.CreatedId})",
+            $"You already have this permission: \"Group : Read\" ({first.CreatedId})",
             result.Message
         );
     }
@@ -262,7 +263,7 @@ public class PermissionProcessorTests
     }
 
     [Fact]
-    public async Task CreateDefaultSystemPermissions_DescribesTypeNotRole_ForEachRow()
+    public async Task CreateDefaultSystemPermissions_DescribesTypeAndActions_ForEachRow()
     {
         var account = await CreateAccountAsync();
         await CreateDefaultRolesAsync(account.Id);
@@ -273,7 +274,7 @@ public class PermissionProcessorTests
         var invoice = await permissionRepo.GetAsync(p =>
             p.AccountId == account.Id && p.ResourceType == "invoice"
         );
-        Assert.Equal("Invoices", invoice!.Description);
+        Assert.Equal("Invoice : Read & Update", invoice!.Description);
     }
 
     [Fact]
@@ -348,5 +349,73 @@ public class PermissionProcessorTests
                 result.ResultCode
             );
         }
+    }
+
+    [Fact]
+    public async Task UpdatePermission_ChangesOnlyDescription_ForSystemDefinedPermission()
+    {
+        var account = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(account.Id);
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(account.Id);
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        var invoice = await permissionRepo.GetAsync(p =>
+            p.AccountId == account.Id && p.ResourceType == "invoice"
+        );
+
+        var result = await _permissionProcessor.UpdatePermissionAsync(
+            new UpdatePermissionRequest(invoice!.Id, account.Id, "  Invoice editing  ")
+        );
+
+        var updated = await permissionRepo.GetAsync(p => p.Id == invoice.Id);
+        Assert.Equal(ModifyResultCode.Success, result.ResultCode);
+        Assert.Equal("Invoice editing", updated!.Description);
+        Assert.True(updated.IsSystemDefined);
+        Assert.True(updated.Read && updated.Update);
+        Assert.False(updated.Create || updated.Delete || updated.Execute);
+    }
+
+    [Fact]
+    public async Task UpdatePermission_ClearsDescription_ForBlankDescription()
+    {
+        var account = await CreateAccountAsync();
+        var created = await _permissionProcessor.CreatePermissionAsync(
+            new CreatePermissionRequest(
+                account.Id,
+                PermissionConstants.GROUP_RESOURCE_TYPE,
+                Guid.Empty,
+                Read: true,
+                Description: "Read groups"
+            )
+        );
+        await AddPermissionToAccountAsync(created.CreatedId, account.Id);
+
+        await _permissionProcessor.UpdatePermissionAsync(
+            new UpdatePermissionRequest(created.CreatedId, account.Id, " ")
+        );
+
+        var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
+        Assert.Null((await permissionRepo.GetAsync(p => p.Id == created.CreatedId))!.Description);
+    }
+
+    [Fact]
+    public async Task UpdatePermission_ReturnsNotFound_ForPermissionInAnotherAccount()
+    {
+        var account = await CreateAccountAsync();
+        var other = await CreateAccountAsync();
+        var created = await _permissionProcessor.CreatePermissionAsync(
+            new CreatePermissionRequest(
+                account.Id,
+                PermissionConstants.GROUP_RESOURCE_TYPE,
+                Guid.Empty,
+                Read: true
+            )
+        );
+        await AddPermissionToAccountAsync(created.CreatedId, account.Id);
+
+        var result = await _permissionProcessor.UpdatePermissionAsync(
+            new UpdatePermissionRequest(created.CreatedId, other.Id, "Renamed")
+        );
+
+        Assert.Equal(ModifyResultCode.NotFoundError, result.ResultCode);
     }
 }

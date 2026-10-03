@@ -16,6 +16,7 @@ internal interface IPermissionProcessor
         bool hydrate,
         Guid accountId = default
     );
+    Task<ModifyResult> UpdatePermissionAsync(UpdatePermissionRequest request);
     Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId, Guid accountId = default);
     Task<List<EffectivePermission>> GetEffectivePermissionsForUserAsync(
         string resourceType,

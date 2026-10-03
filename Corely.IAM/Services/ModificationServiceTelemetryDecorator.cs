@@ -3,6 +3,7 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Extensions;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
@@ -50,6 +51,14 @@ internal class ModificationServiceTelemetryDecorator(
             nameof(ModificationService),
             request,
             () => _inner.ModifyRoleAsync(request),
+            logResult: true
+        );
+
+    public async Task<ModifyResult> ModifyPermissionAsync(UpdatePermissionRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(ModificationService),
+            request,
+            () => _inner.ModifyPermissionAsync(request),
             logResult: true
         );
 

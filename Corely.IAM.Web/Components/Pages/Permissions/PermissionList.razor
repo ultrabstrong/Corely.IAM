@@ -4,6 +4,7 @@
 @inject IRetrievalService RetrievalService
 @inject IRegistrationService RegistrationService
 @inject IDeregistrationService DeregistrationService
+@inject IAuthorizationProvider AuthorizationProvider
 @inject Corely.IAM.Permissions.Providers.IResourceTypeRegistry ResourceTypeRegistry
 
 <PageTitle>Permissions - Corely IAM</PageTitle>
@@ -33,8 +34,8 @@ else
         <table class="table table-striped table-hover table-cards">
             <thead class="table-dark">
                 <tr>
-                    <th class="@GetSortClass(nameof(Permission.ResourceType))" @onclick="() => CycleSortAsync(nameof(Permission.ResourceType))">
-                        <span>Resource Type <i class="bi @(GetSortIcon(nameof(Permission.ResourceType))) sort-icon"></i></span>
+                    <th class="@GetSortClass(nameof(Permission.Description))" @onclick="() => CycleSortAsync(nameof(Permission.Description))">
+                        <span>Permission <i class="bi @(GetSortIcon(nameof(Permission.Description))) sort-icon"></i></span>
                         <div class="th-search" @onclick:stopPropagation="true">
                             <input type="text" class="form-control"
                                    placeholder="Search..."
@@ -63,10 +64,11 @@ else
                     {
                         <tr>
                             <td class="cell-title">
-                                @perm.ResourceType
-                                @if (!string.IsNullOrWhiteSpace(perm.Description))
+                                @(perm.Description ?? perm.DisplayName)
+                                <span class="type-badge">@perm.ResourceType</span>
+                                @if (perm.IsSystemDefined)
                                 {
-                                    <small class="text-muted ms-2">@perm.Description</small>
+                                    <span class="sys-badge">System</span>
                                 }
                                 <br /><small class="guid-text">@perm.Id</small>
                             </td>
@@ -87,11 +89,7 @@ else
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     <a href="@AppRoutes.Permissions/@perm.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
-                                    @if (perm.IsSystemDefined)
-                                    {
-                                        <span class="sys-badge">System</span>
-                                    }
-                                    else
+                                    @if (!perm.IsSystemDefined)
                                     {
                                         <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { perm.Id }">
                                             <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(perm.Id, perm.DisplayName)" title="Delete"><i class="bi bi-trash"></i></button>
@@ -111,17 +109,17 @@ else
 <FormModal @ref="_createModal" Title="Create Permission" OnConfirm="CreateAsync">
     <div class="mb-3">
         <label class="form-label">Resource Type</label>
-        <select class="form-select" value="@_newResourceType" @onchange="OnResourceTypeChanged">
+        <select class="form-select" value="@_newResourceType" @onchange="OnResourceTypeChangedAsync">
             <option value="">-- Select --</option>
-            @foreach (var rt in _resourceTypes)
+            @foreach (var rt in _grantableResourceTypes)
             {
-                <option value="@rt.Name">@rt.Name — @rt.Description</option>
+                <option value="@rt.Name">@rt.Description</option>
             }
         </select>
     </div>
     <div class="mb-3">
         <label class="form-label">Resource ID</label>
-        <input type="text" class="form-control" @bind="_newResourceId" placeholder="GUID (empty = all)" />
+        <input type="text" class="form-control" @bind="_newResourceId" @bind:after="RefreshGrantableActionsAsync" placeholder="GUID (empty = all)" />
     </div>
     <div class="mb-3">
         <label class="form-label">Description</label>
@@ -129,23 +127,23 @@ else
     </div>
     <div class="d-flex gap-3">
         <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="chkCreate" @bind="_newCreate" />
+            <input class="form-check-input" type="checkbox" id="chkCreate" @bind="_newCreate" disabled="@(!_grantableActions.Contains(AuthAction.Create))" />
             <label class="form-check-label" for="chkCreate">Create</label>
         </div>
         <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="chkRead" @bind="_newRead" />
+            <input class="form-check-input" type="checkbox" id="chkRead" @bind="_newRead" disabled="@(!_grantableActions.Contains(AuthAction.Read))" />
             <label class="form-check-label" for="chkRead">Read</label>
         </div>
         <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="chkUpdate" @bind="_newUpdate" />
+            <input class="form-check-input" type="checkbox" id="chkUpdate" @bind="_newUpdate" disabled="@(!_grantableActions.Contains(AuthAction.Update))" />
             <label class="form-check-label" for="chkUpdate">Update</label>
         </div>
         <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="chkDelete" @bind="_newDelete" />
+            <input class="form-check-input" type="checkbox" id="chkDelete" @bind="_newDelete" disabled="@(!_grantableActions.Contains(AuthAction.Delete))" />
             <label class="form-check-label" for="chkDelete">Delete</label>
         </div>
         <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="chkExecute" @bind="_newExecute" />
+            <input class="form-check-input" type="checkbox" id="chkExecute" @bind="_newExecute" disabled="@(!_grantableActions.Contains(AuthAction.Execute))" />
             <label class="form-check-label" for="chkExecute">Execute</label>
         </div>
     </div>
@@ -165,26 +163,33 @@ else
     private FormModal _createModal = null!;
     private ConfirmModal _confirmModal = null!;
     private IReadOnlyCollection<ResourceTypeInfo> _resourceTypes = [];
+    private List<ResourceTypeInfo> _grantableResourceTypes = [];
+    private IReadOnlySet<AuthAction> _grantableActions = new HashSet<AuthAction>();
 
     protected override async Task LoadCoreAsync()
     {
         if (_resourceTypes.Count == 0)
         {
             _resourceTypes = ResourceTypeRegistry.GetAll();
+            foreach (var rt in _resourceTypes)
+            {
+                if ((await AuthorizationProvider.GetGrantableActionsAsync(rt.Name, Guid.Empty)).Count > 0)
+                    _grantableResourceTypes.Add(rt);
+            }
         }
 
         FilterBuilder<Permission>? filter = null;
         if (!string.IsNullOrWhiteSpace(_searchText))
         {
             filter = Filter.For<Permission>()
-                .Where(p => p.ResourceType, StringFilter.Contains(_searchText.Trim()));
+                .Where(p => p.Description!, StringFilter.Contains(_searchText.Trim()));
         }
         OrderBuilder<Permission>? order = null;
         if (_sortColumn != null && _sortDirection != null)
         {
             order = _sortColumn switch
             {
-                nameof(Permission.ResourceType) => Order.For<Permission>().By(p => p.ResourceType, _sortDirection.Value),
+                nameof(Permission.Description) => Order.For<Permission>().By(p => p.Description!, _sortDirection.Value),
                 _ => null
             };
         }
@@ -196,18 +201,24 @@ else
         }
     }
 
-    private void OnResourceTypeChanged(ChangeEventArgs e)
+    private async Task OnResourceTypeChangedAsync(ChangeEventArgs e)
     {
         _newResourceType = e.Value?.ToString();
-        if (string.IsNullOrWhiteSpace(_newDescription)
-            && !string.IsNullOrWhiteSpace(_newResourceType))
-        {
-            var rt = ResourceTypeRegistry.Get(_newResourceType);
-            if (rt != null)
-            {
-                _newDescription = rt.Description;
-            }
-        }
+        await RefreshGrantableActionsAsync();
+    }
+
+    private async Task RefreshGrantableActionsAsync()
+    {
+        _grantableActions = string.IsNullOrWhiteSpace(_newResourceType)
+            ? new HashSet<AuthAction>()
+            : await AuthorizationProvider.GetGrantableActionsAsync(
+                _newResourceType,
+                Guid.TryParse(_newResourceId, out var parsed) ? parsed : Guid.Empty);
+        _newCreate &= _grantableActions.Contains(AuthAction.Create);
+        _newRead &= _grantableActions.Contains(AuthAction.Read);
+        _newUpdate &= _grantableActions.Contains(AuthAction.Update);
+        _newDelete &= _grantableActions.Contains(AuthAction.Delete);
+        _newExecute &= _grantableActions.Contains(AuthAction.Execute);
     }
 
     private async Task CreateAsync()
@@ -217,7 +228,7 @@ else
         await ExecuteSafeAsync(async () =>
         {
             var result = await RegistrationService.RegisterPermissionAsync(
-                new RegisterPermissionRequest(UserContext!.CurrentAccount!.Id, _newResourceType, resourceId, _newCreate, _newRead, _newUpdate, _newDelete, _newExecute, _newDescription));
+                new RegisterPermissionRequest(UserContext!.CurrentAccount!.Id, _newResourceType, resourceId, _newCreate, _newRead, _newUpdate, _newDelete, _newExecute, string.IsNullOrWhiteSpace(_newDescription) ? null : _newDescription.Trim()));
             SetResultMessage(result.ResultCode == CreatePermissionResultCode.Success, "Permission created.", result.Message);
             ResetCreateForm();
             await ReloadAsync();
@@ -234,6 +245,7 @@ else
         _newUpdate = false;
         _newDelete = false;
         _newExecute = false;
+        _grantableActions = new HashSet<AuthAction>();
     }
 
     private void ConfirmDelete(Guid id, string name)

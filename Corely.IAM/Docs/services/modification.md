@@ -1,6 +1,6 @@
 # IModificationService
 
-Updates entity properties for accounts, users, groups, and roles, and rotates account and user keys.
+Updates entity properties for accounts, users, groups, roles and permissions, and rotates account and user keys.
 
 ## Methods
 
@@ -10,6 +10,7 @@ Updates entity properties for accounts, users, groups, and roles, and rotates ac
 | `ModifyUserAsync` | `UpdateUserRequest` | `ModifyResult` |
 | `ModifyGroupAsync` | `UpdateGroupRequest` | `ModifyResult` |
 | `ModifyRoleAsync` | `UpdateRoleRequest` | `ModifyResult` |
+| `ModifyPermissionAsync` | `UpdatePermissionRequest` | `ModifyResult` |
 | `RotateAccountKeyAsync` | `RotateAccountKeyRequest` | `ModifyResult` |
 | `RotateCurrentUserKeyAsync` | `KeyType` | `ModifyResult` |
 
@@ -45,6 +46,6 @@ Rotation is covered in [Key Management](../security/key-management.md#rotation).
 
 ## Notes
 
-- There is no `ModifyPermissionAsync`. Permissions are immutable after creation (delete and recreate instead)
+- `ModifyPermissionAsync` changes only a permission's description, its name, and works on system-defined permissions too. A permission's type, resource ID and actions never change; delete and recreate instead
 - Update requests include the entity ID and the new property values
 - Validation runs before the update, and invalid data returns a validation error code

@@ -301,7 +301,7 @@ public class PermissionMapperTests
             Execute = false,
         };
 
-        Assert.Equal("group - all CRudx", permission.DisplayName);
+        Assert.Equal("Group : Create & Read", permission.DisplayName);
     }
 
     [Fact]
@@ -318,7 +318,7 @@ public class PermissionMapperTests
             Execute = false,
         };
 
-        Assert.Equal($"group - {permission.ResourceId} cRudx", permission.DisplayName);
+        Assert.Equal($"Group {permission.ResourceId} : Read", permission.DisplayName);
     }
 
     [Fact]
@@ -335,7 +335,7 @@ public class PermissionMapperTests
             Execute = true,
         };
 
-        Assert.Equal("user - all CRUDX", permission.DisplayName);
+        Assert.Equal("User : Full Access", permission.DisplayName);
     }
 
     [Theory]

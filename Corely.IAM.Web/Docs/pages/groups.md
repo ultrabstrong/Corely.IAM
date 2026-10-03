@@ -27,8 +27,8 @@ Group properties with user and role management.
 
 **Features:**
 - **Edit properties**: name, description (toggleable edit mode with cancel support)
-- **Users section**: paginated (10 per page), add/remove via `EntityPickerModal`
-- **Roles section**: paginated (10 per page), add/remove via `EntityPickerModal`
+- **Users section**: paginated (10 per page), add/remove via `EntityPickerModal`. Add Users shows only when the caller could grant every permission the group hands out (`CanGrantGroupAsync`)
+- **Roles section**: paginated (10 per page), add/remove via `EntityPickerModal`, offering only roles the caller could grant (`GetGrantableRoleIdsAsync`)
 - **Effective permissions panel**: inherited permissions through assigned roles
 
 **Authorization gates:**

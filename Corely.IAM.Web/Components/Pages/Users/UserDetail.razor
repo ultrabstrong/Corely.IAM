@@ -4,6 +4,7 @@
 @inject IRetrievalService RetrievalService
 @inject IRegistrationService RegistrationService
 @inject IDeregistrationService DeregistrationService
+@inject IAuthorizationProvider AuthorizationProvider
 
 <PageTitle>@_username - Corely IAM</PageTitle>
 
@@ -117,14 +118,14 @@ else
                    Title="Assign Groups to User"
                    SearchPlaceholder="Search groups..."
                    FetchItemsAsync="FetchAvailableGroupsAsync"
-                   ExcludeIds="_assignedGroupIds"
+                   ExcludeIds="_hiddenGroupIds"
                    OnConfirm="AddGroupsAsync" />
 
 <EntityPickerModal @ref="_rolePickerModal"
                    Title="Assign Roles to User"
                    SearchPlaceholder="Search roles..."
                    FetchItemsAsync="FetchAvailableRolesAsync"
-                   ExcludeIds="_assignedRoleIds"
+                   ExcludeIds="_hiddenRoleIds"
                    OnConfirm="AddRolesAsync" />
 
 <ConfirmModal @ref="_confirmModal" Title="Remove Role" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveRoleAsync" />
@@ -135,7 +136,9 @@ else
     private List<ChildRef> _groups = [];
     private List<ChildRef> _roles = [];
     private HashSet<Guid> _assignedGroupIds = [];
+    private HashSet<Guid> _hiddenGroupIds = [];
     private HashSet<Guid> _assignedRoleIds = [];
+    private HashSet<Guid> _hiddenRoleIds = [];
     private List<EffectivePermission>? _effectivePermissions;
     private EntityPickerModal _groupPickerModal = null!;
     private EntityPickerModal _rolePickerModal = null!;
@@ -162,7 +165,9 @@ else
             _groups = result.Item.Groups ?? [];
             _roles = result.Item.Roles ?? [];
             _assignedGroupIds = _groups.Select(g => g.Id).ToHashSet();
+            _hiddenGroupIds = [.. _assignedGroupIds];
             _assignedRoleIds = _roles.Select(r => r.Id).ToHashSet();
+            _hiddenRoleIds = [.. _assignedRoleIds];
             _effectivePermissions = result.EffectivePermissions;
 
             if (Id == UserContext?.User?.Id)
@@ -196,6 +201,8 @@ else
         var result = await RetrievalService.ListGroupsAsync(new ListGroupsRequest(UserContext!.CurrentAccount!.Id, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
+            var grantable = await AuthorizationProvider.GetGrantableGroupIdsAsync(result.Data.Items.Select(x => x.Id));
+            _hiddenGroupIds.UnionWith(result.Data.Items.Select(x => x.Id).Where(id => !grantable.Contains(id)));
             var items = result.Data.Items.Select(g => new PickerItem(g.Id, g.Name, g.Description)).ToList();
             return (items, result.Data.TotalCount);
         }
@@ -227,6 +234,8 @@ else
         var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(UserContext!.CurrentAccount!.Id, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
+            var grantable = await AuthorizationProvider.GetGrantableRoleIdsAsync(result.Data.Items.Select(x => x.Id));
+            _hiddenRoleIds.UnionWith(result.Data.Items.Select(x => x.Id).Where(id => !grantable.Contains(id)));
             var items = result.Data.Items.Select(r => new PickerItem(r.Id, r.Name, r.Description)).ToList();
             return (items, result.Data.TotalCount);
         }

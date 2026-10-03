@@ -12,6 +12,10 @@ public interface IAuthorizationProvider
     Task<bool> CanGrantPermissionsAsync(IEnumerable<Guid> permissionIds);
     Task<bool> CanGrantRolesAsync(IEnumerable<Guid> roleIds);
     Task<bool> CanGrantGroupAsync(Guid groupId);
+    Task<IReadOnlySet<AuthAction>> GetGrantableActionsAsync(string resourceType, Guid resourceId);
+    Task<IReadOnlySet<Guid>> GetGrantablePermissionIdsAsync(IEnumerable<Guid> permissionIds);
+    Task<IReadOnlySet<Guid>> GetGrantableRoleIdsAsync(IEnumerable<Guid> roleIds);
+    Task<IReadOnlySet<Guid>> GetGrantableGroupIdsAsync(IEnumerable<Guid> groupIds);
     bool IsNonSystemUserContext();
     bool IsAuthorizedForOwnUser(Guid requestUserId, bool suppressLog = true);
     bool HasUserContext();

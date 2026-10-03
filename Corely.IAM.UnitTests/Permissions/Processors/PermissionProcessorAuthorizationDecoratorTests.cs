@@ -1,3 +1,4 @@
+using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
@@ -200,6 +201,58 @@ public class PermissionProcessorAuthorizationDecoratorTests
         Assert.Equal("Cannot grant permissions you do not hold", result.Message);
         _mockInnerProcessor.Verify(
             x => x.CreatePermissionAsync(It.IsAny<CreatePermissionRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task UpdatePermission_CallsInner_ForAuthorizedCaller()
+    {
+        var request = new UpdatePermissionRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            "Renamed"
+        );
+        var expected = new ModifyResult(ModifyResultCode.Success, string.Empty);
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                    request.PermissionId
+                )
+            )
+            .ReturnsAsync(true);
+        _mockInnerProcessor.Setup(x => x.UpdatePermissionAsync(request)).ReturnsAsync(expected);
+
+        var result = await _decorator.UpdatePermissionAsync(request);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public async Task UpdatePermission_ReturnsUnauthorized_ForCallerWithoutUpdate()
+    {
+        var request = new UpdatePermissionRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            "Renamed"
+        );
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(
+                    AuthAction.Update,
+                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                    request.PermissionId
+                )
+            )
+            .ReturnsAsync(false);
+
+        var result = await _decorator.UpdatePermissionAsync(request);
+
+        Assert.Equal(ModifyResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerProcessor.Verify(
+            x => x.UpdatePermissionAsync(It.IsAny<UpdatePermissionRequest>()),
             Times.Never
         );
     }

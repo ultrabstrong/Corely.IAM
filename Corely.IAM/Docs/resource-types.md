@@ -43,7 +43,8 @@ latest value. A name already taken by a built-in type, or `"*"`, throws when ser
 
 When an account is created, its Owner role receives one system-defined permission per registered
 type that has owner actions, on `Guid.Empty` (every resource of the type), with exactly those
-actions, described by the type's description. These rows cannot be deleted or detached from the
+actions, named `Resource : Actions` from the type's name: `Group : Full Access`,
+`Quota : Read & Execute`, `Document Workflows : Create, Read, & Update`. These rows cannot be deleted or detached from the
 Owner role, under system context or otherwise. They are ordinary permissions in every other way:
 any role can be given the same row, and since a permission is unique on type, resource ID and
 actions, a role that needs exactly those actions shares it rather than getting a copy.

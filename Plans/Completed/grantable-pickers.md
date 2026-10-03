@@ -1,6 +1,6 @@
 # Grantable pickers
 
-**Status: not started.**
+**Status: done** (Corely.IAM 3.3.0, Corely.IAM.Web 3.2.0). Pickers hide ungrantable items through `ExcludeIds`, filled as each page loads, so the picker's own paging is untouched; that settled the paging question below.
 
 ## The problem
 

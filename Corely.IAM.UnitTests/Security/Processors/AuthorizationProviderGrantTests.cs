@@ -198,6 +198,85 @@ public class AuthorizationProviderGrantTests
             (IUserContextSetter)_serviceFactory.GetRequiredService<UserContextProvider>()
         ).SetUserContext(context);
 
+    [Fact]
+    public async Task GetGrantableActionsAsync_ReturnsHeldActions_ForType()
+    {
+        await SignInCallerAsync();
+        await HoldAsync(INVOICE, Guid.Empty, AuthAction.Read, AuthAction.Update);
+
+        var actions = await CreateProvider().GetGrantableActionsAsync(INVOICE, Guid.Empty);
+
+        Assert.Equal([AuthAction.Read, AuthAction.Update], actions.Order());
+    }
+
+    [Fact]
+    public async Task GetGrantableActionsAsync_ReturnsEveryAction_ForSystemContext()
+    {
+        SetContext(new UserContext(true, "system"));
+
+        var actions = await CreateProvider().GetGrantableActionsAsync(INVOICE, Guid.Empty);
+
+        Assert.Equal(Enum.GetValues<AuthAction>().Length, actions.Count);
+    }
+
+    [Fact]
+    public async Task GetGrantableActionsAsync_ReturnsNothing_ForNoUserContext()
+    {
+        Assert.Empty(await CreateProvider().GetGrantableActionsAsync(INVOICE, Guid.Empty));
+    }
+
+    [Fact]
+    public async Task GetGrantablePermissionIdsAsync_ReturnsOnlyCovered_ForMixedPermissions()
+    {
+        await SignInCallerAsync();
+        await HoldAsync(INVOICE, Guid.Empty, AuthAction.Read);
+        var covered = await CreatePermissionAsync(_accountId, INVOICE, AuthAction.Read);
+        var uncovered = await CreatePermissionAsync(_accountId, INVOICE, AuthAction.Create);
+
+        var grantable = await CreateProvider()
+            .GetGrantablePermissionIdsAsync([covered.Id, uncovered.Id]);
+
+        Assert.Equal([covered.Id], grantable);
+    }
+
+    [Fact]
+    public async Task GetGrantableRoleIdsAsync_ReturnsOnlyRolesWithinTheCaller_ForMixedRoles()
+    {
+        await SignInCallerAsync();
+        await HoldAsync(INVOICE, Guid.Empty, AuthAction.Read);
+        var within = await CreateRoleWithAsync(
+            await CreatePermissionAsync(_accountId, INVOICE, AuthAction.Read)
+        );
+        var beyond = await CreateRoleWithAsync(
+            await CreatePermissionAsync(_accountId, INVOICE, AuthAction.Delete)
+        );
+
+        var grantable = await CreateProvider().GetGrantableRoleIdsAsync([within.Id, beyond.Id]);
+
+        Assert.Equal([within.Id], grantable);
+    }
+
+    [Fact]
+    public async Task GetGrantableGroupIdsAsync_ReturnsOnlyGroupsWithinTheCaller_ForMixedGroups()
+    {
+        await SignInCallerAsync();
+        await HoldAsync(INVOICE, Guid.Empty, AuthAction.Read);
+        var within = await CreateGroupWithAsync(
+            await CreateRoleWithAsync(
+                await CreatePermissionAsync(_accountId, INVOICE, AuthAction.Read)
+            )
+        );
+        var beyond = await CreateGroupWithAsync(
+            await CreateRoleWithAsync(
+                await CreatePermissionAsync(_accountId, INVOICE, AuthAction.Execute)
+            )
+        );
+
+        var grantable = await CreateProvider().GetGrantableGroupIdsAsync([within.Id, beyond.Id]);
+
+        Assert.Equal([within.Id], grantable);
+    }
+
     private async Task SignInCallerAsync()
     {
         await _serviceFactory

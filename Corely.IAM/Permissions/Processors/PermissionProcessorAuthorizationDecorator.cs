@@ -109,6 +109,19 @@ internal class PermissionProcessorAuthorizationDecorator(
         Guid accountId
     ) => _inner.GetEffectivePermissionsForUserAsync(resourceType, resourceId, userId, accountId);
 
+    public async Task<ModifyResult> UpdatePermissionAsync(UpdatePermissionRequest request) =>
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
+            PermissionConstants.PERMISSION_RESOURCE_TYPE,
+            request.PermissionId
+        )
+            ? await _inner.UpdatePermissionAsync(request)
+            : new ModifyResult(
+                ModifyResultCode.UnauthorizedError,
+                $"Unauthorized to update permission {request.PermissionId}"
+            );
+
     public async Task<DeletePermissionResult> DeletePermissionAsync(
         Guid permissionId,
         Guid accountId = default

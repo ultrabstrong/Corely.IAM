@@ -205,7 +205,15 @@ internal class RoleProcessor(
                     .Permissions?.Select(p => new ChildRef(
                         p.Id,
                         p.Description
-                            ?? $"{p.ResourceType} - {(p.ResourceId == Guid.Empty ? "all" : p.ResourceId)} {PermissionLabelProvider.GetCrudxLabel(p.Create, p.Read, p.Update, p.Delete, p.Execute)}",
+                            ?? PermissionLabelProvider.GetName(
+                                p.ResourceType,
+                                p.ResourceId,
+                                p.Create,
+                                p.Read,
+                                p.Update,
+                                p.Delete,
+                                p.Execute
+                            ),
                         p.IsSystemDefined
                     ))
                     .ToList()

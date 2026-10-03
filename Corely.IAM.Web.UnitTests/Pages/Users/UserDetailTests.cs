@@ -1,6 +1,7 @@
 using Bunit.TestDoubles;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Web.Components;
@@ -28,6 +29,7 @@ public class UserDetailTests : TestContext
         Services.AddSingleton(_mockRetrievalService.Object);
         Services.AddSingleton(_mockRegistrationService.Object);
         Services.AddSingleton(_mockDeregistrationService.Object);
+        Services.AddSingleton(new Mock<IAuthorizationProvider>().Object);
         Services.AddSingleton<ILogger<EntityPageBase>>(NullLogger<EntityPageBase>.Instance);
 
         ComponentFactories.AddStub<PermissionView>();

@@ -3,6 +3,8 @@ using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Enums;
@@ -21,6 +23,7 @@ public class ModificationServiceTests
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
     private readonly Mock<IGroupProcessor> _mockGroupProcessor = new();
     private readonly Mock<IRoleProcessor> _mockRoleProcessor = new();
+    private readonly Mock<IPermissionProcessor> _mockPermissionProcessor = new();
     private readonly Mock<IKeyRotationProcessor> _mockKeyRotationProcessor = new();
     private readonly Mock<ILogger<ModificationService>> _mockLogger = new();
     private readonly ModificationService _service;
@@ -33,6 +36,7 @@ public class ModificationServiceTests
             _mockUserProcessor.Object,
             _mockGroupProcessor.Object,
             _mockRoleProcessor.Object,
+            _mockPermissionProcessor.Object,
             _mockKeyRotationProcessor.Object
         );
     }
@@ -177,6 +181,29 @@ public class ModificationServiceTests
 
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    #endregion
+
+    #region ModifyPermissionAsync Tests
+
+    [Fact]
+    public async Task ModifyPermission_DelegatesToProcessor_ForRequest()
+    {
+        var request = new UpdatePermissionRequest(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            "Read reports"
+        );
+        var expected = new ModifyResult(ModifyResultCode.Success, string.Empty);
+        _mockPermissionProcessor
+            .Setup(x => x.UpdatePermissionAsync(request))
+            .ReturnsAsync(expected);
+
+        var result = await _service.ModifyPermissionAsync(request);
+
+        Assert.Equal(expected, result);
+        _mockPermissionProcessor.Verify(x => x.UpdatePermissionAsync(request), Times.Once);
     }
 
     #endregion

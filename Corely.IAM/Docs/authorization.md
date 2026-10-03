@@ -36,6 +36,10 @@ public interface IAuthorizationProvider
     Task<bool> CanGrantPermissionsAsync(IEnumerable<Guid> permissionIds);
     Task<bool> CanGrantRolesAsync(IEnumerable<Guid> roleIds);
     Task<bool> CanGrantGroupAsync(Guid groupId);
+    Task<IReadOnlySet<AuthAction>> GetGrantableActionsAsync(string resourceType, Guid resourceId);
+    Task<IReadOnlySet<Guid>> GetGrantablePermissionIdsAsync(IEnumerable<Guid> permissionIds);
+    Task<IReadOnlySet<Guid>> GetGrantableRoleIdsAsync(IEnumerable<Guid> roleIds);
+    Task<IReadOnlySet<Guid>> GetGrantableGroupIdsAsync(IEnumerable<Guid> groupIds);
     bool IsNonSystemUserContext();
     bool IsAuthorizedForOwnUser(Guid requestUserId, bool suppressLog = true);
     bool HasUserContext();
@@ -161,6 +165,21 @@ rows: Read from one permission and Update from another cover a grant of both.
 - **Existing rows are untouched.** The rule applies when a grant is made.
 - **The permission cache applies**: a caller who just lost a permission can still grant it until
   their cache expires.
+
+### Asking what can be granted
+
+The `CanGrant*` methods answer for a whole request. To offer only what a caller can hand out, as
+the portal's pickers and create form do, ask per item:
+
+| Method | Returns |
+|--------|---------|
+| `GetGrantableActionsAsync(type, resourceId)` | The actions the caller could grant on that type and resource ID |
+| `GetGrantablePermissionIdsAsync(ids)` | The permissions, of those given, the caller could attach to a role |
+| `GetGrantableRoleIdsAsync(ids)` | The roles, of those given, the caller could assign: every permission of the role is covered |
+| `GetGrantableGroupIdsAsync(ids)` | The groups, of those given, the caller could add a user to: every permission of every role of the group is covered |
+
+System context gets everything back; no user context, or no current account, gets nothing. These
+only shape what is offered. The operations themselves still enforce the rule.
 
 ## Self-Ownership
 

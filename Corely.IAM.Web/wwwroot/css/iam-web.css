@@ -351,6 +351,18 @@ th.sortable.active .sort-icon {
     color: var(--iam-badge-info-fg);
 }
 
+.type-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    vertical-align: middle;
+    margin-left: 0.4rem;
+    white-space: nowrap;
+    background: var(--iam-badge-info-bg);
+    color: var(--iam-badge-info-fg);
+}
+
 /* Effective permissions panel */
 .effective-permissions-panel {
     padding: 0.75rem 0;

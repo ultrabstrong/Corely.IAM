@@ -7,7 +7,7 @@ CRUDX permission model scoped to a resource type and optional resource ID. Permi
 | Property | Type | Description |
 |----------|------|-------------|
 | `Id` | `Guid` | Unique identifier |
-| `Description` | `string?` | Optional description |
+| `Description` | `string?` | The permission's name, editable. Owner defaults get `Resource : Actions` |
 | `AccountId` | `Guid` | Owning account |
 | `ResourceType` | `string` | Resource type (see [Resource Types](../resource-types.md)) |
 | `ResourceId` | `Guid` | Specific resource ID, or `Guid.Empty` for every resource of the type |
@@ -18,6 +18,7 @@ CRUDX permission model scoped to a resource type and optional resource ID. Permi
 | `Execute` | `bool` | Execute action granted |
 | `IsSystemDefined` | `bool` | An Owner role default; cannot be deleted or detached from the Owner role |
 | `Roles` | `List<ChildRef>?` | Roles that include this permission (hydrated) |
+| `DisplayName` | `string` | Generated name in the same format, such as `Group : Read & Execute`; shown when there is no `Description` |
 
 ## CRUDX Model
 
@@ -61,7 +62,7 @@ Retrieve effective permissions by passing `hydrate: true` to `IRetrievalService`
 
 ## Key Behaviors
 
-- Permissions are immutable after creation. Delete and recreate to change
+- A permission's type, resource ID and actions are fixed once created; delete and recreate to change them. Its description can be changed with `IModificationService.ModifyPermissionAsync`, which needs Update on `permission`
 - At least one CRUDX flag must be `true` (validated by `PermissionValidator`)
 - Resource type must exist in `IResourceTypeRegistry` (validated by `PermissionValidator`)
 - Permissions are account-scoped and cannot cross account boundaries

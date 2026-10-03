@@ -5,6 +5,7 @@
 @inject IModificationService ModificationService
 @inject IRegistrationService RegistrationService
 @inject IDeregistrationService DeregistrationService
+@inject IAuthorizationProvider AuthorizationProvider
 
 <PageTitle>Group Detail - Corely IAM</PageTitle>
 
@@ -70,7 +71,10 @@ else
             <div class="section-divider-label">
                 Users
                 <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-                    <button class="btn btn-primary btn-sm" @onclick="() => _userPickerModal.ShowAsync()" disabled="@_loading">Add Users</button>
+                    @if (_canAddUsers)
+                    {
+                        <button class="btn btn-primary btn-sm" @onclick="() => _userPickerModal.ShowAsync()" disabled="@_loading">Add Users</button>
+                    }
                 </PermissionView>
             </div>
             <table class="table table-striped table-hover table-cards mb-0">
@@ -162,7 +166,7 @@ else
                    Title="Add Roles to Group"
                    SearchPlaceholder="Search roles..."
                    FetchItemsAsync="FetchAvailableRolesAsync"
-                   ExcludeIds="_assignedRoleIds"
+                   ExcludeIds="_hiddenRoleIds"
                    OnConfirm="AddRolesAsync" />
 
 <ConfirmModal @ref="_removeUserModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />
@@ -184,6 +188,8 @@ else
     private ConfirmModal _deleteModal = null!;
     private HashSet<Guid> _assignedUserIds = [];
     private HashSet<Guid> _assignedRoleIds = [];
+    private HashSet<Guid> _hiddenRoleIds = [];
+    private bool _canAddUsers;
 
     private int _usersSkip;
     private int _rolesSkip;
@@ -203,6 +209,8 @@ else
             _editDescription = _group.Description;
             _assignedUserIds = (_group.Users ?? []).Select(u => u.Id).ToHashSet();
             _assignedRoleIds = (_group.Roles ?? []).Select(r => r.Id).ToHashSet();
+            _hiddenRoleIds = [.. _assignedRoleIds];
+            _canAddUsers = await AuthorizationProvider.CanGrantGroupAsync(Id);
             _effectivePermissions = result.EffectivePermissions;
         }
     }
@@ -253,6 +261,8 @@ else
         var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(UserContext!.CurrentAccount!.Id, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
+            var grantable = await AuthorizationProvider.GetGrantableRoleIdsAsync(result.Data.Items.Select(x => x.Id));
+            _hiddenRoleIds.UnionWith(result.Data.Items.Select(x => x.Id).Where(id => !grantable.Contains(id)));
             var items = result.Data.Items.Select(r => new PickerItem(r.Id, r.Name, r.Description)).ToList();
             return (items, result.Data.TotalCount);
         }

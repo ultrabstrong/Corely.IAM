@@ -6,6 +6,7 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Microsoft.EntityFrameworkCore;
@@ -273,6 +274,36 @@ public class GrantOnlyWhatYouHoldTests : IAsyncLifetime
             _scenario.AccountId,
             services => work(services.GetRequiredService<IRegistrationService>())
         );
+
+    [Fact]
+    public async Task Delegate_SeesOnlyRolesWithinWhatTheyHold_ForGrantableRoles()
+    {
+        var grantable = await _scenario.ActAsAsync(
+            _scenario.DirectMemberUsername,
+            _scenario.AccountId,
+            services =>
+                services
+                    .GetRequiredService<IAuthorizationProvider>()
+                    .GetGrantableRoleIdsAsync([_delegateRoleId, _powerRoleId, _ownerRoleId])
+        );
+
+        Assert.Equal([_delegateRoleId], grantable);
+    }
+
+    [Fact]
+    public async Task Delegate_SeesNoGroupWhoseRolesHoldMore_ForGrantableGroups()
+    {
+        var grantable = await _scenario.ActAsAsync(
+            _scenario.DirectMemberUsername,
+            _scenario.AccountId,
+            services =>
+                services
+                    .GetRequiredService<IAuthorizationProvider>()
+                    .GetGrantableGroupIdsAsync([_powerGroupId])
+        );
+
+        Assert.Empty(grantable);
+    }
 
     private Task<T> AsDelegateAsync<T>(Func<IRegistrationService, Task<T>> work) =>
         _scenario.ActAsAsync(

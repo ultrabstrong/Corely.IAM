@@ -33,6 +33,7 @@ Centralized error handling, loading state, and confirmation dialog support.
 | `_message` | `string?` | Alert message text |
 | `_messageType` | `AlertType` | Alert severity |
 | `_loading` | `bool` | Page-level loading state |
+| `_loadFailed` | `bool` | The last load failed; a list page shows no spinner and no table |
 | `_confirmItemId` | `Guid` | ID pending confirmation |
 | `_confirmMessage` | `string` | Confirmation dialog text |
 
@@ -40,6 +41,7 @@ Centralized error handling, loading state, and confirmation dialog support.
 |--------|-------------|
 | `LoadCoreAsync()` | Abstract: load page data |
 | `ReloadAsync()` | Wraps `LoadCoreAsync()` with loading state and error handling |
+| `FailLoad(resultCode, resourceName)` | Marks the load failed and says why: no access, or couldn't be loaded. Call it from `LoadCoreAsync()` when a retrieval doesn't succeed |
 | `ExecuteSafeAsync(action)` | Wraps any async action with try-catch and loading state |
 | `SetResultMessage(success, msg, failMsg)` | Sets alert state from operation result |
 | `TryParseGuid(input, out result)` | Safe GUID parse with error alert on failure |

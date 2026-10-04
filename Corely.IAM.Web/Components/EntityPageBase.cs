@@ -1,3 +1,4 @@
+using Corely.IAM.Models;
 using Corely.IAM.Web.Components.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
@@ -40,6 +41,16 @@ public abstract class EntityPageBase : AuthenticatedPageBase
         {
             _loading = false;
         }
+    }
+
+    protected void FailLoad(RetrieveResultCode resultCode, string resourceName)
+    {
+        _loadFailed = true;
+        _message =
+            resultCode == RetrieveResultCode.UnauthorizedError
+                ? $"You don't have access to {resourceName} in this account."
+                : $"The {resourceName} couldn't be loaded.";
+        _messageType = AlertType.Warning;
     }
 
     protected async Task ExecuteSafeAsync(Func<Task> action)

@@ -121,6 +121,10 @@ else
             _items = result.Data.Items;
             _totalCount = result.Data.TotalCount;
         }
+        else
+        {
+            FailLoad(result.ResultCode, "users");
+        }
     }
 
     private void ConfirmRemove(Guid id, string name) => ShowConfirmation(_confirmModal, id, $"Remove '{name}' from account?");

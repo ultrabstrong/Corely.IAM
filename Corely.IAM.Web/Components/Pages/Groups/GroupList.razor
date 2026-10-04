@@ -133,6 +133,10 @@ else
             _items = result.Data.Items;
             _totalCount = result.Data.TotalCount;
         }
+        else
+        {
+            FailLoad(result.ResultCode, "groups");
+        }
     }
 
     private async Task CreateAsync()

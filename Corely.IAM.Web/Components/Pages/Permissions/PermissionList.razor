@@ -199,6 +199,10 @@ else
             _items = result.Data.Items;
             _totalCount = result.Data.TotalCount;
         }
+        else
+        {
+            FailLoad(result.ResultCode, "permissions");
+        }
     }
 
     private async Task OnResourceTypeChangedAsync(ChangeEventArgs e)

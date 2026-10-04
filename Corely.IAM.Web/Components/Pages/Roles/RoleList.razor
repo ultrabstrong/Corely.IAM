@@ -147,6 +147,10 @@ else
             _items = result.Data.Items;
             _totalCount = result.Data.TotalCount;
         }
+        else
+        {
+            FailLoad(result.ResultCode, "roles");
+        }
     }
 
     private async Task CreateAsync()

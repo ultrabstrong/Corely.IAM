@@ -1,5 +1,7 @@
 using Corely.DataAccess.Extensions;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.Audits.Models;
+using Corely.IAM.Audits.Providers;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.DataAccess;
 using Corely.IAM.GoogleAuths.Processors;
@@ -107,6 +109,12 @@ public static class ServiceRegistrationExtensions
             serviceCollection.Configure<PasswordValidationOptions>(
                 options.Configuration.GetSection(PasswordValidationOptions.NAME)
             );
+
+            serviceCollection.Configure<AuditOptions>(
+                options.Configuration.GetSection(AuditOptions.NAME)
+            );
+            serviceCollection.AddSingleton<AuditSettingsCache>();
+            serviceCollection.AddScoped<IAuditPolicy, AuditPolicy>();
 
             serviceCollection.AddScoped<IPlatformAccessProvider, PlatformAccessProvider>();
             serviceCollection.AddScoped<IAuthenticationProvider, AuthenticationProvider>();

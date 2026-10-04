@@ -5,6 +5,170 @@
 platform account until this is done. The platform account is out as previews (Corely.IAM
 3.4.0-preview.1, IAM.Web 3.3.0-preview.1, the CLI 3.1.0-preview.1).
 
+## Summary
+
+We are building an audit log for IAM and the apps that use it. Every service method can write an
+entry saying who did what, in which account, and whether it was allowed. What actually gets written is
+up to the platform and to each account:
+
+- **The platform** has a switch for the whole system, a maximum retention, and which actions accounts
+  may record.
+- **Each account** chooses which actions to record for each kind of user (its own members, platform
+  members, background processes) and how long to keep them, within those limits.
+- **People read it on one audit page** that covers every account they may see, filter it, export it
+  as CSV, and delete entries older than a date. Old entries are also cleaned up daily.
+
+Nothing is recorded about the request's contents, entries cannot be edited, and auditing is added with
+the same decorator pattern authorization already uses.
+
+## How it fits together
+
+### Components: writing entries
+
+```mermaid
+flowchart LR
+    caller["<b>Caller</b><br/>a page or a host"]
+    tel["<b>Telemetry</b><br/>decorator"]
+    aud["<b>Audit</b><br/>decorator"]
+    authz["<b>Authorization</b><br/>decorator"]
+    svc["<b>Service</b>"]
+    provider["<b>IAuditProvider</b><br/>records one call"]
+    policy["<b>IAuditPolicy</b><br/>record it, keep how long"]
+    entries[("<b>AuditEntries</b>")]
+    acct[("<b>AccountAuditSettings</b>")]
+    plat[("<b>PlatformSettings</b>")]
+
+    caller --> tel --> aud --> authz --> svc
+    aud --> provider
+    provider --> entries
+    provider --> policy
+    policy --> acct
+    policy --> plat
+
+    classDef new fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef existing fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef store fill:#fef3c7,stroke:#d97706,color:#78350f
+    class aud,provider,policy new
+    class caller,tel,authz,svc existing
+    class entries,acct,plat store
+```
+
+### Components: reading and managing
+
+```mermaid
+flowchart LR
+    cleanup["<b>Daily cleanup</b>"]
+    pages["<b>Audit page</b><br/>and settings pages"]
+    service["<b>IAuditService</b><br/>read, export, delete, settings"]
+    entries[("<b>AuditEntries</b>")]
+    acct[("<b>AccountAuditSettings</b>")]
+    plat[("<b>PlatformSettings</b>")]
+
+    cleanup --> entries
+    pages --> service
+    service --> entries
+    service --> acct
+    service --> plat
+
+    classDef new fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef store fill:#fef3c7,stroke:#d97706,color:#78350f
+    class cleanup,pages,service new
+    class entries,acct,plat store
+```
+
+Green is new, blue exists today, amber is new tables. Billing and DocsToData add audit decorators to
+their own services, which call the same `IAuditProvider`.
+
+### Tables
+
+```mermaid
+erDiagram
+    Accounts ||--o| AccountAuditSettings : "configured by"
+    Accounts |o..o{ AuditEntries : "acted in"
+    Users |o..o{ AuditEntries : "acted"
+    PlatformSettings {
+        bit AuditEnabled
+        int AuditMaxRetentionDays
+        int AuditAllowedActions
+    }
+    AccountAuditSettings {
+        guid AccountId
+        int PlatformMemberActions
+        int AccountMemberActions
+        int SystemContextActions
+        int RetentionDays
+    }
+    AuditEntries {
+        guid Id
+        datetime OccurredUtc
+        guid ActorUserId
+        string ActorUsername
+        int Cohort
+        guid AccountId
+        string Service
+        string Operation
+        int Action
+        string ResourceType
+        string ResourceIds
+        string ResultCode
+    }
+```
+
+The action columns hold CRUDX as flags. `AuditEntries` refers to users and accounts by id with no
+foreign key (the dotted lines), so deleting a user does not delete the record of what they did.
+`PlatformSettings` is a single row.
+
+### Recording a call
+
+```mermaid
+sequenceDiagram
+    participant C as Caller
+    participant T as Telemetry
+    participant A as Audit
+    participant Z as Authorization
+    participant S as Service
+    participant P as IAuditProvider
+    participant Pol as IAuditPolicy
+    participant DB as IAM database
+    C->>T: DeleteGroupAsync
+    T->>A: call
+    A->>Z: call
+    Z->>S: call, when allowed
+    S-->>Z: result
+    Z-->>A: result, or refused
+    A->>P: action, type, ids, result code
+    P->>Pol: record this?
+    Pol->>DB: platform and account settings
+    Pol-->>P: yes, keep 90 days
+    P->>DB: insert entry
+    A-->>T: result
+    T-->>C: result
+```
+
+A refused call is recorded the same way, with its refusal code. When the policy says no, nothing is
+written and the call returns as normal.
+
+### Reading the audit page
+
+```mermaid
+sequenceDiagram
+    participant V as Viewer
+    participant Pg as Audit page
+    participant Svc as IAuditService
+    participant Auth as Authorization
+    participant DB as IAM database
+    V->>Pg: open, set filters
+    Pg->>Svc: list entries
+    Svc->>Auth: accounts with Read on audit
+    Auth-->>Svc: account ids, or all for a platform member
+    Svc->>DB: entries in those accounts, filtered
+    DB-->>Svc: one page of entries
+    Svc-->>Pg: entries
+    Pg-->>V: table, with a platform member column
+```
+
+Export runs the same query without paging and returns CSV.
+
 ## Why
 
 A platform member's permissions reach every account, and nothing records what anyone did. Auditing
@@ -96,6 +260,9 @@ later rule (a per-account override) changes one type, and the policy is tested o
 | Read | List and get, with filters; export as CSV |
 | Delete | Delete one account's entries older than a date |
 
+It also reads and updates the account's audit settings and, in the platform account, the platform
+settings.
+
 **Two resource types:**
 
 | Type | Actions used |
@@ -143,6 +310,8 @@ care about by exporting it before it ages out.
   or a `platform_settings` type of its own, since that table will hold more than audit later?
 - **Where the cleanup runs:** every host that registers IAM (idempotent, so harmless twice), or only
   hosts that opt in.
+- **Deleting an account:** do its entries go with it, or stay until they age out under the platform
+  maximum?
 - **Turning `AuditEnabled` off:** do existing entries stay until they age out, or go at once?
 
 ## Done when

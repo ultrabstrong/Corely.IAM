@@ -1,6 +1,7 @@
 @inject IBlazorUserContextAccessor BlazorUserContextAccessor
 @inject NavigationManager NavigationManager
 @inject IAccountDisplayState AccountDisplayState
+@inject IRetrievalService RetrievalService
 @implements IDisposable
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -100,13 +101,20 @@
         var context = await BlazorUserContextAccessor.GetUserContextAsync();
         _isAuthenticated = context?.User != null;
         _hasAccount = context?.CurrentAccount != null;
-        _hasAnyAccounts = context?.AvailableAccounts.Count > 0;
-        _hasMultipleAccounts = context?.AvailableAccounts.Count > 1;
+        var enterableAccounts = _isAuthenticated ? await CountEnterableAccountsAsync() : 0;
+        _hasAnyAccounts = enterableAccounts > 0;
+        _hasMultipleAccounts = enterableAccounts > 1;
         _userId = context?.User?.Id ?? Guid.Empty;
         _accountId = context?.CurrentAccount?.Id ?? Guid.Empty;
         _username = context?.User?.Username;
         _accountName = context?.CurrentAccount?.AccountName;
         AccountDisplayState.OnChanged += OnAccountNameChanged;
+    }
+
+    private async Task<int> CountEnterableAccountsAsync()
+    {
+        var result = await RetrievalService.ListAccountsAsync(new ListAccountsRequest(Take: 2));
+        return result.Data?.TotalCount ?? 0;
     }
 
     private void OnAccountNameChanged()

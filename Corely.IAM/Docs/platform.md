@@ -22,6 +22,9 @@ other accounts:
    `account` (on every resource) sees every account in the account list and can switch into any of
    them without being a member. They do not appear in that account's user list. Without it, their
    platform permissions only apply in accounts they already belong to.
+   `UserContext.AvailableAccounts` still holds only their memberships plus the account they are in,
+   so a host deciding whether to offer an account switch asks `ListAccountsAsync`, as the IAM.Web
+   nav bar does.
 
 Because a platform member's access is ordinary permissions, the rest of IAM needs no special cases:
 the grant only what you hold rule bounds what platform members can hand out, and a slim role gives a

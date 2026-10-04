@@ -121,13 +121,13 @@ internal class AuditProvider(
             var after = _userContextProvider.GetUserContext();
             var context = pending.Context(after);
             var described = outcome();
-            var accountId = pending.AccountIdAfter(after);
+            var accountId = NonEmpty(described.AccountId) ?? pending.AccountIdAfter(after);
             var isSystem = context?.IsSystemContext == true;
             var actorUserId = isSystem
                 ? null
                 : pending.Before?.User?.Id
                     ?? after?.User?.Id
-                    ?? described.ActorUserId
+                    ?? NonEmpty(described.ActorUserId)
                     ?? await FindUserIdAsync(call.ActorUsername);
 
             var alwaysRecorded = _auditPolicy.IsAlwaysRecorded(call.Service, pending.Operation);
@@ -202,6 +202,8 @@ internal class AuditProvider(
         _auditPolicy.IsAlwaysRecorded(call.Service, operation)
         || await _auditPolicy.IsRecordedAsync(AuditCohort.AccountMember, accountId, call.Action)
         || await _auditPolicy.IsRecordedAsync(AuditCohort.PlatformMember, accountId, call.Action);
+
+    private static Guid? NonEmpty(Guid? id) => id == Guid.Empty ? null : id;
 
     private Task<bool> IsMemberAsync(Guid userId, Guid accountId) =>
         _accountRepo.AnyAsync(a => a.Id == accountId && a.Users!.Any(u => u.Id == userId));

@@ -139,6 +139,7 @@ public static class ServiceRegistrationExtensions
                 IRegistrationService,
                 RegistrationServiceAuthorizationDecorator
             >();
+            serviceCollection.Decorate<IRegistrationService, RegistrationServiceAuditDecorator>();
             serviceCollection.Decorate<
                 IRegistrationService,
                 RegistrationServiceTelemetryDecorator
@@ -150,13 +151,20 @@ public static class ServiceRegistrationExtensions
             >();
             serviceCollection.Decorate<
                 IDeregistrationService,
+                DeregistrationServiceAuditDecorator
+            >();
+            serviceCollection.Decorate<
+                IDeregistrationService,
                 DeregistrationServiceTelemetryDecorator
             >();
             serviceCollection.AddScoped<IRetrievalService, RetrievalService>();
+            serviceCollection.Decorate<IRetrievalService, RetrievalServiceAuditDecorator>();
             serviceCollection.Decorate<IRetrievalService, RetrievalServiceTelemetryDecorator>();
             serviceCollection.AddScoped<IPlatformService, PlatformService>();
+            serviceCollection.Decorate<IPlatformService, PlatformServiceAuditDecorator>();
             serviceCollection.AddHostedService<PlatformOwnerPermissionsStartup>();
             serviceCollection.AddScoped<IModificationService, ModificationService>();
+            serviceCollection.Decorate<IModificationService, ModificationServiceAuditDecorator>();
             serviceCollection.Decorate<
                 IModificationService,
                 ModificationServiceTelemetryDecorator
@@ -164,11 +172,16 @@ public static class ServiceRegistrationExtensions
             serviceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
             serviceCollection.Decorate<
                 IAuthenticationService,
+                AuthenticationServiceAuditDecorator
+            >();
+            serviceCollection.Decorate<
+                IAuthenticationService,
                 AuthenticationServiceTelemetryDecorator
             >();
 
             serviceCollection.AddScoped<IMfaService, MfaService>();
             serviceCollection.Decorate<IMfaService, MfaServiceAuthorizationDecorator>();
+            serviceCollection.Decorate<IMfaService, MfaServiceAuditDecorator>();
             serviceCollection.Decorate<IMfaService, MfaServiceTelemetryDecorator>();
 
             serviceCollection.AddScoped<IGoogleAuthService, GoogleAuthService>();
@@ -176,12 +189,18 @@ public static class ServiceRegistrationExtensions
                 IGoogleAuthService,
                 GoogleAuthServiceAuthorizationDecorator
             >();
+            serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceAuditDecorator>();
             serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceTelemetryDecorator>();
 
             serviceCollection.AddScoped<IInvitationService, InvitationService>();
+            serviceCollection.Decorate<IInvitationService, InvitationServiceAuditDecorator>();
             serviceCollection.Decorate<IInvitationService, InvitationServiceTelemetryDecorator>();
 
             serviceCollection.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
+            serviceCollection.Decorate<
+                IPasswordRecoveryService,
+                PasswordRecoveryServiceAuditDecorator
+            >();
             serviceCollection.Decorate<
                 IPasswordRecoveryService,
                 PasswordRecoveryServiceTelemetryDecorator

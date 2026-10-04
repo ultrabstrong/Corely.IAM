@@ -4,6 +4,7 @@ public sealed record AuditOutcome(string ResultCode)
 {
     public IReadOnlyList<Guid> ResourceIds { get; init; } = [];
     public Guid? ActorUserId { get; init; }
+    public Guid? AccountId { get; init; }
 
     public static AuditOutcome Of(Enum resultCode, params IEnumerable<Guid?> resourceIds) =>
         new(resultCode.ToString())

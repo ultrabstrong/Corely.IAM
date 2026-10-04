@@ -1,6 +1,7 @@
 using System;
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.Audits.Providers;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.DataAccess;
 using Corely.IAM.Groups.Processors;
@@ -115,6 +116,8 @@ public class ServiceRegistrationExtensionsTests
     [InlineData(typeof(IRoleProcessor))]
     [InlineData(typeof(IPermissionProcessor))]
     [InlineData(typeof(IResourceTypeRegistry))]
+    [InlineData(typeof(IAuditPolicy))]
+    [InlineData(typeof(IAuditProvider))]
     public void AddIAMServices_WithMockDb_RegistersService(Type serviceType)
     {
         var services = CreateServiceCollection();

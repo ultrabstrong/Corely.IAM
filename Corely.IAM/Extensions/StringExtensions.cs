@@ -36,6 +36,9 @@ internal static class StringExtensions
 
         public string ToDisplayRecoveryCode() => $"{value[..4]}-{value[4..]}";
 
+        public string Truncated(int maxLength) =>
+            value.Length <= maxLength ? value : value[..maxLength];
+
         public string EmailLocalPart()
         {
             var atIndex = value.IndexOf('@');

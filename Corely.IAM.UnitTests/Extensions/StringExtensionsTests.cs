@@ -47,4 +47,14 @@ public class StringExtensionsTests
     {
         Assert.Equal("ABCD-EFGH", "ABCDEFGH".ToDisplayRecoveryCode());
     }
+
+    [Theory]
+    [InlineData("abcdef", 3, "abc")]
+    [InlineData("abc", 3, "abc")]
+    [InlineData("ab", 3, "ab")]
+    [InlineData("", 3, "")]
+    public void Truncated_KeepsAtMostTheMaximumLength(string value, int maxLength, string expected)
+    {
+        Assert.Equal(expected, value.Truncated(maxLength));
+    }
 }

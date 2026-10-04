@@ -115,6 +115,7 @@ public static class ServiceRegistrationExtensions
             );
             serviceCollection.AddSingleton<AuditSettingsCache>();
             serviceCollection.AddScoped<IAuditPolicy, AuditPolicy>();
+            serviceCollection.AddScoped<IAuditProvider, AuditProvider>();
 
             serviceCollection.AddScoped<IPlatformAccessProvider, PlatformAccessProvider>();
             serviceCollection.AddScoped<IAuthenticationProvider, AuthenticationProvider>();

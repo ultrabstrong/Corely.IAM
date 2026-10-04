@@ -57,27 +57,30 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    cleanup["<b>Daily cleanup</b>"]
     pages["<b>Audit page</b><br/>and settings pages"]
+    cleanup["<b>Host's daily job</b><br/>a timer the app owns"]
     service["<b>IAuditService</b><br/>read, export, delete, settings"]
     entries[("<b>AuditEntries</b>")]
     acct[("<b>AccountAuditSettings</b>")]
     plat[("<b>PlatformSettings</b>")]
 
-    cleanup --> entries
     pages --> service
+    cleanup --> service
     service --> entries
     service --> acct
     service --> plat
 
     classDef new fill:#dcfce7,stroke:#16a34a,color:#14532d
     classDef store fill:#fef3c7,stroke:#d97706,color:#78350f
-    class cleanup,pages,service new
+    classDef host fill:#f6f8fa,stroke:#8c959f,color:#24292f,stroke-dasharray:5 4
+    class pages,service new
     class entries,acct,plat store
+    class cleanup host
 ```
 
-Green is new, blue exists today, amber is new tables. Billing and DocsToData add audit decorators to
-their own services, which call the same `IAuditProvider`.
+Green is new in IAM, blue exists today, amber is new tables, and the dashed grey box is written by
+each app, not shipped by IAM. Billing and DocsToData add audit decorators to their own services,
+which call the same `IAuditProvider`.
 
 ### Tables
 
@@ -284,8 +287,14 @@ account.
 
 ### Retention
 
-A daily cleanup deletes each account's entries older than its `RetentionDays`. People keep what they
-care about by exporting it before it ages out.
+**IAM ships the operation, the app ships the schedule.** `IAuditService` has a method that deletes
+each account's entries older than its `RetentionDays` and returns how many went. It runs under system
+context and is safe to run twice. The app calls it from whatever schedules work there: a timer
+triggered function in DocsToData, a hosted service with a timer in a plain web app. IAM ships no
+timer, because a Functions app, an App Service that sleeps and a web app scaled across instances each
+schedule differently.
+
+People keep what they care about by exporting it before it ages out.
 
 ## First version
 
@@ -293,7 +302,7 @@ care about by exporting it before it ages out.
 - Account settings per cohort and action, and the account's retention
 - Audit decorators on every IAM service; Billing and DocsToData after
 - The cross-account audit page with CSV export, and delete older than a date
-- The daily cleanup
+- The retention cleanup operation in IAM, and a daily timer function calling it in DocsToData
 - The two resource types and their owner defaults
 
 ## Later, without redesign
@@ -308,8 +317,6 @@ care about by exporting it before it ages out.
   means), or go through with the failure logged?
 - **What gates the platform settings page:** Update on `audit_settings` held in the platform account,
   or a `platform_settings` type of its own, since that table will hold more than audit later?
-- **Where the cleanup runs:** every host that registers IAM (idempotent, so harmless twice), or only
-  hosts that opt in.
 - **Deleting an account:** do its entries go with it, or stay until they age out under the platform
   maximum?
 - **Turning `AuditEnabled` off:** do existing entries stay until they age out, or go at once?

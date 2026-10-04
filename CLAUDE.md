@@ -278,6 +278,8 @@ Processors are wrapped with **authorization + telemetry decorators** via Scrutor
 
 Registration order in `ServiceRegistrationExtensions.cs` matters: decorators are applied bottom-up (last registered = outermost).
 
+**A cross-cutting concern is a hand-written decorator per interface, each method a thin call to a provider that holds the logic**, as `AuthorizationDecorator` calls `IAuthorizationProvider`. Do not reach for `DispatchProxy`, a source generator or any other reflection-based interception to avoid writing the per-method calls: the compiler already holds every decorator to its interface, and the provider keeps the logic in one place. A concern that seems to need interception would need it for authorization first, which is the layer that matters most and does not.
+
 Authorization is split into two layers:
 - **Service decorators** — validate context only (`HasUserContext()` / `HasAccountContext()` / `IsNonSystemUserContext()`). They do NOT check CRUDX permissions.
 - **Processor decorators** — enforce specific CRUDX permission checks on resources via `AuthorizationProvider.IsAuthorizedAsync()`.

@@ -27,8 +27,13 @@ The idea is for consumers of the library to be able to plug in their own telemet
 There could be more than one telemetry registered at the consumer level using the decorator pattern.
 Need to figure where / what kinds of telemetry make sense, and if different kinds of telemetry events / handlers are needed
 
-### Add IAuditing
-When authorization passes and an action is performed, audit who did the action and save it to an audits database
+### Audit tamper evidence
+Auditing itself is planned in [auditing.md](auditing.md). This would make an altered or removed entry detectable.
+- [ ] Each entry stores the previous entry's hash and its own hash over its columns, so changing or removing one breaks every hash after it
+- [ ] One chain per account plus a platform chain; a chain head row locked on write keeps it correct across app instances
+- [ ] A daily checkpoint per chain signed with the platform account's signing key, with the key version so keys can rotate
+- [ ] A Verify operation and button that re-walks a chain and reports the first break
+- Cannot catch the oldest entries being removed (retention does that on purpose) or an entry whose write failed
 
 ### Add support for managing other users
 An account owner has abilities to manage other user's access to the accounts, but not the actual users.

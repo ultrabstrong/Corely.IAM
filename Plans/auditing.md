@@ -17,12 +17,10 @@ up to the platform and to each account:
 - **Each account** chooses which actions to record for its own members and for platform members, and
   how long to keep them, within those limits.
 - **People read it on one audit page** covering every account they may see plus their own activity.
-  They can filter it, export up to 10,000 entries as CSV, verify it has not been altered, and delete
-  entries older than a date. Old entries are also cleaned up daily.
+  They can filter it, export up to 10,000 entries as CSV, and delete entries older than a date. Old entries are also cleaned up daily.
 
-Nothing from a request's contents is stored, entries cannot be edited, each entry is chained to the
-one before by its hash so a changed or removed entry shows up, and auditing is added with the same
-decorator pattern authorization already uses.
+Nothing from a request's contents is stored, entries cannot be edited, and auditing is added with the
+same decorator pattern authorization already uses.
 
 ## How it fits together
 
@@ -37,7 +35,7 @@ flowchart LR
     svc["<b>Service</b>"]
     provider["<b>IAuditProvider</b><br/>records one call"]
     policy["<b>IAuditPolicy</b><br/>record it, keep how long"]
-    entries[("<b>AuditEntries</b><br/>and chain heads")]
+    entries[("<b>AuditEntries</b>")]
     acct[("<b>AccountAuditSettings</b>")]
     plat[("<b>PlatformSettings</b>")]
 
@@ -62,8 +60,8 @@ flowchart LR
 flowchart LR
     pages["<b>Audit page</b><br/>and settings pages"]
     cleanup["<b>Host's daily job</b><br/>a timer the app owns"]
-    service["<b>IAuditService</b><br/>read, export, verify, delete, settings"]
-    entries[("<b>AuditEntries</b><br/>and checkpoints")]
+    service["<b>IAuditService</b><br/>read, export, delete, settings"]
+    entries[("<b>AuditEntries</b>")]
     acct[("<b>AccountAuditSettings</b>")]
     plat[("<b>PlatformSettings</b>")]
 
@@ -92,8 +90,6 @@ erDiagram
     Accounts ||--o| AccountAuditSettings : "configured by"
     Accounts |o..o{ AuditEntries : "acted in"
     Users |o..o{ AuditEntries : "acted"
-    AuditChainHeads |o..o| AuditEntries : "last entry"
-    AuditChainHeads ||..o{ AuditCheckpoints : "signed at"
     PlatformSettings {
         bit AuditEnabled
         int AuditMaxRetentionDays
@@ -121,28 +117,12 @@ erDiagram
         string ResourceIds
         string ResultCode
         string Details
-        binary PreviousHash
-        binary Hash
-    }
-    AuditChainHeads {
-        guid ChainId
-        guid LastEntryId
-        binary LastHash
-    }
-    AuditCheckpoints {
-        guid Id
-        guid ChainId
-        guid UpToEntryId
-        binary Hash
-        binary Signature
-        int KeyVersion
     }
 ```
 
 The action columns hold CRUDX as flags. `AuditEntries` refers to users and accounts by id with no
 foreign key (the dotted lines), so deleting a user or an account does not delete the record of what
-happened. `PlatformSettings` is a single row. A chain's id is its account's id, or `Guid.Empty` for
-the platform chain.
+happened. `PlatformSettings` is a single row.
 
 ### Recording a call
 
@@ -165,7 +145,7 @@ sequenceDiagram
     A->>P: action, type, ids, result code
     P->>Pol: record this?
     Pol-->>P: yes, from cached settings
-    P->>DB: lock chain head, insert hashed entry
+    P->>DB: insert entry
     A-->>T: result
     T-->>C: result
 ```
@@ -217,22 +197,25 @@ and what is actually recorded is configured, at the platform and per account.
 | `Action`, `ResourceType`, `ResourceIds` | The CRUDX action and what it was on. A created resource's id comes from the result |
 | `ResultCode` | The result code returned, refusals included, or `Fault` when the call threw |
 | `Details` | A short fact about this operation, never request contents. Only the operations below write it |
-| `PreviousHash`, `Hash` | The chain (below) |
 
 **No request contents.** Nothing from a request body is stored, so no secret or personal data lands
 in the log by accident.
 
-**Names live only where they are needed.** Entries hold ids, not names. Creating or deleting a user
-writes the username into `Details`; creating or deleting an account writes the account name. A user
-who still exists is looked up in Users; a deleted one is looked up from their deletion entry. That
-entry is the newest thing tied to them, so it outlives everything else they did, and when it ages
-out so has every entry that needed it. The same holds for accounts.
+**Names live only where they are needed.** Entries hold ids, not names. Deleting a user writes the
+username into `Details`, and deleting an account writes the account name. A user who still exists is
+looked up in Users; a deleted one is looked up from their deletion entry. That entry is the newest
+thing tied to them, so it outlives everything else they did, and when it ages out so has every entry
+that needed it. The same holds for accounts.
 
 **Entries are append-only.** Nothing updates an entry. The only delete is "everything older than a
 date" for one account, so no entry can be removed or kept selectively.
 
-**Always recorded, whatever the settings say:** creating and deleting users and accounts (their
-names would otherwise be lost), changing audit settings, and deleting audit entries.
+**Two operations are always recorded: deleting a user and deleting an account.** The audit decorator
+records them whatever the settings say, the system-wide switch included, because without them a
+deleted user's or account's name is lost. Everything else follows the settings.
+
+**Entries outlive their account,** so when someone asks what happened in an account after it is gone,
+the answer is still there until it ages out under the platform maximum.
 
 ### Cohorts and settings
 
@@ -256,7 +239,7 @@ setting is a migration, which IAM already ships for every schema change.
 
 | Setting | Meaning |
 |---------|---------|
-| `AuditEnabled` | System-wide switch. Off records nothing anywhere |
+| `AuditEnabled` | System-wide switch. Off records nothing anywhere except deleting a user or an account |
 | `AuditMaxRetentionDays` | The longest any account may keep entries. Also the retention for entries outside any account, for system context, and for a deleted account's entries |
 | `AuditAllowedActions` | The CRUDX actions any account may switch on. The platform can forbid Read and Execute logging everywhere |
 | `SystemContextActions` | What is recorded for system context |
@@ -313,26 +296,6 @@ rule (a per-account override) changes one type, and the policy is tested on its 
 - **Reads are off by default,** so the busiest calls cost one cache lookup and no write.
 - **Indexes:** `(AccountId, OccurredUtc)` for the audit page and the cleanup, `(ActorUserId,
   OccurredUtc)` for a user's own entries.
-- **Writes within one chain are serialized** by the chain head lock (below). That is the cost of the
-  chain, and it is per account, not system wide.
-
-### Tamper evidence
-
-Each entry stores the hash of the entry before it in its chain, and its own hash over its columns
-and that previous hash. Changing or removing an entry in the middle of a chain breaks every hash after
-it.
-
-- **One chain per account,** plus one platform chain for entries outside any account and for system
-  context. One chain for the whole system would put every audited write behind a single lock.
-- **`AuditChainHeads` holds each chain's last entry and hash.** Writing an entry locks its chain's
-  head row, so the chain stays correct across several app instances.
-- **Daily signed checkpoints.** The host's daily job also records, for each chain, its latest hash
-  signed with the platform account's signing key, and the key version, so keys can still rotate. A
-  checkpoint proves the chain up to that point existed then.
-- **Verify.** `IAuditService` re-walks a chain from its oldest remaining entry, checking each hash
-  and each checkpoint's signature, and reports the first break. The audit page has a Verify button.
-- **What it cannot catch:** the oldest entries being removed, because retention removes them on
-  purpose; and an entry that was never written because its write failed, which best effort accepts.
 
 ### Reading and managing it
 
@@ -341,18 +304,17 @@ it.
 | Action | Method |
 |--------|--------|
 | Create | Record an entry (the provider's path; not called by pages) |
-| Read | List and get, with filters; export as CSV; verify a chain |
+| Read | List and get, with filters; export as CSV |
 | Delete | Delete one account's entries older than a date |
 
 It also reads and updates the account's audit settings and, in the platform account, the platform
-settings, and has the two operations the host's daily job calls: delete expired entries, and write
-checkpoints.
+settings, and has the operation the host's daily job calls to delete expired entries.
 
 **Two resource types:**
 
 | Type | Actions used |
 |------|--------------|
-| `audit` | Read: view, export and verify. Delete: delete older than a date |
+| `audit` | Read: view and export. Delete: delete older than a date |
 | `audit_settings` | Read and Update the account's audit settings |
 
 **The audit page is not tied to one account.** It lives outside the current account, like Profile,
@@ -381,7 +343,7 @@ each account's entries older than its effective retention and returns how many w
 system context and is safe to run twice. The app calls it from whatever schedules work there: a timer
 triggered function in DocsToData, a hosted service with a timer in a plain web app. IAM ships no
 timer, because a Functions app, an App Service that sleeps and a web app scaled across instances each
-schedule differently. The same daily job writes the signed checkpoints.
+schedule differently.
 
 **A deleted account's entries stay** and age out under the platform maximum, since the account's own
 settings went with it.
@@ -395,10 +357,8 @@ People keep what they care about by exporting it before it ages out.
 - Account settings for their two cohorts, and the account's retention
 - Audit decorators on every IAM service, and the test that none is missing; Billing and DocsToData
   after
-- The hash chain, chain heads, daily signed checkpoints and Verify
 - The cross-account audit page, CSV export capped at 10,000, and delete older than a date
-- The retention cleanup and checkpoint operations in IAM, and a daily timer function calling them in
-  DocsToData
+- The retention cleanup operation in IAM, and a daily timer function calling it in DocsToData
 - The two resource types and their owner defaults
 
 ## Later, without redesign
@@ -417,6 +377,6 @@ People keep what they care about by exporting it before it ages out.
 ## Done when
 
 Every IAM service method passes through an audit decorator, what is recorded follows the platform and
-account settings, the audit page shows, exports and verifies entries across the accounts a caller may
-read and their own activity, old entries are cleaned up and chains checkpointed on schedule, and
+account settings, the audit page shows and exports entries across the accounts a caller may read and
+their own activity, old entries are cleaned up on schedule, and
 Billing and DocsToData audit their own services the same way.

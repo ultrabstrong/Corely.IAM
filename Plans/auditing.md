@@ -17,7 +17,8 @@ up to the platform and to each account:
 - **Each account** chooses which actions to record for its own members and for platform members, and
   how long to keep them, within those limits.
 - **People read it on one audit page** covering every account they may see plus their own activity.
-  They can filter it, export up to 10,000 entries as CSV, and delete entries older than a date. Old entries are also cleaned up daily.
+  They can filter it, export up to 10,000 entries as CSV, and purge an account's entries, all of them
+  or those older than a date. Old entries are also cleaned up daily.
 
 Nothing from a request's contents is stored, entries cannot be edited, and auditing is added with the
 same decorator pattern authorization already uses.
@@ -207,8 +208,8 @@ looked up in Users; a deleted one is looked up from their deletion entry. That e
 thing tied to them, so it outlives everything else they did, and when it ages out so has every entry
 that needed it. The same holds for accounts.
 
-**Entries are append-only.** Nothing updates an entry. The only delete is "everything older than a
-date" for one account, so no entry can be removed or kept selectively.
+**Entries are append-only.** Nothing updates an entry. The only delete is a purge of one account's
+entries, all of them or everything older than a date, so no entry can be removed or kept selectively.
 
 **Two operations are always recorded: deleting a user and deleting an account.** The audit decorator
 records them whatever the settings say, the system-wide switch included, because without them a
@@ -305,17 +306,21 @@ rule (a per-account override) changes one type, and the policy is tested on its 
 |--------|--------|
 | Create | Record an entry (the provider's path; not called by pages) |
 | Read | List and get, with filters; export as CSV |
-| Delete | Delete one account's entries older than a date |
+| Delete | Purge one account's entries: all of them, or those older than a date |
 
 It also reads and updates the account's audit settings and, in the platform account, the platform
 settings, and has the operation the host's daily job calls to delete expired entries.
 
-**Two resource types:**
+**Three resource types,** one per thing, as everywhere else in IAM:
 
 | Type | Actions used |
 |------|--------------|
-| `audit` | Read: view and export. Delete: delete older than a date |
-| `audit_settings` | Read and Update the account's audit settings |
+| `audit` | Read: view and export. Delete: purge |
+| `audit_settings` | Read and Update an account's audit settings |
+| `platform_settings` | Read and Update the platform settings. Only meaningful in the platform account |
+
+`platform_settings` is its own type, not Update on `audit_settings` held in the platform account,
+because the platform settings table will hold more than audit.
 
 **The audit page is not tied to one account.** It lives outside the current account, like Profile,
 and shows:
@@ -333,8 +338,16 @@ the account picker.
 **Export** downloads what the filters show as CSV, up to 10,000 entries. When the filters match more,
 the page says the export stopped at 10,000 and suggests narrowing the date range.
 
+**Purge** is a button on the audit page that opens a modal. The modal asks which account (only those
+where the viewer holds Delete on `audit`; for a platform member holding it in the platform account,
+also the entries outside any account and from system context), then either everything or everything
+older than a chosen date, and confirms with the count about to go. It never removes single entries.
+
+**Switching auditing off and purging are separate.** Turning `AuditEnabled` off stops new entries
+and leaves existing ones to age out; removing them is a purge.
+
 **Other pages:** account audit settings in account management; platform settings in the platform
-account.
+account, gated by `platform_settings`.
 
 ### Retention
 
@@ -357,9 +370,9 @@ People keep what they care about by exporting it before it ages out.
 - Account settings for their two cohorts, and the account's retention
 - Audit decorators on every IAM service, and the test that none is missing; Billing and DocsToData
   after
-- The cross-account audit page, CSV export capped at 10,000, and delete older than a date
+- The cross-account audit page, CSV export capped at 10,000, and the purge modal
 - The retention cleanup operation in IAM, and a daily timer function calling it in DocsToData
-- The two resource types and their owner defaults
+- The three resource types and their owner defaults
 
 ## Later, without redesign
 
@@ -368,15 +381,9 @@ People keep what they care about by exporting it before it ages out.
   `IAuditPolicy`.
 - **More export controls** than the 10,000 cap.
 
-## Open questions
-
-- **What gates the platform settings page:** Update on `audit_settings` held in the platform account,
-  or a `platform_settings` type of its own, since that table will hold more than audit later?
-- **Turning `AuditEnabled` off:** do existing entries stay until they age out, or go at once?
-
 ## Done when
 
 Every IAM service method passes through an audit decorator, what is recorded follows the platform and
-account settings, the audit page shows and exports entries across the accounts a caller may read and
-their own activity, old entries are cleaned up on schedule, and
-Billing and DocsToData audit their own services the same way.
+account settings, the audit page shows, exports and purges entries across the accounts a caller may
+read and their own activity, old entries are cleaned up on schedule, and Billing and DocsToData audit
+their own services the same way.

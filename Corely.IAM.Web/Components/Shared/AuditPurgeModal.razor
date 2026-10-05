@@ -1,0 +1,160 @@
+@inject IAuditService AuditService
+
+@if (_visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="Cancel">
+        <div class="modal-dialog" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Purge Audit Entries</h5>
+                    <button type="button" class="btn-close" @onclick="Cancel" disabled="@_busy"></button>
+                </div>
+                <div class="modal-body">
+                    @if (_error is not null)
+                    {
+                        <p class="text-danger">@_error</p>
+                    }
+                    @if (_count is null)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Account</label>
+                            <select class="form-select" @bind="_target">
+                                <option value="">Choose...</option>
+                                @foreach (var account in _accounts)
+                                {
+                                    <option value="@account.Id">@account.Name</option>
+                                }
+                                @if (_includesEverything)
+                                {
+                                    <option value="@OUTSIDE_ANY_ACCOUNT">Outside any account and system context</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="purgeScope" id="purgeAll" checked="@(!_olderThanOnly)" @onchange="() => _olderThanOnly = false" />
+                            <label class="form-check-label" for="purgeAll">Everything</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="purgeScope" id="purgeOlder" checked="@_olderThanOnly" @onchange="() => _olderThanOnly = true" />
+                            <label class="form-check-label" for="purgeOlder">Everything older than</label>
+                        </div>
+                        @if (_olderThanOnly)
+                        {
+                            <input type="date" class="form-control" @bind="_olderThan" @bind:format="yyyy-MM-dd" />
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-danger">
+                            This permanently deletes @_count audit entries. It cannot be undone, and single entries cannot be kept.
+                        </p>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Cancel" disabled="@_busy">Cancel</button>
+                    @if (_count is null)
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="ReviewAsync" disabled="@(_busy || string.IsNullOrWhiteSpace(_target))">Review</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-danger" @onclick="PurgeAsync" disabled="@(_busy || _count == 0)">Purge @_count entries</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private const string OUTSIDE_ANY_ACCOUNT = "none";
+
+    [Parameter]
+    public EventCallback<int> OnPurged { get; set; }
+
+    private bool _visible;
+    private bool _busy;
+    private string? _error;
+    private List<AuditAccountOption> _accounts = [];
+    private bool _includesEverything;
+    private string? _target;
+    private bool _olderThanOnly;
+    private DateTime? _olderThan;
+    private int? _count;
+
+    public async Task ShowAsync()
+    {
+        _visible = true;
+        _busy = true;
+        _error = null;
+        _target = null;
+        _olderThanOnly = false;
+        _olderThan = null;
+        _count = null;
+        StateHasChanged();
+
+        var result = await AuditService.ListAuditAccountsAsync(AuthAction.Delete);
+        _accounts = [.. result.Accounts];
+        _includesEverything = result.IncludesEverything;
+        _busy = false;
+        StateHasChanged();
+    }
+
+    private PurgeAuditEntriesRequest? BuildRequest()
+    {
+        if (string.IsNullOrWhiteSpace(_target))
+            return null;
+        Guid? accountId = _target == OUTSIDE_ANY_ACCOUNT ? null : Guid.Parse(_target);
+        if (_olderThanOnly && _olderThan is null)
+            return null;
+        return new PurgeAuditEntriesRequest(accountId, _olderThanOnly ? _olderThan!.Value.StartOfDayUtc() : null);
+    }
+
+    private async Task ReviewAsync()
+    {
+        var request = BuildRequest();
+        if (request is null)
+        {
+            _error = "Choose an account, and a date when purging older entries.";
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        var result = await AuditService.CountPurgeableEntriesAsync(request);
+        _busy = false;
+        if (result.ResultCode != PurgeAuditEntriesResultCode.Success)
+        {
+            _error = "You can't purge audit entries there.";
+            return;
+        }
+        _count = result.Count;
+    }
+
+    private async Task PurgeAsync()
+    {
+        var request = BuildRequest();
+        if (request is null)
+            return;
+
+        _busy = true;
+        var result = await AuditService.PurgeEntriesAsync(request);
+        _busy = false;
+        if (result.ResultCode != PurgeAuditEntriesResultCode.Success)
+        {
+            _error = "The audit entries couldn't be purged.";
+            return;
+        }
+
+        _visible = false;
+        await OnPurged.InvokeAsync(result.Count);
+    }
+
+    private void Cancel()
+    {
+        if (!_busy)
+        {
+            _visible = false;
+        }
+    }
+}

@@ -1,0 +1,146 @@
+@page "/platform-settings"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits EntityPageBase
+@inject IAuditService AuditService
+@inject IAuthorizationProvider AuthorizationProvider
+
+<PageTitle>Platform Settings - Corely IAM</PageTitle>
+
+<div class="management-header">
+    <h1><i class="bi bi-sliders me-2"></i>Platform Settings</h1>
+    <a href="@AppRoutes.Dashboard" class="btn btn-outline-secondary" title="Back to dashboard"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
+</div>
+
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+@if (_settings is null)
+{
+    @if (!_loadFailed)
+    {
+        <LoadingSpinner />
+    }
+}
+else
+{
+    <div class="section-divider mb-4">
+        <div class="section-divider-label">
+            Audit
+            @if (!_isEditing && _canUpdate)
+            {
+                <button class="btn btn-outline-primary btn-sm" @onclick="() => _isEditing = true">Edit</button>
+            }
+        </div>
+        <div class="props-grid mb-3">
+            <span class="prop-label">Auditing</span>
+            <div class="prop-value">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="auditEnabled" @bind="_auditEnabled" disabled="@(!_isEditing)" />
+                    <label class="form-check-label" for="auditEnabled">@(_auditEnabled ? "On" : "Off: only deleting a user or an account is recorded")</label>
+                </div>
+            </div>
+            <span class="prop-label">Maximum retention (days)</span>
+            <div class="prop-value">
+                @if (_isEditing)
+                {
+                    <input type="number" class="form-control form-control-sm" min="0" @bind="_maxRetentionDays" />
+                }
+                else
+                {
+                    @_maxRetentionDays
+                }
+            </div>
+            <span class="prop-label">Actions accounts may record</span>
+            <div class="prop-value">
+                <AuditActionCheckboxes IdPrefix="platform-allowed" @bind-Value="_allowedActions" Disabled="!_isEditing" />
+            </div>
+            <span class="prop-label">Recorded for system context</span>
+            <div class="prop-value">
+                <AuditActionCheckboxes IdPrefix="platform-system" @bind-Value="_systemContextActions" Disabled="!_isEditing" />
+            </div>
+            <span class="prop-label">Recorded outside any account</span>
+            <div class="prop-value">
+                <AuditActionCheckboxes IdPrefix="platform-accountless" @bind-Value="_accountlessActions" Disabled="!_isEditing" />
+            </div>
+        </div>
+        @if (_isEditing)
+        {
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit" disabled="@_loading">Cancel</button>
+            </div>
+        }
+        <p class="text-muted small mt-2 mb-0">
+            The maximum retention also applies to entries outside any account, to system context, and to the entries of deleted accounts.
+            Lowering a limit changes no account's own choice; raising it again brings that choice back.
+            Turning auditing off keeps existing entries until they age out; removing them is a purge on the audit page.
+        </p>
+    </div>
+}
+
+@code {
+    private PlatformSettings? _settings;
+    private bool _canUpdate;
+    private bool _isEditing;
+    private bool _auditEnabled;
+    private int _maxRetentionDays;
+    private AuditActions _allowedActions;
+    private AuditActions _systemContextActions;
+    private AuditActions _accountlessActions;
+
+    protected override async Task LoadCoreAsync()
+    {
+        var result = await AuditService.GetPlatformSettingsAsync();
+        if (result.ResultCode != RetrieveResultCode.Success || result.Settings is null)
+        {
+            _loadFailed = true;
+            _message = "You don't have access to the platform settings.";
+            _messageType = AlertType.Warning;
+            return;
+        }
+
+        _settings = result.Settings;
+        _canUpdate = await AuthorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
+            AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
+        );
+        Reset();
+    }
+
+    private void Reset()
+    {
+        _auditEnabled = _settings!.AuditEnabled;
+        _maxRetentionDays = _settings.AuditMaxRetentionDays;
+        _allowedActions = _settings.AuditAllowedActions;
+        _systemContextActions = _settings.SystemContextActions;
+        _accountlessActions = _settings.AccountlessActions;
+    }
+
+    private void CancelEdit()
+    {
+        Reset();
+        _isEditing = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await AuditService.UpdatePlatformSettingsAsync(
+                new PlatformSettings(
+                    _auditEnabled,
+                    _maxRetentionDays,
+                    _allowedActions,
+                    _systemContextActions,
+                    _accountlessActions
+                )
+            );
+            SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Platform settings saved.", result.Message);
+            if (result.ResultCode == ModifyResultCode.Success)
+            {
+                _isEditing = false;
+                _settings = (await AuditService.GetPlatformSettingsAsync()).Settings ?? _settings;
+                Reset();
+            }
+        });
+    }
+}

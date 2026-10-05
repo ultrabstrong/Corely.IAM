@@ -2,6 +2,7 @@ using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM;
 using Corely.IAM.Web.Extensions;
 using Corely.IAM.WebApp;
+using Corely.IAM.WebApp.Auditing;
 using Corely.IAM.WebApp.Components;
 using Corely.IAM.WebApp.DataAccess;
 using Corely.IAM.WebApp.Security;
@@ -51,6 +52,7 @@ Func<IServiceProvider, IEFConfiguration> efConfig = providerName.ToLowerInvarian
 
 var iamOptions = IAMOptions.Create(builder.Configuration, securityConfigProvider, efConfig);
 builder.Services.AddIAMServices(iamOptions);
+builder.Services.AddHostedService<AuditCleanupService>();
 
 var app = builder.Build();
 

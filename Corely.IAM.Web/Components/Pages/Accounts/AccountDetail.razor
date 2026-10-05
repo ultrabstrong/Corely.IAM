@@ -208,6 +208,10 @@ else
             </PermissionView>
         </PermissionView>
 
+        <PermissionView Action="AuthAction.Read" Resource="@AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE">
+            <AuditSettingsSection AccountId="Id" />
+        </PermissionView>
+
         <EffectivePermissionsPanel Permissions="_effectivePermissions" UseCard="false" />
 
     </div>

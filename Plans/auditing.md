@@ -387,3 +387,25 @@ Every IAM service method passes through an audit decorator, what is recorded fol
 account settings, the audit page shows, exports and purges entries across the accounts a caller may
 read and their own activity, old entries are cleaned up on schedule, and Billing and DocsToData audit
 their own services the same way.
+
+## Progress
+
+Built in one session without running tests or the app; a later session verifies it. Each step below
+is a commit on the `auditing` branch.
+
+### Done
+
+1. Tables and migrations: `AuditEntries`, `AccountAuditSettings` (keyed by account, cascade deleted
+   with it), `PlatformSettings` (one row, id 1), with the two indexes. Migrations generated for MySQL
+   and SQL Server as `AddAuditing`.
+2. `IAuditPolicy` with a singleton `AuditSettingsCache` (expiry `AuditOptions:SettingsCacheTtlSeconds`,
+   default 30; an update through `IAuditService` invalidates its entry at once on that instance).
+3. `IAuditProvider`: one `RecordAsync` per call, wrapping the operation.
+4. An audit decorator on every IAM service, and `AuditDecoratorCoverageTests`.
+5. `IAuditService` with its authorization, audit and telemetry decorators.
+
+### Next
+
+6. The three resource types and their owner defaults.
+7. Corely.IAM.Web pages.
+8. Docs.

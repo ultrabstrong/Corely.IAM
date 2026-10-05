@@ -118,6 +118,8 @@ public class ServiceRegistrationExtensionsTests
     [InlineData(typeof(IResourceTypeRegistry))]
     [InlineData(typeof(IAuditPolicy))]
     [InlineData(typeof(IAuditProvider))]
+    [InlineData(typeof(IAuditAccessProvider))]
+    [InlineData(typeof(IAuditService))]
     public void AddIAMServices_WithMockDb_RegistersService(Type serviceType)
     {
         var services = CreateServiceCollection();

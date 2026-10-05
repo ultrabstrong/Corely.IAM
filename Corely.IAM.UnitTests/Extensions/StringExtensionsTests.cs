@@ -57,4 +57,17 @@ public class StringExtensionsTests
     {
         Assert.Equal(expected, value.Truncated(maxLength));
     }
+
+    [Theory]
+    [InlineData("plain", "plain")]
+    [InlineData("", "")]
+    [InlineData("a,b", "\"a,b\"")]
+    [InlineData("say \"hi\"", "\"say \"\"hi\"\"\"")]
+    [InlineData("line\nbreak", "\"line\nbreak\"")]
+    [InlineData("=SUM(A1)", "\"'=SUM(A1)\"")]
+    [InlineData("@cmd", "\"'@cmd\"")]
+    public void CsvField_QuotesAndGuardsWhatASpreadsheetWouldMisread(string value, string expected)
+    {
+        Assert.Equal(expected, value.CsvField());
+    }
 }

@@ -116,6 +116,7 @@ public static class ServiceRegistrationExtensions
             serviceCollection.AddSingleton<AuditSettingsCache>();
             serviceCollection.AddScoped<IAuditPolicy, AuditPolicy>();
             serviceCollection.AddScoped<IAuditProvider, AuditProvider>();
+            serviceCollection.AddScoped<IAuditAccessProvider, AuditAccessProvider>();
 
             serviceCollection.AddScoped<IPlatformAccessProvider, PlatformAccessProvider>();
             serviceCollection.AddScoped<IAuthenticationProvider, AuthenticationProvider>();
@@ -205,6 +206,11 @@ public static class ServiceRegistrationExtensions
                 IPasswordRecoveryService,
                 PasswordRecoveryServiceTelemetryDecorator
             >();
+
+            serviceCollection.AddScoped<IAuditService, AuditService>();
+            serviceCollection.Decorate<IAuditService, AuditServiceAuthorizationDecorator>();
+            serviceCollection.Decorate<IAuditService, AuditServiceAuditDecorator>();
+            serviceCollection.Decorate<IAuditService, AuditServiceTelemetryDecorator>();
 
             serviceCollection.AddScoped<IUserOwnershipProcessor, UserOwnershipProcessor>();
 

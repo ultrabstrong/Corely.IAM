@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.DataAccess;
+using Corely.IAM.WebApp.Auditing;
 using Corely.Security.Hashing;
 using Corely.Security.Hashing.Factories;
 using Corely.Security.Hashing.Providers;
@@ -61,6 +62,15 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<TimeProvider>();
             services.AddSingleton<TimeProvider>(TimeProvider);
+
+            foreach (
+                var cleanup in services
+                    .Where(d => d.ImplementationType == typeof(AuditCleanupService))
+                    .ToList()
+            )
+            {
+                services.Remove(cleanup);
+            }
 
             services.AddLogging(logging => logging.SetMinimumLevel(LogLevel.Warning));
         });

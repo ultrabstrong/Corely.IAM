@@ -28,6 +28,8 @@ Corely.IAM.Web provides two types of pages: **Razor Pages** for pre-authenticati
 | `/roles/{Id}` | RoleDetail | Blazor | Role detail + permission assignment |
 | `/permissions` | PermissionList | Blazor | Permission table + create |
 | `/permissions/{Id}` | PermissionDetail | Blazor | Permission detail (read-only) |
+| `/audit` | AuditLog | Blazor | Audit entries across accounts, export, purge |
+| `/platform-settings` | PlatformSettingsPage | Blazor | Platform settings, in the platform account |
 
 ## AppRoutes Class
 
@@ -52,6 +54,8 @@ public static class AppRoutes
     public const string Groups = "/groups";
     public const string Roles = "/roles";
     public const string Permissions = "/permissions";
+    public const string Audit = "/audit";
+    public const string PlatformSettings = "/platform-settings";
 }
 ```
 
@@ -70,3 +74,4 @@ public static class AppRoutes
 - [Invitations](invitations.md)
 - [Profile](profile.md)
 - [Dashboard](dashboard.md)
+- [Audit](audit.md)

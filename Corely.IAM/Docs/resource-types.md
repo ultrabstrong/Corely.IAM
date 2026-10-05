@@ -20,6 +20,13 @@ Resource types are compile-time concepts that categorize what a permission grant
 | `PermissionConstants.GROUP_RESOURCE_TYPE` | `"group"` | Groups | All five |
 | `PermissionConstants.ROLE_RESOURCE_TYPE` | `"role"` | Roles | All five |
 | `PermissionConstants.PERMISSION_RESOURCE_TYPE` | `"permission"` | Permissions | All five |
+| `AuditConstants.AUDIT_RESOURCE_TYPE` | `"audit"` | Audit log | Read (view and export), Delete (purge) |
+| `AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE` | `"audit_settings"` | Audit settings | Read, Update |
+| `AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE` | `"platform_settings"` | Platform settings | None |
+
+`platform_settings` is meaningful only in the [platform account](platform.md), whose owner holds full
+access on every type; an account owner elsewhere gets nothing on it. See [Auditing](auditing.md) for
+what the audit types allow.
 
 The owner actions of the built-in types are not configurable. There is no wildcard type: `"*"` is
 rejected as a type name, and a permission grants access only to the type it names.

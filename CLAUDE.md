@@ -272,7 +272,7 @@ The default config sends structured logs to [Seq](https://datalust.co/seq) at `h
 Services (public) → Processors (internal) → Repositories/UoW → EF Core DbContext → Database
 ```
 
-Processors are wrapped with **authorization + telemetry decorators** via Scrutor. Services always have telemetry decorators, and only the services that still need a service-layer context gate keep authorization decorators.
+Processors are wrapped with **authorization + telemetry decorators** via Scrutor. Services always have audit and telemetry decorators, and only the services that still need a service-layer context gate keep authorization decorators. Service order is Telemetry, then Audit, then Authorization, then the service; `AuditDecoratorCoverageTests` fails when a service interface has no audit decorator. See `Corely.IAM/Docs/auditing.md`.
 - `AuthorizationDecorator` — services validate context when needed; processors enforce permissions before calling the inner implementation
 - `TelemetryDecorator` — logs operations
 

@@ -105,14 +105,24 @@ The same work is available as `IPlatformService.CompletePlatformOwnerPermissions
 - **The Owner role keeps the usual rule:** the platform account always has at least one owner.
 - **Ordinary accounts are unaffected.** Their owners' "Account : Full Access" still means "this
   account". Only permissions held in the flagged account reach other accounts.
+- **Customers see what platform members did.** A platform member acting in an account they do not
+  belong to is recorded in the [audit log](auditing.md) as a platform member, in that account, as far
+  as the account's own audit settings choose. An account that switches platform members off gets
+  nothing recorded for them.
+
+## Platform settings
+
+The platform account holds the platform settings, read and changed with `platform_settings`: whether
+auditing is on, the longest retention, the actions accounts may record, and what is recorded for
+system context and outside any account. Only a grant held in the platform account counts. A platform
+member holding Read on `audit` there reads every entry, and Delete on `audit` there purges any
+account's entries and those outside any account. See [Auditing](auditing.md).
 
 ## Not yet
 
 These follow before the platform account is relied on in production:
 
-- an audit log of every action a platform member takes outside the platform account;
-- requiring two factor sign in for every platform member, not only the bootstrapped owner;
-- whether customers can see that a platform admin acted in their account.
+- requiring two factor sign in for every platform member, not only the bootstrapped owner.
 
 ## API
 

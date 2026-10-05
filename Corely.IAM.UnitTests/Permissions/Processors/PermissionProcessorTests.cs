@@ -1,6 +1,7 @@
 using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Audits.Constants;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
@@ -195,6 +196,8 @@ public class PermissionProcessorTests
         Assert.Equal(
             [
                 PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+                AuditConstants.AUDIT_RESOURCE_TYPE,
+                AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE,
                 PermissionConstants.GROUP_RESOURCE_TYPE,
                 "invoice",
                 PermissionConstants.PERMISSION_RESOURCE_TYPE,
@@ -224,7 +227,11 @@ public class PermissionProcessorTests
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
         var permissions = await permissionRepo.ListAsync(
-            p => p.AccountId == account.Id && p.ResourceType != "invoice",
+            p =>
+                p.AccountId == account.Id
+                && p.ResourceType != "invoice"
+                && p.ResourceType != AuditConstants.AUDIT_RESOURCE_TYPE
+                && p.ResourceType != AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE,
             include: q => q.Include(p => p.Roles)
         );
 

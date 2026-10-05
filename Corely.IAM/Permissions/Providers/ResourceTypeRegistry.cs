@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Corely.IAM.Audits.Constants;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Security.Constants;
@@ -20,6 +21,19 @@ internal class ResourceTypeRegistry : IResourceTypeRegistry
         AddIamType(PermissionConstants.GROUP_RESOURCE_TYPE, "Groups");
         AddIamType(PermissionConstants.ROLE_RESOURCE_TYPE, "Roles");
         AddIamType(PermissionConstants.PERMISSION_RESOURCE_TYPE, "Permissions");
+        AddIamType(
+            AuditConstants.AUDIT_RESOURCE_TYPE,
+            "Audit log",
+            AuthAction.Read,
+            AuthAction.Delete
+        );
+        AddIamType(
+            AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE,
+            "Audit settings",
+            AuthAction.Read,
+            AuthAction.Update
+        );
+        AddIamType(AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE, "Platform settings", []);
     }
 
     public IReadOnlyCollection<ResourceTypeInfo> GetAll() =>
@@ -51,5 +65,8 @@ internal class ResourceTypeRegistry : IResourceTypeRegistry
     }
 
     private void AddIamType(string name, string description) =>
-        _resourceTypes[name] = new ResourceTypeInfo(name, description, _allActions);
+        AddIamType(name, description, _allActions);
+
+    private void AddIamType(string name, string description, params AuthAction[] ownerActions) =>
+        _resourceTypes[name] = new ResourceTypeInfo(name, description, ownerActions);
 }

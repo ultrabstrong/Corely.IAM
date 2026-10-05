@@ -505,3 +505,16 @@ WebApp. Billing and DocsToData adopt auditing in their own repositories.
   cleanup may still use the deleted account's own retention instead of the platform maximum.
 - **The purge modal lists only existing accounts**, so a deleted account's entries can only be
   purged through the API (or age out under the platform maximum).
+
+### First verification run (end of the build session, no fixes made)
+
+Run in the cloud container on Linux; Docker container tests skipped.
+
+- `Corely.IAM.UnitTests`: 1831 tests, **2 failed**:
+  - `PermissionProcessorTests.DeletePermission_ReturnsSystemDefinedPermissionError_ForAllSystemDefinedPermissions`, most likely an assumption about the owner default rows that the new audit types change.
+  - `AuditProviderTests.Record_UsesTheOperationName_FromTheCaller`: the recorded operation name is not the helper method's name. Check what `[CallerMemberName]` gives here before changing the provider.
+- `Corely.IAM.IntegrationTests`: 164 tests, 150 passed, 0 failed (the 14 not run are the Docker provider matrix).
+- `Corely.IAM.Web.UnitTests`: 163 tests, 0 failed.
+- `Corely.IAM.Web.FunctionalTests`: 88 tests, 0 failed.
+
+Not done yet: the provider matrix with Docker (the new migration on MySQL and SQL Server), the DevTools and migration CLI unit tests, and checking the pages in a browser.

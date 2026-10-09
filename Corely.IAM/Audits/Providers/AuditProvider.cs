@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
@@ -48,7 +49,7 @@ internal class AuditProvider(
         AuditCall call,
         Func<Task<TResult>> operation,
         Func<TResult, AuditOutcome> outcome,
-        string operationName = ""
+        [CallerMemberName] string operationName = ""
     )
     {
         var pending = await BeginAsync(call, operationName);
@@ -67,7 +68,11 @@ internal class AuditProvider(
         return result;
     }
 
-    public Task RecordAsync(AuditCall call, Func<Task> operation, string operationName = "") =>
+    public Task RecordAsync(
+        AuditCall call,
+        Func<Task> operation,
+        [CallerMemberName] string operationName = ""
+    ) =>
         RecordAsync(
             call,
             async () =>

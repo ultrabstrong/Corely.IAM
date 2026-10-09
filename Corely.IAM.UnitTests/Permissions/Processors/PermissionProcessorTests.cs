@@ -346,7 +346,7 @@ public class PermissionProcessorTests
             p.AccountId == account.Id && p.IsSystemDefined
         );
 
-        Assert.Equal(6, systemPermissions.Count);
+        Assert.Equal(8, systemPermissions.Count);
 
         foreach (var permission in systemPermissions)
         {

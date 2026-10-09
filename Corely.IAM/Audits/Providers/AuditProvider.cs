@@ -18,9 +18,6 @@ namespace Corely.IAM.Audits.Providers;
 
 internal class AuditProvider(
     IUserContextProvider userContextProvider,
-    IAuditPolicy auditPolicy,
-    IReadonlyRepo<AccountEntity> accountRepo,
-    IReadonlyRepo<UserEntity> userRepo,
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
     IOptions<AuditOptions> auditOptions,
@@ -30,11 +27,7 @@ internal class AuditProvider(
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
     );
-    private readonly IAuditPolicy _auditPolicy = auditPolicy.ThrowIfNull(nameof(auditPolicy));
-    private readonly IReadonlyRepo<AccountEntity> _accountRepo = accountRepo.ThrowIfNull(
-        nameof(accountRepo)
-    );
-    private readonly IReadonlyRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
+
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory.ThrowIfNull(
         nameof(scopeFactory)
     );
@@ -52,7 +45,9 @@ internal class AuditProvider(
         [CallerMemberName] string operationName = ""
     )
     {
-        var pending = await BeginAsync(call, operationName);
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var services = scope.ServiceProvider;
+        var pending = await BeginAsync(services, call, operationName);
         TResult result;
         try
         {
@@ -60,11 +55,15 @@ internal class AuditProvider(
         }
         catch
         {
-            await CompleteAsync(pending, () => new AuditOutcome(AuditConstants.FAULT_RESULT_CODE));
+            await CompleteAsync(
+                services,
+                pending,
+                () => new AuditOutcome(AuditConstants.FAULT_RESULT_CODE)
+            );
             throw;
         }
 
-        await CompleteAsync(pending, () => outcome(result));
+        await CompleteAsync(services, pending, () => outcome(result));
         return result;
     }
 
@@ -84,7 +83,11 @@ internal class AuditProvider(
             operationName
         );
 
-    private async Task<PendingAudit> BeginAsync(AuditCall call, string operation)
+    private async Task<PendingAudit> BeginAsync(
+        IServiceProvider services,
+        AuditCall call,
+        string operation
+    )
     {
         var startedUtc = _timeProvider.GetUtcNow().UtcDateTime;
         var before = _userContextProvider.GetUserContext();
@@ -97,13 +100,13 @@ internal class AuditProvider(
             var memberBefore =
                 accountId is { } id
                 && before is { IsSystemContext: false, User: { } user }
-                && await MayRecordForAccountAsync(call, operation, id)
-                && await IsMemberAsync(user.Id, id);
+                && await MayRecordForAccountAsync(services, call, operation, id)
+                && await IsMemberAsync(services, user.Id, id);
 
             return pending with
             {
                 MemberBefore = memberBefore,
-                Details = await DetailsAsync(call, before, accountId),
+                Details = await DetailsAsync(services, call, before, accountId),
             };
         }
         catch (Exception ex)
@@ -118,11 +121,16 @@ internal class AuditProvider(
         }
     }
 
-    private async Task CompleteAsync(PendingAudit pending, Func<AuditOutcome> outcome)
+    private async Task CompleteAsync(
+        IServiceProvider services,
+        PendingAudit pending,
+        Func<AuditOutcome> outcome
+    )
     {
         var call = pending.Call;
         try
         {
+            var policy = services.GetRequiredService<IAuditPolicy>();
             var after = _userContextProvider.GetUserContext();
             var context = pending.Context(after);
             var described = outcome();
@@ -133,9 +141,9 @@ internal class AuditProvider(
                 : pending.Before?.User?.Id
                     ?? after?.User?.Id
                     ?? NonEmpty(described.ActorUserId)
-                    ?? await FindUserIdAsync(call.ActorUsername);
+                    ?? await FindUserIdAsync(services, call.ActorUsername);
 
-            var alwaysRecorded = _auditPolicy.IsAlwaysRecorded(call.Service, pending.Operation);
+            var alwaysRecorded = policy.IsAlwaysRecorded(call.Service, pending.Operation);
 
             AuditCohort cohort;
             if (isSystem)
@@ -146,20 +154,23 @@ internal class AuditProvider(
             {
                 if (
                     !alwaysRecorded
-                    && !await MayRecordForAccountAsync(call, pending.Operation, accountId.Value)
+                    && !await MayRecordForAccountAsync(
+                        services,
+                        call,
+                        pending.Operation,
+                        accountId.Value
+                    )
                 )
                     return;
 
                 cohort =
-                    pending.MemberBefore || await IsMemberAsync(actorUserId.Value, accountId.Value)
+                    pending.MemberBefore
+                    || await IsMemberAsync(services, actorUserId.Value, accountId.Value)
                         ? AuditCohort.AccountMember
                         : AuditCohort.PlatformMember;
             }
 
-            if (
-                !alwaysRecorded
-                && !await _auditPolicy.IsRecordedAsync(cohort, accountId, call.Action)
-            )
+            if (!alwaysRecorded && !await policy.IsRecordedAsync(cohort, accountId, call.Action))
                 return;
 
             IEnumerable<Guid> resourceIds = [.. call.ResourceIds, .. described.ResourceIds];
@@ -183,9 +194,8 @@ internal class AuditProvider(
                 Details = pending.Details?.Truncated(AuditConstants.DETAILS_MAX_LENGTH),
             };
 
-            await using var scope = _scopeFactory.CreateAsyncScope();
-            await scope
-                .ServiceProvider.GetRequiredService<IRepo<AuditEntryEntity>>()
+            await services
+                .GetRequiredService<IRepo<AuditEntryEntity>>()
                 .CreateAsync(entry, CancellationToken.None);
         }
         catch (Exception ex)
@@ -199,26 +209,41 @@ internal class AuditProvider(
         }
     }
 
-    private async Task<bool> MayRecordForAccountAsync(
+    private static async Task<bool> MayRecordForAccountAsync(
+        IServiceProvider services,
         AuditCall call,
         string operation,
         Guid accountId
-    ) =>
-        _auditPolicy.IsAlwaysRecorded(call.Service, operation)
-        || await _auditPolicy.IsRecordedAsync(AuditCohort.AccountMember, accountId, call.Action)
-        || await _auditPolicy.IsRecordedAsync(AuditCohort.PlatformMember, accountId, call.Action);
+    )
+    {
+        var policy = services.GetRequiredService<IAuditPolicy>();
+        return policy.IsAlwaysRecorded(call.Service, operation)
+            || await policy.IsRecordedAsync(AuditCohort.AccountMember, accountId, call.Action)
+            || await policy.IsRecordedAsync(AuditCohort.PlatformMember, accountId, call.Action);
+    }
 
     private static Guid? NonEmpty(Guid? id) => id == Guid.Empty ? null : id;
 
-    private Task<bool> IsMemberAsync(Guid userId, Guid accountId) =>
-        _accountRepo.AnyAsync(a => a.Id == accountId && a.Users!.Any(u => u.Id == userId));
+    private static Task<bool> IsMemberAsync(
+        IServiceProvider services,
+        Guid userId,
+        Guid accountId
+    ) =>
+        services
+            .GetRequiredService<IReadonlyRepo<AccountEntity>>()
+            .AnyAsync(a => a.Id == accountId && a.Users!.Any(u => u.Id == userId));
 
-    private async Task<Guid?> FindUserIdAsync(string? username) =>
+    private static async Task<Guid?> FindUserIdAsync(IServiceProvider services, string? username) =>
         string.IsNullOrWhiteSpace(username)
             ? null
-            : (await _userRepo.GetAsync(u => u.Username == username))?.Id;
+            : (
+                await services
+                    .GetRequiredService<IReadonlyRepo<UserEntity>>()
+                    .GetAsync(u => u.Username == username)
+            )?.Id;
 
-    private async Task<string?> DetailsAsync(
+    private static async Task<string?> DetailsAsync(
+        IServiceProvider services,
         AuditCall call,
         UserContext? before,
         Guid? accountId
@@ -227,7 +252,9 @@ internal class AuditProvider(
         {
             AuditDetail.DeletedUsername => before?.User?.Username,
             AuditDetail.DeletedAccountName when accountId is { } id => (
-                await _accountRepo.GetAsync(a => a.Id == id)
+                await services
+                    .GetRequiredService<IReadonlyRepo<AccountEntity>>()
+                    .GetAsync(a => a.Id == id)
             )?.AccountName,
             _ => null,
         };

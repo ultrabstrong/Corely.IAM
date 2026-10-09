@@ -56,6 +56,13 @@ public class AuditProviderTests
         scopedServices
             .Setup(s => s.GetService(typeof(IRepo<AuditEntryEntity>)))
             .Returns(_entryRepo.Object);
+        scopedServices.Setup(s => s.GetService(typeof(IAuditPolicy))).Returns(_policy.Object);
+        scopedServices
+            .Setup(s => s.GetService(typeof(IReadonlyRepo<AccountEntity>)))
+            .Returns(_serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>());
+        scopedServices
+            .Setup(s => s.GetService(typeof(IReadonlyRepo<UserEntity>)))
+            .Returns(_serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>());
         var scope = new Mock<IServiceScope>();
         scope.Setup(s => s.ServiceProvider).Returns(scopedServices.Object);
         var scopeFactory = new Mock<IServiceScopeFactory>();
@@ -63,9 +70,6 @@ public class AuditProviderTests
 
         _provider = new AuditProvider(
             _userContextProvider,
-            _policy.Object,
-            _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
-            _serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>(),
             scopeFactory.Object,
             TimeProvider.System,
             Options.Create(new AuditOptions { Source = SOURCE }),

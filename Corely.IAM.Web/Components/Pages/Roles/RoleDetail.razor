@@ -1,11 +1,6 @@
 @page "/roles/{Id:guid}"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityDetailPageBase
-@inject IRetrievalService RetrievalService
-@inject IModificationService ModificationService
-@inject IRegistrationService RegistrationService
-@inject IDeregistrationService DeregistrationService
-@inject IAuthorizationProvider AuthorizationProvider
 
 <PageTitle>Role Detail - Corely IAM</PageTitle>
 
@@ -135,6 +130,12 @@ else
 <ConfirmModal @ref="_deleteModal" Title="Delete Role" Message="@($"Permanently delete role '{_role?.Name}'? This cannot be undone.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
+    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
+    private IModificationService ModificationService => ScopedServices.GetRequiredService<IModificationService>();
+    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
+    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
+    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
+
     private Role? _role;
     private string _editName = string.Empty;
     private string? _editDescription;

@@ -1,9 +1,6 @@
 @page "/roles"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityListPageBase<Role>
-@inject IRetrievalService RetrievalService
-@inject IRegistrationService RegistrationService
-@inject IDeregistrationService DeregistrationService
 
 <PageTitle>Roles - Corely IAM</PageTitle>
 
@@ -111,6 +108,10 @@ else
 <ConfirmModal @ref="_confirmModal" Title="Delete Role" Message="@_confirmMessage" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
+    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
+    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
+    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
+
     private string _searchDescription = string.Empty;
     private string? _newRoleName;
     private FormModal _createModal = null!;

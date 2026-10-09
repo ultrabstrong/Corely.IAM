@@ -1,9 +1,6 @@
 @page "/groups"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityListPageBase<Group>
-@inject IRetrievalService RetrievalService
-@inject IRegistrationService RegistrationService
-@inject IDeregistrationService DeregistrationService
 
 <PageTitle>Groups - Corely IAM</PageTitle>
 
@@ -97,6 +94,10 @@ else
 <ConfirmModal @ref="_confirmModal" Title="Delete Group" Message="@_confirmMessage" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
+    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
+    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
+    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
+
     private string _searchDescription = string.Empty;
     private string? _newGroupName;
     private FormModal _createModal = null!;

@@ -1,8 +1,6 @@
 @page "/users"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityListPageBase<User>
-@inject IRetrievalService RetrievalService
-@inject IDeregistrationService DeregistrationService
 
 <PageTitle>Users - Corely IAM</PageTitle>
 
@@ -87,6 +85,9 @@ else
 <ConfirmModal @ref="_confirmModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveAsync" />
 
 @code {
+    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
+    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
+
     private string _searchEmail = string.Empty;
     private ConfirmModal _confirmModal = null!;
 

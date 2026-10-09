@@ -1,6 +1,5 @@
 @using Corely.IAM.Web.Extensions
-@inject IAuthorizationProvider AuthorizationProvider
-@inject IUserContextProvider UserContextProvider
+@inherits OwningComponentBase
 
 @if (_checkComplete)
 {
@@ -26,6 +25,9 @@ else if (Undetermined != null)
 }
 
 @code {
+    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
+    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
+
     [Parameter]
     public AuthAction Action { get; set; }
 
@@ -55,7 +57,7 @@ else if (Undetermined != null)
 
     protected override async Task OnParametersSetAsync()
     {
-        if (UserContextProvider.GetUserContext() == null)
+        if (await BlazorUserContextAccessor.GetUserContextAsync() == null)
         {
             _checkComplete = false;
             return;

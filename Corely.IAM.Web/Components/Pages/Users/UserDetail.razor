@@ -1,10 +1,6 @@
 @page "/users/{Id:guid}"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityDetailPageBase
-@inject IRetrievalService RetrievalService
-@inject IRegistrationService RegistrationService
-@inject IDeregistrationService DeregistrationService
-@inject IAuthorizationProvider AuthorizationProvider
 
 <PageTitle>@_username - Corely IAM</PageTitle>
 
@@ -131,6 +127,11 @@ else
 <ConfirmModal @ref="_confirmModal" Title="Remove Role" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveRoleAsync" />
 
 @code {
+    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
+    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
+    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
+    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
+
     private string? _username;
     private string? _email;
     private List<ChildRef> _groups = [];

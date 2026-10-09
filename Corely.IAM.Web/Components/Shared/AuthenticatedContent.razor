@@ -1,4 +1,4 @@
-@inject IBlazorUserContextAccessor BlazorUserContextAccessor
+@inherits OwningComponentBase
 
 @if (_loaded)
 {
@@ -10,6 +10,8 @@ else
 }
 
 @code {
+    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
+
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
 

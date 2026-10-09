@@ -1,8 +1,8 @@
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
-using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Components.Shared;
+using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
@@ -18,13 +18,15 @@ public class PermissionViewTests : TestContext
     private const string UNDETERMINED_MARKER = "undetermined-content";
 
     private readonly Mock<IAuthorizationProvider> _mockAuthorizationProvider = new();
-    private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
+    private readonly Mock<IBlazorUserContextAccessor> _mockUserContextAccessor = new();
 
     private UserContext? _userContext;
 
     public PermissionViewTests()
     {
-        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(() => _userContext);
+        _mockUserContextAccessor
+            .Setup(x => x.GetUserContextAsync())
+            .ReturnsAsync(() => _userContext);
 
         _mockAuthorizationProvider
             .Setup(x =>
@@ -33,7 +35,7 @@ public class PermissionViewTests : TestContext
             .ReturnsAsync(() => _userContext != null);
 
         Services.AddSingleton(_mockAuthorizationProvider.Object);
-        Services.AddSingleton(_mockUserContextProvider.Object);
+        Services.AddSingleton(_mockUserContextAccessor.Object);
     }
 
     private sealed class DeferredContextPage : ComponentBase

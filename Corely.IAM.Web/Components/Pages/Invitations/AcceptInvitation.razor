@@ -1,7 +1,6 @@
 @page "/accept-invitation"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits AuthenticatedPageBase
-@inject IInvitationService InvitationService
 
 <PageTitle>Accept Invitation - Corely IAM</PageTitle>
 
@@ -29,6 +28,8 @@
 </div>
 
 @code {
+    private IInvitationService InvitationService => ScopedServices.GetRequiredService<IInvitationService>();
+
     private string? _token;
     private string? _message;
     private AlertType _messageType = AlertType.Info;

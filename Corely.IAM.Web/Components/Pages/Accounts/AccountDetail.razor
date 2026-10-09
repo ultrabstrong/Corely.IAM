@@ -1,11 +1,6 @@
 @page "/accounts/{Id:guid}"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityDetailPageBase
-@inject IRetrievalService RetrievalService
-@inject IModificationService ModificationService
-@inject IRegistrationService RegistrationService
-@inject IDeregistrationService DeregistrationService
-@inject IInvitationService InvitationService
 @inject IAccountDisplayState AccountDisplayState
 @inject IJSRuntime JSRuntime
 
@@ -266,6 +261,12 @@ else
 }
 
 @code {
+    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
+    private IModificationService ModificationService => ScopedServices.GetRequiredService<IModificationService>();
+    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
+    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
+    private IInvitationService InvitationService => ScopedServices.GetRequiredService<IInvitationService>();
+
     private string? _accountName;
     private string? _originalAccountName;
     private bool _isEditing;

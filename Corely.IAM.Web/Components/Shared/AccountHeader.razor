@@ -1,4 +1,4 @@
-@inject IBlazorUserContextAccessor BlazorUserContextAccessor
+@inherits OwningComponentBase
 
 @if (_currentAccount != null)
 {
@@ -9,6 +9,8 @@
 }
 
 @code {
+    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
+
     private Account? _currentAccount;
 
     protected override async Task OnInitializedAsync()

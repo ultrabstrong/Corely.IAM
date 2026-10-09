@@ -1,6 +1,5 @@
-@inject IMfaService MfaService
+@inherits OwningComponentBase
 @inject IJSRuntime JSRuntime
-@implements IAsyncDisposable
 
 <div class="section-divider mb-4 mt-4">
     <div class="section-divider-label">Two-Factor Authentication</div>
@@ -97,6 +96,8 @@
 </div>
 
 @code {
+    private IMfaService MfaService => ScopedServices.GetRequiredService<IMfaService>();
+
     [Parameter]
     public EventCallback OnStatusChanged { get; set; }
 
@@ -119,6 +120,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await ScopedServices.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
         await LoadStatusAsync();
     }
 
@@ -152,7 +154,7 @@
         }
     }
 
-    public async ValueTask DisposeAsync()
+    protected override async ValueTask DisposeAsyncCore()
     {
         if (_qrModule is not null)
         {
@@ -164,6 +166,7 @@
             {
             }
         }
+        await base.DisposeAsyncCore();
     }
 
     private async Task LoadStatusAsync()

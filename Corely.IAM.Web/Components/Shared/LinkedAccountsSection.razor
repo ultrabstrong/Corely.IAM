@@ -1,7 +1,6 @@
-@inject IGoogleAuthService GoogleAuthService
+@inherits OwningComponentBase
 @inject IJSRuntime JSRuntime
 @inject IOptions<SecurityOptions> SecurityOptions
-@implements IAsyncDisposable
 
 <div class="section-divider mb-4 mt-4">
     <div class="section-divider-label">Linked Accounts</div>
@@ -49,6 +48,8 @@
               OnConfirm="UnlinkAsync" />
 
 @code {
+    private IGoogleAuthService GoogleAuthService => ScopedServices.GetRequiredService<IGoogleAuthService>();
+
     [Parameter]
     public bool HasGoogleAuth { get; set; }
 
@@ -68,8 +69,11 @@
     private DotNetObjectReference<LinkedAccountsSection>? _selfRef;
     private bool _linkButtonRendered;
 
-    protected override void OnInitialized() =>
+    protected override async Task OnInitializedAsync()
+    {
         _googleClientId = SecurityOptions.Value.GoogleClientId;
+        await ScopedServices.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -164,7 +168,7 @@
         _messageType = success ? AlertType.Success : AlertType.Danger;
     }
 
-    public async ValueTask DisposeAsync()
+    protected override async ValueTask DisposeAsyncCore()
     {
         _selfRef?.Dispose();
         if (_linkModule is not null)
@@ -177,5 +181,6 @@
             {
             }
         }
+        await base.DisposeAsyncCore();
     }
 }

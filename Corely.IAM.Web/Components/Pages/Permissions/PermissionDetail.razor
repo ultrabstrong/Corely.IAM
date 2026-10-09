@@ -1,9 +1,6 @@
 @page "/permissions/{Id:guid}"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityDetailPageBase
-@inject IRetrievalService RetrievalService
-@inject IDeregistrationService DeregistrationService
-@inject IModificationService ModificationService
 
 <PageTitle>Permission Detail - Corely IAM</PageTitle>
 
@@ -91,6 +88,10 @@ else
 <ConfirmModal @ref="_confirmModal" Title="Delete Permission" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
+    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
+    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
+    private IModificationService ModificationService => ScopedServices.GetRequiredService<IModificationService>();
+
     private Permission? _permission;
     private List<EffectivePermission>? _effectivePermissions;
     private ConfirmModal _confirmModal = null!;

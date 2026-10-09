@@ -1,10 +1,6 @@
 @page "/profile"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityPageBase
-@inject IRetrievalService RetrievalService
-@inject IModificationService ModificationService
-@inject IDeregistrationService DeregistrationService
-@inject IGoogleAuthService GoogleAuthService
 
 <PageTitle>Profile - Corely IAM</PageTitle>
 
@@ -99,6 +95,11 @@ else
               OnConfirm="LeaveAccountAsync" />
 
 @code {
+    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
+    private IModificationService ModificationService => ScopedServices.GetRequiredService<IModificationService>();
+    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
+    private IGoogleAuthService GoogleAuthService => ScopedServices.GetRequiredService<IGoogleAuthService>();
+
     private string? _username;
     private string? _email;
     private string? _originalUsername;

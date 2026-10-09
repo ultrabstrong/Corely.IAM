@@ -1,13 +1,14 @@
 using Corely.IAM.Users.Models;
 using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.Web.Components;
 
-public abstract class AuthenticatedPageBase : ComponentBase
+public abstract class AuthenticatedPageBase : OwningComponentBase
 {
-    [Inject]
-    protected IBlazorUserContextAccessor BlazorUserContextAccessor { get; set; } = null!;
+    protected IBlazorUserContextAccessor BlazorUserContextAccessor =>
+        ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
 
     [Inject]
     protected NavigationManager NavigationManager { get; set; } = null!;

@@ -518,3 +518,28 @@ Run in the cloud container on Linux; Docker container tests skipped.
 - `Corely.IAM.Web.FunctionalTests`: 88 tests, 0 failed.
 
 Not done yet: the provider matrix with Docker (the new migration on MySQL and SQL Server), the DevTools and migration CLI unit tests, and checking the pages in a browser.
+
+### Second verification run (on the owner's PC)
+
+- Both failing unit tests fixed. `[CallerMemberName]` was on `IAuditProvider` only, so a caller
+  holding `AuditProvider` itself recorded an empty operation name; the attribute is now on the
+  implementation too. The owner default count in the permission test was stale (audit types add two
+  rows).
+- `dotnet test --solution Corely.IAM.slnx`: 2283 tests, 0 failed, 14 skipped (the container tests).
+- Provider matrix with Docker: 14 of 14 passed on MySQL and SQL Server, so `AddAuditing` applies on
+  both. The matrix does not assert that entries are written; a failed write is only logged.
+- WebApp against LocalDB: the migration applied, the platform Owner role got the three new types at
+  startup, and the cleanup ran (0 deleted).
+- **The audit provider now does all its database work in its own scope**, not only the write. Its
+  policy, membership and name reads used the caller's `DbContext`, and in a Blazor circuit they
+  collided with other components' queries ("A second operation was started on this context").
+
+**Blocking, decision needed: Blazor circuits share one `DbContext` across components.** `/audit`
+never finishes loading: the nav bar's `ListAccountsAsync` and the page's `ListAuditAccountsAsync`
+run at once on the circuit's scoped context, the nav bar's exception is unhandled and kills the
+circuit, and the page stays on its spinner. `/profile` fails the same way **on master too** (its
+sections load concurrently), so the race predates auditing; the audit decorator's extra awaits only
+change which calls overlap. Fixing it is a change to how IAM.Web (or IAM) gets a `DbContext` in a
+long-lived scope, for example a context per operation from `IDbContextFactory`, or serializing a
+circuit's service calls. Until then `/audit`, `/platform-settings` and the account audit section are
+unchecked in a browser.

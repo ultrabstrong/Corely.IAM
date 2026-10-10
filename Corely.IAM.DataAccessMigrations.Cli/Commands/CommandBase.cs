@@ -9,6 +9,7 @@ internal abstract class CommandBase : Command
     private const string _helpFlag = "--help";
 
     private readonly Dictionary<PropertyInfo, string> _boundNames = [];
+    private bool _failed;
 
     protected CommandBase(string name, string description, string additionalDescription)
         : this(name, $"{description}{Environment.NewLine}{additionalDescription}") { }
@@ -150,8 +151,9 @@ internal abstract class CommandBase : Command
         }
     }
 
-    private async Task InvokeExecute(ParseResult parseResult)
+    private async Task<int> InvokeExecute(ParseResult parseResult)
     {
+        _failed = false;
         foreach (var property in DeclaredProperties())
         {
             if (!_boundNames.TryGetValue(property, out var name))
@@ -176,8 +178,11 @@ internal abstract class CommandBase : Command
                 || ex is NotSupportedException
             )
         {
+            _failed = true;
             ShowHelp(ex.Message);
         }
+
+        return _failed ? 1 : 0;
     }
 
     private static object? GetParsedValue(ParseResult parseResult, Type valueType, string name) =>
@@ -256,13 +261,15 @@ internal abstract class CommandBase : Command
         WriteColored(messages, ConsoleColor.Yellow);
     }
 
-    protected static void Error(string message)
+    protected void Error(string message)
     {
+        _failed = true;
         WriteColored(message, ConsoleColor.Red);
     }
 
-    protected static void Error(IEnumerable<string> messages)
+    protected void Error(IEnumerable<string> messages)
     {
+        _failed = true;
         WriteColored(messages, ConsoleColor.Red);
     }
 

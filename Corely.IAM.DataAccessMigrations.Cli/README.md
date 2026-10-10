@@ -90,6 +90,10 @@ The owner gets a generated password and two factor sign in enrolled. The usernam
 authenticator secret and recovery codes go to the secrets file and nowhere else. A second run reports
 that the platform account exists and changes nothing. The application gives the platform owner its
 own resource types the next time it starts.
+
+Every platform member, not only this owner, needs two factor sign in enabled to enter the platform
+account or any account through it.
+
 ## Migrations history table
 
 IAM records its migrations in `__CorelyIamMigrationsHistory` rather than the default
@@ -147,6 +151,7 @@ at the repository root, which target both providers:
 
 ## Notes
 
+- Every command exits with `0` on success and `1` when it reports an error, so scripts can check it.
 - `db create` is safe to run against an existing database. It applies whatever is pending.
 - `db migrate 0` reverts all migrations but does not drop the database.
 - `db drop` is destructive and cannot be undone.

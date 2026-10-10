@@ -10,7 +10,7 @@ internal class Program
 {
     private static readonly string CommandsNamespace = typeof(CommandBase).Namespace!;
 
-    static async Task Main(string[] args)
+    static async Task<int> Main(string[] args)
     {
         try
         {
@@ -38,13 +38,14 @@ internal class Program
             var rootCommand = GetRootCommand(scope.ServiceProvider);
             rootCommand.Description = "IAM Database Migration Management Tool";
 
-            await rootCommand.Parse(args).InvokeAsync();
+            return await rootCommand.Parse(args).InvokeAsync();
         }
         catch (Exception ex)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"An error occurred: {ex.Message}");
             Console.ResetColor();
+            return 1;
         }
     }
 

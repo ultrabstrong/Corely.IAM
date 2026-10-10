@@ -101,7 +101,7 @@ internal abstract class DbCommandBase(string name, string description)
         return false;
     }
 
-    private static bool Report(ConnectionSettings.Resolution resolution)
+    private bool Report(ConnectionSettings.Resolution resolution)
     {
         if (resolution.IsValid)
             return true;

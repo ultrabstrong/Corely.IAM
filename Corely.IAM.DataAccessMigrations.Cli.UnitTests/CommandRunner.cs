@@ -19,4 +19,18 @@ internal static class CommandRunner
         }
         return captured.ToString().Trim();
     }
+
+    public static int ExitCode(Command command, params string[] args)
+    {
+        var original = Console.Out;
+        Console.SetOut(TextWriter.Null);
+        try
+        {
+            return command.Parse(args).Invoke();
+        }
+        finally
+        {
+            Console.SetOut(original);
+        }
+    }
 }

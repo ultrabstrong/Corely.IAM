@@ -1,6 +1,6 @@
 # Blazor components own their scopes
 
-**Status: Corely.IAM.Web done on branch `blazor-owned-scopes`, not yet released.** Found while verifying auditing ([auditing.md](auditing.md)): `/audit` never
+**Status: Corely.IAM.Web done and released as 3.4.0. Billing and DocsToData next.** Found while verifying auditing ([auditing.md](auditing.md)): `/audit` never
 finishes loading.
 
 ## Why
@@ -179,7 +179,7 @@ packages are released and taken by DocsToData.
 
 ## Progress
 
-### Corely.IAM.Web (step 1 of the Order): done, on branch `blazor-owned-scopes`
+### Corely.IAM.Web (step 1 of the Order): done, on master
 
 1. **Reproduced on master.** `/profile` signed in as `admin`: NavBar's `ListAccountsAsync` threw "A
    second operation was started on this context instance".
@@ -204,7 +204,7 @@ packages are released and taken by DocsToData.
    `/groups/{id}`, `/roles`, `/roles/{id}`, `/permissions`, `/permissions/{id}`,
    `/accept-invitation`. Renaming the account on `/accounts/{id}` updated the nav bar, so
    `IAccountDisplayState` is still shared.
-7. **Version.** `Corely.IAM.Web` 3.3.0-preview.1 to 3.4.0, the last code commit. Not tagged.
+7. **Version.** `Corely.IAM.Web` 3.3.0-preview.1 to 3.4.0, tagged and published. It depends on `Corely.IAM` 3.4.0-preview.1, the version in that csproj, so the stable package carries a prerelease dependency until `Corely.IAM` 3.4.0 ships.
 
 ### Decisions the plan did not cover
 
@@ -246,7 +246,7 @@ packages are released and taken by DocsToData.
 
 ### Next
 
-- Release `Corely.IAM.Web` 3.4.0 (tag only with the owner's say so), then merge into `auditing` and
+- Merge master into `auditing` and
   finish verifying `/audit`, `/platform-settings` and the account audit section. `AuditLog`,
   `PlatformSettingsPage`, `AuditPurgeModal` and `AuditSettingsSection` exist only on `auditing` and get
   the same treatment there; the injection test will flag any that are missed.

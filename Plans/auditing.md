@@ -546,7 +546,7 @@ unchecked in a browser.
 ### Third verification run (after Blazor owned scopes)
 
 - Merged into master after `Corely.IAM.Web` gave every component that calls services its own DI
-  scope (`Plans/blazor-owned-scopes.md`). The audit page, purge modal, settings section and platform
+  scope (`Plans/Completed/blazor-owned-scopes.md`). The audit page, purge modal, settings section and platform
   settings page got the same treatment; `AuditLog` disposes its download module in
   `DisposeAsyncCore`.
 - Browser, WebApp on LocalDB with a freshly bootstrapped platform account, server log captured:

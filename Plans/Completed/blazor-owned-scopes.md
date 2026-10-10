@@ -1,7 +1,7 @@
 # Blazor components own their scopes
 
-**Status: Corely.IAM.Web done, released as 3.4.0 and, with the audit pages, 3.5.0. Billing and
-DocsToData next.** Found while verifying auditing ([auditing.md](auditing.md)): `/audit` never
+**Status: done.** Corely.IAM.Web 3.4.0 and 3.5.0, Billing.Web 2.2.0, Billing.Web.IAM 2.1.0 and
+Billing.IAM 2.1.0 released; DocsToData converted and committed, push pending the owner. Found while verifying auditing ([auditing.md](../auditing.md)): `/audit` never
 finishes loading.
 
 ## Why
@@ -249,7 +249,41 @@ packages are released and taken by DocsToData.
   `AuditSettingsSection` take their services from their own scope; `/audit`, `/platform-settings` and
   the account audit section load in a browser with a clean log. They ship in IAM.Web 3.5.0.
 
-### Next
+### Corely.Billing (step 2): done, released
 
-- Billing (step 2) and DocsToData (step 3), in their own repositories, against IAM.Web 3.5.0 and
-  Corely.IAM 3.4.0.
+- `BillingComponentBase` and `BillingPageBase` inherit `OwningComponentBase`; the base calls
+  `IBillingAccountAccessor.GetAccountIdAsync()` from the component's own scope first, which is where
+  `Corely.Billing.Web.IAM`'s accessor signs that scope in. No change to the accessor was needed: it
+  already went through `IBlazorUserContextAccessor`, which signs in whatever scope resolves it.
+- `BillingCallGate` and `SerializedAsync` are gone; the five components call their services directly.
+- **Not in the plan: `UsageExporter` takes `IJSRuntime`.** Resolved from a component's scope it would
+  get a JS runtime not attached to the circuit, so it is no longer registered: the base builds it with
+  `ActivatorUtilities` from `ScopedServices` plus the injected `IJSRuntime`, and disposes it.
+- `UsageChart` overrides `DisposeAsyncCore`. The dashboard test that asserted chart and table never
+  overlap their calls was the gate's premise and is replaced by one that they load.
+- `OwningComponentInjectionTests` in `Corely.Billing.Web.UnitTests`. Demo `Home` pages converted.
+  Billing's CLAUDE.md boundary note and the Web and Web.IAM docs rewritten.
+- Released: Billing.Web 2.2.0, Billing.Web.IAM 2.1.0 and Billing.IAM 2.1.0 (on Corely.IAM 3.4.0 and
+  IAM.Web 3.5.0). Verified in the WithIAM demo, reseeded: olivia reads grants, carla edits and saves
+  one, bobby is refused, with a clean log; the Portal demo's dashboard, simulate, export, grants and
+  usage pages load clean.
+
+### DocsToData (step 3): done, committed locally, not pushed
+
+- Took the stable packages, converted the nav bar, home page, four modals and the code behind pages.
+  `ProviderModelSelect` and `ProviderLabel` stay as they are: their resolver only reads provider
+  profiles. Four pages that disposed resources override `DisposeAsyncCore`.
+- The injection test lives in the portal's functional tier, on the host's real registrations
+  captured through `PortalFactory`.
+- **Found while verifying:** the template editor threw (and lost the circuit) when the add field
+  textarea inside a `PermissionView` had not rendered yet; owned scopes made that latent race likely.
+  The JS helper now skips a reference that is not an element, as `initSortable` already did, and the
+  page keeps the request pending until it attaches.
+- **Corely.IAM 3.4.0's two factor rule** refused the local seed's platform members; the seed now
+  enrolls them in TOTP, with their secrets in the seed header and `docs/local-development.md`.
+- Verified: the full suite passes except the Functions host tier, which fails the same way on `main`
+  (the host exits with code 1); the portal tier passes including the browser tests; a click through
+  as admin on desktop and phone, Run Once end to end, and provisioner signing in with a code,
+  entering Demo Account and creating a grant, with a clean log.
+- **Not pushed.** DocsToData's CLAUDE.md rations pushes (GitHub Free Actions budget); the two commits
+  wait for the owner.

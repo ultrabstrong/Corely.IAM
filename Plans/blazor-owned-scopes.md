@@ -1,6 +1,7 @@
 # Blazor components own their scopes
 
-**Status: Corely.IAM.Web done and released as 3.4.0. Billing and DocsToData next.** Found while verifying auditing ([auditing.md](auditing.md)): `/audit` never
+**Status: Corely.IAM.Web done, released as 3.4.0 and, with the audit pages, 3.5.0. Billing and
+DocsToData next.** Found while verifying auditing ([auditing.md](auditing.md)): `/audit` never
 finishes loading.
 
 ## Why
@@ -244,10 +245,11 @@ packages are released and taken by DocsToData.
   demo database was seeded before this session, likely by a version before the Owner role carried its
   per type permissions; reseeding (drop both demo databases) would tell.
 
+- **Auditing merged into master.** `AuditLog`, `PlatformSettingsPage`, `AuditPurgeModal` and
+  `AuditSettingsSection` take their services from their own scope; `/audit`, `/platform-settings` and
+  the account audit section load in a browser with a clean log. They ship in IAM.Web 3.5.0.
+
 ### Next
 
-- Merge master into `auditing` and
-  finish verifying `/audit`, `/platform-settings` and the account audit section. `AuditLog`,
-  `PlatformSettingsPage`, `AuditPurgeModal` and `AuditSettingsSection` exist only on `auditing` and get
-  the same treatment there; the injection test will flag any that are missed.
-- Billing (step 2) and DocsToData (step 3), in their own repositories.
+- Billing (step 2) and DocsToData (step 3), in their own repositories, against IAM.Web 3.5.0 and
+  Corely.IAM 3.4.0.

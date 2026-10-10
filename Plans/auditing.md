@@ -1,9 +1,8 @@
 # Auditing
 
-**Status: built, not yet verified (see Progress).** Part of the platform account fast follow
-([platform-account-hardening.md](platform-account-hardening.md)): no stable IAM release carries the
-platform account until this is done. The platform account is out as previews (Corely.IAM
-3.4.0-preview.1, IAM.Web 3.3.0-preview.1, the CLI 3.1.0-preview.1).
+**Status: done and verified in Corely.IAM; released with Corely.IAM 3.4.0, the CLI 3.1.0 and IAM.Web
+3.5.0. Billing and DocsToData adopt it in their own repositories.** Part of the platform account fast
+follow ([platform-account-hardening.md](Completed/platform-account-hardening.md)).
 
 ## Summary
 
@@ -543,3 +542,21 @@ change which calls overlap. Fixing it is a change to how IAM.Web (or IAM) gets a
 long-lived scope, for example a context per operation from `IDbContextFactory`, or serializing a
 circuit's service calls. Until then `/audit`, `/platform-settings` and the account audit section are
 unchecked in a browser.
+
+### Third verification run (after Blazor owned scopes)
+
+- Merged into master after `Corely.IAM.Web` gave every component that calls services its own DI
+  scope (`Plans/blazor-owned-scopes.md`). The audit page, purge modal, settings section and platform
+  settings page got the same treatment; `AuditLog` disposes its download module in
+  `DisposeAsyncCore`.
+- Browser, WebApp on LocalDB with a freshly bootstrapped platform account, server log captured:
+  `/audit` as the platform owner (25 rows, all six accounts in the filter, CSV export of 278 entries,
+  the purge modal listing every account plus outside any account), `/platform-settings`, and the audit
+  section on the platform account's page all load. As a customer owner (`alice.johnson` in North
+  America) `/audit` offers only their account. The log had no warnings or errors.
+- **Existing accounts get no audit owner rows:** kept, since the owner defaults rule
+  (`Docs/resource-types.md`) already says existing accounts keep their rows and the host provisions
+  anything beyond. `Docs/auditing.md` now says what an existing account's owners lack until the host
+  grants `audit` and `audit_settings`.
+- The WebApp demo seed's permission counts now include the two audit owner rows.
+- `RebuildAndTest.ps1`: 2298 tests, 0 failed, 14 skipped (the container tests).

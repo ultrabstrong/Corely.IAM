@@ -166,6 +166,13 @@ git push origin Corely.IAM-v2.3.2
   version already on nuget.org fails the push rather than being skipped.
 - The migration CLI's major must equal `Corely.IAM`'s at that commit: CLI 2.x targets IAM 2.x.
 - Tags are pushed only with the owner's say-so. A published version cannot be deleted.
+- **A session never ends with a package left in preview.** A preview version is fine while work is in
+  progress, but before the session is closed out (for instance when the owner asks whether anything is
+  left), every package carrying a `-preview` version is brought to completion and released at its
+  stable version. Leaving one in preview needs the owner's explicit approval, asked for by name.
+- A stable package never depends on a preview one. `Corely.IAM.Web` and the migration CLI reference
+  `Corely.IAM` as a project, so releasing either stable while `Corely.IAM` is in preview publishes a
+  prerelease dependency; release `Corely.IAM` stable first.
 - `scripts/check-package-versions.sh` runs in CI and reports any package changed since its own last
   tag without a version bump. It never fails the build.
 - The old `v*` tags are history and stay.

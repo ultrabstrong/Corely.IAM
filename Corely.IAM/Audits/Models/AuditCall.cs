@@ -7,5 +7,6 @@ public sealed record AuditCall(string Service, AuthAction Action, string Resourc
     public Guid? AccountId { get; init; }
     public IReadOnlyList<Guid> ResourceIds { get; init; } = [];
     public string? ActorUsername { get; init; }
+    public string? ActorMfaChallengeToken { get; init; }
     public AuditDetail Detail { get; init; }
 }

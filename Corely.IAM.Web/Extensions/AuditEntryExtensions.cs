@@ -17,5 +17,9 @@ internal static class AuditEntryExtensions
 
         public string AccountDisplayName() =>
             entry.AccountName ?? entry.AccountId?.ToString() ?? NO_ACCOUNT;
+
+        public IEnumerable<Guid> ShownResourceIds(int max) => entry.ResourceIds.Take(max);
+
+        public int HiddenResourceIdCount(int max) => Math.Max(entry.ResourceIds.Count - max, 0);
     }
 }

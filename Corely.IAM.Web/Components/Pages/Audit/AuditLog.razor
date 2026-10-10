@@ -130,9 +130,13 @@ else
                             <td>@entry.Action</td>
                             <td>
                                 @entry.ResourceType
-                                @foreach (var id in entry.ResourceIds)
+                                @foreach (var id in entry.ShownResourceIds(SHOWN_RESOURCE_IDS))
                                 {
                                     <br /><small class="guid-text">@id</small>
+                                }
+                                @if (entry.HiddenResourceIdCount(SHOWN_RESOURCE_IDS) is > 0 and var hidden)
+                                {
+                                    <br /><small class="text-muted" title="@string.Join(Environment.NewLine, entry.ResourceIds)">and @hidden more (all in the CSV export)</small>
                                 }
                             </td>
                             <td class="@(entry.ResultCode == AuditConstants.SUCCESS_RESULT_CODE ? "text-success" : "text-danger")">@entry.ResultCode</td>
@@ -149,6 +153,7 @@ else
 
 @code {
     private const string CSV_MIME_TYPE = "text/csv";
+    private const int SHOWN_RESOURCE_IDS = 3;
 
     private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
 

@@ -27,6 +27,21 @@ public class AuditEntryExtensionsTests
             null
         );
 
+    [Theory]
+    [InlineData(0, 0, 0)]
+    [InlineData(3, 3, 0)]
+    [InlineData(5, 3, 2)]
+    public void ShownAndHiddenResourceIds_SplitAtTheMaximum(int total, int shown, int hidden)
+    {
+        var entry = Entry() with
+        {
+            ResourceIds = [.. Enumerable.Range(0, total).Select(_ => Guid.CreateVersion7())],
+        };
+
+        Assert.Equal(entry.ResourceIds.Take(shown), entry.ShownResourceIds(3));
+        Assert.Equal(hidden, entry.HiddenResourceIdCount(3));
+    }
+
     [Fact]
     public void ActorDisplayName_PrefersTheName_ThenTheId()
     {

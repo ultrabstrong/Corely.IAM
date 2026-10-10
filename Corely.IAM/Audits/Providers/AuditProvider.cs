@@ -7,6 +7,7 @@ using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Mappers;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Extensions;
+using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -141,7 +142,8 @@ internal class AuditProvider(
                 : pending.Before?.User?.Id
                     ?? after?.User?.Id
                     ?? NonEmpty(described.ActorUserId)
-                    ?? await FindUserIdAsync(services, call.ActorUsername);
+                    ?? await FindUserIdAsync(services, call.ActorUsername)
+                    ?? await FindChallengeUserIdAsync(services, call.ActorMfaChallengeToken);
 
             var alwaysRecorded = policy.IsAlwaysRecorded(call.Service, pending.Operation);
 
@@ -241,6 +243,18 @@ internal class AuditProvider(
                     .GetRequiredService<IReadonlyRepo<UserEntity>>()
                     .GetAsync(u => u.Username == username)
             )?.Id;
+
+    private static async Task<Guid?> FindChallengeUserIdAsync(
+        IServiceProvider services,
+        string? challengeToken
+    ) =>
+        string.IsNullOrWhiteSpace(challengeToken)
+            ? null
+            : (
+                await services
+                    .GetRequiredService<IReadonlyRepo<MfaChallengeEntity>>()
+                    .GetAsync(c => c.ChallengeToken == challengeToken)
+            )?.UserId;
 
     private static async Task<string?> DetailsAsync(
         IServiceProvider services,

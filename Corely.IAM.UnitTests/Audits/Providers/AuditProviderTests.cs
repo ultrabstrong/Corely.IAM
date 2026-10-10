@@ -5,6 +5,7 @@ using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
+using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Security.Constants;
@@ -63,6 +64,9 @@ public class AuditProviderTests
         scopedServices
             .Setup(s => s.GetService(typeof(IReadonlyRepo<UserEntity>)))
             .Returns(_serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>());
+        scopedServices
+            .Setup(s => s.GetService(typeof(IReadonlyRepo<MfaChallengeEntity>)))
+            .Returns(_serviceFactory.GetRequiredService<IReadonlyRepo<MfaChallengeEntity>>());
         var scope = new Mock<IServiceScope>();
         scope.Setup(s => s.ServiceProvider).Returns(scopedServices.Object);
         var scopeFactory = new Mock<IServiceScopeFactory>();
@@ -301,6 +305,33 @@ public class AuditProviderTests
         var entry = Assert.Single(_written);
         Assert.Equal(_memberId, entry.ActorUserId);
         Assert.Equal(nameof(ModifyResultCode.UnauthorizedError), entry.ResultCode);
+    }
+
+    [Fact]
+    public async Task Record_FindsTheActorByMfaChallenge_WhenThereIsNoContext()
+    {
+        await _serviceFactory
+            .GetRequiredService<IRepo<MfaChallengeEntity>>()
+            .CreateAsync(
+                new MfaChallengeEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    UserId = _memberId,
+                    ChallengeToken = "challenge-token",
+                    DeviceId = "device",
+                }
+            );
+
+        await _provider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Execute, PermissionConstants.USER_RESOURCE_TYPE)
+            {
+                ActorMfaChallengeToken = "challenge-token",
+            },
+            () => Task.FromResult(new ModifyResult(ModifyResultCode.UnauthorizedError, "")),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+        Assert.Equal(_memberId, Assert.Single(_written).ActorUserId);
     }
 
     [Fact]

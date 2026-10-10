@@ -44,7 +44,10 @@ internal class AuthenticationServiceAuditDecorator(
 
     public Task<SignInResult> VerifyMfaAsync(VerifyMfaRequest request) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Execute, PermissionConstants.USER_RESOURCE_TYPE),
+            new AuditCall(SERVICE, AuthAction.Execute, PermissionConstants.USER_RESOURCE_TYPE)
+            {
+                ActorMfaChallengeToken = request.MfaChallengeToken,
+            },
             () => _inner.VerifyMfaAsync(request),
             r => AuditOutcome.Of(r.ResultCode)
         );

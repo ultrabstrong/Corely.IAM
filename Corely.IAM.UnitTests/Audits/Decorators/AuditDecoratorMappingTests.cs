@@ -121,6 +121,24 @@ public class AuditDecoratorMappingTests
     }
 
     [Fact]
+    public async Task VerifyMfa_PassesTheChallenge_SoAFailedCodeNamesTheActor()
+    {
+        var inner = new Mock<IAuthenticationService>();
+        inner
+            .Setup(s => s.VerifyMfaAsync(It.IsAny<VerifyMfaRequest>()))
+            .ReturnsAsync(new SignInResult(SignInResultCode.InvalidMfaCodeError, "", null, null));
+
+        await new AuthenticationServiceAuditDecorator(inner.Object, _auditProvider).VerifyMfaAsync(
+            new VerifyMfaRequest("challenge-token", "000000")
+        );
+
+        Assert.Equal(
+            "challenge-token",
+            Assert.Single(_auditProvider.Calls).Call.ActorMfaChallengeToken
+        );
+    }
+
+    [Fact]
     public async Task SignIn_PassesTheUsername_SoAFailedSignInNamesTheActor()
     {
         var inner = new Mock<IAuthenticationService>();

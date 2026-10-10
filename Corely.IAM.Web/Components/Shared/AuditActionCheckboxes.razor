@@ -5,7 +5,7 @@
         var allowed = Allowed.Has(current);
         <div class="form-check">
             <input class="form-check-input" type="checkbox" id="@($"{IdPrefix}-{current}")"
-                   checked="@Value.Has(current)"
+                   checked="@(allowed && Value.Has(current))"
                    disabled="@(Disabled || !allowed)"
                    @onchange="e => OnChangedAsync(current, e.Value is true)" />
             <label class="form-check-label @(allowed ? "" : "text-muted")" for="@($"{IdPrefix}-{current}")"

@@ -20,6 +20,19 @@ public class AuditActionCheckboxesTests : TestContext
     }
 
     [Fact]
+    public void Checkboxes_ShowAForbiddenActionUnchecked_EvenWhenTheAccountChoseIt()
+    {
+        var cut = Render<AuditActionCheckboxes>(p =>
+            p.Add(x => x.IdPrefix, "test")
+                .Add(x => x.Value, AuditActions.Create | AuditActions.Read)
+                .Add(x => x.Allowed, AuditActions.Create)
+        );
+
+        Assert.False(cut.Find("#test-Read").HasAttribute("checked"));
+        Assert.True(cut.Find("#test-Create").HasAttribute("checked"));
+    }
+
+    [Fact]
     public void Checkboxes_DisableActionsThePlatformForbids()
     {
         var cut = Render<AuditActionCheckboxes>(p =>

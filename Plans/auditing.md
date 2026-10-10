@@ -560,3 +560,27 @@ unchecked in a browser.
   grants `audit` and `audit_settings`.
 - The WebApp demo seed's permission counts now include the two audit owner rows.
 - `RebuildAndTest.ps1`: 2298 tests, 0 failed, 14 skipped (the container tests).
+
+### Fourth verification run (the features end to end)
+
+Browser, WebApp on LocalDB reseeded with a bootstrapped platform account, rows checked in the database.
+
+- **Account owner** (`alice.johnson`, North America): the audit section saved Read on for members and
+  30 days, and the next read was recorded at once. `/audit` showed the account's entries and her own;
+  export wrote 110 entries; the purge modal offered only her account, the review counted 102, and the
+  purge removed 103 because this account now records reads, so the review's own count was recorded
+  first. The purge's own entry stays.
+- **Platform owner**: sign in with two factor; `/platform-settings` saved Read forbidden and a 20 day
+  maximum, and Alice's section then showed Read disabled and 20 days, with no read recorded after.
+  `/audit` covered every account, and the purge modal added outside any account and system context.
+  A group created in Alice's account was recorded as a platform member, shown to her with the badge,
+  and hidden when she excluded platform members.
+- **Fixed:** a failed two factor code was recorded with no actor. `AuditCall.ActorMfaChallengeToken`
+  now lets the provider find the user from the challenge, the way `ActorUsername` does for sign in.
+- **Fixed:** a membership call listing dozens of ids made one row thousands of pixels tall. The page
+  shows three and says how many more; the CSV has them all.
+- **Fixed:** an action the platform forbids showed checked (the account's own choice) though nothing
+  is recorded. It now shows unchecked and disabled; the stored choice is unchanged.
+- Not recorded by default, as designed: a platform member switching into an account (Execute is off
+  for platform members unless the account turns it on).
+- `dotnet test --solution Corely.IAM.slnx`: 2304 tests, 0 failed, 14 skipped (the container tests).

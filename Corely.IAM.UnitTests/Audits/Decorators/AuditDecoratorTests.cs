@@ -14,6 +14,7 @@ public class AuditDecoratorTests
     [
         nameof(IAuthenticationService.AuthenticateWithTokenAsync),
         nameof(IAuthenticationService.AuthenticateAsSystem),
+        nameof(IPlatformService.CompletePlatformOwnerPermissionsAsync),
     ];
 
     public static TheoryData<Type, string> DecoratedMethods()

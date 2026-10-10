@@ -584,3 +584,14 @@ Browser, WebApp on LocalDB reseeded with a bootstrapped platform account, rows c
 - Not recorded by default, as designed: a platform member switching into an account (Execute is off
   for platform members unless the account turns it on).
 - `dotnet test --solution Corely.IAM.slnx`: 2304 tests, 0 failed, 14 skipped (the container tests).
+
+### Decisions after the fourth run
+
+- **Entering an account stays unrecorded by default.** A customer sees platform members' activity only
+  as far as the account's own settings choose; the platform never overrides them. Documented in
+  `Docs/auditing.md`.
+- **The startup permission check is no longer recorded.** `CompletePlatformOwnerPermissionsAsync` runs
+  at every start with no user and only adds rows to the platform Owner role; its audit decorator now
+  passes straight through. It can be recorded later if a need appears.
+- Released with these fixes: Corely.IAM 3.5.0 (adds `AuditCall.ActorMfaChallengeToken`) and
+  Corely.IAM.Web 3.5.1.

@@ -1,5 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Permissions.Constants;
@@ -33,9 +32,5 @@ internal class PlatformServiceAuditDecorator(IPlatformService inner, IAuditProvi
         );
 
     public Task<int> CompletePlatformOwnerPermissionsAsync() =>
-        _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.PERMISSION_RESOURCE_TYPE),
-            () => _inner.CompletePlatformOwnerPermissionsAsync(),
-            _ => new AuditOutcome(AuditConstants.SUCCESS_RESULT_CODE)
-        );
+        _inner.CompletePlatformOwnerPermissionsAsync();
 }

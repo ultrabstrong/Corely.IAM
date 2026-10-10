@@ -229,6 +229,20 @@ packages are released and taken by DocsToData.
   I created the account "Scope Verification" (renamed "Scope Verification Renamed" by the rename check),
   the group "Verification Group" and 20 permissions on the Roles type described "Measure 0" to
   "Measure 19". They are still in that database.
+- **Demo hosts and the WebApp dashboard, added at the owner's request.** `Corely.IAM.Demos.UsersOnly`
+  (`Home`, `Profile`), `Corely.IAM.Demos.SharedAccount` (`Home`, `Profile`, `Team`) and the WebApp's
+  `Home` inherit `OwningComponentBase` and take IAM services from `ScopedServices`; each already signs
+  in first thing through the accessor, which now signs in the page's own scope. `IDbContextFactory<T>`,
+  `TimeProvider` and `NavigationManager` stay injected. The demo layouts keep the accessor injected: a
+  `LayoutComponentBase` cannot also own a scope, and the tab's scope is signed in by
+  `IamAuthenticationStateProvider` anyway, the accessor's semaphore serializing the two. The injection
+  test covers only IAM.Web's assembly, since the test project does not reference the hosts. Verified:
+  `RebuildAndTest.ps1` green (1965, 0 failed), and both demos' `/`, `/profile` and `/team` loaded in a
+  browser, with no warnings or errors in either log.
+- **Found while verifying, not changed:** on the SharedAccount demo, `olivia` (the seeded owner) is
+  refused Read on users, so `/team` says only the owner can see members. Master behaves the same. The
+  demo database was seeded before this session, likely by a version before the Owner role carried its
+  per type permissions; reseeding (drop both demo databases) would tell.
 
 ### Next
 
@@ -236,7 +250,4 @@ packages are released and taken by DocsToData.
   finish verifying `/audit`, `/platform-settings` and the account audit section. `AuditLog`,
   `PlatformSettingsPage`, `AuditPurgeModal` and `AuditSettingsSection` exist only on `auditing` and get
   the same treatment there; the injection test will flag any that are missed.
-- Not in this session's scope: the demo hosts (`Corely.IAM.Demos.UsersOnly`, `.SharedAccount`) and the
-  WebApp's own `Home` still `@inject` scoped services into plain components. Each now shares the tab's
-  scope only with its layout, but they do not follow the two rules yet.
 - Billing (step 2) and DocsToData (step 3), in their own repositories.

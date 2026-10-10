@@ -172,3 +172,7 @@ outside any account. The operation name comes from the calling method.
 - `AuthenticateWithTokenAsync` and `AuthenticateAsSystem` are not recorded. They set the context that every recorded call after them carries.
 - Reads are off by default, so the busiest calls cost a cache lookup and no write.
 - Reading the audit log is itself a Read on `audit`, recorded only where Reads are recorded.
+- The Owner role gets Read and Delete on `audit` and Read and Update on `audit_settings` as
+  [owner defaults](resource-types.md#owner-defaults), so only in accounts created after these types are
+  registered. Until a host grants them in an existing account, under system context, that account's
+  owners see only their own entries and cannot change its settings.

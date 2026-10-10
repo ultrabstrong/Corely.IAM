@@ -1,6 +1,6 @@
 # Services
 
-Nine public services form the API surface of Corely.IAM. All are registered as scoped and wrapped with telemetry decorators. Service-layer authorization decorators remain only on the services that still need context gating before the implementation runs.
+Eleven public services form the API surface of Corely.IAM. All are registered as scoped and wrapped with audit decorators, and all but `IPlatformService` with telemetry decorators. Service-layer authorization decorators remain only on the services that still need context gating before the implementation runs.
 
 ## Service Overview
 
@@ -16,14 +16,17 @@ Nine public services form the API surface of Corely.IAM. All are registered as s
 | `IMfaService` | TOTP setup, confirmation, status, recovery codes | 5 |
 | `IGoogleAuthService` | Link/unlink Google auth, check auth methods | 3 |
 | `IInvitationService` | Create, accept, revoke, and list invitations | 4 |
+| `IAuditService` | Read, export and purge [audit entries](../auditing.md), audit and platform settings, retention cleanup | 11 |
 
 ## Decorator Pattern
 
-Services are wrapped with telemetry decorators via Scrutor, and some also keep an authorization decorator:
+Services are wrapped with telemetry and audit decorators via Scrutor, and some also keep an authorization decorator:
 
 ```
-TelemetryDecorator → [AuthorizationDecorator] → Service Implementation
+TelemetryDecorator → AuditDecorator → [AuthorizationDecorator] → Service Implementation
 ```
+
+- **Audit decorators** record each call through `IAuditProvider`, refusals included. See [Auditing](../auditing.md)
 
 - **Authorization decorators** validate user/account context where a service still dereferences ambient context before handing off
 - **Telemetry decorators** log method entry/exit and timing

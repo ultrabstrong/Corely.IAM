@@ -109,11 +109,12 @@ All five services are wrapped with authorization and telemetry decorators via Sc
 
 ## Configuration Sections
 
-`AddIAMServices` binds two configuration sections from `IConfiguration`:
+`AddIAMServices` binds three configuration sections from `IConfiguration`:
 
 | Section | Options Class | Properties |
 |---------|--------------|------------|
 | `SecurityOptions` | `SecurityOptions` | `MaxLoginAttempts` (5), `LockoutCooldownSeconds` (900), `AuthTokenTtlSeconds` (3600), `AuthSessionTtlSeconds` (604800) |
+| `AuditOptions` | `AuditOptions` | `Source` (the entry assembly's name), `SettingsCacheTtlSeconds` (30). See [Auditing](auditing.md) |
 | `PasswordValidationOptions` | `PasswordValidationOptions` | Minimum length, complexity requirements. App-wide rather than per account: a user sets a password before joining any account, and can belong to several |
 
 Configure these in `appsettings.json`:

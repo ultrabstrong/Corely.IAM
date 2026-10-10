@@ -36,6 +36,21 @@ internal static class StringExtensions
 
         public string ToDisplayRecoveryCode() => $"{value[..4]}-{value[4..]}";
 
+        public string Truncated(int maxLength) =>
+            value.Length <= maxLength ? value : value[..maxLength];
+
+        public string CsvField()
+        {
+            var needsQuotes =
+                value.IndexOfAny([',', '"', '\r', '\n']) >= 0
+                || value.StartsWith(' ')
+                || value.EndsWith(' ');
+            var escaped = value.Replace("\"", "\"\"");
+            var guarded =
+                escaped.Length > 0 && "=+-@".Contains(escaped[0]) ? $"'{escaped}" : escaped;
+            return needsQuotes || guarded != escaped ? $"\"{guarded}\"" : guarded;
+        }
+
         public string EmailLocalPart()
         {
             var atIndex = value.IndexOf('@');

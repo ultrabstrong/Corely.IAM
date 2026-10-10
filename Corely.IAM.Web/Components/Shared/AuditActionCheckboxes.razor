@@ -1,0 +1,35 @@
+<div class="d-flex flex-wrap gap-3">
+    @foreach (var action in Enum.GetValues<AuthAction>())
+    {
+        var current = action;
+        var allowed = Allowed.Has(current);
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="@($"{IdPrefix}-{current}")"
+                   checked="@Value.Has(current)"
+                   disabled="@(Disabled || !allowed)"
+                   @onchange="e => OnChangedAsync(current, e.Value is true)" />
+            <label class="form-check-label @(allowed ? "" : "text-muted")" for="@($"{IdPrefix}-{current}")"
+                   title="@(allowed ? null : "The platform does not allow recording this action")">@current</label>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string IdPrefix { get; set; } = null!;
+
+    [Parameter]
+    public AuditActions Value { get; set; }
+
+    [Parameter]
+    public EventCallback<AuditActions> ValueChanged { get; set; }
+
+    [Parameter]
+    public AuditActions Allowed { get; set; } = AuditActions.All;
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    private Task OnChangedAsync(AuthAction action, bool included) =>
+        ValueChanged.InvokeAsync(Value.With(action, included));
+}

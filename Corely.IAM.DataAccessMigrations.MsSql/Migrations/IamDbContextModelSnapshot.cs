@@ -134,6 +134,94 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                     b.ToTable("AccountSymmetricKeys", (string)null);
                 });
 
+            modelBuilder.Entity("Corely.IAM.Audits.Entities.AccountAuditSettingsEntity", b =>
+                {
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AccountMemberActions")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("DATETIME2")
+                        .HasDefaultValueSql("(SYSUTCDATETIME())");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("DATETIME2");
+
+                    b.Property<int>("PlatformMemberActions")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RetentionDays")
+                        .HasColumnType("int");
+
+                    b.HasKey("AccountId");
+
+                    b.ToTable("AccountAuditSettings", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.Audits.Entities.AuditEntryEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Cohort")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("OccurredUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Operation")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ResourceIds")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResourceType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ResultCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Service")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId", "OccurredUtc");
+
+                    b.HasIndex("ActorUserId", "OccurredUtc");
+
+                    b.ToTable("AuditEntries", (string)null);
+                });
+
             modelBuilder.Entity("Corely.IAM.BasicAuths.Entities.BasicAuthEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -499,6 +587,39 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                     b.ToTable("Permissions", (string)null);
                 });
 
+            modelBuilder.Entity("Corely.IAM.Platform.Entities.PlatformSettingsEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AccountlessActions")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AuditAllowedActions")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("AuditEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("AuditMaxRetentionDays")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("DATETIME2")
+                        .HasDefaultValueSql("(SYSUTCDATETIME())");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("DATETIME2");
+
+                    b.Property<int>("SystemContextActions")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PlatformSettings", (string)null);
+                });
+
             modelBuilder.Entity("Corely.IAM.Roles.Entities.RoleEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -783,6 +904,15 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                     b.HasOne("Corely.IAM.Accounts.Entities.AccountEntity", null)
                         .WithMany("SymmetricKeys")
                         .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Corely.IAM.Audits.Entities.AccountAuditSettingsEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.Accounts.Entities.AccountEntity", null)
+                        .WithOne()
+                        .HasForeignKey("Corely.IAM.Audits.Entities.AccountAuditSettingsEntity", "AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

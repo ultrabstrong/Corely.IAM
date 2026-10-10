@@ -25,6 +25,17 @@ public class UnauthenticatedAccessTests : FunctionalTestBase
         Assert.Contains("ReturnUrl", location, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData(AppRoutes.Audit)]
+    [InlineData(AppRoutes.PlatformSettings)]
+    public async Task AnonymousRequestToAuditPages_RedirectsToSignIn(string route)
+    {
+        using var response = await Client.GetAsync(route);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains(AppRoutes.SignIn, response.Headers.Location!.OriginalString);
+    }
+
     [Fact]
     public async Task SignInPage_IsReachableAnonymously()
     {

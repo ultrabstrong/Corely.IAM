@@ -1,3 +1,4 @@
+using Corely.IAM.Audits.Constants;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Security.Constants;
@@ -37,12 +38,41 @@ public class ResourceTypeRegistryTests
         Assert.Equal(Enum.GetValues<AuthAction>(), info.OwnerActions);
     }
 
+    [Theory]
+    [InlineData(
+        AuditConstants.AUDIT_RESOURCE_TYPE,
+        "Audit log",
+        new[] { AuthAction.Read, AuthAction.Delete }
+    )]
+    [InlineData(
+        AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE,
+        "Audit settings",
+        new[] { AuthAction.Read, AuthAction.Update }
+    )]
+    [InlineData(
+        AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE,
+        "Platform settings",
+        new AuthAction[0]
+    )]
+    public void Constructor_PreRegistersAuditTypes_WithTheirOwnerActions(
+        string name,
+        string expectedDescription,
+        AuthAction[] expectedOwnerActions
+    )
+    {
+        var info = _registry.Get(name);
+
+        Assert.NotNull(info);
+        Assert.Equal(expectedDescription, info.Description);
+        Assert.Equal(expectedOwnerActions, info.OwnerActions);
+    }
+
     [Fact]
-    public void GetAll_ReturnsOnlyTheFiveIAMTypes_ForNewRegistry()
+    public void GetAll_ReturnsOnlyTheIAMTypes_ForNewRegistry()
     {
         var all = _registry.GetAll();
 
-        Assert.Equal(5, all.Count);
+        Assert.Equal(8, all.Count);
     }
 
     [Fact]

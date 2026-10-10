@@ -18,9 +18,10 @@ Services (public) → Processors (internal) → Repositories/UoW → EF Core DbC
 Every service and processor is wrapped with decorators registered via Scrutor:
 
 ```
-TelemetryDecorator → [AuthorizationDecorator] → Implementation
+TelemetryDecorator → [AuditDecorator] → [AuthorizationDecorator] → Implementation
 ```
 
+- **Audit decorators**: every service has one; it records the call through `IAuditProvider` after it runs. It sits outside authorization so refused calls are recorded. See [Auditing](auditing.md)
 - **Authorization decorators**: service level decorators are only used where a context gate is still required; processor level decorators enforce CRUDX permissions
 - **Telemetry decorators**: structured logging of method entry/exit
 

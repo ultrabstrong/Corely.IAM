@@ -22,4 +22,6 @@ public static class AppRoutes
     public const string Groups = "/groups";
     public const string Roles = "/roles";
     public const string Permissions = "/permissions";
+    public const string Audit = "/audit";
+    public const string PlatformSettings = "/platform-settings";
 }

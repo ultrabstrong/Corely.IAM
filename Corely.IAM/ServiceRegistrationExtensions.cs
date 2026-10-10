@@ -1,5 +1,7 @@
 using Corely.DataAccess.Extensions;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.Audits.Models;
+using Corely.IAM.Audits.Providers;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.DataAccess;
 using Corely.IAM.GoogleAuths.Processors;
@@ -108,6 +110,14 @@ public static class ServiceRegistrationExtensions
                 options.Configuration.GetSection(PasswordValidationOptions.NAME)
             );
 
+            serviceCollection.Configure<AuditOptions>(
+                options.Configuration.GetSection(AuditOptions.NAME)
+            );
+            serviceCollection.AddSingleton<AuditSettingsCache>();
+            serviceCollection.AddScoped<IAuditPolicy, AuditPolicy>();
+            serviceCollection.AddScoped<IAuditProvider, AuditProvider>();
+            serviceCollection.AddScoped<IAuditAccessProvider, AuditAccessProvider>();
+
             serviceCollection.AddScoped<IPlatformAccessProvider, PlatformAccessProvider>();
             serviceCollection.AddScoped<IAuthenticationProvider, AuthenticationProvider>();
             serviceCollection.AddScoped<UserContextProvider>();
@@ -130,6 +140,7 @@ public static class ServiceRegistrationExtensions
                 IRegistrationService,
                 RegistrationServiceAuthorizationDecorator
             >();
+            serviceCollection.Decorate<IRegistrationService, RegistrationServiceAuditDecorator>();
             serviceCollection.Decorate<
                 IRegistrationService,
                 RegistrationServiceTelemetryDecorator
@@ -141,13 +152,20 @@ public static class ServiceRegistrationExtensions
             >();
             serviceCollection.Decorate<
                 IDeregistrationService,
+                DeregistrationServiceAuditDecorator
+            >();
+            serviceCollection.Decorate<
+                IDeregistrationService,
                 DeregistrationServiceTelemetryDecorator
             >();
             serviceCollection.AddScoped<IRetrievalService, RetrievalService>();
+            serviceCollection.Decorate<IRetrievalService, RetrievalServiceAuditDecorator>();
             serviceCollection.Decorate<IRetrievalService, RetrievalServiceTelemetryDecorator>();
             serviceCollection.AddScoped<IPlatformService, PlatformService>();
+            serviceCollection.Decorate<IPlatformService, PlatformServiceAuditDecorator>();
             serviceCollection.AddHostedService<PlatformOwnerPermissionsStartup>();
             serviceCollection.AddScoped<IModificationService, ModificationService>();
+            serviceCollection.Decorate<IModificationService, ModificationServiceAuditDecorator>();
             serviceCollection.Decorate<
                 IModificationService,
                 ModificationServiceTelemetryDecorator
@@ -155,11 +173,16 @@ public static class ServiceRegistrationExtensions
             serviceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
             serviceCollection.Decorate<
                 IAuthenticationService,
+                AuthenticationServiceAuditDecorator
+            >();
+            serviceCollection.Decorate<
+                IAuthenticationService,
                 AuthenticationServiceTelemetryDecorator
             >();
 
             serviceCollection.AddScoped<IMfaService, MfaService>();
             serviceCollection.Decorate<IMfaService, MfaServiceAuthorizationDecorator>();
+            serviceCollection.Decorate<IMfaService, MfaServiceAuditDecorator>();
             serviceCollection.Decorate<IMfaService, MfaServiceTelemetryDecorator>();
 
             serviceCollection.AddScoped<IGoogleAuthService, GoogleAuthService>();
@@ -167,16 +190,27 @@ public static class ServiceRegistrationExtensions
                 IGoogleAuthService,
                 GoogleAuthServiceAuthorizationDecorator
             >();
+            serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceAuditDecorator>();
             serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceTelemetryDecorator>();
 
             serviceCollection.AddScoped<IInvitationService, InvitationService>();
+            serviceCollection.Decorate<IInvitationService, InvitationServiceAuditDecorator>();
             serviceCollection.Decorate<IInvitationService, InvitationServiceTelemetryDecorator>();
 
             serviceCollection.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
             serviceCollection.Decorate<
                 IPasswordRecoveryService,
+                PasswordRecoveryServiceAuditDecorator
+            >();
+            serviceCollection.Decorate<
+                IPasswordRecoveryService,
                 PasswordRecoveryServiceTelemetryDecorator
             >();
+
+            serviceCollection.AddScoped<IAuditService, AuditService>();
+            serviceCollection.Decorate<IAuditService, AuditServiceAuthorizationDecorator>();
+            serviceCollection.Decorate<IAuditService, AuditServiceAuditDecorator>();
+            serviceCollection.Decorate<IAuditService, AuditServiceTelemetryDecorator>();
 
             serviceCollection.AddScoped<IUserOwnershipProcessor, UserOwnershipProcessor>();
 

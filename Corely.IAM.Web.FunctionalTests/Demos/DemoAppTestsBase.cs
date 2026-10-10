@@ -42,6 +42,8 @@ public abstract class DemoAppTestsBase<TNotesContext> : IAsyncLifetime
     [InlineData(AppRoutes.Groups)]
     [InlineData(AppRoutes.Roles)]
     [InlineData(AppRoutes.Permissions)]
+    [InlineData(AppRoutes.Audit)]
+    [InlineData(AppRoutes.PlatformSettings)]
     public async Task TheLibrarysAdminPagesAreNotRouted(string route)
     {
         await SignUpAsync();

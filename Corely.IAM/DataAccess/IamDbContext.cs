@@ -1,10 +1,12 @@
 ﻿using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Audits.Entities;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.GoogleAuths.Entities;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.PasswordRecoveries.Entities;
+using Corely.IAM.Platform.Entities;
 using Corely.IAM.TotpAuths.Entities;
 using Corely.IAM.Users.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +38,9 @@ internal class IamDbContext(
     public DbSet<TotpRecoveryCodeEntity> TotpRecoveryCodes { get; set; } = null!;
     public DbSet<GoogleAuthEntity> GoogleAuths { get; set; } = null!;
     public DbSet<MfaChallengeEntity> MfaChallenges { get; set; } = null!;
+    public DbSet<AuditEntryEntity> AuditEntries { get; set; } = null!;
+    public DbSet<AccountAuditSettingsEntity> AccountAuditSettings { get; set; } = null!;
+    public DbSet<PlatformSettingsEntity> PlatformSettings { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

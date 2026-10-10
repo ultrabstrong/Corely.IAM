@@ -1,0 +1,141 @@
+@inject IAuditService AuditService
+
+<div class="section-divider mb-4">
+    <div class="section-divider-label">
+        Audit
+        @if (_settings is not null && !_isEditing)
+        {
+            <PermissionView Action="AuthAction.Update" Resource="@AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE">
+                <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit" disabled="@_busy">Edit</button>
+            </PermissionView>
+        }
+    </div>
+
+    <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+    @if (_settings is null)
+    {
+        @if (_message is null)
+        {
+            <LoadingSpinner />
+        }
+    }
+    else
+    {
+        <div class="props-grid mb-3">
+            <span class="prop-label">Recorded for account members</span>
+            <div class="prop-value">
+                <AuditActionCheckboxes IdPrefix="audit-members" @bind-Value="_accountMemberActions" Allowed="_allowedActions" Disabled="!_isEditing" />
+            </div>
+            <span class="prop-label">Recorded for platform members</span>
+            <div class="prop-value">
+                <AuditActionCheckboxes IdPrefix="audit-platform" @bind-Value="_platformMemberActions" Allowed="_allowedActions" Disabled="!_isEditing" />
+            </div>
+            <span class="prop-label">Keep entries for (days)</span>
+            <div class="prop-value">
+                @if (_isEditing)
+                {
+                    <input type="number" class="form-control form-control-sm" min="0" max="@_maxRetentionDays" @bind="_retentionDays" />
+                    <small class="text-muted">0 to @_maxRetentionDays, the platform's maximum.</small>
+                }
+                else
+                {
+                    @Math.Min(_retentionDays, _maxRetentionDays)
+                }
+            </div>
+        </div>
+        @if (_isEditing)
+        {
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_busy">Save</button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit" disabled="@_busy">Cancel</button>
+            </div>
+        }
+        <p class="text-muted small mt-2 mb-0">
+            Turning a cohort off records nothing for it in this account, platform members included.
+            Deleting a user and deleting an account are always recorded.
+        </p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid AccountId { get; set; }
+
+    private AccountAuditSettings? _settings;
+    private AuditActions _accountMemberActions;
+    private AuditActions _platformMemberActions;
+    private AuditActions _allowedActions = AuditActions.All;
+    private int _retentionDays;
+    private int _maxRetentionDays;
+    private bool _isEditing;
+    private bool _busy;
+    private string? _message;
+    private AlertType _messageType = AlertType.Info;
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var result = await AuditService.GetAccountSettingsAsync(AccountId);
+        if (result.ResultCode != RetrieveResultCode.Success || result.Settings is null)
+        {
+            _settings = null;
+            _message = "The audit settings couldn't be loaded.";
+            _messageType = AlertType.Warning;
+            return;
+        }
+
+        _settings = result.Settings;
+        _allowedActions = result.AllowedActions;
+        _maxRetentionDays = result.MaxRetentionDays;
+        Reset();
+    }
+
+    private void Reset()
+    {
+        _accountMemberActions = _settings!.AccountMemberActions;
+        _platformMemberActions = _settings.PlatformMemberActions;
+        _retentionDays = _settings.RetentionDays;
+    }
+
+    private void StartEdit() => _isEditing = true;
+
+    private void CancelEdit()
+    {
+        Reset();
+        _isEditing = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        try
+        {
+            var result = await AuditService.UpdateAccountSettingsAsync(
+                new UpdateAccountAuditSettingsRequest(
+                    AccountId,
+                    _accountMemberActions,
+                    _platformMemberActions,
+                    _retentionDays
+                )
+            );
+            if (result.ResultCode == ModifyResultCode.Success)
+            {
+                _isEditing = false;
+                _message = "Audit settings saved.";
+                _messageType = AlertType.Success;
+                await LoadAsync();
+            }
+            else
+            {
+                _message = result.Message;
+                _messageType = AlertType.Danger;
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -37,6 +37,10 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="@AppRoutes.Accounts/@_accountId">Manage Account</a></li>
+                                @if (_isPlatformAccount)
+                                {
+                                    <li><a class="dropdown-item" href="@AppRoutes.PlatformSettings"><i class="bi bi-sliders"></i> Platform Settings</a></li>
+                                }
                                 @if (_hasMultipleAccounts)
                                 {
                                     <li><hr class="dropdown-divider" /></li>
@@ -66,6 +70,9 @@
                         </li>
                     }
                     <li class="nav-item">
+                        <a class="nav-link" href="@AppRoutes.Audit"><i class="bi bi-journal-text"></i> Audit</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="@AppRoutes.Profile"><i class="bi bi-person"></i> @_username</a>
                     </li>
                     <li class="nav-item">
@@ -88,6 +95,7 @@
 
     private bool _isAuthenticated;
     private bool _hasAccount;
+    private bool _isPlatformAccount;
     private bool _hasAnyAccounts;
     private bool _hasMultipleAccounts;
     private Guid _userId;
@@ -102,6 +110,7 @@
         var context = await BlazorUserContextAccessor.GetUserContextAsync();
         _isAuthenticated = context?.User != null;
         _hasAccount = context?.CurrentAccount != null;
+        _isPlatformAccount = context?.CurrentAccount?.IsPlatformAccount == true;
         var enterableAccounts = _isAuthenticated ? await CountEnterableAccountsAsync() : 0;
         _hasAnyAccounts = enterableAccounts > 0;
         _hasMultipleAccounts = enterableAccounts > 1;

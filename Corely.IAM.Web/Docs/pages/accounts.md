@@ -25,6 +25,11 @@ Account detail page with invitation management, user listing, and encryption key
 ### Users Section
 - Paginated (10 per page), view/remove individual users
 
+### Audit Section
+- `AuditSettingsSection`: which actions are recorded for account members and for platform members, and how many days entries are kept
+- Actions the platform does not allow are shown disabled; retention is limited to the platform's maximum
+- **Edit** saves through `UpdateAccountSettingsAsync`
+
 ### Encryption/Signing Panel
 - Symmetric encryption, asymmetric encryption, and asymmetric signature provider information
 - **Rotate key** on each tab calls `RotateAccountKeyAsync` and reloads the providers
@@ -33,6 +38,8 @@ Account detail page with invitation management, user listing, and encryption key
 - `AuthAction.Update` + `ACCOUNT_RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit, Create Invitation, Revoke, Remove User, Rotate key
 - `AuthAction.Delete` + `ACCOUNT_RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete
 - `AuthAction.Read` + `ACCOUNT_RESOURCE_TYPE` + `ResourceIds: [Id]`: Encryption/Signing panel
+- `AuthAction.Read` + `AUDIT_SETTINGS_RESOURCE_TYPE`: Audit section
+- `AuthAction.Update` + `AUDIT_SETTINGS_RESOURCE_TYPE`: Audit section Edit
 
 **Behavior:**
 - Account name changes update `IAccountDisplayState` to reflect in the NavBar

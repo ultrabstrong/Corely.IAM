@@ -26,4 +26,7 @@
     <ProjectReference Include="..\Corely.IAM.Web\Corely.IAM.Web.csproj" />
     <ProjectReference Include="..\Corely.IAM\Corely.IAM.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Corely.IAM.Web.FunctionalTests" />
+  </ItemGroup>
 </Project>

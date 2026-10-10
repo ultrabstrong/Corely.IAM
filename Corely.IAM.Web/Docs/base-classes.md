@@ -5,7 +5,7 @@ Class hierarchy for all Blazor management pages in Corely.IAM.Web.
 ## Hierarchy
 
 ```
-ComponentBase (Blazor)
+OwningComponentBase (Blazor)
 └── AuthenticatedPageBase
     └── EntityPageBase
         ├── EntityListPageBase<T>
@@ -23,6 +23,23 @@ Ensures user context is loaded. Redirects unauthenticated users to `/signin`.
 | `OnInitializedAuthenticatedAsync()` | `virtual Task` | Override point, called after successful authentication |
 
 **Behavior:** Sealed `OnInitializedAsync()` calls `BlazorUserContextAccessor.GetUserContextAsync()`. If not authenticated, redirects to sign-in with `forceLoad: true`.
+
+### Services come from the page's own scope
+
+Blazor Server keeps one DI scope per browser tab, so every component in the tab would otherwise share
+one `DbContext`, and two components loading at once fail with "A second operation was started on this
+context instance". Every page therefore owns a scope, created with the page and disposed with it, and
+takes its services from `ScopedServices`:
+
+```csharp
+private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
+```
+
+`OnInitializedAsync()` signs that scope in, so services resolved from it see the user. Do not `@inject`
+or `[Inject]` a scoped service that reaches the database: property injection always resolves from the
+tab's scope and brings the shared context back. Singletons, framework services (`NavigationManager`,
+`IJSRuntime`, `ILogger<T>`, `IOptions<T>`) and `IAccountDisplayState`, which is shared across the tab on
+purpose, stay injected.
 
 ## EntityPageBase
 
@@ -51,7 +68,8 @@ Centralized error handling, loading state, and confirmation dialog support.
 
 ## EntityListPageBase\<T\>
 
-Pagination, search, and sort for entity list pages. Implements `IAsyncDisposable`.
+Pagination, search, and sort for entity list pages. A derived page that disposes its own resources
+overrides `DisposeAsyncCore()` and calls the base, which disposes the scope.
 
 | Member | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -88,7 +106,7 @@ Create a custom list page:
 @inherits EntityListPageBase<MyItem>
 
 @code {
-    [Inject] private IMyService MyService { get; set; } = null!;
+    private IMyService MyService => ScopedServices.GetRequiredService<IMyService>();
 
     protected override async Task LoadCoreAsync()
     {

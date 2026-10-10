@@ -16,6 +16,8 @@ Authorization gate component that conditionally renders content based on the cur
 
 ## Behavior
 
+- Owns its DI scope (see [Services and scopes](index.md#services-and-scopes)) and signs it in from the
+  auth cookie before checking, so each instance checks against its own `DbContext`
 - Calls `IAuthorizationProvider.IsAuthorizedAsync()` on parameter change
 - Caches the result; re-evaluation only on `Action`, `Resource`, or `ResourceIds` change
 - `ResourceIds` equality uses span comparison for performance
@@ -23,13 +25,9 @@ Authorization gate component that conditionally renders content based on the cur
 ### Three states, not two
 
 The component distinguishes *undetermined* from *denied*. It skips the check entirely while there is
-no user context to check against, leaving the result uncached so the next render re-runs it.
-
-This matters because an authenticated page awaits its user context in `OnInitializedAsync`, and that
-await makes Blazor paint an interim render of its children first. A check running in that render has
-nothing to authorize against and would be denied, which is an unknown, not a decision. Caching it would be
-permanent, since the parameters never change to invalidate it, so the gated content would stay
-hidden for the life of that component instance.
+no user context to check against, leaving the result uncached so the next render re-runs it. A check
+with no user would be denied, which is an unknown, not a decision, and caching it would be permanent,
+since the parameters never change to invalidate it.
 
 While undetermined, `Undetermined` renders if supplied and nothing renders otherwise. `NotAuthorized`
 is reserved for a real denial, so a "you cannot do this" message never flickers into a control the

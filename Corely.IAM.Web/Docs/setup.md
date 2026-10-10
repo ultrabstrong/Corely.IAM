@@ -87,6 +87,26 @@ CSS is auto-served from `_content/Corely.IAM.Web/`. Reference it in your layout:
 }
 ```
 
+## Your Own Blazor Pages
+
+Blazor Server keeps one DI scope per browser tab, so components that inject IAM services share one
+`DbContext`, and two loading at once fail with "A second operation was started on this context
+instance". Two rules avoid it:
+
+1. A component that calls services inherits `OwningComponentBase` (or one of the
+   [base classes](base-classes.md), which do) and takes them from `ScopedServices`. Unless it inherits
+   `AuthenticatedPageBase`, it signs its scope in first:
+
+   ```csharp
+   await ScopedServices.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
+   ```
+
+2. Such a component never uses `@inject` or `[Inject]` for a scoped service that reaches the database,
+   because property injection resolves from the tab's scope. Singletons, framework services and
+   `IAccountDisplayState` stay injected.
+
+A component that only renders what it is given needs neither.
+
 ## Simple Apps
 
 An app that uses IAM for sign-in only (users without accounts, or one shared account) usually

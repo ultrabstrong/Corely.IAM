@@ -1,8 +1,6 @@
 @page "/audit"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityListPageBase<AuditEntry>
-@implements IAsyncDisposable
-@inject IAuditService AuditService
 @inject Corely.IAM.Permissions.Providers.IResourceTypeRegistry ResourceTypeRegistry
 @inject IJSRuntime JSRuntime
 
@@ -152,6 +150,8 @@ else
 @code {
     private const string CSV_MIME_TYPE = "text/csv";
 
+    private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
+
     private List<AuditAccountOption> _accounts = [];
     private List<string> _resourceTypes = [];
     private bool _canPurge;
@@ -249,9 +249,9 @@ else
         await ReloadAsync();
     }
 
-    async ValueTask IAsyncDisposable.DisposeAsync()
+    protected override async ValueTask DisposeAsyncCore()
     {
-        await DisposeAsync();
+        await base.DisposeAsyncCore();
         if (_downloadModule is not null)
         {
             try

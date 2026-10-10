@@ -1,8 +1,6 @@
 @page "/platform-settings"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityPageBase
-@inject IAuditService AuditService
-@inject IAuthorizationProvider AuthorizationProvider
 
 <PageTitle>Platform Settings - Corely IAM</PageTitle>
 
@@ -78,6 +76,9 @@ else
 }
 
 @code {
+    private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
+    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
+
     private PlatformSettings? _settings;
     private bool _canUpdate;
     private bool _isEditing;

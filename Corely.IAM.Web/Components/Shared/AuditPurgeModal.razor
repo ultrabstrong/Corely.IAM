@@ -1,4 +1,4 @@
-@inject IAuditService AuditService
+@inherits OwningComponentBase
 
 @if (_visible)
 {
@@ -67,6 +67,8 @@
 }
 
 @code {
+    private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
+
     private const string OUTSIDE_ANY_ACCOUNT = "none";
 
     [Parameter]
@@ -93,6 +95,7 @@
         _count = null;
         StateHasChanged();
 
+        await ScopedServices.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
         var result = await AuditService.ListAuditAccountsAsync(AuthAction.Delete);
         _accounts = [.. result.Accounts];
         _includesEverything = result.IncludesEverything;

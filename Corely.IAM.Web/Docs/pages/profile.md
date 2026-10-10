@@ -13,7 +13,7 @@ Self-service user profile page. No permission gates: any authenticated user can 
 - **Delete account**: confirmation modal, redirects to `/signout`
 
 ### Accounts Section
-- Lists all accounts from `UserContext.AvailableAccounts` (in-memory, no server call)
+- Lists the accounts the user belongs to from `UserContext.MemberAccounts` (in-memory, no server call), so a platform member never sees Leave on an account they only entered
 - Paginated (10 per page)
 - **View**: navigates to account detail
 - **Leave**: confirmation modal, removes user from account, redirects to `/select-account`

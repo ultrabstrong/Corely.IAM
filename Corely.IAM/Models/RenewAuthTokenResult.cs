@@ -11,6 +11,7 @@ public enum RenewAuthTokenResultCode
     SignatureKeyNotFoundError,
     AccountNotFoundError,
     SessionExpiredError,
+    TwoFactorRequiredError,
 }
 
 public record RenewAuthTokenResult(

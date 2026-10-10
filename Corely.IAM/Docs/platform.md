@@ -24,7 +24,8 @@ other accounts:
    platform permissions only apply in accounts they already belong to.
    `UserContext.AvailableAccounts` still holds only their memberships plus the account they are in,
    so a host deciding whether to offer an account switch asks `ListAccountsAsync`, as the IAM.Web
-   nav bar does.
+   nav bar does. `UserContext.EnteredAsPlatformMember` is `true` in an account they entered this way,
+   and `UserContext.MemberAccounts` leaves that account out.
 
 Because a platform member's access is ordinary permissions, the rest of IAM needs no special cases:
 the grant only what you hold rule bounds what platform members can hand out, and a slim role gives a
@@ -102,6 +103,10 @@ The same work is available as `IPlatformService.CompletePlatformOwnerPermissions
 - **The platform account cannot be deleted.** Deregistering it returns `PlatformAccountError`, under
   system context too.
 - **There is only one,** created only by bootstrap; nothing in the API sets or clears the flag.
+- **Platform members sign in with two factor.** Entering the platform account, or entering an account
+  through platform reach, needs TOTP enabled: signing in to it, switching to it and renewing a token in
+  it return `TwoFactorRequiredError` otherwise. A member who turns TOTP off loses access at the next
+  renewal. Members of an ordinary account are unaffected.
 - **The Owner role keeps the usual rule:** the platform account always has at least one owner.
 - **Ordinary accounts are unaffected.** Their owners' "Account : Full Access" still means "this
   account". Only permissions held in the flagged account reach other accounts.
@@ -117,12 +122,6 @@ auditing is on, the longest retention, the actions accounts may record, and what
 system context and outside any account. Only a grant held in the platform account counts. A platform
 member holding Read on `audit` there reads every entry, and Delete on `audit` there purges any
 account's entries and those outside any account. See [Auditing](auditing.md).
-
-## Not yet
-
-These follow before the platform account is relied on in production:
-
-- requiring two factor sign in for every platform member, not only the bootstrapped owner.
 
 ## API
 

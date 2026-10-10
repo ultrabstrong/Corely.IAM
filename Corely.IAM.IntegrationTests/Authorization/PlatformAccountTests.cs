@@ -120,10 +120,7 @@ public class PlatformAccountTests : IAsyncLifetime
     [Fact]
     public async Task PlatformMember_EntersAccountTheyDoNotBelongTo_ForAccountRead()
     {
-        await GivePlatformRoleAsync(
-            _scenario.OutsiderUserId,
-            (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read])
-        );
+        await GivePlatformRoleAsync((PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]));
 
         var current = await _scenario.ActAsAsync(
             _scenario.OutsiderUsername,
@@ -138,6 +135,27 @@ public class PlatformAccountTests : IAsyncLifetime
         );
 
         Assert.Equal(_scenario.AccountId, current);
+    }
+
+    [Fact]
+    public async Task PlatformMember_IsMarkedAsEntering_AnAccountTheyDoNotBelongTo()
+    {
+        await GivePlatformRoleAsync((PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]));
+
+        var context = await _scenario.ActAsAsync(
+            _scenario.OutsiderUsername,
+            _scenario.AccountId,
+            services =>
+                Task.FromResult(
+                    services
+                        .GetRequiredService<Users.Providers.IUserContextProvider>()
+                        .GetUserContext()!
+                )
+        );
+
+        Assert.True(context.EnteredAsPlatformMember);
+        Assert.DoesNotContain(context.MemberAccounts, a => a.Id == _scenario.AccountId);
+        Assert.Contains(context.MemberAccounts, a => a.Id == _platformAccountId);
     }
 
     [Fact]
@@ -164,10 +182,7 @@ public class PlatformAccountTests : IAsyncLifetime
     [Fact]
     public async Task PlatformMember_ListsEveryAccount_ForAccountRead()
     {
-        await GivePlatformRoleAsync(
-            _scenario.OutsiderUserId,
-            (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read])
-        );
+        await GivePlatformRoleAsync((PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]));
 
         var names = await _scenario.ActAsAsync(
             _scenario.OutsiderUsername,
@@ -187,7 +202,6 @@ public class PlatformAccountTests : IAsyncLifetime
     public async Task PlatformMember_HoldsOnlyPlatformRolePermissions_InAnotherAccount()
     {
         await GivePlatformRoleAsync(
-            _scenario.OutsiderUserId,
             (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]),
             (IamScenario.INVOICE_RESOURCE_TYPE, [AuthAction.Read, AuthAction.Create])
         );
@@ -222,7 +236,6 @@ public class PlatformAccountTests : IAsyncLifetime
     public async Task PlatformMember_SeesAccessComingFromPlatformAccount_InEffectivePermissions()
     {
         await GivePlatformRoleAsync(
-            _scenario.OutsiderUserId,
             (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]),
             (PermissionConstants.USER_RESOURCE_TYPE, [AuthAction.Read])
         );
@@ -253,11 +266,129 @@ public class PlatformAccountTests : IAsyncLifetime
         Assert.Equal(DeregisterAccountResultCode.PlatformAccountError, result.ResultCode);
     }
 
+    [Fact]
+    public async Task PlatformMember_CannotEnterAccountTheyDoNotBelongTo_WithoutTwoFactor()
+    {
+        await GivePlatformRoleWithoutTwoFactorAsync(
+            (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read])
+        );
+
+        var switched = await SignInAndSwitchAsync(_scenario.AccountId);
+
+        Assert.Equal(SignInResultCode.TwoFactorRequiredError, switched.ResultCode);
+    }
+
+    [Fact]
+    public async Task PlatformMember_CannotEnterPlatformAccount_WithoutTwoFactor()
+    {
+        await GivePlatformRoleWithoutTwoFactorAsync(
+            (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read])
+        );
+
+        var switched = await SignInAndSwitchAsync(_platformAccountId);
+
+        Assert.Equal(SignInResultCode.TwoFactorRequiredError, switched.ResultCode);
+    }
+
+    [Fact]
+    public async Task PlatformMember_CannotSignInToPlatformAccount_WithoutTwoFactor()
+    {
+        await GivePlatformRoleWithoutTwoFactorAsync(
+            (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read])
+        );
+
+        var signIn = await _scenario.Host.WithScopeAsync(services =>
+            services
+                .GetRequiredService<IAuthenticationService>()
+                .SignInAsync(
+                    new SignInRequest(
+                        _scenario.OutsiderUsername,
+                        IamScenario.Password,
+                        "device-outsider",
+                        _platformAccountId
+                    )
+                )
+        );
+
+        Assert.Equal(SignInResultCode.TwoFactorRequiredError, signIn.ResultCode);
+    }
+
+    [Fact]
+    public async Task PlatformMember_CannotRenewTokenInAnotherAccount_AfterTwoFactorIsTurnedOff()
+    {
+        await GivePlatformRoleAsync((PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]));
+        var token = await _scenario.ActAsAsync(
+            _scenario.OutsiderUsername,
+            _scenario.AccountId,
+            services =>
+                services
+                    .GetRequiredService<IAuthenticationService>()
+                    .SwitchAccountAsync(new SwitchAccountRequest(_scenario.AccountId))
+        );
+        await _scenario.Host.QueryAsync(db =>
+            db.Set<TotpAuthEntity>()
+                .Where(t => t.UserId == _scenario.OutsiderUserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(t => t.IsEnabled, false))
+        );
+
+        var renewed = await _scenario.Host.WithScopeAsync(services =>
+            services
+                .GetRequiredService<IAuthenticationService>()
+                .RenewAuthTokenAsync(new RenewAuthTokenRequest(token.AuthToken!))
+        );
+
+        Assert.Equal(RenewAuthTokenResultCode.TwoFactorRequiredError, renewed.ResultCode);
+    }
+
+    [Fact]
+    public async Task AccountMember_EntersTheirOwnAccount_WithoutTwoFactor()
+    {
+        var switched = await _scenario.Host.WithScopeAsync(async services =>
+        {
+            var authentication = services.GetRequiredService<IAuthenticationService>();
+            await authentication.SignInAsync(
+                new SignInRequest(
+                    _scenario.DirectMemberUsername,
+                    IamScenario.Password,
+                    "device-member"
+                )
+            );
+            return await authentication.SwitchAccountAsync(
+                new SwitchAccountRequest(_scenario.AccountId)
+            );
+        });
+
+        Assert.Equal(SignInResultCode.Success, switched.ResultCode);
+    }
+
+    private Task<SignInResult> SignInAndSwitchAsync(Guid accountId) =>
+        _scenario.Host.WithScopeAsync(async services =>
+        {
+            var authentication = services.GetRequiredService<IAuthenticationService>();
+            var signIn = await authentication.SignInAsync(
+                new SignInRequest(
+                    _scenario.OutsiderUsername,
+                    IamScenario.Password,
+                    "device-outsider"
+                )
+            );
+            Assert.Equal(SignInResultCode.Success, signIn.ResultCode);
+            return await authentication.SwitchAccountAsync(new SwitchAccountRequest(accountId));
+        });
+
     private async Task GivePlatformRoleAsync(
-        Guid userId,
         params (string ResourceType, AuthAction[] Actions)[] grants
     )
     {
+        await GivePlatformRoleWithoutTwoFactorAsync(grants);
+        await _scenario.EnrollTwoFactorAsync(_scenario.OutsiderUsername);
+    }
+
+    private async Task GivePlatformRoleWithoutTwoFactorAsync(
+        params (string ResourceType, AuthAction[] Actions)[] grants
+    )
+    {
+        var userId = _scenario.OutsiderUserId;
         await _scenario.AsSystemAsync(async services =>
         {
             var registration = services.GetRequiredService<IRegistrationService>();

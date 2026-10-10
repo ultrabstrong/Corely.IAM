@@ -7,6 +7,9 @@ using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
+using Corely.IAM.TotpAuths.Entities;
+using Corely.IAM.TotpAuths.Entities;
+using Corely.IAM.TotpAuths.Entities;
 using Corely.IAM.Users.Constants;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
@@ -48,6 +51,7 @@ public class AuthenticationProviderTests
             _serviceFactory.GetRequiredService<IRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
+            _serviceFactory.GetRequiredService<IReadonlyRepo<TotpAuthEntity>>(),
             _serviceFactory.GetRequiredService<IPlatformAccessProvider>(),
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
             Options.Create(securityOptions ?? new SecurityOptions()),

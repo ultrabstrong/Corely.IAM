@@ -17,7 +17,8 @@ internal record UserAuthTokenValidationResult(
     Account? CurrentAccount,
     string? DeviceId,
     Guid? TokenId,
-    List<Account> AvailableAccounts
+    List<Account> AvailableAccounts,
+    bool EnteredAsPlatformMember = false
 )
 {
     internal static UserAuthTokenValidationResult Failed(

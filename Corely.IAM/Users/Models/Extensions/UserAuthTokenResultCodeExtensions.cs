@@ -21,6 +21,10 @@ internal static class UserAuthTokenResultCodeExtensions
                     SignInResultCode.AccountNotFoundError,
                     $"Account {accountId} not found for user"
                 ),
+                UserAuthTokenResultCode.TwoFactorRequiredError => SignInResult.Failed(
+                    SignInResultCode.TwoFactorRequiredError,
+                    $"Two factor sign in is required to enter account {accountId} as a platform member"
+                ),
                 _ => SignInResult.Failed(
                     SignInResultCode.UserNotFoundError,
                     "Unknown error creating auth token"

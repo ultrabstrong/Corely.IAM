@@ -13,6 +13,7 @@ internal enum RenewUserAuthTokenResultCode
     SignatureKeyNotFoundError,
     AccountNotFoundError,
     SessionExpiredError,
+    TwoFactorRequiredError,
 }
 
 internal record RenewUserAuthTokenResult(
@@ -22,7 +23,8 @@ internal record RenewUserAuthTokenResult(
     User? User,
     Account? CurrentAccount,
     string? DeviceId,
-    List<Account> AvailableAccounts
+    List<Account> AvailableAccounts,
+    bool EnteredAsPlatformMember = false
 )
 {
     internal static RenewUserAuthTokenResult Failed(RenewUserAuthTokenResultCode resultCode) =>

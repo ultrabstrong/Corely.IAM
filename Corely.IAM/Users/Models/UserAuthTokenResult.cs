@@ -8,6 +8,7 @@ public enum UserAuthTokenResultCode
     UserNotFoundError,
     SignatureKeyNotFoundError,
     AccountNotFoundError,
+    TwoFactorRequiredError,
 }
 
 public record UserAuthTokenResult(
@@ -16,7 +17,8 @@ public record UserAuthTokenResult(
     Guid? TokenId,
     User? User,
     Account? CurrentAccount,
-    List<Account> AvailableAccounts
+    List<Account> AvailableAccounts,
+    bool EnteredAsPlatformMember = false
 )
 {
     internal static UserAuthTokenResult Failed(UserAuthTokenResultCode resultCode) =>

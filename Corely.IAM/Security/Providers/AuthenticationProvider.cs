@@ -10,6 +10,7 @@ using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Security.Models;
+using Corely.IAM.TotpAuths.Entities;
 using Corely.IAM.Users.Constants;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Mappers;
@@ -25,6 +26,7 @@ internal class AuthenticationProvider(
     IRepo<UserEntity> userRepo,
     IRepo<UserAuthTokenEntity> authTokenRepo,
     IReadonlyRepo<AccountEntity> accountRepo,
+    IReadonlyRepo<TotpAuthEntity> totpAuthRepo,
     IPlatformAccessProvider platformAccessProvider,
     ISecurityProvider securityProcessor,
     IOptions<SecurityOptions> securityOptions,
@@ -38,6 +40,9 @@ internal class AuthenticationProvider(
     );
     private readonly IReadonlyRepo<AccountEntity> _accountRepo = accountRepo.ThrowIfNull(
         nameof(accountRepo)
+    );
+    private readonly IReadonlyRepo<TotpAuthEntity> _totpAuthRepo = totpAuthRepo.ThrowIfNull(
+        nameof(totpAuthRepo)
     );
     private readonly IPlatformAccessProvider _platformAccessProvider =
         platformAccessProvider.ThrowIfNull(nameof(platformAccessProvider));
@@ -143,6 +148,8 @@ internal class AuthenticationProvider(
                         RenewUserAuthTokenResultCode.SignatureKeyNotFoundError,
                     UserAuthTokenResultCode.AccountNotFoundError =>
                         RenewUserAuthTokenResultCode.AccountNotFoundError,
+                    UserAuthTokenResultCode.TwoFactorRequiredError =>
+                        RenewUserAuthTokenResultCode.TwoFactorRequiredError,
                     _ => RenewUserAuthTokenResultCode.TokenValidationFailed,
                 }
             );
@@ -195,7 +202,8 @@ internal class AuthenticationProvider(
                 renewedTokenResult.User,
                 renewedTokenResult.CurrentAccount,
                 deviceId,
-                renewedTokenResult.AvailableAccounts
+                renewedTokenResult.AvailableAccounts,
+                renewedTokenResult.EnteredAsPlatformMember
             ),
             UserAuthTokenResultCode.UserNotFoundError => RenewUserAuthTokenResult.Failed(
                 RenewUserAuthTokenResultCode.UserNotFoundError
@@ -335,7 +343,8 @@ internal class AuthenticationProvider(
             signedInAccount,
             deviceId,
             tokenId,
-            accounts
+            accounts,
+            IsEnteredAsPlatformMember(userEntity, signedInAccount)
         );
     }
 
@@ -501,9 +510,9 @@ internal class AuthenticationProvider(
         Account? signedInAccount = null;
         if (accountId.HasValue)
         {
+            var membership = FindAccountById(accounts, accountId.Value);
             signedInAccount =
-                FindAccountById(accounts, accountId.Value)
-                ?? await FindPlatformEnterableAccountAsync(userId, accountId.Value);
+                membership ?? await FindPlatformEnterableAccountAsync(userId, accountId.Value);
             if (signedInAccount == null)
             {
                 _logger.LogWarning(
@@ -512,6 +521,19 @@ internal class AuthenticationProvider(
                     accountId.Value
                 );
                 return (UserAuthTokenResultCode.AccountNotFoundError, null);
+            }
+
+            if (
+                (membership is null || signedInAccount.IsPlatformAccount)
+                && !await _totpAuthRepo.AnyAsync(t => t.UserId == userId && t.IsEnabled)
+            )
+            {
+                _logger.LogWarning(
+                    "User with Id {UserId} needs two factor sign in to enter account {AccountId} as a platform member",
+                    userId,
+                    accountId.Value
+                );
+                return (UserAuthTokenResultCode.TwoFactorRequiredError, null);
             }
         }
 
@@ -585,7 +607,11 @@ internal class AuthenticationProvider(
             tokenId,
             tokenIssueContext.UserEntity.ToModel(),
             tokenIssueContext.SignedInAccount,
-            tokenIssueContext.Accounts
+            tokenIssueContext.Accounts,
+            IsEnteredAsPlatformMember(
+                tokenIssueContext.UserEntity,
+                tokenIssueContext.SignedInAccount
+            )
         );
     }
 
@@ -645,6 +671,13 @@ internal class AuthenticationProvider(
         signedInAccount is null || accounts.Any(a => a.Id == signedInAccount.Id)
             ? accounts
             : [.. accounts, signedInAccount];
+
+    private static bool IsEnteredAsPlatformMember(
+        UserEntity userEntity,
+        Account? signedInAccount
+    ) =>
+        signedInAccount is not null
+        && userEntity.Accounts?.Any(a => a.Id == signedInAccount.Id) != true;
 
     private async Task<Account?> FindPlatformEnterableAccountAsync(Guid userId, Guid accountId) =>
         await _platformAccessProvider.CanEnterAnyAccountAsync(userId)

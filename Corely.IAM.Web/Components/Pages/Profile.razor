@@ -47,7 +47,7 @@ else
         </div>
     }
 
-    @if (UserContext?.AvailableAccounts.Count > 0)
+    @if (UserContext?.MemberAccounts.Count > 0)
     {
         <div class="section-divider mb-4 mt-4">
             <div class="section-divider-label">Accounts</div>
@@ -111,8 +111,8 @@ else
     private string _leaveAccountMessage = "";
     private int _accountsSkip;
     private const int AccountPageSize = 10;
-    private List<Account> PagedAccounts => (UserContext?.AvailableAccounts ?? []).Skip(_accountsSkip).Take(AccountPageSize).ToList();
-    private int AccountsTotalCount => UserContext?.AvailableAccounts.Count ?? 0;
+    private List<Account> PagedAccounts => (UserContext?.MemberAccounts ?? []).Skip(_accountsSkip).Take(AccountPageSize).ToList();
+    private int AccountsTotalCount => UserContext?.MemberAccounts.Count ?? 0;
 
     private IIamSymmetricEncryptionProvider? _symProvider;
     private IIamAsymmetricEncryptionProvider? _asymProvider;

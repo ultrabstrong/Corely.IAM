@@ -166,6 +166,7 @@ Complete reference of all result code enums across Corely.IAM.
 | `MfaChallengeExpiredError` | MFA challenge expired or already used |
 | `InvalidGoogleTokenError` | Google ID token validation failed |
 | `GoogleAuthNotLinkedError` | No user linked to this Google account |
+| `TwoFactorRequiredError` | A platform member without TOTP enabled tried to enter the platform account or an account they do not belong to |
 
 ### UserAuthTokenValidationResultCode
 

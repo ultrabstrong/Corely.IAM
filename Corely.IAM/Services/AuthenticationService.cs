@@ -358,7 +358,8 @@ internal class AuthenticationService(
                 renewResult.CurrentAccount,
                 renewResult.DeviceId,
                 renewResult.AvailableAccounts,
-                renewResult.TokenId
+                renewResult.TokenId,
+                renewResult.EnteredAsPlatformMember
             )
         );
 
@@ -619,7 +620,8 @@ internal class AuthenticationService(
             authTokenResult.CurrentAccount,
             deviceId,
             authTokenResult.AvailableAccounts,
-            authTokenResult.TokenId
+            authTokenResult.TokenId,
+            authTokenResult.EnteredAsPlatformMember
         );
 
         _userContextSetter.SetUserContext(userContext);
@@ -659,7 +661,8 @@ internal class AuthenticationService(
                 validationResult.CurrentAccount,
                 validationResult.DeviceId,
                 validationResult.AvailableAccounts,
-                validationResult.TokenId
+                validationResult.TokenId,
+                validationResult.EnteredAsPlatformMember
             )
         );
         return UserAuthTokenValidationResultCode.Success;

@@ -14,6 +14,7 @@ public enum SignInResultCode
     InvalidGoogleTokenError,
     InvalidMfaCodeError,
     MfaChallengeExpiredError,
+    TwoFactorRequiredError,
 }
 
 public record SignInResult(

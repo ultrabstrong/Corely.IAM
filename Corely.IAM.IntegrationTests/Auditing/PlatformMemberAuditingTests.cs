@@ -42,6 +42,7 @@ public class PlatformMemberAuditingTests : IAsyncLifetime
             (PermissionConstants.GROUP_RESOURCE_TYPE, [AuthAction.Create]),
             (AuditConstants.AUDIT_RESOURCE_TYPE, [AuthAction.Read])
         );
+        await _scenario.EnrollTwoFactorAsync(_scenario.OutsiderUsername);
     }
 
     public ValueTask DisposeAsync() => _scenario.DisposeAsync();

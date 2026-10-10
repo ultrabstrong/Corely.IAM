@@ -99,6 +99,7 @@ Accepts either a 6-digit TOTP code or a recovery code in `XXXX-XXXX` format. See
 | `MfaChallengeExpiredError` | Challenge expired or already used |
 | `InvalidGoogleTokenError` | Google ID token validation failed |
 | `GoogleAuthNotLinkedError` | No user linked to this Google account |
+| `TwoFactorRequiredError` | Platform member without TOTP entering the platform account or an account they do not belong to |
 
 ## Authorization
 

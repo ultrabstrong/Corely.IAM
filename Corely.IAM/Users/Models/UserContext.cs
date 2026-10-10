@@ -10,13 +10,20 @@ public record UserContext
     public Guid? AuthTokenId { get; init; }
     public List<Account> AvailableAccounts { get; init; }
     public bool IsSystemContext { get; init; }
+    public bool EnteredAsPlatformMember { get; init; }
+
+    public List<Account> MemberAccounts =>
+        EnteredAsPlatformMember
+            ? [.. AvailableAccounts.Where(a => a.Id != CurrentAccount?.Id)]
+            : AvailableAccounts;
 
     public UserContext(
         User user,
         Account? currentAccount,
         string deviceId,
         List<Account> availableAccounts,
-        Guid? authTokenId = null
+        Guid? authTokenId = null,
+        bool enteredAsPlatformMember = false
     )
     {
         User = user;
@@ -25,6 +32,7 @@ public record UserContext
         AuthTokenId = authTokenId;
         AvailableAccounts = availableAccounts;
         IsSystemContext = false;
+        EnteredAsPlatformMember = enteredAsPlatformMember;
     }
 
     public UserContext(bool isSystemContext, string deviceId)

@@ -6,6 +6,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Web.Extensions;
 using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -59,7 +60,7 @@ public class SelectAccountModel(
 
         if (result.ResultCode != SignInResultCode.Success)
         {
-            ErrorMessage = "Failed to switch account.";
+            ErrorMessage = result.ResultCode.SwitchFailureMessage();
             await LoadAccountsAsync();
             return Page();
         }

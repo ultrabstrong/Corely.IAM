@@ -5,6 +5,8 @@ using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
+using Corely.IAM.TotpAuths.Models;
+using Corely.IAM.TotpAuths.Providers;
 using Corely.IAM.Users.Models;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +17,8 @@ public sealed class IamScenario : IAsyncLifetime
     public const string Password = "Test1234";
     public const string INVOICE_RESOURCE_TYPE = "invoice";
     public const string REPORT_RESOURCE_TYPE = "report";
+
+    private readonly Dictionary<string, string> _totpSecrets = [];
 
     public IamTestHost Host { get; private set; } = null!;
 
@@ -91,6 +95,18 @@ public sealed class IamScenario : IAsyncLifetime
             var signIn = await authentication.SignInAsync(
                 new SignInRequest(username, Password, $"device-{username}")
             );
+            if (
+                signIn.ResultCode == SignInResultCode.MfaRequiredChallenge
+                && _totpSecrets.TryGetValue(username, out var secret)
+            )
+            {
+                signIn = await authentication.VerifyMfaAsync(
+                    new VerifyMfaRequest(
+                        signIn.MfaChallengeToken!,
+                        services.GetRequiredService<ITotpProvider>().GenerateCode(secret)
+                    )
+                );
+            }
             Assert.Equal(SignInResultCode.Success, signIn.ResultCode);
 
             if (accountId.HasValue)
@@ -103,6 +119,26 @@ public sealed class IamScenario : IAsyncLifetime
 
             return await work(services);
         });
+
+    public Task EnrollTwoFactorAsync(string username) =>
+        ActAsAsync(
+            username,
+            null,
+            async services =>
+            {
+                var mfa = services.GetRequiredService<IMfaService>();
+                var enable = await mfa.EnableTotpAsync();
+                Assert.Equal(EnableTotpResultCode.Success, enable.ResultCode);
+                var confirm = await mfa.ConfirmTotpAsync(
+                    new ConfirmTotpRequest(
+                        services.GetRequiredService<ITotpProvider>().GenerateCode(enable.Secret!)
+                    )
+                );
+                Assert.Equal(ConfirmTotpResultCode.Success, confirm.ResultCode);
+                _totpSecrets[username] = enable.Secret!;
+                return true;
+            }
+        );
 
     public Task<bool> IsAuthorizedAsync(
         string username,

@@ -13,6 +13,8 @@ public record UserContext
     public Guid? AuthTokenId { get; init; }
     public List<Account> AvailableAccounts { get; init; }
     public bool IsSystemContext { get; init; }
+    public bool EnteredAsPlatformMember { get; init; }
+    public List<Account> MemberAccounts { get; }
 }
 ```
 
@@ -24,6 +26,8 @@ public record UserContext
 | `AuthTokenId` | Tracked auth-token/session ID for the current user context (null for system context) |
 | `AvailableAccounts` | The accounts the user belongs to, plus the current account when a [platform](../platform.md) member has entered one they don't belong to (empty for system context) |
 | `IsSystemContext` | `true` when context was set via `IAuthenticationService.AuthenticateAsSystem()` |
+| `EnteredAsPlatformMember` | `true` when `CurrentAccount` is one a [platform](../platform.md) member entered without belonging to it |
+| `MemberAccounts` | `AvailableAccounts` without that entered account: the accounts the user can leave |
 
 ## IUserContextProvider (Read-Only)
 

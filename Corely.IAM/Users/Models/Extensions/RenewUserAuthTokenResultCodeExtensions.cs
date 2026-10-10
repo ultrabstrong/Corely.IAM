@@ -38,6 +38,10 @@ internal static class RenewUserAuthTokenResultCodeExtensions
                     RenewAuthTokenResultCode.SessionExpiredError,
                     "Auth session has expired"
                 ),
+                RenewUserAuthTokenResultCode.TwoFactorRequiredError => RenewAuthTokenResult.Failed(
+                    RenewAuthTokenResultCode.TwoFactorRequiredError,
+                    "Two factor sign in is required to stay in this account as a platform member"
+                ),
                 _ => RenewAuthTokenResult.Failed(
                     RenewAuthTokenResultCode.InvalidAuthTokenError,
                     "Auth token is invalid"

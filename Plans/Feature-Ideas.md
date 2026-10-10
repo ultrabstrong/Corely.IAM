@@ -28,7 +28,7 @@ There could be more than one telemetry registered at the consumer level using th
 Need to figure where / what kinds of telemetry make sense, and if different kinds of telemetry events / handlers are needed
 
 ### Audit tamper evidence
-Auditing itself is planned in [auditing.md](auditing.md). This would make an altered or removed entry detectable.
+Auditing itself is planned in [auditing.md](Completed/auditing.md). This would make an altered or removed entry detectable.
 - [ ] Each entry stores the previous entry's hash and its own hash over its columns, so changing or removing one breaks every hash after it
 - [ ] One chain per account plus a platform chain; a chain head row locked on write keeps it correct across app instances
 - [ ] A daily checkpoint per chain signed with the platform account's signing key, with the key version so keys can rotate

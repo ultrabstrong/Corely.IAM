@@ -10,7 +10,7 @@ today nothing records what a platform member did outside the platform account.
 
 ## What is wanted
 
-- **Auditing.** Planned in full in [auditing.md](../auditing.md). It covers every service, not only
+- **Auditing.** Planned in full in [auditing.md](auditing.md). It covers every service, not only
   platform members, and answers customer visibility: each account decides what is recorded in it,
   including platform members' actions, and reads it on the audit page.
 - **Two factor sign in for every platform member.** The bootstrapped owner is enrolled; other platform
@@ -32,7 +32,7 @@ fixed.
 
 ## Progress
 
-- **Auditing:** done on the IAM side (see [auditing.md](../auditing.md)); Billing and DocsToData adopt
+- **Auditing:** done on the IAM side (see [auditing.md](auditing.md)); Billing and DocsToData adopt
   it in their own repositories.
 - **Two factor for platform members:** `AuthenticationProvider.GetTokenIssueContextAsync` refuses a
   token for the platform account, or for an account entered through platform reach, unless the user

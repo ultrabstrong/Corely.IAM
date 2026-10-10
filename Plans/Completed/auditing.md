@@ -1,8 +1,7 @@
 # Auditing
 
-**Status: done and verified in Corely.IAM; released with Corely.IAM 3.4.0, the CLI 3.1.0 and IAM.Web
-3.5.0. Billing and DocsToData adopt it in their own repositories.** Part of the platform account fast
-follow ([platform-account-hardening.md](Completed/platform-account-hardening.md)).
+**Status: done.** Corely.IAM 3.5.0 and IAM.Web 3.5.1, Corely.Billing.IAM 2.2.0 and Corely.Billing.Web.IAM 2.1.1, and DocsToData all audit their services; DocsToData cleans up expired entries daily. Part of the platform account fast
+follow ([platform-account-hardening.md](platform-account-hardening.md)).
 
 ## Summary
 
@@ -595,3 +594,22 @@ Browser, WebApp on LocalDB reseeded with a bootstrapped platform account, rows c
   passes straight through. It can be recorded later if a need appears.
 - Released with these fixes: Corely.IAM 3.5.0 (adds `AuditCall.ActorMfaChallengeToken`) and
   Corely.IAM.Web 3.5.1.
+
+### Billing and DocsToData
+
+- **Corely.Billing.IAM 2.2.0:** `UseCorelyIamPermissions()` adds an audit decorator to `IGrantService`,
+  `IConsumptionService` and `IQuotaService`, between Billing's telemetry and the authorization
+  decorators, each call recorded with the action and resource type its permission uses.
+  `AuditDecoratorCoverageTests` fails when a Billing service has none or the order is wrong.
+  Billing.Web.IAM 2.1.1 only takes the new IAM.Web. Billing's suite: 569 tests, 0 failed.
+- **DocsToData:** all ten services (workflow templates, jobs, the four orchestration services,
+  extraction, extraction templates, SFTP administration, the portal's workflow storage) have audit
+  decorators; the Functions coverage test checks the eight the Functions host registers, and SFTP's
+  tests check its chain. `AuditCleanupFunction` runs daily at 03:30 UTC under system context.
+  Orchestration runs under system context, so it records nothing unless the platform turns system
+  context actions on.
+- DocsToData's suite passed except the Functions host tier, which fails identically on `origin/main`:
+  on this machine `func start` crashes with "Exception has been thrown by the target of an
+  invocation" even in an empty folder (Core Tools 4.15.2, already the latest). The new function is in
+  the generated `functions.metadata` with its schedule; the portal's 27 functional and browser tests
+  passed.

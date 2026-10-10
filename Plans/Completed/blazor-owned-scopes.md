@@ -1,7 +1,7 @@
 # Blazor components own their scopes
 
 **Status: done.** Corely.IAM.Web 3.4.0 and 3.5.0, Billing.Web 2.2.0, Billing.Web.IAM 2.1.0 and
-Billing.IAM 2.1.0 released; DocsToData converted and committed, push pending the owner. Found while verifying auditing ([auditing.md](../auditing.md)): `/audit` never
+Billing.IAM 2.1.0 released; DocsToData converted and committed, push pending the owner. Found while verifying auditing ([auditing.md](auditing.md)): `/audit` never
 finishes loading.
 
 ## Why

@@ -1,6 +1,6 @@
 @page "/"
 @attribute [Authorize]
-@inject IBlazorUserContextAccessor UserContextAccessor
+@inherits OwningComponentBase
 @inject IDbContextFactory<NotesDbContext> DbFactory
 @inject TimeProvider TimeProvider
 
@@ -37,6 +37,8 @@ else
 }
 
 @code {
+    private IBlazorUserContextAccessor UserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
+
     private Guid _userId;
     private List<Note>? _notes;
     private string? _newText;

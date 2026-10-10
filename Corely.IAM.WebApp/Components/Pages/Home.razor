@@ -1,4 +1,5 @@
 @page "/"
+@inherits OwningComponentBase
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @attribute [Authorize]
 @using Corely.IAM.Web
@@ -8,8 +9,6 @@
 @using Corely.IAM.Services
 @using Corely.IAM.Accounts.Models
 @using Corely.IAM.Users.Models
-@inject IBlazorUserContextAccessor BlazorUserContextAccessor
-@inject IRegistrationService RegistrationService
 @inject NavigationManager NavigationManager
 
 <PageTitle>Dashboard - Corely IAM</PageTitle>
@@ -95,6 +94,9 @@ else if (_userContext?.CurrentAccount != null)
 }
 
 @code {
+    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
+    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
+
     private UserContext? _userContext;
     private string? _newAccountName;
     private string? _message;

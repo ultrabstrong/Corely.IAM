@@ -1,9 +1,7 @@
 @page "/profile"
 @attribute [Authorize]
 @using Corely.IAM.GoogleAuths.Models
-@inject IBlazorUserContextAccessor UserContextAccessor
-@inject IGoogleAuthService GoogleAuthService
-@inject IDeregistrationService DeregistrationService
+@inherits OwningComponentBase
 @inject NavigationManager NavigationManager
 
 <PageTitle>Profile</PageTitle>
@@ -41,6 +39,10 @@ else
               OnConfirm="DeleteAsync" />
 
 @code {
+    private IBlazorUserContextAccessor UserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
+    private IGoogleAuthService GoogleAuthService => ScopedServices.GetRequiredService<IGoogleAuthService>();
+    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
+
     private string? _username;
     private string? _email;
     private bool _authMethodsLoaded;

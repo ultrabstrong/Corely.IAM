@@ -1,8 +1,6 @@
 @page "/team"
 @attribute [Authorize]
-@inject IBlazorUserContextAccessor UserContextAccessor
-@inject IRetrievalService RetrievalService
-@inject IInvitationService InvitationService
+@inherits OwningComponentBase
 @inject NavigationManager NavigationManager
 
 <PageTitle>Team</PageTitle>
@@ -45,6 +43,10 @@ else
 }
 
 @code {
+    private IBlazorUserContextAccessor UserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
+    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
+    private IInvitationService InvitationService => ScopedServices.GetRequiredService<IInvitationService>();
+
     private const int INVITATION_LIFETIME_SECONDS = 7 * 24 * 60 * 60;
 
     private Guid _accountId;

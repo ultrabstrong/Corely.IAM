@@ -1,8 +1,6 @@
 @page "/"
 @attribute [Authorize]
-@inject IBlazorUserContextAccessor UserContextAccessor
-@inject IRegistrationService RegistrationService
-@inject IInvitationService InvitationService
+@inherits OwningComponentBase
 @inject IDbContextFactory<NotesDbContext> DbFactory
 @inject TimeProvider TimeProvider
 @inject NavigationManager NavigationManager
@@ -73,6 +71,10 @@ else
 }
 
 @code {
+    private IBlazorUserContextAccessor UserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
+    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
+    private IInvitationService InvitationService => ScopedServices.GetRequiredService<IInvitationService>();
+
     private const string SWITCH_ACCOUNT_PATH = "/switch-account";
 
     private UserContext? _context;

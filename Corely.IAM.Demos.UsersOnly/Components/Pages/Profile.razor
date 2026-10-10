@@ -3,9 +3,7 @@
 @using Corely.IAM.GoogleAuths.Models
 @using Corely.IAM.Models
 @using Corely.IAM.Services
-@inject IBlazorUserContextAccessor UserContextAccessor
-@inject IGoogleAuthService GoogleAuthService
-@inject IDeregistrationService DeregistrationService
+@inherits OwningComponentBase
 @inject IDbContextFactory<NotesDbContext> DbFactory
 @inject NavigationManager NavigationManager
 
@@ -44,6 +42,10 @@ else
               OnConfirm="DeleteAsync" />
 
 @code {
+    private IBlazorUserContextAccessor UserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
+    private IGoogleAuthService GoogleAuthService => ScopedServices.GetRequiredService<IGoogleAuthService>();
+    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
+
     private Guid _userId;
     private string? _username;
     private string? _email;

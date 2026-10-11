@@ -2,7 +2,7 @@
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
-using Corely.IAM.BasicAuths.Models;
+using Corely.IAM.BasicAuths.Models.Extensions;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Models.Extensions;
@@ -14,6 +14,8 @@ using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Models.Extensions;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Models.Extensions;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Models.Extensions;
@@ -33,7 +35,8 @@ internal class DeregistrationService(
     IBasicAuthProcessor basicAuthProcessor,
     IUserContextProvider userContextProvider,
     IUserContextSetter userContextSetter,
-    IAuthorizationCacheClearer authorizationCacheClearer
+    IAuthorizationCacheClearer authorizationCacheClearer,
+    IReauthenticationProvider reauthenticationProvider
 ) : IDeregistrationService
 {
     private readonly ILogger<DeregistrationService> _logger = logger.ThrowIfNull(nameof(logger));
@@ -63,6 +66,8 @@ internal class DeregistrationService(
     );
     private readonly IAuthorizationCacheClearer _authorizationCacheClearer =
         authorizationCacheClearer.ThrowIfNull(nameof(authorizationCacheClearer));
+    private readonly IReauthenticationProvider _reauthenticationProvider =
+        reauthenticationProvider.ThrowIfNull(nameof(reauthenticationProvider));
 
     public async Task<DeregisterUserResult> DeregisterUserAsync()
     {
@@ -562,12 +567,41 @@ internal class DeregistrationService(
         );
     }
 
-    public async Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync()
+    public async Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync(
+        DeregisterBasicAuthRequest request
+    )
     {
-        var context = _userContextProvider.GetUserContext();
-        var result = await _basicAuthProcessor.DeleteBasicAuthAsync(context!.User!.Id);
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        var userId = _userContextProvider.GetUserContext()!.User!.Id;
+        _logger.LogInformation("Deregistering password for user {UserId}", userId);
+
+        var passwordResult = await _reauthenticationProvider.VerifyCurrentPasswordAsync(
+            userId,
+            request.CurrentPassword
+        );
+        if (passwordResult.ResultCode != ReauthenticationResultCode.Success)
+        {
+            return new DeregisterBasicAuthResult(
+                passwordResult.ResultCode.ToDeregisterBasicAuthResultCode(),
+                passwordResult.Message
+            );
+        }
+
+        var totpResult = await _reauthenticationProvider.VerifyTotpCodeAsync(
+            userId,
+            request.TotpCode
+        );
+        if (totpResult.ResultCode != ReauthenticationResultCode.Success)
+        {
+            return new DeregisterBasicAuthResult(
+                totpResult.ResultCode.ToDeregisterBasicAuthResultCode(),
+                totpResult.Message
+            );
+        }
+
+        var result = await _basicAuthProcessor.DeleteBasicAuthAsync(userId);
         return new DeregisterBasicAuthResult(
-            (DeregisterBasicAuthResultCode)(int)result.ResultCode,
+            result.ResultCode.ToDeregisterBasicAuthResultCode(),
             result.Message
         );
     }

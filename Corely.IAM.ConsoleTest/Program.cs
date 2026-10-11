@@ -492,7 +492,9 @@ internal class Program
                 $"Auth methods: HasBasicAuth={authMethods.HasBasicAuth}, HasGoogleAuth={authMethods.HasGoogleAuth}"
             );
 
-            var deregisterBasicAuthResult = await deregistrationService.DeregisterBasicAuthAsync();
+            var deregisterBasicAuthResult = await deregistrationService.DeregisterBasicAuthAsync(
+                new DeregisterBasicAuthRequest("admin")
+            );
             Console.WriteLine(
                 $"Deregister basic auth (last method): {deregisterBasicAuthResult.ResultCode}"
             );

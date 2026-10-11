@@ -13,6 +13,7 @@ Updates entity properties for accounts, users, groups, roles and permissions, an
 | `ModifyPermissionAsync` | `UpdatePermissionRequest` | `ModifyResult` |
 | `RotateAccountKeyAsync` | `RotateAccountKeyRequest` | `ModifyResult` |
 | `RotateCurrentUserKeyAsync` | `KeyType` | `ModifyResult` |
+| `ModifyPasswordAsync` | `ModifyPasswordRequest` | `ModifyPasswordResult` |
 
 ## Usage
 
@@ -38,11 +39,27 @@ var result = await modificationService.RotateAccountKeyAsync(
 
 Rotation is covered in [Key Management](../security/key-management.md#rotation).
 
+## Password Changes
+
+A signed in session alone cannot change or remove a password. `ModifyPasswordAsync` and
+`IDeregistrationService.DeregisterBasicAuthAsync` take the current password, and when the user has
+TOTP enabled, a TOTP or recovery code. `IRegistrationService.RegisterPasswordAsync`, which adds a
+first password, takes the code too. A recovery code is consumed, as at sign in.
+
+```csharp
+var result = await modificationService.ModifyPasswordAsync(
+    new ModifyPasswordRequest(currentPassword, newPassword, totpCode));
+```
+
+A wrong current password counts toward `MaxLoginAttempts` like a failed sign in, and a locked out user
+gets `UserLockedError` until `LockoutCooldownSeconds` passes.
+
 ## Authorization
 
 - **Service level**: requires account context
 - **Processor level**: CRUDX Update permission on the target resource type
 - **Key rotation**: account keys need Update on the account; user keys are a self operation, so only the signed in user rotates their own and system context is refused
+- **Password change**: a self operation; system context is refused
 
 ## Notes
 

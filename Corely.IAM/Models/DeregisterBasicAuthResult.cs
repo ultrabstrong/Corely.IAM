@@ -5,6 +5,10 @@ public enum DeregisterBasicAuthResultCode
     Success,
     NotFoundError,
     LastAuthMethodError,
+    InvalidCurrentPasswordError,
+    UserLockedError,
+    TotpRequiredError,
+    InvalidTotpCodeError,
     UnauthorizedError,
 }
 

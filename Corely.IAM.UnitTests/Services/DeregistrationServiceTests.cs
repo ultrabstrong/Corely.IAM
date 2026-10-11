@@ -1,5 +1,6 @@
 ﻿using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
@@ -8,6 +9,7 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
@@ -31,6 +33,7 @@ public class DeregistrationServiceTests
     private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly Mock<IUserContextSetter> _mockUserContextSetter = new();
     private readonly Mock<IAuthorizationCacheClearer> _mockAuthorizationCacheClearer = new();
+    private readonly Mock<IReauthenticationProvider> _mockReauthenticationProvider = new();
     private readonly DeregistrationService _service;
     private readonly UserContext _userContext;
 
@@ -56,9 +59,114 @@ public class DeregistrationServiceTests
             _mockBasicAuthProcessor.Object,
             _mockUserContextProvider.Object,
             _mockUserContextSetter.Object,
-            _mockAuthorizationCacheClearer.Object
+            _mockAuthorizationCacheClearer.Object,
+            _mockReauthenticationProvider.Object
         );
+
+        _mockReauthenticationProvider
+            .Setup(x => x.VerifyCurrentPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>()))
+            .ReturnsAsync(ReauthenticationResult.Succeeded);
+        _mockReauthenticationProvider
+            .Setup(x => x.VerifyTotpCodeAsync(It.IsAny<Guid>(), It.IsAny<string?>()))
+            .ReturnsAsync(ReauthenticationResult.Succeeded);
     }
+
+    #region DeregisterBasicAuthAsync Tests
+
+    [Theory]
+    [InlineData(DeleteBasicAuthResultCode.Success, DeregisterBasicAuthResultCode.Success)]
+    [InlineData(
+        DeleteBasicAuthResultCode.NotFoundError,
+        DeregisterBasicAuthResultCode.NotFoundError
+    )]
+    [InlineData(
+        DeleteBasicAuthResultCode.LastAuthMethodError,
+        DeregisterBasicAuthResultCode.LastAuthMethodError
+    )]
+    public async Task DeregisterBasicAuth_ReturnsTheDeleteResult_WhenChecksPass(
+        DeleteBasicAuthResultCode deleteResultCode,
+        DeregisterBasicAuthResultCode expected
+    )
+    {
+        _mockBasicAuthProcessor
+            .Setup(x => x.DeleteBasicAuthAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(new DeleteBasicAuthResult(deleteResultCode, "delete"));
+
+        var result = await _service.DeregisterBasicAuthAsync(new("current", "123456"));
+
+        Assert.Equal(expected, result.ResultCode);
+        var userId = _userContext.User!.Id;
+        _mockReauthenticationProvider.Verify(
+            x => x.VerifyCurrentPasswordAsync(userId, "current"),
+            Times.Once
+        );
+        _mockReauthenticationProvider.Verify(
+            x => x.VerifyTotpCodeAsync(userId, "123456"),
+            Times.Once
+        );
+        _mockBasicAuthProcessor.Verify(x => x.DeleteBasicAuthAsync(userId), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(
+        nameof(ReauthenticationResultCode.BasicAuthNotFoundError),
+        DeregisterBasicAuthResultCode.NotFoundError
+    )]
+    [InlineData(
+        nameof(ReauthenticationResultCode.InvalidCurrentPasswordError),
+        DeregisterBasicAuthResultCode.InvalidCurrentPasswordError
+    )]
+    [InlineData(
+        nameof(ReauthenticationResultCode.UserLockedError),
+        DeregisterBasicAuthResultCode.UserLockedError
+    )]
+    public async Task DeregisterBasicAuth_DoesNotDelete_WhenCurrentPasswordCheckFails(
+        string passwordResultCode,
+        DeregisterBasicAuthResultCode expected
+    )
+    {
+        _mockReauthenticationProvider
+            .Setup(x => x.VerifyCurrentPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>()))
+            .ReturnsAsync(
+                new ReauthenticationResult(
+                    Enum.Parse<ReauthenticationResultCode>(passwordResultCode),
+                    "no"
+                )
+            );
+
+        var result = await _service.DeregisterBasicAuthAsync(new("wrong"));
+
+        Assert.Equal(expected, result.ResultCode);
+        _mockReauthenticationProvider.Verify(
+            x => x.VerifyTotpCodeAsync(It.IsAny<Guid>(), It.IsAny<string?>()),
+            Times.Never
+        );
+        _mockBasicAuthProcessor.Verify(x => x.DeleteBasicAuthAsync(It.IsAny<Guid>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(DeregisterBasicAuthResultCode.TotpRequiredError)]
+    [InlineData(DeregisterBasicAuthResultCode.InvalidTotpCodeError)]
+    public async Task DeregisterBasicAuth_DoesNotDelete_WhenTotpCheckFails(
+        DeregisterBasicAuthResultCode expected
+    )
+    {
+        _mockReauthenticationProvider
+            .Setup(x => x.VerifyTotpCodeAsync(It.IsAny<Guid>(), It.IsAny<string?>()))
+            .ReturnsAsync(
+                new ReauthenticationResult(
+                    Enum.Parse<ReauthenticationResultCode>(expected.ToString()),
+                    "no"
+                )
+            );
+
+        var result = await _service.DeregisterBasicAuthAsync(new("current"));
+
+        Assert.Equal(expected, result.ResultCode);
+        _mockBasicAuthProcessor.Verify(x => x.DeleteBasicAuthAsync(It.IsAny<Guid>()), Times.Never);
+    }
+
+    #endregion
 
     #region DeregisterUserAsync Tests
 

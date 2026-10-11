@@ -1,6 +1,31 @@
 # Split SetPasswordAsync into RegisterPasswordAsync and ModifyPasswordAsync
 
-**Status: planned.** Releases as Corely.IAM 4.0.0.
+**Status: built, not yet released.** Releases as Corely.IAM 4.0.0; the csproj versions are bumped,
+no tag is pushed.
+
+## As built
+
+The three open questions were answered yes. Where the build differs from the plan below:
+
+- **No options.** The two `SecurityOptions` switches were built and then removed: a user who turned
+  on TOTP asked for the check, and no host needs the current password skipped today. Adding a switch
+  later is not a breaking change.
+- **`UserLockedError`** is added to `ModifyPasswordResultCode` and `DeregisterBasicAuthResultCode`:
+  counting wrong passwords toward lockout needs a code for the locked state.
+- **The checks live in one internal `IReauthenticationProvider`** (`Security/Providers`), called by
+  all three services. It duplicates the few lines of lockout counting in `AuthenticationService`
+  rather than refactoring sign in.
+- **A missing current password is refused without counting**; only a wrong one counts. TOTP failures
+  do not count, as at sign in.
+- **The telemetry decorators no longer log these requests**, since they carry passwords.
+  `SetPasswordAsync` logged its request at trace level.
+- **`PasswordSection` reads TOTP status itself** through `IMfaService` on each parameter set, so the
+  profile page needs no new parameter. "Change Password" is offered whenever the user has a password.
+- **DevTools tests were not added.** Its commands are internal with no `InternalsVisibleTo` or Moq in
+  the test project, and the argument binding is the shared `CommandBase` reflection.
+
+Known edge: the TOTP check runs before the new password is validated, so a recovery code is spent
+even when the new password then fails the rules.
 
 ## Why
 

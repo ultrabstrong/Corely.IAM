@@ -120,6 +120,7 @@ public static class ServiceRegistrationExtensions
 
             serviceCollection.AddScoped<IPlatformAccessProvider, PlatformAccessProvider>();
             serviceCollection.AddScoped<IAuthenticationProvider, AuthenticationProvider>();
+            serviceCollection.AddScoped<IReauthenticationProvider, ReauthenticationProvider>();
             serviceCollection.AddScoped<UserContextProvider>();
             serviceCollection.AddScoped<IUserContextProvider>(sp =>
                 sp.GetRequiredService<UserContextProvider>()
@@ -165,6 +166,10 @@ public static class ServiceRegistrationExtensions
             serviceCollection.Decorate<IPlatformService, PlatformServiceAuditDecorator>();
             serviceCollection.AddHostedService<PlatformOwnerPermissionsStartup>();
             serviceCollection.AddScoped<IModificationService, ModificationService>();
+            serviceCollection.Decorate<
+                IModificationService,
+                ModificationServiceAuthorizationDecorator
+            >();
             serviceCollection.Decorate<IModificationService, ModificationServiceAuditDecorator>();
             serviceCollection.Decorate<
                 IModificationService,

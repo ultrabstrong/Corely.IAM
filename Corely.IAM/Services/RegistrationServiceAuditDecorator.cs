@@ -161,13 +161,13 @@ internal class RegistrationServiceAuditDecorator(
             r => AuditOutcome.Of(r.ResultCode)
         );
 
-    public Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request) =>
+    public Task<RegisterPasswordResult> RegisterPasswordAsync(RegisterPasswordRequest request) =>
         _auditProvider.RecordAsync(
             new AuditCall(SERVICE, AuthAction.Create, PermissionConstants.USER_RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
             },
-            () => _inner.SetPasswordAsync(request),
+            () => _inner.RegisterPasswordAsync(request),
             r => AuditOutcome.Of(r.ResultCode)
         );
 }

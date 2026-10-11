@@ -42,7 +42,7 @@ if (result.ResultCode == RegisterUserWithGoogleResultCode.Success)
 }
 ```
 
-The flow validates the Google ID token, extracts the email and subject ID, creates a new user, and links the Google account in a single operation. The user can later add a password via `SetPasswordAsync` or sign in exclusively with Google.
+The flow validates the Google ID token, extracts the email and subject ID, creates a new user, and links the Google account in a single operation. The user can later add a password via `IRegistrationService.RegisterPasswordAsync` or sign in exclusively with Google.
 
 ### Result Codes
 

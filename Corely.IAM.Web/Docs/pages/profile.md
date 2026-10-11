@@ -26,11 +26,10 @@ Self-service user profile page. No permission gates: any authenticated user can 
 - Uses `IMfaService` for enable/confirm/disable/regenerate/status
 
 ### Password Section
-- **Has password + has Google**: "Password is set" with "Remove Password" button (confirmation toggle)
-- **Has password only**: "Password is set" with note to add another method first
+- **Has password**: "Password is set" with "Change Password", plus "Remove Password" when Google sign in is linked
 - **No password (Google only)**: "Set Password" form (new password + confirm)
-- Remove calls `IDeregistrationService.DeregisterBasicAuthAsync()`
-- Set calls `IRegistrationService.SetPasswordAsync()`
+- Change and remove ask for the current password, and every form asks for an authenticator code when TOTP is enabled
+- Set calls `IRegistrationService.RegisterPasswordAsync()`, change calls `IModificationService.ModifyPasswordAsync()`, remove calls `IDeregistrationService.DeregisterBasicAuthAsync()`
 
 ### Linked Accounts Section
 - Shows linked Google email when Google auth is active

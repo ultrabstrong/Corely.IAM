@@ -13,6 +13,8 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
@@ -34,6 +36,7 @@ public class RegistrationServiceTests
     private readonly Mock<IRoleProcessor> _roleProcessorMock;
     private readonly Mock<IPermissionProcessor> _permissionProcessorMock;
     private readonly Mock<IUserContextProvider> _userContextProviderMock = new();
+    private readonly Mock<IReauthenticationProvider> _reauthenticationProviderMock = new();
     private readonly RegistrationService _registrationService;
 
     private CreateAccountResultCode _createAccountResultCode = CreateAccountResultCode.Success;
@@ -100,6 +103,7 @@ public class RegistrationServiceTests
             _permissionProcessorMock.Object,
             _userContextProviderMock.Object,
             new Mock<IUserContextSetter>().Object,
+            _reauthenticationProviderMock.Object,
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _unitOfWorkProviderMock.Object
         );
@@ -687,4 +691,77 @@ public class RegistrationServiceTests
             result.InvalidPermissionIds.Count
         );
     }
+
+    [Theory]
+    [InlineData(CreateBasicAuthResultCode.Success, RegisterPasswordResultCode.Success)]
+    [InlineData(
+        CreateBasicAuthResultCode.BasicAuthExistsError,
+        RegisterPasswordResultCode.BasicAuthExistsError
+    )]
+    [InlineData(
+        CreateBasicAuthResultCode.PasswordValidationError,
+        RegisterPasswordResultCode.PasswordValidationError
+    )]
+    public async Task RegisterPassword_ReturnsTheCreateResult_WhenTotpCheckPasses(
+        CreateBasicAuthResultCode createResultCode,
+        RegisterPasswordResultCode expected
+    )
+    {
+        SetupTotpCheck(ReauthenticationResult.Succeeded);
+        _createBasicAuthResultCode = createResultCode;
+
+        var result = await _registrationService.RegisterPasswordAsync(new("Password1!", "123456"));
+
+        Assert.Equal(expected, result.ResultCode);
+        _reauthenticationProviderMock.Verify(
+            m => m.VerifyTotpCodeAsync(It.IsAny<Guid>(), "123456"),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public Task RegisterPassword_DoesNotCreate_WhenTotpCodeMissing() =>
+        AssertRegisterPasswordRefusedByTotpCheck(
+            ReauthenticationResultCode.TotpRequiredError,
+            RegisterPasswordResultCode.TotpRequiredError
+        );
+
+    [Fact]
+    public Task RegisterPassword_DoesNotCreate_WhenTotpCodeInvalid() =>
+        AssertRegisterPasswordRefusedByTotpCheck(
+            ReauthenticationResultCode.InvalidTotpCodeError,
+            RegisterPasswordResultCode.InvalidTotpCodeError
+        );
+
+    private async Task AssertRegisterPasswordRefusedByTotpCheck(
+        ReauthenticationResultCode totpResultCode,
+        RegisterPasswordResultCode expected
+    )
+    {
+        SetupTotpCheck(new(totpResultCode, "totp failed"));
+
+        var result = await _registrationService.RegisterPasswordAsync(new("Password1!"));
+
+        Assert.Equal(expected, result.ResultCode);
+        Assert.Equal("totp failed", result.Message);
+        _basicAuthProcessorMock.Verify(
+            m => m.CreateBasicAuthAsync(It.IsAny<CreateBasicAuthRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task RegisterPassword_Throws_WithNullRequest()
+    {
+        var ex = await Record.ExceptionAsync(() =>
+            _registrationService.RegisterPasswordAsync(null!)
+        );
+
+        Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    private void SetupTotpCheck(ReauthenticationResult result) =>
+        _reauthenticationProviderMock
+            .Setup(m => m.VerifyTotpCodeAsync(It.IsAny<Guid>(), It.IsAny<string?>()))
+            .ReturnsAsync(result);
 }

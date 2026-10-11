@@ -18,4 +18,5 @@ public interface IModificationService
     Task<ModifyResult> ModifyPermissionAsync(UpdatePermissionRequest request);
     Task<ModifyResult> RotateAccountKeyAsync(RotateAccountKeyRequest request);
     Task<ModifyResult> RotateCurrentUserKeyAsync(KeyType keyType);
+    Task<ModifyPasswordResult> ModifyPasswordAsync(ModifyPasswordRequest request);
 }

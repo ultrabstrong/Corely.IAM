@@ -491,4 +491,40 @@ public class DeregistrationServiceAuthorizationDecoratorTests
         );
 
     #endregion
+
+    #region DeregisterBasicAuthAsync
+
+    [Fact]
+    public async Task DeregisterBasicAuth_DelegatesToInner_WhenNonSystemUserContext()
+    {
+        var request = new DeregisterBasicAuthRequest("current");
+        var expectedResult = new DeregisterBasicAuthResult(
+            DeregisterBasicAuthResultCode.Success,
+            ""
+        );
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(true);
+        _mockInnerService
+            .Setup(x => x.DeregisterBasicAuthAsync(request))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.DeregisterBasicAuthAsync(request);
+
+        Assert.Equal(expectedResult, result);
+    }
+
+    [Fact]
+    public async Task DeregisterBasicAuth_ReturnsUnauthorized_WhenNoUserContextOrSystemContext()
+    {
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(false);
+
+        var result = await _decorator.DeregisterBasicAuthAsync(new("current"));
+
+        Assert.Equal(DeregisterBasicAuthResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerService.Verify(
+            x => x.DeregisterBasicAuthAsync(It.IsAny<DeregisterBasicAuthRequest>()),
+            Times.Never
+        );
+    }
+
+    #endregion
 }

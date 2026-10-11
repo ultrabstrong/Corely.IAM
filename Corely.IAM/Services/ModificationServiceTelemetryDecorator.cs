@@ -77,4 +77,11 @@ internal class ModificationServiceTelemetryDecorator(
             () => _inner.RotateCurrentUserKeyAsync(keyType),
             logResult: true
         );
+
+    public async Task<ModifyPasswordResult> ModifyPasswordAsync(ModifyPasswordRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(ModificationService),
+            () => _inner.ModifyPasswordAsync(request),
+            logResult: true
+        );
 }

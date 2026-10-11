@@ -20,7 +20,7 @@ Creates entities, establishes relationships between entities, and manages invita
 | `AcceptInvitationAsync` | `AcceptInvitationRequest` | `AcceptInvitationResult` |
 | `RevokeInvitationAsync` | `Guid invitationId` | `RevokeInvitationResult` |
 | `RegisterUserWithGoogleAsync` | `RegisterUserWithGoogleRequest` | `RegisterUserWithGoogleResult` |
-| `SetPasswordAsync` | `SetPasswordRequest` | `SetPasswordResult` |
+| `RegisterPasswordAsync` | `RegisterPasswordRequest` | `RegisterPasswordResult` |
 | `ListInvitationsAsync` | `ListInvitationsRequest` | `RetrieveListResult<Invitation>` |
 
 > **Note:** TOTP and Google Auth methods have been moved to dedicated services. See [MFA](../mfa.md) (`IMfaService`) and [Google Sign-In](../google-signin.md) (`IGoogleAuthService`).

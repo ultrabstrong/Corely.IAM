@@ -1,6 +1,8 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.BasicAuths.Models.Extensions;
+using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
@@ -10,9 +12,12 @@ using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Models.Extensions;
 using Corely.IAM.Security.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
+using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;
@@ -24,7 +29,10 @@ internal class ModificationService(
     IGroupProcessor groupProcessor,
     IRoleProcessor roleProcessor,
     IPermissionProcessor permissionProcessor,
-    IKeyRotationProcessor keyRotationProcessor
+    IKeyRotationProcessor keyRotationProcessor,
+    IBasicAuthProcessor basicAuthProcessor,
+    IReauthenticationProvider reauthenticationProvider,
+    IUserContextProvider userContextProvider
 ) : IModificationService
 {
     private readonly ILogger<ModificationService> _logger = logger.ThrowIfNull(nameof(logger));
@@ -45,6 +53,14 @@ internal class ModificationService(
     );
     private readonly IKeyRotationProcessor _keyRotationProcessor = keyRotationProcessor.ThrowIfNull(
         nameof(keyRotationProcessor)
+    );
+    private readonly IBasicAuthProcessor _basicAuthProcessor = basicAuthProcessor.ThrowIfNull(
+        nameof(basicAuthProcessor)
+    );
+    private readonly IReauthenticationProvider _reauthenticationProvider =
+        reauthenticationProvider.ThrowIfNull(nameof(reauthenticationProvider));
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
     );
 
     public async Task<ModifyResult> ModifyAccountAsync(UpdateAccountRequest request)
@@ -97,5 +113,44 @@ internal class ModificationService(
     {
         _logger.LogInformation("Rotating {KeyType} key for the current user", keyType);
         return await _keyRotationProcessor.RotateCurrentUserKeyAsync(keyType);
+    }
+
+    public async Task<ModifyPasswordResult> ModifyPasswordAsync(ModifyPasswordRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        var userId = _userContextProvider.GetUserContext()!.User!.Id;
+        _logger.LogInformation("Modifying password for user {UserId}", userId);
+
+        var passwordResult = await _reauthenticationProvider.VerifyCurrentPasswordAsync(
+            userId,
+            request.CurrentPassword
+        );
+        if (passwordResult.ResultCode != ReauthenticationResultCode.Success)
+        {
+            return new ModifyPasswordResult(
+                passwordResult.ResultCode.ToModifyPasswordResultCode(),
+                passwordResult.Message
+            );
+        }
+
+        var totpResult = await _reauthenticationProvider.VerifyTotpCodeAsync(
+            userId,
+            request.TotpCode
+        );
+        if (totpResult.ResultCode != ReauthenticationResultCode.Success)
+        {
+            return new ModifyPasswordResult(
+                totpResult.ResultCode.ToModifyPasswordResultCode(),
+                totpResult.Message
+            );
+        }
+
+        var updateResult = await _basicAuthProcessor.UpdateBasicAuthAsync(
+            new(userId, request.NewPassword)
+        );
+        return new ModifyPasswordResult(
+            updateResult.ResultCode.ToModifyPasswordResultCode(),
+            updateResult.Message
+        );
     }
 }

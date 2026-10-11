@@ -60,8 +60,13 @@ internal class RegistrationServiceAuthorizationDecorator(
         RegisterPermissionsWithRoleRequest request
     ) => await _inner.RegisterPermissionsWithRoleAsync(request);
 
-    public async Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request) =>
+    public async Task<RegisterPasswordResult> RegisterPasswordAsync(
+        RegisterPasswordRequest request
+    ) =>
         _authorizationProvider.IsNonSystemUserContext()
-            ? await _inner.SetPasswordAsync(request)
-            : new SetPasswordResult(SetPasswordResultCode.UnauthorizedError, "Unauthorized");
+            ? await _inner.RegisterPasswordAsync(request)
+            : new RegisterPasswordResult(
+                RegisterPasswordResultCode.UnauthorizedError,
+                "Unauthorized"
+            );
 }

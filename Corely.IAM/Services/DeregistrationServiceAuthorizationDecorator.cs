@@ -64,9 +64,11 @@ internal class DeregistrationServiceAuthorizationDecorator(
         DeregisterPermissionsFromRoleRequest request
     ) => _inner.DeregisterPermissionsFromRoleAsync(request);
 
-    public Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync() =>
+    public Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync(
+        DeregisterBasicAuthRequest request
+    ) =>
         _authorizationProvider.IsNonSystemUserContext()
-            ? _inner.DeregisterBasicAuthAsync()
+            ? _inner.DeregisterBasicAuthAsync(request)
             : Task.FromResult(
                 new DeregisterBasicAuthResult(
                     DeregisterBasicAuthResultCode.UnauthorizedError,

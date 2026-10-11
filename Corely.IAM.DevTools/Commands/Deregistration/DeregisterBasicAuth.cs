@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Corely.Common.Extensions;
+using Corely.IAM.DevTools.Attributes;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
 
@@ -9,6 +10,12 @@ internal partial class Deregistration : CommandBase
 {
     internal class DeregisterBasicAuth : CommandBase
     {
+        [Argument("The current password", true)]
+        private string CurrentPassword { get; init; } = null!;
+
+        [Argument("TOTP or recovery code, when TOTP is enabled")]
+        private string? Code { get; init; }
+
         private readonly IDeregistrationService _deregistrationService;
         private readonly IAuthenticationService _authenticationService;
 
@@ -31,7 +38,9 @@ internal partial class Deregistration : CommandBase
             if (!await SetUserContextFromAuthTokenFileAsync(_authenticationService))
                 return;
 
-            var result = await _deregistrationService.DeregisterBasicAuthAsync();
+            var result = await _deregistrationService.DeregisterBasicAuthAsync(
+                new DeregisterBasicAuthRequest(CurrentPassword, Code)
+            );
 
             if (result.ResultCode == DeregisterBasicAuthResultCode.Success)
             {

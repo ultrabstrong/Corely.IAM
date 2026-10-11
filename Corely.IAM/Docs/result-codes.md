@@ -308,17 +308,33 @@ Complete reference of all result code enums across Corely.IAM.
 | `UserExistsError` | Username derived from Google email already taken |
 | `ValidationError` | Input validation failed |
 
-### SetPasswordResultCode
+### RegisterPasswordResultCode
 
 | Code | Meaning |
 |------|---------|
-| `Success` | Password set |
-| `BasicAuthExistsError` | User already has a password |
+| `Success` | Password added |
+| `BasicAuthExistsError` | User already has a password; change it with `ModifyPasswordAsync` |
+| `TotpRequiredError` | TOTP is enabled and no code was given |
+| `InvalidTotpCodeError` | The TOTP or recovery code is wrong |
 | `PasswordValidationError` | Password doesn't meet requirements |
 | `ValidationError` | Input validation failed |
-| `UnauthorizedError` | Not authorized |
+| `UnauthorizedError` | No user context, or system context |
 
 ## BasicAuth Result Codes
+
+### ModifyPasswordResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | Password changed |
+| `BasicAuthNotFoundError` | User has no password; add one with `RegisterPasswordAsync` |
+| `InvalidCurrentPasswordError` | Current password missing or wrong. A wrong one counts toward the sign in lockout |
+| `UserLockedError` | User is locked out after too many failed attempts |
+| `TotpRequiredError` | TOTP is enabled and no code was given |
+| `InvalidTotpCodeError` | The TOTP or recovery code is wrong |
+| `PasswordValidationError` | New password doesn't meet requirements |
+| `ValidationError` | Input validation failed |
+| `UnauthorizedError` | No user context, or system context |
 
 ### DeregisterBasicAuthResultCode
 
@@ -327,4 +343,8 @@ Complete reference of all result code enums across Corely.IAM.
 | `Success` | Password authentication removed |
 | `NotFoundError` | User has no basic auth credentials |
 | `LastAuthMethodError` | Cannot remove the only authentication method |
-| `UnauthorizedError` | Insufficient permissions |
+| `InvalidCurrentPasswordError` | Current password missing or wrong. A wrong one counts toward the sign in lockout |
+| `UserLockedError` | User is locked out after too many failed attempts |
+| `TotpRequiredError` | TOTP is enabled and no code was given |
+| `InvalidTotpCodeError` | The TOTP or recovery code is wrong |
+| `UnauthorizedError` | No user context, or system context |

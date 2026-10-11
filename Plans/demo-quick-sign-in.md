@@ -1,8 +1,7 @@
 # Demo quick sign in
 
-**Status: planned. Blocked on `password-register-and-modify.md`.** The platform owner step needs the
-`password modify` dev tool command that plan adds. Everything else could go first, but ship them in
-order so the WebApp list is complete from day one.
+**Status: planned.** `password-register-and-modify.md` is built, so the `password modify` dev tool
+command the platform owner step needs exists. It takes the current password as well as the new one.
 
 ## What
 

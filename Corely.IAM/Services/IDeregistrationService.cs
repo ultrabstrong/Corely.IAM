@@ -24,5 +24,5 @@ public interface IDeregistrationService
     Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(
         DeregisterPermissionsFromRoleRequest request
     );
-    Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync();
+    Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync(DeregisterBasicAuthRequest request);
 }

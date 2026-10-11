@@ -7,6 +7,7 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.BasicAuths.Models;
+using Corely.IAM.BasicAuths.Models.Extensions;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Extensions;
 using Corely.IAM.GoogleAuths.Models;
@@ -19,6 +20,9 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Models.Extensions;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
@@ -39,6 +43,7 @@ internal class RegistrationService(
     IPermissionProcessor permissionProcessor,
     IUserContextProvider userContextProvider,
     IUserContextSetter userContextSetter,
+    IReauthenticationProvider reauthenticationProvider,
     IValidationProvider validationProvider,
     IUnitOfWorkProvider uowProvider
 ) : IRegistrationService
@@ -75,6 +80,8 @@ internal class RegistrationService(
     private readonly IUserContextSetter _userContextSetter = userContextSetter.ThrowIfNull(
         nameof(userContextSetter)
     );
+    private readonly IReauthenticationProvider _reauthenticationProvider =
+        reauthenticationProvider.ThrowIfNull(nameof(reauthenticationProvider));
     private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
         nameof(validationProvider)
     );
@@ -720,42 +727,31 @@ internal class RegistrationService(
         );
     }
 
-    public async Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request)
+    public async Task<RegisterPasswordResult> RegisterPasswordAsync(RegisterPasswordRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var context = _userContextProvider.GetUserContext()!;
+        var userId = _userContextProvider.GetUserContext()!.User!.Id;
+        _logger.LogInformation("Registering password for user {UserId}", userId);
 
-        var createResult = await _basicAuthProcessor.CreateBasicAuthAsync(
-            new(context.User!.Id, request.Password)
+        var totpResult = await _reauthenticationProvider.VerifyTotpCodeAsync(
+            userId,
+            request.TotpCode
         );
-
-        if (createResult.ResultCode != CreateBasicAuthResultCode.BasicAuthExistsError)
+        if (totpResult.ResultCode != ReauthenticationResultCode.Success)
         {
-            return new SetPasswordResult(
-                (SetPasswordResultCode)(int)createResult.ResultCode,
-                createResult.Message
+            return new RegisterPasswordResult(
+                totpResult.ResultCode.ToRegisterPasswordResultCode(),
+                totpResult.Message
             );
         }
 
-        var updateResult = await _basicAuthProcessor.UpdateBasicAuthAsync(
-            new(context.User!.Id, request.Password)
+        var createResult = await _basicAuthProcessor.CreateBasicAuthAsync(
+            new(userId, request.Password)
         );
-        return updateResult.ResultCode switch
-        {
-            UpdateBasicAuthResultCode.Success => new SetPasswordResult(
-                SetPasswordResultCode.Success,
-                updateResult.Message
-            ),
-            UpdateBasicAuthResultCode.PasswordValidationError => new SetPasswordResult(
-                SetPasswordResultCode.PasswordValidationError,
-                updateResult.Message
-            ),
-            UpdateBasicAuthResultCode.ValidationError => new SetPasswordResult(
-                SetPasswordResultCode.ValidationError,
-                updateResult.Message
-            ),
-            _ => new SetPasswordResult(SetPasswordResultCode.ValidationError, updateResult.Message),
-        };
+        return new RegisterPasswordResult(
+            createResult.ResultCode.ToRegisterPasswordResultCode(),
+            createResult.Message
+        );
     }
 
     private static string GenerateRandomSuffix()

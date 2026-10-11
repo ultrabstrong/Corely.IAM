@@ -82,6 +82,16 @@ internal class ModificationServiceAuditDecorator(
             r => AuditOutcome.Of(r.ResultCode)
         );
 
+    public Task<ModifyPasswordResult> ModifyPasswordAsync(ModifyPasswordRequest request) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.USER_RESOURCE_TYPE)
+            {
+                AccountId = Guid.Empty,
+            },
+            () => _inner.ModifyPasswordAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
     private static AuditCall Update(string resourceType, Guid accountId, Guid resourceId) =>
         new(SERVICE, AuthAction.Update, resourceType)
         {

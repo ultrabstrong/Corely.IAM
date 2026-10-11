@@ -120,11 +120,12 @@ internal class RegistrationServiceTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request) =>
+    public async Task<RegisterPasswordResult> RegisterPasswordAsync(
+        RegisterPasswordRequest request
+    ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RegistrationService),
-            request,
-            () => _inner.SetPasswordAsync(request),
+            () => _inner.RegisterPasswordAsync(request),
             logResult: true
         );
 }

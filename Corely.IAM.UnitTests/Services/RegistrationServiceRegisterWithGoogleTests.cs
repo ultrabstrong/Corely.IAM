@@ -9,6 +9,7 @@ using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
@@ -42,6 +43,7 @@ public class RegistrationServiceRegisterWithGoogleTests
             new Mock<IPermissionProcessor>().Object,
             new Mock<IUserContextProvider>().Object,
             new Mock<IUserContextSetter>().Object,
+            new Mock<IReauthenticationProvider>().Object,
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _unitOfWorkProviderMock.Object
         );

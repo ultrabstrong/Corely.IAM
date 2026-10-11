@@ -215,6 +215,18 @@ dotnet run -- totp generate-code "JBSWY3DPEHPK3PXP"
 dotnet run -- totp validate-code "JBSWY3DPEHPK3PXP" "123456"
 ```
 
+### Password
+
+Add or change the signed in user's password. The code is needed only when TOTP is enabled.
+
+```bash
+# Add a first password
+dotnet run -- password register "NewPassword1!" ["123456"]
+
+# Change the password
+dotnet run -- password modify "CurrentPassword1!" "NewPassword1!" ["123456"]
+```
+
 ### Google Authentication
 
 Manage Google account linking. Requires an authenticated session.
@@ -314,7 +326,7 @@ dotnet run -- deregister user-from-account "request.json"
 | `permissions-from-role` | Remove permissions from a role |
 | `roles-from-user` | Unassign roles from a user |
 | `roles-from-group` | Unassign roles from a group |
-| `basic-auth` | Remove password authentication |
+| `basic-auth` | Remove password authentication: `<current password> [code]` |
 
 ### Modification
 

@@ -482,33 +482,33 @@ public class RegistrationServiceAuthorizationDecoratorTests
 
     #endregion
 
-    #region SetPasswordAsync
+    #region RegisterPasswordAsync
 
     [Fact]
-    public async Task SetPassword_DelegatesToInner_WhenHasUserContext()
+    public async Task RegisterPassword_DelegatesToInner_WhenHasUserContext()
     {
-        var request = new SetPasswordRequest("newpassword");
-        var expectedResult = new SetPasswordResult(SetPasswordResultCode.Success, "");
+        var request = new RegisterPasswordRequest("newpassword");
+        var expectedResult = new RegisterPasswordResult(RegisterPasswordResultCode.Success, "");
         _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(true);
-        _mockInnerService.Setup(x => x.SetPasswordAsync(request)).ReturnsAsync(expectedResult);
+        _mockInnerService.Setup(x => x.RegisterPasswordAsync(request)).ReturnsAsync(expectedResult);
 
-        var result = await _decorator.SetPasswordAsync(request);
+        var result = await _decorator.RegisterPasswordAsync(request);
 
         Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.SetPasswordAsync(request), Times.Once);
+        _mockInnerService.Verify(x => x.RegisterPasswordAsync(request), Times.Once);
     }
 
     [Fact]
-    public async Task SetPassword_ReturnsUnauthorized_WhenNoUserContext()
+    public async Task RegisterPassword_ReturnsUnauthorized_WhenNoUserContextOrSystemContext()
     {
-        var request = new SetPasswordRequest("newpassword");
+        var request = new RegisterPasswordRequest("newpassword");
         _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(false);
 
-        var result = await _decorator.SetPasswordAsync(request);
+        var result = await _decorator.RegisterPasswordAsync(request);
 
-        Assert.Equal(SetPasswordResultCode.UnauthorizedError, result.ResultCode);
+        Assert.Equal(RegisterPasswordResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerService.Verify(
-            x => x.SetPasswordAsync(It.IsAny<SetPasswordRequest>()),
+            x => x.RegisterPasswordAsync(It.IsAny<RegisterPasswordRequest>()),
             Times.Never
         );
     }

@@ -28,5 +28,5 @@ public interface IRegistrationService
     Task<RegisterPermissionsWithRoleResult> RegisterPermissionsWithRoleAsync(
         RegisterPermissionsWithRoleRequest request
     );
-    Task<SetPasswordResult> SetPasswordAsync(SetPasswordRequest request);
+    Task<RegisterPasswordResult> RegisterPasswordAsync(RegisterPasswordRequest request);
 }

@@ -83,6 +83,50 @@ public class AuditDecoratorMappingTests
     }
 
     [Fact]
+    public async Task RegisterPassword_RecordsACreateOnTheUser_OutsideAnyAccount()
+    {
+        var inner = new Mock<IRegistrationService>();
+        inner
+            .Setup(s => s.RegisterPasswordAsync(It.IsAny<RegisterPasswordRequest>()))
+            .ReturnsAsync(new RegisterPasswordResult(RegisterPasswordResultCode.Success, ""));
+
+        await new RegistrationServiceAuditDecorator(
+            inner.Object,
+            _auditProvider
+        ).RegisterPasswordAsync(new RegisterPasswordRequest("pw"));
+
+        var captured = Assert.Single(_auditProvider.Calls);
+        Assert.Equal(AuthAction.Create, captured.Call.Action);
+        Assert.Equal(PermissionConstants.USER_RESOURCE_TYPE, captured.Call.ResourceType);
+        Assert.Equal(Guid.Empty, captured.Call.AccountId);
+    }
+
+    [Fact]
+    public async Task ModifyPassword_RecordsAnUpdateOfTheUser_WithItsOutcome()
+    {
+        var inner = new Mock<IModificationService>();
+        inner
+            .Setup(s => s.ModifyPasswordAsync(It.IsAny<ModifyPasswordRequest>()))
+            .ReturnsAsync(
+                new ModifyPasswordResult(ModifyPasswordResultCode.InvalidCurrentPasswordError, "")
+            );
+
+        await new ModificationServiceAuditDecorator(
+            inner.Object,
+            _auditProvider
+        ).ModifyPasswordAsync(new ModifyPasswordRequest("current", "new"));
+
+        var captured = Assert.Single(_auditProvider.Calls);
+        Assert.Equal(AuthAction.Update, captured.Call.Action);
+        Assert.Equal(PermissionConstants.USER_RESOURCE_TYPE, captured.Call.ResourceType);
+        Assert.Equal(Guid.Empty, captured.Call.AccountId);
+        Assert.Equal(
+            nameof(ModifyPasswordResultCode.InvalidCurrentPasswordError),
+            captured.Outcome!.ResultCode
+        );
+    }
+
+    [Fact]
     public async Task DeregisterUser_AsksForTheDeletedUsername()
     {
         var inner = new Mock<IDeregistrationService>();

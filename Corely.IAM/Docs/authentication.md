@@ -112,7 +112,7 @@ Validation checks: JWT format, required claims, user existence, token not revoke
 
 ## Login Metrics
 
-Failed login attempts are tracked per user. After `MaxLoginAttempts` consecutive failures, the account is locked for `LockoutCooldownSeconds`.
+Failed login attempts are tracked per user. After `MaxLoginAttempts` consecutive failures, the account is locked for `LockoutCooldownSeconds`. A wrong current password given to change or remove a password counts as a failure too.
 
 | Option | Default | Description |
 |--------|---------|-------------|

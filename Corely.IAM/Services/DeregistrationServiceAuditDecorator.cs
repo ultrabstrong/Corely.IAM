@@ -142,13 +142,15 @@ internal class DeregistrationServiceAuditDecorator(
             r => AuditOutcome.Of(r.ResultCode)
         );
 
-    public Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync() =>
+    public Task<DeregisterBasicAuthResult> DeregisterBasicAuthAsync(
+        DeregisterBasicAuthRequest request
+    ) =>
         _auditProvider.RecordAsync(
             new AuditCall(SERVICE, AuthAction.Delete, PermissionConstants.USER_RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
             },
-            () => _inner.DeregisterBasicAuthAsync(),
+            () => _inner.DeregisterBasicAuthAsync(request),
             r => AuditOutcome.Of(r.ResultCode)
         );
 }

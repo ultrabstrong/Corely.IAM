@@ -12,7 +12,7 @@ internal partial class Password : CommandBase
         [Argument("The new password", true)]
         private string NewPassword { get; init; } = null!;
 
-        [Argument("TOTP or recovery code, when TOTP is enabled")]
+        [Argument("TOTP or recovery code, when TOTP is enabled", false)]
         private string? Code { get; init; }
 
         private readonly IRegistrationService _registrationService;

@@ -24,7 +24,9 @@ dotnet run --project Corely.IAM.Demos.SharedAccount -- --seed
 
 That creates the team `Acme` with owner `olivia` and members `bobby` and `carla`, a few team notes,
 and `dana.solo` with no team. Every seeded password is `Test1234`. Sign in as `olivia` to see the
-member list and invite people; sign in as `bobby` to see what a member without roles gets.
+member list and invite people; sign in as `bobby` to see what a member without roles gets. In
+Development the sign-in page lists them in a "Demo only: quick sign in" dropdown; picking one signs
+in as that user.
 
 To see an invitation end to end, use a second browser profile or a private window:
 

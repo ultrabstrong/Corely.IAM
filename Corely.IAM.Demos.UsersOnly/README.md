@@ -23,7 +23,8 @@ dotnet run --project Corely.IAM.Demos.UsersOnly -- --seed
 ```
 
 That creates `alice` and `marcus`, each with a few notes, password `Test1234`. Rerunning skips
-users that already exist.
+users that already exist. In Development the sign-in page lists them in a "Demo only: quick sign in"
+dropdown; picking one signs in as that user.
 
 `appsettings.Development.json` holds a committed system key. It exists so the demo runs without
 setup and protects nothing but local demo data; a real app supplies its own key.
@@ -38,3 +39,5 @@ setup and protects nothing but local demo data; a real app supplies its own key.
   the app's tables.
 - `Pages/Shared/_AuthLayout.cshtml`: replaces the library's "Corely IAM" branding on the sign-in
   pages.
+- `Pages/Authentication/_SignInAssist.cshtml`: the quick sign in dropdown, shown above the sign-in
+  form in Development only.

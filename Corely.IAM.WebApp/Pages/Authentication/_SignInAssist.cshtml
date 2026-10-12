@@ -1,0 +1,57 @@
+@using Microsoft.Extensions.Hosting
+@inject IHostEnvironment HostEnvironment
+@if (HostEnvironment.IsDevelopment())
+{
+    <div class="border border-warning rounded p-3 mb-4">
+        <label for="demo-quick-sign-in" class="form-label fw-semibold">Demo only: quick sign in</label>
+        <select id="demo-quick-sign-in" class="form-select"
+                onchange="if (this.value) { const u = document.getElementById('username'); u.value = this.value; document.getElementById('password').value = 'Test1234'; u.form.requestSubmit(); }">
+            <option value="" selected>Pick a seeded user</option>
+            <optgroup label="Platform">
+                <option value="platform-owner">platform-owner: platform owner, full access everywhere, can switch into any account</option>
+            </optgroup>
+            <optgroup label="Start here">
+                <option value="admin">admin: no accounts yet, create one</option>
+            </optgroup>
+            <optgroup label="Account owners">
+                <option value="alice.johnson">alice.johnson: owns Acme NA; Account Admin in the other four</option>
+                <option value="ben.carter">ben.carter: owns Acme Europe; also an owner in Acme NA</option>
+                <option value="cara.nguyen">cara.nguyen: owns Contoso Manufacturing</option>
+                <option value="daniel.lee">daniel.lee: owns Fabrikam Professional Services</option>
+                <option value="elena.morris">elena.morris: owns Northwind Internal IT</option>
+            </optgroup>
+            <optgroup label="Admins">
+                <option value="farah.khan">farah.khan: owner and Account Admin in Acme NA; Account Admin and Finance Reviewer in Acme Europe</option>
+                <option value="gavin.brooks">gavin.brooks: Account Admin and Operations Manager in Acme NA; Support Lead in Acme Europe</option>
+                <option value="hannah.price">hannah.price: Account Admin and Support Agent in Acme NA; Support Lead in Acme Europe</option>
+                <option value="isaac.reed">isaac.reed: owner in Acme Europe; Support Agent in Acme NA</option>
+                <option value="julia.woods">julia.woods: Account Admin and QA Reviewer in Contoso; Analyst and Security Auditor in Acme NA</option>
+                <option value="kevin.bell">kevin.bell: Account Admin and QA Reviewer in Contoso</option>
+            </optgroup>
+            <optgroup label="Members">
+                <option value="leo.turner">leo.turner: Fulfillment Lead in Acme NA; Plant Supervisor in Contoso</option>
+                <option value="maya.shah">maya.shah: Operations Manager in Acme NA; Plant Supervisor in Contoso</option>
+                <option value="nolan.gray">nolan.gray: Project Lead in Fabrikam</option>
+                <option value="olivia.ward">olivia.ward: Fulfillment Lead in Acme NA; Project Lead in Fabrikam</option>
+                <option value="paula.ramos">paula.ramos: Billing Manager in Acme NA; read only in Fabrikam</option>
+                <option value="quinn.hughes">quinn.hughes: Analyst and Security Auditor in Acme NA; Helpdesk in Northwind</option>
+                <option value="rafael.gomez">rafael.gomez: Helpdesk in Northwind</option>
+                <option value="sara.kim">sara.kim: Analyst and Security Auditor in Acme NA; Finance Reviewer in Acme Europe; read only in Northwind</option>
+                <option value="tyler.adams">tyler.adams: Support Agent in Acme NA; Support Lead in Acme Europe</option>
+                <option value="uma.patel">uma.patel: Plant Supervisor in Contoso</option>
+                <option value="victor.ross">victor.ross: Operations Manager in Acme NA; QA Reviewer in Contoso</option>
+                <option value="willa.ford">willa.ford: Billing Manager in Acme NA</option>
+                <option value="xavier.young">xavier.young: read only in Acme NA</option>
+                <option value="yasmine.ali">yasmine.ali: read only in Acme NA</option>
+                <option value="zane.cooper">zane.cooper: Fulfillment Lead in Acme NA; Project Lead in Fabrikam</option>
+            </optgroup>
+            <optgroup label="Contractors">
+                <option value="seasonal.01">seasonal.01: Contractor Limited in Acme NA</option>
+                <option value="seasonal.02">seasonal.02: Contractor Limited in Acme NA</option>
+                <option value="seasonal.03">seasonal.03: Contractor Limited in Acme NA</option>
+                <option value="seasonal.04">seasonal.04: Contractor Limited in Acme NA</option>
+            </optgroup>
+        </select>
+        <div class="form-text">Every demo user's password is Test1234. Everyone in Acme NA also has read only access there.</div>
+    </div>
+}

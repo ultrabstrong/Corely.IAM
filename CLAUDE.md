@@ -187,9 +187,13 @@ One command, from the repository root, in PowerShell 7:
 
 It creates `Corely.IAM.WebApp/appsettings.json` for LocalDB with a fresh system key if there is none,
 starts LocalDB, builds, creates or migrates the database (finding the migration history in
-`__EFMigrationsHistory` on a database migrated before IAM had its own table), seeds the demo users
-into a new database, then runs the WebApp with its startup log visible and opens the browser. Sign in
-as `admin` / `Test1234`; every seeded demo user uses `Test1234`. Ctrl+C stops it.
+`__EFMigrationsHistory` on a database migrated before IAM had its own table), bootstraps the platform
+account and seeds the demo users into a new database, then runs the WebApp with its startup log
+visible and opens the browser. Sign in as `admin` / `Test1234`; every seeded demo user uses
+`Test1234`, the platform owner `platform-owner` included (its TOTP is turned off by the seed). In
+Development the sign-in page of the WebApp and both demo hosts has a "Demo only: quick sign in"
+dropdown of the seeded users, from each host's `Pages/Authentication/_SignInAssist.cshtml`. Ctrl+C
+stops it.
 
 | Switch | Does |
 |--------|------|

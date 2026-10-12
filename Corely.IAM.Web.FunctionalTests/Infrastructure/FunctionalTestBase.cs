@@ -9,6 +9,7 @@ using Corely.IAM.Web;
 using Corely.IAM.Web.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Corely.IAM.Web.FunctionalTests.Infrastructure;
 
@@ -23,6 +24,7 @@ public abstract class FunctionalTestBase : IAsyncLifetime
 
     protected virtual int AuthTokenTtlSeconds => 3600;
     protected virtual int AuthSessionTtlSeconds => 604800;
+    protected virtual string EnvironmentName => Environments.Development;
 
     public async ValueTask InitializeAsync()
     {
@@ -30,6 +32,7 @@ public abstract class FunctionalTestBase : IAsyncLifetime
         {
             AuthTokenTtlSeconds = AuthTokenTtlSeconds,
             AuthSessionTtlSeconds = AuthSessionTtlSeconds,
+            EnvironmentName = EnvironmentName,
         };
         await Factory.InitializeDatabaseAsync();
         await SeedAsync();

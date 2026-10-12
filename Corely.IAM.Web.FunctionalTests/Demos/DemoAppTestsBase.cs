@@ -65,6 +65,15 @@ public abstract class DemoAppTestsBase<TNotesContext> : IAsyncLifetime
     }
 
     [Fact]
+    public async Task TheSignInPageOffersQuickSignInInDevelopment()
+    {
+        using var response = await _client.GetAsync(AppRoutes.SignIn);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        Assert.Contains("id=\"demo-quick-sign-in\"", html);
+    }
+
+    [Fact]
     public async Task TheAppSendsItsOwnContentSecurityPolicy()
     {
         using var response = await _client.GetAsync(AppRoutes.SignIn);

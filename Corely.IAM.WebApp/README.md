@@ -18,8 +18,10 @@ One command, from the repository root, in PowerShell 7:
 It creates `appsettings.json` for LocalDB with a fresh system key if there is none,
 starts LocalDB, builds, creates or migrates the database (finding the migration history in
 `__EFMigrationsHistory` on a database migrated before IAM had its own table), seeds the demo users
-into a new database, then runs the WebApp with its startup log visible and opens the browser. Sign in
-as `admin` / `Test1234`; every seeded demo user uses `Test1234`. Ctrl+C stops it.
+into a new database, bootstraps the platform account with a `platform-owner` user, then runs the
+WebApp with its startup log visible and opens the browser. Every seeded user, `platform-owner`
+included, uses `Test1234`, and in Development the sign-in page lists them in a "Demo only: quick sign
+in" dropdown. Ctrl+C stops it.
 
 | Switch | Does |
 |--------|------|
@@ -72,6 +74,14 @@ From the WebApp folder:
 ```
 
 This seeds the WebApp's configured IAM database with the demo users/accounts used for local dogfooding. Demo users, including `admin` and `alice.johnson`, use the password `Test1234`.
+
+For a platform owner too, bootstrap first and pass the secrets file to the seed, which turns off the
+owner's TOTP and gives it `Test1234`:
+
+```powershell
+dotnet run --project ..\Corely.IAM.DataAccessMigrations.Cli -- platform bootstrap -p MsSql -c "your-connection-string" -e platform-owner@demo.local -s $env:TEMP\platform-owner.txt -k "your-system-key" --settings appsettings.json
+.\DemoSetup\SeedWebAppDemo.ps1 -PlatformOwnerSecretsFile $env:TEMP\platform-owner.txt
+```
 
 **5. Run the app**
 

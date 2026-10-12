@@ -1,7 +1,29 @@
 # Demo quick sign in
 
-**Status: planned.** `password-register-and-modify.md` is built, so the `password modify` dev tool
-command the platform owner step needs exists. It takes the current password as well as the new one.
+**Status: built, not yet released.** Ships with Corely.IAM.Web 4.0.0.
+
+## As built
+
+Where the build differs from the plan below:
+
+- **The bootstrap runs in `Start-LocalStack.ps1`,** which has the provider, connection, system key
+  and settings path. It passes the secrets file to the seed with `-PlatformOwnerSecretsFile`; the
+  seed does steps 2 to 5 and skips them without it. It bootstraps with `--settings` and the WebApp's
+  `appsettings.json`.
+- **`auth signin` prints the MFA challenge token** when MFA is required. It printed only the result
+  code, so step 3 could not be scripted.
+- **The optional code on `password register`, `password modify` and `deregister basic-auth` was
+  required:** the attribute's one argument constructor defaults to required. Fixed with `false`.
+- **The library renders the slot with `Html.PartialAsync`.** `Corely.IAM.Web` has no
+  `_ViewImports` registering tag helpers, so `<partial>` came out as a literal tag.
+- **The WebApp template no longer carries the moved `SecurityOptions` and
+  `PasswordValidationOptions` keys.** A seeded WebApp has a platform account, so they would log the
+  warning; without one the defaults are the same values.
+- **Descriptions were checked against the seed** and four corrected: farah.khan, julia.woods,
+  quinn.hughes and sara.kim had roles the plan left out.
+- The functional tests cover the WebApp in Development and Production and both demo hosts in
+  Development. The dropdown was checked by hand: picking platform-owner signs in to account
+  selection.
 
 ## What
 

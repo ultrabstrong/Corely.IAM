@@ -13,7 +13,7 @@ internal partial class Deregistration : CommandBase
         [Argument("The current password", true)]
         private string CurrentPassword { get; init; } = null!;
 
-        [Argument("TOTP or recovery code, when TOTP is enabled")]
+        [Argument("TOTP or recovery code, when TOTP is enabled", false)]
         private string? Code { get; init; }
 
         private readonly IDeregistrationService _deregistrationService;

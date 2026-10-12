@@ -1,0 +1,17 @@
+@using Microsoft.Extensions.Hosting
+@inject IHostEnvironment HostEnvironment
+@if (HostEnvironment.IsDevelopment())
+{
+    <div class="border border-warning rounded p-3 mb-4">
+        <label for="demo-quick-sign-in" class="form-label fw-semibold">Demo only: quick sign in</label>
+        <select id="demo-quick-sign-in" class="form-select"
+                onchange="if (this.value) { const u = document.getElementById('username'); u.value = this.value; document.getElementById('password').value = 'Test1234'; u.form.requestSubmit(); }">
+            <option value="" selected>Pick a seeded user</option>
+            <option value="olivia">olivia: owns team Acme, sees members, can invite</option>
+            <option value="bobby">bobby: member of Acme with no roles</option>
+            <option value="carla">carla: member of Acme with no roles</option>
+            <option value="dana.solo">dana.solo: no team, create one or join with a token</option>
+        </select>
+        <div class="form-text">Every demo user's password is Test1234.</div>
+    </div>
+}

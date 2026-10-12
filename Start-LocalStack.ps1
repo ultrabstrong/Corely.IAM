@@ -138,28 +138,36 @@ elseif (-not $fresh) {
     Write-Step 'Database already had data; leaving it as it is (run with -Reset for a clean, seeded one)'
 }
 else {
+    Write-Step 'Bootstrapping the platform account'
+    $platformSecrets = Join-Path ([System.IO.Path]::GetTempPath()) "corely-platform-owner-$([guid]::NewGuid()).txt"
+    $output = dotnet run --project $cliProject --no-build -- platform bootstrap -p $provider -c $connection `
+        -e 'platform-owner@demo.local' -s $platformSecrets -k $settings.Security.SystemKey --settings $settingsPath 2>&1
+    if (-not (Test-Path $platformSecrets)) {
+        throw "Bootstrapping the platform account failed:`n$($output -join "`n")"
+    }
+
     Write-Step 'Seeding demo users and accounts (takes a few minutes)'
     @{
         Provider = $provider
         ConnectionStrings = @{ DataRepoConnection = $connection }
         SystemSymmetricEncryptionKey = $settings.Security.SystemKey
-        PasswordValidationOptions = $settings.PasswordValidationOptions
     } | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $devToolsBin 'corely-iam-devtool-settings.json')
 
     $devToolsDll = Join-Path $devToolsBin 'Corely.IAM.DevTools.dll'
     Set-Item -Path function:global:corely -Value { & dotnet $devToolsDll @args }.GetNewClosure()
     try {
-        & $seedScript -AuthTokenFile (Join-Path $devToolsBin 'corely-iam-auth-token.json')
+        & $seedScript -AuthTokenFile (Join-Path $devToolsBin 'corely-iam-auth-token.json') -PlatformOwnerSecretsFile $platformSecrets
     }
     finally {
         Remove-Item function:global:corely -ErrorAction SilentlyContinue
+        Remove-Item $platformSecrets -ErrorAction SilentlyContinue
     }
 }
 
 Write-Host ''
 Write-Host 'Local IAM is ready.' -ForegroundColor Green
 Write-Host "  Open:     $appUrl"
-Write-Host '  Sign in:  admin / Test1234 (seeded demo users all use Test1234)'
+Write-Host '  Sign in:  admin / Test1234 (seeded demo users, platform-owner among them, all use Test1234; the sign in page lists them)'
 if ($NoRun) {
     Write-Host "  Run it:   dotnet run --project Corely.IAM.WebApp (or run this script without -NoRun)"
     return

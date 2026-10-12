@@ -29,10 +29,11 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
 
     public int AuthTokenTtlSeconds { get; init; } = 3600;
     public int AuthSessionTtlSeconds { get; init; } = 604800;
+    public string EnvironmentName { get; init; } = Environments.Development;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment(Environments.Development);
+        builder.UseEnvironment(EnvironmentName);
 
         foreach (
             var (key, value) in new Dictionary<string, string>

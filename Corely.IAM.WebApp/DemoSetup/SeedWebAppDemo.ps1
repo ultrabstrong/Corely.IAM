@@ -3,7 +3,8 @@ param(
     [switch]$Resume,
     [string]$SeedRoot = (Join-Path $env:TEMP 'corely-webapp-demo'),
     [string]$DeviceId = 'webapp-demo-seed',
-    [string]$AuthTokenFile = (Join-Path $env:USERPROFILE 'Corely\corely-iam-auth-token.json')
+    [string]$AuthTokenFile = (Join-Path $env:USERPROFILE 'Corely\corely-iam-auth-token.json'),
+    [string]$PlatformOwnerSecretsFile
 )
 
 $ErrorActionPreference = 'Stop'
@@ -900,6 +901,63 @@ $state.Validation['na-paging'] = [ordered]@{
 
 Save-State
 Sign-OutCurrentUser -Label 'signout-final-validation'
+
+function Get-SecretsFileValue {
+    param(
+        [string]$Text,
+        [string]$Name
+    )
+
+    $match = [regex]::Match($Text, "(?m)^$([regex]::Escape($Name)): (\S+)\s*$")
+    Assert-True -Condition $match.Success -Message "$Name not found in $PlatformOwnerSecretsFile"
+    return $match.Groups[1].Value
+}
+
+function Get-TotpCode {
+    param(
+        [string]$Label,
+        [string]$Secret
+    )
+
+    $text = Invoke-CorelyText -Label $Label -Arguments @('totp', 'generate-code', $Secret)
+    $match = [regex]::Match($text, 'TOTP code: (\d+)')
+    Assert-True -Condition $match.Success -Message "No TOTP code generated for $Label"
+    return $match.Groups[1].Value
+}
+
+if (-not [string]::IsNullOrWhiteSpace($PlatformOwnerSecretsFile) -and -not ((Test-MapContainsKey -Map $state -Key 'PlatformOwnerReady') -and $state.PlatformOwnerReady)) {
+    Write-Host '==> Giving platform-owner the demo password'
+    $secrets = Get-Content -Path $PlatformOwnerSecretsFile -Raw
+    $generatedPassword = Get-SecretsFileValue -Text $secrets -Name 'Password'
+    $totpSecret = Get-SecretsFileValue -Text $secrets -Name 'Authenticator secret'
+
+    $requestPath = Write-RequestObject -FileName 'signin-platform-owner.json' -Payload ([ordered]@{
+            Username = 'platform-owner'
+            Password = $generatedPassword
+            DeviceId = $DeviceId
+        })
+    $text = Invoke-CorelyText -Label 'signin-platform-owner' -Arguments @('auth', 'signin', $requestPath)
+    $challenge = [regex]::Match($text, 'Challenge token: (\S+)')
+    Assert-True -Condition $challenge.Success -Message "platform-owner sign in did not ask for MFA`n$text"
+
+    $code = Get-TotpCode -Label 'totp-code-verify-platform-owner' -Secret $totpSecret
+    $text = Invoke-CorelyText -Label 'verify-mfa-platform-owner' -Arguments @('auth', 'verify-mfa', $challenge.Groups[1].Value, $code)
+    Assert-True -Condition ($text -match 'MFA verification successful') -Message "MFA verification failed for platform-owner`n$text"
+
+    $code = Get-TotpCode -Label 'totp-code-disable-platform-owner' -Secret $totpSecret
+    $text = Invoke-CorelyText -Label 'totp-disable-platform-owner' -Arguments @('totp', 'disable', $code)
+    Assert-True -Condition ($text -match 'TOTP disabled successfully') -Message "Disabling TOTP failed for platform-owner`n$text"
+
+    $text = Invoke-CorelyText -Label 'password-modify-platform-owner' -Arguments @('password', 'modify', $generatedPassword, 'Test1234')
+    Assert-True -Condition ($text -match 'Password modified successfully') -Message "Setting the demo password failed for platform-owner`n$text"
+
+    Sign-OutCurrentUser -Label 'signout-platform-owner'
+    Sign-InUser -Username 'platform-owner' -AccountId $null
+    Sign-OutCurrentUser -Label 'signout-validate-platform-owner'
+
+    $state['PlatformOwnerReady'] = $true
+    Save-State
+}
 
 Write-Host ''
 Write-Host 'Demo environment seed complete.'

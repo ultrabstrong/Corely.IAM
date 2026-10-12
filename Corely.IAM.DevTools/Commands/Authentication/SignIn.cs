@@ -59,6 +59,10 @@ internal partial class Authentication : CommandBase
                 await WriteAuthTokenToFileAsync(result);
                 Success("Sign in successful. Auth token saved.");
             }
+            else if (result.ResultCode == SignInResultCode.MfaRequiredChallenge)
+            {
+                Info($"MFA required. Challenge token: {result.MfaChallengeToken}");
+            }
             else
             {
                 Warn($"Sign in failed: {result.ResultCode}");

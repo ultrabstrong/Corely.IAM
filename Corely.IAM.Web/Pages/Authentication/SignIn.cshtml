@@ -20,6 +20,8 @@
         <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
     }
 
+    @await Html.PartialAsync("_SignInAssist")
+
     <form method="post">
         @Html.AntiForgeryToken()
         <div class="mb-3">

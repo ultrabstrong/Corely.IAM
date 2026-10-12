@@ -2,11 +2,11 @@ using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Models;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Entities;
-using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Security.Providers;
 
@@ -14,7 +14,7 @@ internal class ReauthenticationProvider(
     IRepo<UserEntity> userRepo,
     IBasicAuthProcessor basicAuthProcessor,
     ITotpAuthProcessor totpAuthProcessor,
-    IOptions<SecurityOptions> securityOptions,
+    ISecurityPolicyProvider securityPolicyProvider,
     TimeProvider timeProvider
 ) : IReauthenticationProvider
 {
@@ -25,9 +25,8 @@ internal class ReauthenticationProvider(
     private readonly ITotpAuthProcessor _totpAuthProcessor = totpAuthProcessor.ThrowIfNull(
         nameof(totpAuthProcessor)
     );
-    private readonly SecurityOptions _securityOptions = securityOptions
-        .ThrowIfNull(nameof(securityOptions))
-        .Value;
+    private readonly ISecurityPolicyProvider _securityPolicyProvider =
+        securityPolicyProvider.ThrowIfNull(nameof(securityPolicyProvider));
     private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
 
     public async Task<ReauthenticationResult> VerifyCurrentPasswordAsync(
@@ -52,12 +51,11 @@ internal class ReauthenticationProvider(
             );
         }
 
+        var policy = await _securityPolicyProvider.GetPolicyAsync();
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         if (userEntity.LockedUtc != null)
         {
-            if (
-                userEntity.LockedUtc.Value.AddSeconds(_securityOptions.LockoutCooldownSeconds) > now
-            )
+            if (userEntity.LockedUtc.Value.AddSeconds(policy.LockoutCooldownSeconds) > now)
             {
                 return new(ReauthenticationResultCode.UserLockedError, "User is locked out");
             }
@@ -85,7 +83,7 @@ internal class ReauthenticationProvider(
         userEntity.FailedLoginsSinceLastSuccess++;
         userEntity.TotalFailedLogins++;
         userEntity.LastFailedLoginUtc = now;
-        if (userEntity.FailedLoginsSinceLastSuccess >= _securityOptions.MaxLoginAttempts)
+        if (userEntity.FailedLoginsSinceLastSuccess >= policy.MaxLoginAttempts)
         {
             userEntity.LockedUtc = now;
         }

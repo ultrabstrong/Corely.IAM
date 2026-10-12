@@ -1,0 +1,206 @@
+@page "/platform-settings/security"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits EntityPageBase
+
+<PageTitle>Security Settings - Corely IAM</PageTitle>
+
+<PlatformSettingsFrame>
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+@if (_settings is null)
+{
+    @if (!_loadFailed)
+    {
+        <LoadingSpinner />
+    }
+}
+else
+{
+    <div class="section-divider mb-4">
+        <div class="section-divider-label">
+            Passwords
+            @if (!_isEditing && _canUpdate)
+            {
+                <button class="btn btn-outline-primary btn-sm" @onclick="() => _isEditing = true">Edit</button>
+            }
+        </div>
+        <div class="props-grid mb-3">
+            <span class="prop-label">Minimum length</span>
+            <div class="prop-value">
+                <NumberSetting @bind-Value="_passwordMinimumLength" Editing="_isEditing"
+                               Min="SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_MIN" Max="SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_MAX"
+                               Hint="@($"{SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_RECOMMENDED} or more is recommended")" />
+            </div>
+            <span class="prop-label">Maximum length</span>
+            <div class="prop-value">
+                <NumberSetting @bind-Value="_passwordMaximumLength" Editing="_isEditing"
+                               Min="SecurityPolicyConstants.PASSWORD_MAXIMUM_LENGTH_MIN" Max="SecurityPolicyConstants.PASSWORD_MAXIMUM_LENGTH_MAX" />
+            </div>
+            <span class="prop-label">Must contain</span>
+            <div class="prop-value">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="requireUppercase" @bind="_requireUppercase" disabled="@(!_isEditing)" />
+                    <label class="form-check-label" for="requireUppercase">An uppercase letter</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="requireLowercase" @bind="_requireLowercase" disabled="@(!_isEditing)" />
+                    <label class="form-check-label" for="requireLowercase">A lowercase letter</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="requireDigit" @bind="_requireDigit" disabled="@(!_isEditing)" />
+                    <label class="form-check-label" for="requireDigit">A digit</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="requireNonAlphanumeric" @bind="_requireNonAlphanumeric" disabled="@(!_isEditing)" />
+                    <label class="form-check-label" for="requireNonAlphanumeric">A symbol</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-divider mb-4">
+        <div class="section-divider-label">Sign in</div>
+        <div class="props-grid mb-3">
+            <span class="prop-label">Failed sign ins before lockout</span>
+            <div class="prop-value">
+                <NumberSetting @bind-Value="_maxLoginAttempts" Editing="_isEditing"
+                               Min="SecurityPolicyConstants.MAX_LOGIN_ATTEMPTS_MIN" Max="SecurityPolicyConstants.MAX_LOGIN_ATTEMPTS_MAX" />
+            </div>
+            <span class="prop-label">Lockout length (seconds)</span>
+            <div class="prop-value">
+                <NumberSetting @bind-Value="_lockoutCooldownSeconds" Editing="_isEditing"
+                               Min="SecurityPolicyConstants.LOCKOUT_COOLDOWN_SECONDS_MIN" Max="SecurityPolicyConstants.LOCKOUT_COOLDOWN_SECONDS_MAX" />
+            </div>
+            <span class="prop-label">Sign in token lifetime (seconds)</span>
+            <div class="prop-value">
+                <NumberSetting @bind-Value="_authTokenTtlSeconds" Editing="_isEditing"
+                               Min="SecurityPolicyConstants.AUTH_TOKEN_TTL_SECONDS_MIN" Max="SecurityPolicyConstants.AUTH_TOKEN_TTL_SECONDS_MAX"
+                               Hint="No longer than the session lifetime" />
+            </div>
+            <span class="prop-label">Session lifetime (seconds)</span>
+            <div class="prop-value">
+                <NumberSetting @bind-Value="_authSessionTtlSeconds" Editing="_isEditing"
+                               Min="SecurityPolicyConstants.AUTH_SESSION_TTL_SECONDS_MIN" Max="SecurityPolicyConstants.AUTH_SESSION_TTL_SECONDS_MAX" />
+            </div>
+        </div>
+    </div>
+
+    <div class="section-divider mb-4">
+        <div class="section-divider-label">Two factor</div>
+        <div class="props-grid mb-3">
+            <span class="prop-label">Code prompt timeout (seconds)</span>
+            <div class="prop-value">
+                <NumberSetting @bind-Value="_mfaChallengeTimeoutSeconds" Editing="_isEditing"
+                               Min="SecurityPolicyConstants.MFA_CHALLENGE_TIMEOUT_SECONDS_MIN" Max="SecurityPolicyConstants.MFA_CHALLENGE_TIMEOUT_SECONDS_MAX" />
+            </div>
+            <span class="prop-label">Recovery codes per user</span>
+            <div class="prop-value">
+                <NumberSetting @bind-Value="_totpRecoveryCodeCount" Editing="_isEditing"
+                               Min="SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_MIN" Max="SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_MAX" />
+            </div>
+        </div>
+        @if (_isEditing)
+        {
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit" disabled="@_loading">Cancel</button>
+            </div>
+        }
+        <p class="text-muted small mt-2 mb-0">
+            A stricter password rule applies the next time a password is set; saved passwords are not checked against it.
+            Every instance picks up a change within a minute.
+        </p>
+    </div>
+}
+</PlatformSettingsFrame>
+
+@code {
+    private IPlatformService PlatformService => ScopedServices.GetRequiredService<IPlatformService>();
+    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
+
+    private SecurityPolicy? _settings;
+    private bool _canUpdate;
+    private bool _isEditing;
+    private int _passwordMinimumLength;
+    private int _passwordMaximumLength;
+    private bool _requireUppercase;
+    private bool _requireLowercase;
+    private bool _requireDigit;
+    private bool _requireNonAlphanumeric;
+    private int _maxLoginAttempts;
+    private int _lockoutCooldownSeconds;
+    private int _authTokenTtlSeconds;
+    private int _authSessionTtlSeconds;
+    private int _mfaChallengeTimeoutSeconds;
+    private int _totpRecoveryCodeCount;
+
+    protected override async Task LoadCoreAsync()
+    {
+        var result = await PlatformService.GetSecuritySettingsAsync();
+        if (result.ResultCode != RetrieveResultCode.Success || result.Settings is null)
+        {
+            _loadFailed = true;
+            _message = "You don't have access to the platform settings.";
+            _messageType = AlertType.Warning;
+            return;
+        }
+
+        _settings = result.Settings;
+        _canUpdate = await AuthorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
+            AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
+        );
+        Reset();
+    }
+
+    private void Reset()
+    {
+        _passwordMinimumLength = _settings!.PasswordMinimumLength;
+        _passwordMaximumLength = _settings.PasswordMaximumLength;
+        _requireUppercase = _settings.RequireUppercase;
+        _requireLowercase = _settings.RequireLowercase;
+        _requireDigit = _settings.RequireDigit;
+        _requireNonAlphanumeric = _settings.RequireNonAlphanumeric;
+        _maxLoginAttempts = _settings.MaxLoginAttempts;
+        _lockoutCooldownSeconds = _settings.LockoutCooldownSeconds;
+        _authTokenTtlSeconds = _settings.AuthTokenTtlSeconds;
+        _authSessionTtlSeconds = _settings.AuthSessionTtlSeconds;
+        _mfaChallengeTimeoutSeconds = _settings.MfaChallengeTimeoutSeconds;
+        _totpRecoveryCodeCount = _settings.TotpRecoveryCodeCount;
+    }
+
+    private void CancelEdit()
+    {
+        Reset();
+        _isEditing = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var settings = new SecurityPolicy(
+                _passwordMinimumLength,
+                _passwordMaximumLength,
+                _requireUppercase,
+                _requireLowercase,
+                _requireDigit,
+                _requireNonAlphanumeric,
+                _maxLoginAttempts,
+                _lockoutCooldownSeconds,
+                _authTokenTtlSeconds,
+                _authSessionTtlSeconds,
+                _mfaChallengeTimeoutSeconds,
+                _totpRecoveryCodeCount
+            );
+            var result = await PlatformService.UpdateSecuritySettingsAsync(settings);
+            SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Security settings saved.", result.Message);
+            if (result.ResultCode == ModifyResultCode.Success)
+            {
+                _isEditing = false;
+                _settings = settings;
+                Reset();
+            }
+        });
+    }
+}

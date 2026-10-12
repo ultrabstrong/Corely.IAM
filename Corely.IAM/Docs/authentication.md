@@ -121,7 +121,9 @@ Failed login attempts are tracked per user. After `MaxLoginAttempts` consecutive
 | `AuthTokenTtlSeconds` | 3600 | Token lifetime (1 hour) |
 | `AuthSessionTtlSeconds` | 604800 | Maximum renewable session lifetime (7 days) |
 
-Configure in `appsettings.json` under the `SecurityOptions` section.
+Configure in `appsettings.json` under the `SecurityOptions` section. With a platform account these come
+from the platform's security settings instead; see
+[where security settings come from](platform.md#where-security-settings-come-from).
 
 ## Notes
 

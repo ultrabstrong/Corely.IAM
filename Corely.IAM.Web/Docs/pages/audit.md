@@ -31,14 +31,29 @@ navigation bar for every signed in user.
 
 **Authorization:** `IAuditService` scopes the list itself; the page shows whatever it returns.
 
-## PlatformSettingsPage (`/platform-settings`)
+## Platform settings (`/platform-settings`)
 
 The platform settings, linked from the account menu while the platform account is the current
-account. Loads through `GetPlatformSettingsAsync`, which needs Read on `platform_settings` held in the
-platform account; anyone else sees an access message.
+account. `/platform-settings` opens the Audit page; a menu on the left switches between the pages.
+Each page needs Read on `platform_settings` held in the platform account, and anyone else sees an
+access message. **Edit** is shown with Update on `platform_settings`, and each page saves on its own.
+
+### PlatformAuditSettingsPage (`/platform-settings/audit`)
+
+Loads through `IAuditService.GetPlatformSettingsAsync`.
 
 - **Auditing** on or off, **maximum retention**, the **actions accounts may record**, and what is recorded for **system context** and **outside any account**
-- **Edit** shown with Update on `platform_settings`
+
+### PlatformSecuritySettingsPage (`/platform-settings/security`)
+
+Loads through `IPlatformService.GetSecuritySettingsAsync` and saves through
+`UpdateSecuritySettingsAsync`.
+
+- **Passwords:** minimum and maximum length, and the characters a password must contain. The minimum
+  length shows that 8 or more is recommended
+- **Sign in:** failed sign ins before lockout, lockout length, token lifetime, session lifetime
+- **Two factor:** code prompt timeout, recovery codes per user
+- Each number shows its range; a save outside it shows the refusal
 
 See [Accounts](accounts.md) for the account's own audit settings, and Corely.IAM's
 [Auditing](../../../Corely.IAM/Docs/auditing.md) docs for what each setting means.

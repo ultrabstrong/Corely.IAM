@@ -8,6 +8,7 @@ public enum BootstrapPlatformResultCode
     OwnerSignInError,
     AccountCreationError,
     TwoFactorEnrollmentError,
+    InvalidSecuritySettingsError,
 }
 
 public record BootstrapPlatformResult(

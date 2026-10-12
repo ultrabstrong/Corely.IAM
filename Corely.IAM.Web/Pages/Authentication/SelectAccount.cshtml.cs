@@ -3,7 +3,7 @@ using Corely.Common.Filtering.Filters;
 using Corely.Common.Filtering.Ordering;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Security.Models;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Extensions;
@@ -18,13 +18,11 @@ public class SelectAccountModel(
     IAuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
     IAuthCookieManager authCookieManager,
-    IOptions<SecurityOptions> securityOptions,
+    ISecurityPolicyProvider securityPolicyProvider,
     IRetrievalService retrievalService
 ) : PageModel
 {
     private const int PageSize = 10;
-
-    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
 
     public List<Account> Accounts { get; set; } = [];
 
@@ -70,7 +68,7 @@ public class SelectAccountModel(
             result.AuthToken!,
             result.AuthTokenId!.Value,
             Request.IsHttps,
-            _authSessionTtlSeconds
+            (await securityPolicyProvider.GetPolicyAsync()).AuthSessionTtlSeconds
         );
 
         return Redirect(AppRoutes.Dashboard);

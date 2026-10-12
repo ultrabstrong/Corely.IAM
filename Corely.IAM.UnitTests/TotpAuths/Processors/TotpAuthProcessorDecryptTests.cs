@@ -1,4 +1,6 @@
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.Platform.Constants;
+using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.TotpAuths.Entities;
 using Corely.IAM.TotpAuths.Models;
@@ -36,6 +38,7 @@ public class TotpAuthProcessorDecryptTests
             _securityConfig,
             new SymmetricEncryptionProviderFactory(CURRENT_DEFAULT_PROVIDER),
             _serviceFactory.GetRequiredService<IHashProviderFactory>(),
+            new FixedSecurityPolicyProvider(SecurityPolicy.Default),
             timeProvider.Object,
             _serviceFactory.GetRequiredService<ILogger<TotpAuthProcessor>>()
         );

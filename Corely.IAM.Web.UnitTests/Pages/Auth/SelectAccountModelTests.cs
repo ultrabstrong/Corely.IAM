@@ -34,7 +34,7 @@ public class SelectAccountModelTests
             _mockAuthService.Object,
             _mockUserContextProvider.Object,
             _mockCookieManager.Object,
-            Options.Create(new SecurityOptions()),
+            new FixedSecurityPolicyProvider(),
             _mockRetrievalService.Object
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();

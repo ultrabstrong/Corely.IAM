@@ -114,7 +114,7 @@ public class SignInModelTests
             .Setup(s => s.SignInAsync(It.IsAny<SignInRequest>()))
             .ReturnsAsync(signInResult);
         _mockPostAuthenticationFlowService
-            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()))
+            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult))
             .ReturnsAsync(new RedirectResult(AppRoutes.Dashboard));
 
         var result = await _model.OnPostAsync();
@@ -122,7 +122,7 @@ public class SignInModelTests
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.Dashboard, redirect.Url);
         _mockPostAuthenticationFlowService.Verify(
-            s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()),
+            s => s.CompleteSignInAsync(_model.HttpContext, signInResult),
             Times.Once
         );
     }
@@ -139,7 +139,7 @@ public class SignInModelTests
             .Setup(s => s.SignInAsync(It.IsAny<SignInRequest>()))
             .ReturnsAsync(signInResult);
         _mockPostAuthenticationFlowService
-            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()))
+            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult))
             .ReturnsAsync(new RedirectResult(AppRoutes.Dashboard));
 
         var result = await _model.OnPostAsync();
@@ -147,7 +147,7 @@ public class SignInModelTests
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.Dashboard, redirect.Url);
         _mockPostAuthenticationFlowService.Verify(
-            s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()),
+            s => s.CompleteSignInAsync(_model.HttpContext, signInResult),
             Times.Once
         );
     }
@@ -164,7 +164,7 @@ public class SignInModelTests
             .Setup(s => s.SignInAsync(It.IsAny<SignInRequest>()))
             .ReturnsAsync(signInResult);
         _mockPostAuthenticationFlowService
-            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()))
+            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult))
             .ReturnsAsync(new RedirectResult(AppRoutes.SelectAccount));
 
         var result = await _model.OnPostAsync();
@@ -185,7 +185,7 @@ public class SignInModelTests
             .Setup(s => s.SignInAsync(It.IsAny<SignInRequest>()))
             .ReturnsAsync(signInResult);
         _mockPostAuthenticationFlowService
-            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()))
+            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult))
             .ReturnsAsync(new RedirectResult(AppRoutes.SelectAccount));
 
         var result = await _model.OnPostAsync();

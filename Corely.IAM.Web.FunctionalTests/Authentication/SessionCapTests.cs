@@ -5,8 +5,8 @@ namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
 public class SessionCapTests : FunctionalTestBase
 {
-    protected override int AuthTokenTtlSeconds => 30;
-    protected override int AuthSessionTtlSeconds => 300;
+    protected override int AuthTokenTtlSeconds => 300;
+    protected override int AuthSessionTtlSeconds => 3600;
 
     [Fact]
     public async Task JustBeforeSessionExpiry_StillRenews()

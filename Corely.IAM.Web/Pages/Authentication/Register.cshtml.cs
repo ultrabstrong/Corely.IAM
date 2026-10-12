@@ -1,4 +1,5 @@
 using Corely.IAM.Models;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Security;
@@ -12,11 +13,10 @@ public class RegisterModel(
     IRegistrationService registrationService,
     IAuthenticationService authenticationService,
     IAuthCookieManager authCookieManager,
+    ISecurityPolicyProvider securityPolicyProvider,
     IOptions<SecurityOptions> securityOptions
 ) : PageModel
 {
-    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
-
     public string? GoogleClientId { get; } = securityOptions.Value.GoogleClientId;
 
     public string? GoogleCallbackUrl { get; set; }
@@ -81,7 +81,7 @@ public class RegisterModel(
                 signInResult.AuthToken!,
                 signInResult.AuthTokenId!.Value,
                 Request.IsHttps,
-                _authSessionTtlSeconds
+                (await securityPolicyProvider.GetPolicyAsync()).AuthSessionTtlSeconds
             );
             return Redirect(AppRoutes.Dashboard);
         }

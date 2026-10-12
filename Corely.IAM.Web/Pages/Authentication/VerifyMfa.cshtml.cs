@@ -1,22 +1,17 @@
 using Corely.IAM.Models;
-using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Web.Pages.Authentication;
 
 public class VerifyMfaModel(
     IAuthenticationService authenticationService,
-    IPostAuthenticationFlowService postAuthenticationFlowService,
-    IOptions<SecurityOptions> securityOptions
+    IPostAuthenticationFlowService postAuthenticationFlowService
 ) : PageModel
 {
-    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
-
     [BindProperty]
     public string Code { get; set; } = string.Empty;
 
@@ -69,10 +64,6 @@ public class VerifyMfaModel(
             return Page();
         }
 
-        return await postAuthenticationFlowService.CompleteSignInAsync(
-            HttpContext,
-            result,
-            _authSessionTtlSeconds
-        );
+        return await postAuthenticationFlowService.CompleteSignInAsync(HttpContext, result);
     }
 }

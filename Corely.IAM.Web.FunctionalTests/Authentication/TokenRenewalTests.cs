@@ -5,7 +5,7 @@ namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
 public class TokenRenewalTests : FunctionalTestBase
 {
-    protected override int AuthTokenTtlSeconds => 60;
+    protected override int AuthTokenTtlSeconds => 300;
     protected override int AuthSessionTtlSeconds => 3600;
 
     [Fact]

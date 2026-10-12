@@ -8,6 +8,7 @@ using Corely.IAM.GoogleAuths.Providers;
 using Corely.IAM.MfaChallenges.Constants;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Models;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.TotpAuths.Models;
@@ -17,7 +18,6 @@ using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Models.Extensions;
 using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Services;
 
@@ -33,7 +33,7 @@ internal class AuthenticationService(
     IGoogleAuthProcessor googleAuthProcessor,
     IGoogleIdTokenValidator googleIdTokenValidator,
     IRepo<MfaChallengeEntity> mfaChallengeRepo,
-    IOptions<SecurityOptions> securityOptions,
+    ISecurityPolicyProvider securityPolicyProvider,
     TimeProvider timeProvider
 ) : IAuthenticationService
 {
@@ -63,9 +63,8 @@ internal class AuthenticationService(
     private readonly IRepo<MfaChallengeEntity> _mfaChallengeRepo = mfaChallengeRepo.ThrowIfNull(
         nameof(mfaChallengeRepo)
     );
-    private readonly SecurityOptions _securityOptions = securityOptions
-        .ThrowIfNull(nameof(securityOptions))
-        .Value;
+    private readonly ISecurityPolicyProvider _securityPolicyProvider =
+        securityPolicyProvider.ThrowIfNull(nameof(securityPolicyProvider));
     private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
 
     public async Task<SignInResult> SignInAsync(SignInRequest request)
@@ -84,7 +83,7 @@ internal class AuthenticationService(
         if (userEntity.LockedUtc != null)
         {
             var cooldownExpiry = userEntity.LockedUtc.Value.AddSeconds(
-                _securityOptions.LockoutCooldownSeconds
+                (await _securityPolicyProvider.GetPolicyAsync()).LockoutCooldownSeconds
             );
             var now = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -108,7 +107,10 @@ internal class AuthenticationService(
             userEntity.TotalFailedLogins++;
             userEntity.LastFailedLoginUtc = failNow;
 
-            if (userEntity.FailedLoginsSinceLastSuccess >= _securityOptions.MaxLoginAttempts)
+            if (
+                userEntity.FailedLoginsSinceLastSuccess
+                >= (await _securityPolicyProvider.GetPolicyAsync()).MaxLoginAttempts
+            )
             {
                 userEntity.LockedUtc = failNow;
             }
@@ -194,7 +196,7 @@ internal class AuthenticationService(
         if (userEntity.LockedUtc != null)
         {
             var cooldownExpiry = userEntity.LockedUtc.Value.AddSeconds(
-                _securityOptions.LockoutCooldownSeconds
+                (await _securityPolicyProvider.GetPolicyAsync()).LockoutCooldownSeconds
             );
             var now = _timeProvider.GetUtcNow().UtcDateTime;
 
@@ -580,7 +582,9 @@ internal class AuthenticationService(
             ChallengeToken = challengeToken,
             DeviceId = deviceId,
             AccountId = accountId,
-            ExpiresUtc = now.AddSeconds(_securityOptions.MfaChallengeTimeoutSeconds),
+            ExpiresUtc = now.AddSeconds(
+                (await _securityPolicyProvider.GetPolicyAsync()).MfaChallengeTimeoutSeconds
+            ),
         };
         await _mfaChallengeRepo.CreateAsync(entity);
 

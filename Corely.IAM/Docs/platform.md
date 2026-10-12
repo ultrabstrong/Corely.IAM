@@ -56,7 +56,8 @@ Run the migration CLI's bootstrap command against the application's database, af
 $env:CORELY_IAM_DB_PROVIDER = "MsSql"
 $env:CORELY_IAM_DB_CONNECTION = "<connection string>"
 $env:CORELY_IAM_SYSTEM_KEY = "<the application's system key>"
-corely-iam-db platform bootstrap --email owner@example.com --secrets .\platform-owner.txt
+corely-iam-db platform bootstrap --email owner@example.com --secrets .\platform-owner.txt `
+    --settings ..\MyApp\appsettings.json
 ```
 
 It creates, in one go:
@@ -65,7 +66,9 @@ It creates, in one go:
   character password and two factor sign in already enrolled;
 - the account (`Platform` unless `--account-name` says otherwise), flagged as the platform account,
   with that user as its owner;
-- full access on every IAM resource type for the account's Owner role.
+- full access on every IAM resource type for the account's Owner role;
+- the platform's security settings, from `--settings` or `--use-defaults`. Exactly one is required;
+  see [where security settings come from](#where-security-settings-come-from).
 
 The owner's username, password, authenticator secret, setup URI and recovery codes go to the file
 named by `--secrets`. The command refuses to run without it, refuses a file that already exists, and
@@ -123,6 +126,52 @@ system context and outside any account. Only a grant held in the platform accoun
 member holding Read on `audit` there reads every entry, and Delete on `audit` there purges any
 account's entries and those outside any account. See [Auditing](auditing.md).
 
+The portal splits them into pages under `/platform-settings`: Audit, and Security.
+
+## Where security settings come from
+
+Password rules, lockout, token lifetimes and the two factor settings come from one of two places:
+
+| The host has | Values come from |
+|--------------|------------------|
+| No platform account | Configuration: `SecurityOptions` and `PasswordValidationOptions` |
+| A platform account | The platform's security settings. Configuration is ignored |
+
+Bootstrap writes the platform's security settings, so a platform account always has them. A platform
+member holding Update on `platform_settings` changes them on the Security page, or in code under
+system context:
+
+```csharp
+var current = (await platformService.GetSecuritySettingsAsync()).Settings!;
+await platformService.UpdateSecuritySettingsAsync(current with { MaxLoginAttempts = 3 });
+```
+
+Every instance picks up a change within `AuditOptions.SettingsCacheTtlSeconds` (30 by default). A
+stricter password rule applies the next time a password is set, never to a stored password.
+
+| Setting | Default | Range | Configuration key |
+|---------|---------|-------|-------------------|
+| Password minimum length | 8 | 3 to 64 | `PasswordValidationOptions:MinimumLength` |
+| Password maximum length | 128 | 64 to 256 | `PasswordValidationOptions:MaximumLength` |
+| Require uppercase, lowercase, digit | on | | `PasswordValidationOptions:RequireUppercase`, `RequireLowercase`, `RequireDigit` |
+| Require symbol | off | | `PasswordValidationOptions:RequireNonAlphanumeric` |
+| Failed sign ins before lockout | 5 | 3 to 20 | `SecurityOptions:MaxLoginAttempts` |
+| Lockout length | 900 seconds | 60 to 86400 | `SecurityOptions:LockoutCooldownSeconds` |
+| Sign in token lifetime | 3600 seconds | 300 to 86400, and no longer than the session | `SecurityOptions:AuthTokenTtlSeconds` |
+| Session lifetime | 604800 seconds | 3600 to 7776000 | `SecurityOptions:AuthSessionTtlSeconds` |
+| Two factor prompt timeout | 300 seconds | 60 to 900 | `SecurityOptions:MfaChallengeTimeoutSeconds` |
+| Recovery codes per user | 10 | 5 to 20 | `SecurityOptions:TotpRecoveryCodeCount` |
+
+The limits are `SecurityPolicyConstants`. Configuration is checked against them when the app starts,
+and an out of range value stops it starting. A save outside them returns `ValidationError`. A minimum
+password length below 8 suits a demo, not production.
+
+Startup logs a warning when configuration still carries any of these keys alongside saved settings,
+naming the keys to remove. It also warns when a platform account has no saved settings, which happens
+only for one bootstrapped before this rule existed: configuration applies to it until someone saves
+the Security page. `ISecurityPolicyProvider.GetPolicyAsync()` returns the settings in force, from
+whichever place they come from.
+
 ## API
 
 | Member | Purpose |
@@ -130,5 +179,9 @@ account's entries and those outside any account. See [Auditing](auditing.md).
 | `Account.IsPlatformAccount` | Marks the platform account |
 | `IPlatformService.BootstrapPlatformAsync(BootstrapPlatformRequest)` | What the CLI command runs; returns the owner's credentials |
 | `IPlatformService.CompletePlatformOwnerPermissionsAsync()` | Gives the platform Owner role any missing full access rows; returns how many it added |
+| `IPlatformService.GetSecuritySettingsAsync()` | The security settings in force; needs Read on `platform_settings` in the platform account |
+| `IPlatformService.UpdateSecuritySettingsAsync(SecurityPolicy)` | Saves them; needs Update there. `NotFoundError` without a platform account |
+| `ISecurityPolicyProvider.GetPolicyAsync()` | The security settings in force, with no permission check, for code that applies them |
+| `BootstrapPlatformResultCode.InvalidSecuritySettingsError` | The configured security settings are out of range; nothing was written |
 | `EffectiveRole.ViaPlatformAccount` | True when a role in effective permissions comes from the platform account |
 | `DeregisterAccountResultCode.PlatformAccountError` | Refusal to delete the platform account |

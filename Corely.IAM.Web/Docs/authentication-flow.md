@@ -100,7 +100,7 @@ This happens before ASP.NET Core's `UseAuthentication()` and `UseAuthorization()
 ## Notes
 
 - Pre-auth pages use the `_AuthLayout` layout (centered card with tab navigation between Sign In and Sign Up)
-- The auth cookies use `SecurityOptions.AuthSessionTtlSeconds` so the browser can present an expired access token for renewal inside the bounded session window
+- The auth cookies use the session lifetime from `ISecurityPolicyProvider` (`SecurityOptions.AuthSessionTtlSeconds`, or the platform's security settings when there is a platform account) so the browser can present an expired access token for renewal inside the bounded session window
 - If a user navigates to `/signin` while already authenticated, they are redirected to the dashboard
 - `GetOrCreateDeviceId()` creates a new device ID cookie if one doesn't exist, using a v7 UUID
 

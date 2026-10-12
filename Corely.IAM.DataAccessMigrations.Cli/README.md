@@ -79,12 +79,22 @@ needs the application's system key, because IAM encrypts each user's keys with i
 | `-s, --secrets` | | Yes: a file that does not exist yet |
 | `-e, --email` | | Yes: the owner's email address |
 | `-k, --system-key` | `CORELY_IAM_SYSTEM_KEY` | Yes |
+| `--settings` | | One of these two: the host's `appsettings.json` |
+| `--use-defaults` | | One of these two: the built in defaults |
 | `-u, --username` | | No: defaults to `platform-owner` |
 | `-a, --account-name` | | No: defaults to `Platform` |
 
 ```powershell
-corely-iam-db platform bootstrap --email owner@example.com --secrets .\platform-owner.txt
+corely-iam-db platform bootstrap --email owner@example.com --secrets .\platform-owner.txt `
+    --settings ..\MyApp\appsettings.json
 ```
+
+Once a platform account exists, the platform's security settings (password rules, lockout, token
+lifetimes and the two factor settings) replace those sections of the host's configuration.
+`--settings` starts them from the `SecurityOptions` and `PasswordValidationOptions` sections of that
+file, and `--use-defaults` from the built in defaults. It reads only the file named, so name the one
+holding the values the host really runs with. An out of range value fails the bootstrap before
+anything is written. See [where security settings come from](../Corely.IAM/Docs/platform.md#where-security-settings-come-from).
 
 The owner gets a generated password and two factor sign in enrolled. The username, password,
 authenticator secret and recovery codes go to the secrets file and nowhere else. A second run reports

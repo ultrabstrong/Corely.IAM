@@ -1,5 +1,5 @@
 using Corely.IAM.Models;
-using Corely.IAM.Security.Models;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Mvc;
@@ -11,11 +11,9 @@ namespace Corely.IAM.Web.Pages.Authentication;
 public class SwitchAccountModel(
     IAuthenticationService authenticationService,
     IAuthCookieManager authCookieManager,
-    IOptions<SecurityOptions> securityOptions
+    ISecurityPolicyProvider securityPolicyProvider
 ) : PageModel
 {
-    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
-
     public async Task<IActionResult> OnGetAsync(Guid? accountId = null, string? returnUrl = null)
     {
         if (accountId == null)
@@ -47,7 +45,7 @@ public class SwitchAccountModel(
             result.AuthToken!,
             result.AuthTokenId!.Value,
             Request.IsHttps,
-            _authSessionTtlSeconds
+            (await securityPolicyProvider.GetPolicyAsync()).AuthSessionTtlSeconds
         );
 
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))

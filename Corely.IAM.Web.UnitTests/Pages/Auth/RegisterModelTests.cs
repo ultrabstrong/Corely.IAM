@@ -29,6 +29,7 @@ public class RegisterModelTests
             _mockRegistrationService.Object,
             _mockAuthService.Object,
             _mockCookieManager.Object,
+            new FixedSecurityPolicyProvider(),
             Options.Create(new SecurityOptions())
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();

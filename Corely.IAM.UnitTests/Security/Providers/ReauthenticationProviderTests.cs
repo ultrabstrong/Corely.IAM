@@ -6,7 +6,6 @@ using Corely.IAM.Security.Providers;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Entities;
-using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.UnitTests.Security.Providers;
 
@@ -55,7 +54,7 @@ public class ReauthenticationProviderTests
             _userRepo,
             _basicAuthProcessorMock.Object,
             _totpAuthProcessorMock.Object,
-            Options.Create(_securityOptions),
+            FixedSecurityPolicyProvider.From(_securityOptions),
             _timeProviderMock.Object
         );
     }

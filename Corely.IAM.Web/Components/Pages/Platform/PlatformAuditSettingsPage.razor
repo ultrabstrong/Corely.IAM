@@ -1,14 +1,10 @@
-@page "/platform-settings"
+@page "/platform-settings/audit"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits EntityPageBase
 
-<PageTitle>Platform Settings - Corely IAM</PageTitle>
+<PageTitle>Audit Settings - Corely IAM</PageTitle>
 
-<div class="management-header">
-    <h1><i class="bi bi-sliders me-2"></i>Platform Settings</h1>
-    <a href="@AppRoutes.Dashboard" class="btn btn-outline-secondary" title="Back to dashboard"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
-</div>
-
+<PlatformSettingsFrame>
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
 
 @if (_settings is null)
@@ -74,6 +70,7 @@ else
         </p>
     </div>
 }
+</PlatformSettingsFrame>
 
 @code {
     private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();

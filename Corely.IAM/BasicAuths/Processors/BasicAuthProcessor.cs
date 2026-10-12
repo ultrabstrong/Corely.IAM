@@ -4,10 +4,10 @@ using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Mappers;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.GoogleAuths.Entities;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Validators;
 using Corely.Security.Hashing.Factories;
-using Corely.Security.PasswordValidation.Providers;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.BasicAuths.Processors;
@@ -15,7 +15,7 @@ namespace Corely.IAM.BasicAuths.Processors;
 internal class BasicAuthProcessor(
     IRepo<BasicAuthEntity> basicAuthRepo,
     IReadonlyRepo<GoogleAuthEntity> googleAuthRepo,
-    IPasswordValidationProvider passwordValidationProvider,
+    ISecurityPolicyProvider securityPolicyProvider,
     IHashProviderFactory hashProviderFactory,
     IValidationProvider validationProvider,
     ILogger<BasicAuthProcessor> logger
@@ -27,8 +27,8 @@ internal class BasicAuthProcessor(
     private readonly IReadonlyRepo<GoogleAuthEntity> _googleAuthRepo = googleAuthRepo.ThrowIfNull(
         nameof(googleAuthRepo)
     );
-    private readonly IPasswordValidationProvider _passwordValidationProvider =
-        passwordValidationProvider.ThrowIfNull(nameof(passwordValidationProvider));
+    private readonly ISecurityPolicyProvider _securityPolicyProvider =
+        securityPolicyProvider.ThrowIfNull(nameof(securityPolicyProvider));
     private readonly IHashProviderFactory _hashProviderFactory = hashProviderFactory.ThrowIfNull(
         nameof(hashProviderFactory)
     );
@@ -63,9 +63,9 @@ internal class BasicAuthProcessor(
             );
         }
 
-        var passwordValidationResults = _passwordValidationProvider.ValidatePassword(
-            request.Password
-        );
+        var passwordValidationResults = (
+            await _securityPolicyProvider.GetPolicyAsync()
+        ).ValidatePassword(request.Password);
         if (!passwordValidationResults.IsSuccess)
         {
             return new CreateBasicAuthResult(
@@ -112,9 +112,9 @@ internal class BasicAuthProcessor(
             );
         }
 
-        var passwordValidationResults = _passwordValidationProvider.ValidatePassword(
-            request.Password
-        );
+        var passwordValidationResults = (
+            await _securityPolicyProvider.GetPolicyAsync()
+        ).ValidatePassword(request.Password);
         if (!passwordValidationResults.IsSuccess)
         {
             return new UpdateBasicAuthResult(

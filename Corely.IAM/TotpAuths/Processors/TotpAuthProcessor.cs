@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Extensions;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.TotpAuths.Constants;
@@ -22,6 +23,7 @@ internal class TotpAuthProcessor(
     ISecurityConfigurationProvider securityConfigProvider,
     ISymmetricEncryptionProviderFactory encryptionProviderFactory,
     IHashProviderFactory hashProviderFactory,
+    ISecurityPolicyProvider securityPolicyProvider,
     TimeProvider timeProvider,
     ILogger<TotpAuthProcessor> logger
 ) : ITotpAuthProcessor
@@ -40,6 +42,8 @@ internal class TotpAuthProcessor(
     private readonly IHashProviderFactory _hashProviderFactory = hashProviderFactory.ThrowIfNull(
         nameof(hashProviderFactory)
     );
+    private readonly ISecurityPolicyProvider _securityPolicyProvider =
+        securityPolicyProvider.ThrowIfNull(nameof(securityPolicyProvider));
     private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
     private readonly ILogger<TotpAuthProcessor> _logger = logger.ThrowIfNull(nameof(logger));
 
@@ -305,7 +309,9 @@ internal class TotpAuthProcessor(
 
     private async Task<string[]> GenerateRecoveryCodesAsync(Guid totpAuthId)
     {
-        var codes = new string[TotpAuthConstants.DEFAULT_RECOVERY_CODE_COUNT];
+        var codes = new string[
+            (await _securityPolicyProvider.GetPolicyAsync()).TotpRecoveryCodeCount
+        ];
 
         for (var i = 0; i < codes.Length; i++)
         {

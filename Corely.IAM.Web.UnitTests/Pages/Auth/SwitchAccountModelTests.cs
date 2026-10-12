@@ -26,7 +26,7 @@ public class SwitchAccountModelTests
         _model = new SwitchAccountModel(
             _mockAuthService.Object,
             _mockCookieManager.Object,
-            Options.Create(new SecurityOptions())
+            new FixedSecurityPolicyProvider()
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();
 

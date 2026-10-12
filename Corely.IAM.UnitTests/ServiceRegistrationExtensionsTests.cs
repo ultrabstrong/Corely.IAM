@@ -8,6 +8,7 @@ using Corely.IAM.Groups.Processors;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Permissions.Providers;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
@@ -18,7 +19,6 @@ using Corely.IAM.Validators;
 using Corely.IAM.Validators.FluentValidators;
 using Corely.Security.Encryption.Factories;
 using Corely.Security.Hashing.Factories;
-using Corely.Security.PasswordValidation.Providers;
 using Corely.Security.Signature.Factories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -98,7 +98,7 @@ public class ServiceRegistrationExtensionsTests
     [InlineData(typeof(IAsymmetricSignatureProviderFactory))]
     [InlineData(typeof(IHashProviderFactory))]
     [InlineData(typeof(ISecurityProvider))]
-    [InlineData(typeof(IPasswordValidationProvider))]
+    [InlineData(typeof(ISecurityPolicyProvider))]
     [InlineData(typeof(ISecurityConfigurationProvider))]
     [InlineData(typeof(IAuthenticationProvider))]
     [InlineData(typeof(IUserContextProvider))]
@@ -167,7 +167,7 @@ public class ServiceRegistrationExtensionsTests
     [Theory]
     [InlineData(typeof(IValidationProvider))]
     [InlineData(typeof(IFluentValidatorFactory))]
-    [InlineData(typeof(IPasswordValidationProvider))]
+    [InlineData(typeof(ISecurityPolicyProvider))]
     [InlineData(typeof(IAuthenticationProvider))]
     [InlineData(typeof(IAuthorizationProvider))]
     [InlineData(typeof(IRegistrationService))]
@@ -293,7 +293,7 @@ public class ServiceRegistrationExtensionsTests
     [InlineData(typeof(IAsymmetricSignatureProviderFactory))]
     [InlineData(typeof(IHashProviderFactory))]
     [InlineData(typeof(ISecurityProvider))]
-    [InlineData(typeof(IPasswordValidationProvider))]
+    [InlineData(typeof(ISecurityPolicyProvider))]
     [InlineData(typeof(ISecurityConfigurationProvider))]
     [InlineData(typeof(IAuthenticationProvider))]
     [InlineData(typeof(IUserContextProvider))]

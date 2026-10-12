@@ -17,7 +17,6 @@ using Corely.IAM.Users.Mappers;
 using Corely.IAM.Users.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Corely.IAM.Security.Providers;
@@ -29,7 +28,7 @@ internal class AuthenticationProvider(
     IReadonlyRepo<TotpAuthEntity> totpAuthRepo,
     IPlatformAccessProvider platformAccessProvider,
     ISecurityProvider securityProcessor,
-    IOptions<SecurityOptions> securityOptions,
+    ISecurityPolicyProvider securityPolicyProvider,
     ILogger<AuthenticationProvider> logger,
     TimeProvider timeProvider
 ) : IAuthenticationProvider
@@ -49,9 +48,8 @@ internal class AuthenticationProvider(
     private readonly ISecurityProvider _securityProcessor = securityProcessor.ThrowIfNull(
         nameof(securityProcessor)
     );
-    private readonly SecurityOptions _securityOptions = securityOptions
-        .ThrowIfNull(nameof(securityOptions))
-        .Value;
+    private readonly ISecurityPolicyProvider _securityPolicyProvider =
+        securityPolicyProvider.ThrowIfNull(nameof(securityPolicyProvider));
     private readonly ILogger<AuthenticationProvider> _logger = logger.ThrowIfNull(nameof(logger));
     private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
 
@@ -170,7 +168,8 @@ internal class AuthenticationProvider(
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        if (sessionStartedUtc.Value.AddSeconds(_securityOptions.AuthSessionTtlSeconds) <= now)
+        var policy = await _securityPolicyProvider.GetPolicyAsync();
+        if (sessionStartedUtc.Value.AddSeconds(policy.AuthSessionTtlSeconds) <= now)
         {
             trackedToken.RevokedUtc = now;
             await _authTokenRepo.UpdateAsync(trackedToken);
@@ -563,12 +562,11 @@ internal class AuthenticationProvider(
             true
         );
 
+        var policy = await _securityPolicyProvider.GetPolicyAsync();
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var resolvedSessionStartedUtc = sessionStartedUtc ?? now;
-        var sessionExpiresUtc = resolvedSessionStartedUtc.AddSeconds(
-            _securityOptions.AuthSessionTtlSeconds
-        );
-        var expires = now.AddSeconds(_securityOptions.AuthTokenTtlSeconds);
+        var sessionExpiresUtc = resolvedSessionStartedUtc.AddSeconds(policy.AuthSessionTtlSeconds);
+        var expires = now.AddSeconds(policy.AuthTokenTtlSeconds);
         if (expires > sessionExpiresUtc)
             expires = sessionExpiresUtc;
 

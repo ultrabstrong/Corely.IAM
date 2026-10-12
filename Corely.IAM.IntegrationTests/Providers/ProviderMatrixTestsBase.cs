@@ -2,6 +2,8 @@ using Corely.IAM.DataAccess;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Platform.Mappers;
+using Corely.IAM.Platform.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Constants;
 using Corely.IAM.Security.Providers;
@@ -112,6 +114,23 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
         );
 
         Assert.True(authorized, "The account owner must resolve as authorized on any provider.");
+    }
+
+    [RequiresDockerFact]
+    public async Task PlatformSecuritySettingsRoundTrip()
+    {
+        var settings = SecurityPolicy.Default with { MaxLoginAttempts = 7, RequireDigit = false };
+        await Host.QueryAsync(async db =>
+        {
+            db.PlatformSecuritySettings.Add(settings.ToEntity());
+            return await db.SaveChangesAsync();
+        });
+
+        var stored = await Host.QueryAsync(db =>
+            db.PlatformSecuritySettings.AsNoTracking().SingleAsync()
+        );
+
+        Assert.Equal(settings, stored.ToModel());
     }
 
     [RequiresDockerFact]

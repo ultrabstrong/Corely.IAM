@@ -1,11 +1,11 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Models;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using SignInResultModel = Corely.IAM.Models.SignInResult;
 
 namespace Corely.IAM.Web.Services;
@@ -14,7 +14,7 @@ public class PostAuthenticationFlowService(
     IAuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
     IAuthCookieManager authCookieManager,
-    IOptions<Corely.IAM.Security.Models.SecurityOptions> securityOptions
+    ISecurityPolicyProvider securityPolicyProvider
 ) : IPostAuthenticationFlowService
 {
     private readonly IAuthenticationService _authenticationService =
@@ -25,14 +25,12 @@ public class PostAuthenticationFlowService(
     private readonly IAuthCookieManager _authCookieManager = authCookieManager.ThrowIfNull(
         nameof(authCookieManager)
     );
-    private readonly int _authSessionTtlSeconds = securityOptions
-        .ThrowIfNull(nameof(securityOptions))
-        .Value.AuthSessionTtlSeconds;
+    private readonly ISecurityPolicyProvider _securityPolicyProvider =
+        securityPolicyProvider.ThrowIfNull(nameof(securityPolicyProvider));
 
     public async Task<IActionResult> CompleteSignInAsync(
         HttpContext httpContext,
-        SignInResultModel signInResult,
-        int _unusedAuthCookieTtlSeconds
+        SignInResultModel signInResult
     )
     {
         ArgumentNullException.ThrowIfNull(httpContext);
@@ -49,12 +47,15 @@ public class PostAuthenticationFlowService(
             );
         }
 
+        var authSessionTtlSeconds = (
+            await _securityPolicyProvider.GetPolicyAsync()
+        ).AuthSessionTtlSeconds;
         _authCookieManager.SetAuthCookies(
             httpContext.Response.Cookies,
             signInResult.AuthToken,
             signInResult.AuthTokenId.Value,
             httpContext.Request.IsHttps,
-            _authSessionTtlSeconds
+            authSessionTtlSeconds
         );
 
         var userContext = _userContextProvider.GetUserContext();
@@ -81,7 +82,7 @@ public class PostAuthenticationFlowService(
             switchResult.AuthToken!,
             switchResult.AuthTokenId!.Value,
             httpContext.Request.IsHttps,
-            _authSessionTtlSeconds
+            authSessionTtlSeconds
         );
 
         return new RedirectResult(AppRoutes.Dashboard);

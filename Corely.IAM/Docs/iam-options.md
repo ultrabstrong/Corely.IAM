@@ -115,7 +115,12 @@ All five services are wrapped with authorization and telemetry decorators via Sc
 |---------|--------------|------------|
 | `SecurityOptions` | `SecurityOptions` | `MaxLoginAttempts` (5), `LockoutCooldownSeconds` (900), `AuthTokenTtlSeconds` (3600), `AuthSessionTtlSeconds` (604800) |
 | `AuditOptions` | `AuditOptions` | `Source` (the entry assembly's name), `SettingsCacheTtlSeconds` (30). See [Auditing](auditing.md) |
-| `PasswordValidationOptions` | `PasswordValidationOptions` | Minimum length, complexity requirements. App-wide rather than per account: a user sets a password before joining any account, and can belong to several |
+| `PasswordValidationOptions` | `PasswordValidationOptions` | Minimum length (8), maximum length (128), complexity requirements. App-wide rather than per account: a user sets a password before joining any account, and can belong to several |
+
+With a platform account, the password rules and every `SecurityOptions` setting except
+`PermissionCacheTtlSeconds` and `GoogleClientId` come from the platform's security settings
+instead, and these keys are ignored. Each has a range, checked at startup. See
+[where security settings come from](platform.md#where-security-settings-come-from).
 
 Configure these in `appsettings.json`:
 

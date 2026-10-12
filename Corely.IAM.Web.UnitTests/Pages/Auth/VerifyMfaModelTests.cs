@@ -27,8 +27,7 @@ public class VerifyMfaModelTests
         _mockPostAuthenticationFlowService = new Mock<IPostAuthenticationFlowService>();
         _model = new VerifyMfaModel(
             _mockAuthService.Object,
-            _mockPostAuthenticationFlowService.Object,
-            Options.Create(new SecurityOptions())
+            _mockPostAuthenticationFlowService.Object
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();
         _model.TempData = new TempDataDictionary(
@@ -68,7 +67,7 @@ public class VerifyMfaModelTests
             .Setup(s => s.VerifyMfaAsync(It.IsAny<VerifyMfaRequest>()))
             .ReturnsAsync(signInResult);
         _mockPostAuthenticationFlowService
-            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()))
+            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult))
             .ReturnsAsync(new RedirectResult(AppRoutes.Dashboard));
 
         var result = await _model.OnPostAsync();
@@ -76,7 +75,7 @@ public class VerifyMfaModelTests
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.Dashboard, redirect.Url);
         _mockPostAuthenticationFlowService.Verify(
-            s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()),
+            s => s.CompleteSignInAsync(_model.HttpContext, signInResult),
             Times.Once
         );
     }
@@ -155,7 +154,7 @@ public class VerifyMfaModelTests
             .Setup(s => s.VerifyMfaAsync(It.IsAny<VerifyMfaRequest>()))
             .ReturnsAsync(signInResult);
         _mockPostAuthenticationFlowService
-            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()))
+            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult))
             .ReturnsAsync(new RedirectResult(AppRoutes.Dashboard));
 
         var result = await _model.OnPostAsync();
@@ -163,7 +162,7 @@ public class VerifyMfaModelTests
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.Dashboard, redirect.Url);
         _mockPostAuthenticationFlowService.Verify(
-            s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()),
+            s => s.CompleteSignInAsync(_model.HttpContext, signInResult),
             Times.Once
         );
     }
@@ -179,7 +178,7 @@ public class VerifyMfaModelTests
             .Setup(s => s.VerifyMfaAsync(It.IsAny<VerifyMfaRequest>()))
             .ReturnsAsync(signInResult);
         _mockPostAuthenticationFlowService
-            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult, It.IsAny<int>()))
+            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult))
             .ReturnsAsync(new RedirectResult(AppRoutes.SelectAccount));
 
         var result = await _model.OnPostAsync();

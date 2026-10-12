@@ -6,12 +6,17 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Providers;
+using Corely.IAM.Platform.Constants;
+using Corely.IAM.Platform.Entities;
+using Corely.IAM.Platform.Mappers;
 using Corely.IAM.Platform.Models;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Providers;
 using Corely.IAM.Users.Models;
+using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -26,6 +31,11 @@ internal class PlatformService(
     IRepo<RoleEntity> roleRepo,
     IRepo<PermissionEntity> permissionRepo,
     IResourceTypeRegistry resourceTypeRegistry,
+    IRepo<PlatformSecuritySettingsEntity> securitySettingsRepo,
+    ISecurityPolicyProvider securityPolicyProvider,
+    ConfiguredSecurityPolicy configuredSecurityPolicy,
+    SecurityPolicyCache securityPolicyCache,
+    IValidationProvider validationProvider,
     ILogger<PlatformService> logger
 ) : IPlatformService
 {
@@ -48,6 +58,18 @@ internal class PlatformService(
     private readonly IResourceTypeRegistry _resourceTypeRegistry = resourceTypeRegistry.ThrowIfNull(
         nameof(resourceTypeRegistry)
     );
+    private readonly IRepo<PlatformSecuritySettingsEntity> _securitySettingsRepo =
+        securitySettingsRepo.ThrowIfNull(nameof(securitySettingsRepo));
+    private readonly ISecurityPolicyProvider _securityPolicyProvider =
+        securityPolicyProvider.ThrowIfNull(nameof(securityPolicyProvider));
+    private readonly ConfiguredSecurityPolicy _configuredSecurityPolicy =
+        configuredSecurityPolicy.ThrowIfNull(nameof(configuredSecurityPolicy));
+    private readonly SecurityPolicyCache _securityPolicyCache = securityPolicyCache.ThrowIfNull(
+        nameof(securityPolicyCache)
+    );
+    private readonly IValidationProvider _validationProvider = validationProvider.ThrowIfNull(
+        nameof(validationProvider)
+    );
     private readonly ILogger<PlatformService> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<BootstrapPlatformResult> BootstrapPlatformAsync(
@@ -61,6 +83,15 @@ internal class PlatformService(
             return Failed(
                 BootstrapPlatformResultCode.AlreadyBootstrappedError,
                 $"The platform account already exists: {existing.AccountName} ({existing.Id})"
+            );
+        }
+
+        var settingsValidation = _validationProvider.Validate(_configuredSecurityPolicy.Policy);
+        if (!settingsValidation.IsValid)
+        {
+            return Failed(
+                BootstrapPlatformResultCode.InvalidSecuritySettingsError,
+                settingsValidation.Message
             );
         }
 
@@ -115,6 +146,7 @@ internal class PlatformService(
             )!;
             accountEntity.IsPlatformAccount = true;
             await _accountRepo.UpdateAsync(accountEntity);
+            await SaveSecuritySettingsAsync(_configuredSecurityPolicy.Policy);
             await CompletePlatformOwnerPermissionsAsync();
 
             _logger.LogInformation(
@@ -225,6 +257,50 @@ internal class PlatformService(
             );
         }
         return added;
+    }
+
+    public async Task<GetSecuritySettingsResult> GetSecuritySettingsAsync() =>
+        new(
+            RetrieveResultCode.Success,
+            string.Empty,
+            await _securityPolicyProvider.GetPolicyAsync()
+        );
+
+    public async Task<ModifyResult> UpdateSecuritySettingsAsync(SecurityPolicy settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings, nameof(settings));
+
+        var validation = _validationProvider.Validate(settings);
+        if (!validation.IsValid)
+            return new ModifyResult(ModifyResultCode.ValidationError, validation.Message);
+
+        if (!await _accountRepo.AnyAsync(a => a.IsPlatformAccount))
+        {
+            return new ModifyResult(
+                ModifyResultCode.NotFoundError,
+                "Security settings are saved in the platform account, and there is none; set them in configuration instead"
+            );
+        }
+
+        await SaveSecuritySettingsAsync(settings);
+        return new ModifyResult(ModifyResultCode.Success, string.Empty);
+    }
+
+    private async Task SaveSecuritySettingsAsync(SecurityPolicy settings)
+    {
+        var entity = await _securitySettingsRepo.GetAsync(s =>
+            s.Id == PlatformConstants.PLATFORM_SETTINGS_ID
+        );
+        if (entity is null)
+        {
+            await _securitySettingsRepo.CreateAsync(settings.ToEntity());
+        }
+        else
+        {
+            entity.Apply(settings);
+            await _securitySettingsRepo.UpdateAsync(entity);
+        }
+        _securityPolicyCache.Invalidate();
     }
 
     private static bool IsFullAccess(PermissionEntity p, string resourceType) =>

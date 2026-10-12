@@ -1,8 +1,9 @@
 # Migrating to Corely.IAM 4.0
 
-A signed in session alone can no longer change or remove a password. Changing one needs the current
-password, and a user with TOTP enabled also needs a TOTP or recovery code to add, change or remove
-one. There is no schema change.
+Two changes need action. A signed in session alone can no longer change or remove a password, and
+the security settings (password rules, lockout, token lifetimes, the two factor settings) have ranges,
+and come from the platform account when there is one. One new table, `PlatformSecuritySettings`:
+run `corely-iam-db db migrate`.
 
 ## SetPasswordAsync is split in two
 
@@ -49,6 +50,44 @@ A wrong current password counts against `MaxLoginAttempts` as a failed sign in d
 is locked out, sign in, `ModifyPasswordAsync` and `DeregisterBasicAuthAsync` all refuse until
 `LockoutCooldownSeconds` passes. The session that is already signed in stays signed in.
 
+## Security settings have ranges
+
+Each security setting has a range in `SecurityPolicyConstants`, and configuration outside it stops
+the app starting. Check your `SecurityOptions` and `PasswordValidationOptions` against the table in
+[where security settings come from](Corely.IAM/Docs/platform.md#where-security-settings-come-from).
+The ones most likely to need a change: a token lifetime below 300 seconds, and a session lifetime
+below 3600 seconds.
+
+The default minimum password length rises from 5 to 8. It applies the next time a password is set;
+stored passwords keep working. Set `PasswordValidationOptions:MinimumLength` to keep 5.
+
+`SecurityOptions.TotpRecoveryCodeCount` now takes effect; it was ignored before.
+
+## Security settings come from the platform account when there is one
+
+Without a platform account nothing changes: configuration applies. With one, the platform's security
+settings apply and these configuration keys are ignored.
+
+- **Bootstrap** requires `--settings <path to appsettings.json>` or `--use-defaults`, and writes the
+  settings from that file or the defaults.
+- **A platform account bootstrapped before 4.0** has no saved settings. Configuration keeps applying
+  to it, and startup logs a warning, until a platform member saves the Security page under
+  `/platform-settings/security`. The page starts from the values in force, so opening it and saving
+  carries them over.
+- **After saving,** remove the keys from configuration. Startup logs a warning naming any that remain.
+
+## API changes
+
+- `IPlatformService` gains `GetSecuritySettingsAsync` and `UpdateSecuritySettingsAsync`, and an
+  authorization decorator that gates them on `platform_settings` in the platform account.
+- `ISecurityPolicyProvider` returns the security settings in force. Read lifetimes and limits from it
+  rather than from `IOptions<SecurityOptions>`, which no longer reflects a platform account.
+- `IPasswordValidationProvider` and `IOptions<PasswordValidationOptions>` are no longer registered.
+  `SecurityPolicy.ValidatePassword` replaces them inside the library.
+- `TotpAuthConstants.DEFAULT_RECOVERY_CODE_COUNT` is removed; use
+  `SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_DEFAULT`.
+- `BootstrapPlatformResultCode` gains `InvalidSecuritySettingsError`.
+
 ## IModificationService has an authorization decorator
 
 `ModificationServiceAuthorizationDecorator` sits between audit and the service. It refuses
@@ -57,9 +96,14 @@ through unchanged.
 
 ## Corely.IAM.Web
 
-The profile page asks for the current password to change or remove a password, and for an
-authenticator code when TOTP is enabled.
+- The profile page asks for the current password to change or remove a password, and for an
+  authenticator code when TOTP is enabled.
+- `IPostAuthenticationFlowService.CompleteSignInAsync` drops its unused TTL argument:
+  `CompleteSignInAsync(httpContext, signInResult)`.
+- The platform settings split into `/platform-settings/audit` and `/platform-settings/security`.
+  `/platform-settings` still works and opens the first.
 
 ## Corely.IAM.DataAccessMigrations.Cli
 
-No change. It releases as 4.0.0 because its major tracks Corely.IAM's.
+`platform bootstrap` requires `--settings` or `--use-defaults`. It releases as 4.0.0 because its
+major tracks Corely.IAM's.

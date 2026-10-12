@@ -1,5 +1,6 @@
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
+using Corely.IAM.Platform.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Security;
@@ -7,7 +8,6 @@ using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using SignInResultModel = Corely.IAM.Models.SignInResult;
 
 namespace Corely.IAM.Web.UnitTests.Services;
@@ -27,8 +27,8 @@ public class PostAuthenticationFlowServiceTests
             _mockAuthenticationService.Object,
             _mockUserContextProvider.Object,
             _mockAuthCookieManager.Object,
-            Options.Create(
-                new Corely.IAM.Security.Models.SecurityOptions
+            new FixedSecurityPolicyProvider(
+                SecurityPolicy.Default with
                 {
                     AuthSessionTtlSeconds = AUTH_SESSION_TTL_SECONDS,
                 }
@@ -50,7 +50,7 @@ public class PostAuthenticationFlowServiceTests
             .Setup(x => x.GetUserContext())
             .Returns(PageTestHelpers.CreateUserContext(availableAccounts: []));
 
-        var result = await _service.CompleteSignInAsync(httpContext, signInResult, 3600);
+        var result = await _service.CompleteSignInAsync(httpContext, signInResult);
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.Dashboard, redirect.Url);
@@ -87,7 +87,7 @@ public class PostAuthenticationFlowServiceTests
             .Setup(x => x.GetUserContext())
             .Returns(PageTestHelpers.CreateUserContext(availableAccounts: [account1, account2]));
 
-        var result = await _service.CompleteSignInAsync(httpContext, signInResult, 3600);
+        var result = await _service.CompleteSignInAsync(httpContext, signInResult);
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.SelectAccount, redirect.Url);
@@ -123,7 +123,7 @@ public class PostAuthenticationFlowServiceTests
             )
             .ReturnsAsync(switchedResult);
 
-        var result = await _service.CompleteSignInAsync(httpContext, signInResult, 3600);
+        var result = await _service.CompleteSignInAsync(httpContext, signInResult);
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.Dashboard, redirect.Url);
@@ -171,7 +171,7 @@ public class PostAuthenticationFlowServiceTests
                 )
             );
 
-        var result = await _service.CompleteSignInAsync(httpContext, signInResult, 3600);
+        var result = await _service.CompleteSignInAsync(httpContext, signInResult);
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.SelectAccount, redirect.Url);

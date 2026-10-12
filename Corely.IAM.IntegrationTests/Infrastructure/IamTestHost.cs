@@ -21,7 +21,10 @@ public sealed class IamTestHost : IDisposable
     public TestTimeProvider TimeProvider { get; } =
         new(new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
 
-    public IamTestHost(Action<IAMOptions>? configureOptions = null)
+    public IamTestHost(
+        Action<IAMOptions>? configureOptions = null,
+        IReadOnlyDictionary<string, string?>? configurationOverrides = null
+    )
     {
         _connection.Open();
 
@@ -42,6 +45,7 @@ public sealed class IamTestHost : IDisposable
                     ["SecurityOptions:MfaChallengeTimeoutSeconds"] = "300",
                 }
             )
+            .AddInMemoryCollection(configurationOverrides ?? new Dictionary<string, string?>())
             .Build();
 
         var options = IAMOptions.Create(

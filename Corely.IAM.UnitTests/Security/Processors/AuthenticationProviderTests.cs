@@ -54,7 +54,7 @@ public class AuthenticationProviderTests
             _serviceFactory.GetRequiredService<IReadonlyRepo<TotpAuthEntity>>(),
             _serviceFactory.GetRequiredService<IPlatformAccessProvider>(),
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
-            Options.Create(securityOptions ?? new SecurityOptions()),
+            FixedSecurityPolicyProvider.From(securityOptions ?? new SecurityOptions()),
             _serviceFactory.GetRequiredService<ILogger<AuthenticationProvider>>(),
             timeProvider ?? TimeProvider.System
         );

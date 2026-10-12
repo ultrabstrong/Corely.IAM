@@ -18,7 +18,7 @@ All authentication cookies use:
 
 | Cookie | Purpose | Expiry |
 |--------|---------|--------|
-| `authentication_token` | JWT token | `AuthSessionTtlSeconds` (default: 7 days); the JWT inside still uses `AuthTokenTtlSeconds` for access-token expiry |
+| `authentication_token` | JWT token | The session lifetime (default: 7 days); the JWT inside still uses the token lifetime for access-token expiry. Both come from `ISecurityPolicyProvider` |
 | `auth_token_id` | Token ID for revocation | Same as `authentication_token` |
 | `device_id` | Device fingerprint | 90 days |
 

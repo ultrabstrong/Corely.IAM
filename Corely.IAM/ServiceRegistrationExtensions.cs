@@ -13,6 +13,7 @@ using Corely.IAM.PasswordRecoveries.Processors;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Platform;
+using Corely.IAM.Platform.Models;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Models;
@@ -27,8 +28,6 @@ using Corely.IAM.Validators;
 using Corely.IAM.Validators.FluentValidators;
 using Corely.Security.Encryption.Factories;
 using Corely.Security.Hashing.Factories;
-using Corely.Security.PasswordValidation.Models;
-using Corely.Security.PasswordValidation.Providers;
 using Corely.Security.Secrets;
 using Corely.Security.Signature.Factories;
 using FluentValidation;
@@ -100,15 +99,14 @@ public static class ServiceRegistrationExtensions
             ));
 
             serviceCollection.AddSingleton<ISecurityProvider, SecurityProvider>();
-            serviceCollection.AddScoped<IPasswordValidationProvider, PasswordValidationProvider>();
 
             serviceCollection.AddSingleton(_ => options.SecurityConfigurationProvider);
             serviceCollection.Configure<SecurityOptions>(
                 options.Configuration.GetSection(SecurityOptions.NAME)
             );
-            serviceCollection.Configure<PasswordValidationOptions>(
-                options.Configuration.GetSection(PasswordValidationOptions.NAME)
-            );
+            serviceCollection.AddSingleton(ConfiguredSecurityPolicy.From(options.Configuration));
+            serviceCollection.AddSingleton<SecurityPolicyCache>();
+            serviceCollection.AddScoped<ISecurityPolicyProvider, SecurityPolicyProvider>();
 
             serviceCollection.Configure<AuditOptions>(
                 options.Configuration.GetSection(AuditOptions.NAME)
@@ -163,8 +161,10 @@ public static class ServiceRegistrationExtensions
             serviceCollection.Decorate<IRetrievalService, RetrievalServiceAuditDecorator>();
             serviceCollection.Decorate<IRetrievalService, RetrievalServiceTelemetryDecorator>();
             serviceCollection.AddScoped<IPlatformService, PlatformService>();
+            serviceCollection.Decorate<IPlatformService, PlatformServiceAuthorizationDecorator>();
             serviceCollection.Decorate<IPlatformService, PlatformServiceAuditDecorator>();
             serviceCollection.AddHostedService<PlatformOwnerPermissionsStartup>();
+            serviceCollection.AddHostedService<SecurityPolicyStartup>();
             serviceCollection.AddScoped<IModificationService, ModificationService>();
             serviceCollection.Decorate<
                 IModificationService,

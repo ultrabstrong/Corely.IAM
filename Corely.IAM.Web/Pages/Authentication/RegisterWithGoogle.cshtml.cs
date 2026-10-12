@@ -1,12 +1,10 @@
 using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Web.Pages.Authentication;
 
@@ -14,12 +12,9 @@ public class RegisterWithGoogleModel(
     IRegistrationService registrationService,
     IAuthenticationService authenticationService,
     IAuthCookieManager authCookieManager,
-    IPostAuthenticationFlowService postAuthenticationFlowService,
-    IOptions<SecurityOptions> securityOptions
+    IPostAuthenticationFlowService postAuthenticationFlowService
 ) : PageModel
 {
-    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
-
     public string? ErrorMessage { get; set; }
 
     public IActionResult OnGet()
@@ -76,10 +71,6 @@ public class RegisterWithGoogleModel(
             return Page();
         }
 
-        return await postAuthenticationFlowService.CompleteSignInAsync(
-            HttpContext,
-            signInResult,
-            _authSessionTtlSeconds
-        );
+        return await postAuthenticationFlowService.CompleteSignInAsync(HttpContext, signInResult);
     }
 }

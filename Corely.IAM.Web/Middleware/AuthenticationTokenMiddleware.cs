@@ -1,5 +1,5 @@
 using Corely.IAM.Models;
-using Corely.IAM.Security.Models;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -7,7 +7,6 @@ using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Web.Middleware;
 
@@ -15,16 +14,14 @@ public class AuthenticationTokenMiddleware(
     RequestDelegate next,
     ILogger<AuthenticationTokenMiddleware> logger,
     IAuthCookieManager authCookieManager,
-    IUserContextClaimsBuilder userContextClaimsBuilder,
-    IOptions<SecurityOptions> securityOptions
+    IUserContextClaimsBuilder userContextClaimsBuilder
 )
 {
-    private readonly int _authSessionTtlSeconds = securityOptions.Value.AuthSessionTtlSeconds;
-
     public async Task InvokeAsync(
         HttpContext context,
         IAuthenticationService authenticationService,
-        IUserContextProvider userContextProvider
+        IUserContextProvider userContextProvider,
+        ISecurityPolicyProvider securityPolicyProvider
     )
     {
         var token = context.Request.Cookies[AuthenticationConstants.AUTH_TOKEN_COOKIE];
@@ -34,6 +31,7 @@ public class AuthenticationTokenMiddleware(
                 context,
                 authenticationService,
                 userContextProvider,
+                securityPolicyProvider,
                 token
             );
 
@@ -44,6 +42,7 @@ public class AuthenticationTokenMiddleware(
         HttpContext context,
         IAuthenticationService authenticationService,
         IUserContextProvider userContextProvider,
+        ISecurityPolicyProvider securityPolicyProvider,
         string token
     )
     {
@@ -73,7 +72,7 @@ public class AuthenticationTokenMiddleware(
                     renewResult.AuthToken,
                     renewResult.AuthTokenId.Value,
                     context.Request.IsHttps,
-                    _authSessionTtlSeconds
+                    (await securityPolicyProvider.GetPolicyAsync()).AuthSessionTtlSeconds
                 );
                 SetUserPrincipal(context, userContextProvider);
                 return;

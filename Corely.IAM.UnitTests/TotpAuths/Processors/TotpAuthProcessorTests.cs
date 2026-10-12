@@ -1,4 +1,6 @@
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.Platform.Constants;
+using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.TotpAuths.Constants;
 using Corely.IAM.TotpAuths.Entities;
@@ -29,6 +31,7 @@ public class TotpAuthProcessorTests
             _serviceFactory.GetRequiredService<ISecurityConfigurationProvider>(),
             _serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>(),
             _serviceFactory.GetRequiredService<IHashProviderFactory>(),
+            new FixedSecurityPolicyProvider(SecurityPolicy.Default),
             _timeProviderMock.Object,
             _serviceFactory.GetRequiredService<ILogger<TotpAuthProcessor>>()
         );
@@ -66,7 +69,39 @@ public class TotpAuthProcessorTests
         Assert.NotNull(result.Secret);
         Assert.NotNull(result.SetupUri);
         Assert.NotNull(result.RecoveryCodes);
-        Assert.Equal(TotpAuthConstants.DEFAULT_RECOVERY_CODE_COUNT, result.RecoveryCodes.Length);
+        Assert.Equal(
+            SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_DEFAULT,
+            result.RecoveryCodes.Length
+        );
+    }
+
+    [Fact]
+    public async Task EnableTotpAsync_MakesAsManyRecoveryCodesAsThePolicySays()
+    {
+        var processor = new TotpAuthProcessor(
+            _serviceFactory.GetRequiredService<IRepo<TotpAuthEntity>>(),
+            _serviceFactory.GetRequiredService<IRepo<TotpRecoveryCodeEntity>>(),
+            _totpProvider,
+            _serviceFactory.GetRequiredService<ISecurityConfigurationProvider>(),
+            _serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>(),
+            _serviceFactory.GetRequiredService<IHashProviderFactory>(),
+            new FixedSecurityPolicyProvider(
+                SecurityPolicy.Default with
+                {
+                    TotpRecoveryCodeCount = 6,
+                }
+            ),
+            _timeProviderMock.Object,
+            _serviceFactory.GetRequiredService<ILogger<TotpAuthProcessor>>()
+        );
+
+        var result = await processor.EnableTotpAsync(
+            Guid.CreateVersion7(),
+            "TestIssuer",
+            "user@test.com"
+        );
+
+        Assert.Equal(6, result.RecoveryCodes!.Length);
     }
 
     [Fact]
@@ -198,7 +233,10 @@ public class TotpAuthProcessorTests
 
         Assert.Equal(TotpStatusResultCode.Success, result.ResultCode);
         Assert.True(result.IsEnabled);
-        Assert.Equal(TotpAuthConstants.DEFAULT_RECOVERY_CODE_COUNT, result.RemainingRecoveryCodes);
+        Assert.Equal(
+            SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_DEFAULT,
+            result.RemainingRecoveryCodes
+        );
     }
 
     [Fact]
@@ -211,7 +249,10 @@ public class TotpAuthProcessorTests
 
         Assert.Equal(RegenerateTotpRecoveryCodesResultCode.Success, result.ResultCode);
         Assert.NotNull(result.RecoveryCodes);
-        Assert.Equal(TotpAuthConstants.DEFAULT_RECOVERY_CODE_COUNT, result.RecoveryCodes.Length);
+        Assert.Equal(
+            SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_DEFAULT,
+            result.RecoveryCodes.Length
+        );
     }
 
     [Fact]

@@ -74,7 +74,7 @@ public class AuthenticationServiceTests
             _googleAuthProcessorMock.Object,
             _googleIdTokenValidatorMock.Object,
             _serviceFactory.GetRequiredService<IRepo<MfaChallengeEntity>>(),
-            Options.Create(
+            FixedSecurityPolicyProvider.From(
                 new SecurityOptions()
                 {
                     MaxLoginAttempts = MAX_LOGIN_ATTEMPTS,

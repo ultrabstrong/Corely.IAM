@@ -41,6 +41,7 @@ internal class IamDbContext(
     public DbSet<AuditEntryEntity> AuditEntries { get; set; } = null!;
     public DbSet<AccountAuditSettingsEntity> AccountAuditSettings { get; set; } = null!;
     public DbSet<PlatformSettingsEntity> PlatformSettings { get; set; } = null!;
+    public DbSet<PlatformSecuritySettingsEntity> PlatformSecuritySettings { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

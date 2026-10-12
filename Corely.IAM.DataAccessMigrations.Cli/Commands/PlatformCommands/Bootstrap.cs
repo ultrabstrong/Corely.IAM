@@ -47,6 +47,18 @@ internal class Bootstrap()
     )]
     private string SystemKey { get; init; } = null!;
 
+    [Option(
+        "--settings",
+        Description = "The host's appsettings.json. Its SecurityOptions and PasswordValidationOptions become the platform's security settings. Pass this or --use-defaults."
+    )]
+    private string SettingsPath { get; init; } = null!;
+
+    [Option(
+        "--use-defaults",
+        Description = "Start the platform's security settings from the built in defaults. Pass this or --settings."
+    )]
+    private bool UseDefaults { get; init; }
+
     protected override async Task ExecuteAsync()
     {
         if (string.IsNullOrWhiteSpace(SecretsPath))
@@ -59,6 +71,8 @@ internal class Bootstrap()
             Error("Pass --email with the platform owner's email address.");
             return;
         }
+        if (!TryLoadSettings(out var settings))
+            return;
         var systemKey = string.IsNullOrWhiteSpace(SystemKey)
             ? Environment.GetEnvironmentVariable(SYSTEM_KEY_VARIABLE)
             : SystemKey;
@@ -86,7 +100,12 @@ internal class Bootstrap()
         var written = false;
         try
         {
-            await using var services = BuildIamServices(provider, connectionString, systemKey);
+            await using var services = BuildIamServices(
+                provider,
+                connectionString,
+                systemKey,
+                settings
+            );
             await using var scope = services.CreateAsyncScope();
             var result = await scope
                 .ServiceProvider.GetRequiredService<IPlatformService>()
@@ -129,17 +148,57 @@ internal class Bootstrap()
         }
     }
 
+    private bool TryLoadSettings(out IConfiguration settings)
+    {
+        settings = null!;
+        var hasSettingsPath = !string.IsNullOrWhiteSpace(SettingsPath);
+        if (hasSettingsPath == UseDefaults)
+        {
+            Error(
+                "Pass exactly one of --settings, with the host's appsettings.json, or --use-defaults."
+            );
+            Info(
+                "The platform's security settings start from that file, or from the built in defaults, and are changed on the platform settings page afterwards."
+            );
+            return false;
+        }
+
+        if (UseDefaults)
+        {
+            settings = new ConfigurationBuilder().Build();
+            return true;
+        }
+
+        var settingsPath = Path.GetFullPath(SettingsPath);
+        if (!File.Exists(settingsPath))
+        {
+            Error($"Settings file not found: {settingsPath}");
+            return false;
+        }
+        try
+        {
+            settings = new ConfigurationBuilder().AddJsonFile(settingsPath).Build();
+            return true;
+        }
+        catch (Exception ex) when (ex is FormatException or InvalidDataException)
+        {
+            Error($"Cannot read the settings file {settingsPath}: {ex.Message}");
+            return false;
+        }
+    }
+
     private static ServiceProvider BuildIamServices(
         DatabaseProvider provider,
         string connectionString,
-        string systemKey
+        string systemKey,
+        IConfiguration settings
     )
     {
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddIAMServices(
             IAMOptions.Create(
-                new ConfigurationBuilder().Build(),
+                settings,
                 new SystemKeyConfigurationProvider(systemKey),
                 _ =>
                     provider switch

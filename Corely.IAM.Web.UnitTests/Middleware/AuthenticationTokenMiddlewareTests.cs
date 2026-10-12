@@ -1,5 +1,6 @@
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
+using Corely.IAM.Platform.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -9,7 +10,6 @@ using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Web.UnitTests.Middleware;
 
@@ -25,6 +25,12 @@ public class AuthenticationTokenMiddlewareTests
     );
     private readonly IUserContextClaimsBuilder _userContextClaimsBuilder =
         new UserContextClaimsBuilder();
+    private readonly FixedSecurityPolicyProvider _securityPolicyProvider = new(
+        SecurityPolicy.Default with
+        {
+            AuthSessionTtlSeconds = AUTH_SESSION_TTL_SECONDS,
+        }
+    );
 
     public AuthenticationTokenMiddlewareTests()
     {
@@ -39,13 +45,7 @@ public class AuthenticationTokenMiddlewareTests
             next,
             _mockLogger.Object,
             _authCookieManager,
-            _userContextClaimsBuilder,
-            Options.Create(
-                new Corely.IAM.Security.Models.SecurityOptions
-                {
-                    AuthSessionTtlSeconds = AUTH_SESSION_TTL_SECONDS,
-                }
-            )
+            _userContextClaimsBuilder
         );
     }
 
@@ -64,7 +64,8 @@ public class AuthenticationTokenMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             _mockAuthenticationService.Object,
-            _mockUserContextProvider.Object
+            _mockUserContextProvider.Object,
+            _securityPolicyProvider
         );
 
         Assert.True(nextCalled);
@@ -102,7 +103,8 @@ public class AuthenticationTokenMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             _mockAuthenticationService.Object,
-            _mockUserContextProvider.Object
+            _mockUserContextProvider.Object,
+            _securityPolicyProvider
         );
 
         Assert.True(nextCalled);
@@ -156,7 +158,8 @@ public class AuthenticationTokenMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             _mockAuthenticationService.Object,
-            _mockUserContextProvider.Object
+            _mockUserContextProvider.Object,
+            _securityPolicyProvider
         );
 
         Assert.True(nextCalled);
@@ -212,7 +215,8 @@ public class AuthenticationTokenMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             _mockAuthenticationService.Object,
-            _mockUserContextProvider.Object
+            _mockUserContextProvider.Object,
+            _securityPolicyProvider
         );
 
         Assert.True(nextCalled);
@@ -244,7 +248,8 @@ public class AuthenticationTokenMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             _mockAuthenticationService.Object,
-            _mockUserContextProvider.Object
+            _mockUserContextProvider.Object,
+            _securityPolicyProvider
         );
 
         Assert.True(nextCalled);
@@ -281,7 +286,8 @@ public class AuthenticationTokenMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             _mockAuthenticationService.Object,
-            _mockUserContextProvider.Object
+            _mockUserContextProvider.Object,
+            _securityPolicyProvider
         );
 
         Assert.True(nextCalled);

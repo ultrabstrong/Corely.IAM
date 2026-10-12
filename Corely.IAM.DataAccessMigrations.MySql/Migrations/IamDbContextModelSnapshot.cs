@@ -584,6 +584,60 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.ToTable("Permissions", (string)null);
                 });
 
+            modelBuilder.Entity("Corely.IAM.Platform.Entities.PlatformSecuritySettingsEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AuthSessionTtlSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AuthTokenTtlSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TIMESTAMP")
+                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+
+                    b.Property<int>("LockoutCooldownSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxLoginAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MfaChallengeTimeoutSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
+
+                    b.Property<int>("PasswordMaximumLength")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PasswordMinimumLength")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("RequireDigit")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("RequireLowercase")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("RequireNonAlphanumeric")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("RequireUppercase")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("TotpRecoveryCodeCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PlatformSecuritySettings", (string)null);
+                });
+
             modelBuilder.Entity("Corely.IAM.Platform.Entities.PlatformSettingsEntity", b =>
                 {
                     b.Property<int>("Id")

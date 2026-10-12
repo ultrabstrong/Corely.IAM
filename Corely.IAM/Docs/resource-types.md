@@ -57,8 +57,17 @@ any role can be given the same row, and since a permission is unique on type, re
 actions, a role that needs exactly those actions shares it rather than getting a copy.
 
 Anything beyond the owner defaults is the host's to provision, under system context: other roles, a
-starter grant, or permissions added later. Changing a type's owner actions affects accounts created
-afterwards; existing accounts keep their rows.
+starter grant, or permissions added later.
+
+At startup, every existing account's Owner role is given the owner default of any type it has none
+for, so a type registered after accounts exist reaches their owners on the next start. If the account
+already has a permission with exactly those actions, that row is made system-defined and attached
+rather than duplicated. The platform account is skipped, since its Owner role gets full access on
+every type anyway.
+
+This only ever adds. Changing the owner actions of a type an account already has a default for
+affects accounts created afterwards; existing accounts keep their rows, and nothing is taken away
+from an owner automatically.
 
 ## IResourceTypeRegistry Interface
 

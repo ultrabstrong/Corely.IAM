@@ -7,6 +7,7 @@ internal interface IPermissionProcessor
 {
     Task<CreatePermissionResult> CreatePermissionAsync(CreatePermissionRequest request);
     Task CreateDefaultSystemPermissionsAsync(Guid accountId);
+    Task<int> CreateMissingOwnerDefaultsAsync();
     Task<ListResult<Permission>> ListPermissionsAsync(
         ListPermissionsRequest request,
         IReadOnlySet<Guid>? authorizedResourceIds = null

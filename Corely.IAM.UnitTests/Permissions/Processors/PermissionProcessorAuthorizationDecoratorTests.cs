@@ -107,6 +107,21 @@ public class PermissionProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
+    public async Task CreateMissingOwnerDefaults_BypassesAuthorization()
+    {
+        _mockInnerProcessor.Setup(x => x.CreateMissingOwnerDefaultsAsync()).ReturnsAsync(2);
+
+        var added = await _decorator.CreateMissingOwnerDefaultsAsync();
+
+        Assert.Equal(2, added);
+        _mockAuthorizationProvider.Verify(
+            x =>
+                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
     public async Task DeletePermission_CallsAuthorizationProvider()
     {
         var permissionId = Guid.CreateVersion7();

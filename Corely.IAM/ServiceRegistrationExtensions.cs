@@ -10,6 +10,7 @@ using Corely.IAM.Groups.Processors;
 using Corely.IAM.Invitations.Processors;
 using Corely.IAM.PasswordRecoveries.Constants;
 using Corely.IAM.PasswordRecoveries.Processors;
+using Corely.IAM.Permissions;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Platform;
@@ -164,6 +165,7 @@ public static class ServiceRegistrationExtensions
             serviceCollection.Decorate<IPlatformService, PlatformServiceAuthorizationDecorator>();
             serviceCollection.Decorate<IPlatformService, PlatformServiceAuditDecorator>();
             serviceCollection.AddHostedService<PlatformOwnerPermissionsStartup>();
+            serviceCollection.AddHostedService<OwnerDefaultsStartup>();
             serviceCollection.AddHostedService<SecurityPolicyStartup>();
             serviceCollection.AddScoped<IModificationService, ModificationService>();
             serviceCollection.Decorate<

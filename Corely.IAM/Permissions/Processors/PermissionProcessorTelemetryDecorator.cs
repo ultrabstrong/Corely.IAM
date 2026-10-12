@@ -33,6 +33,13 @@ internal class PermissionProcessorTelemetryDecorator(
             () => _inner.CreateDefaultSystemPermissionsAsync(accountId)
         );
 
+    public async Task<int> CreateMissingOwnerDefaultsAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(PermissionProcessor),
+            () => _inner.CreateMissingOwnerDefaultsAsync(),
+            logResult: true
+        );
+
     public async Task<ListResult<Permission>> ListPermissionsAsync(
         ListPermissionsRequest request,
         IReadOnlySet<Guid>? authorizedResourceIds = null

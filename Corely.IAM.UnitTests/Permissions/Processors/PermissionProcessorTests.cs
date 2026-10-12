@@ -284,6 +284,136 @@ public class PermissionProcessorTests
         Assert.Equal("Invoice : Read & Update", invoice!.Description);
     }
 
+    private PermissionProcessor ProcessorWithTypes(
+        params (string Name, AuthAction[] OwnerActions)[] types
+    )
+    {
+        var registry = new ResourceTypeRegistry();
+        foreach (var (name, ownerActions) in types)
+            registry.Register(name, name, ownerActions);
+        return new PermissionProcessor(
+            _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>(),
+            _serviceFactory.GetRequiredService<IRepo<RoleEntity>>(),
+            _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
+            registry,
+            _serviceFactory.GetRequiredService<IValidationProvider>(),
+            _serviceFactory.GetRequiredService<IUserContextProvider>(),
+            _serviceFactory.GetRequiredService<ILogger<PermissionProcessor>>()
+        );
+    }
+
+    private async Task<AccountEntity> CreateSeededAccountAsync()
+    {
+        var account = await CreateAccountAsync();
+        await CreateDefaultRolesAsync(account.Id);
+        await _permissionProcessor.CreateDefaultSystemPermissionsAsync(account.Id);
+        return account;
+    }
+
+    private Task<List<PermissionEntity>> ListPermissionsAsync(
+        Guid accountId,
+        string resourceType
+    ) =>
+        _serviceFactory
+            .GetRequiredService<IRepo<PermissionEntity>>()
+            .ListAsync(
+                p => p.AccountId == accountId && p.ResourceType == resourceType,
+                include: q => q.Include(p => p.Roles)
+            );
+
+    [Fact]
+    public async Task CreateMissingOwnerDefaults_GivesExistingOwnerRolesANewlyRegisteredType()
+    {
+        var account = await CreateSeededAccountAsync();
+        var processor = ProcessorWithTypes(
+            ("invoice", [AuthAction.Read, AuthAction.Update]),
+            ("quota", [AuthAction.Read, AuthAction.Execute])
+        );
+
+        var added = await processor.CreateMissingOwnerDefaultsAsync();
+
+        Assert.Equal(1, added);
+        var quota = Assert.Single(await ListPermissionsAsync(account.Id, "quota"));
+        Assert.True(quota.IsSystemDefined);
+        Assert.Equal(Guid.Empty, quota.ResourceId);
+        Assert.True(quota.Read && quota.Execute);
+        Assert.False(quota.Create || quota.Update || quota.Delete);
+        Assert.Equal("Quota : Read & Execute", quota.Description);
+        Assert.Contains(quota.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+    }
+
+    [Fact]
+    public async Task CreateMissingOwnerDefaults_AddsNothing_WhenRunAgain()
+    {
+        await CreateSeededAccountAsync();
+        var processor = ProcessorWithTypes(("quota", [AuthAction.Read]));
+        await processor.CreateMissingOwnerDefaultsAsync();
+
+        var added = await processor.CreateMissingOwnerDefaultsAsync();
+
+        Assert.Equal(0, added);
+    }
+
+    [Fact]
+    public async Task CreateMissingOwnerDefaults_LeavesAnExistingTypesRowAlone_WhenItsDefaultChanged()
+    {
+        var account = await CreateSeededAccountAsync();
+        var processor = ProcessorWithTypes(
+            ("invoice", [AuthAction.Create, AuthAction.Read, AuthAction.Update, AuthAction.Delete])
+        );
+
+        var added = await processor.CreateMissingOwnerDefaultsAsync();
+
+        Assert.Equal(0, added);
+        var invoice = Assert.Single(await ListPermissionsAsync(account.Id, "invoice"));
+        Assert.False(invoice.Create || invoice.Delete);
+        Assert.True(invoice.Read && invoice.Update);
+    }
+
+    [Fact]
+    public async Task CreateMissingOwnerDefaults_AdoptsAnIdenticalPermission_InsteadOfDuplicatingIt()
+    {
+        var account = await CreateSeededAccountAsync();
+        var existing = await _serviceFactory
+            .GetRequiredService<IRepo<PermissionEntity>>()
+            .CreateAsync(
+                new PermissionEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    AccountId = account.Id,
+                    ResourceType = "report",
+                    ResourceId = Guid.Empty,
+                    Read = true,
+                    Roles = [],
+                }
+            );
+        var processor = ProcessorWithTypes(("report", [AuthAction.Read]));
+
+        var added = await processor.CreateMissingOwnerDefaultsAsync();
+
+        Assert.Equal(1, added);
+        var report = Assert.Single(await ListPermissionsAsync(account.Id, "report"));
+        Assert.Equal(existing.Id, report.Id);
+        Assert.True(report.IsSystemDefined);
+        Assert.Contains(report.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+    }
+
+    [Fact]
+    public async Task CreateMissingOwnerDefaults_SkipsThePlatformAccount()
+    {
+        var account = await CreateSeededAccountAsync();
+        var accountRepo = _serviceFactory.GetRequiredService<IRepo<AccountEntity>>();
+        var platform = await accountRepo.GetAsync(a => a.Id == account.Id);
+        platform!.IsPlatformAccount = true;
+        await accountRepo.UpdateAsync(platform);
+        var processor = ProcessorWithTypes(("quota", [AuthAction.Read]));
+
+        var added = await processor.CreateMissingOwnerDefaultsAsync();
+
+        Assert.Equal(0, added);
+        Assert.Empty(await ListPermissionsAsync(account.Id, "quota"));
+    }
+
     [Fact]
     public async Task DeletePermission_ReturnsSuccess_WhenPermissionExists()
     {

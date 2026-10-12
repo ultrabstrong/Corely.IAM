@@ -7,6 +7,25 @@ namespace Corely.IAM.Permissions.Mappers;
 
 internal static class PermissionMapper
 {
+    extension(ResourceTypeInfo type)
+    {
+        public PermissionEntity ToOwnerDefaultEntity(Guid accountId) =>
+            new()
+            {
+                Id = Guid.CreateVersion7(),
+                AccountId = accountId,
+                ResourceType = type.Name,
+                ResourceId = Guid.Empty,
+                Create = type.OwnerActions.Contains(AuthAction.Create),
+                Read = type.OwnerActions.Contains(AuthAction.Read),
+                Update = type.OwnerActions.Contains(AuthAction.Update),
+                Delete = type.OwnerActions.Contains(AuthAction.Delete),
+                Execute = type.OwnerActions.Contains(AuthAction.Execute),
+                Description = type.OwnerDefaultDescription(),
+                IsSystemDefined = true,
+            };
+    }
+
     extension(CreatePermissionRequest request)
     {
         public Permission ToPermission()

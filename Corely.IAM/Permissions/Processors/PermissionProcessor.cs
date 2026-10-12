@@ -126,24 +126,88 @@ internal class PermissionProcessor(
             .. _resourceTypeRegistry
                 .GetAll()
                 .Where(t => t.OwnerActions.Count > 0)
-                .Select(t => new PermissionEntity
+                .Select(t =>
                 {
-                    Id = Guid.CreateVersion7(),
-                    AccountId = accountId,
-                    ResourceType = t.Name,
-                    ResourceId = Guid.Empty,
-                    Create = t.OwnerActions.Contains(AuthAction.Create),
-                    Read = t.OwnerActions.Contains(AuthAction.Read),
-                    Update = t.OwnerActions.Contains(AuthAction.Update),
-                    Delete = t.OwnerActions.Contains(AuthAction.Delete),
-                    Execute = t.OwnerActions.Contains(AuthAction.Execute),
-                    Description = t.OwnerDefaultDescription(),
-                    IsSystemDefined = true,
-                    Roles = ownerRole != null ? [ownerRole] : [],
+                    var permission = t.ToOwnerDefaultEntity(accountId);
+                    permission.Roles = ownerRole != null ? [ownerRole] : [];
+                    return permission;
                 }),
         ];
 
         await _permissionRepo.CreateAsync(permissionEntities);
+    }
+
+    public async Task<int> CreateMissingOwnerDefaultsAsync()
+    {
+        var types = _resourceTypeRegistry.GetAll().Where(t => t.OwnerActions.Count > 0).ToList();
+        if (types.Count == 0)
+            return 0;
+
+        var platformAccountId = (await _accountRepo.GetAsync(a => a.IsPlatformAccount))?.Id;
+        var ownerRoles = await _roleRepo.ListAsync(r =>
+            r.IsSystemDefined
+            && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && r.AccountId != platformAccountId
+        );
+        var present = (
+            await _permissionRepo.QueryAsync(q =>
+                q.Where(p => p.IsSystemDefined && p.ResourceId == Guid.Empty)
+                    .Select(p => new { p.AccountId, p.ResourceType })
+            )
+        )
+            .Select(p => (p.AccountId, ResourceType: p.ResourceType.ToLowerInvariant()))
+            .ToHashSet();
+
+        var created = new List<PermissionEntity>();
+        var promoted = 0;
+        foreach (var ownerRole in ownerRoles)
+        {
+            foreach (
+                var type in types.Where(t =>
+                    !present.Contains((ownerRole.AccountId, t.Name.ToLowerInvariant()))
+                )
+            )
+            {
+                var owner = type.ToOwnerDefaultEntity(ownerRole.AccountId);
+                var existing = await _permissionRepo.GetAsync(
+                    p =>
+                        p.AccountId == owner.AccountId
+                        && p.ResourceType == owner.ResourceType
+                        && p.ResourceId == Guid.Empty
+                        && p.Create == owner.Create
+                        && p.Read == owner.Read
+                        && p.Update == owner.Update
+                        && p.Delete == owner.Delete
+                        && p.Execute == owner.Execute,
+                    include: q => q.Include(p => p.Roles)
+                );
+                if (existing is null)
+                {
+                    owner.Roles = [ownerRole];
+                    created.Add(owner);
+                    continue;
+                }
+
+                existing.IsSystemDefined = true;
+                if (!existing.Roles!.Any(r => r.Id == ownerRole.Id))
+                    existing.Roles!.Add(ownerRole);
+                await _permissionRepo.UpdateAsync(existing);
+                promoted++;
+            }
+        }
+
+        if (created.Count > 0)
+            await _permissionRepo.CreateAsync([.. created]);
+
+        var added = created.Count + promoted;
+        if (added > 0)
+        {
+            _logger.LogInformation(
+                "Gave existing Owner roles {Count} missing owner default permissions",
+                added
+            );
+        }
+        return added;
     }
 
     public async Task<ListResult<Permission>> ListPermissionsAsync(

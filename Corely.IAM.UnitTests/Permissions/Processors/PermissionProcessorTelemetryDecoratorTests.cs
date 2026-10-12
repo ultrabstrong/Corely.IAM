@@ -63,6 +63,17 @@ public class PermissionProcessorTelemetryDecoratorTests
     }
 
     [Fact]
+    public async Task CreateMissingOwnerDefaults_DelegatesToInner()
+    {
+        _mockInnerProcessor.Setup(x => x.CreateMissingOwnerDefaultsAsync()).ReturnsAsync(2);
+
+        var added = await _decorator.CreateMissingOwnerDefaultsAsync();
+
+        Assert.Equal(2, added);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
             new PermissionProcessorTelemetryDecorator(null!, _mockLogger.Object)

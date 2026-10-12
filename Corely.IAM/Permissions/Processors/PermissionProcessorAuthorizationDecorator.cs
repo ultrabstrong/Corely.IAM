@@ -54,6 +54,8 @@ internal class PermissionProcessorAuthorizationDecorator(
     public Task CreateDefaultSystemPermissionsAsync(Guid accountId) =>
         _inner.CreateDefaultSystemPermissionsAsync(accountId);
 
+    public Task<int> CreateMissingOwnerDefaultsAsync() => _inner.CreateMissingOwnerDefaultsAsync();
+
     public async Task<ListResult<Permission>> ListPermissionsAsync(
         ListPermissionsRequest request,
         IReadOnlySet<Guid>? authorizedResourceIds = null

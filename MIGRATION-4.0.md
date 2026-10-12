@@ -90,6 +90,14 @@ settings apply and these configuration keys are ignored.
 - `ListAuditAccountsResult` gains a last positional parameter, `DeletedAccounts`: the deleted
   accounts that still have audit entries, filled only for a viewer who reaches everything.
 
+## Existing owners get missing owner defaults at startup
+
+At startup, every account's Owner role is given the owner default of any registered type it has none
+for, including host types registered after the account was created. Expect a one time log line,
+"Gave existing Owner roles N missing owner default permissions", on the first start after
+upgrading. Nothing is ever removed, and an owner default whose actions changed is left as it was. See
+[Owner defaults](Corely.IAM/Docs/resource-types.md#owner-defaults).
+
 ## IModificationService has an authorization decorator
 
 `ModificationServiceAuthorizationDecorator` sits between audit and the service. It refuses

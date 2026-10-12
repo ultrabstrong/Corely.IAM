@@ -167,8 +167,30 @@ internal class AuditService(
             RetrieveResultCode.Success,
             string.Empty,
             accounts,
-            access.Everything
+            access.Everything,
+            access.Everything ? await DeletedAccountsAsync([.. accounts.Select(a => a.Id)]) : []
         );
+    }
+
+    private async Task<List<AuditAccountOption>> DeletedAccountsAsync(HashSet<Guid> liveAccountIds)
+    {
+        var entryAccountIds = await _entryRepo.QueryAsync(q =>
+            q.Where(e => e.AccountId != null).Select(e => e.AccountId!.Value).Distinct()
+        );
+        var deletedIds = entryAccountIds.Where(id => !liveAccountIds.Contains(id)).ToList();
+        if (deletedIds.Count == 0)
+            return [];
+
+        var names = await AccountNamesAsync(deletedIds);
+        return
+        [
+            .. deletedIds
+                .Select(id => new AuditAccountOption(
+                    id,
+                    names.GetValueOrDefault(id) ?? id.ToString()
+                ))
+                .OrderBy(a => a.Name),
+        ];
     }
 
     public async Task<PurgeAuditEntriesResult> CountPurgeableEntriesAsync(

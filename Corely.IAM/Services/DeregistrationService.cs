@@ -2,6 +2,7 @@
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.Audits.Providers;
 using Corely.IAM.BasicAuths.Models.Extensions;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Models;
@@ -36,7 +37,8 @@ internal class DeregistrationService(
     IUserContextProvider userContextProvider,
     IUserContextSetter userContextSetter,
     IAuthorizationCacheClearer authorizationCacheClearer,
-    IReauthenticationProvider reauthenticationProvider
+    IReauthenticationProvider reauthenticationProvider,
+    AuditSettingsCache auditSettingsCache
 ) : IDeregistrationService
 {
     private readonly ILogger<DeregistrationService> _logger = logger.ThrowIfNull(nameof(logger));
@@ -68,6 +70,9 @@ internal class DeregistrationService(
         authorizationCacheClearer.ThrowIfNull(nameof(authorizationCacheClearer));
     private readonly IReauthenticationProvider _reauthenticationProvider =
         reauthenticationProvider.ThrowIfNull(nameof(reauthenticationProvider));
+    private readonly AuditSettingsCache _auditSettingsCache = auditSettingsCache.ThrowIfNull(
+        nameof(auditSettingsCache)
+    );
 
     public async Task<DeregisterUserResult> DeregisterUserAsync()
     {
@@ -116,6 +121,8 @@ internal class DeregistrationService(
                 result.Message
             );
         }
+
+        _auditSettingsCache.InvalidateAccount(accountId);
 
         if (!context!.IsSystemContext)
         {

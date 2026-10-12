@@ -87,6 +87,8 @@ settings apply and these configuration keys are ignored.
 - `TotpAuthConstants.DEFAULT_RECOVERY_CODE_COUNT` is removed; use
   `SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_DEFAULT`.
 - `BootstrapPlatformResultCode` gains `InvalidSecuritySettingsError`.
+- `ListAuditAccountsResult` gains a last positional parameter, `DeletedAccounts`: the deleted
+  accounts that still have audit entries, filled only for a viewer who reaches everything.
 
 ## IModificationService has an authorization decorator
 

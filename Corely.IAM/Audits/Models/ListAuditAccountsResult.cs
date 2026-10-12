@@ -6,5 +6,6 @@ public record ListAuditAccountsResult(
     RetrieveResultCode ResultCode,
     string Message,
     IReadOnlyList<AuditAccountOption> Accounts,
-    bool IncludesEverything
+    bool IncludesEverything,
+    IReadOnlyList<AuditAccountOption> DeletedAccounts
 );

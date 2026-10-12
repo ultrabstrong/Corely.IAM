@@ -1,5 +1,7 @@
 ﻿using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.Audits.Models;
+using Corely.IAM.Audits.Providers;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Models;
@@ -16,6 +18,7 @@ using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.UnitTests.Services;
 
@@ -34,6 +37,10 @@ public class DeregistrationServiceTests
     private readonly Mock<IUserContextSetter> _mockUserContextSetter = new();
     private readonly Mock<IAuthorizationCacheClearer> _mockAuthorizationCacheClearer = new();
     private readonly Mock<IReauthenticationProvider> _mockReauthenticationProvider = new();
+    private readonly AuditSettingsCache _auditSettingsCache = new(
+        TimeProvider.System,
+        Options.Create(new AuditOptions())
+    );
     private readonly DeregistrationService _service;
     private readonly UserContext _userContext;
 
@@ -60,7 +67,8 @@ public class DeregistrationServiceTests
             _mockUserContextProvider.Object,
             _mockUserContextSetter.Object,
             _mockAuthorizationCacheClearer.Object,
-            _mockReauthenticationProvider.Object
+            _mockReauthenticationProvider.Object,
+            _auditSettingsCache
         );
 
         _mockReauthenticationProvider
@@ -264,6 +272,25 @@ public class DeregistrationServiceTests
             x => x.DeleteAccountAsync(_userContext.CurrentAccount!.Id),
             Times.Once
         );
+    }
+
+    [Theory]
+    [InlineData(DeleteAccountResultCode.Success, false)]
+    [InlineData(DeleteAccountResultCode.AccountNotFoundError, true)]
+    public async Task DeregisterAccount_ClearsCachedAuditSettings_OnlyWhenDeleted(
+        DeleteAccountResultCode deleteResultCode,
+        bool stillCached
+    )
+    {
+        var accountId = _userContext.CurrentAccount!.Id;
+        _auditSettingsCache.SetAccount(accountId, null);
+        _mockAccountProcessor
+            .Setup(x => x.DeleteAccountAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(new DeleteAccountResult(deleteResultCode, string.Empty));
+
+        await _service.DeregisterAccountAsync(new DeregisterAccountRequest(accountId));
+
+        Assert.Equal(stillCached, _auditSettingsCache.TryGetAccount(accountId, out _));
     }
 
     [Fact]

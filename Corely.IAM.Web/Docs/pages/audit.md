@@ -11,7 +11,7 @@ navigation bar for every signed in user.
 **Features:**
 
 ### Filters
-- **Account**: the accounts from `ListAuditAccountsAsync(AuthAction.Read)`
+- **Account**: the accounts from `ListAuditAccountsAsync(AuthAction.Read)`, with its `DeletedAccounts` in a separate "Deleted accounts" group
 - **User id**, **action**, **resource type** (from `IResourceTypeRegistry`), **result** and a **from/to** date range (UTC days)
 - **Include platform members**: on by default; off hides entries in the `PlatformMember` cohort
 
@@ -26,7 +26,7 @@ navigation bar for every signed in user.
 
 ### Purge
 - Shown only when `ListAuditAccountsAsync(AuthAction.Delete)` returns an account or everything
-- `AuditPurgeModal`: choose an account (and, for a platform member holding Delete on `audit` in the platform account, the entries outside any account and from system context), then everything or everything older than a date
+- `AuditPurgeModal`: choose an account (and, for a platform member holding Delete on `audit` in the platform account, the entries outside any account and from system context, and the deleted accounts in their own group), then everything or everything older than a date
 - Review shows the count about to go (`CountPurgeableEntriesAsync`) before the purge runs
 
 **Authorization:** `IAuditService` scopes the list itself; the page shows whatever it returns.

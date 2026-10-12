@@ -1,7 +1,13 @@
 # Audit settings cache on account deletion
 
-**Status: parked.** Recorded from auditing's build notes (`Completed/auditing.md`); low impact, not
-planned for any release.
+**Status: built, not yet released.** Ships in Corely.IAM 4.0.0.
+
+## As built
+
+`DeregistrationService.DeregisterAccountAsync` calls `AuditSettingsCache.InvalidateAccount` after a
+successful delete, as `AuditService` does after saving settings. A failed delete leaves the entry.
+Other instances still hold theirs until it expires, the accepted staleness everywhere else.
+`DeregistrationServiceTests.DeregisterAccount_ClearsCachedAuditSettings_OnlyWhenDeleted` covers both.
 
 ## The problem
 
@@ -14,20 +20,3 @@ A deleted account's entries are meant to age out under the platform maximum, sin
 with it. If the retention cleanup runs on the same instance within the cache window after the
 deletion, it uses the account's own retention instead. The window is 30 seconds against a daily
 cleanup, so this is close to theoretical; the next cleanup applies the right rule.
-
-The entry also stays in the dictionary until the process restarts, though it is never read as fresh
-again.
-
-## What is wanted
-
-Deleting an account clears its cached audit settings at once, on the instance that deleted it.
-
-## Starting points, not decisions
-
-- `DeregisterAccountAsync` (or the account processor behind it) calls
-  `AuditSettingsCache.InvalidateAccount` after a successful delete, the way `AuditService` does after
-  saving settings.
-- Other instances still hold their own entry until it expires; the cache is per instance by design,
-  and 30 seconds is the accepted staleness everywhere else.
-- A test: with the clock frozen inside the window, delete an account and confirm the policy reports
-  the platform maximum for it.

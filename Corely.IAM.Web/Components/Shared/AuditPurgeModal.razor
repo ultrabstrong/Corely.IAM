@@ -28,6 +28,15 @@
                                 {
                                     <option value="@OUTSIDE_ANY_ACCOUNT">Outside any account and system context</option>
                                 }
+                                @if (_deletedAccounts.Count > 0)
+                                {
+                                    <optgroup label="Deleted accounts">
+                                        @foreach (var account in _deletedAccounts)
+                                        {
+                                            <option value="@account.Id">@account.Name</option>
+                                        }
+                                    </optgroup>
+                                }
                             </select>
                         </div>
                         <div class="form-check">
@@ -79,6 +88,7 @@
     private string? _error;
     private List<AuditAccountOption> _accounts = [];
     private bool _includesEverything;
+    private List<AuditAccountOption> _deletedAccounts = [];
     private string? _target;
     private bool _olderThanOnly;
     private DateTime? _olderThan;
@@ -99,6 +109,7 @@
         var result = await AuditService.ListAuditAccountsAsync(AuthAction.Delete);
         _accounts = [.. result.Accounts];
         _includesEverything = result.IncludesEverything;
+        _deletedAccounts = [.. result.DeletedAccounts];
         _busy = false;
         StateHasChanged();
     }

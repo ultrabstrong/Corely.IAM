@@ -32,6 +32,15 @@
             {
                 <option value="@account.Id">@account.Name</option>
             }
+            @if (_deletedAccounts.Count > 0)
+            {
+                <optgroup label="Deleted accounts">
+                    @foreach (var account in _deletedAccounts)
+                    {
+                        <option value="@account.Id">@account.Name</option>
+                    }
+                </optgroup>
+            }
         </select>
     </div>
     <div class="col-12 col-md-3">
@@ -158,6 +167,7 @@ else
     private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
 
     private List<AuditAccountOption> _accounts = [];
+    private List<AuditAccountOption> _deletedAccounts = [];
     private List<string> _resourceTypes = [];
     private bool _canPurge;
     private Guid? _accountFilter;
@@ -195,6 +205,7 @@ else
     {
         var readable = await AuditService.ListAuditAccountsAsync(AuthAction.Read);
         _accounts = [.. readable.Accounts];
+        _deletedAccounts = [.. readable.DeletedAccounts];
         var purgeable = await AuditService.ListAuditAccountsAsync(AuthAction.Delete);
         _canPurge = purgeable.IncludesEverything || purgeable.Accounts.Count > 0;
         _resourceTypes = [.. ResourceTypeRegistry.GetAll().Select(t => t.Name).Order()];

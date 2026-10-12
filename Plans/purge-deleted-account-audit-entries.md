@@ -1,7 +1,19 @@
 # Purge a deleted account's audit entries
 
-**Status: parked.** Recorded from auditing's build notes (`Completed/auditing.md`); not planned for any
-release.
+**Status: built, not yet released.** Ships in Corely.IAM 4.0.0 and Corely.IAM.Web 4.0.0.
+
+## As built
+
+- `ListAuditAccountsResult` gains `DeletedAccounts`. `ListAuditAccountsAsync` fills it only when the
+  viewer reaches everything for that action: the distinct account ids in the entries that have no
+  Accounts row, named from their deletion entry's `Details`, or by id without one, ordered by name.
+- The live account ids are compared in memory rather than sent to the database as a list, so a
+  platform with many accounts never builds a large `IN` clause.
+- Purging needed no change: `AuditAccess.CanReach` already lets everything reach any id.
+- Both the purge modal and the audit page's account filter show them in a "Deleted accounts"
+  `<optgroup>`.
+- Tests: `AuditServiceTests` for the list with and without access to everything, and bUnit
+  `AuditPurgeModalTests` for the group and for reviewing a deleted account's count.
 
 ## The problem
 
@@ -14,13 +26,3 @@ offered. Only the API (`PurgeEntriesAsync` with the deleted account's id) can re
 
 A platform member who may purge everything can also purge a deleted account's entries from the purge
 modal, all of them or those older than a date, like any other account.
-
-## Starting points, not decisions
-
-- **Who may.** A deleted account has no owners and no permissions left, so only a platform member
-  holding Delete on `audit` in the platform account (the "everything" reach) can be offered it.
-- **Finding them.** The account ids that have entries but no Accounts row. The account's name comes
-  from its deletion entry's `Details`, as the audit page already does for names.
-- **Showing them.** A separate group in the modal's account list ("Deleted accounts"), so a deleted
-  account is never mistaken for a live one.
-- The audit page's own account filter has the same gap and could take the same list.

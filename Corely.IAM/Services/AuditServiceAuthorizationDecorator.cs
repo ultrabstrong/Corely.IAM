@@ -68,7 +68,8 @@ internal class AuditServiceAuthorizationDecorator(
                     RetrieveResultCode.UnauthorizedError,
                     UNAUTHORIZED,
                     [],
-                    false
+                    false,
+                    []
                 )
             );
 

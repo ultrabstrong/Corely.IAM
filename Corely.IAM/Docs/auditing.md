@@ -99,13 +99,15 @@ var result = await auditService.ListEntriesAsync(new ListAuditEntriesRequest(
 Each entry carries `ActorName` and `AccountName`, read from Users and Accounts or from the deletion
 entry once they are gone. `ExportEntriesAsync` runs the same query as CSV, stops at 10,000 entries and
 sets `Truncated` when the filter matches more. `ListAuditAccountsAsync(AuthAction.Read)` lists the
-accounts to offer in a filter.
+accounts to offer in a filter. For a viewer who reaches everything, `DeletedAccounts` also lists the
+deleted accounts that still have entries, named from their deletion entry (or by id without one).
 
 ## Purging
 
 A purge removes one account's entries, all of them or those older than a date. It needs Delete on
 `audit` in that account. Entries outside any account (`AccountId` of `null`) need Delete on `audit` in
-the platform account. Single entries cannot be removed.
+the platform account, and so do a deleted account's entries, since nobody holds anything in an
+account that is gone. Single entries cannot be removed.
 
 ```csharp
 var preview = await auditService.CountPurgeableEntriesAsync(new PurgeAuditEntriesRequest(accountId, cutoff));

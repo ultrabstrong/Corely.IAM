@@ -275,6 +275,47 @@ public class AuditServiceTests
     }
 
     [Fact]
+    public async Task ListAuditAccounts_ListsDeletedAccountsWithEntries_ForAccessToEverything()
+    {
+        _accessProvider
+            .Setup(x => x.GetAccessAsync(AuthAction.Delete))
+            .ReturnsAsync(AuditAccess.All);
+        var named = Guid.CreateVersion7();
+        var unnamed = Guid.CreateVersion7();
+        await CreateAccountAsync(_accountId, "Live");
+        await AddEntryAsync(accountId: _accountId);
+        await AddEntryAsync(accountId: unnamed);
+        await AddEntryAsync(
+            accountId: named,
+            service: nameof(IDeregistrationService),
+            operation: nameof(IDeregistrationService.DeregisterAccountAsync),
+            details: "Gone Inc"
+        );
+
+        var result = await _service.ListAuditAccountsAsync(AuthAction.Delete);
+
+        Assert.Equal([new AuditAccountOption(_accountId, "Live")], result.Accounts);
+        Assert.Equal(
+            new[]
+            {
+                new AuditAccountOption(named, "Gone Inc"),
+                new AuditAccountOption(unnamed, unnamed.ToString()),
+            }.OrderBy(a => a.Name),
+            result.DeletedAccounts
+        );
+    }
+
+    [Fact]
+    public async Task ListAuditAccounts_ListsNoDeletedAccounts_WithoutAccessToEverything()
+    {
+        await AddEntryAsync(accountId: Guid.CreateVersion7());
+
+        var result = await _service.ListAuditAccountsAsync(AuthAction.Read);
+
+        Assert.Empty(result.DeletedAccounts);
+    }
+
+    [Fact]
     public async Task CountPurgeableEntries_CountsOneAccountsEntries_OlderThanTheDate()
     {
         await AddEntryAsync(accountId: _accountId, occurredUtc: _now.AddDays(-10));

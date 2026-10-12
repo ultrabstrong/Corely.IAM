@@ -1,6 +1,9 @@
 # Owner role self-assignment
 
-**Status: parked.** Recorded so it is not lost; not planned for any release.
+**Status: closed, no change.** The owner decided against a rule of its own for the Owner role. A
+member who holds everything the Owner role holds was given that by someone who could, and is in
+effect an owner already. Blocking them on top of that would be the system second guessing a grant it
+allowed, which frustrates more than it protects. Grant only what you hold stays the whole answer.
 
 Anyone holding Update on `user` and Read on `role` in an account can assign any role to any member,
 themselves included, and that includes the Owner role. Nothing in `UserProcessor.AssignRolesToUserAsync`

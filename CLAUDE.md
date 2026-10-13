@@ -501,7 +501,9 @@ class.
 
 ### Plans
 
-Store implementation plans in `Plans/` at the repository root.
+Store implementation plans in `Plans/` at the repository root. When the work ships, its plan moves
+to `Plans/Completed/` in the same push, with a status line saying what was released and an "As
+built" section for anything that turned out differently. Never leave it for a later push.
 
 ### Rejected Ideas
 

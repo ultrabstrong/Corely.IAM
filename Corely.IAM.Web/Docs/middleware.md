@@ -1,15 +1,15 @@
 # Middleware
 
-`UseIAMWebAuthentication()` registers five middleware components in a specific order.
+`UseIAMWebAuthentication()` registers four middleware components in a specific order. It sets no
+security headers; see [Security headers](security.md#security-headers).
 
 ## Pipeline Order
 
 ```
 1. CorrelationIdMiddleware
-2. SecurityHeadersMiddleware
-3. AuthenticationTokenMiddleware
-4. UseAuthentication()
-5. UseAuthorization()
+2. AuthenticationTokenMiddleware
+3. UseAuthentication()
+4. UseAuthorization()
 ```
 
 Order matters: each middleware builds on the previous.
@@ -22,25 +22,6 @@ Assigns a correlation ID for request tracing.
 - If absent, generates a new v7 UUID
 - Sets the header on the response
 - Pushes the ID into Serilog's `LogContext` for structured logging
-
-## SecurityHeadersMiddleware
-
-Adds security response headers on every request.
-
-| Header | Value |
-|--------|-------|
-| `X-Frame-Options` | `DENY` |
-| `X-Content-Type-Options` | `nosniff` |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` |
-| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=()` |
-| `Cache-Control` | `no-store, no-cache, must-revalidate`, except on static files, which `MapStaticAssets` sets |
-| `Cross-Origin-Opener-Policy` | `same-origin` |
-| `Cross-Origin-Resource-Policy` | `same-origin` |
-| `X-Permitted-Cross-Domain-Policies` | `none` |
-| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` (non-development only) |
-
-It does not set a `Content-Security-Policy`; the host owns that. See
-[Content Security Policy](security.md#content-security-policy) for a starting policy.
 
 ## AuthenticationTokenMiddleware
 

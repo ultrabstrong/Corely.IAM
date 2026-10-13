@@ -6,7 +6,6 @@ Pre-built Blazor Server UI for Corely.IAM. Provides authentication pages, multi-
 - **Multi-tenant management**: account selection, user/group/role/permission CRUD (Blazor Server)
 - **Authorization gates**: `PermissionView` component hides UI based on CRUDX permissions
 - **Effective permissions**: visualize permission grants through roles and groups
-- **Security headers**: HSTS, X-Frame-Options and more out of the box; the host sets its own Content-Security-Policy
 - **Customizable styling**: Bootstrap-first CSS with scoped utility classes
 
 ## Topics
@@ -47,7 +46,7 @@ var iamOptions = IAMOptions.Create(builder.Configuration, securityConfigProvider
 builder.Services.AddIAMServices(iamOptions);
 
 var app = builder.Build();
-app.UseIAMWebAuthentication();       // CorrelationId → SecurityHeaders → AuthToken → Auth → Authz
+app.UseIAMWebAuthentication();       // CorrelationId → AuthToken → Auth → Authz
 
 app.MapRazorPages();
 app.MapRazorComponents<App>()

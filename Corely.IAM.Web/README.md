@@ -2,6 +2,9 @@
 
 Reusable Razor Class Library (RCL) that provides a complete Blazor Server UI for the Corely.IAM identity and access management library. Drop it into any ASP.NET Core host app to get a fully-functional IAM web interface with minimal wiring.
 
+> **Upgrading from 4.x?** See [MIGRATION-IAM.Web-5.0.md](https://github.com/ultrabstrong/Corely.IAM/blob/master/MIGRATION-IAM.Web-5.0.md).
+> The package no longer sets security headers; the host sets its own.
+
 ---
 
 ## What the library provides
@@ -9,7 +12,7 @@ Reusable Razor Class Library (RCL) that provides a complete Blazor Server UI for
 - **Blazor pages**: Users, Groups, Roles, Permissions, Account detail, Profile, Dashboard, Home
 - **Razor Pages**: Sign In, Register, Sign Out, Select Account, Switch Account, Create Account
 - **Shared components**: Alert, Pagination, ConfirmModal, FormModal, EntityPickerModal, EffectivePermissionsPanel, PermissionView, LoadingSpinner, and more
-- **Middleware**: correlation ID, security headers (X-Frame-Options, etc.; the host sets its own CSP), JWT cookie → UserContext
+- **Middleware**: correlation ID, JWT cookie → UserContext. Security headers are the host's; see [Security](Docs/security.md#security-headers)
 - **Authentication**: cookie-based auth wired to Corely.IAM's JWT token system
 - **Static assets**: `iam-web.css` (custom styles), `modal-keyboard.js`
 - **Route constants**: `AppRoutes` class with all page paths
@@ -92,7 +95,7 @@ copy after an upgrade:
 ```csharp
 using Corely.IAM.Web.Extensions;
 
-app.UseIAMWebAuthentication(); // correlation ID → security headers → JWT validation → auth/authz
+app.UseIAMWebAuthentication(); // correlation ID → JWT validation → auth/authz
 app.UseHttpsRedirection();
 app.UseAntiforgery();
 
@@ -106,10 +109,12 @@ app.MapRazorComponents<App>()
 
 `UseIAMWebAuthentication()` applies middleware in this order:
 1. `CorrelationIdMiddleware`: assigns a correlation ID to every request
-2. `SecurityHeadersMiddleware`: sets X-Frame-Options, X-Content-Type-Options, etc. It sets no Content-Security-Policy; the host owns that
-3. `AuthenticationTokenMiddleware`: validates the JWT auth cookie and populates `UserContext`
-4. `UseAuthentication()`: ASP.NET Core authentication
-5. `UseAuthorization()`: ASP.NET Core authorization
+2. `AuthenticationTokenMiddleware`: validates the JWT auth cookie and populates `UserContext`
+3. `UseAuthentication()`: ASP.NET Core authentication
+4. `UseAuthorization()`: ASP.NET Core authorization
+
+It sets no security headers. Set them in the host, before this call; [Security](Docs/security.md#security-headers)
+has a starting set.
 
 ### 5. Set up the Blazor router (`Routes.razor`)
 

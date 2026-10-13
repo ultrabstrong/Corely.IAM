@@ -65,7 +65,23 @@ if (!app.Environment.IsDevelopment())
 app.Use(
     async (context, next) =>
     {
-        context.Response.Headers.ContentSecurityPolicy =
+        var headers = context.Response.Headers;
+        headers.XFrameOptions = "DENY";
+        headers.XContentTypeOptions = "nosniff";
+        headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
+        headers["Cross-Origin-Opener-Policy"] = "same-origin";
+        headers["Cross-Origin-Resource-Policy"] = "same-origin";
+        headers["X-Permitted-Cross-Domain-Policies"] = "none";
+        context.Response.OnStarting(() =>
+        {
+            if (headers.CacheControl.Count == 0)
+            {
+                headers.CacheControl = "no-store";
+            }
+            return Task.CompletedTask;
+        });
+        headers.ContentSecurityPolicy =
             "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
             + "connect-src 'self' wss: ws:; img-src 'self' data:; font-src 'self'; "
             + "frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'";

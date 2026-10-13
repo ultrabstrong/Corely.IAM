@@ -20,20 +20,29 @@ Password rules apply app-wide through `PasswordValidationOptions`.
 
 **Revisit if** passwords ever become per-account credentials rather than one per user.
 
-## A Content-Security-Policy set by the library
+## Security headers set by the library
 
-Have `Corely.IAM.Web`'s `SecurityHeadersMiddleware` set a Content-Security-Policy for the host.
+Have `Corely.IAM.Web` set response security headers for the host: a Content-Security-Policy,
+`X-Frame-Options`, `Permissions-Policy`, HSTS, caching and the rest.
 
-**Why not.** A policy has to list every source a page loads (analytics, a CDN, Google sign-in), and
-only the app knows those. A library policy is either too loose to protect anything or tight enough
-to break the app. It did break this package's own pages: its policy blocked the Google sign-in
-script. The middleware sets the other security headers; the host sets the Content-Security-Policy.
+**Why not.** Security headers are an application concern. Each one encodes a choice only the app can
+make: the sources its pages load, whether it embeds its own pages, which browser features it uses,
+how it caches its files. Set inside `UseIAMWebAuthentication()`, the library's choice was forced on
+every host, which could neither opt out without losing authentication nor override a header without
+undocumented middleware after it. It broke hosts twice:
 
-This was reversed once by accident: moved back into the library without the reason being
-revisited. Check here before putting it back.
+- The library's Content-Security-Policy blocked this package's own Google sign-in script.
+- Its `Cache-Control: public, max-age=86400` on every static file left browsers showing stale CSS
+  and scripts for a day, and contradicted the cache headers `MapStaticAssets` sets.
 
-**Revisit if** hosts want the library to apply a policy they configure themselves. That is a
-different proposal from a policy the library decides.
+Each host sets its own headers, starting from the set in `Corely.IAM.Web/Docs/security.md`. The
+duplication across hosts is accepted.
+
+The Content-Security-Policy was moved back into the library once by accident, without the reason
+being revisited. Check here before putting any header back.
+
+**Revisit if** hosts want the library to apply headers they configure themselves. That is a
+different proposal from headers the library decides.
 
 ## Distinct names for result types shared with other Corely libraries
 

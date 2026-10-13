@@ -10,6 +10,7 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
     throw 'Run this with PowerShell 7 (pwsh), not Windows PowerShell.'
 }
 $ProgressPreference = 'SilentlyContinue'
+$env:MSBUILDDISABLENODEREUSE = '1'
 
 $repoRoot = $PSScriptRoot
 $webAppDir = Join-Path $repoRoot 'Corely.IAM.WebApp'

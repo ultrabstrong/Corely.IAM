@@ -1,3 +1,4 @@
+$env:MSBUILDDISABLENODEREUSE = '1'
 dotnet tool restore
 dotnet csharpier format .
 dotnet clean Corely.IAM.slnx --verbosity minimal

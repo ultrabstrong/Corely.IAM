@@ -492,7 +492,14 @@ th.sortable.active .sort-icon {
 
 .copyable-id .guid-text {
     min-width: 0;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+    .copyable-id .guid-text {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
 }
 
 .copy-btn {
@@ -765,6 +772,10 @@ span.cell-icon {
         grid-row: 1;
         justify-self: end;
         align-self: start;
+    }
+
+    .table-cards:not(.audit-cards) tr:has(.cell-only) > :is(.cell-title, .cell-badge) {
+        grid-column: 1 / -1;
     }
 
     .table-cards tr:has(.cell-badge):not(:has(.cell-only)) > td.cell-actions {

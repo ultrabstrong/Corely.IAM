@@ -97,58 +97,67 @@
 else
 {
     <div>
-        <table class="table table-striped table-hover table-cards">
-            <thead class="table-dark">
+        <table class="table table-striped table-hover table-cards audit-cards">
+            <thead class="list-head">
                 <tr>
-                    <th>When (UTC)</th>
-                    <th>Actor</th>
-                    <th>Account</th>
-                    <th>Operation</th>
-                    <th>Action</th>
-                    <th>Resource</th>
+                    <th><i class="bi bi-clock me-1" aria-hidden="true"></i>When (UTC)</th>
+                    <th><i class="bi bi-person me-1" aria-hidden="true"></i>Actor</th>
+                    <th><i class="bi bi-building me-1" aria-hidden="true"></i>Account</th>
+                    <th>Activity</th>
+                    <th><i class="bi bi-lightning me-1" aria-hidden="true"></i>Action</th>
+                    <th><i class="bi bi-box me-1" aria-hidden="true"></i>Resource</th>
                     <th>Result</th>
+                    <th class="table-actions">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @if (_items.Count == 0)
                 {
-                    <tr><td colspan="7" class="text-muted text-center">No audit entries found</td></tr>
+                    <tr><td colspan="8"class="text-muted text-center">No audit entries found</td></tr>
                 }
                 else
                 {
                     @foreach (var entry in _items)
                     {
                         <tr>
-                            <td class="text-nowrap">@entry.OccurredUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                            <td class="cell-title">
-                                @entry.ActorDisplayName()
+                            <td class="text-nowrap"><i class="bi bi-clock cell-icon" aria-hidden="true"></i>@entry.OccurredUtc.ToString("yyyy-MM-dd HH:mm:ss")<span class="cell-icon text-body-tertiary ms-1">UTC</span></td>
+                            <td>
+                                <i class="bi bi-person cell-icon" aria-hidden="true"></i>@entry.ActorDisplayName()
                                 @if (entry.IsPlatformMember)
                                 {
-                                    <span class="badge bg-warning text-dark ms-1">Platform member</span>
+                                    <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis ms-1">Platform member</span>
                                 }
                             </td>
-                            <td>@entry.AccountDisplayName()</td>
-                            <td>
-                                @($"{entry.Service}.{entry.Operation}")
+                            <td><i class="bi bi-building cell-icon" aria-hidden="true"></i>@entry.AccountDisplayName()</td>
+                            <td class="cell-title">
+                                @entry.Description()
+                                <span class="cell-only small text-body-tertiary fw-normal ms-1 text-nowrap">via @entry.Source</span>
                                 @if (entry.Details is not null)
                                 {
-                                    <br /><small class="text-muted">@entry.Details</small>
+                                    <div class="small text-body-secondary fw-normal">@entry.Details</div>
                                 }
-                                <br /><small class="text-muted">@entry.Source</small>
+                                <div class="small text-body-tertiary fw-normal cell-hide">via @entry.Source</div>
                             </td>
-                            <td>@entry.Action</td>
-                            <td>
-                                @entry.ResourceType
-                                @foreach (var id in entry.ShownResourceIds(SHOWN_RESOURCE_IDS))
-                                {
-                                    <br /><small class="guid-text">@id</small>
-                                }
-                                @if (entry.HiddenResourceIdCount(SHOWN_RESOURCE_IDS) is > 0 and var hidden)
-                                {
-                                    <br /><small class="text-muted" title="@string.Join(Environment.NewLine, entry.ResourceIds)">and @hidden more (all in the CSV export)</small>
-                                }
+                            <td class="cell-hide"><span class="sys-badge ms-0">@entry.Action</span></td>
+                            <td class="cell-hide">
+                                <span class="type-badge ms-0">@entry.ResourceType</span>
+                                @ResourceIds(entry)
                             </td>
-                            <td class="@(entry.ResultCode == AuditConstants.SUCCESS_RESULT_CODE ? "text-success" : "text-danger")">@entry.ResultCode</td>
+                            <td class="cell-only">
+                                <i class="bi bi-lightning cell-icon" aria-hidden="true"></i><span class="sys-badge ms-0">@entry.Action</span>
+                                <i class="bi bi-box cell-icon ms-3" aria-hidden="true"></i><span class="type-badge ms-0">@entry.ResourceType</span>
+                                @ResourceIds(entry)
+                            </td>
+                            <td class="cell-badge">
+                                <span class="badge rounded-pill @(entry.Succeeded() ? "bg-success-subtle text-success-emphasis" : "bg-danger-subtle text-danger-emphasis")">
+                                    <i class="bi @(entry.Succeeded() ? "bi-check-circle-fill" : "bi-x-circle-fill") me-1" aria-hidden="true"></i>@entry.ResultText()
+                                </span>
+                            </td>
+                            <td class="table-actions cell-actions">
+                                <div class="row-actions">
+                                    <a href="@AppRoutes.Audit/@entry.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                </div>
+                            </td>
                         </tr>
                     }
                 }
@@ -163,6 +172,18 @@ else
 @code {
     private const string CSV_MIME_TYPE = "text/csv";
     private const int SHOWN_RESOURCE_IDS = 3;
+
+    private RenderFragment ResourceIds(AuditEntry entry) =>
+        @<text>
+            @foreach (var id in entry.ShownResourceIds(SHOWN_RESOURCE_IDS))
+            {
+                <div><CopyableId Value="id" /></div>
+            }
+            @if (entry.HiddenResourceIdCount(SHOWN_RESOURCE_IDS) is > 0 and var hidden)
+            {
+                <div><small class="text-muted">and @hidden more</small></div>
+            }
+        </text>;
 
     private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
 

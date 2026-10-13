@@ -30,6 +30,8 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
     public int AuthTokenTtlSeconds { get; init; } = 3600;
     public int AuthSessionTtlSeconds { get; init; } = 604800;
     public string EnvironmentName { get; init; } = Environments.Development;
+    public IReadOnlyDictionary<string, string> Settings { get; init; } =
+        new Dictionary<string, string>();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -47,7 +49,8 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
                 ["SecurityOptions:MfaChallengeTimeoutSeconds"] = "300",
                 ["SecurityOptions:GoogleClientId"] = "",
                 ["DemoFeatures:EnablePasswordRecoveryPreview"] = "true",
-            }
+                ["DemoFeatures:PlatformOwnerTotpSecret"] = "",
+            }.Concat(Settings)
         )
         {
             builder.UseSetting(key, value);

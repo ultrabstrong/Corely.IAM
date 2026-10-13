@@ -1,0 +1,37 @@
+@if (Editing)
+{
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="@Id" checked="@Value" @onchange="e => ValueChanged.InvokeAsync(e.Value is true)" />
+        <label class="form-check-label" for="@Id">@Label</label>
+    </div>
+}
+else
+{
+    <div id="@Id" class="toggle-read">
+        @if (LabelWhenReadOnly)
+        {
+            <span>@Label</span>
+        }
+        <EnabledBadge Enabled="Value" />
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = null!;
+
+    [Parameter]
+    public bool Value { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool Editing { get; set; }
+
+    [Parameter]
+    public bool LabelWhenReadOnly { get; set; } = true;
+}

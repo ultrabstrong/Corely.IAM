@@ -22,27 +22,16 @@
     }
     else
     {
-        <div class="props-grid mb-3">
-            <span class="prop-label">Recorded for account members</span>
-            <div class="prop-value">
-                <AuditActionCheckboxes IdPrefix="audit-members" @bind-Value="_accountMemberActions" Allowed="_allowedActions" Disabled="!_isEditing" />
-            </div>
-            <span class="prop-label">Recorded for platform members</span>
-            <div class="prop-value">
-                <AuditActionCheckboxes IdPrefix="audit-platform" @bind-Value="_platformMemberActions" Allowed="_allowedActions" Disabled="!_isEditing" />
-            </div>
-            <span class="prop-label">Keep entries for (days)</span>
-            <div class="prop-value">
-                @if (_isEditing)
-                {
-                    <input type="number" class="form-control form-control-sm" min="0" max="@_maxRetentionDays" @bind="_retentionDays" />
-                    <small class="text-muted">0 to @_maxRetentionDays, the platform's maximum.</small>
-                }
-                else
-                {
-                    @Math.Min(_retentionDays, _maxRetentionDays)
-                }
-            </div>
+        <AuditActionMatrix>
+            <AuditActionRow IdPrefix="audit-members" Label="Logged for account members" @bind-Value="_accountMemberActions" Allowed="_allowedActions" Editing="_isEditing" />
+            <AuditActionRow IdPrefix="audit-platform" Label="Logged for platform members" @bind-Value="_platformMemberActions" Allowed="_allowedActions" Editing="_isEditing" />
+        </AuditActionMatrix>
+        <div class="settings-grid mt-3 mb-3">
+            <NumberSetting Label="Keep entries for (days)"
+                           Value="@(_isEditing ? _retentionDays : Math.Min(_retentionDays, _maxRetentionDays))"
+                           ValueChanged="value => _retentionDays = value"
+                           Editing="_isEditing" Min="0" Max="_maxRetentionDays"
+                           Hint="@(_isEditing ? "The platform's maximum is the top of the range." : null)" />
         </div>
         @if (_isEditing)
         {
@@ -51,10 +40,10 @@
                 <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit" disabled="@_busy">Cancel</button>
             </div>
         }
-        <p class="text-muted small mt-2 mb-0">
-            Turning a cohort off records nothing for it in this account, platform members included.
-            Deleting a user and deleting an account are always recorded.
-        </p>
+        <ul class="settings-notes">
+            <li>An action left off is not recorded for that group in this account.</li>
+            <li>Deleting a user and deleting an account are always recorded.</li>
+        </ul>
     }
 </div>
 

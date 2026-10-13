@@ -66,7 +66,7 @@ else
                     }
                 </span>
                 <span class="prop-label">Resource ID</span>
-                <span class="prop-value">@(_permission.ResourceId == Guid.Empty ? "all" : _permission.ResourceId)</span>
+                <span class="prop-value">@if (_permission.ResourceId == Guid.Empty) { <text>all</text> } else { <CopyableId Value="_permission.ResourceId" /> }</span>
                 <span class="prop-label">CRUDX</span>
                 <span class="prop-value">
                     <span class="d-flex gap-2">

@@ -64,7 +64,7 @@ else
                 </PermissionView>
             </div>
             <table class="table table-striped table-hover table-cards mb-0">
-                <thead>
+                <thead class="list-head">
                     <tr>
                         <th class="@GetInvSortClass(nameof(Invitation.Email))" @onclick="() => CycleInvSortAsync(nameof(Invitation.Email))">
                             <span>Email <i class="bi @(GetInvSortIcon(nameof(Invitation.Email))) sort-icon"></i></span>
@@ -161,7 +161,7 @@ else
                 Users
             </div>
             <table class="table table-striped table-hover table-cards mb-0">
-                <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+                <thead class="list-head"><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
                 <tbody>
                     @if (_users.Count == 0)
                     {
@@ -172,7 +172,7 @@ else
                         <tr>
                             <td class="cell-title">
                                 @user.Name
-                                <br /><small class="guid-text">@user.Id</small>
+                                <br /><CopyableId Value="user.Id" />
                             </td>
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">

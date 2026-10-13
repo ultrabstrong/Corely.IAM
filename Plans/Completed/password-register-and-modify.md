@@ -1,7 +1,6 @@
 # Split SetPasswordAsync into RegisterPasswordAsync and ModifyPasswordAsync
 
-**Status: built, not yet released.** Releases as Corely.IAM 4.0.0; the csproj versions are bumped,
-no tag is pushed.
+**Status: done.** Released in Corely.IAM 4.0.0.
 
 ## As built
 

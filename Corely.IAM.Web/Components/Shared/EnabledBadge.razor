@@ -1,0 +1,9 @@
+<span class="badge rounded-pill fw-medium @(Enabled ? "bg-success-subtle text-success-emphasis" : "bg-danger-subtle text-danger-emphasis")" title="@Title">@(Enabled ? "Enabled" : "Disabled")</span>
+
+@code {
+    [Parameter]
+    public bool Enabled { get; set; }
+
+    [Parameter]
+    public string? Title { get; set; }
+}

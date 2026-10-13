@@ -21,7 +21,9 @@ starts LocalDB, builds, creates or migrates the database (finding the migration 
 into a new database, bootstraps the platform account with a `platform-owner` user, then runs the
 WebApp with its startup log visible and opens the browser. Every seeded user, `platform-owner`
 included, uses `Test1234`, and in Development the sign-in page lists them in a "Demo only: quick sign
-in" dropdown. Ctrl+C stops it.
+in" dropdown. `platform-owner` keeps its TOTP, which a platform member needs to enter an account: the
+script saves the secret to `DemoFeatures:PlatformOwnerTotpSecret`, and in Development the code page
+has a "Demo only: enter platform-owner's code" button. Ctrl+C stops it.
 
 | Switch | Does |
 |--------|------|
@@ -75,8 +77,9 @@ From the WebApp folder:
 
 This seeds the WebApp's configured IAM database with the demo users/accounts used for local dogfooding. Demo users, including `admin` and `alice.johnson`, use the password `Test1234`.
 
-For a platform owner too, bootstrap first and pass the secrets file to the seed, which turns off the
-owner's TOTP and gives it `Test1234`:
+For a platform owner too, bootstrap first and pass the secrets file to the seed, which gives the
+owner `Test1234`. Put its `Authenticator secret` in `DemoFeatures:PlatformOwnerTotpSecret` for the
+code button:
 
 ```powershell
 dotnet run --project ..\Corely.IAM.DataAccessMigrations.Cli -- platform bootstrap -p MsSql -c "your-connection-string" -e platform-owner@demo.local -s $env:TEMP\platform-owner.txt -k "your-system-key" --settings appsettings.json

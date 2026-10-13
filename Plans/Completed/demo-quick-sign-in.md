@@ -1,6 +1,7 @@
 # Demo quick sign in
 
-**Status: built, not yet released.** Ships with Corely.IAM.Web 4.0.0.
+**Status: done.** Released in Corely.IAM.Web 4.0.0; the empty `_VerifyMfaAssist` slot for the
+platform owner's code button ships in Corely.IAM.Web 4.1.0.
 
 ## As built
 
@@ -24,6 +25,12 @@ Where the build differs from the plan below:
 - The functional tests cover the WebApp in Development and Production and both demo hosts in
   Development. The dropdown was checked by hand: picking platform-owner signs in to account
   selection.
+- **platform-owner keeps its TOTP.** Turning it off locked the owner out of every account, the
+  platform account included, since a platform member needs two factor to enter one. The seed now
+  passes a code to `password modify` instead, `Start-LocalStack.ps1` saves the secret to
+  `DemoFeatures:PlatformOwnerTotpSecret`, and the WebApp's `_VerifyMfaAssist.cshtml` (an empty slot
+  in `Corely.IAM.Web`, like `_SignInAssist`) shows a Development only button entering the current
+  code.
 
 ## What
 

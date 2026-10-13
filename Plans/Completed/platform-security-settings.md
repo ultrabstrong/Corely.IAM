@@ -1,6 +1,6 @@
 # Security policy in platform settings
 
-**Status: built, not yet released.** Ships in Corely.IAM 4.0.0 with the password split.
+**Status: done.** Released in Corely.IAM 4.0.0 with the password split.
 
 ## As built
 

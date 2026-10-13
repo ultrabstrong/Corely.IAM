@@ -17,5 +17,16 @@ internal static class AuthActionExtensions
                 AuthAction.Execute => AuditActions.Execute,
                 _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
             };
+
+        public string Letter() =>
+            action switch
+            {
+                AuthAction.Create => "C",
+                AuthAction.Read => "R",
+                AuthAction.Update => "U",
+                AuthAction.Delete => "D",
+                AuthAction.Execute => "X",
+                _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
+            };
     }
 }

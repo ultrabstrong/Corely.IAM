@@ -1,0 +1,18 @@
+@using Corely.IAM.TotpAuths.Providers
+@using Corely.IAM.WebApp
+@using Microsoft.Extensions.Hosting
+@using Microsoft.Extensions.Options
+@inject IHostEnvironment HostEnvironment
+@inject IOptions<DemoFeaturesOptions> DemoFeatures
+@inject ITotpProvider TotpProvider
+@if (HostEnvironment.IsDevelopment() && !string.IsNullOrWhiteSpace(DemoFeatures.Value.PlatformOwnerTotpSecret))
+{
+    <div class="border border-warning rounded p-3 mb-4">
+        <button type="button" id="demo-fill-code" class="btn btn-outline-warning w-100"
+                data-code="@TotpProvider.GenerateCode(DemoFeatures.Value.PlatformOwnerTotpSecret)"
+                onclick="const c = document.getElementById('code'); c.value = this.dataset.code; c.form.requestSubmit();">
+            Demo only: enter platform-owner's code
+        </button>
+        <div class="form-text">Only platform-owner has two factor in the demo. If the code has expired, reload the page.</div>
+    </div>
+}

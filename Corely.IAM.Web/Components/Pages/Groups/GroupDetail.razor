@@ -73,7 +73,7 @@ else
                 </PermissionView>
             </div>
             <table class="table table-striped table-hover table-cards mb-0">
-                <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+                <thead class="list-head"><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
                 <tbody>
                     @if (_group.Users == null || _group.Users.Count == 0)
                     {
@@ -86,7 +86,7 @@ else
                             <tr>
                                 <td class="cell-title">
                                     @user.Name
-                                    <br /><small class="guid-text">@user.Id</small>
+                                    <br /><CopyableId Value="user.Id" />
                                 </td>
                                 <td class="table-actions cell-actions">
                                     <div class="row-actions">
@@ -113,7 +113,7 @@ else
                 </PermissionView>
             </div>
             <table class="table table-striped table-hover table-cards mb-0">
-                <thead><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+                <thead class="list-head"><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
                 <tbody>
                     @if (_group.Roles == null || _group.Roles.Count == 0)
                     {
@@ -126,7 +126,7 @@ else
                             <tr>
                                 <td class="cell-title">
                                     @role.Name
-                                    <br /><small class="guid-text">@role.Id</small>
+                                    <br /><CopyableId Value="role.Id" />
                                 </td>
                                 <td class="table-actions cell-actions">
                                     <div class="row-actions">

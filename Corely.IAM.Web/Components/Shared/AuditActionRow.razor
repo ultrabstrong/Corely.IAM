@@ -1,0 +1,51 @@
+<tr>
+    <th scope="row" class="fw-normal">@Label</th>
+    @foreach (var action in Enum.GetValues<AuthAction>())
+    {
+        var current = action;
+        var allowed = Allowed.Has(current);
+        var on = allowed && Value.Has(current);
+        var id = $"{IdPrefix}-{current}";
+        <td class="text-center">
+            @if (Editing)
+            {
+                <input class="form-check-input" type="checkbox" id="@id"
+                       checked="@on"
+                       disabled="@(!allowed)"
+                       aria-label="@($"{Label}: {current}")"
+                       title="@(allowed ? null : NOT_ALLOWED)"
+                       @onchange="e => OnChangedAsync(current, e.Value is true)" />
+            }
+            else
+            {
+                <span id="@id" class="permission-badge @(on ? "active" : "inactive") @(allowed ? "" : "not-allowed")"
+                      title="@(allowed ? $"{current}: {(on ? "logged" : "not logged")}" : NOT_ALLOWED)">@current.Letter()<span class="visually-hidden">@(allowed ? (on ? " Enabled" : " Disabled") : " Not allowed")</span></span>
+            }
+        </td>
+    }
+</tr>
+
+@code {
+    private const string NOT_ALLOWED = "The platform does not allow recording this action";
+
+    [Parameter, EditorRequired]
+    public string IdPrefix { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = null!;
+
+    [Parameter]
+    public AuditActions Value { get; set; }
+
+    [Parameter]
+    public EventCallback<AuditActions> ValueChanged { get; set; }
+
+    [Parameter]
+    public AuditActions Allowed { get; set; } = AuditActions.All;
+
+    [Parameter]
+    public bool Editing { get; set; } = true;
+
+    private Task OnChangedAsync(AuthAction action, bool included) =>
+        ValueChanged.InvokeAsync(Value.With(action, included));
+}

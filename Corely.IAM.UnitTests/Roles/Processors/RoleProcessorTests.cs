@@ -140,10 +140,9 @@ public class RoleProcessorTests
     [Fact]
     public async Task CreateRole_Throws_WithNullRequest()
     {
-        var ex = Record.ExceptionAsync(() => _roleProcessor.CreateRoleAsync(null!));
+        var ex = await Record.ExceptionAsync(() => _roleProcessor.CreateRoleAsync(null!));
 
-        Assert.NotNull(ex);
-        Assert.IsType<ArgumentNullException>(await ex);
+        Assert.IsType<ArgumentNullException>(ex);
     }
 
     [Theory, ClassData(typeof(NullEmptyAndWhitespace))]

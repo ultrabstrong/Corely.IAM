@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Corely.IAM.IntegrationTests.Providers;
 
@@ -47,7 +48,11 @@ public static class DockerAvailability
 
 public sealed class RequiresDockerFactAttribute : FactAttribute
 {
-    public RequiresDockerFactAttribute()
+    public RequiresDockerFactAttribute(
+        [CallerFilePath] string? sourceFilePath = null,
+        [CallerLineNumber] int sourceLineNumber = -1
+    )
+        : base(sourceFilePath, sourceLineNumber)
     {
         if (DockerAvailability.UnavailableReason is { } reason)
             Skip = reason;
@@ -56,7 +61,11 @@ public sealed class RequiresDockerFactAttribute : FactAttribute
 
 public sealed class RequiresDockerTheoryAttribute : TheoryAttribute
 {
-    public RequiresDockerTheoryAttribute()
+    public RequiresDockerTheoryAttribute(
+        [CallerFilePath] string? sourceFilePath = null,
+        [CallerLineNumber] int sourceLineNumber = -1
+    )
+        : base(sourceFilePath, sourceLineNumber)
     {
         if (DockerAvailability.UnavailableReason is { } reason)
             Skip = reason;

@@ -157,6 +157,18 @@ else {
     Set-Item -Path function:global:corely -Value { & dotnet $devToolsDll @args }.GetNewClosure()
     try {
         & $seedScript -AuthTokenFile (Join-Path $devToolsBin 'corely-iam-auth-token.json') -PlatformOwnerSecretsFile $platformSecrets
+
+        Write-Step "Saving platform-owner's authenticator secret for the demo code button"
+        $secretMatch = [regex]::Match((Get-Content $platformSecrets -Raw), '(?m)^Authenticator secret: (\S+)\s*$')
+        if (-not $secretMatch.Success) {
+            throw "No authenticator secret found in $platformSecrets"
+        }
+        $settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
+        if ($null -eq $settings.DemoFeatures) {
+            $settings | Add-Member -NotePropertyName DemoFeatures -NotePropertyValue ([pscustomobject]@{})
+        }
+        $settings.DemoFeatures | Add-Member -NotePropertyName PlatformOwnerTotpSecret -NotePropertyValue $secretMatch.Groups[1].Value -Force
+        $settings | ConvertTo-Json -Depth 20 | Set-Content $settingsPath
     }
     finally {
         Remove-Item function:global:corely -ErrorAction SilentlyContinue
@@ -167,7 +179,7 @@ else {
 Write-Host ''
 Write-Host 'Local IAM is ready.' -ForegroundColor Green
 Write-Host "  Open:     $appUrl"
-Write-Host '  Sign in:  admin / Test1234 (seeded demo users, platform-owner among them, all use Test1234; the sign in page lists them)'
+Write-Host '  Sign in:  admin / Test1234 (seeded demo users, platform-owner among them, all use Test1234; the sign in page lists them, and the code page fills in platform-owner''s code)'
 if ($NoRun) {
     Write-Host "  Run it:   dotnet run --project Corely.IAM.WebApp (or run this script without -NoRun)"
     return

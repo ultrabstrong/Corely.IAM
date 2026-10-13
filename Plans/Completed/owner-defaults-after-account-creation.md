@@ -1,6 +1,6 @@
 # Owner defaults after account creation
 
-**Status: built, not yet released.** Ships in Corely.IAM 4.0.0.
+**Status: done.** Released in Corely.IAM 4.0.0.
 
 ## Decisions
 

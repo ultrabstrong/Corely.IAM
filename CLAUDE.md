@@ -190,7 +190,10 @@ starts LocalDB, builds, creates or migrates the database (finding the migration 
 `__EFMigrationsHistory` on a database migrated before IAM had its own table), bootstraps the platform
 account and seeds the demo users into a new database, then runs the WebApp with its startup log
 visible and opens the browser. Sign in as `admin` / `Test1234`; every seeded demo user uses
-`Test1234`, the platform owner `platform-owner` included (its TOTP is turned off by the seed). In
+`Test1234`, the platform owner `platform-owner` included. Its TOTP stays on, since a platform member
+needs it to enter accounts; the script saves the secret to `DemoFeatures:PlatformOwnerTotpSecret` in
+`appsettings.json`, and in Development the WebApp's code page (`_VerifyMfaAssist.cshtml`) has a
+button that enters the current code. In
 Development the sign-in page of the WebApp and both demo hosts has a "Demo only: quick sign in"
 dropdown of the seeded users, from each host's `Pages/Authentication/_SignInAssist.cshtml`. Ctrl+C
 stops it.

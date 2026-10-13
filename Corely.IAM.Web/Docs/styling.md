@@ -41,16 +41,17 @@ the card is laid out from those roles instead of labelling every value:
 | Class | In the card |
 |-------|-------------|
 | `.cell-title` | Top left, bold: what the row is |
-| `.cell-badge` | Top right: status or type |
+| `.cell-badge` | Under the title: status or type |
 | `.cell-actions` | The buttons, right-aligned |
 | `.cell-hide` | Shown in the table only |
 | `.cell-only` | Shown in the card only; the actions share its line |
 
-Any other cell is a full-width line. Header search boxes stay above the cards.
+Any other cell is a full-width line. Header search boxes stay above the cards. `.list-head` on
+the `<thead>` gives it a header color that follows the theme.
 
 ```razor
 <table class="table table-striped table-hover table-cards">
-    <thead class="table-dark">...</thead>
+    <thead class="list-head">...</thead>
     <tbody>
         <tr>
             <td class="cell-title">@role.Name<br /><small class="guid-text">@role.Id</small></td>

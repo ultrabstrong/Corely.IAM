@@ -27,7 +27,7 @@ else
 {
     <div>
         <table class="table table-striped table-hover table-cards">
-            <thead class="table-dark">
+            <thead class="list-head">
                 <tr>
                     <th class="@GetSortClass(nameof(Group.Name))" @onclick="() => CycleSortAsync(nameof(Group.Name))">
                         <span>Name <i class="bi @(GetSortIcon(nameof(Group.Name))) sort-icon"></i></span>
@@ -64,7 +64,7 @@ else
                         <tr>
                             <td class="cell-title">
                                 @group.Name
-                                <br /><small class="guid-text">@group.Id</small>
+                                <br /><CopyableId Value="group.Id" />
                             </td>
                             <td class="@(group.Description is null ? "cell-hide" : "text-muted")">@(group.Description ?? "—")</td>
                             <td class="table-actions cell-actions">

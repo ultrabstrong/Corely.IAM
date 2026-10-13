@@ -944,16 +944,11 @@ if (-not [string]::IsNullOrWhiteSpace($PlatformOwnerSecretsFile) -and -not ((Tes
     $text = Invoke-CorelyText -Label 'verify-mfa-platform-owner' -Arguments @('auth', 'verify-mfa', $challenge.Groups[1].Value, $code)
     Assert-True -Condition ($text -match 'MFA verification successful') -Message "MFA verification failed for platform-owner`n$text"
 
-    $code = Get-TotpCode -Label 'totp-code-disable-platform-owner' -Secret $totpSecret
-    $text = Invoke-CorelyText -Label 'totp-disable-platform-owner' -Arguments @('totp', 'disable', $code)
-    Assert-True -Condition ($text -match 'TOTP disabled successfully') -Message "Disabling TOTP failed for platform-owner`n$text"
-
-    $text = Invoke-CorelyText -Label 'password-modify-platform-owner' -Arguments @('password', 'modify', $generatedPassword, 'Test1234')
+    $code = Get-TotpCode -Label 'totp-code-password-platform-owner' -Secret $totpSecret
+    $text = Invoke-CorelyText -Label 'password-modify-platform-owner' -Arguments @('password', 'modify', $generatedPassword, 'Test1234', $code)
     Assert-True -Condition ($text -match 'Password modified successfully') -Message "Setting the demo password failed for platform-owner`n$text"
 
     Sign-OutCurrentUser -Label 'signout-platform-owner'
-    Sign-InUser -Username 'platform-owner' -AccountId $null
-    Sign-OutCurrentUser -Label 'signout-validate-platform-owner'
 
     $state['PlatformOwnerReady'] = $true
     Save-State

@@ -25,6 +25,8 @@ public abstract class FunctionalTestBase : IAsyncLifetime
     protected virtual int AuthTokenTtlSeconds => 3600;
     protected virtual int AuthSessionTtlSeconds => 604800;
     protected virtual string EnvironmentName => Environments.Development;
+    protected virtual IReadOnlyDictionary<string, string> Settings =>
+        new Dictionary<string, string>();
 
     public async ValueTask InitializeAsync()
     {
@@ -33,6 +35,7 @@ public abstract class FunctionalTestBase : IAsyncLifetime
             AuthTokenTtlSeconds = AuthTokenTtlSeconds,
             AuthSessionTtlSeconds = AuthSessionTtlSeconds,
             EnvironmentName = EnvironmentName,
+            Settings = Settings,
         };
         await Factory.InitializeDatabaseAsync();
         await SeedAsync();
@@ -136,6 +139,17 @@ public abstract class FunctionalTestBase : IAsyncLifetime
 
             return enable.Secret!;
         });
+
+    protected async Task<string> GetVerifyMfaPageAsync()
+    {
+        await EnableMfaAsync();
+        using (var signIn = await SignInAsync())
+            Assert.Equal(System.Net.HttpStatusCode.Redirect, signIn.StatusCode);
+
+        using var page = await Client.GetAsync(AppRoutes.VerifyMfa);
+        Assert.Equal(System.Net.HttpStatusCode.OK, page.StatusCode);
+        return await page.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+    }
 
     protected Task<string> GenerateTotpCodeAsync(string secret) =>
         Factory.WithScopeAsync(services =>

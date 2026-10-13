@@ -14,26 +14,26 @@
     <NoWarn></NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Corely.Common" Version="2.0.0" />
+    <PackageReference Include="Corely.Common" Version="2.0.4" />
     <PackageReference Include="CSharpier.MsBuild" Version="1.3.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
 
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
     <PackageReference Include="MySql.EntityFrameworkCore" Version="10.0.9" />
-    <PackageReference Include="Testcontainers.MsSql" Version="4.14.0" />
-    <PackageReference Include="Testcontainers.MySql" Version="4.14.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.11" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
-    <PackageReference Include="xunit.v3" Version="4.0.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">
+    <PackageReference Include="Testcontainers.MsSql" Version="4.16.0" />
+    <PackageReference Include="Testcontainers.MySql" Version="4.16.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Include="xunit.v3" Version="4.0.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.10.0" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Corely.IAM\Corely.IAM.csproj" />

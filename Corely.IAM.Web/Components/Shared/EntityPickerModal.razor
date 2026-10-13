@@ -54,7 +54,7 @@
                                                disabled="@_saving" />
                                         <div class="flex-grow-1">
                                             <span class="@(isChecked ? "text-white" : "")">@item.DisplayText</span>
-                                            <br /><small class="guid-text">@item.Id</small>
+                                            <br /><CopyableId Value="item.Id" />
                                             @if (!string.IsNullOrWhiteSpace(item.Description))
                                             {
                                                 <br />

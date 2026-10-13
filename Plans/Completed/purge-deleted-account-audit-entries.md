@@ -1,6 +1,6 @@
 # Purge a deleted account's audit entries
 
-**Status: built, not yet released.** Ships in Corely.IAM 4.0.0 and Corely.IAM.Web 4.0.0.
+**Status: done.** Released in Corely.IAM 4.0.0 and Corely.IAM.Web 4.0.0.
 
 ## As built
 

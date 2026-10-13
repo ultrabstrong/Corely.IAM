@@ -1,0 +1,21 @@
+<div class="table-responsive">
+    <table class="table table-sm align-middle audit-matrix mb-0">
+        <thead>
+            <tr>
+                <th scope="col">Scope</th>
+                @foreach (var action in Enum.GetValues<AuthAction>())
+                {
+                    <th scope="col" class="text-center" title="@action">@action.Letter()</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @ChildContent
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

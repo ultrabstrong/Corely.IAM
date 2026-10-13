@@ -18,99 +18,65 @@ else
 {
     <div class="section-divider mb-4">
         <div class="section-divider-label">
-            Passwords
-            @if (!_isEditing && _canUpdate)
-            {
-                <button class="btn btn-outline-primary btn-sm" @onclick="() => _isEditing = true">Edit</button>
-            }
+            @PASSWORDS
+            @EditButton(PASSWORDS)
         </div>
-        <div class="props-grid mb-3">
-            <span class="prop-label">Minimum length</span>
-            <div class="prop-value">
-                <NumberSetting @bind-Value="_passwordMinimumLength" Editing="_isEditing"
-                               Min="SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_MIN" Max="SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_MAX"
-                               Hint="@($"{SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_RECOMMENDED} or more is recommended")" />
-            </div>
-            <span class="prop-label">Maximum length</span>
-            <div class="prop-value">
-                <NumberSetting @bind-Value="_passwordMaximumLength" Editing="_isEditing"
-                               Min="SecurityPolicyConstants.PASSWORD_MAXIMUM_LENGTH_MIN" Max="SecurityPolicyConstants.PASSWORD_MAXIMUM_LENGTH_MAX" />
-            </div>
+        <div class="settings-grid mb-3">
+            <NumberSetting Label="Minimum length" @bind-Value="_passwordMinimumLength" Editing="IsEditing(PASSWORDS)"
+                           Min="SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_MIN" Max="SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_MAX"
+                           Hint="@($"{SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_RECOMMENDED} or more is recommended")" />
+            <NumberSetting Label="Maximum length" @bind-Value="_passwordMaximumLength" Editing="IsEditing(PASSWORDS)"
+                           Min="SecurityPolicyConstants.PASSWORD_MAXIMUM_LENGTH_MIN" Max="SecurityPolicyConstants.PASSWORD_MAXIMUM_LENGTH_MAX" />
             <span class="prop-label">Must contain</span>
-            <div class="prop-value">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="requireUppercase" @bind="_requireUppercase" disabled="@(!_isEditing)" />
-                    <label class="form-check-label" for="requireUppercase">An uppercase letter</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="requireLowercase" @bind="_requireLowercase" disabled="@(!_isEditing)" />
-                    <label class="form-check-label" for="requireLowercase">A lowercase letter</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="requireDigit" @bind="_requireDigit" disabled="@(!_isEditing)" />
-                    <label class="form-check-label" for="requireDigit">A digit</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="requireNonAlphanumeric" @bind="_requireNonAlphanumeric" disabled="@(!_isEditing)" />
-                    <label class="form-check-label" for="requireNonAlphanumeric">A symbol</label>
-                </div>
+            <div class="setting-wide toggle-list">
+                <ToggleSetting Id="requireUppercase" Label="An uppercase letter" @bind-Value="_requireUppercase" Editing="IsEditing(PASSWORDS)" />
+                <ToggleSetting Id="requireLowercase" Label="A lowercase letter" @bind-Value="_requireLowercase" Editing="IsEditing(PASSWORDS)" />
+                <ToggleSetting Id="requireDigit" Label="A digit" @bind-Value="_requireDigit" Editing="IsEditing(PASSWORDS)" />
+                <ToggleSetting Id="requireNonAlphanumeric" Label="A symbol" @bind-Value="_requireNonAlphanumeric" Editing="IsEditing(PASSWORDS)" />
             </div>
         </div>
+        @SaveButtons(PASSWORDS)
+        <ul class="settings-notes">
+            <li>A stricter rule applies the next time a password is set. Saved passwords are not checked against it.</li>
+        </ul>
     </div>
 
     <div class="section-divider mb-4">
-        <div class="section-divider-label">Sign in</div>
-        <div class="props-grid mb-3">
-            <span class="prop-label">Failed sign ins before lockout</span>
-            <div class="prop-value">
-                <NumberSetting @bind-Value="_maxLoginAttempts" Editing="_isEditing"
-                               Min="SecurityPolicyConstants.MAX_LOGIN_ATTEMPTS_MIN" Max="SecurityPolicyConstants.MAX_LOGIN_ATTEMPTS_MAX" />
-            </div>
-            <span class="prop-label">Lockout length (seconds)</span>
-            <div class="prop-value">
-                <NumberSetting @bind-Value="_lockoutCooldownSeconds" Editing="_isEditing"
-                               Min="SecurityPolicyConstants.LOCKOUT_COOLDOWN_SECONDS_MIN" Max="SecurityPolicyConstants.LOCKOUT_COOLDOWN_SECONDS_MAX" />
-            </div>
-            <span class="prop-label">Sign in token lifetime (seconds)</span>
-            <div class="prop-value">
-                <NumberSetting @bind-Value="_authTokenTtlSeconds" Editing="_isEditing"
-                               Min="SecurityPolicyConstants.AUTH_TOKEN_TTL_SECONDS_MIN" Max="SecurityPolicyConstants.AUTH_TOKEN_TTL_SECONDS_MAX"
-                               Hint="No longer than the session lifetime" />
-            </div>
-            <span class="prop-label">Session lifetime (seconds)</span>
-            <div class="prop-value">
-                <NumberSetting @bind-Value="_authSessionTtlSeconds" Editing="_isEditing"
-                               Min="SecurityPolicyConstants.AUTH_SESSION_TTL_SECONDS_MIN" Max="SecurityPolicyConstants.AUTH_SESSION_TTL_SECONDS_MAX" />
-            </div>
+        <div class="section-divider-label">
+            @SIGN_IN
+            @EditButton(SIGN_IN)
         </div>
+        <div class="settings-grid mb-3">
+            <NumberSetting Label="Failed sign ins before lockout" @bind-Value="_maxLoginAttempts" Editing="IsEditing(SIGN_IN)"
+                           Min="SecurityPolicyConstants.MAX_LOGIN_ATTEMPTS_MIN" Max="SecurityPolicyConstants.MAX_LOGIN_ATTEMPTS_MAX" />
+            <NumberSetting Label="Lockout length (seconds)" @bind-Value="_lockoutCooldownSeconds" Editing="IsEditing(SIGN_IN)"
+                           Min="SecurityPolicyConstants.LOCKOUT_COOLDOWN_SECONDS_MIN" Max="SecurityPolicyConstants.LOCKOUT_COOLDOWN_SECONDS_MAX" />
+            <NumberSetting Label="Sign in token lifetime (seconds)" @bind-Value="_authTokenTtlSeconds" Editing="IsEditing(SIGN_IN)"
+                           Min="SecurityPolicyConstants.AUTH_TOKEN_TTL_SECONDS_MIN" Max="SecurityPolicyConstants.AUTH_TOKEN_TTL_SECONDS_MAX"
+                           Hint="No longer than the session lifetime" />
+            <NumberSetting Label="Session lifetime (seconds)" @bind-Value="_authSessionTtlSeconds" Editing="IsEditing(SIGN_IN)"
+                           Min="SecurityPolicyConstants.AUTH_SESSION_TTL_SECONDS_MIN" Max="SecurityPolicyConstants.AUTH_SESSION_TTL_SECONDS_MAX" />
+        </div>
+        @SaveButtons(SIGN_IN)
     </div>
 
     <div class="section-divider mb-4">
-        <div class="section-divider-label">Two factor</div>
-        <div class="props-grid mb-3">
-            <span class="prop-label">Code prompt timeout (seconds)</span>
-            <div class="prop-value">
-                <NumberSetting @bind-Value="_mfaChallengeTimeoutSeconds" Editing="_isEditing"
-                               Min="SecurityPolicyConstants.MFA_CHALLENGE_TIMEOUT_SECONDS_MIN" Max="SecurityPolicyConstants.MFA_CHALLENGE_TIMEOUT_SECONDS_MAX" />
-            </div>
-            <span class="prop-label">Recovery codes per user</span>
-            <div class="prop-value">
-                <NumberSetting @bind-Value="_totpRecoveryCodeCount" Editing="_isEditing"
-                               Min="SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_MIN" Max="SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_MAX" />
-            </div>
+        <div class="section-divider-label">
+            @TWO_FACTOR
+            @EditButton(TWO_FACTOR)
         </div>
-        @if (_isEditing)
-        {
-            <div class="d-flex gap-2">
-                <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
-                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit" disabled="@_loading">Cancel</button>
-            </div>
-        }
-        <p class="text-muted small mt-2 mb-0">
-            A stricter password rule applies the next time a password is set; saved passwords are not checked against it.
-            Every instance picks up a change within a minute.
-        </p>
+        <div class="settings-grid mb-3">
+            <NumberSetting Label="Code prompt timeout (seconds)" @bind-Value="_mfaChallengeTimeoutSeconds" Editing="IsEditing(TWO_FACTOR)"
+                           Min="SecurityPolicyConstants.MFA_CHALLENGE_TIMEOUT_SECONDS_MIN" Max="SecurityPolicyConstants.MFA_CHALLENGE_TIMEOUT_SECONDS_MAX" />
+            <NumberSetting Label="Recovery codes per user" @bind-Value="_totpRecoveryCodeCount" Editing="IsEditing(TWO_FACTOR)"
+                           Min="SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_MIN" Max="SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_MAX" />
+        </div>
+        @SaveButtons(TWO_FACTOR)
     </div>
+
+    <ul class="settings-notes">
+        <li>Every instance picks up a change within a minute.</li>
+    </ul>
 }
 </PlatformSettingsFrame>
 
@@ -118,9 +84,13 @@ else
     private IPlatformService PlatformService => ScopedServices.GetRequiredService<IPlatformService>();
     private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
 
+    private const string PASSWORDS = "Passwords";
+    private const string SIGN_IN = "Sign in";
+    private const string TWO_FACTOR = "Two factor";
+
     private SecurityPolicy? _settings;
     private bool _canUpdate;
-    private bool _isEditing;
+    private readonly HashSet<string> _editingSections = [];
     private int _passwordMinimumLength;
     private int _passwordMaximumLength;
     private bool _requireUppercase;
@@ -150,56 +120,100 @@ else
             AuthAction.Update,
             AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
         );
-        Reset();
+        Reset(PASSWORDS);
+        Reset(SIGN_IN);
+        Reset(TWO_FACTOR);
     }
 
-    private void Reset()
+    private void Reset(string section)
     {
-        _passwordMinimumLength = _settings!.PasswordMinimumLength;
-        _passwordMaximumLength = _settings.PasswordMaximumLength;
-        _requireUppercase = _settings.RequireUppercase;
-        _requireLowercase = _settings.RequireLowercase;
-        _requireDigit = _settings.RequireDigit;
-        _requireNonAlphanumeric = _settings.RequireNonAlphanumeric;
-        _maxLoginAttempts = _settings.MaxLoginAttempts;
-        _lockoutCooldownSeconds = _settings.LockoutCooldownSeconds;
-        _authTokenTtlSeconds = _settings.AuthTokenTtlSeconds;
-        _authSessionTtlSeconds = _settings.AuthSessionTtlSeconds;
-        _mfaChallengeTimeoutSeconds = _settings.MfaChallengeTimeoutSeconds;
-        _totpRecoveryCodeCount = _settings.TotpRecoveryCodeCount;
+        switch (section)
+        {
+            case PASSWORDS:
+                _passwordMinimumLength = _settings!.PasswordMinimumLength;
+                _passwordMaximumLength = _settings.PasswordMaximumLength;
+                _requireUppercase = _settings.RequireUppercase;
+                _requireLowercase = _settings.RequireLowercase;
+                _requireDigit = _settings.RequireDigit;
+                _requireNonAlphanumeric = _settings.RequireNonAlphanumeric;
+                break;
+            case SIGN_IN:
+                _maxLoginAttempts = _settings!.MaxLoginAttempts;
+                _lockoutCooldownSeconds = _settings.LockoutCooldownSeconds;
+                _authTokenTtlSeconds = _settings.AuthTokenTtlSeconds;
+                _authSessionTtlSeconds = _settings.AuthSessionTtlSeconds;
+                break;
+            case TWO_FACTOR:
+                _mfaChallengeTimeoutSeconds = _settings!.MfaChallengeTimeoutSeconds;
+                _totpRecoveryCodeCount = _settings.TotpRecoveryCodeCount;
+                break;
+        }
     }
 
-    private void CancelEdit()
+    private SecurityPolicy WithEdits(string section) =>
+        section switch
+        {
+            PASSWORDS => _settings! with
+            {
+                PasswordMinimumLength = _passwordMinimumLength,
+                PasswordMaximumLength = _passwordMaximumLength,
+                RequireUppercase = _requireUppercase,
+                RequireLowercase = _requireLowercase,
+                RequireDigit = _requireDigit,
+                RequireNonAlphanumeric = _requireNonAlphanumeric,
+            },
+            SIGN_IN => _settings! with
+            {
+                MaxLoginAttempts = _maxLoginAttempts,
+                LockoutCooldownSeconds = _lockoutCooldownSeconds,
+                AuthTokenTtlSeconds = _authTokenTtlSeconds,
+                AuthSessionTtlSeconds = _authSessionTtlSeconds,
+            },
+            _ => _settings! with
+            {
+                MfaChallengeTimeoutSeconds = _mfaChallengeTimeoutSeconds,
+                TotpRecoveryCodeCount = _totpRecoveryCodeCount,
+            },
+        };
+
+    private bool IsEditing(string section) => _editingSections.Contains(section);
+
+    private RenderFragment EditButton(string section) =>
+        @<text>
+            @if (!IsEditing(section) && _canUpdate)
+            {
+                <button class="btn btn-outline-primary btn-sm" @onclick="() => _editingSections.Add(section)">Edit</button>
+            }
+        </text>;
+
+    private RenderFragment SaveButtons(string section) =>
+        @<text>
+            @if (IsEditing(section))
+            {
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary btn-sm" @onclick="() => SaveAsync(section)" disabled="@_loading">Save</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="() => CancelEdit(section)" disabled="@_loading">Cancel</button>
+                </div>
+            }
+        </text>;
+
+    private void CancelEdit(string section)
     {
-        Reset();
-        _isEditing = false;
+        Reset(section);
+        _editingSections.Remove(section);
     }
 
-    private async Task SaveAsync()
+    private async Task SaveAsync(string section)
     {
         await ExecuteSafeAsync(async () =>
         {
-            var settings = new SecurityPolicy(
-                _passwordMinimumLength,
-                _passwordMaximumLength,
-                _requireUppercase,
-                _requireLowercase,
-                _requireDigit,
-                _requireNonAlphanumeric,
-                _maxLoginAttempts,
-                _lockoutCooldownSeconds,
-                _authTokenTtlSeconds,
-                _authSessionTtlSeconds,
-                _mfaChallengeTimeoutSeconds,
-                _totpRecoveryCodeCount
-            );
+            var settings = WithEdits(section);
             var result = await PlatformService.UpdateSecuritySettingsAsync(settings);
-            SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Security settings saved.", result.Message);
+            SetResultMessage(result.ResultCode == ModifyResultCode.Success, $"{section} settings saved.", result.Message);
             if (result.ResultCode == ModifyResultCode.Success)
             {
-                _isEditing = false;
                 _settings = settings;
-                Reset();
+                CancelEdit(section);
             }
         });
     }

@@ -1,0 +1,30 @@
+@inject IJSRuntime JS
+
+<span class="copyable-id"><small class="guid-text">@Value</small><button type="button" class="copy-btn" title="@(_copied ? "Copied" : "Copy")" aria-label="Copy @Value"
+        @onclick="CopyAsync" @onclick:stopPropagation="true" @onclick:preventDefault="true"><i class="bi @(_copied ? "bi-check2" : "bi-copy")" aria-hidden="true"></i></button></span>
+
+@code {
+    private static readonly TimeSpan COPIED_FOR = TimeSpan.FromSeconds(1.5);
+
+    [Parameter, EditorRequired]
+    public Guid Value { get; set; }
+
+    private bool _copied;
+
+    private async Task CopyAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", Value.ToString());
+        }
+        catch (JSException)
+        {
+            return;
+        }
+
+        _copied = true;
+        StateHasChanged();
+        await Task.Delay(COPIED_FOR);
+        _copied = false;
+    }
+}

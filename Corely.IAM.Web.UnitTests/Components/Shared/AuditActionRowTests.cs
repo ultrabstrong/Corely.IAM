@@ -4,13 +4,14 @@ using TestContext = Bunit.TestContext;
 
 namespace Corely.IAM.Web.UnitTests.Components.Shared;
 
-public class AuditActionCheckboxesTests : TestContext
+public class AuditActionRowTests : TestContext
 {
     [Fact]
     public void Checkboxes_ShowTheCurrentActions()
     {
-        var cut = Render<AuditActionCheckboxes>(p =>
+        var cut = RenderRow(p =>
             p.Add(x => x.IdPrefix, "test")
+                .Add(x => x.Label, "Members")
                 .Add(x => x.Value, AuditActions.Create | AuditActions.Delete)
         );
 
@@ -22,8 +23,9 @@ public class AuditActionCheckboxesTests : TestContext
     [Fact]
     public void Checkboxes_ShowAForbiddenActionUnchecked_EvenWhenTheAccountChoseIt()
     {
-        var cut = Render<AuditActionCheckboxes>(p =>
+        var cut = RenderRow(p =>
             p.Add(x => x.IdPrefix, "test")
+                .Add(x => x.Label, "Members")
                 .Add(x => x.Value, AuditActions.Create | AuditActions.Read)
                 .Add(x => x.Allowed, AuditActions.Create)
         );
@@ -35,8 +37,9 @@ public class AuditActionCheckboxesTests : TestContext
     [Fact]
     public void Checkboxes_DisableActionsThePlatformForbids()
     {
-        var cut = Render<AuditActionCheckboxes>(p =>
+        var cut = RenderRow(p =>
             p.Add(x => x.IdPrefix, "test")
+                .Add(x => x.Label, "Members")
                 .Add(
                     x => x.Allowed,
                     AuditActions.Create | AuditActions.Update | AuditActions.Delete
@@ -49,11 +52,37 @@ public class AuditActionCheckboxesTests : TestContext
     }
 
     [Fact]
+    public void ReadOnly_ShowsEachActionEnabledDisabledOrNotAllowed()
+    {
+        var cut = RenderRow(p =>
+            p.Add(x => x.IdPrefix, "test")
+                .Add(x => x.Label, "Members")
+                .Add(x => x.Value, AuditActions.Create | AuditActions.Read)
+                .Add(x => x.Allowed, AuditActions.Create | AuditActions.Update)
+                .Add(x => x.Editing, false)
+        );
+
+        Assert.Empty(cut.FindAll("input"));
+        Assert.Equal("Members", cut.Find("tbody th").TextContent);
+        Assert.Equal("C Enabled", cut.Find("#test-Create").TextContent);
+        Assert.Contains("active", cut.Find("#test-Create").ClassList);
+        Assert.Equal("U Disabled", cut.Find("#test-Update").TextContent);
+        Assert.Contains("inactive", cut.Find("#test-Update").ClassList);
+        Assert.Equal("R Not allowed", cut.Find("#test-Read").TextContent);
+        Assert.Contains("not-allowed", cut.Find("#test-Read").ClassList);
+    }
+
+    private IRenderedComponent<AuditActionMatrix> RenderRow(
+        Action<ComponentParameterCollectionBuilder<AuditActionRow>> row
+    ) => Render<AuditActionMatrix>(p => p.AddChildContent(row));
+
+    [Fact]
     public void Checking_ReportsTheNewActions()
     {
         AuditActions? changed = null;
-        var cut = Render<AuditActionCheckboxes>(p =>
+        var cut = RenderRow(p =>
             p.Add(x => x.IdPrefix, "test")
+                .Add(x => x.Label, "Members")
                 .Add(x => x.Value, AuditActions.Create)
                 .Add(x => x.ValueChanged, (AuditActions value) => changed = value)
         );

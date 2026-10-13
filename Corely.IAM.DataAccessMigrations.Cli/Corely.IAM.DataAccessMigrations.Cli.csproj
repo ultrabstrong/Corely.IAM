@@ -15,7 +15,7 @@
     <PackageProjectUrl>https://github.com/ultrabstrong/Corely.IAM</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>4.0.0</Version>
+    <Version>4.0.1</Version>
 
     <!-- Single-file publishing options. Applied only when publishing: a self-contained
          executable cannot be referenced by a non-self-contained one, which would block a test
@@ -39,9 +39,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Corely.Common" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
-    <PackageReference Include="System.CommandLine" Version="2.0.11" />
+    <PackageReference Include="Corely.Common" Version="2.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+    <PackageReference Include="System.CommandLine" Version="2.0.12" />
   </ItemGroup>
 
   <ItemGroup>

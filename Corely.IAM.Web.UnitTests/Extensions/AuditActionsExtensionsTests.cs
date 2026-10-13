@@ -37,4 +37,13 @@ public class AuditActionsExtensionsTests
     [Fact]
     public void AuditFlag_Throws_ForUnknownAction() =>
         Assert.Throws<ArgumentOutOfRangeException>(() => ((AuthAction)99).AuditFlag());
+
+    [Theory]
+    [InlineData(AuthAction.Create, "C")]
+    [InlineData(AuthAction.Read, "R")]
+    [InlineData(AuthAction.Update, "U")]
+    [InlineData(AuthAction.Delete, "D")]
+    [InlineData(AuthAction.Execute, "X")]
+    public void Letter_IsTheCrudxColumnLetter(AuthAction action, string expected) =>
+        Assert.Equal(expected, action.Letter());
 }

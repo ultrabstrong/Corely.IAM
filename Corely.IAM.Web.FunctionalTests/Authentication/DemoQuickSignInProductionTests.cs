@@ -7,6 +7,22 @@ public class DemoQuickSignInProductionTests : FunctionalTestBase
 {
     protected override string EnvironmentName => Environments.Production;
 
+    protected override IReadOnlyDictionary<string, string> Settings =>
+        new Dictionary<string, string>
+        {
+            ["DemoFeatures:PlatformOwnerTotpSecret"] =
+                DemoVerifyMfaAssistTests.PLATFORM_OWNER_SECRET,
+        };
+
+    [Fact]
+    public async Task TheCodePageHasNoCodeButtonOutsideDevelopment()
+    {
+        var html = await GetVerifyMfaPageAsync();
+
+        Assert.Contains("id=\"code\"", html);
+        Assert.DoesNotContain("demo-fill-code", html);
+    }
+
     [Fact]
     public async Task TheSignInPageHasNoQuickSignInOutsideDevelopment()
     {

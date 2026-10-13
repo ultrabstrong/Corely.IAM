@@ -24,50 +24,31 @@ else
                 <button class="btn btn-outline-primary btn-sm" @onclick="() => _isEditing = true">Edit</button>
             }
         </div>
-        <div class="props-grid mb-3">
+        <div class="settings-grid mb-3">
             <span class="prop-label">Auditing</span>
-            <div class="prop-value">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="auditEnabled" @bind="_auditEnabled" disabled="@(!_isEditing)" />
-                    <label class="form-check-label" for="auditEnabled">@(_auditEnabled ? "On" : "Off: only deleting a user or an account is recorded")</label>
-                </div>
+            <div class="setting-wide">
+                <ToggleSetting Id="auditEnabled" Label="Auditing" LabelWhenReadOnly="false" @bind-Value="_auditEnabled" Editing="_isEditing" />
             </div>
-            <span class="prop-label">Maximum retention (days)</span>
-            <div class="prop-value">
-                @if (_isEditing)
-                {
-                    <input type="number" class="form-control form-control-sm" min="0" @bind="_maxRetentionDays" />
-                }
-                else
-                {
-                    @_maxRetentionDays
-                }
-            </div>
-            <span class="prop-label">Actions accounts may record</span>
-            <div class="prop-value">
-                <AuditActionCheckboxes IdPrefix="platform-allowed" @bind-Value="_allowedActions" Disabled="!_isEditing" />
-            </div>
-            <span class="prop-label">Recorded for system context</span>
-            <div class="prop-value">
-                <AuditActionCheckboxes IdPrefix="platform-system" @bind-Value="_systemContextActions" Disabled="!_isEditing" />
-            </div>
-            <span class="prop-label">Recorded outside any account</span>
-            <div class="prop-value">
-                <AuditActionCheckboxes IdPrefix="platform-accountless" @bind-Value="_accountlessActions" Disabled="!_isEditing" />
-            </div>
+            <NumberSetting Label="Maximum retention (days)" @bind-Value="_maxRetentionDays" Editing="_isEditing" Min="0" />
         </div>
+        <AuditActionMatrix>
+            <AuditActionRow IdPrefix="platform-allowed" Label="Allowed for accounts" @bind-Value="_allowedActions" Editing="_isEditing" />
+            <AuditActionRow IdPrefix="platform-system" Label="Logged for system context" @bind-Value="_systemContextActions" Editing="_isEditing" />
+            <AuditActionRow IdPrefix="platform-accountless" Label="Logged outside any account" @bind-Value="_accountlessActions" Editing="_isEditing" />
+        </AuditActionMatrix>
         @if (_isEditing)
         {
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 mt-3">
                 <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
                 <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit" disabled="@_loading">Cancel</button>
             </div>
         }
-        <p class="text-muted small mt-2 mb-0">
-            The maximum retention also applies to entries outside any account, to system context, and to the entries of deleted accounts.
-            Lowering a limit changes no account's own choice; raising it again brings that choice back.
-            Turning auditing off keeps existing entries until they age out; removing them is a purge on the audit page.
-        </p>
+        <ul class="settings-notes">
+            <li>Allowed for accounts is the most each account can choose to log for its own members.</li>
+            <li>The maximum retention also covers entries outside any account, system context and deleted accounts.</li>
+            <li>Lowering a limit leaves each account's own choice alone; raising it again brings that choice back.</li>
+            <li>With auditing off, only deleting a user or an account is recorded. Existing entries stay until they age out, or until a purge on the audit page.</li>
+        </ul>
     </div>
 }
 </PlatformSettingsFrame>

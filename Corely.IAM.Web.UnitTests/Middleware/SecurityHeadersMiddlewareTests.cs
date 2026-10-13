@@ -52,7 +52,7 @@ public class SecurityHeadersMiddlewareTests
     }
 
     [Fact]
-    public async Task Invoke_StaticAssetRequest_SetsPublicCacheHeaders()
+    public async Task Invoke_StaticAssetRequest_LeavesCacheHeadersToTheStaticFileHandler()
     {
         var middleware = CreateMiddleware();
         var httpContext = new DefaultHttpContext();
@@ -60,10 +60,7 @@ public class SecurityHeadersMiddlewareTests
 
         await middleware.InvokeAsync(httpContext);
 
-        Assert.Equal(
-            "public, max-age=86400",
-            httpContext.Response.Headers["Cache-Control"].ToString()
-        );
+        Assert.False(httpContext.Response.Headers.ContainsKey("Cache-Control"));
         Assert.False(httpContext.Response.Headers.ContainsKey("Pragma"));
     }
 

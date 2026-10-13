@@ -30,7 +30,7 @@ All authentication cookies use:
 | `X-Content-Type-Options` | `nosniff` | Prevents MIME sniffing |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | Controls referrer information |
 | `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=()` | Restricts browser features |
-| `Cache-Control` | `no-store, no-cache, must-revalidate` | Prevents response caching |
+| `Cache-Control` | `no-store, no-cache, must-revalidate` | Prevents response caching. Static files are left to `MapStaticAssets` |
 | `Cross-Origin-Opener-Policy` | `same-origin` | Isolates browsing context |
 | `Cross-Origin-Resource-Policy` | `same-origin` | Restricts resource loading |
 | `X-Permitted-Cross-Domain-Policies` | `none` | Blocks cross-domain policies |

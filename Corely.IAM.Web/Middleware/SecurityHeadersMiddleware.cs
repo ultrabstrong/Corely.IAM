@@ -7,8 +7,6 @@ namespace Corely.IAM.Web.Middleware;
 
 public class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvironment env)
 {
-    private const int STATIC_ASSET_CACHE_SECONDS = 86400;
-
     public async Task InvokeAsync(HttpContext context)
     {
         var headers = context.Response.Headers;
@@ -30,14 +28,10 @@ public class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvironment
 
     private static void ApplyCacheHeaders(HttpContext context)
     {
-        var headers = context.Response.Headers;
         if (context.Request.Path.IsCacheableStaticAsset())
-        {
-            headers["Cache-Control"] = $"public, max-age={STATIC_ASSET_CACHE_SECONDS}";
-            headers.Remove("Pragma");
             return;
-        }
 
+        var headers = context.Response.Headers;
         headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
         headers["Pragma"] = "no-cache";
     }

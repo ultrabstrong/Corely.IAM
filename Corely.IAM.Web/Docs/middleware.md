@@ -33,7 +33,7 @@ Adds security response headers on every request.
 | `X-Content-Type-Options` | `nosniff` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
 | `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=()` |
-| `Cache-Control` | `no-store, no-cache, must-revalidate` |
+| `Cache-Control` | `no-store, no-cache, must-revalidate`, except on static files, which `MapStaticAssets` sets |
 | `Cross-Origin-Opener-Policy` | `same-origin` |
 | `Cross-Origin-Resource-Policy` | `same-origin` |
 | `X-Permitted-Cross-Domain-Policies` | `none` |

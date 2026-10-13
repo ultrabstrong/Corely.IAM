@@ -74,11 +74,12 @@ app.Use(
 );
 app.UseIAMWebAuthentication();
 app.UseHttpsRedirection();
-app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapRazorPages();
+app.MapStaticAssets();
+app.MapRazorPages().WithStaticAssets();
 app.MapRazorComponents<App>()
+    .WithStaticAssets()
     .AddAdditionalAssemblies(typeof(Corely.IAM.Web.AppRoutes).Assembly)
     .AddInteractiveServerRenderMode();
 

@@ -44,15 +44,19 @@ app.Use(async (context, next) =>
 });
 app.UseIAMWebAuthentication();
 app.UseHttpsRedirection();
-app.UseStaticFiles();
 app.UseAntiforgery();
 ```
 
 ## 5) Map Endpoints
 
+`MapStaticAssets()` with `WithStaticAssets()` fingerprints IAM.Web's CSS and scripts, so a browser
+never keeps an old copy after an upgrade.
+
 ```csharp
-app.MapRazorPages();
+app.MapStaticAssets();
+app.MapRazorPages().WithStaticAssets();
 app.MapRazorComponents<App>()
+    .WithStaticAssets()
     .AddAdditionalAssemblies(typeof(Corely.IAM.Web.AppRoutes).Assembly)
     .AddInteractiveServerRenderMode();
 ```

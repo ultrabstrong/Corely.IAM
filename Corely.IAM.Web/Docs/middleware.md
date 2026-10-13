@@ -61,4 +61,5 @@ The middleware pipeline is registered as a single call:
 app.UseIAMWebAuthentication();
 ```
 
-Place this before `UseHttpsRedirection()` and `UseStaticFiles()` in the middleware pipeline.
+Place this before `UseHttpsRedirection()` and before the endpoints, `MapStaticAssets()` included, are
+mapped.

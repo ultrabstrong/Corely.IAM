@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Corely.IAM.Web.FunctionalTests.Infrastructure;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
@@ -12,10 +13,14 @@ public class PasswordToggleTests : FunctionalTestBase
         using var response = await Client.GetAsync(route);
         response.EnsureSuccessStatusCode();
 
-        Assert.Contains(
-            "_content/Corely.IAM.Web/js/password-toggle.js",
-            await response.Content.ReadAsStringAsync()
+        var reference = Regex.Match(
+            await response.Content.ReadAsStringAsync(),
+            @"src=""/?(_content/Corely\.IAM\.Web/js/password-toggle(\.\w+)?\.js)"""
         );
+        Assert.True(reference.Success);
+
+        using var script = await Client.GetAsync("/" + reference.Groups[1].Value);
+        script.EnsureSuccessStatusCode();
     }
 
     [Fact]

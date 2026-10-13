@@ -9,7 +9,7 @@ public class FormBusyStateTests : FunctionalTestBase
     {
         var html = await GetPageAsync(AppRoutes.SignIn);
 
-        Assert.Contains("_content/Corely.IAM.Web/js/form-busy.js", html);
+        Assert.Matches(@"_content/Corely\.IAM\.Web/js/form-busy(\.\w+)?\.js", html);
     }
 
     [Fact]

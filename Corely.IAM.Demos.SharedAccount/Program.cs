@@ -49,12 +49,12 @@ app.Use(
 );
 app.UseIAMWebAuthentication();
 app.UseHttpsRedirection();
-app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapRazorPages();
+app.MapStaticAssets();
+app.MapRazorPages().WithStaticAssets();
 
-app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+app.MapRazorComponents<App>().WithStaticAssets().AddInteractiveServerRenderMode();
 
 app.Run();
 

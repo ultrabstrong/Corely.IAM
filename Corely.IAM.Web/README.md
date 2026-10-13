@@ -85,18 +85,21 @@ builder.Services.AddIAMServicesWithEF(builder.Configuration, securityConfigProvi
 
 ### 4. Set up the middleware pipeline
 
-Order matters. Call `UseIAMWebAuthentication()` before static files and routing:
+Order matters. Call `UseIAMWebAuthentication()` before the endpoints are mapped. `MapStaticAssets()`
+with `WithStaticAssets()` fingerprints IAM.Web's CSS and scripts, so a browser never keeps an old
+copy after an upgrade:
 
 ```csharp
 using Corely.IAM.Web.Extensions;
 
 app.UseIAMWebAuthentication(); // correlation ID → security headers → JWT validation → auth/authz
 app.UseHttpsRedirection();
-app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapRazorPages();
+app.MapStaticAssets();
+app.MapRazorPages().WithStaticAssets();
 app.MapRazorComponents<App>()
+    .WithStaticAssets()
     .AddAdditionalAssemblies(typeof(Corely.IAM.Web.AppRoutes).Assembly)
     .AddInteractiveServerRenderMode();
 ```

@@ -35,11 +35,11 @@ Account detail page with invitation management, user listing, and encryption key
 - **Rotate key** on each tab calls `RotateAccountKeyAsync` and reloads the providers
 
 **Authorization gates:**
-- `AuthAction.Update` + `ACCOUNT_RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit, Create Invitation, Revoke, Remove User, Rotate key
-- `AuthAction.Delete` + `ACCOUNT_RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete
-- `AuthAction.Read` + `ACCOUNT_RESOURCE_TYPE` + `ResourceIds: [Id]`: Encryption/Signing panel
-- `AuthAction.Read` + `AUDIT_SETTINGS_RESOURCE_TYPE`: Audit section
-- `AuthAction.Update` + `AUDIT_SETTINGS_RESOURCE_TYPE`: Audit section Edit
+- `AuthAction.Update` + `Account.RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit, Create Invitation, Revoke, Remove User, Rotate key
+- `AuthAction.Delete` + `Account.RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete
+- `AuthAction.Read` + `Account.RESOURCE_TYPE` + `ResourceIds: [Id]`: Encryption/Signing panel
+- `AuthAction.Read` + `AccountAuditSettings.RESOURCE_TYPE`: Audit section
+- `AuthAction.Update` + `AccountAuditSettings.RESOURCE_TYPE`: Audit section Edit
 
 **Behavior:**
 - Account name changes update `IAccountDisplayState` to reflect in the NavBar

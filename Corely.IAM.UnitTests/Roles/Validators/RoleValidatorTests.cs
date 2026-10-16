@@ -1,5 +1,4 @@
-﻿using Corely.IAM.Roles.Constants;
-using Corely.IAM.Roles.Models;
+﻿using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Validators;
 using Corely.IAM.UnitTests.ClassData;
 using FluentValidation.TestHelper;
@@ -29,7 +28,7 @@ public class RoleValidatorTests
 
     public static IEnumerable<object[]> InvalidRoleTestData =>
         [
-            [new string('a', RoleConstants.ROLE_NAME_MIN_LENGTH - 1)],
-            [new string('a', RoleConstants.ROLE_NAME_MAX_LENGTH + 1)],
+            [new string('a', Role.NAME_MIN_LENGTH - 1)],
+            [new string('a', Role.NAME_MAX_LENGTH + 1)],
         ];
 }

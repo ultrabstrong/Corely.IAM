@@ -1,8 +1,6 @@
 using Corely.DataAccess.Interfaces.Repos;
-using Corely.IAM.Platform.Constants;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Providers;
-using Corely.IAM.TotpAuths.Constants;
 using Corely.IAM.TotpAuths.Entities;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Processors;
@@ -69,10 +67,7 @@ public class TotpAuthProcessorTests
         Assert.NotNull(result.Secret);
         Assert.NotNull(result.SetupUri);
         Assert.NotNull(result.RecoveryCodes);
-        Assert.Equal(
-            SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_DEFAULT,
-            result.RecoveryCodes.Length
-        );
+        Assert.Equal(SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_DEFAULT, result.RecoveryCodes.Length);
     }
 
     [Fact]
@@ -234,7 +229,7 @@ public class TotpAuthProcessorTests
         Assert.Equal(TotpStatusResultCode.Success, result.ResultCode);
         Assert.True(result.IsEnabled);
         Assert.Equal(
-            SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_DEFAULT,
+            SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_DEFAULT,
             result.RemainingRecoveryCodes
         );
     }
@@ -249,10 +244,7 @@ public class TotpAuthProcessorTests
 
         Assert.Equal(RegenerateTotpRecoveryCodesResultCode.Success, result.ResultCode);
         Assert.NotNull(result.RecoveryCodes);
-        Assert.Equal(
-            SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_DEFAULT,
-            result.RecoveryCodes.Length
-        );
+        Assert.Equal(SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_DEFAULT, result.RecoveryCodes.Length);
     }
 
     [Fact]

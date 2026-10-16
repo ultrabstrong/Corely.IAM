@@ -14,7 +14,9 @@ internal class EFMsSqlConfiguration(string connectionString, string? historyTabl
             b =>
             {
                 b.MigrationsAssembly(typeof(EFMsSqlConfiguration).Assembly.GetName().Name);
-                b.MigrationsHistoryTable(historyTable ?? MigrationConstants.DEFAULT_HISTORY_TABLE);
+                b.MigrationsHistoryTable(
+                    historyTable ?? IamDbContext.DEFAULT_MIGRATIONS_HISTORY_TABLE
+                );
             }
         );
     }

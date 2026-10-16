@@ -92,13 +92,15 @@ public class DeregistrationServiceTests
         DeregisterBasicAuthResultCode.LastAuthMethodError
     )]
     public async Task DeregisterBasicAuth_ReturnsTheDeleteResult_WhenChecksPass(
-        DeleteBasicAuthResultCode deleteResultCode,
+        Enum deleteResultCode,
         DeregisterBasicAuthResultCode expected
     )
     {
         _mockBasicAuthProcessor
             .Setup(x => x.DeleteBasicAuthAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(new DeleteBasicAuthResult(deleteResultCode, "delete"));
+            .ReturnsAsync(
+                new DeleteBasicAuthResult((DeleteBasicAuthResultCode)deleteResultCode, "delete")
+            );
 
         var result = await _service.DeregisterBasicAuthAsync(new("current", "123456"));
 
@@ -278,7 +280,7 @@ public class DeregistrationServiceTests
     [InlineData(DeleteAccountResultCode.Success, false)]
     [InlineData(DeleteAccountResultCode.AccountNotFoundError, true)]
     public async Task DeregisterAccount_ClearsCachedAuditSettings_OnlyWhenDeleted(
-        DeleteAccountResultCode deleteResultCode,
+        Enum deleteResultCode,
         bool stillCached
     )
     {
@@ -286,7 +288,9 @@ public class DeregistrationServiceTests
         _auditSettingsCache.SetAccount(accountId, null);
         _mockAccountProcessor
             .Setup(x => x.DeleteAccountAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(new DeleteAccountResult(deleteResultCode, string.Empty));
+            .ReturnsAsync(
+                new DeleteAccountResult((DeleteAccountResultCode)deleteResultCode, string.Empty)
+            );
 
         await _service.DeregisterAccountAsync(new DeregisterAccountRequest(accountId));
 

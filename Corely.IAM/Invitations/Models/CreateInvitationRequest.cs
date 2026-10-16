@@ -5,4 +5,9 @@ public record CreateInvitationRequest(
     string Email,
     string? Description,
     int ExpiresInSeconds
-);
+)
+{
+    public const int MIN_EXPIRY_SECONDS = 300;
+    public const int MAX_EXPIRY_SECONDS = 2_592_000;
+    public const int DEFAULT_EXPIRY_SECONDS = 604_800;
+}

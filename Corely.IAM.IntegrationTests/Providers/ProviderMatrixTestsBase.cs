@@ -1,13 +1,13 @@
 using Corely.IAM.DataAccess;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Platform.Mappers;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Roles.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -110,7 +110,7 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
         var authorized = await ActAsOwnerAsync(services =>
             services
                 .GetRequiredService<IAuthorizationProvider>()
-                .IsAuthorizedAsync(AuthAction.Read, PermissionConstants.ROLE_RESOURCE_TYPE, _roleId)
+                .IsAuthorizedAsync(AuthAction.Read, Role.RESOURCE_TYPE, _roleId)
         );
 
         Assert.True(authorized, "The account owner must resolve as authorized on any provider.");
@@ -186,7 +186,7 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
             var permission = await registration.RegisterPermissionAsync(
                 new RegisterPermissionRequest(
                     _accountId,
-                    PermissionConstants.USER_RESOURCE_TYPE,
+                    User.RESOURCE_TYPE,
                     Guid.Empty,
                     Read: true
                 )

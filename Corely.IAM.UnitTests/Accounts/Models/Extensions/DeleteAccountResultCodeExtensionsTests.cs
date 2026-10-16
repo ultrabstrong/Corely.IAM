@@ -17,11 +17,11 @@ public class DeleteAccountResultCodeExtensionsTests
         DeregisterAccountResultCode.UnauthorizedError
     )]
     public void ToDeregisterAccountResultCode_MapsCorrectly(
-        DeleteAccountResultCode input,
+        Enum input,
         DeregisterAccountResultCode expected
     )
     {
-        var result = input.ToDeregisterAccountResultCode();
+        var result = ((DeleteAccountResultCode)input).ToDeregisterAccountResultCode();
 
         Assert.Equal(expected, result);
     }

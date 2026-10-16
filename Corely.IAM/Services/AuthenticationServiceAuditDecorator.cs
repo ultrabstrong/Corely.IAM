@@ -1,10 +1,10 @@
 using Corely.Common.Extensions;
-using Corely.IAM.Audits.Constants;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Services;
@@ -44,7 +44,7 @@ internal class AuthenticationServiceAuditDecorator(
 
     public Task<SignInResult> VerifyMfaAsync(VerifyMfaRequest request) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Execute, PermissionConstants.USER_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Execute, User.RESOURCE_TYPE)
             {
                 ActorMfaChallengeToken = request.MfaChallengeToken,
             },
@@ -54,14 +54,14 @@ internal class AuthenticationServiceAuditDecorator(
 
     public Task<RenewAuthTokenResult> RenewAuthTokenAsync(RenewAuthTokenRequest request) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE),
+            new AuditCall(SERVICE, AuthAction.Read, User.RESOURCE_TYPE),
             () => _inner.RenewAuthTokenAsync(request),
             r => AuditOutcome.Of(r.ResultCode)
         );
 
     public Task<SignInResult> SwitchAccountAsync(SwitchAccountRequest request) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Execute, PermissionConstants.ACCOUNT_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Execute, Account.RESOURCE_TYPE)
             {
                 AccountId = request.AccountId,
                 ResourceIds = [request.AccountId],
@@ -96,7 +96,7 @@ internal class AuthenticationServiceAuditDecorator(
             OnUser(AuthAction.Execute),
             () => _inner.SignOutAsync(request),
             signedOut => new AuditOutcome(
-                signedOut ? AuditConstants.SUCCESS_RESULT_CODE : AuditConstants.FAILED_RESULT_CODE
+                signedOut ? AuditEntry.SUCCESS_RESULT_CODE : AuditEntry.FAILED_RESULT_CODE
             )
         );
 
@@ -109,5 +109,5 @@ internal class AuthenticationServiceAuditDecorator(
     public void AuthenticateAsSystem(string deviceId) => _inner.AuthenticateAsSystem(deviceId);
 
     private static AuditCall OnUser(AuthAction action) =>
-        new(SERVICE, action, PermissionConstants.USER_RESOURCE_TYPE) { AccountId = Guid.Empty };
+        new(SERVICE, action, User.RESOURCE_TYPE) { AccountId = Guid.Empty };
 }

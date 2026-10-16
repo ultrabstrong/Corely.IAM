@@ -1,6 +1,7 @@
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
@@ -53,9 +54,7 @@ public class UserProcessorAuthorizationDecoratorTests
             new User { Id = userId, Username = "testuser" }
         );
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, userId)
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE, userId))
             .ReturnsAsync(true);
         _mockInnerProcessor.Setup(x => x.GetUserAsync(userId)).ReturnsAsync(expectedResult);
 
@@ -63,12 +62,7 @@ public class UserProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Read,
-                    PermissionConstants.USER_RESOURCE_TYPE,
-                    userId
-                ),
+            x => x.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE, userId),
             Times.Once
         );
     }
@@ -78,9 +72,7 @@ public class UserProcessorAuthorizationDecoratorTests
     {
         var userId = Guid.CreateVersion7();
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, userId)
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE, userId))
             .ReturnsAsync(false);
 
         var result = await _decorator.GetUserAsync(userId);
@@ -134,9 +126,7 @@ public class UserProcessorAuthorizationDecoratorTests
             "test-key"
         );
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, userId)
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE, userId))
             .ReturnsAsync(true);
         _mockInnerProcessor
             .Setup(x => x.GetAsymmetricSignatureVerificationKeyAsync(userId))
@@ -146,12 +136,7 @@ public class UserProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Read,
-                    PermissionConstants.USER_RESOURCE_TYPE,
-                    userId
-                ),
+            x => x.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE, userId),
             Times.Once
         );
     }
@@ -161,9 +146,7 @@ public class UserProcessorAuthorizationDecoratorTests
     {
         var userId = Guid.CreateVersion7();
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, userId)
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE, userId))
             .ReturnsAsync(false);
 
         var result = await _decorator.GetAsymmetricSignatureVerificationKeyAsync(userId);
@@ -220,21 +203,11 @@ public class UserProcessorAuthorizationDecoratorTests
             []
         );
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Update,
-                    PermissionConstants.USER_RESOURCE_TYPE,
-                    request.UserId
-                )
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, User.RESOURCE_TYPE, request.UserId))
             .ReturnsAsync(true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Read,
-                    PermissionConstants.ROLE_RESOURCE_TYPE,
-                    It.IsAny<Guid[]>()
-                )
+                x.IsAuthorizedAsync(AuthAction.Read, Role.RESOURCE_TYPE, It.IsAny<Guid[]>())
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
@@ -245,19 +218,14 @@ public class UserProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Update,
-                    PermissionConstants.USER_RESOURCE_TYPE,
-                    request.UserId
-                ),
+            x => x.IsAuthorizedAsync(AuthAction.Update, User.RESOURCE_TYPE, request.UserId),
             Times.Once
         );
         _mockAuthorizationProvider.Verify(
             x =>
                 x.IsAuthorizedAsync(
                     AuthAction.Read,
-                    PermissionConstants.ROLE_RESOURCE_TYPE,
+                    Role.RESOURCE_TYPE,
                     request.RoleIds[0],
                     request.RoleIds[1]
                 ),
@@ -274,13 +242,7 @@ public class UserProcessorAuthorizationDecoratorTests
             Guid.CreateVersion7()
         );
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Update,
-                    PermissionConstants.USER_RESOURCE_TYPE,
-                    request.UserId
-                )
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, User.RESOURCE_TYPE, request.UserId))
             .ReturnsAsync(false);
 
         var result = await _decorator.AssignRolesToUserAsync(request);
@@ -300,21 +262,11 @@ public class UserProcessorAuthorizationDecoratorTests
             Guid.CreateVersion7()
         );
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Update,
-                    PermissionConstants.USER_RESOURCE_TYPE,
-                    request.UserId
-                )
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, User.RESOURCE_TYPE, request.UserId))
             .ReturnsAsync(true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Read,
-                    PermissionConstants.ROLE_RESOURCE_TYPE,
-                    It.IsAny<Guid[]>()
-                )
+                x.IsAuthorizedAsync(AuthAction.Read, Role.RESOURCE_TYPE, It.IsAny<Guid[]>())
             )
             .ReturnsAsync(false);
 
@@ -370,21 +322,11 @@ public class UserProcessorAuthorizationDecoratorTests
             []
         );
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Update,
-                    PermissionConstants.USER_RESOURCE_TYPE,
-                    request.UserId
-                )
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, User.RESOURCE_TYPE, request.UserId))
             .ReturnsAsync(true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Read,
-                    PermissionConstants.ROLE_RESOURCE_TYPE,
-                    It.IsAny<Guid[]>()
-                )
+                x.IsAuthorizedAsync(AuthAction.Read, Role.RESOURCE_TYPE, It.IsAny<Guid[]>())
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
@@ -395,19 +337,14 @@ public class UserProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Update,
-                    PermissionConstants.USER_RESOURCE_TYPE,
-                    request.UserId
-                ),
+            x => x.IsAuthorizedAsync(AuthAction.Update, User.RESOURCE_TYPE, request.UserId),
             Times.Once
         );
         _mockAuthorizationProvider.Verify(
             x =>
                 x.IsAuthorizedAsync(
                     AuthAction.Read,
-                    PermissionConstants.ROLE_RESOURCE_TYPE,
+                    Role.RESOURCE_TYPE,
                     request.RoleIds[0],
                     request.RoleIds[1]
                 ),
@@ -424,13 +361,7 @@ public class UserProcessorAuthorizationDecoratorTests
             Guid.CreateVersion7()
         );
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Update,
-                    PermissionConstants.USER_RESOURCE_TYPE,
-                    request.UserId
-                )
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, User.RESOURCE_TYPE, request.UserId))
             .ReturnsAsync(false);
 
         var result = await _decorator.RemoveRolesFromUserAsync(request);
@@ -450,21 +381,11 @@ public class UserProcessorAuthorizationDecoratorTests
             Guid.CreateVersion7()
         );
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Update,
-                    PermissionConstants.USER_RESOURCE_TYPE,
-                    request.UserId
-                )
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, User.RESOURCE_TYPE, request.UserId))
             .ReturnsAsync(true);
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Read,
-                    PermissionConstants.ROLE_RESOURCE_TYPE,
-                    It.IsAny<Guid[]>()
-                )
+                x.IsAuthorizedAsync(AuthAction.Read, Role.RESOURCE_TYPE, It.IsAny<Guid[]>())
             )
             .ReturnsAsync(false);
 
@@ -515,9 +436,7 @@ public class UserProcessorAuthorizationDecoratorTests
             .Setup(x => x.IsAuthorizedForOwnUser(userId, It.IsAny<bool>()))
             .Returns(false);
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, userId)
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE, userId))
             .ReturnsAsync(true);
         _mockInnerProcessor
             .Setup(x => x.GetUserByIdAsync(userId, false, It.IsAny<Guid>()))
@@ -540,9 +459,7 @@ public class UserProcessorAuthorizationDecoratorTests
             .Setup(x => x.IsAuthorizedForOwnUser(userId, It.IsAny<bool>()))
             .Returns(false);
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, PermissionConstants.USER_RESOURCE_TYPE, userId)
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE, userId))
             .ReturnsAsync(false);
 
         var result = await _decorator.GetUserByIdAsync(userId, false);

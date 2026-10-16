@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Corely.IAM.Extensions;
-using Corely.IAM.Users.Constants;
+using Corely.IAM.Security.Models;
 
 namespace Corely.IAM.UnitTests.Extensions;
 
@@ -31,7 +31,7 @@ public class JwtSecurityTokenExtensionsTests
     {
         var started = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc);
         var token = Token(
-            Unix(UserConstants.SESSION_STARTED_AT_CLAIM, started),
+            Unix(TokenIssueContext.SESSION_STARTED_AT_CLAIM, started),
             Unix(JwtRegisteredClaimNames.Iat, started.AddHours(1))
         );
 
@@ -43,7 +43,7 @@ public class JwtSecurityTokenExtensionsTests
     {
         var issued = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc);
         var token = Token(
-            new Claim(UserConstants.SESSION_STARTED_AT_CLAIM, "not a number"),
+            new Claim(TokenIssueContext.SESSION_STARTED_AT_CLAIM, "not a number"),
             Unix(JwtRegisteredClaimNames.Iat, issued)
         );
 
@@ -60,7 +60,7 @@ public class JwtSecurityTokenExtensionsTests
     public void SignedInAccountId_ParsesTheClaim()
     {
         var id = Guid.CreateVersion7();
-        var token = Token(new Claim(UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM, id.ToString()));
+        var token = Token(new Claim(TokenIssueContext.SIGNED_IN_ACCOUNT_ID_CLAIM, id.ToString()));
 
         Assert.Equal(id, token.SignedInAccountId());
     }
@@ -74,7 +74,7 @@ public class JwtSecurityTokenExtensionsTests
         var token =
             value == null
                 ? Token()
-                : Token(new Claim(UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM, value));
+                : Token(new Claim(TokenIssueContext.SIGNED_IN_ACCOUNT_ID_CLAIM, value));
 
         Assert.Null(token.SignedInAccountId());
     }

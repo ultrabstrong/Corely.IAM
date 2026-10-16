@@ -1,4 +1,4 @@
-﻿using Corely.IAM.BasicAuths.Constants;
+﻿using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Validators;
 using Corely.IAM.UnitTests.ClassData;
 using Corely.Security.Hashing.Models;
@@ -28,7 +28,7 @@ public class BasicAuthValidatorTests
 
     public static IEnumerable<object[]> InvalidPasswordData() =>
         [
-            [new string('a', BasicAuthConstants.PASSWORD_MAX_LENGTH + 1)],
+            [new string('a', BasicAuth.PASSWORD_MAX_LENGTH + 1)],
         ];
 
     [Fact]

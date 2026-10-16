@@ -1,13 +1,12 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Entities;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -235,7 +234,7 @@ public class AuditServiceTests
             .GetRequiredService<IRepo<AuditEntryEntity>>()
             .CreateAsync(
                 Enumerable
-                    .Range(0, AuditConstants.EXPORT_MAX_ENTRIES + 1)
+                    .Range(0, ExportAuditEntriesResult.MAX_ENTRIES + 1)
                     .Select(i => NewEntry(_accountId, _now.AddSeconds(-i)))
                     .ToList()
             );
@@ -243,7 +242,7 @@ public class AuditServiceTests
         var result = await _service.ExportEntriesAsync(new AuditEntryFilter());
 
         Assert.True(result.Truncated);
-        Assert.Equal(AuditConstants.EXPORT_MAX_ENTRIES, result.ExportedCount);
+        Assert.Equal(ExportAuditEntriesResult.MAX_ENTRIES, result.ExportedCount);
         Assert.Contains("10,000", result.Message);
     }
 
@@ -342,7 +341,7 @@ public class AuditServiceTests
 
         Assert.Equal(AccountAuditSettings.Default(_accountId), result.Settings);
         Assert.Equal(AuditActions.All, result.AllowedActions);
-        Assert.Equal(AuditConstants.DEFAULT_MAX_RETENTION_DAYS, result.MaxRetentionDays);
+        Assert.Equal(PlatformSettings.DEFAULT_AUDIT_MAX_RETENTION_DAYS, result.MaxRetentionDays);
     }
 
     [Fact]
@@ -386,7 +385,7 @@ public class AuditServiceTests
 
     [Theory]
     [InlineData(-1)]
-    [InlineData(AuditConstants.DEFAULT_MAX_RETENTION_DAYS + 1)]
+    [InlineData(PlatformSettings.DEFAULT_AUDIT_MAX_RETENTION_DAYS + 1)]
     public async Task UpdateAccountSettings_RefusesARetentionOutsideZeroToThePlatformMaximum(
         int retentionDays
     )

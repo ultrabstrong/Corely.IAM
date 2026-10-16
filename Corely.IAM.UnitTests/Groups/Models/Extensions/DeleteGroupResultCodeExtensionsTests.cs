@@ -21,11 +21,11 @@ public class DeleteGroupResultCodeExtensionsTests
         DeregisterGroupResultCode.UnauthorizedError
     )]
     public void ToDeregisterGroupResultCode_MapsCorrectly(
-        DeleteGroupResultCode input,
+        Enum input,
         DeregisterGroupResultCode expected
     )
     {
-        var result = input.ToDeregisterGroupResultCode();
+        var result = ((DeleteGroupResultCode)input).ToDeregisterGroupResultCode();
 
         Assert.Equal(expected, result);
     }

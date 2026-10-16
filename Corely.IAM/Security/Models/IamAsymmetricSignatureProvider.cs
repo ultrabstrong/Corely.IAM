@@ -3,7 +3,7 @@ using Corely.Security.Signature.Providers;
 
 namespace Corely.IAM.Security.Models;
 
-public class IamAsymmetricSignatureProvider(
+internal class IamAsymmetricSignatureProvider(
     IAsymmetricSignatureProvider provider,
     IAsymmetricKeyStoreProvider keyStore,
     string providerName,

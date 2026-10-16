@@ -2,10 +2,12 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Groups.Entities;
-using Corely.IAM.Permissions.Constants;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.Permissions.Entities;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Entities;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
@@ -28,15 +30,12 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceType: Group.RESOURCE_TYPE,
             resourceId: Guid.Empty,
             create: true
         );
 
-        var result = await provider.IsAuthorizedAsync(
-            AuthAction.Create,
-            PermissionConstants.GROUP_RESOURCE_TYPE
-        );
+        var result = await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE);
 
         Assert.True(result);
     }
@@ -48,14 +47,14 @@ public class AuthorizationProviderTests
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         var resourceId = Guid.CreateVersion7();
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceType: Group.RESOURCE_TYPE,
             resourceId: resourceId,
             update: true
         );
 
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             resourceId
         );
 
@@ -68,14 +67,14 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceType: Group.RESOURCE_TYPE,
             resourceId: Guid.Empty,
             read: true
         );
 
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             Guid.CreateVersion7()
         );
 
@@ -87,10 +86,7 @@ public class AuthorizationProviderTests
     {
         var provider = CreateProvider();
 
-        var result = await provider.IsAuthorizedAsync(
-            AuthAction.Create,
-            PermissionConstants.GROUP_RESOURCE_TYPE
-        );
+        var result = await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE);
 
         Assert.False(result);
     }
@@ -101,10 +97,7 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
 
-        var result = await provider.IsAuthorizedAsync(
-            AuthAction.Create,
-            PermissionConstants.GROUP_RESOURCE_TYPE
-        );
+        var result = await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE);
 
         Assert.False(result);
     }
@@ -115,15 +108,12 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceType: Group.RESOURCE_TYPE,
             resourceId: Guid.Empty,
             read: true
         );
 
-        var result = await provider.IsAuthorizedAsync(
-            AuthAction.Create,
-            PermissionConstants.GROUP_RESOURCE_TYPE
-        );
+        var result = await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE);
 
         Assert.False(result);
     }
@@ -134,15 +124,12 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.ROLE_RESOURCE_TYPE,
+            resourceType: Role.RESOURCE_TYPE,
             resourceId: Guid.Empty,
             create: true
         );
 
-        var result = await provider.IsAuthorizedAsync(
-            AuthAction.Create,
-            PermissionConstants.GROUP_RESOURCE_TYPE
-        );
+        var result = await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE);
 
         Assert.False(result);
     }
@@ -153,14 +140,14 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceType: Group.RESOURCE_TYPE,
             resourceId: Guid.CreateVersion7(),
             update: true
         );
 
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             Guid.CreateVersion7()
         );
 
@@ -174,24 +161,11 @@ public class AuthorizationProviderTests
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(resourceType: "*", resourceId: Guid.Empty, create: true);
 
-        Assert.False(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
-        Assert.False(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.ROLE_RESOURCE_TYPE
-            )
-        );
+        Assert.False(await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE));
+        Assert.False(await provider.IsAuthorizedAsync(AuthAction.Create, Role.RESOURCE_TYPE));
         Assert.Equal(
             new HashSet<Guid>(),
-            await provider.GetAuthorizedResourceIdsAsync(
-                AuthAction.Create,
-                PermissionConstants.USER_RESOURCE_TYPE
-            )
+            await provider.GetAuthorizedResourceIdsAsync(AuthAction.Create, User.RESOURCE_TYPE)
         );
     }
 
@@ -201,24 +175,14 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceType: Group.RESOURCE_TYPE,
             resourceId: Guid.Empty,
             create: true,
             read: true
         );
 
-        Assert.True(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
-        Assert.True(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Read,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
+        Assert.True(await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE));
+        Assert.True(await provider.IsAuthorizedAsync(AuthAction.Read, Group.RESOURCE_TYPE));
     }
 
     [Fact]
@@ -375,14 +339,14 @@ public class AuthorizationProviderTests
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         var resourceIdWithPermission = Guid.CreateVersion7();
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.USER_RESOURCE_TYPE,
+            resourceType: User.RESOURCE_TYPE,
             resourceId: resourceIdWithPermission,
             read: true
         );
 
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
+            User.RESOURCE_TYPE,
             resourceIdWithPermission,
             Guid.CreateVersion7(),
             Guid.CreateVersion7()
@@ -397,25 +361,15 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceType: Group.RESOURCE_TYPE,
             resourceId: Guid.Empty,
             create: true
         );
 
-        Assert.True(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
+        Assert.True(await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE));
 
         ((IAuthorizationCacheClearer)provider).ClearCache();
-        Assert.True(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
+        Assert.True(await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE));
     }
 
     [Fact]
@@ -466,17 +420,14 @@ public class AuthorizationProviderTests
         {
             Id = Guid.CreateVersion7(),
             AccountId = accountId,
-            ResourceType = PermissionConstants.ROLE_RESOURCE_TYPE,
+            ResourceType = Role.RESOURCE_TYPE,
             ResourceId = Guid.Empty,
             Read = true,
             Roles = [role],
         };
         await permissionRepo.CreateAsync(permission);
 
-        var result = await provider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE
-        );
+        var result = await provider.IsAuthorizedAsync(AuthAction.Read, Role.RESOURCE_TYPE);
 
         Assert.True(result);
     }
@@ -491,24 +442,16 @@ public class AuthorizationProviderTests
         SetUserContext(userId, account1, [account1, account2]);
 
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceType: Group.RESOURCE_TYPE,
             resourceId: Guid.Empty,
             create: true
         );
 
-        Assert.True(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
+        Assert.True(await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE));
 
         SetUserContext(userId, account2, [account1, account2]);
 
-        var result = await provider.IsAuthorizedAsync(
-            AuthAction.Create,
-            PermissionConstants.GROUP_RESOURCE_TYPE
-        );
+        var result = await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE);
 
         Assert.False(result);
     }
@@ -522,14 +465,14 @@ public class AuthorizationProviderTests
         var resourceId2 = Guid.CreateVersion7();
         var resourceId3 = Guid.CreateVersion7();
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.USER_RESOURCE_TYPE,
+            resourceType: User.RESOURCE_TYPE,
             resourceIds: new[] { resourceId1, resourceId2, resourceId3 },
             read: true
         );
 
         var result = await provider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
+            User.RESOURCE_TYPE,
             resourceId1,
             resourceId2,
             resourceId3
@@ -667,27 +610,17 @@ public class AuthorizationProviderTests
         var userId = Guid.CreateVersion7();
         SetUserContext(userId, Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceType: Group.RESOURCE_TYPE,
             resourceId: Guid.Empty,
             create: true
         );
 
-        Assert.True(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
+        Assert.True(await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE));
 
         await RevokeAllPermissionsAsync();
         _timeProvider.Advance(TimeSpan.FromSeconds(CACHE_TTL_SECONDS - 1));
 
-        Assert.True(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
+        Assert.True(await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE));
     }
 
     [Fact]
@@ -696,27 +629,17 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceType: Group.RESOURCE_TYPE,
             resourceId: Guid.Empty,
             create: true
         );
 
-        Assert.True(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
+        Assert.True(await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE));
 
         await RevokeAllPermissionsAsync();
         _timeProvider.Advance(TimeSpan.FromSeconds(CACHE_TTL_SECONDS));
 
-        Assert.False(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
+        Assert.False(await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE));
     }
 
     [Fact]
@@ -725,32 +648,21 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceType: Group.RESOURCE_TYPE,
             resourceId: Guid.Empty,
             create: true
         );
 
-        await provider.IsAuthorizedAsync(
-            AuthAction.Create,
-            PermissionConstants.GROUP_RESOURCE_TYPE
-        );
+        await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE);
         await RevokeAllPermissionsAsync();
 
         for (var i = 0; i < CACHE_TTL_SECONDS; i++)
         {
             _timeProvider.Advance(TimeSpan.FromSeconds(1));
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            );
+            await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE);
         }
 
-        Assert.False(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
+        Assert.False(await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE));
     }
 
     [Fact]
@@ -759,27 +671,17 @@ public class AuthorizationProviderTests
         var provider = CreateProvider();
         SetUserContext(Guid.CreateVersion7(), Guid.CreateVersion7());
         await SetupTestPermissionDataAsync(
-            resourceType: PermissionConstants.GROUP_RESOURCE_TYPE,
+            resourceType: Group.RESOURCE_TYPE,
             resourceId: Guid.Empty,
             create: true
         );
 
-        Assert.True(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
+        Assert.True(await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE));
 
         await RevokeAllPermissionsAsync();
         ((IAuthorizationCacheClearer)provider).ClearCache();
 
-        Assert.False(
-            await provider.IsAuthorizedAsync(
-                AuthAction.Create,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
-        );
+        Assert.False(await provider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE));
     }
 
     private sealed class ControllableTimeProvider : TimeProvider

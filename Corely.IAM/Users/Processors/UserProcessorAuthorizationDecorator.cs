@@ -1,7 +1,8 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
@@ -21,11 +22,7 @@ internal class UserProcessorAuthorizationDecorator(
         _inner.CreateUserAsync(request);
 
     public async Task<GetUserResult> GetUserAsync(Guid userId) =>
-        await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
-            userId
-        )
+        await _authorizationProvider.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE, userId)
             ? await _inner.GetUserAsync(userId)
             : new GetUserResult(
                 GetUserResultCode.UnauthorizedError,
@@ -44,11 +41,7 @@ internal class UserProcessorAuthorizationDecorator(
     public async Task<GetAsymmetricKeyResult> GetAsymmetricSignatureVerificationKeyAsync(
         Guid userId
     ) =>
-        await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
-            userId
-        )
+        await _authorizationProvider.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE, userId)
             ? await _inner.GetAsymmetricSignatureVerificationKeyAsync(userId)
             : new GetAsymmetricKeyResult(
                 GetAsymmetricKeyResultCode.UnauthorizedError,
@@ -73,12 +66,12 @@ internal class UserProcessorAuthorizationDecorator(
             !_authorizationProvider.HasAccountContext(request.AccountId)
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Update,
-                PermissionConstants.USER_RESOURCE_TYPE,
+                User.RESOURCE_TYPE,
                 request.UserId
             )
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Read,
-                PermissionConstants.ROLE_RESOURCE_TYPE,
+                Role.RESOURCE_TYPE,
                 [.. request.RoleIds]
             )
         )
@@ -116,12 +109,12 @@ internal class UserProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.USER_RESOURCE_TYPE,
+            User.RESOURCE_TYPE,
             request.UserId
         )
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             [.. request.RoleIds]
         )
             ? await _inner.RemoveRolesFromUserAsync(request)
@@ -147,10 +140,7 @@ internal class UserProcessorAuthorizationDecorator(
     {
         if (
             !_authorizationProvider.HasAccountContext(request.AccountId)
-            || !await _authorizationProvider.IsAuthorizedAsync(
-                AuthAction.Read,
-                PermissionConstants.USER_RESOURCE_TYPE
-            )
+            || !await _authorizationProvider.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE)
         )
         {
             return new ListResult<User>(
@@ -165,7 +155,7 @@ internal class UserProcessorAuthorizationDecorator(
             request,
             await _authorizationProvider.GetAuthorizedResourceIdsAsync(
                 AuthAction.Read,
-                PermissionConstants.USER_RESOURCE_TYPE
+                User.RESOURCE_TYPE
             )
         );
     }
@@ -180,7 +170,7 @@ internal class UserProcessorAuthorizationDecorator(
             _authorizationProvider.HasAccountContext(accountId)
             && await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Read,
-                PermissionConstants.USER_RESOURCE_TYPE,
+                User.RESOURCE_TYPE,
                 userId
             )
         )

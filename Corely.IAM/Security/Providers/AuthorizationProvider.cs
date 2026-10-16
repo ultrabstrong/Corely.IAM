@@ -1,9 +1,8 @@
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;

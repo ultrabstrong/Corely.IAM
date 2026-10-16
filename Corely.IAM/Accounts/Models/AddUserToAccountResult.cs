@@ -1,8 +1,8 @@
 namespace Corely.IAM.Accounts.Models;
 
-public record AddUserToAccountResult(AddUserToAccountResultCode ResultCode, string Message);
+internal record AddUserToAccountResult(AddUserToAccountResultCode ResultCode, string Message);
 
-public enum AddUserToAccountResultCode
+internal enum AddUserToAccountResultCode
 {
     Success,
     UserNotFoundError,

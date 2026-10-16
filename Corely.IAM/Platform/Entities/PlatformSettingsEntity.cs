@@ -5,6 +5,8 @@ namespace Corely.IAM.Platform.Entities;
 
 internal class PlatformSettingsEntity : IHasCreatedUtc, IHasModifiedUtc
 {
+    public const int SINGLE_ROW_ID = 1;
+
     public int Id { get; set; }
     public bool AuditEnabled { get; set; }
     public int AuditMaxRetentionDays { get; set; }

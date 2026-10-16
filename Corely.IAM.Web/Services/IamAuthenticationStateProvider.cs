@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Corely.IAM.Web.Services;
 
-public class IamAuthenticationStateProvider(
+internal class IamAuthenticationStateProvider(
     IBlazorUserContextAccessor blazorUserContextAccessor,
     IUserContextClaimsBuilder userContextClaimsBuilder
 ) : AuthenticationStateProvider

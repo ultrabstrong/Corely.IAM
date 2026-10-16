@@ -1,8 +1,8 @@
 namespace Corely.IAM.Groups.Models;
 
-public record DeleteGroupResult(DeleteGroupResultCode ResultCode, string Message);
+internal record DeleteGroupResult(DeleteGroupResultCode ResultCode, string Message);
 
-public enum DeleteGroupResultCode
+internal enum DeleteGroupResultCode
 {
     Success,
     GroupNotFoundError,

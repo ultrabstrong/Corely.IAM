@@ -27,10 +27,10 @@ else
                 @if (!_isEditing)
                 {
                     <div class="d-flex gap-2">
-                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                        <PermissionView Action="AuthAction.Update" Resource="@Account.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                             <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
                         </PermissionView>
-                        <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                        <PermissionView Action="AuthAction.Delete" Resource="@Account.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                             <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
                         </PermissionView>
                     </div>
@@ -59,7 +59,7 @@ else
         <div class="section-divider mb-4">
             <div class="section-divider-label">
                 Invitations
-                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <PermissionView Action="AuthAction.Update" Resource="@Account.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                     <button class="btn btn-primary btn-sm" @onclick="ShowCreateInvitation" disabled="@_loading">Create Invitation</button>
                 </PermissionView>
             </div>
@@ -142,7 +142,7 @@ else
                                 <div class="row-actions">
                                     @if (inv.IsPending(DateTime.UtcNow))
                                     {
-                                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                        <PermissionView Action="AuthAction.Update" Resource="@Account.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                                             <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRevokeInvitation(inv.Id, inv.Email)" title="Revoke"><i class="bi bi-x-circle"></i></button>
                                         </PermissionView>
                                     }
@@ -177,7 +177,7 @@ else
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     <a href="@AppRoutes.Users/@user.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
-                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                    <PermissionView Action="AuthAction.Update" Resource="@Account.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                                         <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
                                     </PermissionView>
                                 </div>
@@ -190,8 +190,8 @@ else
                         OnPageChanged="newSkip => { _usersSkip = newSkip; StateHasChanged(); }" />
         </div>
 
-        <PermissionView Action="AuthAction.Read" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
-            <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+        <PermissionView Action="AuthAction.Read" Resource="@Account.RESOURCE_TYPE" ResourceIds="new[] { Id }">
+            <PermissionView Action="AuthAction.Update" Resource="@Account.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                 <Authorized>
                     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
                                             DescriptionText="@KEYS_DESCRIPTION" RotateKeyAsync="RotateKeyAsync" />
@@ -203,7 +203,7 @@ else
             </PermissionView>
         </PermissionView>
 
-        <PermissionView Action="AuthAction.Read" Resource="@AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE">
+        <PermissionView Action="AuthAction.Read" Resource="@AccountAuditSettings.RESOURCE_TYPE">
             <AuditSettingsSection AccountId="Id" />
         </PermissionView>
 
@@ -290,7 +290,7 @@ else
     private SortDirection? _invSortDirection;
     private string? _inviteEmail;
     private string? _inviteDescription;
-    private int _inviteExpirySeconds = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
+    private int _inviteExpirySeconds = CreateInvitationRequest.DEFAULT_EXPIRY_SECONDS;
     private string? _createdToken;
     private bool _tokenCopied;
     private CancellationTokenSource? _invSearchCts;
@@ -500,7 +500,7 @@ else
     {
         _inviteEmail = string.Empty;
         _inviteDescription = string.Empty;
-        _inviteExpirySeconds = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
+        _inviteExpirySeconds = CreateInvitationRequest.DEFAULT_EXPIRY_SECONDS;
         _createdToken = null;
         _tokenCopied = false;
         _createInvitationModal.Show();

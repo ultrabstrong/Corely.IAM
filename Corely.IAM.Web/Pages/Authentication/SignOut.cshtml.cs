@@ -23,7 +23,7 @@ public class SignOutModel(
 
     private async Task<IActionResult> SignOutCoreAsync()
     {
-        var tokenId = Request.Cookies[AuthenticationConstants.AUTH_TOKEN_ID_COOKIE];
+        var tokenId = Request.Cookies[AuthCookieManager.AUTH_TOKEN_ID_COOKIE];
         if (!string.IsNullOrWhiteSpace(tokenId))
         {
             await authenticationService.SignOutAsync(new SignOutRequest(tokenId));

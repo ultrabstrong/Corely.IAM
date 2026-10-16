@@ -4,7 +4,6 @@ using Corely.Common.Providers.Redaction;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.ConsoleApp.SerilogCustomization;
 using Corely.IAM.Groups.Models;
-using Corely.IAM.Invitations.Constants;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
@@ -378,7 +377,7 @@ internal class Program
                     registerAccountResult.CreatedAccountId,
                     "test@example.com",
                     "Test invitation",
-                    InvitationConstants.DEFAULT_EXPIRY_SECONDS
+                    CreateInvitationRequest.DEFAULT_EXPIRY_SECONDS
                 )
             );
             Console.WriteLine(
@@ -407,7 +406,7 @@ internal class Program
                     registerAccountResult.CreatedAccountId,
                     "test2@example.com",
                     "Will be revoked",
-                    InvitationConstants.DEFAULT_EXPIRY_SECONDS
+                    CreateInvitationRequest.DEFAULT_EXPIRY_SECONDS
                 )
             );
             Console.WriteLine(

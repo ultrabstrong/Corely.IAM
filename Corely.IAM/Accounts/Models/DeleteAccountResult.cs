@@ -1,8 +1,8 @@
 namespace Corely.IAM.Accounts.Models;
 
-public record DeleteAccountResult(DeleteAccountResultCode ResultCode, string Message);
+internal record DeleteAccountResult(DeleteAccountResultCode ResultCode, string Message);
 
-public enum DeleteAccountResultCode
+internal enum DeleteAccountResultCode
 {
     Success,
     AccountNotFoundError,

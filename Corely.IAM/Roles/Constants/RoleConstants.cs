@@ -1,9 +1,0 @@
-﻿namespace Corely.IAM.Roles.Constants;
-
-public static class RoleConstants
-{
-    public const int ROLE_NAME_MIN_LENGTH = 1;
-    public const int ROLE_NAME_MAX_LENGTH = 100;
-
-    public const string OWNER_ROLE_NAME = "Owner Role";
-}

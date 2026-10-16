@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace Corely.IAM.Permissions;
 
-public static class PermissionLabelProvider
+internal static class PermissionLabelProvider
 {
     public static string GetCrudxLabel(
         bool create,

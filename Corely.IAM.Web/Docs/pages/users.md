@@ -13,7 +13,7 @@ User table for the current account with search, sort, and pagination.
 - **Remove**: removes user from current account (not a user delete)
 
 **Authorization gates:**
-- `AuthAction.Update` + `ACCOUNT_RESOURCE_TYPE`: Remove button
+- `AuthAction.Update` + `Account.RESOURCE_TYPE`: Remove button
 
 **Behavior:**
 - Displays only users in the current account
@@ -36,7 +36,7 @@ Read-only user properties with group and role assignment. When viewing your own 
 - **Effective permissions panel**: inherited permissions through roles and groups
 
 **Authorization gates:**
-- `AuthAction.Update` + `USER_RESOURCE_TYPE` + `ResourceIds: [Id]`: Add Groups, Add Roles, Remove Role buttons
+- `AuthAction.Update` + `User.RESOURCE_TYPE` + `ResourceIds: [Id]`: Add Groups, Add Roles, Remove Role buttons
 
 **Behavior:**
 - Loads with `hydrate: true` to include group and role relations

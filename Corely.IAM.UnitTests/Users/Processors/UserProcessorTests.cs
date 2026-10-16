@@ -4,10 +4,9 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Models;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Providers;
-using Corely.IAM.Users.Constants;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
@@ -130,7 +129,7 @@ public class UserProcessorTests
         {
             Id = Guid.CreateVersion7(),
             AccountId = accountId,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = users,
             Groups = [],
@@ -199,7 +198,7 @@ public class UserProcessorTests
         {
             Id = Guid.CreateVersion7(),
             AccountId = accountId,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = directUsers,
             Groups = [createdGroup],
@@ -230,7 +229,7 @@ public class UserProcessorTests
 
         Assert.Equal(CreateUserResultCode.ValidationError, result.ResultCode);
         Assert.Contains("Username", result.Message);
-        Assert.Contains($"{UserConstants.USERNAME_MIN_LENGTH} characters", result.Message);
+        Assert.Contains($"{User.USERNAME_MIN_LENGTH} characters", result.Message);
     }
 
     [Fact]
@@ -635,7 +634,7 @@ public class UserProcessorTests
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var ownerRole = await roleRepo.GetAsync(r =>
-            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == account.Id && r.Name == Role.OWNER_ROLE_NAME
         );
 
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
@@ -664,7 +663,7 @@ public class UserProcessorTests
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var ownerRole = await roleRepo.GetAsync(r =>
-            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == account.Id && r.Name == Role.OWNER_ROLE_NAME
         );
 
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
@@ -687,7 +686,7 @@ public class UserProcessorTests
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var ownerRole = await roleRepo.GetAsync(r =>
-            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == account.Id && r.Name == Role.OWNER_ROLE_NAME
         );
 
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();
@@ -712,7 +711,7 @@ public class UserProcessorTests
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var ownerRole = await roleRepo.GetAsync(r =>
-            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == account.Id && r.Name == Role.OWNER_ROLE_NAME
         );
 
         var userRepo = _serviceFactory.GetRequiredService<IRepo<UserEntity>>();

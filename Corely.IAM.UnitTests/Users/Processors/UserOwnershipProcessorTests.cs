@@ -2,8 +2,8 @@ using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Entities;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Roles.Models;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Processors;
 using Microsoft.Extensions.Logging;
@@ -99,7 +99,7 @@ public class UserOwnershipProcessorTests
         {
             Id = Guid.CreateVersion7(),
             AccountId = accountId,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = directUsers,
             Groups = groups,
@@ -227,7 +227,7 @@ public class UserOwnershipProcessorTests
         {
             Id = Guid.CreateVersion7(),
             AccountId = account.Id,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = [user1!, user2!],
             Groups = [],
@@ -328,7 +328,7 @@ public class UserOwnershipProcessorTests
         {
             Id = Guid.CreateVersion7(),
             AccountId = account.Id,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = [],
             Groups = [createdGroup2],
@@ -368,7 +368,7 @@ public class UserOwnershipProcessorTests
         {
             Id = Guid.CreateVersion7(),
             AccountId = account.Id,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = [],
             Groups = [createdGroup],
@@ -434,7 +434,7 @@ public class UserOwnershipProcessorTests
         {
             Id = Guid.CreateVersion7(),
             AccountId = account.Id,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = [user!],
             Groups = [createdGroup],
@@ -504,7 +504,7 @@ public class UserOwnershipProcessorTests
         {
             Id = Guid.CreateVersion7(),
             AccountId = account.Id,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = [],
             Groups = [createdGroup],

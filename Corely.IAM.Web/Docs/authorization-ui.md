@@ -5,7 +5,7 @@
 ## Usage
 
 ```razor
-<PermissionView Action="AuthAction.Create" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE">
+<PermissionView Action="AuthAction.Create" Resource="@Permission.RESOURCE_TYPE">
     <button class="btn btn-primary">Create Permission</button>
 </PermissionView>
 ```
@@ -28,7 +28,7 @@ The button only renders if the current user has `Create` permission on the `perm
 Show different content based on authorization state:
 
 ```razor
-<PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.ROLE_RESOURCE_TYPE">
+<PermissionView Action="AuthAction.Delete" Resource="@Role.RESOURCE_TYPE">
     <Authorized>
         <button class="btn btn-danger">Delete Role</button>
     </Authorized>
@@ -52,7 +52,7 @@ If only `ChildContent` is provided (no `Authorized` fragment), it is used as the
 ### Gating a Button
 
 ```razor
-<PermissionView Action="AuthAction.Create" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE">
+<PermissionView Action="AuthAction.Create" Resource="@Group.RESOURCE_TYPE">
     <button @onclick="ShowCreateForm" class="btn btn-primary">New Group</button>
 </PermissionView>
 ```
@@ -60,7 +60,7 @@ If only `ChildContent` is provided (no `Authorized` fragment), it is used as the
 ### Gating an Entire Section
 
 ```razor
-<PermissionView Action="AuthAction.Read" Resource="@PermissionConstants.USER_RESOURCE_TYPE">
+<PermissionView Action="AuthAction.Read" Resource="@User.RESOURCE_TYPE">
     <div class="user-list">
         @* User table content *@
     </div>
@@ -71,7 +71,7 @@ If only `ChildContent` is provided (no `Authorized` fragment), it is used as the
 
 ```razor
 <PermissionView Action="AuthAction.Update"
-                Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE"
+                Resource="@Account.RESOURCE_TYPE"
                 ResourceIds="@(new[] { accountId })">
     <button @onclick="EditAccount" class="btn btn-sm btn-outline-primary">Edit</button>
 </PermissionView>
@@ -81,4 +81,4 @@ If only `ChildContent` is provided (no `Authorized` fragment), it is used as the
 
 - `PermissionView` injects `IAuthorizationProvider` directly. It does not use the Blazor `AuthorizeView` component
 - The component is in the `Corely.IAM.Web.Components.Shared` namespace
-- Use `PermissionConstants` for resource type values to avoid magic strings
+- Use each resource's `RESOURCE_TYPE` constant (`Role.RESOURCE_TYPE`) for resource type values to avoid magic strings

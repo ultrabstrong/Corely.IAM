@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Users.Models;
-using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 
 namespace Corely.IAM.Web.UnitTests.Services;
@@ -44,11 +43,11 @@ public class IamAuthenticationStateProviderTests
         Assert.Equal("jdoe@example.com", state.User.FindFirstValue(ClaimTypes.Email));
         Assert.Equal(
             accountId.ToString(),
-            state.User.FindFirstValue(AuthenticationConstants.ACCOUNT_ID_CLAIM)
+            state.User.FindFirstValue(UserContextClaimsBuilder.ACCOUNT_ID_CLAIM)
         );
         Assert.Equal(
             "Acme Corp",
-            state.User.FindFirstValue(AuthenticationConstants.ACCOUNT_NAME_CLAIM)
+            state.User.FindFirstValue(UserContextClaimsBuilder.ACCOUNT_NAME_CLAIM)
         );
     }
 

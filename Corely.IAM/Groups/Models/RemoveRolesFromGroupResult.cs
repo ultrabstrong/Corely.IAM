@@ -1,6 +1,6 @@
 namespace Corely.IAM.Groups.Models;
 
-public enum RemoveRolesFromGroupResultCode
+internal enum RemoveRolesFromGroupResultCode
 {
     Success,
     PartialSuccess,
@@ -10,7 +10,7 @@ public enum RemoveRolesFromGroupResultCode
     UnauthorizedError,
 }
 
-public record RemoveRolesFromGroupResult(
+internal record RemoveRolesFromGroupResult(
     RemoveRolesFromGroupResultCode ResultCode,
     string Message,
     int RemovedRoleCount,

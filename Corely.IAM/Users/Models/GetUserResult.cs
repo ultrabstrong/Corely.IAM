@@ -1,8 +1,8 @@
 namespace Corely.IAM.Users.Models;
 
-public record GetUserResult(GetUserResultCode ResultCode, string Message, User? User);
+internal record GetUserResult(GetUserResultCode ResultCode, string Message, User? User);
 
-public enum GetUserResultCode
+internal enum GetUserResultCode
 {
     Success,
     UserNotFoundError,

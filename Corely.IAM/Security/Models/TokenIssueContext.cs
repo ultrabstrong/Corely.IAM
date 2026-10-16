@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.Users.Constants;
 using Corely.IAM.Users.Entities;
 
 namespace Corely.IAM.Security.Models;
@@ -13,6 +12,12 @@ internal sealed record TokenIssueContext(
     Account? SignedInAccount
 )
 {
+    public const string JWT_AUDIENCE = "Corely.IAM";
+    public const string ACCOUNT_ID_CLAIM = "account_id";
+    public const string SIGNED_IN_ACCOUNT_ID_CLAIM = "signed_in_account_id";
+    public const string DEVICE_ID_CLAIM = "device_id";
+    public const string SESSION_STARTED_AT_CLAIM = "session_started_at";
+
     public List<Claim> Claims(
         string jti,
         DateTime issuedAt,
@@ -30,23 +35,21 @@ internal sealed record TokenIssueContext(
                 ClaimValueTypes.Integer64
             ),
             new(
-                UserConstants.SESSION_STARTED_AT_CLAIM,
+                SESSION_STARTED_AT_CLAIM,
                 new DateTimeOffset(sessionStartedUtc).ToUnixTimeSeconds().ToString(),
                 ClaimValueTypes.Integer64
             ),
-            new(UserConstants.DEVICE_ID_CLAIM, deviceId),
+            new(DEVICE_ID_CLAIM, deviceId),
         };
 
         foreach (var account in Accounts)
         {
-            claims.Add(new Claim(UserConstants.ACCOUNT_ID_CLAIM, account.Id.ToString()));
+            claims.Add(new Claim(ACCOUNT_ID_CLAIM, account.Id.ToString()));
         }
 
         if (SignedInAccount != null)
         {
-            claims.Add(
-                new Claim(UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM, SignedInAccount.Id.ToString())
-            );
+            claims.Add(new Claim(SIGNED_IN_ACCOUNT_ID_CLAIM, SignedInAccount.Id.ToString()));
         }
 
         return claims;

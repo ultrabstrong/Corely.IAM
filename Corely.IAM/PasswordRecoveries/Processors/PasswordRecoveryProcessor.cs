@@ -2,7 +2,6 @@ using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.PasswordRecoveries.Constants;
 using Corely.IAM.PasswordRecoveries.Entities;
 using Corely.IAM.PasswordRecoveries.Models;
 using Corely.IAM.Security.Mappers;
@@ -93,7 +92,7 @@ internal class PasswordRecoveryProcessor(
             SecretHash = secret
                 .ToHashedValueFromPlainText(_hashProviderFactory, _hashCodes.TokenHashCode)
                 .ToHashString()!,
-            ExpiresUtc = utcNow.AddSeconds(PasswordRecoveryConstants.TOKEN_TTL_SECONDS),
+            ExpiresUtc = utcNow.AddSeconds(PasswordRecoveryEntity.TOKEN_TTL_SECONDS),
         };
 
         await _passwordRecoveryRepo.CreateAsync(recoveryEntity);

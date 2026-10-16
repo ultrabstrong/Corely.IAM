@@ -1,12 +1,12 @@
-using Corely.IAM.Audits.Constants;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Models;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.IntegrationTests.Infrastructure;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,9 +38,9 @@ public class PlatformMemberAuditingTests : IAsyncLifetime
 
         await GivePlatformRoleAsync(
             _scenario.OutsiderUserId,
-            (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]),
-            (PermissionConstants.GROUP_RESOURCE_TYPE, [AuthAction.Create]),
-            (AuditConstants.AUDIT_RESOURCE_TYPE, [AuthAction.Read])
+            (Account.RESOURCE_TYPE, [AuthAction.Read]),
+            (Group.RESOURCE_TYPE, [AuthAction.Create]),
+            (AuditEntry.RESOURCE_TYPE, [AuthAction.Read])
         );
         await _scenario.EnrollTwoFactorAsync(_scenario.OutsiderUsername);
     }

@@ -1,6 +1,6 @@
 ﻿namespace Corely.IAM.Accounts.Models;
 
-public enum CreateAccountResultCode
+internal enum CreateAccountResultCode
 {
     Success,
     AccountExistsError,

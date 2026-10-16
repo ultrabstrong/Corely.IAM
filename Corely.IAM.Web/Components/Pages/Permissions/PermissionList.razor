@@ -9,7 +9,7 @@
     <h1><i class="bi bi-key me-2"></i>Permissions</h1>
     <div class="d-flex gap-2 align-items-center">
         <a href="@AppRoutes.Dashboard" class="btn btn-outline-secondary" title="Back to dashboard"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
-        <PermissionView Action="AuthAction.Create" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE">
+        <PermissionView Action="AuthAction.Create" Resource="@Permission.RESOURCE_TYPE">
             <button class="btn btn-primary" @onclick="() => _createModal.Show()"><i class="bi bi-plus-lg me-1"></i>Create</button>
         </PermissionView>
     </div>
@@ -89,7 +89,7 @@ else
                                     <a href="@AppRoutes.Permissions/@perm.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
                                     @if (!perm.IsSystemDefined)
                                     {
-                                        <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { perm.Id }">
+                                        <PermissionView Action="AuthAction.Delete" Resource="@Permission.RESOURCE_TYPE" ResourceIds="new[] { perm.Id }">
                                             <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(perm.Id, perm.DisplayName)" title="Delete"><i class="bi bi-trash"></i></button>
                                         </PermissionView>
                                     }

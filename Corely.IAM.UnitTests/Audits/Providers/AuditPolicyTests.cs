@@ -3,10 +3,9 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
-using Corely.IAM.Platform.Constants;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
 using Microsoft.Extensions.Options;
 
@@ -220,7 +219,7 @@ public class AuditPolicyTests
             .CreateAsync(
                 new PlatformSettingsEntity
                 {
-                    Id = PlatformConstants.PLATFORM_SETTINGS_ID,
+                    Id = PlatformSettingsEntity.SINGLE_ROW_ID,
                     AuditEnabled = auditEnabled,
                     AuditMaxRetentionDays = maxRetentionDays,
                     AuditAllowedActions = AuditActions.All,

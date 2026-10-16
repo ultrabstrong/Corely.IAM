@@ -1,10 +1,10 @@
 using Corely.Common.Extensions;
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 
 namespace Corely.IAM.Services;
 
@@ -60,7 +60,7 @@ internal class AuditServiceAuditDecorator(IAuditService inner, IAuditProvider au
 
     public Task<PurgeAuditEntriesResult> PurgeEntriesAsync(PurgeAuditEntriesRequest request) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Delete, AuditConstants.AUDIT_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Delete, AuditEntry.RESOURCE_TYPE)
             {
                 AccountId = request.AccountId ?? Guid.Empty,
             },
@@ -86,25 +86,21 @@ internal class AuditServiceAuditDecorator(IAuditService inner, IAuditProvider au
 
     public Task<GetPlatformSettingsResult> GetPlatformSettingsAsync() =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Read, AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE),
+            new AuditCall(SERVICE, AuthAction.Read, PlatformSettings.RESOURCE_TYPE),
             () => _inner.GetPlatformSettingsAsync(),
             r => AuditOutcome.Of(r.ResultCode)
         );
 
     public Task<ModifyResult> UpdatePlatformSettingsAsync(PlatformSettings settings) =>
         _auditProvider.RecordAsync(
-            new AuditCall(
-                SERVICE,
-                AuthAction.Update,
-                AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
-            ),
+            new AuditCall(SERVICE, AuthAction.Update, PlatformSettings.RESOURCE_TYPE),
             () => _inner.UpdatePlatformSettingsAsync(settings),
             r => AuditOutcome.Of(r.ResultCode)
         );
 
     public Task<DeleteExpiredAuditEntriesResult> DeleteExpiredEntriesAsync() =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Delete, AuditConstants.AUDIT_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Delete, AuditEntry.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
             },
@@ -113,13 +109,13 @@ internal class AuditServiceAuditDecorator(IAuditService inner, IAuditProvider au
         );
 
     private static AuditCall ReadAudit(Guid? accountId) =>
-        new(SERVICE, AuthAction.Read, AuditConstants.AUDIT_RESOURCE_TYPE)
+        new(SERVICE, AuthAction.Read, AuditEntry.RESOURCE_TYPE)
         {
             AccountId = accountId ?? Guid.Empty,
         };
 
     private static AuditCall AccountSettings(AuthAction action, Guid accountId) =>
-        new(SERVICE, action, AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE)
+        new(SERVICE, action, AccountAuditSettings.RESOURCE_TYPE)
         {
             AccountId = accountId,
             ResourceIds = [accountId],

@@ -1,6 +1,6 @@
 namespace Corely.IAM.Roles.Models;
 
-public enum RemovePermissionsFromRoleResultCode
+internal enum RemovePermissionsFromRoleResultCode
 {
     Success,
     PartialSuccess,
@@ -10,7 +10,7 @@ public enum RemovePermissionsFromRoleResultCode
     UnauthorizedError,
 }
 
-public record RemovePermissionsFromRoleResult(
+internal record RemovePermissionsFromRoleResult(
     RemovePermissionsFromRoleResultCode ResultCode,
     string Message,
     int RemovedPermissionCount,

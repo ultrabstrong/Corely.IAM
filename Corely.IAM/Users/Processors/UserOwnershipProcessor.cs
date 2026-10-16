@@ -1,7 +1,7 @@
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Roles.Models;
 using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
 
@@ -22,14 +22,14 @@ internal class UserOwnershipProcessor(
     {
         var hasDirectOwnership = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
-            && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && r.Name == Role.OWNER_ROLE_NAME
             && r.IsSystemDefined
             && r.Users!.Any(u => u.Id == userId)
         );
 
         var hasGroupOwnership = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
-            && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && r.Name == Role.OWNER_ROLE_NAME
             && r.IsSystemDefined
             && r.Groups!.Any(g => g.Users!.Any(u => u.Id == userId))
         );
@@ -54,7 +54,7 @@ internal class UserOwnershipProcessor(
 
         var otherOwnerExists = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
-            && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && r.Name == Role.OWNER_ROLE_NAME
             && r.IsSystemDefined
             && (
                 r.Users!.Any(u => u.Id != userId && u.Accounts!.Any(a => a.Id == accountId))
@@ -101,7 +101,7 @@ internal class UserOwnershipProcessor(
     {
         var hasDirectOwnership = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
-            && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && r.Name == Role.OWNER_ROLE_NAME
             && r.IsSystemDefined
             && r.Users!.Any(u => u.Id == userId)
         );
@@ -118,7 +118,7 @@ internal class UserOwnershipProcessor(
 
         var hasOwnershipViaOtherGroup = await _roleRepo.AnyAsync(r =>
             r.AccountId == accountId
-            && r.Name == RoleConstants.OWNER_ROLE_NAME
+            && r.Name == Role.OWNER_ROLE_NAME
             && r.IsSystemDefined
             && r.Groups!.Any(g => g.Id != excludeGroupId && g.Users!.Any(u => u.Id == userId))
         );

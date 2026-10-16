@@ -3,7 +3,7 @@ using Corely.IAM.Audits.Models;
 using Corely.IAM.Extensions;
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Services;

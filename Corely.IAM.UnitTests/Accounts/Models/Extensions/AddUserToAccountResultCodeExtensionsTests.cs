@@ -25,11 +25,11 @@ public class AddUserToAccountResultCodeExtensionsTests
         RegisterUserWithAccountResultCode.UnauthorizedError
     )]
     public void ToRegisterUserWithAccountResultCode_MapsCorrectly(
-        AddUserToAccountResultCode input,
+        Enum input,
         RegisterUserWithAccountResultCode expected
     )
     {
-        var result = input.ToRegisterUserWithAccountResultCode();
+        var result = ((AddUserToAccountResultCode)input).ToRegisterUserWithAccountResultCode();
 
         Assert.Equal(expected, result);
     }

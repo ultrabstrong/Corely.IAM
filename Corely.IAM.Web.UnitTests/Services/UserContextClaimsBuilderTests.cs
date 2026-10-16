@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Users.Models;
-using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 
 namespace Corely.IAM.Web.UnitTests.Services;
@@ -109,11 +108,11 @@ public class UserContextClaimsBuilderTests
 
         Assert.Equal(
             accountId.ToString(),
-            principal.FindFirstValue(AuthenticationConstants.ACCOUNT_ID_CLAIM)
+            principal.FindFirstValue(UserContextClaimsBuilder.ACCOUNT_ID_CLAIM)
         );
         Assert.Equal(
             "Acme Corp",
-            principal.FindFirstValue(AuthenticationConstants.ACCOUNT_NAME_CLAIM)
+            principal.FindFirstValue(UserContextClaimsBuilder.ACCOUNT_NAME_CLAIM)
         );
     }
 
@@ -124,7 +123,7 @@ public class UserContextClaimsBuilderTests
 
         var principal = _builder.BuildPrincipal(context);
 
-        Assert.Null(principal.FindFirstValue(AuthenticationConstants.ACCOUNT_ID_CLAIM));
-        Assert.Null(principal.FindFirstValue(AuthenticationConstants.ACCOUNT_NAME_CLAIM));
+        Assert.Null(principal.FindFirstValue(UserContextClaimsBuilder.ACCOUNT_ID_CLAIM));
+        Assert.Null(principal.FindFirstValue(UserContextClaimsBuilder.ACCOUNT_NAME_CLAIM));
     }
 }

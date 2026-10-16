@@ -1,6 +1,6 @@
 ﻿namespace Corely.IAM.Users.Models;
 
-public enum CreateUserResultCode
+internal enum CreateUserResultCode
 {
     Success,
     UserExistsError,

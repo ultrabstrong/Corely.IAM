@@ -11,7 +11,6 @@ using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Security.Models;
 using Corely.IAM.TotpAuths.Entities;
-using Corely.IAM.Users.Constants;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Mappers;
 using Corely.IAM.Users.Models;
@@ -94,7 +93,7 @@ internal class AuthenticationProvider(
             return RenewUserAuthTokenResult.Failed(RenewUserAuthTokenResultCode.MissingUserIdClaim);
         }
 
-        var deviceId = jwtToken.ClaimValue(UserConstants.DEVICE_ID_CLAIM);
+        var deviceId = jwtToken.ClaimValue(TokenIssueContext.DEVICE_ID_CLAIM);
         if (string.IsNullOrWhiteSpace(deviceId))
         {
             _logger.LogInformation("Auth token does not contain device ID");
@@ -306,7 +305,7 @@ internal class AuthenticationProvider(
             ValidateIssuer = true,
             ValidIssuer = typeof(AuthenticationProvider).FullName,
             ValidateAudience = true,
-            ValidAudience = UserConstants.JWT_AUDIENCE,
+            ValidAudience = TokenIssueContext.JWT_AUDIENCE,
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero,
             LifetimeValidator = IsWithinLifetime,
@@ -324,7 +323,7 @@ internal class AuthenticationProvider(
             );
         }
 
-        var deviceId = jwtToken.ClaimValue(UserConstants.DEVICE_ID_CLAIM);
+        var deviceId = jwtToken.ClaimValue(TokenIssueContext.DEVICE_ID_CLAIM);
         if (string.IsNullOrWhiteSpace(deviceId))
         {
             _logger.LogInformation("Auth token does not contain device ID");
@@ -580,7 +579,7 @@ internal class AuthenticationProvider(
 
         var token = new JwtSecurityToken(
             issuer: typeof(AuthenticationProvider).FullName,
-            audience: UserConstants.JWT_AUDIENCE,
+            audience: TokenIssueContext.JWT_AUDIENCE,
             claims: claims,
             expires: expires,
             signingCredentials: credentials
@@ -644,7 +643,7 @@ internal class AuthenticationProvider(
             ValidateIssuer = true,
             ValidIssuer = typeof(AuthenticationProvider).FullName,
             ValidateAudience = true,
-            ValidAudience = UserConstants.JWT_AUDIENCE,
+            ValidAudience = TokenIssueContext.JWT_AUDIENCE,
             ValidateLifetime = validateLifetime,
             ClockSkew = TimeSpan.Zero,
             LifetimeValidator = validateLifetime ? IsWithinLifetime : null,

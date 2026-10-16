@@ -1,14 +1,14 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
@@ -89,7 +89,7 @@ public class AuditProviderTests
         var groupId = Guid.CreateVersion7();
 
         var result = await _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Create, PermissionConstants.GROUP_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Create, Group.RESOURCE_TYPE)
             {
                 AccountId = _accountId,
             },
@@ -107,7 +107,7 @@ public class AuditProviderTests
         Assert.Equal(SERVICE, entry.Service);
         Assert.Equal("RegisterGroupAsync", entry.Operation);
         Assert.Equal(AuthAction.Create, entry.Action);
-        Assert.Equal(PermissionConstants.GROUP_RESOURCE_TYPE, entry.ResourceType);
+        Assert.Equal(Group.RESOURCE_TYPE, entry.ResourceType);
         Assert.Equal(groupId.ToString(), entry.ResourceIds);
         Assert.Equal(nameof(ModifyResultCode.Success), entry.ResultCode);
         Assert.Null(entry.Details);
@@ -159,7 +159,7 @@ public class AuditProviderTests
         _userContextProvider.Context = UserIn(_memberId, _accountId);
 
         await _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Update, Account.RESOURCE_TYPE)
             {
                 AccountId = _accountId,
             },
@@ -181,7 +181,7 @@ public class AuditProviderTests
         _userContextProvider.Context = UserIn(_memberId, null);
 
         await _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Create, PermissionConstants.ACCOUNT_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Create, Account.RESOURCE_TYPE)
             {
                 AccountId = _accountId,
             },
@@ -256,7 +256,7 @@ public class AuditProviderTests
         _userContextProvider.Context = UserIn(_memberId, _accountId);
 
         await _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.USER_RESOURCE_TYPE),
+            new AuditCall(SERVICE, AuthAction.Update, User.RESOURCE_TYPE),
             () => Task.FromResult(new ModifyResult(ModifyResultCode.Success, "")),
             r => AuditOutcome.Of(r.ResultCode)
         );
@@ -270,7 +270,7 @@ public class AuditProviderTests
         await SeedAccountAsync();
 
         await _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Execute, PermissionConstants.USER_RESOURCE_TYPE),
+            new AuditCall(SERVICE, AuthAction.Execute, User.RESOURCE_TYPE),
             () =>
             {
                 _userContextProvider.Context = UserIn(_memberId, _accountId);
@@ -293,7 +293,7 @@ public class AuditProviderTests
             .CreateAsync(new UserEntity { Id = _memberId, Username = "member" });
 
         await _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Execute, PermissionConstants.USER_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Execute, User.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
                 ActorUsername = "member",
@@ -323,7 +323,7 @@ public class AuditProviderTests
             );
 
         await _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Execute, PermissionConstants.USER_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Execute, User.RESOURCE_TYPE)
             {
                 ActorMfaChallengeToken = "challenge-token",
             },
@@ -338,7 +338,7 @@ public class AuditProviderTests
     public async Task Record_WritesNoActor_ForAnUnknownUsername()
     {
         await _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Execute, PermissionConstants.USER_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Execute, User.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
                 ActorUsername = "nobody",
@@ -356,7 +356,7 @@ public class AuditProviderTests
         var createdUserId = Guid.CreateVersion7();
 
         await _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Create, PermissionConstants.USER_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Create, User.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
             },
@@ -376,7 +376,7 @@ public class AuditProviderTests
         var resultId = Guid.CreateVersion7();
 
         await _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Update, Group.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
                 ResourceIds = [requestId, Guid.Empty],
@@ -393,7 +393,7 @@ public class AuditProviderTests
     {
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _provider.RecordAsync<ModifyResult>(
-                new AuditCall(SERVICE, AuthAction.Delete, PermissionConstants.GROUP_RESOURCE_TYPE)
+                new AuditCall(SERVICE, AuthAction.Delete, Group.RESOURCE_TYPE)
                 {
                     AccountId = Guid.Empty,
                 },
@@ -403,7 +403,7 @@ public class AuditProviderTests
         );
 
         Assert.Equal("boom", exception.Message);
-        Assert.Equal(AuditConstants.FAULT_RESULT_CODE, Assert.Single(_written).ResultCode);
+        Assert.Equal(AuditEntry.FAULT_RESULT_CODE, Assert.Single(_written).ResultCode);
     }
 
     [Fact]
@@ -423,7 +423,7 @@ public class AuditProviderTests
     public async Task Record_ReturnsTheResult_AndLogsAnError_WhenTheOutcomeCannotBeRead()
     {
         var result = await _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Update, Group.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
             },
@@ -470,11 +470,7 @@ public class AuditProviderTests
         _userContextProvider.Context = UserIn(_memberId, null, "member-name");
 
         await _provider.RecordAsync(
-            new AuditCall(
-                nameof(IDeregistrationService),
-                AuthAction.Delete,
-                PermissionConstants.USER_RESOURCE_TYPE
-            )
+            new AuditCall(nameof(IDeregistrationService), AuthAction.Delete, User.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
                 Detail = AuditDetail.DeletedUsername,
@@ -511,11 +507,7 @@ public class AuditProviderTests
         _userContextProvider.Context = UserIn(_memberId, _accountId);
 
         await _provider.RecordAsync(
-            new AuditCall(
-                nameof(IDeregistrationService),
-                AuthAction.Delete,
-                PermissionConstants.ACCOUNT_RESOURCE_TYPE
-            )
+            new AuditCall(nameof(IDeregistrationService), AuthAction.Delete, Account.RESOURCE_TYPE)
             {
                 AccountId = _accountId,
                 ResourceIds = [_accountId],
@@ -538,19 +530,19 @@ public class AuditProviderTests
     public async Task Record_WritesSuccess_ForAnOperationWithoutAResult()
     {
         await _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.USER_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Update, User.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
             },
             () => Task.CompletedTask
         );
 
-        Assert.Equal(AuditConstants.SUCCESS_RESULT_CODE, Assert.Single(_written).ResultCode);
+        Assert.Equal(AuditEntry.SUCCESS_RESULT_CODE, Assert.Single(_written).ResultCode);
     }
 
     private Task<ModifyResult> RecordAccountlessAsync() =>
         _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.USER_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Update, User.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
             },
@@ -560,7 +552,7 @@ public class AuditProviderTests
 
     private Task<ModifyResult> RecordInAccountAsync() =>
         _provider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Update, Group.RESOURCE_TYPE)
             {
                 AccountId = _accountId,
             },

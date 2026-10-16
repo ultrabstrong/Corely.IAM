@@ -1,9 +1,10 @@
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
-using Corely.IAM.Audits.Constants;
+using Corely.IAM.Audits.Models;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Users.Providers;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,7 +32,7 @@ internal class AuditAccessProvider(
         if (context.User is not { } user)
             return AuditAccess.None;
 
-        var held = await HeldAsync(user.Id, action, AuditConstants.AUDIT_RESOURCE_TYPE);
+        var held = await HeldAsync(user.Id, action, AuditEntry.RESOURCE_TYPE);
         var everything = held.Any(p =>
             p.Account?.IsPlatformAccount == true && p.ResourceId == Guid.Empty
         );

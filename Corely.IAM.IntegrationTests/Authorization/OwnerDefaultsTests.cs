@@ -1,6 +1,10 @@
+using Corely.IAM.Accounts.Models;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.IntegrationTests.Infrastructure;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.IntegrationTests.Authorization;
 
@@ -18,11 +22,11 @@ public class OwnerDefaultsTests : IAsyncLifetime
         foreach (
             var type in new[]
             {
-                PermissionConstants.ACCOUNT_RESOURCE_TYPE,
-                PermissionConstants.USER_RESOURCE_TYPE,
-                PermissionConstants.GROUP_RESOURCE_TYPE,
-                PermissionConstants.ROLE_RESOURCE_TYPE,
-                PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                Account.RESOURCE_TYPE,
+                User.RESOURCE_TYPE,
+                Group.RESOURCE_TYPE,
+                Role.RESOURCE_TYPE,
+                Permission.RESOURCE_TYPE,
             }
         )
         foreach (var action in Enum.GetValues<AuthAction>())

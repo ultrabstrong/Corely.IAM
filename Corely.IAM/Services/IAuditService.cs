@@ -1,7 +1,7 @@
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 
 namespace Corely.IAM.Services;
 

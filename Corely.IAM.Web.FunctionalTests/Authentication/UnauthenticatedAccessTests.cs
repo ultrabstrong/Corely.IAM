@@ -71,10 +71,7 @@ public class UnauthenticatedAccessTests : FunctionalTestBase
     private static System.Net.Http.Headers.HttpResponseHeaders BuildCookieHeader(string token)
     {
         using var message = new HttpResponseMessage();
-        message.Headers.Add(
-            "Set-Cookie",
-            $"{AuthenticationConstants.AUTH_TOKEN_COOKIE}={token}; path=/"
-        );
+        message.Headers.Add("Set-Cookie", $"{AuthCookieManager.AUTH_TOKEN_COOKIE}={token}; path=/");
         return message.Headers;
     }
 }

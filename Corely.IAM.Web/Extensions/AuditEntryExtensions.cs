@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Models;
 
 namespace Corely.IAM.Web.Extensions;
@@ -38,7 +37,7 @@ internal static partial class AuditEntryExtensions
 
         public string Description() => Sentence(Trimmed(entry.Operation, ASYNC_SUFFIX));
 
-        public bool Succeeded() => entry.ResultCode == AuditConstants.SUCCESS_RESULT_CODE;
+        public bool Succeeded() => entry.ResultCode == AuditEntry.SUCCESS_RESULT_CODE;
 
         public string ResultText() => Sentence(Trimmed(entry.ResultCode, ERROR_SUFFIX));
     }

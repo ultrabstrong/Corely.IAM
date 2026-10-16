@@ -1,9 +1,9 @@
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 
@@ -135,9 +135,7 @@ public class AuditServiceAuthorizationDecoratorTests
             .Setup(x => x.HasAccountContext(_accountId))
             .Returns(hasAccountContext);
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE)
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, AccountAuditSettings.RESOURCE_TYPE))
             .ReturnsAsync(isAuthorized);
         _mockInnerService
             .Setup(x => x.UpdateAccountSettingsAsync(request))
@@ -156,9 +154,7 @@ public class AuditServiceAuthorizationDecoratorTests
     {
         _mockAuthorizationProvider.Setup(x => x.HasAccountContext(_accountId)).Returns(true);
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Read, AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE)
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Read, AccountAuditSettings.RESOURCE_TYPE))
             .ReturnsAsync(false);
 
         var result = await _decorator.GetAccountSettingsAsync(_accountId);
@@ -176,10 +172,7 @@ public class AuditServiceAuthorizationDecoratorTests
     {
         _mockAccessProvider
             .Setup(x =>
-                x.HoldsInPlatformAccountAsync(
-                    AuthAction.Update,
-                    AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
-                )
+                x.HoldsInPlatformAccountAsync(AuthAction.Update, PlatformSettings.RESOURCE_TYPE)
             )
             .ReturnsAsync(holds);
         _mockInnerService

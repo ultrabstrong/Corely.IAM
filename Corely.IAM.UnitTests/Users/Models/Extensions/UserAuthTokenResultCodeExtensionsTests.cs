@@ -17,12 +17,9 @@ public class UserAuthTokenResultCodeExtensionsTests
         SignInResultCode.AccountNotFoundError
     )]
     [InlineData(UserAuthTokenResultCode.Success, SignInResultCode.UserNotFoundError)]
-    public void ToFailedSignInResult_MapsTheCode(
-        UserAuthTokenResultCode code,
-        SignInResultCode expected
-    )
+    public void ToFailedSignInResult_MapsTheCode(Enum code, SignInResultCode expected)
     {
-        var result = code.ToFailedSignInResult(null);
+        var result = ((UserAuthTokenResultCode)code).ToFailedSignInResult(null);
 
         Assert.Equal(expected, result.ResultCode);
         Assert.False(string.IsNullOrWhiteSpace(result.Message));

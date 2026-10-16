@@ -1,11 +1,11 @@
 namespace Corely.IAM.Accounts.Models;
 
-public record RemoveUserFromAccountResult(
+internal record RemoveUserFromAccountResult(
     RemoveUserFromAccountResultCode ResultCode,
     string Message
 );
 
-public enum RemoveUserFromAccountResultCode
+internal enum RemoveUserFromAccountResultCode
 {
     Success,
     UserNotFoundError,

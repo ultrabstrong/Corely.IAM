@@ -1,6 +1,6 @@
-using Corely.IAM.Invitations.Constants;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Invitations.Validators;
+using Corely.IAM.Users.Models;
 using FluentValidation.TestHelper;
 
 namespace Corely.IAM.UnitTests.Invitations.Validators;
@@ -14,7 +14,7 @@ public class CreateInvitationRequestValidatorTests
             Guid.CreateVersion7(),
             "valid@example.com",
             "A description",
-            InvitationConstants.MIN_EXPIRY_SECONDS
+            CreateInvitationRequest.MIN_EXPIRY_SECONDS
         );
 
     [Fact]
@@ -40,7 +40,7 @@ public class CreateInvitationRequestValidatorTests
     {
         var request = ValidRequest with
         {
-            ExpiresInSeconds = InvitationConstants.MIN_EXPIRY_SECONDS - 1,
+            ExpiresInSeconds = CreateInvitationRequest.MIN_EXPIRY_SECONDS - 1,
         };
 
         var result = _validator.TestValidate(request);
@@ -53,7 +53,7 @@ public class CreateInvitationRequestValidatorTests
     {
         var request = ValidRequest with
         {
-            ExpiresInSeconds = InvitationConstants.MAX_EXPIRY_SECONDS + 1,
+            ExpiresInSeconds = CreateInvitationRequest.MAX_EXPIRY_SECONDS + 1,
         };
 
         var result = _validator.TestValidate(request);
@@ -86,8 +86,7 @@ public class CreateInvitationRequestValidatorTests
     [Fact]
     public void Validate_Fails_WhenEmailExceedsMaxLength()
     {
-        var longEmail =
-            new string('a', InvitationConstants.EMAIL_MAX_LENGTH - "@b.com".Length + 1) + "@b.com";
+        var longEmail = new string('a', User.EMAIL_MAX_LENGTH - "@b.com".Length + 1) + "@b.com";
         var request = ValidRequest with { Email = longEmail };
 
         var result = _validator.TestValidate(request);
@@ -100,7 +99,7 @@ public class CreateInvitationRequestValidatorTests
     {
         var request = ValidRequest with
         {
-            Description = new string('x', InvitationConstants.DESCRIPTION_MAX_LENGTH + 1),
+            Description = new string('x', Invitation.DESCRIPTION_MAX_LENGTH + 1),
         };
 
         var result = _validator.TestValidate(request);

@@ -2,7 +2,7 @@
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.DataAccess.Extensions;
 using Corely.IAM.Entities;
-using Corely.IAM.Groups.Constants;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.Roles.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -19,10 +19,7 @@ internal sealed class GroupEntityConfiguration : EntityConfigurationBase<GroupEn
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).ValueGeneratedNever();
 
-        builder
-            .Property(e => e.Name)
-            .IsRequired()
-            .HasMaxLength(GroupConstants.GROUP_NAME_MAX_LENGTH);
+        builder.Property(e => e.Name).IsRequired().HasMaxLength(Group.NAME_MAX_LENGTH);
 
         builder.HasIndex(e => new { e.AccountId, e.Name }).IsUnique();
 

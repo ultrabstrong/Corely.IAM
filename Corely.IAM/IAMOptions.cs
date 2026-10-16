@@ -1,6 +1,6 @@
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.Permissions.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 using Corely.Security.Encryption;
 using Corely.Security.Hashing;

@@ -1,4 +1,3 @@
-using Corely.IAM.Platform.Constants;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Models;
 
@@ -31,7 +30,7 @@ internal static class PlatformSettingsMapper
     {
         public PlatformSettingsEntity ToEntity()
         {
-            var entity = new PlatformSettingsEntity { Id = PlatformConstants.PLATFORM_SETTINGS_ID };
+            var entity = new PlatformSettingsEntity { Id = PlatformSettingsEntity.SINGLE_ROW_ID };
             entity.Apply(settings);
             return entity;
         }

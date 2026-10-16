@@ -1,6 +1,6 @@
 namespace Corely.IAM.BasicAuths.Models;
 
-public enum UpdateBasicAuthResultCode
+internal enum UpdateBasicAuthResultCode
 {
     Success,
     BasicAuthNotFoundError,

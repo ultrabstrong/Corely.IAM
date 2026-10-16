@@ -1,8 +1,9 @@
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
-using Corely.IAM.Permissions.Constants;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Permissions.Entities;
+using Corely.IAM.Permissions.Models;
 
 namespace Corely.IAM.Platform.Providers;
 
@@ -25,7 +26,7 @@ internal class PlatformAccessProvider(
         await _permissionRepo.GetAsync(p =>
             p.Account != null
             && p.Account.IsPlatformAccount
-            && p.ResourceType == PermissionConstants.ACCOUNT_RESOURCE_TYPE
+            && p.ResourceType == Account.RESOURCE_TYPE
             && p.ResourceId == Guid.Empty
             && p.Read
             && p.Roles!.Any(r =>

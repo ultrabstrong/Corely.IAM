@@ -1,5 +1,4 @@
-﻿using Corely.IAM.Accounts.Constants;
-using Corely.IAM.Accounts.Models;
+﻿using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Validators;
 using Corely.IAM.UnitTests.ClassData;
 using FluentValidation.TestHelper;
@@ -23,7 +22,7 @@ public class AccountValidatorTests
 
     public static IEnumerable<object[]> InvalidAccountTestData =>
         [
-            [new string('a', AccountConstants.ACCOUNT_NAME_MIN_LENGTH - 1)],
-            [new string('a', AccountConstants.ACCOUNT_NAME_MAX_LENGTH + 1)],
+            [new string('a', Account.ACCOUNT_NAME_MIN_LENGTH - 1)],
+            [new string('a', Account.ACCOUNT_NAME_MAX_LENGTH + 1)],
         ];
 }

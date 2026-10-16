@@ -5,6 +5,8 @@ namespace Corely.IAM.TotpAuths.Entities;
 
 internal class TotpAuthEntity : IHasCreatedUtc, IHasModifiedUtc
 {
+    public const int ENCRYPTED_SECRET_MAX_LENGTH = 500;
+
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
     public string EncryptedSecret { get; set; } = null!;

@@ -1,10 +1,12 @@
 using Corely.IAM.Audits.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 
 namespace Corely.IAM.Audits.Entities;
 
 internal class AuditEntryEntity
 {
+    public const string TABLE_NAME = "AuditEntries";
+
     public Guid Id { get; set; }
     public DateTime OccurredUtc { get; set; }
     public Guid? ActorUserId { get; set; }

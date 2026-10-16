@@ -1,8 +1,10 @@
 using Corely.IAM.IntegrationTests.Infrastructure;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Authorization;
@@ -117,7 +119,7 @@ public class GrantRevocationTests : IAsyncLifetime
             _scenario.DirectMemberUsername,
             null,
             AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
+            User.RESOURCE_TYPE,
             _scenario.OwnerUserId
         );
         Assert.False(authorized);
@@ -128,7 +130,7 @@ public class GrantRevocationTests : IAsyncLifetime
             _scenario.DirectMemberUsername,
             _scenario.AccountId,
             AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
+            User.RESOURCE_TYPE,
             _scenario.OwnerUserId
         );
 
@@ -137,7 +139,7 @@ public class GrantRevocationTests : IAsyncLifetime
             _scenario.GroupMemberUsername,
             _scenario.AccountId,
             AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             _scenario.EditorRoleId
         );
 }

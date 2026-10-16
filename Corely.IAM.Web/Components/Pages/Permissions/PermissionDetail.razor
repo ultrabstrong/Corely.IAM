@@ -29,12 +29,12 @@ else
                 @if (!_isEditing)
                 {
                     <div class="d-flex gap-2">
-                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                        <PermissionView Action="AuthAction.Update" Resource="@Permission.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                             <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
                         </PermissionView>
                         @if (!_permission.IsSystemDefined)
                         {
-                            <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.PERMISSION_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                            <PermissionView Action="AuthAction.Delete" Resource="@Permission.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                                 <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
                             </PermissionView>
                         }

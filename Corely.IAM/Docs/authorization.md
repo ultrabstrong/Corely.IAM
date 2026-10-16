@@ -84,7 +84,7 @@ Processor authorization decorators call `IsAuthorizedAsync()` with specific acti
 ```csharp
 // Inside a processor decorator
 if (!await authorizationProvider.IsAuthorizedAsync(
-    AuthAction.Create, PermissionConstants.GROUP_RESOURCE_TYPE))
+    AuthAction.Create, Group.RESOURCE_TYPE))
 {
     return new RegisterGroupResult(RegisterGroupResultCode.AuthorizationError, ...);
 }
@@ -98,11 +98,11 @@ Permissions are scoped to resource types defined as string constants:
 
 | Constant | Value | Description |
 |----------|-------|-------------|
-| `ACCOUNT_RESOURCE_TYPE` | `"account"` | Accounts |
-| `USER_RESOURCE_TYPE` | `"user"` | Users |
-| `GROUP_RESOURCE_TYPE` | `"group"` | Groups |
-| `ROLE_RESOURCE_TYPE` | `"role"` | Roles |
-| `PERMISSION_RESOURCE_TYPE` | `"permission"` | Permissions |
+| `Account.RESOURCE_TYPE` | `"account"` | Accounts |
+| `User.RESOURCE_TYPE` | `"user"` | Users |
+| `Group.RESOURCE_TYPE` | `"group"` | Groups |
+| `Role.RESOURCE_TYPE` | `"role"` | Roles |
+| `Permission.RESOURCE_TYPE` | `"permission"` | Permissions |
 
 See [Resource Types](resource-types.md) for custom type registration and the actions an account owner gets on each type.
 
@@ -117,7 +117,7 @@ cover every resource of that type:
 await registrationService.RegisterPermissionAsync(
     new RegisterPermissionRequest(
         accountId,
-        PermissionConstants.GROUP_RESOURCE_TYPE,
+        Group.RESOURCE_TYPE,
         Guid.Empty,
         Read: true));
 ```

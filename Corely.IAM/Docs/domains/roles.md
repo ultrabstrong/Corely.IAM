@@ -19,9 +19,9 @@ Named collection of permissions, scoped to an account. Roles can be assigned dir
 
 | Constant | Value |
 |----------|-------|
-| `RoleConstants.OWNER_ROLE_NAME` | `"Owner Role"` |
-| `RoleConstants.ROLE_NAME_MIN_LENGTH` | `1` |
-| `RoleConstants.ROLE_NAME_MAX_LENGTH` | `100` |
+| `Role.OWNER_ROLE_NAME` | `"Owner Role"` |
+| `Role.NAME_MIN_LENGTH` | `1` |
+| `Role.NAME_MAX_LENGTH` | `100` |
 
 ## System-Defined Roles
 

@@ -1,8 +1,7 @@
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.UnitTests.Permissions.Processors;
@@ -42,9 +41,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
             request.OwnerAccountId
         );
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.PERMISSION_RESOURCE_TYPE)
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Create, Permission.RESOURCE_TYPE))
             .ReturnsAsync(true);
         _mockInnerProcessor
             .Setup(x => x.CreatePermissionAsync(request))
@@ -54,11 +51,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Create,
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE
-                ),
+            x => x.IsAuthorizedAsync(AuthAction.Create, Permission.RESOURCE_TYPE),
             Times.Once
         );
         _mockInnerProcessor.Verify(x => x.CreatePermissionAsync(request), Times.Once);
@@ -74,9 +67,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
             Read: true
         );
         _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Create, PermissionConstants.PERMISSION_RESOURCE_TYPE)
-            )
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Create, Permission.RESOURCE_TYPE))
             .ReturnsAsync(false);
 
         var result = await _decorator.CreatePermissionAsync(request);
@@ -128,11 +119,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
         var expectedResult = new DeletePermissionResult(DeletePermissionResultCode.Success, "");
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Delete,
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
-                    permissionId
-                )
+                x.IsAuthorizedAsync(AuthAction.Delete, Permission.RESOURCE_TYPE, permissionId)
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
@@ -143,12 +130,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
-            x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Delete,
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
-                    permissionId
-                ),
+            x => x.IsAuthorizedAsync(AuthAction.Delete, Permission.RESOURCE_TYPE, permissionId),
             Times.Once
         );
         _mockInnerProcessor.Verify(
@@ -163,11 +145,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
         var permissionId = Guid.CreateVersion7();
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Delete,
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
-                    permissionId
-                )
+                x.IsAuthorizedAsync(AuthAction.Delete, Permission.RESOURCE_TYPE, permissionId)
             )
             .ReturnsAsync(false);
 
@@ -233,7 +211,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
             .Setup(x =>
                 x.IsAuthorizedAsync(
                     AuthAction.Update,
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                    Permission.RESOURCE_TYPE,
                     request.PermissionId
                 )
             )
@@ -257,7 +235,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
             .Setup(x =>
                 x.IsAuthorizedAsync(
                     AuthAction.Update,
-                    PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                    Permission.RESOURCE_TYPE,
                     request.PermissionId
                 )
             )

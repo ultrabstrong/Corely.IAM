@@ -87,8 +87,7 @@ public class AuthenticationTokenMiddlewareTests
         };
         var middleware = CreateMiddleware(next);
         var httpContext = new DefaultHttpContext();
-        httpContext.Request.Headers["Cookie"] =
-            $"{AuthenticationConstants.AUTH_TOKEN_COOKIE}=test-token";
+        httpContext.Request.Headers["Cookie"] = $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=test-token";
 
         var account = new Account { Id = Guid.CreateVersion7(), AccountName = "TestAccount" };
         var userContext = PageTestHelpers.CreateUserContext(
@@ -136,8 +135,7 @@ public class AuthenticationTokenMiddlewareTests
         };
         var middleware = CreateMiddleware(next);
         var httpContext = new DefaultHttpContext();
-        httpContext.Request.Headers["Cookie"] =
-            $"{AuthenticationConstants.AUTH_TOKEN_COOKIE}=bad-token";
+        httpContext.Request.Headers["Cookie"] = $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=bad-token";
 
         _mockAuthenticationService
             .Setup(x => x.AuthenticateWithTokenAsync("bad-token"))
@@ -166,11 +164,11 @@ public class AuthenticationTokenMiddlewareTests
         Assert.False(httpContext.User.Identity?.IsAuthenticated ?? false);
         Assert.Contains(
             httpContext.Response.Headers.SetCookie,
-            c => c != null && c.Contains(AuthenticationConstants.AUTH_TOKEN_COOKIE)
+            c => c != null && c.Contains(AuthCookieManager.AUTH_TOKEN_COOKIE)
         );
         Assert.Contains(
             httpContext.Response.Headers.SetCookie,
-            c => c != null && c.Contains(AuthenticationConstants.DEVICE_ID_COOKIE)
+            c => c != null && c.Contains(AuthCookieManager.DEVICE_ID_COOKIE)
         );
     }
 
@@ -186,7 +184,7 @@ public class AuthenticationTokenMiddlewareTests
         var middleware = CreateMiddleware(next);
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Headers["Cookie"] =
-            $"{AuthenticationConstants.AUTH_TOKEN_COOKIE}=expired-token";
+            $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=expired-token";
 
         var account = new Account { Id = Guid.CreateVersion7(), AccountName = "TestAccount" };
         var userContext = PageTestHelpers.CreateUserContext(
@@ -223,7 +221,7 @@ public class AuthenticationTokenMiddlewareTests
         Assert.True(httpContext.User.Identity?.IsAuthenticated);
         Assert.Contains(
             httpContext.Response.Headers.SetCookie,
-            c => c != null && c.Contains(AuthenticationConstants.AUTH_TOKEN_COOKIE)
+            c => c != null && c.Contains(AuthCookieManager.AUTH_TOKEN_COOKIE)
         );
     }
 
@@ -239,7 +237,7 @@ public class AuthenticationTokenMiddlewareTests
         var middleware = CreateMiddleware(next);
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Headers["Cookie"] =
-            $"{AuthenticationConstants.AUTH_TOKEN_COOKIE}=error-token";
+            $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=error-token";
 
         _mockAuthenticationService
             .Setup(x => x.AuthenticateWithTokenAsync("error-token"))
@@ -256,11 +254,11 @@ public class AuthenticationTokenMiddlewareTests
         Assert.False(httpContext.User.Identity?.IsAuthenticated ?? false);
         Assert.Contains(
             httpContext.Response.Headers.SetCookie,
-            c => c != null && c.Contains(AuthenticationConstants.AUTH_TOKEN_COOKIE)
+            c => c != null && c.Contains(AuthCookieManager.AUTH_TOKEN_COOKIE)
         );
         Assert.Contains(
             httpContext.Response.Headers.SetCookie,
-            c => c != null && c.Contains(AuthenticationConstants.DEVICE_ID_COOKIE)
+            c => c != null && c.Contains(AuthCookieManager.DEVICE_ID_COOKIE)
         );
     }
 
@@ -275,8 +273,7 @@ public class AuthenticationTokenMiddlewareTests
         };
         var middleware = CreateMiddleware(next);
         var httpContext = new DefaultHttpContext();
-        httpContext.Request.Headers["Cookie"] =
-            $"{AuthenticationConstants.AUTH_TOKEN_COOKIE}=test-token";
+        httpContext.Request.Headers["Cookie"] = $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=test-token";
 
         _mockAuthenticationService
             .Setup(x => x.AuthenticateWithTokenAsync("test-token"))

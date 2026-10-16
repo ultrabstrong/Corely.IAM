@@ -7,7 +7,6 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
-using Corely.IAM.Invitations.Constants;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Invitations.Mappers;
 using Corely.IAM.Invitations.Models;
@@ -106,7 +105,7 @@ internal class InvitationProcessor(
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
         var userId = GetRequiredUserContext("create invitations").User!.Id;
 
-        var tokenBytes = RandomNumberGenerator.GetBytes(InvitationConstants.TOKEN_LENGTH);
+        var tokenBytes = RandomNumberGenerator.GetBytes(InvitationEntity.TOKEN_LENGTH);
         var token = Convert
             .ToBase64String(tokenBytes)
             .Replace("+", "-")

@@ -5,11 +5,10 @@ using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Mappers;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Models.Extensions;
-using Corely.IAM.Platform.Constants;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Mappers;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
 
 namespace Corely.IAM.Audits.Providers;
@@ -42,7 +41,7 @@ internal class AuditPolicy(
             return cached;
 
         var entity = await _platformSettingsRepo.GetAsync(p =>
-            p.Id == PlatformConstants.PLATFORM_SETTINGS_ID
+            p.Id == PlatformSettingsEntity.SINGLE_ROW_ID
         );
         var settings = entity?.ToModel() ?? PlatformSettings.Default;
         _cache.SetPlatform(settings);

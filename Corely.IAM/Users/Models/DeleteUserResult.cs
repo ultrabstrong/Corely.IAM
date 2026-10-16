@@ -1,8 +1,8 @@
 namespace Corely.IAM.Users.Models;
 
-public record DeleteUserResult(DeleteUserResultCode ResultCode, string Message);
+internal record DeleteUserResult(DeleteUserResultCode ResultCode, string Message);
 
-public enum DeleteUserResultCode
+internal enum DeleteUserResultCode
 {
     Success,
     UserNotFoundError,

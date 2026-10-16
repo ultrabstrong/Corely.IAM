@@ -32,11 +32,13 @@ public class RemovePermissionsFromRoleResultCodeExtensionsTests
         DeregisterPermissionsFromRoleResultCode.UnauthorizedError
     )]
     public void ToDeregisterPermissionsFromRoleResultCode_MapsCorrectly(
-        RemovePermissionsFromRoleResultCode input,
+        Enum input,
         DeregisterPermissionsFromRoleResultCode expected
     )
     {
-        var result = input.ToDeregisterPermissionsFromRoleResultCode();
+        var result = (
+            (RemovePermissionsFromRoleResultCode)input
+        ).ToDeregisterPermissionsFromRoleResultCode();
 
         Assert.Equal(expected, result);
     }

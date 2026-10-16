@@ -5,6 +5,8 @@ namespace Corely.IAM.Security.Models;
 
 public class AsymmetricKey
 {
+    internal const int VERSION_MIN_VALUE = 1;
+
     public Guid Id { get; set; }
     public KeyUsedFor KeyUsedFor { get; set; }
     public string ProviderName { get; set; } = null!;

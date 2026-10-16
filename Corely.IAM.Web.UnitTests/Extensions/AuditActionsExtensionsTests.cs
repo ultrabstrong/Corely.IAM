@@ -1,5 +1,5 @@
 using Corely.IAM.Audits.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Web.Extensions;
 
 namespace Corely.IAM.Web.UnitTests.Extensions;

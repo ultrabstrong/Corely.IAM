@@ -1,12 +1,12 @@
 namespace Corely.IAM.Users.Models;
 
-public record GetAsymmetricKeyResult(
+internal record GetAsymmetricKeyResult(
     GetAsymmetricKeyResultCode ResultCode,
     string Message,
     string? PublicKey
 );
 
-public enum GetAsymmetricKeyResultCode
+internal enum GetAsymmetricKeyResultCode
 {
     Success,
     UserNotFoundError,

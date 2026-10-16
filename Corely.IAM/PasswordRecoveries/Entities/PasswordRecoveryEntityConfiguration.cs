@@ -1,6 +1,5 @@
 using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
-using Corely.IAM.PasswordRecoveries.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -22,7 +21,7 @@ internal sealed class PasswordRecoveryEntityConfiguration
         builder
             .Property(e => e.SecretHash)
             .IsRequired()
-            .HasMaxLength(PasswordRecoveryConstants.SECRET_HASH_MAX_LENGTH);
+            .HasMaxLength(PasswordRecoveryEntity.SECRET_HASH_MAX_LENGTH);
 
         builder.Property(e => e.ExpiresUtc).IsRequired();
         builder.Property(e => e.CompletedUtc).IsRequired(false);

@@ -6,7 +6,7 @@ using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Roles.Entities;
-using Corely.IAM.Users.Constants;
+using Corely.IAM.Users.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -24,14 +24,11 @@ internal sealed class UserEntityConfiguration : EntityConfigurationBase<UserEnti
 
         builder.Property(e => e.LockedUtc).IsRequired(false);
 
-        builder
-            .Property(e => e.Username)
-            .HasMaxLength(UserConstants.USERNAME_MAX_LENGTH)
-            .IsRequired();
+        builder.Property(e => e.Username).HasMaxLength(User.USERNAME_MAX_LENGTH).IsRequired();
 
         builder.HasIndex(e => e.Username).IsUnique();
 
-        builder.Property(e => e.Email).HasMaxLength(UserConstants.EMAIL_MAX_LENGTH).IsRequired();
+        builder.Property(e => e.Email).HasMaxLength(User.EMAIL_MAX_LENGTH).IsRequired();
 
         builder.HasIndex(e => e.Email).IsUnique();
 

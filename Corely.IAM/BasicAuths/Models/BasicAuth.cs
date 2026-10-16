@@ -2,8 +2,10 @@
 
 namespace Corely.IAM.BasicAuths.Models;
 
-public class BasicAuth
+internal class BasicAuth
 {
+    public const int PASSWORD_MAX_LENGTH = 250;
+
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
     public IHashedValue Password { get; set; } = null!;

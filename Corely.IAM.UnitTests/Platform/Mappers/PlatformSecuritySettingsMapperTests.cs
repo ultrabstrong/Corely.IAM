@@ -1,5 +1,4 @@
 using System.Reflection;
-using Corely.IAM.Platform.Constants;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Mappers;
 using Corely.IAM.Platform.Models;
@@ -73,7 +72,7 @@ public class PlatformSecuritySettingsMapperTests
     {
         var entity = _policy.ToEntity();
 
-        Assert.Equal(PlatformConstants.PLATFORM_SETTINGS_ID, entity.Id);
+        Assert.Equal(PlatformSecuritySettingsEntity.SINGLE_ROW_ID, entity.Id);
         Assert.Equal(_policy, entity.ToModel());
     }
 

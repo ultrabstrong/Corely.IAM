@@ -5,8 +5,8 @@ using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Mappers;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Roles.Models;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
@@ -183,9 +183,8 @@ internal class GroupProcessor(
             groupEntity.Users?.Where(u => request.UserIds.Contains(u.Id)).ToList() ?? [];
 
         var groupHasOwnerRole =
-            groupEntity.Roles?.Any(r =>
-                r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined
-            ) ?? false;
+            groupEntity.Roles?.Any(r => r.Name == Role.OWNER_ROLE_NAME && r.IsSystemDefined)
+            ?? false;
         var totalUsersInGroup = groupEntity.Users?.Count ?? 0;
         var usersRemainingAfterRemoval = totalUsersInGroup - usersToRemove.Count;
 
@@ -358,7 +357,7 @@ internal class GroupProcessor(
 
         var blockedOwnerRoleIds = new List<Guid>();
         var ownerRole = rolesToRemove.FirstOrDefault(r =>
-            r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined
+            r.Name == Role.OWNER_ROLE_NAME && r.IsSystemDefined
         );
         var usersInGroup = groupEntity.Users?.ToList() ?? [];
 
@@ -480,9 +479,8 @@ internal class GroupProcessor(
         }
 
         var groupHasOwnerRole =
-            groupEntity.Roles?.Any(r =>
-                r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined
-            ) ?? false;
+            groupEntity.Roles?.Any(r => r.Name == Role.OWNER_ROLE_NAME && r.IsSystemDefined)
+            ?? false;
         var usersInGroup = groupEntity.Users?.ToList() ?? [];
 
         if (groupHasOwnerRole && usersInGroup.Count > 0)

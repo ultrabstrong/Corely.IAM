@@ -3,8 +3,12 @@ using Microsoft.AspNetCore.Http;
 
 namespace Corely.IAM.Web.Security;
 
-public class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
+internal class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
 {
+    public const string AUTH_TOKEN_COOKIE = "authentication_token";
+    public const string AUTH_TOKEN_ID_COOKIE = "auth_token_id";
+    public const string DEVICE_ID_COOKIE = "device_id";
+
     private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
 
     public void SetAuthCookies(
@@ -24,34 +28,30 @@ public class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
             Expires = _timeProvider.GetUtcNow().AddSeconds(authCookieTtlSeconds),
         };
 
-        cookies.Append(AuthenticationConstants.AUTH_TOKEN_COOKIE, authToken, cookieOptions);
-        cookies.Append(
-            AuthenticationConstants.AUTH_TOKEN_ID_COOKIE,
-            authTokenId.ToString(),
-            cookieOptions
-        );
+        cookies.Append(AUTH_TOKEN_COOKIE, authToken, cookieOptions);
+        cookies.Append(AUTH_TOKEN_ID_COOKIE, authTokenId.ToString(), cookieOptions);
     }
 
     public void DeleteAuthCookies(IResponseCookies cookies)
     {
         var cookieOptions = new CookieOptions { Path = "/" };
-        cookies.Delete(AuthenticationConstants.AUTH_TOKEN_COOKIE, cookieOptions);
-        cookies.Delete(AuthenticationConstants.AUTH_TOKEN_ID_COOKIE, cookieOptions);
+        cookies.Delete(AUTH_TOKEN_COOKIE, cookieOptions);
+        cookies.Delete(AUTH_TOKEN_ID_COOKIE, cookieOptions);
     }
 
     public void DeleteDeviceIdCookie(IResponseCookies cookies)
     {
-        cookies.Delete(AuthenticationConstants.DEVICE_ID_COOKIE, new CookieOptions { Path = "/" });
+        cookies.Delete(DEVICE_ID_COOKIE, new CookieOptions { Path = "/" });
     }
 
     public string GetOrCreateDeviceId(HttpContext context)
     {
-        var deviceId = context.Request.Cookies[AuthenticationConstants.DEVICE_ID_COOKIE];
+        var deviceId = context.Request.Cookies[DEVICE_ID_COOKIE];
         if (string.IsNullOrWhiteSpace(deviceId))
         {
             deviceId = Guid.CreateVersion7().ToString();
             context.Response.Cookies.Append(
-                AuthenticationConstants.DEVICE_ID_COOKIE,
+                DEVICE_ID_COOKIE,
                 deviceId,
                 new CookieOptions
                 {

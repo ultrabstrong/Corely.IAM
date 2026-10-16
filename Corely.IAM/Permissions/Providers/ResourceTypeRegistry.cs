@@ -1,8 +1,12 @@
 using System.Collections.Concurrent;
-using Corely.IAM.Audits.Constants;
-using Corely.IAM.Permissions.Constants;
+using Corely.IAM.Accounts.Models;
+using Corely.IAM.Audits.Models;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.Permissions.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Platform.Models;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Permissions.Providers;
 
@@ -16,24 +20,19 @@ internal class ResourceTypeRegistry : IResourceTypeRegistry
 
     public ResourceTypeRegistry()
     {
-        AddIamType(PermissionConstants.ACCOUNT_RESOURCE_TYPE, "Accounts");
-        AddIamType(PermissionConstants.USER_RESOURCE_TYPE, "Users");
-        AddIamType(PermissionConstants.GROUP_RESOURCE_TYPE, "Groups");
-        AddIamType(PermissionConstants.ROLE_RESOURCE_TYPE, "Roles");
-        AddIamType(PermissionConstants.PERMISSION_RESOURCE_TYPE, "Permissions");
+        AddIamType(Account.RESOURCE_TYPE, "Accounts");
+        AddIamType(User.RESOURCE_TYPE, "Users");
+        AddIamType(Group.RESOURCE_TYPE, "Groups");
+        AddIamType(Role.RESOURCE_TYPE, "Roles");
+        AddIamType(Permission.RESOURCE_TYPE, "Permissions");
+        AddIamType(AuditEntry.RESOURCE_TYPE, "Audit log", AuthAction.Read, AuthAction.Delete);
         AddIamType(
-            AuditConstants.AUDIT_RESOURCE_TYPE,
-            "Audit log",
-            AuthAction.Read,
-            AuthAction.Delete
-        );
-        AddIamType(
-            AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE,
+            AccountAuditSettings.RESOURCE_TYPE,
             "Audit settings",
             AuthAction.Read,
             AuthAction.Update
         );
-        AddIamType(AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE, "Platform settings", []);
+        AddIamType(PlatformSettings.RESOURCE_TYPE, "Platform settings", []);
     }
 
     public IReadOnlyCollection<ResourceTypeInfo> GetAll() =>

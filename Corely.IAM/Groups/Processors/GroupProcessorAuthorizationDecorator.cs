@@ -1,9 +1,11 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
+using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Groups.Processors;
 
@@ -18,10 +20,7 @@ internal class GroupProcessorAuthorizationDecorator(
 
     public async Task<CreateGroupResult> CreateGroupAsync(CreateGroupRequest request) =>
         _authorizationProvider.HasAccountContext(request.OwnerAccountId)
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Create,
-            PermissionConstants.GROUP_RESOURCE_TYPE
-        )
+        && await _authorizationProvider.IsAuthorizedAsync(AuthAction.Create, Group.RESOURCE_TYPE)
             ? await _inner.CreateGroupAsync(request)
             : new CreateGroupResult(
                 CreateGroupResultCode.UnauthorizedError,
@@ -35,12 +34,12 @@ internal class GroupProcessorAuthorizationDecorator(
             !_authorizationProvider.HasAccountContext(request.AccountId)
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Update,
-                PermissionConstants.GROUP_RESOURCE_TYPE,
+                Group.RESOURCE_TYPE,
                 request.GroupId
             )
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Read,
-                PermissionConstants.USER_RESOURCE_TYPE,
+                User.RESOURCE_TYPE,
                 [.. request.UserIds]
             )
         )
@@ -72,12 +71,12 @@ internal class GroupProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             request.GroupId
         )
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
+            User.RESOURCE_TYPE,
             [.. request.UserIds]
         )
             ? await _inner.RemoveUsersFromGroupAsync(request)
@@ -96,12 +95,12 @@ internal class GroupProcessorAuthorizationDecorator(
             !_authorizationProvider.HasAccountContext(request.AccountId)
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Update,
-                PermissionConstants.GROUP_RESOURCE_TYPE,
+                Group.RESOURCE_TYPE,
                 request.GroupId
             )
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Read,
-                PermissionConstants.ROLE_RESOURCE_TYPE,
+                Role.RESOURCE_TYPE,
                 [.. request.RoleIds]
             )
         )
@@ -133,12 +132,12 @@ internal class GroupProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             request.GroupId
         )
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             [.. request.RoleIds]
         )
             ? await _inner.RemoveRolesFromGroupAsync(request)
@@ -153,7 +152,7 @@ internal class GroupProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             request.GroupId
         )
             ? await _inner.UpdateGroupAsync(request)
@@ -166,7 +165,7 @@ internal class GroupProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(accountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             groupId
         )
             ? await _inner.DeleteGroupAsync(groupId, accountId)
@@ -182,10 +181,7 @@ internal class GroupProcessorAuthorizationDecorator(
     {
         if (
             !_authorizationProvider.HasAccountContext(request.AccountId)
-            || !await _authorizationProvider.IsAuthorizedAsync(
-                AuthAction.Read,
-                PermissionConstants.GROUP_RESOURCE_TYPE
-            )
+            || !await _authorizationProvider.IsAuthorizedAsync(AuthAction.Read, Group.RESOURCE_TYPE)
         )
         {
             return new ListResult<Group>(
@@ -200,7 +196,7 @@ internal class GroupProcessorAuthorizationDecorator(
             request,
             await _authorizationProvider.GetAuthorizedResourceIdsAsync(
                 AuthAction.Read,
-                PermissionConstants.GROUP_RESOURCE_TYPE
+                Group.RESOURCE_TYPE
             )
         );
     }
@@ -213,7 +209,7 @@ internal class GroupProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(accountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             groupId
         )
             ? await _inner.GetGroupByIdAsync(groupId, hydrate, accountId)

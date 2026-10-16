@@ -1,16 +1,18 @@
 using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
-using Corely.IAM.Audits.Constants;
+using Corely.IAM.Accounts.Models;
+using Corely.IAM.Audits.Models;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Permissions.Providers;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
@@ -67,7 +69,7 @@ public class PermissionProcessorTests
             new RoleEntity
             {
                 AccountId = accountId,
-                Name = RoleConstants.OWNER_ROLE_NAME,
+                Name = Role.OWNER_ROLE_NAME,
                 IsSystemDefined = true,
             }
         );
@@ -78,7 +80,7 @@ public class PermissionProcessorTests
     {
         var request = new CreatePermissionRequest(
             Guid.CreateVersion7(),
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             Guid.Empty,
             Read: true
         );
@@ -94,7 +96,7 @@ public class PermissionProcessorTests
         var account = await CreateAccountAsync();
         var request = new CreatePermissionRequest(
             account.Id,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             Guid.Empty,
             Read: true
         );
@@ -113,7 +115,7 @@ public class PermissionProcessorTests
         var first = await _permissionProcessor.CreatePermissionAsync(
             new CreatePermissionRequest(
                 account.Id,
-                PermissionConstants.GROUP_RESOURCE_TYPE,
+                Group.RESOURCE_TYPE,
                 Guid.Empty,
                 Read: true,
                 Description: "Read groups"
@@ -124,7 +126,7 @@ public class PermissionProcessorTests
         var result = await _permissionProcessor.CreatePermissionAsync(
             new CreatePermissionRequest(
                 account.Id,
-                PermissionConstants.GROUP_RESOURCE_TYPE,
+                Group.RESOURCE_TYPE,
                 Guid.Empty,
                 Read: true,
                 Description: "Another name"
@@ -143,7 +145,7 @@ public class PermissionProcessorTests
         var account = await CreateAccountAsync();
         var request = new CreatePermissionRequest(
             account.Id,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             Guid.Empty,
             Read: true
         );
@@ -164,7 +166,7 @@ public class PermissionProcessorTests
         var account = await CreateAccountAsync();
         var request = new CreatePermissionRequest(
             account.Id,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             Guid.Empty,
             Read: true
         );
@@ -195,14 +197,14 @@ public class PermissionProcessorTests
         var permissions = await permissionRepo.ListAsync(p => p.AccountId == account.Id);
         Assert.Equal(
             [
-                PermissionConstants.ACCOUNT_RESOURCE_TYPE,
-                AuditConstants.AUDIT_RESOURCE_TYPE,
-                AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE,
-                PermissionConstants.GROUP_RESOURCE_TYPE,
+                Account.RESOURCE_TYPE,
+                AuditEntry.RESOURCE_TYPE,
+                AccountAuditSettings.RESOURCE_TYPE,
+                Group.RESOURCE_TYPE,
                 "invoice",
-                PermissionConstants.PERMISSION_RESOURCE_TYPE,
-                PermissionConstants.ROLE_RESOURCE_TYPE,
-                PermissionConstants.USER_RESOURCE_TYPE,
+                Permission.RESOURCE_TYPE,
+                Role.RESOURCE_TYPE,
+                User.RESOURCE_TYPE,
             ],
             permissions.Select(p => p.ResourceType).Order()
         );
@@ -230,8 +232,8 @@ public class PermissionProcessorTests
             p =>
                 p.AccountId == account.Id
                 && p.ResourceType != "invoice"
-                && p.ResourceType != AuditConstants.AUDIT_RESOURCE_TYPE
-                && p.ResourceType != AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE,
+                && p.ResourceType != AuditEntry.RESOURCE_TYPE
+                && p.ResourceType != AccountAuditSettings.RESOURCE_TYPE,
             include: q => q.Include(p => p.Roles)
         );
 
@@ -241,7 +243,7 @@ public class PermissionProcessorTests
             p =>
             {
                 Assert.True(p.Create && p.Read && p.Update && p.Delete && p.Execute);
-                Assert.Contains(p.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+                Assert.Contains(p.Roles!, r => r.Name == Role.OWNER_ROLE_NAME);
             }
         );
     }
@@ -266,7 +268,7 @@ public class PermissionProcessorTests
         Assert.True(invoice.Update);
         Assert.False(invoice.Delete);
         Assert.False(invoice.Execute);
-        Assert.Contains(invoice.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+        Assert.Contains(invoice.Roles!, r => r.Name == Role.OWNER_ROLE_NAME);
     }
 
     [Fact]
@@ -339,7 +341,7 @@ public class PermissionProcessorTests
         Assert.True(quota.Read && quota.Execute);
         Assert.False(quota.Create || quota.Update || quota.Delete);
         Assert.Equal("Quota : Read & Execute", quota.Description);
-        Assert.Contains(quota.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+        Assert.Contains(quota.Roles!, r => r.Name == Role.OWNER_ROLE_NAME);
     }
 
     [Fact]
@@ -395,7 +397,7 @@ public class PermissionProcessorTests
         var report = Assert.Single(await ListPermissionsAsync(account.Id, "report"));
         Assert.Equal(existing.Id, report.Id);
         Assert.True(report.IsSystemDefined);
-        Assert.Contains(report.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+        Assert.Contains(report.Roles!, r => r.Name == Role.OWNER_ROLE_NAME);
     }
 
     [Fact]
@@ -420,7 +422,7 @@ public class PermissionProcessorTests
         var account = await CreateAccountAsync();
         var createRequest = new CreatePermissionRequest(
             account.Id,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             Guid.Empty,
             Read: true
         );
@@ -518,7 +520,7 @@ public class PermissionProcessorTests
         var created = await _permissionProcessor.CreatePermissionAsync(
             new CreatePermissionRequest(
                 account.Id,
-                PermissionConstants.GROUP_RESOURCE_TYPE,
+                Group.RESOURCE_TYPE,
                 Guid.Empty,
                 Read: true,
                 Description: "Read groups"
@@ -540,12 +542,7 @@ public class PermissionProcessorTests
         var account = await CreateAccountAsync();
         var other = await CreateAccountAsync();
         var created = await _permissionProcessor.CreatePermissionAsync(
-            new CreatePermissionRequest(
-                account.Id,
-                PermissionConstants.GROUP_RESOURCE_TYPE,
-                Guid.Empty,
-                Read: true
-            )
+            new CreatePermissionRequest(account.Id, Group.RESOURCE_TYPE, Guid.Empty, Read: true)
         );
         await AddPermissionToAccountAsync(created.CreatedId, account.Id);
 

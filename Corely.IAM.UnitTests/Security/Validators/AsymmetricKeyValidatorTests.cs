@@ -1,5 +1,4 @@
-﻿using Corely.IAM.Security.Constants;
-using Corely.IAM.Security.Models;
+﻿using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Validators;
 using Corely.IAM.UnitTests.ClassData;
 using Corely.Security.Encryption.Models;
@@ -51,7 +50,7 @@ public class AsymmetricKeyValidatorTests
     {
         var asymmetricKey = new AsymmetricKey
         {
-            Version = AsymmetricKeyConstants.VERSION_MIN_VALUE - 1,
+            Version = AsymmetricKey.VERSION_MIN_VALUE - 1,
             PublicKey = "public key",
             PrivateKey = new SymmetricEncryptedValue(new AesEncryptionProvider())
             {
@@ -70,7 +69,7 @@ public class AsymmetricKeyValidatorTests
     {
         var asymmetricKey = new AsymmetricKey
         {
-            Version = AsymmetricKeyConstants.VERSION_MIN_VALUE,
+            Version = AsymmetricKey.VERSION_MIN_VALUE,
             PublicKey = "public key",
             PrivateKey = new SymmetricEncryptedValue(new AesEncryptionProvider())
             {

@@ -1,6 +1,6 @@
 ﻿using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
-using Corely.IAM.Accounts.Constants;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Invitations.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -20,7 +20,7 @@ internal sealed class AccountEntityConfiguration : EntityConfigurationBase<Accou
         builder
             .Property(e => e.AccountName)
             .IsRequired()
-            .HasMaxLength(AccountConstants.ACCOUNT_NAME_MAX_LENGTH);
+            .HasMaxLength(Account.ACCOUNT_NAME_MAX_LENGTH);
 
         builder.HasIndex(e => e.AccountName).IsUnique();
 

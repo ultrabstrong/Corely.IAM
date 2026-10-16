@@ -4,6 +4,8 @@ namespace Corely.IAM.Platform.Entities;
 
 internal class PlatformSecuritySettingsEntity : IHasCreatedUtc, IHasModifiedUtc
 {
+    public const int SINGLE_ROW_ID = 1;
+
     public int Id { get; set; }
     public int PasswordMinimumLength { get; set; }
     public int PasswordMaximumLength { get; set; }

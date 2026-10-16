@@ -1,3 +1,3 @@
 namespace Corely.IAM.Roles.Models;
 
-public record CreateDefaultSystemRolesResult(Guid OwnerRoleId);
+internal record CreateDefaultSystemRolesResult(Guid OwnerRoleId);

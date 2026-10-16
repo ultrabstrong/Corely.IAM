@@ -5,6 +5,10 @@ namespace Corely.IAM.PasswordRecoveries.Entities;
 
 internal class PasswordRecoveryEntity : IHasCreatedUtc
 {
+    public const int TOKEN_SECRET_LENGTH = 32;
+    public const int SECRET_HASH_MAX_LENGTH = 250;
+    public const int TOKEN_TTL_SECONDS = 600;
+
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
     public string SecretHash { get; set; } = null!;

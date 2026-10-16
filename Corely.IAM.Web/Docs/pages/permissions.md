@@ -20,8 +20,8 @@ Permission table with search, sort, pagination, and create. CRUDX flags displaye
 - **CRUDX badges**: individual Create, Read, Update, Delete, Execute columns with active/inactive indicators
 
 **Authorization gates:**
-- `AuthAction.Create` + `PERMISSION_RESOURCE_TYPE`: Create button
-- `AuthAction.Delete` + `PERMISSION_RESOURCE_TYPE` + `ResourceIds: [permissionId]`: Delete button per row
+- `AuthAction.Create` + `Permission.RESOURCE_TYPE`: Create button
+- `AuthAction.Delete` + `Permission.RESOURCE_TYPE` + `ResourceIds: [permissionId]`: Delete button per row
 - System-defined permissions (the Owner role's defaults) have no Delete button
 
 **Create form:**
@@ -53,9 +53,9 @@ Permission table with search, sort, pagination, and create. CRUDX flags displaye
 - **Delete**: confirmation modal
 
 **Authorization gates:**
-- `AuthAction.Update` + `PERMISSION_RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit button, on system-defined
+- `AuthAction.Update` + `Permission.RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit button, on system-defined
   permissions too
-- `AuthAction.Delete` + `PERMISSION_RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete button, hidden for a
+- `AuthAction.Delete` + `Permission.RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete button, hidden for a
   system-defined permission
 
 **Behavior:**

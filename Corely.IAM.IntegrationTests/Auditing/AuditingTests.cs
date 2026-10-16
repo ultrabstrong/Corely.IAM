@@ -3,7 +3,7 @@ using Corely.IAM.Audits.Models;
 using Corely.IAM.IntegrationTests.Infrastructure;
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

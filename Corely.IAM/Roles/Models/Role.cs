@@ -4,6 +4,11 @@ namespace Corely.IAM.Roles.Models;
 
 public class Role
 {
+    public const string RESOURCE_TYPE = "role";
+    public const string OWNER_ROLE_NAME = "Owner Role";
+    public const int NAME_MIN_LENGTH = 1;
+    public const int NAME_MAX_LENGTH = 100;
+
     public Guid Id { get; set; }
     public string Name { get; set; } = null!;
     public string? Description { get; set; } = null!;

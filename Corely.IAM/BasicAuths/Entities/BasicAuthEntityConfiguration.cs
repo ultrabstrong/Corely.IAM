@@ -1,6 +1,6 @@
 ﻿using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
-using Corely.IAM.BasicAuths.Constants;
+using Corely.IAM.BasicAuths.Models;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Corely.IAM.BasicAuths.Entities;
@@ -15,9 +15,6 @@ internal sealed class BasicAuthEntityConfiguration : EntityConfigurationBase<Bas
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).ValueGeneratedNever();
 
-        builder
-            .Property(e => e.Password)
-            .IsRequired()
-            .HasMaxLength(BasicAuthConstants.PASSWORD_MAX_LENGTH);
+        builder.Property(e => e.Password).IsRequired().HasMaxLength(BasicAuth.PASSWORD_MAX_LENGTH);
     }
 }

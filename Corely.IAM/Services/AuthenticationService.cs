@@ -5,7 +5,6 @@ using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.GoogleAuths.Providers;
-using Corely.IAM.MfaChallenges.Constants;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Providers;
@@ -282,7 +281,7 @@ internal class AuthenticationService(
             );
         }
 
-        if (challenge.FailedAttempts >= MfaChallengeConstants.MAX_ATTEMPTS)
+        if (challenge.FailedAttempts >= MfaChallengeEntity.MAX_ATTEMPTS)
         {
             _logger.LogDebug("MFA challenge max attempts exceeded");
             return SignInResult.Failed(
@@ -569,9 +568,7 @@ internal class AuthenticationService(
         Guid? accountId
     )
     {
-        var tokenBytes = RandomNumberGenerator.GetBytes(
-            MfaChallengeConstants.CHALLENGE_TOKEN_BYTES
-        );
+        var tokenBytes = RandomNumberGenerator.GetBytes(MfaChallengeEntity.CHALLENGE_TOKEN_BYTES);
         var challengeToken = Convert.ToBase64String(tokenBytes);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
 

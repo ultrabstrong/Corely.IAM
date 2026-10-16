@@ -8,9 +8,6 @@ using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.TotpAuths.Entities;
-using Corely.IAM.TotpAuths.Entities;
-using Corely.IAM.TotpAuths.Entities;
-using Corely.IAM.Users.Constants;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
@@ -118,7 +115,7 @@ public class AuthenticationProviderTests
         var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token);
 
         Assert.Equal(typeof(AuthenticationProvider).FullName, jwtToken.Issuer);
-        Assert.Equal(UserConstants.JWT_AUDIENCE, jwtToken.Audiences.First());
+        Assert.Equal(TokenIssueContext.JWT_AUDIENCE, jwtToken.Audiences.First());
         Assert.Contains(
             jwtToken.Claims,
             c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == userEntity.Id.ToString()
@@ -657,7 +654,7 @@ public class AuthenticationProviderTests
         var jwtToken = tokenHandler.ReadJwtToken(result.Token);
 
         var deviceIdClaim = jwtToken.Claims.FirstOrDefault(c =>
-            c.Type == UserConstants.DEVICE_ID_CLAIM
+            c.Type == TokenIssueContext.DEVICE_ID_CLAIM
         );
         Assert.NotNull(deviceIdClaim);
         Assert.Equal(deviceId, deviceIdClaim.Value);
@@ -816,10 +813,10 @@ public class AuthenticationProviderTests
         var initialJwt = tokenHandler.ReadJwtToken(initialToken.Token);
         var renewedJwt = tokenHandler.ReadJwtToken(renewResult.Token);
         var initialSessionStartedAt = initialJwt.Claims.First(c =>
-            c.Type == UserConstants.SESSION_STARTED_AT_CLAIM
+            c.Type == TokenIssueContext.SESSION_STARTED_AT_CLAIM
         );
         var renewedSessionStartedAt = renewedJwt.Claims.First(c =>
-            c.Type == UserConstants.SESSION_STARTED_AT_CLAIM
+            c.Type == TokenIssueContext.SESSION_STARTED_AT_CLAIM
         );
 
         Assert.Equal(initialSessionStartedAt.Value, renewedSessionStartedAt.Value);

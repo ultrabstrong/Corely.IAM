@@ -4,7 +4,7 @@ using Corely.Security.KeyStore;
 
 namespace Corely.IAM.Security.Models;
 
-public class IamAsymmetricEncryptionProvider(
+internal class IamAsymmetricEncryptionProvider(
     IAsymmetricEncryptionProvider provider,
     IAsymmetricKeyStoreProvider keyStore,
     string providerName,

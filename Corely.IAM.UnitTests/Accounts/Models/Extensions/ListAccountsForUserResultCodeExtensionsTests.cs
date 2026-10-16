@@ -12,14 +12,11 @@ public class ListAccountsForUserResultCodeExtensionsTests
         ListAccountsForUserResultCode.UnauthorizedError,
         RetrieveAccountsResultCode.UnauthorizedError
     )]
-    public void ToRetrieveAccountsResultCode_MapsCorrectly(
-        ListAccountsForUserResultCode input,
-        RetrieveAccountsResultCode expected
-    )
+    public void ToRetrieveAccountsResultCode_MapsCorrectly(Enum input, Enum expected)
     {
-        var result = input.ToRetrieveAccountsResultCode();
+        var result = ((ListAccountsForUserResultCode)input).ToRetrieveAccountsResultCode();
 
-        Assert.Equal(expected, result);
+        Assert.Equal((RetrieveAccountsResultCode)expected, result);
     }
 
     [Fact]

@@ -1,4 +1,3 @@
-using Corely.IAM.Groups.Constants;
 using Corely.IAM.Groups.Models;
 using FluentValidation;
 
@@ -10,7 +9,7 @@ internal class UpdateGroupRequestValidator : AbstractValidator<UpdateGroupReques
     {
         RuleFor(x => x.Name)
             .NotEmpty()
-            .MinimumLength(GroupConstants.GROUP_NAME_MIN_LENGTH)
-            .MaximumLength(GroupConstants.GROUP_NAME_MAX_LENGTH);
+            .MinimumLength(Group.NAME_MIN_LENGTH)
+            .MaximumLength(Group.NAME_MAX_LENGTH);
     }
 }

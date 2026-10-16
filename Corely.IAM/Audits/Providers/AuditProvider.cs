@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Mappers;
 using Corely.IAM.Audits.Models;
@@ -36,7 +35,7 @@ internal class AuditProvider(
     private readonly string _source = auditOptions
         .ThrowIfNull(nameof(auditOptions))
         .Value.SourceName()
-        .Truncated(AuditConstants.SOURCE_MAX_LENGTH);
+        .Truncated(AuditEntry.SOURCE_MAX_LENGTH);
     private readonly ILogger<AuditProvider> _logger = logger.ThrowIfNull(nameof(logger));
 
     public async Task<TResult> RecordAsync<TResult>(
@@ -59,7 +58,7 @@ internal class AuditProvider(
             await CompleteAsync(
                 services,
                 pending,
-                () => new AuditOutcome(AuditConstants.FAULT_RESULT_CODE)
+                () => new AuditOutcome(AuditEntry.FAULT_RESULT_CODE)
             );
             throw;
         }
@@ -80,7 +79,7 @@ internal class AuditProvider(
                 await operation();
                 return true;
             },
-            _ => new AuditOutcome(AuditConstants.SUCCESS_RESULT_CODE),
+            _ => new AuditOutcome(AuditEntry.SUCCESS_RESULT_CODE),
             operationName
         );
 
@@ -187,13 +186,13 @@ internal class AuditProvider(
                 Cohort = cohort,
                 AccountId = accountId,
                 Source = _source,
-                Service = call.Service.Truncated(AuditConstants.SERVICE_MAX_LENGTH),
-                Operation = pending.Operation.Truncated(AuditConstants.OPERATION_MAX_LENGTH),
+                Service = call.Service.Truncated(AuditEntry.SERVICE_MAX_LENGTH),
+                Operation = pending.Operation.Truncated(AuditEntry.OPERATION_MAX_LENGTH),
                 Action = call.Action,
-                ResourceType = call.ResourceType.Truncated(AuditConstants.RESOURCE_TYPE_MAX_LENGTH),
+                ResourceType = call.ResourceType.Truncated(AuditEntry.RESOURCE_TYPE_MAX_LENGTH),
                 ResourceIds = resourceIds.ToResourceIdsColumn(),
-                ResultCode = described.ResultCode.Truncated(AuditConstants.RESULT_CODE_MAX_LENGTH),
-                Details = pending.Details?.Truncated(AuditConstants.DETAILS_MAX_LENGTH),
+                ResultCode = described.ResultCode.Truncated(AuditEntry.RESULT_CODE_MAX_LENGTH),
+                Details = pending.Details?.Truncated(AuditEntry.DETAILS_MAX_LENGTH),
             };
 
             await services

@@ -1,7 +1,7 @@
 using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Mappers;
 using Corely.IAM.Audits.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 
 namespace Corely.IAM.UnitTests.Audits.Mappers;
 

@@ -1,5 +1,4 @@
-﻿using Corely.IAM.Groups.Constants;
-using Corely.IAM.Groups.Models;
+﻿using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Validators;
 using Corely.IAM.UnitTests.ClassData;
 using FluentValidation.TestHelper;
@@ -30,7 +29,7 @@ public class GroupValidatorTests
 
     public static IEnumerable<object[]> InvalidGroupTestData =>
         [
-            [new string('a', GroupConstants.GROUP_NAME_MIN_LENGTH - 1)],
-            [new string('a', GroupConstants.GROUP_NAME_MAX_LENGTH + 1)],
+            [new string('a', Group.NAME_MIN_LENGTH - 1)],
+            [new string('a', Group.NAME_MAX_LENGTH + 1)],
         ];
 }

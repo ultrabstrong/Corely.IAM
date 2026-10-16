@@ -4,8 +4,8 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Roles.Models;
 using Corely.IAM.UnitTests.ClassData;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Processors;
@@ -662,7 +662,7 @@ public class GroupProcessorTests
             {
                 Id = Guid.CreateVersion7(),
                 AccountId = account.Id,
-                Name = RoleConstants.OWNER_ROLE_NAME,
+                Name = Role.OWNER_ROLE_NAME,
                 IsSystemDefined = true,
                 Users = [],
                 Groups = [createdGroup],
@@ -688,7 +688,7 @@ public class GroupProcessorTests
         {
             Id = Guid.CreateVersion7(),
             AccountId = accountId,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = [user!],
             Groups = [],
@@ -816,7 +816,7 @@ public class GroupProcessorTests
         {
             Id = Guid.CreateVersion7(),
             AccountId = account.Id,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = [],
             Groups = [createdGroup],
@@ -942,7 +942,7 @@ public class GroupProcessorTests
         {
             Id = Guid.CreateVersion7(),
             AccountId = account.Id,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = [],
             Groups = [createdGroup],
@@ -973,7 +973,7 @@ public class GroupProcessorTests
             g => g.Id == groupId,
             include: q => q.Include(g => g.Roles)
         );
-        var ownerRoleId = group!.Roles!.First(r => r.Name == RoleConstants.OWNER_ROLE_NAME).Id;
+        var ownerRoleId = group!.Roles!.First(r => r.Name == Role.OWNER_ROLE_NAME).Id;
 
         var request = new RemoveRolesFromGroupRequest([ownerRoleId], groupId);
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
@@ -994,7 +994,7 @@ public class GroupProcessorTests
             g => g.Id == groupId,
             include: q => q.Include(g => g.Roles)
         );
-        var ownerRoleId = group!.Roles!.First(r => r.Name == RoleConstants.OWNER_ROLE_NAME).Id;
+        var ownerRoleId = group!.Roles!.First(r => r.Name == Role.OWNER_ROLE_NAME).Id;
 
         var request = new RemoveRolesFromGroupRequest([ownerRoleId], groupId);
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
@@ -1035,7 +1035,7 @@ public class GroupProcessorTests
         group!.Roles!.Add(createdRegularRole);
         await groupRepo.UpdateAsync(group);
 
-        var ownerRoleId = group.Roles.First(r => r.Name == RoleConstants.OWNER_ROLE_NAME).Id;
+        var ownerRoleId = group.Roles.First(r => r.Name == Role.OWNER_ROLE_NAME).Id;
 
         var request = new RemoveRolesFromGroupRequest(
             [ownerRoleId, createdRegularRole.Id],

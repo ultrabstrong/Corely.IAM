@@ -1,4 +1,3 @@
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Platform.Models;
 
 namespace Corely.IAM.Audits.Models;
@@ -10,16 +9,14 @@ public record AccountAuditSettings(
     int RetentionDays
 )
 {
+    public const string RESOURCE_TYPE = "audit_settings";
+    public const int DEFAULT_RETENTION_DAYS = 90;
+
     public static AuditActions DefaultMemberActions =>
         AuditActions.Create | AuditActions.Update | AuditActions.Delete;
 
     public static AccountAuditSettings Default(Guid accountId) =>
-        new(
-            accountId,
-            DefaultMemberActions,
-            DefaultMemberActions,
-            AuditConstants.DEFAULT_RETENTION_DAYS
-        );
+        new(accountId, DefaultMemberActions, DefaultMemberActions, DEFAULT_RETENTION_DAYS);
 
     public AuditActions EffectiveActions(AuditCohort cohort, PlatformSettings platform) =>
         cohort switch

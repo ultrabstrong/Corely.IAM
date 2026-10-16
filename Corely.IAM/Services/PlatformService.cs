@@ -6,13 +6,12 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Providers;
-using Corely.IAM.Platform.Constants;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Mappers;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Platform.Providers;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Roles.Models;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Providers;
 using Corely.IAM.Users.Models;
@@ -189,7 +188,7 @@ internal class PlatformService(
                 r =>
                     r.AccountId == platformAccount.Id
                     && r.IsSystemDefined
-                    && r.Name == RoleConstants.OWNER_ROLE_NAME,
+                    && r.Name == Role.OWNER_ROLE_NAME,
                 include: q => q.Include(r => r.Permissions)
             )
         )!;
@@ -289,7 +288,7 @@ internal class PlatformService(
     private async Task SaveSecuritySettingsAsync(SecurityPolicy settings)
     {
         var entity = await _securitySettingsRepo.GetAsync(s =>
-            s.Id == PlatformConstants.PLATFORM_SETTINGS_ID
+            s.Id == PlatformSecuritySettingsEntity.SINGLE_ROW_ID
         );
         if (entity is null)
         {

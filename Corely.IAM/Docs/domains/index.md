@@ -33,7 +33,6 @@ Each domain uses:
 
 ```
 Domain/
-├── Constants/        # Domain constants (SCREAMING_SNAKE_CASE)
 ├── Entities/         # EF Core entities
 ├── Models/           # Request/response/domain models
 ├── Processors/       # Business logic + authorization/telemetry decorators
@@ -47,7 +46,7 @@ Domain/
 - **Account scoping**: groups, roles, permissions, and invitations are scoped to an account via `AccountId`
 - **M:M relationships**: use explicit join entities with `DeleteBehavior.NoAction` (SQL Server constraint)
 - **ChildRef**: lightweight `record ChildRef(Guid Id, string Name, bool IsSystemDefined = false)` used in hydrated collections. `IsSystemDefined` is set for roles and permissions; users, groups and accounts leave it false
-- **Constants**: `SCREAMING_SNAKE_CASE`, defined in `Constants/` folder per domain
+- **Constants**: `SCREAMING_SNAKE_CASE`, declared on the type they describe: `User.USERNAME_MAX_LENGTH`, `Role.OWNER_ROLE_NAME`, `User.RESOURCE_TYPE`. A model's limits and defaults are on the model
 
 ## Topics
 

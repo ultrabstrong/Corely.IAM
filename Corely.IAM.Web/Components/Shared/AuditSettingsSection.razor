@@ -5,7 +5,7 @@
         Audit
         @if (_settings is not null && !_isEditing)
         {
-            <PermissionView Action="AuthAction.Update" Resource="@AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE">
+            <PermissionView Action="AuthAction.Update" Resource="@AccountAuditSettings.RESOURCE_TYPE">
                 <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit" disabled="@_busy">Edit</button>
             </PermissionView>
         }

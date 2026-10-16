@@ -1,6 +1,6 @@
 namespace Corely.IAM.BasicAuths.Models;
 
-public enum DeleteBasicAuthResultCode
+internal enum DeleteBasicAuthResultCode
 {
     Success,
     NotFoundError,

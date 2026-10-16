@@ -29,10 +29,10 @@ else
                 @if (!_isEditing)
                 {
                     <div class="d-flex gap-2">
-                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                        <PermissionView Action="AuthAction.Update" Resource="@Group.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                             <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
                         </PermissionView>
-                        <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                        <PermissionView Action="AuthAction.Delete" Resource="@Group.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                             <button class="btn btn-outline-danger btn-sm" @onclick="ConfirmDelete" disabled="@_loading">Delete</button>
                         </PermissionView>
                     </div>
@@ -65,7 +65,7 @@ else
         <div class="section-divider mb-4">
             <div class="section-divider-label">
                 Users
-                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <PermissionView Action="AuthAction.Update" Resource="@Group.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                     @if (_canAddUsers)
                     {
                         <button class="btn btn-primary btn-sm" @onclick="() => _userPickerModal.ShowAsync()" disabled="@_loading">Add Users</button>
@@ -91,7 +91,7 @@ else
                                 <td class="table-actions cell-actions">
                                     <div class="row-actions">
                                         <a href="@AppRoutes.Users/@user.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
-                                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                        <PermissionView Action="AuthAction.Update" Resource="@Group.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                                             <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemoveUser(user.Id, user.Name)" title="Remove"><i class="bi bi-trash"></i></button>
                                         </PermissionView>
                                     </div>
@@ -108,7 +108,7 @@ else
         <div class="section-divider mb-4">
             <div class="section-divider-label">
                 Roles
-                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <PermissionView Action="AuthAction.Update" Resource="@Group.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                     <button class="btn btn-primary btn-sm" @onclick="() => _rolePickerModal.ShowAsync()" disabled="@_loading">Add Roles</button>
                 </PermissionView>
             </div>
@@ -131,7 +131,7 @@ else
                                 <td class="table-actions cell-actions">
                                     <div class="row-actions">
                                         <a href="@AppRoutes.Roles/@role.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
-                                        <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                        <PermissionView Action="AuthAction.Update" Resource="@Group.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                                             <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)" title="Remove"><i class="bi bi-trash"></i></button>
                                         </PermissionView>
                                     </div>

@@ -1,8 +1,8 @@
 namespace Corely.IAM.Accounts.Models;
 
-public record GetAccountResult(GetAccountResultCode ResultCode, string Message, Account? Account);
+internal record GetAccountResult(GetAccountResultCode ResultCode, string Message, Account? Account);
 
-public enum GetAccountResultCode
+internal enum GetAccountResultCode
 {
     Success,
     AccountNotFoundError,

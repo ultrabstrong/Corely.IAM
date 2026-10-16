@@ -1,10 +1,14 @@
 using Corely.Common.Extensions;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.GoogleAuths.Models;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Services;
 
@@ -22,7 +26,7 @@ internal class RegistrationServiceAuditDecorator(
 
     public Task<RegisterUserResult> RegisterUserAsync(RegisterUserRequest request) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Create, PermissionConstants.USER_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Create, User.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
             },
@@ -38,7 +42,7 @@ internal class RegistrationServiceAuditDecorator(
         RegisterUserWithGoogleRequest request
     ) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Create, PermissionConstants.USER_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Create, User.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
             },
@@ -52,7 +56,7 @@ internal class RegistrationServiceAuditDecorator(
 
     public Task<RegisterAccountResult> RegisterAccountAsync(RegisterAccountRequest request) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Create, PermissionConstants.ACCOUNT_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Create, Account.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
             },
@@ -66,7 +70,7 @@ internal class RegistrationServiceAuditDecorator(
 
     public Task<RegisterGroupResult> RegisterGroupAsync(RegisterGroupRequest request) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Create, PermissionConstants.GROUP_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Create, Group.RESOURCE_TYPE)
             {
                 AccountId = request.AccountId,
             },
@@ -76,7 +80,7 @@ internal class RegistrationServiceAuditDecorator(
 
     public Task<RegisterRoleResult> RegisterRoleAsync(RegisterRoleRequest request) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Create, PermissionConstants.ROLE_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Create, Role.RESOURCE_TYPE)
             {
                 AccountId = request.AccountId,
             },
@@ -88,7 +92,7 @@ internal class RegistrationServiceAuditDecorator(
         RegisterPermissionRequest request
     ) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Create, PermissionConstants.PERMISSION_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Create, Permission.RESOURCE_TYPE)
             {
                 AccountId = request.AccountId,
             },
@@ -100,7 +104,7 @@ internal class RegistrationServiceAuditDecorator(
         RegisterUserWithAccountRequest request
     ) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Update, Account.RESOURCE_TYPE)
             {
                 AccountId = request.AccountId,
                 ResourceIds = [request.AccountId, request.UserId],
@@ -113,7 +117,7 @@ internal class RegistrationServiceAuditDecorator(
         RegisterUsersWithGroupRequest request
     ) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Update, Group.RESOURCE_TYPE)
             {
                 AccountId = request.AccountId,
                 ResourceIds = [request.GroupId, .. request.UserIds ?? []],
@@ -126,7 +130,7 @@ internal class RegistrationServiceAuditDecorator(
         RegisterRolesWithGroupRequest request
     ) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.GROUP_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Update, Group.RESOURCE_TYPE)
             {
                 AccountId = request.AccountId,
                 ResourceIds = [request.GroupId, .. request.RoleIds ?? []],
@@ -139,7 +143,7 @@ internal class RegistrationServiceAuditDecorator(
         RegisterRolesWithUserRequest request
     ) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.USER_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Update, User.RESOURCE_TYPE)
             {
                 AccountId = request.AccountId,
                 ResourceIds = [request.UserId, .. request.RoleIds ?? []],
@@ -152,7 +156,7 @@ internal class RegistrationServiceAuditDecorator(
         RegisterPermissionsWithRoleRequest request
     ) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.ROLE_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Update, Role.RESOURCE_TYPE)
             {
                 AccountId = request.AccountId,
                 ResourceIds = [request.RoleId, .. request.PermissionIds ?? []],
@@ -163,7 +167,7 @@ internal class RegistrationServiceAuditDecorator(
 
     public Task<RegisterPasswordResult> RegisterPasswordAsync(RegisterPasswordRequest request) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Create, PermissionConstants.USER_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Create, User.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
             },

@@ -2,18 +2,16 @@ using System.Text;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Mappers;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Models.Extensions;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Models;
-using Corely.IAM.Platform.Constants;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Mappers;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Users.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -129,12 +127,12 @@ internal class AuditService(
                 .Where(matching)
                 .OrderByDescending(e => e.OccurredUtc)
                 .ThenByDescending(e => e.Id)
-                .Take(AuditConstants.EXPORT_MAX_ENTRIES + 1)
+                .Take(ExportAuditEntriesResult.MAX_ENTRIES + 1)
         );
 
-        var truncated = entities.Count > AuditConstants.EXPORT_MAX_ENTRIES;
+        var truncated = entities.Count > ExportAuditEntriesResult.MAX_ENTRIES;
         var items = await WithNamesAsync([
-            .. entities.Take(AuditConstants.EXPORT_MAX_ENTRIES).Select(e => e.ToModel()),
+            .. entities.Take(ExportAuditEntriesResult.MAX_ENTRIES).Select(e => e.ToModel()),
         ]);
 
         var csv = new StringBuilder(AuditEntry.CSV_HEADER).Append(CSV_LINE_BREAK);
@@ -144,7 +142,7 @@ internal class AuditService(
         return new ExportAuditEntriesResult(
             RetrieveResultCode.Success,
             truncated
-                ? $"The export stopped at {AuditConstants.EXPORT_MAX_ENTRIES:N0} entries. Narrow the date range to export the rest."
+                ? $"The export stopped at {ExportAuditEntriesResult.MAX_ENTRIES:N0} entries. Narrow the date range to export the rest."
                 : string.Empty,
             csv.ToString(),
             items.Count,
@@ -317,7 +315,7 @@ internal class AuditService(
             );
 
         var entity = await _platformSettingsRepo.GetAsync(p =>
-            p.Id == PlatformConstants.PLATFORM_SETTINGS_ID
+            p.Id == PlatformSettingsEntity.SINGLE_ROW_ID
         );
         if (entity is null)
         {

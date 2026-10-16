@@ -703,12 +703,12 @@ public class RegistrationServiceTests
         RegisterPasswordResultCode.PasswordValidationError
     )]
     public async Task RegisterPassword_ReturnsTheCreateResult_WhenTotpCheckPasses(
-        CreateBasicAuthResultCode createResultCode,
+        Enum createResultCode,
         RegisterPasswordResultCode expected
     )
     {
         SetupTotpCheck(ReauthenticationResult.Succeeded);
-        _createBasicAuthResultCode = createResultCode;
+        _createBasicAuthResultCode = (CreateBasicAuthResultCode)createResultCode;
 
         var result = await _registrationService.RegisterPasswordAsync(new("Password1!", "123456"));
 

@@ -2,7 +2,7 @@ using Corely.IAM.Accounts.Models;
 
 namespace Corely.IAM.Users.Models;
 
-public enum UserAuthTokenResultCode
+internal enum UserAuthTokenResultCode
 {
     Success,
     UserNotFoundError,
@@ -11,7 +11,7 @@ public enum UserAuthTokenResultCode
     TwoFactorRequiredError,
 }
 
-public record UserAuthTokenResult(
+internal record UserAuthTokenResult(
     UserAuthTokenResultCode ResultCode,
     string? Token,
     Guid? TokenId,

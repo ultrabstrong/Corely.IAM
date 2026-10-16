@@ -4,7 +4,6 @@ using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Roles.Models;
@@ -70,7 +69,7 @@ internal class RetrievalService(
             GetCurrentAccountId()
         );
         var effectivePermissions = await GetEffectivePermissionsAsync(
-            PermissionConstants.PERMISSION_RESOURCE_TYPE,
+            Permission.RESOURCE_TYPE,
             permissionId
         );
         return new RetrieveSingleResult<Permission>(
@@ -91,10 +90,7 @@ internal class RetrievalService(
             hydrate,
             GetCurrentAccountId()
         );
-        var effectivePermissions = await GetEffectivePermissionsAsync(
-            PermissionConstants.GROUP_RESOURCE_TYPE,
-            groupId
-        );
+        var effectivePermissions = await GetEffectivePermissionsAsync(Group.RESOURCE_TYPE, groupId);
         return new RetrieveSingleResult<Group>(
             result.ResultCode,
             result.Message,
@@ -109,10 +105,7 @@ internal class RetrievalService(
     public async Task<RetrieveSingleResult<Role>> GetRoleAsync(Guid roleId, bool hydrate = false)
     {
         var result = await _roleProcessor.GetRoleByIdAsync(roleId, hydrate, GetCurrentAccountId());
-        var effectivePermissions = await GetEffectivePermissionsAsync(
-            PermissionConstants.ROLE_RESOURCE_TYPE,
-            roleId
-        );
+        var effectivePermissions = await GetEffectivePermissionsAsync(Role.RESOURCE_TYPE, roleId);
         return new RetrieveSingleResult<Role>(
             result.ResultCode,
             result.Message,
@@ -127,10 +120,7 @@ internal class RetrievalService(
     public async Task<RetrieveSingleResult<User>> GetUserAsync(Guid userId, bool hydrate = false)
     {
         var result = await _userProcessor.GetUserByIdAsync(userId, hydrate, GetCurrentAccountId());
-        var effectivePermissions = await GetEffectivePermissionsAsync(
-            PermissionConstants.USER_RESOURCE_TYPE,
-            userId
-        );
+        var effectivePermissions = await GetEffectivePermissionsAsync(User.RESOURCE_TYPE, userId);
         return new RetrieveSingleResult<User>(
             result.ResultCode,
             result.Message,
@@ -149,7 +139,7 @@ internal class RetrievalService(
     {
         var result = await _accountProcessor.GetAccountByIdAsync(accountId, hydrate);
         var effectivePermissions = await GetEffectivePermissionsAsync(
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            Account.RESOURCE_TYPE,
             accountId
         );
         return new RetrieveSingleResult<Account>(

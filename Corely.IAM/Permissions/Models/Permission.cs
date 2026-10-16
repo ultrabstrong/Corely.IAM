@@ -4,6 +4,8 @@ namespace Corely.IAM.Permissions.Models;
 
 public class Permission
 {
+    public const string RESOURCE_TYPE = "permission";
+
     public Guid Id { get; set; }
     public string? Description { get; set; }
     public Guid AccountId { get; set; }

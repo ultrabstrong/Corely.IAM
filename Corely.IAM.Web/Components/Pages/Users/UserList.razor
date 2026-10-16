@@ -68,7 +68,7 @@ else
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     <a href="@AppRoutes.Users/@user.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
-                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.ACCOUNT_RESOURCE_TYPE">
+                                    <PermissionView Action="AuthAction.Update" Resource="@Account.RESOURCE_TYPE">
                                         <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemove(user.Id, user.Username)" title="Remove"><i class="bi bi-person-dash"></i></button>
                                     </PermissionView>
                                 </div>

@@ -1,5 +1,4 @@
 using System.Reflection;
-using Corely.IAM.Audits.Constants;
 
 namespace Corely.IAM.Audits.Models;
 
@@ -11,6 +10,6 @@ public class AuditOptions
 
     public string SourceName() =>
         string.IsNullOrWhiteSpace(Source)
-            ? Assembly.GetEntryAssembly()?.GetName().Name ?? AuditConstants.UNKNOWN_SOURCE
+            ? Assembly.GetEntryAssembly()?.GetName().Name ?? AuditEntry.UNKNOWN_SOURCE
             : Source;
 }

@@ -1,6 +1,7 @@
 using Corely.IAM.IntegrationTests.Infrastructure;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.TotpAuths.Models;
@@ -16,11 +17,7 @@ public class SystemContextTests(IamScenario scenario) : IClassFixture<IamScenari
         var authorized = await scenario.AsSystemAsync(services =>
             services
                 .GetRequiredService<IAuthorizationProvider>()
-                .IsAuthorizedAsync(
-                    AuthAction.Delete,
-                    PermissionConstants.ROLE_RESOURCE_TYPE,
-                    scenario.UngrantedRoleId
-                )
+                .IsAuthorizedAsync(AuthAction.Delete, Role.RESOURCE_TYPE, scenario.UngrantedRoleId)
         );
 
         Assert.True(authorized);

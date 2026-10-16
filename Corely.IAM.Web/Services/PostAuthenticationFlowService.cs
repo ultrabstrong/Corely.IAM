@@ -10,7 +10,7 @@ using SignInResultModel = Corely.IAM.Models.SignInResult;
 
 namespace Corely.IAM.Web.Services;
 
-public class PostAuthenticationFlowService(
+internal class PostAuthenticationFlowService(
     IAuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
     IAuthCookieManager authCookieManager,

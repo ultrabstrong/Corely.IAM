@@ -1,8 +1,9 @@
-using Corely.IAM.Permissions.Constants;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Permissions.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
 
 namespace Corely.IAM.UnitTests.Permissions.Mappers;
 
@@ -411,7 +412,7 @@ public class PermissionMapperTests
     public void IsCoveredBy_IsFalse_ForAnotherResourceType()
     {
         var held = Grant(Guid.Empty, read: true);
-        held.ResourceType = PermissionConstants.ROLE_RESOURCE_TYPE;
+        held.ResourceType = Role.RESOURCE_TYPE;
 
         Assert.False(Grant(Guid.Empty, read: true).IsCoveredBy([held]));
     }
@@ -438,7 +439,7 @@ public class PermissionMapperTests
     ) =>
         new()
         {
-            ResourceType = PermissionConstants.GROUP_RESOURCE_TYPE,
+            ResourceType = Group.RESOURCE_TYPE,
             ResourceId = resourceId,
             Read = read,
             Update = update,
@@ -449,7 +450,7 @@ public class PermissionMapperTests
         new()
         {
             IsSystemDefined = true,
-            ResourceType = PermissionConstants.GROUP_RESOURCE_TYPE,
+            ResourceType = Group.RESOURCE_TYPE,
             ResourceId = Guid.Empty,
             Create = true,
             Read = true,

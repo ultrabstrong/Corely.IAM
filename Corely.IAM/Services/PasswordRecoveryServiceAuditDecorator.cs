@@ -2,8 +2,9 @@ using Corely.Common.Extensions;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.PasswordRecoveries.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Services;
 
@@ -47,5 +48,5 @@ internal class PasswordRecoveryServiceAuditDecorator(
         );
 
     private static AuditCall OnUser(AuthAction action) =>
-        new(SERVICE, action, PermissionConstants.USER_RESOURCE_TYPE) { AccountId = Guid.Empty };
+        new(SERVICE, action, User.RESOURCE_TYPE) { AccountId = Guid.Empty };
 }

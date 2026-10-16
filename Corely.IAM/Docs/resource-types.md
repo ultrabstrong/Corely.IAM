@@ -15,14 +15,14 @@ Resource types are compile-time concepts that categorize what a permission grant
 
 | Constant | Value | Description | Owner actions |
 |----------|-------|-------------|---------------|
-| `PermissionConstants.ACCOUNT_RESOURCE_TYPE` | `"account"` | Accounts | All five |
-| `PermissionConstants.USER_RESOURCE_TYPE` | `"user"` | Users | All five |
-| `PermissionConstants.GROUP_RESOURCE_TYPE` | `"group"` | Groups | All five |
-| `PermissionConstants.ROLE_RESOURCE_TYPE` | `"role"` | Roles | All five |
-| `PermissionConstants.PERMISSION_RESOURCE_TYPE` | `"permission"` | Permissions | All five |
-| `AuditConstants.AUDIT_RESOURCE_TYPE` | `"audit"` | Audit log | Read (view and export), Delete (purge) |
-| `AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE` | `"audit_settings"` | Audit settings | Read, Update |
-| `AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE` | `"platform_settings"` | Platform settings | None |
+| `Account.RESOURCE_TYPE` | `"account"` | Accounts | All five |
+| `User.RESOURCE_TYPE` | `"user"` | Users | All five |
+| `Group.RESOURCE_TYPE` | `"group"` | Groups | All five |
+| `Role.RESOURCE_TYPE` | `"role"` | Roles | All five |
+| `Permission.RESOURCE_TYPE` | `"permission"` | Permissions | All five |
+| `AuditEntry.RESOURCE_TYPE` | `"audit"` | Audit log | Read (view and export), Delete (purge) |
+| `AccountAuditSettings.RESOURCE_TYPE` | `"audit_settings"` | Audit settings | Read, Update |
+| `PlatformSettings.RESOURCE_TYPE` | `"platform_settings"` | Platform settings | None |
 
 `platform_settings` is meaningful only in the [platform account](platform.md), whose owner holds full
 access on every type; an account owner elsewhere gets nothing on it. See [Auditing](auditing.md) for

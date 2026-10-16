@@ -4,7 +4,7 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Roles.Entities;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;

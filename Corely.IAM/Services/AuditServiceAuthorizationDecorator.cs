@@ -1,10 +1,10 @@
 using Corely.Common.Extensions;
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.Services;
@@ -116,7 +116,7 @@ internal class AuditServiceAuthorizationDecorator(
     public async Task<GetPlatformSettingsResult> GetPlatformSettingsAsync() =>
         await _auditAccessProvider.HoldsInPlatformAccountAsync(
             AuthAction.Read,
-            AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
+            PlatformSettings.RESOURCE_TYPE
         )
             ? await _inner.GetPlatformSettingsAsync()
             : new GetPlatformSettingsResult(
@@ -128,7 +128,7 @@ internal class AuditServiceAuthorizationDecorator(
     public async Task<ModifyResult> UpdatePlatformSettingsAsync(PlatformSettings settings) =>
         await _auditAccessProvider.HoldsInPlatformAccountAsync(
             AuthAction.Update,
-            AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
+            PlatformSettings.RESOURCE_TYPE
         )
             ? await _inner.UpdatePlatformSettingsAsync(settings)
             : new ModifyResult(ModifyResultCode.UnauthorizedError, UNAUTHORIZED);
@@ -154,6 +154,6 @@ internal class AuditServiceAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(accountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             action,
-            AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE
+            AccountAuditSettings.RESOURCE_TYPE
         );
 }

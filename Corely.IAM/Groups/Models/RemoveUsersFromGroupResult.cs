@@ -1,6 +1,6 @@
 namespace Corely.IAM.Groups.Models;
 
-public record RemoveUsersFromGroupResult(
+internal record RemoveUsersFromGroupResult(
     RemoveUsersFromGroupResultCode ResultCode,
     string Message,
     int RemovedUserCount,
@@ -11,7 +11,7 @@ public record RemoveUsersFromGroupResult(
     public List<Guid> SoleOwnerUserIds { get; init; } = SoleOwnerUserIds ?? [];
 }
 
-public enum RemoveUsersFromGroupResultCode
+internal enum RemoveUsersFromGroupResultCode
 {
     Success,
     PartialSuccess,

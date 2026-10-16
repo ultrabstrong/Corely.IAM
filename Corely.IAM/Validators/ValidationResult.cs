@@ -1,6 +1,6 @@
 namespace Corely.IAM.Validators;
 
-public class ValidationResult
+internal class ValidationResult
 {
     public string Message { get; set; } = null!;
     public List<ValidationError>? Errors { get; init; }

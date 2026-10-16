@@ -1,4 +1,3 @@
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Platform.Models;
 
@@ -16,7 +15,7 @@ public class AccountAuditSettingsTests
         var expected = AuditActions.Create | AuditActions.Update | AuditActions.Delete;
         Assert.Equal(expected, settings.AccountMemberActions);
         Assert.Equal(expected, settings.PlatformMemberActions);
-        Assert.Equal(AuditConstants.DEFAULT_RETENTION_DAYS, settings.RetentionDays);
+        Assert.Equal(AccountAuditSettings.DEFAULT_RETENTION_DAYS, settings.RetentionDays);
     }
 
     [Theory]

@@ -2,6 +2,8 @@ namespace Corely.IAM.Invitations.Models;
 
 public class Invitation
 {
+    public const int DESCRIPTION_MAX_LENGTH = 200;
+
     public Guid Id { get; init; }
     public Guid AccountId { get; init; }
     public Guid CreatedByUserId { get; init; }

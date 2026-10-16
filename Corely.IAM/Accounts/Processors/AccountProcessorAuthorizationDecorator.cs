@@ -2,8 +2,8 @@ using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.Accounts.Processors;
@@ -32,7 +32,7 @@ internal class AccountProcessorAuthorizationDecorator(
     public async Task<GetAccountResult> GetAccountAsync(Guid accountId) =>
         await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            Account.RESOURCE_TYPE,
             accountId
         )
             ? await _inner.GetAccountAsync(accountId)
@@ -46,7 +46,7 @@ internal class AccountProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            Account.RESOURCE_TYPE,
             request.AccountId
         )
             ? await _inner.UpdateAccountAsync(request)
@@ -59,7 +59,7 @@ internal class AccountProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(accountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            Account.RESOURCE_TYPE,
             accountId
         )
             ? await _inner.DeleteAccountAsync(accountId)
@@ -74,7 +74,7 @@ internal class AccountProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            Account.RESOURCE_TYPE,
             request.AccountId
         )
             ? await _inner.AddUserToAccountAsync(request)
@@ -93,7 +93,7 @@ internal class AccountProcessorAuthorizationDecorator(
         _authorizationProvider.IsAuthorizedForOwnUser(request.UserId, true)
         || await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            Account.RESOURCE_TYPE,
             request.AccountId
         )
             ? await _inner.RemoveUserFromAccountAsync(request)
@@ -120,7 +120,7 @@ internal class AccountProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(accountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            Account.RESOURCE_TYPE,
             accountId
         )
             ? await _inner.GetAccountByIdAsync(accountId, hydrate)
@@ -134,7 +134,7 @@ internal class AccountProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(accountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            Account.RESOURCE_TYPE,
             accountId
         )
             ? await _inner.GetAccountKeysAsync(accountId)

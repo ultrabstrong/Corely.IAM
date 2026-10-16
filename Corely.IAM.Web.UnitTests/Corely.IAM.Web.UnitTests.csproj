@@ -33,4 +33,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Corely.IAM.Web\Corely.IAM.Web.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile
+      Include="..\Corely.IAM.UnitTests\PublicSurface\PublicTypes.cs"
+      Link="PublicSurface\PublicTypes.cs"
+    />
+  </ItemGroup>
 </Project>

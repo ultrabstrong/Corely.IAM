@@ -15,8 +15,8 @@ Role table with search, sort, pagination, and create/delete operations. System-d
 - **Role type badge**: "System" (gray) or "User" (light) per row
 
 **Authorization gates:**
-- `AuthAction.Create` + `ROLE_RESOURCE_TYPE`: Create button
-- `AuthAction.Delete` + `ROLE_RESOURCE_TYPE` + `ResourceIds: [roleId]`: Delete button (conditionally hidden for system roles)
+- `AuthAction.Create` + `Role.RESOURCE_TYPE`: Create button
+- `AuthAction.Delete` + `Role.RESOURCE_TYPE` + `ResourceIds: [roleId]`: Delete button (conditionally hidden for system roles)
 
 ---
 
@@ -33,8 +33,8 @@ Role properties with permission assignment. A system-defined role's name and des
 - **System role badge**: displayed for system-defined roles
 
 **Authorization gates:**
-- `AuthAction.Update` + `ROLE_RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit (hidden for system roles), Add Permissions, Remove Permission
-- `AuthAction.Delete` + `ROLE_RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete button (hidden for system roles)
+- `AuthAction.Update` + `Role.RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit (hidden for system roles), Add Permissions, Remove Permission
+- `AuthAction.Delete` + `Role.RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete button (hidden for system roles)
 
 **Behavior:**
 - Edit/delete disabled when `IsSystemDefined = true`

@@ -1,4 +1,3 @@
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Platform.Models;
 
@@ -19,7 +18,10 @@ public class PlatformSettingsTests
         var settings = PlatformSettings.Default;
 
         Assert.True(settings.AuditEnabled);
-        Assert.Equal(AuditConstants.DEFAULT_MAX_RETENTION_DAYS, settings.AuditMaxRetentionDays);
+        Assert.Equal(
+            PlatformSettings.DEFAULT_AUDIT_MAX_RETENTION_DAYS,
+            settings.AuditMaxRetentionDays
+        );
         Assert.Equal(AuditActions.All, settings.AuditAllowedActions);
         Assert.Equal(AuditActions.None, settings.SystemContextActions);
         Assert.Equal(

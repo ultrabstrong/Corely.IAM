@@ -1,5 +1,4 @@
 using Corely.IAM.Models;
-using Corely.IAM.Platform.Constants;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
@@ -39,7 +38,7 @@ public class PlatformSecuritySettingsPageTests : TestContext
         _authorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(
-                    It.IsAny<Corely.IAM.Security.Constants.AuthAction>(),
+                    It.IsAny<Corely.IAM.Security.Enums.AuthAction>(),
                     It.IsAny<string>(),
                     It.IsAny<Guid[]>()
                 )
@@ -121,7 +120,7 @@ public class PlatformSecuritySettingsPageTests : TestContext
             )
         );
         Assert.Contains(
-            $"Range {SecurityPolicyConstants.MAX_LOGIN_ATTEMPTS_MIN} to {SecurityPolicyConstants.MAX_LOGIN_ATTEMPTS_MAX}",
+            $"Range {SecurityPolicy.MAX_LOGIN_ATTEMPTS_MIN} to {SecurityPolicy.MAX_LOGIN_ATTEMPTS_MAX}",
             cut.Markup
         );
         Assert.Empty(cut.FindAll("input"));

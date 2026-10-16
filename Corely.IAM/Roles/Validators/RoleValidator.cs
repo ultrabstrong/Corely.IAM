@@ -1,5 +1,4 @@
-﻿using Corely.IAM.Roles.Constants;
-using Corely.IAM.Roles.Models;
+﻿using Corely.IAM.Roles.Models;
 using FluentValidation;
 
 namespace Corely.IAM.Roles.Validators;
@@ -10,7 +9,7 @@ internal class RoleValidator : AbstractValidator<Role>
     {
         RuleFor(x => x.Name)
             .NotEmpty()
-            .MinimumLength(RoleConstants.ROLE_NAME_MIN_LENGTH)
-            .MaximumLength(RoleConstants.ROLE_NAME_MAX_LENGTH);
+            .MinimumLength(Role.NAME_MIN_LENGTH)
+            .MaximumLength(Role.NAME_MAX_LENGTH);
     }
 }

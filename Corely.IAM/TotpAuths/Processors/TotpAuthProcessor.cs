@@ -5,7 +5,6 @@ using Corely.IAM.Extensions;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Security.Providers;
-using Corely.IAM.TotpAuths.Constants;
 using Corely.IAM.TotpAuths.Entities;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Providers;
@@ -334,6 +333,6 @@ internal class TotpAuthProcessor(
     private static string GenerateRecoveryCode()
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        return RandomNumberGenerator.GetString(chars, TotpAuthConstants.RECOVERY_CODE_LENGTH);
+        return RandomNumberGenerator.GetString(chars, TotpRecoveryCodeEntity.CODE_LENGTH);
     }
 }

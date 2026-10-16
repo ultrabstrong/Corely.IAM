@@ -1,4 +1,3 @@
-using Corely.IAM.Platform.Constants;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Models;
 
@@ -47,7 +46,7 @@ internal static class PlatformSecuritySettingsMapper
         {
             var entity = new PlatformSecuritySettingsEntity
             {
-                Id = PlatformConstants.PLATFORM_SETTINGS_ID,
+                Id = PlatformSecuritySettingsEntity.SINGLE_ROW_ID,
             };
             entity.Apply(policy);
             return entity;

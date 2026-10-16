@@ -15,11 +15,11 @@ public class DeleteRoleResultCodeExtensionsTests
     )]
     [InlineData(DeleteRoleResultCode.UnauthorizedError, DeregisterRoleResultCode.UnauthorizedError)]
     public void ToDeregisterRoleResultCode_MapsCorrectly(
-        DeleteRoleResultCode input,
+        Enum input,
         DeregisterRoleResultCode expected
     )
     {
-        var result = input.ToDeregisterRoleResultCode();
+        var result = ((DeleteRoleResultCode)input).ToDeregisterRoleResultCode();
 
         Assert.Equal(expected, result);
     }

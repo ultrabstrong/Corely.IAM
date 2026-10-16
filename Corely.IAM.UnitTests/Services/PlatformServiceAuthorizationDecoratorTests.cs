@@ -1,8 +1,8 @@
-using Corely.IAM.Audits.Constants;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
 
 namespace Corely.IAM.UnitTests.Services;
@@ -20,12 +20,7 @@ public class PlatformServiceAuthorizationDecoratorTests
 
     private void Holds(AuthAction action, bool holds) =>
         _access
-            .Setup(a =>
-                a.HoldsInPlatformAccountAsync(
-                    action,
-                    AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
-                )
-            )
+            .Setup(a => a.HoldsInPlatformAccountAsync(action, PlatformSettings.RESOURCE_TYPE))
             .ReturnsAsync(holds);
 
     [Fact]

@@ -1,8 +1,9 @@
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Invitations.Processors;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.UnitTests.Invitations.Processors;
@@ -118,11 +119,7 @@ public class InvitationProcessorAuthorizationDecoratorTests
         var request = new RevokeInvitationRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Update,
-                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
-                    request.AccountId
-                )
+                x.IsAuthorizedAsync(AuthAction.Update, Account.RESOURCE_TYPE, request.AccountId)
             )
             .ReturnsAsync(false);
 
@@ -142,11 +139,7 @@ public class InvitationProcessorAuthorizationDecoratorTests
         var expectedResult = new RevokeInvitationResult(RevokeInvitationResultCode.Success, "");
         _mockAuthorizationProvider
             .Setup(x =>
-                x.IsAuthorizedAsync(
-                    AuthAction.Update,
-                    PermissionConstants.ACCOUNT_RESOURCE_TYPE,
-                    request.AccountId
-                )
+                x.IsAuthorizedAsync(AuthAction.Update, Account.RESOURCE_TYPE, request.AccountId)
             )
             .ReturnsAsync(true);
         _mockInnerProcessor

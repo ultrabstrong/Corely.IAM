@@ -23,10 +23,10 @@ else
         </div>
         <div class="settings-grid mb-3">
             <NumberSetting Label="Minimum length" @bind-Value="_passwordMinimumLength" Editing="IsEditing(PASSWORDS)"
-                           Min="SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_MIN" Max="SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_MAX"
-                           Hint="@($"{SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_RECOMMENDED} or more is recommended")" />
+                           Min="SecurityPolicy.PASSWORD_MINIMUM_LENGTH_MIN" Max="SecurityPolicy.PASSWORD_MINIMUM_LENGTH_MAX"
+                           Hint="@($"{SecurityPolicy.PASSWORD_MINIMUM_LENGTH_RECOMMENDED} or more is recommended")" />
             <NumberSetting Label="Maximum length" @bind-Value="_passwordMaximumLength" Editing="IsEditing(PASSWORDS)"
-                           Min="SecurityPolicyConstants.PASSWORD_MAXIMUM_LENGTH_MIN" Max="SecurityPolicyConstants.PASSWORD_MAXIMUM_LENGTH_MAX" />
+                           Min="SecurityPolicy.PASSWORD_MAXIMUM_LENGTH_MIN" Max="SecurityPolicy.PASSWORD_MAXIMUM_LENGTH_MAX" />
             <span class="prop-label">Must contain</span>
             <div class="setting-wide toggle-list">
                 <ToggleSetting Id="requireUppercase" Label="An uppercase letter" @bind-Value="_requireUppercase" Editing="IsEditing(PASSWORDS)" />
@@ -48,14 +48,14 @@ else
         </div>
         <div class="settings-grid mb-3">
             <NumberSetting Label="Failed sign ins before lockout" @bind-Value="_maxLoginAttempts" Editing="IsEditing(SIGN_IN)"
-                           Min="SecurityPolicyConstants.MAX_LOGIN_ATTEMPTS_MIN" Max="SecurityPolicyConstants.MAX_LOGIN_ATTEMPTS_MAX" />
+                           Min="SecurityPolicy.MAX_LOGIN_ATTEMPTS_MIN" Max="SecurityPolicy.MAX_LOGIN_ATTEMPTS_MAX" />
             <NumberSetting Label="Lockout length (seconds)" @bind-Value="_lockoutCooldownSeconds" Editing="IsEditing(SIGN_IN)"
-                           Min="SecurityPolicyConstants.LOCKOUT_COOLDOWN_SECONDS_MIN" Max="SecurityPolicyConstants.LOCKOUT_COOLDOWN_SECONDS_MAX" />
+                           Min="SecurityPolicy.LOCKOUT_COOLDOWN_SECONDS_MIN" Max="SecurityPolicy.LOCKOUT_COOLDOWN_SECONDS_MAX" />
             <NumberSetting Label="Sign in token lifetime (seconds)" @bind-Value="_authTokenTtlSeconds" Editing="IsEditing(SIGN_IN)"
-                           Min="SecurityPolicyConstants.AUTH_TOKEN_TTL_SECONDS_MIN" Max="SecurityPolicyConstants.AUTH_TOKEN_TTL_SECONDS_MAX"
+                           Min="SecurityPolicy.AUTH_TOKEN_TTL_SECONDS_MIN" Max="SecurityPolicy.AUTH_TOKEN_TTL_SECONDS_MAX"
                            Hint="No longer than the session lifetime" />
             <NumberSetting Label="Session lifetime (seconds)" @bind-Value="_authSessionTtlSeconds" Editing="IsEditing(SIGN_IN)"
-                           Min="SecurityPolicyConstants.AUTH_SESSION_TTL_SECONDS_MIN" Max="SecurityPolicyConstants.AUTH_SESSION_TTL_SECONDS_MAX" />
+                           Min="SecurityPolicy.AUTH_SESSION_TTL_SECONDS_MIN" Max="SecurityPolicy.AUTH_SESSION_TTL_SECONDS_MAX" />
         </div>
         @SaveButtons(SIGN_IN)
     </div>
@@ -67,9 +67,9 @@ else
         </div>
         <div class="settings-grid mb-3">
             <NumberSetting Label="Code prompt timeout (seconds)" @bind-Value="_mfaChallengeTimeoutSeconds" Editing="IsEditing(TWO_FACTOR)"
-                           Min="SecurityPolicyConstants.MFA_CHALLENGE_TIMEOUT_SECONDS_MIN" Max="SecurityPolicyConstants.MFA_CHALLENGE_TIMEOUT_SECONDS_MAX" />
+                           Min="SecurityPolicy.MFA_CHALLENGE_TIMEOUT_SECONDS_MIN" Max="SecurityPolicy.MFA_CHALLENGE_TIMEOUT_SECONDS_MAX" />
             <NumberSetting Label="Recovery codes per user" @bind-Value="_totpRecoveryCodeCount" Editing="IsEditing(TWO_FACTOR)"
-                           Min="SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_MIN" Max="SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_MAX" />
+                           Min="SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MIN" Max="SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MAX" />
         </div>
         @SaveButtons(TWO_FACTOR)
     </div>
@@ -118,7 +118,7 @@ else
         _settings = result.Settings;
         _canUpdate = await AuthorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
+            PlatformSettings.RESOURCE_TYPE
         );
         Reset(PASSWORDS);
         Reset(SIGN_IN);

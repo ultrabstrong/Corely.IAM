@@ -1,8 +1,8 @@
 namespace Corely.IAM.Permissions.Models;
 
-public record DeletePermissionResult(DeletePermissionResultCode ResultCode, string Message);
+internal record DeletePermissionResult(DeletePermissionResultCode ResultCode, string Message);
 
-public enum DeletePermissionResultCode
+internal enum DeletePermissionResultCode
 {
     Success,
     PermissionNotFoundError,

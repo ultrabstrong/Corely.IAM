@@ -1,5 +1,5 @@
 using Corely.IAM.Extensions;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 
 namespace Corely.IAM.Audits.Models;
 
@@ -19,6 +19,19 @@ public record AuditEntry(
     string? Details
 )
 {
+    public const string RESOURCE_TYPE = "audit";
+    public const string SUCCESS_RESULT_CODE = "Success";
+    public const string FAILED_RESULT_CODE = "Failed";
+    public const string FAULT_RESULT_CODE = "Fault";
+    public const string UNKNOWN_SOURCE = "unknown";
+
+    internal const int SOURCE_MAX_LENGTH = 100;
+    internal const int SERVICE_MAX_LENGTH = 100;
+    internal const int OPERATION_MAX_LENGTH = 100;
+    internal const int RESOURCE_TYPE_MAX_LENGTH = 100;
+    internal const int RESULT_CODE_MAX_LENGTH = 100;
+    internal const int DETAILS_MAX_LENGTH = 500;
+
     public const string CSV_HEADER =
         "Id,OccurredUtc,ActorUserId,ActorName,Cohort,AccountId,AccountName,Source,Service,Operation,Action,ResourceType,ResourceIds,ResultCode,Details";
 

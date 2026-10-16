@@ -1,12 +1,12 @@
 namespace Corely.IAM.Accounts.Models;
 
-public record ListAccountsForUserResult(
+internal record ListAccountsForUserResult(
     ListAccountsForUserResultCode ResultCode,
     string Message,
     List<Account> Accounts
 );
 
-public enum ListAccountsForUserResultCode
+internal enum ListAccountsForUserResultCode
 {
     Success,
     UnauthorizedError,

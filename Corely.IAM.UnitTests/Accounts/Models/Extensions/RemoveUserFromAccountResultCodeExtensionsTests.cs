@@ -32,11 +32,13 @@ public class RemoveUserFromAccountResultCodeExtensionsTests
         DeregisterUserFromAccountResultCode.UnauthorizedError
     )]
     public void ToDeregisterUserFromAccountResultCode_MapsCorrectly(
-        RemoveUserFromAccountResultCode input,
+        Enum input,
         DeregisterUserFromAccountResultCode expected
     )
     {
-        var result = input.ToDeregisterUserFromAccountResultCode();
+        var result = (
+            (RemoveUserFromAccountResultCode)input
+        ).ToDeregisterUserFromAccountResultCode();
 
         Assert.Equal(expected, result);
     }

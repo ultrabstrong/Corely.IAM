@@ -1,6 +1,5 @@
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
-using Corely.IAM.Platform.Constants;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Mappers;
 using Corely.IAM.Platform.Models;
@@ -26,7 +25,7 @@ internal class SecurityPolicyProvider(
             return cached;
 
         var entity = await _settingsRepo.GetAsync(s =>
-            s.Id == PlatformConstants.PLATFORM_SETTINGS_ID
+            s.Id == PlatformSecuritySettingsEntity.SINGLE_ROW_ID
         );
         var policy = entity?.ToModel() ?? _configuredPolicy.Policy;
         _cache.Set(policy);

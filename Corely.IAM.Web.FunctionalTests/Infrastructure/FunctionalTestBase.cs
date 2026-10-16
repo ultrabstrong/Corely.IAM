@@ -165,13 +165,11 @@ public abstract class FunctionalTestBase : IAsyncLifetime
             return result.RecoveryToken;
         });
 
-    protected string? CurrentAuthToken => Client.Cookies[AuthenticationConstants.AUTH_TOKEN_COOKIE];
+    protected string? CurrentAuthToken => Client.Cookies[AuthCookieManager.AUTH_TOKEN_COOKIE];
 
-    protected string? CurrentAuthTokenId =>
-        Client.Cookies[AuthenticationConstants.AUTH_TOKEN_ID_COOKIE];
+    protected string? CurrentAuthTokenId => Client.Cookies[AuthCookieManager.AUTH_TOKEN_ID_COOKIE];
 
-    protected bool HasAuthCookies =>
-        Client.Cookies.Contains(AuthenticationConstants.AUTH_TOKEN_COOKIE);
+    protected bool HasAuthCookies => Client.Cookies.Contains(AuthCookieManager.AUTH_TOKEN_COOKIE);
 
     internal Task<T> QueryAsync<T>(Func<IamDbContext, Task<T>> query) =>
         Factory.WithScopeAsync(services => query(services.GetRequiredService<IamDbContext>()));

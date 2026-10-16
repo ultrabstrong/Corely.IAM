@@ -2,14 +2,12 @@ using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Providers;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Roles.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
@@ -118,7 +116,7 @@ internal class PermissionProcessor(
     public async Task CreateDefaultSystemPermissionsAsync(Guid accountId)
     {
         var ownerRole = await _roleRepo.GetAsync(r =>
-            r.AccountId == accountId && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == accountId && r.Name == Role.OWNER_ROLE_NAME
         );
 
         PermissionEntity[] permissionEntities =
@@ -145,9 +143,7 @@ internal class PermissionProcessor(
 
         var platformAccountId = (await _accountRepo.GetAsync(a => a.IsPlatformAccount))?.Id;
         var ownerRoles = await _roleRepo.ListAsync(r =>
-            r.IsSystemDefined
-            && r.Name == RoleConstants.OWNER_ROLE_NAME
-            && r.AccountId != platformAccountId
+            r.IsSystemDefined && r.Name == Role.OWNER_ROLE_NAME && r.AccountId != platformAccountId
         );
         var present = (
             await _permissionRepo.QueryAsync(q =>

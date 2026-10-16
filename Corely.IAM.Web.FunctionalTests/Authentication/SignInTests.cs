@@ -23,7 +23,7 @@ public class SignInTests : FunctionalTestBase
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
 
         var authCookie = Client.LastSetCookies.Last(c =>
-            c.Name == AuthenticationConstants.AUTH_TOKEN_COOKIE
+            c.Name == AuthCookieManager.AUTH_TOKEN_COOKIE
         );
 
         Assert.True(authCookie.HttpOnly);
@@ -38,7 +38,7 @@ public class SignInTests : FunctionalTestBase
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
 
         var authCookie = Client.LastSetCookies.Last(c =>
-            c.Name == AuthenticationConstants.AUTH_TOKEN_COOKIE
+            c.Name == AuthCookieManager.AUTH_TOKEN_COOKIE
         );
 
         Assert.NotNull(authCookie.Expires);
@@ -62,7 +62,7 @@ public class SignInTests : FunctionalTestBase
     {
         await SignInSuccessfullyAsync();
 
-        Assert.True(Client.Cookies.Contains(AuthenticationConstants.DEVICE_ID_COOKIE));
+        Assert.True(Client.Cookies.Contains(AuthCookieManager.DEVICE_ID_COOKIE));
     }
 
     [Fact]

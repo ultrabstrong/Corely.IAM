@@ -2,7 +2,7 @@ using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.TotpAuths.Models;
@@ -219,7 +219,7 @@ public sealed class IamScenario : IAsyncLifetime
 
         var wildcardUserRead = await CreatePermissionAsync(
             AccountId,
-            Permissions.Constants.PermissionConstants.USER_RESOURCE_TYPE,
+            Users.Models.User.RESOURCE_TYPE,
             Guid.Empty,
             read: true
         );
@@ -228,7 +228,7 @@ public sealed class IamScenario : IAsyncLifetime
 
         var specificRoleAccess = await CreatePermissionAsync(
             AccountId,
-            Permissions.Constants.PermissionConstants.ROLE_RESOURCE_TYPE,
+            Roles.Models.Role.RESOURCE_TYPE,
             EditorRoleId,
             read: true,
             update: true

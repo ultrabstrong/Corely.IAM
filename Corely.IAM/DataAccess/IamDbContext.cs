@@ -18,6 +18,8 @@ internal class IamDbContext(
     [FromKeyedServices(EFConfigurationKeys.IAM)] IEFConfiguration efConfiguration
 ) : DbContext
 {
+    public const string DEFAULT_MIGRATIONS_HISTORY_TABLE = "__CorelyIamMigrationsHistory";
+
     private readonly IEFConfiguration _efConfiguration = efConfiguration;
 
 #pragma warning disable IDE0060

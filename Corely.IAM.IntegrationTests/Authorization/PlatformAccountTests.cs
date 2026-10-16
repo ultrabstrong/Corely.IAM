@@ -2,12 +2,11 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.IntegrationTests.Infrastructure;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
 using Corely.IAM.TotpAuths.Entities;
 using Corely.IAM.Users.Models;
@@ -85,9 +84,7 @@ public class PlatformAccountTests : IAsyncLifetime
     {
         var fullAccessTypes = await _scenario.Host.QueryAsync(db =>
             db.Set<RoleEntity>()
-                .Where(r =>
-                    r.AccountId == _platformAccountId && r.Name == RoleConstants.OWNER_ROLE_NAME
-                )
+                .Where(r => r.AccountId == _platformAccountId && r.Name == Role.OWNER_ROLE_NAME)
                 .SelectMany(r => r.Permissions!)
                 .Where(p =>
                     p.ResourceId == Guid.Empty
@@ -104,7 +101,7 @@ public class PlatformAccountTests : IAsyncLifetime
 
         Assert.Contains(IamScenario.INVOICE_RESOURCE_TYPE, fullAccessTypes);
         Assert.Contains(IamScenario.REPORT_RESOURCE_TYPE, fullAccessTypes);
-        Assert.Contains(PermissionConstants.ACCOUNT_RESOURCE_TYPE, fullAccessTypes);
+        Assert.Contains(Account.RESOURCE_TYPE, fullAccessTypes);
     }
 
     [Fact]
@@ -120,7 +117,7 @@ public class PlatformAccountTests : IAsyncLifetime
     [Fact]
     public async Task PlatformMember_EntersAccountTheyDoNotBelongTo_ForAccountRead()
     {
-        await GivePlatformRoleAsync((PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]));
+        await GivePlatformRoleAsync((Account.RESOURCE_TYPE, [AuthAction.Read]));
 
         var current = await _scenario.ActAsAsync(
             _scenario.OutsiderUsername,
@@ -140,7 +137,7 @@ public class PlatformAccountTests : IAsyncLifetime
     [Fact]
     public async Task PlatformMember_IsMarkedAsEntering_AnAccountTheyDoNotBelongTo()
     {
-        await GivePlatformRoleAsync((PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]));
+        await GivePlatformRoleAsync((Account.RESOURCE_TYPE, [AuthAction.Read]));
 
         var context = await _scenario.ActAsAsync(
             _scenario.OutsiderUsername,
@@ -182,7 +179,7 @@ public class PlatformAccountTests : IAsyncLifetime
     [Fact]
     public async Task PlatformMember_ListsEveryAccount_ForAccountRead()
     {
-        await GivePlatformRoleAsync((PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]));
+        await GivePlatformRoleAsync((Account.RESOURCE_TYPE, [AuthAction.Read]));
 
         var names = await _scenario.ActAsAsync(
             _scenario.OutsiderUsername,
@@ -202,7 +199,7 @@ public class PlatformAccountTests : IAsyncLifetime
     public async Task PlatformMember_HoldsOnlyPlatformRolePermissions_InAnotherAccount()
     {
         await GivePlatformRoleAsync(
-            (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]),
+            (Account.RESOURCE_TYPE, [AuthAction.Read]),
             (IamScenario.INVOICE_RESOURCE_TYPE, [AuthAction.Read, AuthAction.Create])
         );
 
@@ -227,7 +224,7 @@ public class PlatformAccountTests : IAsyncLifetime
                 _scenario.OutsiderUsername,
                 _scenario.AccountId,
                 AuthAction.Read,
-                PermissionConstants.USER_RESOURCE_TYPE
+                User.RESOURCE_TYPE
             )
         );
     }
@@ -236,8 +233,8 @@ public class PlatformAccountTests : IAsyncLifetime
     public async Task PlatformMember_SeesAccessComingFromPlatformAccount_InEffectivePermissions()
     {
         await GivePlatformRoleAsync(
-            (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]),
-            (PermissionConstants.USER_RESOURCE_TYPE, [AuthAction.Read])
+            (Account.RESOURCE_TYPE, [AuthAction.Read]),
+            (User.RESOURCE_TYPE, [AuthAction.Read])
         );
 
         var roles = await _scenario.ActAsAsync(
@@ -269,9 +266,7 @@ public class PlatformAccountTests : IAsyncLifetime
     [Fact]
     public async Task PlatformMember_CannotEnterAccountTheyDoNotBelongTo_WithoutTwoFactor()
     {
-        await GivePlatformRoleWithoutTwoFactorAsync(
-            (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read])
-        );
+        await GivePlatformRoleWithoutTwoFactorAsync((Account.RESOURCE_TYPE, [AuthAction.Read]));
 
         var switched = await SignInAndSwitchAsync(_scenario.AccountId);
 
@@ -281,9 +276,7 @@ public class PlatformAccountTests : IAsyncLifetime
     [Fact]
     public async Task PlatformMember_CannotEnterPlatformAccount_WithoutTwoFactor()
     {
-        await GivePlatformRoleWithoutTwoFactorAsync(
-            (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read])
-        );
+        await GivePlatformRoleWithoutTwoFactorAsync((Account.RESOURCE_TYPE, [AuthAction.Read]));
 
         var switched = await SignInAndSwitchAsync(_platformAccountId);
 
@@ -293,9 +286,7 @@ public class PlatformAccountTests : IAsyncLifetime
     [Fact]
     public async Task PlatformMember_CannotSignInToPlatformAccount_WithoutTwoFactor()
     {
-        await GivePlatformRoleWithoutTwoFactorAsync(
-            (PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read])
-        );
+        await GivePlatformRoleWithoutTwoFactorAsync((Account.RESOURCE_TYPE, [AuthAction.Read]));
 
         var signIn = await _scenario.Host.WithScopeAsync(services =>
             services
@@ -316,7 +307,7 @@ public class PlatformAccountTests : IAsyncLifetime
     [Fact]
     public async Task PlatformMember_CannotRenewTokenInAnotherAccount_AfterTwoFactorIsTurnedOff()
     {
-        await GivePlatformRoleAsync((PermissionConstants.ACCOUNT_RESOURCE_TYPE, [AuthAction.Read]));
+        await GivePlatformRoleAsync((Account.RESOURCE_TYPE, [AuthAction.Read]));
         var token = await _scenario.ActAsAsync(
             _scenario.OutsiderUsername,
             _scenario.AccountId,

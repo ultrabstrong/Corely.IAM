@@ -1,6 +1,6 @@
 namespace Corely.IAM.Users.Models;
 
-public record RevokeUserAuthTokenRequest(
+internal record RevokeUserAuthTokenRequest(
     Guid UserId,
     string TokenId,
     string DeviceId,

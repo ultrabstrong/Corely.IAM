@@ -166,6 +166,9 @@ git push origin Corely.IAM-v2.3.2
   version already on nuget.org fails the push rather than being skipped.
 - The migration CLI's major must equal `Corely.IAM`'s at that commit: CLI 2.x targets IAM 2.x.
 - Tags are pushed only with the owner's say-so. A published version cannot be deleted.
+- **Nothing is released while a plan is outstanding.** No package is tagged until every plan in
+  `Plans/` has moved to `Plans/Completed/`. `Plans/Feature-Ideas.md` is a list of ideas, not a plan,
+  and does not count. Work merges to master as it lands; the release waits.
 - **A session never ends with a package left in preview.** A preview version is fine while work is in
   progress, but before the session is closed out (for instance when the owner asks whether anything is
   left), every package carrying a `-preview` version is brought to completion and released at its
@@ -306,7 +309,6 @@ Each domain (Accounts, Users, BasicAuths, Groups, Roles, Permissions) follows a 
 
 ```
 Domain/
-├── Constants/        # Domain constants (SCREAMING_SNAKE_CASE)
 ├── Entities/         # EF Core entities
 ├── Models/           # Request/response/domain models
 ├── Processors/       # Business logic + authorization/telemetry decorators
@@ -339,7 +341,7 @@ New services go in `Services/` with an interface, registered in `ServiceRegistra
 - The Owner role gets one system-defined permission per type with owner actions, declared in `RegisterResourceType(name, description, params AuthAction[] ownerActions)`; the five IAM types carry all five actions. System-defined permissions cannot be deleted or detached from the Owner role
 - Granting is bounded: creating a permission, attaching permissions to a role, assigning roles to a user or group, and adding users to a group are refused unless the caller holds everything handed out (`IAuthorizationProvider.CanGrant*`, called from the processor authorization decorators). System context bypasses it
 - Platform account: one account flagged `IsPlatformAccount`, created only by `corely-iam-db platform bootstrap`. A member's permissions there are added to their permissions in whatever account they act in (`AuthorizationProvider` loads both), and Account Read there lets them switch into any account (`IPlatformAccessProvider`). A hosted service gives its Owner role full access on every registered type at startup. See `Corely.IAM/Docs/platform.md`
-- Security settings (password rules, lockout, token lifetimes, two factor) are one `SecurityPolicy`, read through `ISecurityPolicyProvider`: the platform account's saved row when it exists, `SecurityOptions` and `PasswordValidationOptions` configuration otherwise. Never read those values from `IOptions<SecurityOptions>`. Every setting has a range in `SecurityPolicyConstants`, checked by `SecurityPolicyValidator` at startup, on bootstrap and on save; a setting added to the model goes on the entity too, and `PlatformSecuritySettingsMapperTests` fails until it does
+- Security settings (password rules, lockout, token lifetimes, two factor) are one `SecurityPolicy`, read through `ISecurityPolicyProvider`: the platform account's saved row when it exists, `SecurityOptions` and `PasswordValidationOptions` configuration otherwise. Never read those values from `IOptions<SecurityOptions>`. Every setting has a range in constants on `SecurityPolicy`, checked by `SecurityPolicyValidator` at startup, on bootstrap and on save; a setting added to the model goes on the entity too, and `PlatformSecuritySettingsMapperTests` fails until it does
 - List endpoints scope their query to permitted resource ids via `IAuthorizationProvider.GetAuthorizedResourceIdsAsync` (`null` = wildcard, no clause added). The scope is folded into the predicate `ListQueryHelper` uses for both the page and the count, so paging stays correct - filtering after the query would return short pages and an inflated total. Accounts and invitations are excluded on purpose: they authorize by account membership, so their permitted ids are account ids rather than the rows being listed.
 - `AuthorizationProvider` caches permissions per scope, expiring `SecurityOptions.PermissionCacheTtlSeconds` (default 30) after the load — absolute, not sliding, so an active user still refreshes. A scope-per-request host never reaches it; a long-lived scope (a Blazor Server circuit lasts the whole browser session) depends on it, since the cache is per-scope and one scope cannot invalidate another's. Hosts needing immediate invalidation inject `IAuthorizationCacheClearer` and call `ClearCache()`.
 - JWT-based authentication via `AuthenticationProvider`
@@ -424,11 +426,52 @@ Use constants instead of magic strings. When a string value is used in multiple 
 
 ```csharp
 // CORRECT - use defined constants
-if (role.Name == RoleConstants.OWNER_ROLE_NAME) return true;
+if (role.Name == Role.OWNER_ROLE_NAME) return true;
 
 // WRONG - magic string
 if (role.Name == "Owner") return true;
 ```
+
+### Where constants live
+
+**A constant lives on the type it describes.** There are no constants classes and no `Constants/`
+folders.
+
+- A limit or default of a model's field is on the model: `User.USERNAME_MAX_LENGTH`,
+  `SecurityPolicy.MAX_LOGIN_ATTEMPTS_MIN`, `CreateInvitationRequest.DEFAULT_EXPIRY_SECONDS`. Entity
+  configurations and validators read it from there, so a column and its validation rule cannot
+  disagree.
+- A well known value of a field is on the model whose field it fills: `Role.OWNER_ROLE_NAME`, the
+  audit result codes on `AuditEntry`.
+- A resource's type name is on the resource: `Role.RESOURCE_TYPE`, `AuditEntry.RESOURCE_TYPE`.
+- An enum is never in a constants namespace; IAM's enums live in an `Enums` folder
+  (`Corely.IAM.Security.Enums.AuthAction`).
+- A value no public model carries goes on the entity or class that uses it:
+  `MfaChallengeEntity.MAX_ATTEMPTS`, `TokenIssueContext.DEVICE_ID_CLAIM`.
+- A constant is `public` only when a host has a use for it; otherwise `internal`, even on a public
+  model (`SymmetricKey.KEY_MAX_LENGTH`).
+- One value, one constant. Something already defined elsewhere (an email length) is read from there,
+  not repeated.
+
+### Visibility
+
+**Public is for the API a host uses.** Services, providers (interfaces and their models), options,
+the registration extensions, and the models and result code enums those take and return are public.
+Processors, entities, mappers, repositories, validators and any model only a processor sees are
+`internal`. A result code enum is public only when a service result carries it; one the service
+converts before returning is internal. In `Corely.IAM.Web`, Razor components and page models are
+public because a host renders them; service and middleware implementations are internal behind
+their public interfaces.
+
+Nothing is made public so a test or tool can reach it: add `InternalsVisibleTo` instead. A public
+test method cannot take an internal enum as a parameter, so a theory types it as `Enum` and casts.
+
+`PublicSurfaceTests` in `Corely.IAM.UnitTests` and `Corely.IAM.Web.UnitTests` enforce this. They
+fail when an entity, processor, mapper, repo or validator is public, or when a public type cannot be
+reached from the public API through public signatures (the roots are interfaces, options, extension
+classes and, in the Web project, components and page models). Fix a failure by making the type
+internal. Add it to the test's `_allowed` list only when a host needs it by name with no signature
+reaching it, as with `AppRoutes`.
 
 ### Result Pattern
 

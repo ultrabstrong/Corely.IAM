@@ -1,9 +1,10 @@
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 
@@ -29,7 +30,7 @@ public class AuditDecoratorMappingTests
 
         var captured = Assert.Single(_auditProvider.Calls);
         Assert.Equal(AuthAction.Create, captured.Call.Action);
-        Assert.Equal(PermissionConstants.USER_RESOURCE_TYPE, captured.Call.ResourceType);
+        Assert.Equal(User.RESOURCE_TYPE, captured.Call.ResourceType);
         Assert.Equal(Guid.Empty, captured.Call.AccountId);
         Assert.Equal([userId], captured.Outcome!.ResourceIds);
         Assert.Equal(userId, captured.Outcome.ActorUserId);
@@ -51,7 +52,7 @@ public class AuditDecoratorMappingTests
         ).RegisterAccountAsync(new RegisterAccountRequest("Acme", Guid.CreateVersion7()));
 
         var captured = Assert.Single(_auditProvider.Calls);
-        Assert.Equal(PermissionConstants.ACCOUNT_RESOURCE_TYPE, captured.Call.ResourceType);
+        Assert.Equal(Account.RESOURCE_TYPE, captured.Call.ResourceType);
         Assert.Equal(_accountId, captured.Outcome!.AccountId);
         Assert.Equal([_accountId], captured.Outcome.ResourceIds);
     }
@@ -77,7 +78,7 @@ public class AuditDecoratorMappingTests
 
         var captured = Assert.Single(_auditProvider.Calls);
         Assert.Equal(AuthAction.Update, captured.Call.Action);
-        Assert.Equal(PermissionConstants.GROUP_RESOURCE_TYPE, captured.Call.ResourceType);
+        Assert.Equal(Group.RESOURCE_TYPE, captured.Call.ResourceType);
         Assert.Equal(_accountId, captured.Call.AccountId);
         Assert.Equal([groupId, .. userIds], captured.Call.ResourceIds);
     }
@@ -97,7 +98,7 @@ public class AuditDecoratorMappingTests
 
         var captured = Assert.Single(_auditProvider.Calls);
         Assert.Equal(AuthAction.Create, captured.Call.Action);
-        Assert.Equal(PermissionConstants.USER_RESOURCE_TYPE, captured.Call.ResourceType);
+        Assert.Equal(User.RESOURCE_TYPE, captured.Call.ResourceType);
         Assert.Equal(Guid.Empty, captured.Call.AccountId);
     }
 
@@ -118,7 +119,7 @@ public class AuditDecoratorMappingTests
 
         var captured = Assert.Single(_auditProvider.Calls);
         Assert.Equal(AuthAction.Update, captured.Call.Action);
-        Assert.Equal(PermissionConstants.USER_RESOURCE_TYPE, captured.Call.ResourceType);
+        Assert.Equal(User.RESOURCE_TYPE, captured.Call.ResourceType);
         Assert.Equal(Guid.Empty, captured.Call.AccountId);
         Assert.Equal(
             nameof(ModifyPasswordResultCode.InvalidCurrentPasswordError),
@@ -231,7 +232,7 @@ public class AuditDecoratorMappingTests
 
         var captured = Assert.Single(_auditProvider.Calls);
         Assert.Equal(AuthAction.Execute, captured.Call.Action);
-        Assert.Equal(PermissionConstants.ACCOUNT_RESOURCE_TYPE, captured.Call.ResourceType);
+        Assert.Equal(Account.RESOURCE_TYPE, captured.Call.ResourceType);
         Assert.Equal(_accountId, captured.Call.AccountId);
     }
 

@@ -25,11 +25,11 @@ public class RemoveUsersFromGroupResultCodeExtensionsTests
         DeregisterUsersFromGroupResultCode.UnauthorizedError
     )]
     public void ToDeregisterUsersFromGroupResultCode_MapsCorrectly(
-        RemoveUsersFromGroupResultCode input,
+        Enum input,
         DeregisterUsersFromGroupResultCode expected
     )
     {
-        var result = input.ToDeregisterUsersFromGroupResultCode();
+        var result = ((RemoveUsersFromGroupResultCode)input).ToDeregisterUsersFromGroupResultCode();
 
         Assert.Equal(expected, result);
     }

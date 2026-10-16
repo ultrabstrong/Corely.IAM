@@ -1,12 +1,14 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.Audits.Constants;
+using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Permissions.Entities;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Platform.Models;
 using Corely.IAM.Roles.Entities;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -87,13 +89,13 @@ public class AuditAccessProviderTests
         await GrantAsync(
             isPlatform: false,
             update: true,
-            resourceType: AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
+            resourceType: PlatformSettings.RESOURCE_TYPE
         );
 
         Assert.False(
             await _provider.HoldsInPlatformAccountAsync(
                 AuthAction.Update,
-                AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
+                PlatformSettings.RESOURCE_TYPE
             )
         );
     }
@@ -105,19 +107,19 @@ public class AuditAccessProviderTests
         await GrantAsync(
             isPlatform: true,
             update: true,
-            resourceType: AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
+            resourceType: PlatformSettings.RESOURCE_TYPE
         );
 
         Assert.True(
             await _provider.HoldsInPlatformAccountAsync(
                 AuthAction.Update,
-                AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
+                PlatformSettings.RESOURCE_TYPE
             )
         );
         Assert.False(
             await _provider.HoldsInPlatformAccountAsync(
                 AuthAction.Read,
-                AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
+                PlatformSettings.RESOURCE_TYPE
             )
         );
     }
@@ -140,7 +142,7 @@ public class AuditAccessProviderTests
         bool update = false,
         bool delete = false,
         bool throughGroup = false,
-        string resourceType = AuditConstants.AUDIT_RESOURCE_TYPE
+        string resourceType = AuditEntry.RESOURCE_TYPE
     )
     {
         var account = new AccountEntity

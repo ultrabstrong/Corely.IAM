@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Web.Services;
 
-public class BlazorUserContextAccessor(
+internal class BlazorUserContextAccessor(
     IAuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
     IHttpContextAccessor httpContextAccessor,
@@ -40,7 +40,7 @@ public class BlazorUserContextAccessor(
                 return null;
             }
 
-            var token = httpContext.Request.Cookies[AuthenticationConstants.AUTH_TOKEN_COOKIE];
+            var token = httpContext.Request.Cookies[AuthCookieManager.AUTH_TOKEN_COOKIE];
             if (string.IsNullOrWhiteSpace(token))
             {
                 return null;

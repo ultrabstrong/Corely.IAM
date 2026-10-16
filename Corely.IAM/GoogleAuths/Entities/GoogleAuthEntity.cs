@@ -5,6 +5,8 @@ namespace Corely.IAM.GoogleAuths.Entities;
 
 internal class GoogleAuthEntity : IHasCreatedUtc, IHasModifiedUtc
 {
+    public const int SUBJECT_ID_MAX_LENGTH = 255;
+
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
     public string GoogleSubjectId { get; set; } = null!;

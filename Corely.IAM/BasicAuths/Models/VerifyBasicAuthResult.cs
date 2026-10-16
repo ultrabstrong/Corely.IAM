@@ -1,12 +1,12 @@
 namespace Corely.IAM.BasicAuths.Models;
 
-public record VerifyBasicAuthResult(
+internal record VerifyBasicAuthResult(
     VerifyBasicAuthResultCode ResultCode,
     string Message,
     bool IsValid
 );
 
-public enum VerifyBasicAuthResultCode
+internal enum VerifyBasicAuthResultCode
 {
     Success,
     UserNotFoundError,

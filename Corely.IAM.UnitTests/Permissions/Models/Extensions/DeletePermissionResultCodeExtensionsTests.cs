@@ -21,11 +21,11 @@ public class DeletePermissionResultCodeExtensionsTests
         DeregisterPermissionResultCode.UnauthorizedError
     )]
     public void ToDeregisterPermissionResultCode_MapsCorrectly(
-        DeletePermissionResultCode input,
+        Enum input,
         DeregisterPermissionResultCode expected
     )
     {
-        var result = input.ToDeregisterPermissionResultCode();
+        var result = ((DeletePermissionResultCode)input).ToDeregisterPermissionResultCode();
 
         Assert.Equal(expected, result);
     }

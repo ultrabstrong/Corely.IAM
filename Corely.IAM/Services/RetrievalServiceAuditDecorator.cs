@@ -4,10 +4,9 @@ using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
 
@@ -27,7 +26,7 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
         ListPermissionsRequest request
     ) =>
         _auditProvider.RecordAsync(
-            Read(PermissionConstants.PERMISSION_RESOURCE_TYPE) with
+            Read(Permission.RESOURCE_TYPE) with
             {
                 AccountId = request.AccountId,
             },
@@ -40,7 +39,7 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
         bool hydrate = false
     ) =>
         _auditProvider.RecordAsync(
-            Read(PermissionConstants.PERMISSION_RESOURCE_TYPE) with
+            Read(Permission.RESOURCE_TYPE) with
             {
                 ResourceIds = [permissionId],
             },
@@ -50,7 +49,7 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
 
     public Task<RetrieveListResult<Group>> ListGroupsAsync(ListGroupsRequest request) =>
         _auditProvider.RecordAsync(
-            Read(PermissionConstants.GROUP_RESOURCE_TYPE) with
+            Read(Group.RESOURCE_TYPE) with
             {
                 AccountId = request.AccountId,
             },
@@ -60,7 +59,7 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
 
     public Task<RetrieveSingleResult<Group>> GetGroupAsync(Guid groupId, bool hydrate = false) =>
         _auditProvider.RecordAsync(
-            Read(PermissionConstants.GROUP_RESOURCE_TYPE) with
+            Read(Group.RESOURCE_TYPE) with
             {
                 ResourceIds = [groupId],
             },
@@ -70,7 +69,7 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
 
     public Task<RetrieveListResult<Role>> ListRolesAsync(ListRolesRequest request) =>
         _auditProvider.RecordAsync(
-            Read(PermissionConstants.ROLE_RESOURCE_TYPE) with
+            Read(Role.RESOURCE_TYPE) with
             {
                 AccountId = request.AccountId,
             },
@@ -80,7 +79,7 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
 
     public Task<RetrieveSingleResult<Role>> GetRoleAsync(Guid roleId, bool hydrate = false) =>
         _auditProvider.RecordAsync(
-            Read(PermissionConstants.ROLE_RESOURCE_TYPE) with
+            Read(Role.RESOURCE_TYPE) with
             {
                 ResourceIds = [roleId],
             },
@@ -90,7 +89,7 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
 
     public Task<RetrieveListResult<User>> ListUsersAsync(ListUsersRequest request) =>
         _auditProvider.RecordAsync(
-            Read(PermissionConstants.USER_RESOURCE_TYPE) with
+            Read(User.RESOURCE_TYPE) with
             {
                 AccountId = request.AccountId,
             },
@@ -100,7 +99,7 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
 
     public Task<RetrieveSingleResult<User>> GetUserAsync(Guid userId, bool hydrate = false) =>
         _auditProvider.RecordAsync(
-            Read(PermissionConstants.USER_RESOURCE_TYPE) with
+            Read(User.RESOURCE_TYPE) with
             {
                 ResourceIds = [userId],
             },
@@ -110,7 +109,7 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
 
     public Task<RetrieveListResult<Account>> ListAccountsAsync(ListAccountsRequest request) =>
         _auditProvider.RecordAsync(
-            Read(PermissionConstants.ACCOUNT_RESOURCE_TYPE) with
+            Read(Account.RESOURCE_TYPE) with
             {
                 AccountId = Guid.Empty,
             },
@@ -186,15 +185,11 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
         new(SERVICE, AuthAction.Read, resourceType);
 
     private static AuditCall InAccount(Guid accountId) =>
-        Read(PermissionConstants.ACCOUNT_RESOURCE_TYPE) with
+        Read(Account.RESOURCE_TYPE) with
         {
             AccountId = accountId,
             ResourceIds = [accountId],
         };
 
-    private static AuditCall OwnUser() =>
-        Read(PermissionConstants.USER_RESOURCE_TYPE) with
-        {
-            AccountId = Guid.Empty,
-        };
+    private static AuditCall OwnUser() => Read(User.RESOURCE_TYPE) with { AccountId = Guid.Empty };
 }

@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Corely.Common.Extensions;
 using Corely.IAM.DevTools.Attributes;
-using Corely.IAM.Invitations.Constants;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Services;
 
@@ -21,7 +20,8 @@ internal partial class Invitation : CommandBase
         private string? InvitationDescription { get; init; }
 
         [Option("-x", "--expires", Description = "Expiration in seconds")]
-        private int ExpiresInSeconds { get; init; } = InvitationConstants.DEFAULT_EXPIRY_SECONDS;
+        private int ExpiresInSeconds { get; init; } =
+            CreateInvitationRequest.DEFAULT_EXPIRY_SECONDS;
 
         private readonly IInvitationService _invitationService;
         private readonly IAuthenticationService _authenticationService;

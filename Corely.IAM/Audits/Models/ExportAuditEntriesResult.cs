@@ -8,4 +8,7 @@ public record ExportAuditEntriesResult(
     string? Csv,
     int ExportedCount,
     bool Truncated
-);
+)
+{
+    public const int MAX_ENTRIES = 10_000;
+}

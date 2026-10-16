@@ -1,6 +1,6 @@
 namespace Corely.IAM.BasicAuths.Models;
 
-public enum CreateBasicAuthResultCode
+internal enum CreateBasicAuthResultCode
 {
     Success,
     BasicAuthExistsError,

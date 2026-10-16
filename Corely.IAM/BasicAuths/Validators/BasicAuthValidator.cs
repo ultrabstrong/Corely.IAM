@@ -1,4 +1,4 @@
-﻿using Corely.IAM.BasicAuths.Constants;
+﻿using Corely.IAM.BasicAuths.Models;
 using FluentValidation;
 
 namespace Corely.IAM.BasicAuths.Validators;
@@ -9,8 +9,6 @@ internal class BasicAuthValidator : AbstractValidator<Models.BasicAuth>
     {
         ClassLevelCascadeMode = CascadeMode.Stop;
         RuleFor(m => m.Password).NotNull();
-        RuleFor(m => m.Password.Hash)
-            .NotEmpty()
-            .MaximumLength(BasicAuthConstants.PASSWORD_MAX_LENGTH);
+        RuleFor(m => m.Password.Hash).NotEmpty().MaximumLength(BasicAuth.PASSWORD_MAX_LENGTH);
     }
 }

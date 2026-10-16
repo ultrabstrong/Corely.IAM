@@ -1,6 +1,6 @@
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Components.Shared;
 using Corely.IAM.Web.Services;

@@ -11,7 +11,7 @@
     <PackageProjectUrl>https://github.com/ultrabstrong/Corely.IAM</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>5.0.0</Version>
+    <Version>6.0.0</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn></NoWarn>
@@ -45,5 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Corely.IAM.Web.UnitTests" />
+    <InternalsVisibleTo Include="Corely.IAM.Web.FunctionalTests" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 </Project>

@@ -1,7 +1,12 @@
-using Corely.IAM.Audits.Constants;
-using Corely.IAM.Permissions.Constants;
+using Corely.IAM.Accounts.Models;
+using Corely.IAM.Audits.Models;
+using Corely.IAM.Groups.Models;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Providers;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Platform.Models;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.UnitTests.Permissions.Providers;
 
@@ -10,11 +15,11 @@ public class ResourceTypeRegistryTests
     private readonly ResourceTypeRegistry _registry = new();
 
     [Theory]
-    [InlineData(PermissionConstants.ACCOUNT_RESOURCE_TYPE, "Accounts")]
-    [InlineData(PermissionConstants.USER_RESOURCE_TYPE, "Users")]
-    [InlineData(PermissionConstants.GROUP_RESOURCE_TYPE, "Groups")]
-    [InlineData(PermissionConstants.ROLE_RESOURCE_TYPE, "Roles")]
-    [InlineData(PermissionConstants.PERMISSION_RESOURCE_TYPE, "Permissions")]
+    [InlineData(Account.RESOURCE_TYPE, "Accounts")]
+    [InlineData(User.RESOURCE_TYPE, "Users")]
+    [InlineData(Group.RESOURCE_TYPE, "Groups")]
+    [InlineData(Role.RESOURCE_TYPE, "Roles")]
+    [InlineData(Permission.RESOURCE_TYPE, "Permissions")]
     public void Constructor_PreRegistersIAMType(string name, string expectedDescription)
     {
         var info = _registry.Get(name);
@@ -25,11 +30,11 @@ public class ResourceTypeRegistryTests
     }
 
     [Theory]
-    [InlineData(PermissionConstants.ACCOUNT_RESOURCE_TYPE)]
-    [InlineData(PermissionConstants.USER_RESOURCE_TYPE)]
-    [InlineData(PermissionConstants.GROUP_RESOURCE_TYPE)]
-    [InlineData(PermissionConstants.ROLE_RESOURCE_TYPE)]
-    [InlineData(PermissionConstants.PERMISSION_RESOURCE_TYPE)]
+    [InlineData(Account.RESOURCE_TYPE)]
+    [InlineData(User.RESOURCE_TYPE)]
+    [InlineData(Group.RESOURCE_TYPE)]
+    [InlineData(Role.RESOURCE_TYPE)]
+    [InlineData(Permission.RESOURCE_TYPE)]
     public void Constructor_GivesOwnersEveryAction_ForIAMType(string name)
     {
         var info = _registry.Get(name);
@@ -40,20 +45,16 @@ public class ResourceTypeRegistryTests
 
     [Theory]
     [InlineData(
-        AuditConstants.AUDIT_RESOURCE_TYPE,
+        AuditEntry.RESOURCE_TYPE,
         "Audit log",
         new[] { AuthAction.Read, AuthAction.Delete }
     )]
     [InlineData(
-        AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE,
+        AccountAuditSettings.RESOURCE_TYPE,
         "Audit settings",
         new[] { AuthAction.Read, AuthAction.Update }
     )]
-    [InlineData(
-        AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE,
-        "Platform settings",
-        new AuthAction[0]
-    )]
+    [InlineData(PlatformSettings.RESOURCE_TYPE, "Platform settings", new AuthAction[0])]
     public void Constructor_PreRegistersAuditTypes_WithTheirOwnerActions(
         string name,
         string expectedDescription,
@@ -84,10 +85,10 @@ public class ResourceTypeRegistryTests
     [Fact]
     public void Get_ReturnsCorrectType()
     {
-        var info = _registry.Get(PermissionConstants.ACCOUNT_RESOURCE_TYPE);
+        var info = _registry.Get(Account.RESOURCE_TYPE);
 
         Assert.NotNull(info);
-        Assert.Equal(PermissionConstants.ACCOUNT_RESOURCE_TYPE, info.Name);
+        Assert.Equal(Account.RESOURCE_TYPE, info.Name);
         Assert.Equal("Accounts", info.Description);
     }
 
@@ -97,7 +98,7 @@ public class ResourceTypeRegistryTests
         var info = _registry.Get("ACCOUNT");
 
         Assert.NotNull(info);
-        Assert.Equal(PermissionConstants.ACCOUNT_RESOURCE_TYPE, info.Name);
+        Assert.Equal(Account.RESOURCE_TYPE, info.Name);
     }
 
     [Fact]
@@ -111,7 +112,7 @@ public class ResourceTypeRegistryTests
     [Fact]
     public void Exists_WithKnownType_ReturnsTrue()
     {
-        Assert.True(_registry.Exists(PermissionConstants.USER_RESOURCE_TYPE));
+        Assert.True(_registry.Exists(User.RESOURCE_TYPE));
     }
 
     [Fact]
@@ -156,7 +157,7 @@ public class ResourceTypeRegistryTests
     public void Register_WithDuplicateName_ThrowsInvalidOperationException()
     {
         Assert.Throws<InvalidOperationException>(() =>
-            _registry.Register(PermissionConstants.ACCOUNT_RESOURCE_TYPE, "Duplicate", [])
+            _registry.Register(Account.RESOURCE_TYPE, "Duplicate", [])
         );
     }
 

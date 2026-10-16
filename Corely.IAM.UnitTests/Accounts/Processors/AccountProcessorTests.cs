@@ -6,8 +6,8 @@ using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Platform.Providers;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Processors;
@@ -82,7 +82,7 @@ public class AccountProcessorTests
         var ownerRole = new RoleEntity
         {
             AccountId = accountId,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = users,
             Groups = [],
@@ -145,7 +145,7 @@ public class AccountProcessorTests
         var ownerRole = new RoleEntity
         {
             AccountId = accountId,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
             Users = directUsers,
             Groups = [createdGroup],

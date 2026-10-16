@@ -32,7 +32,7 @@ else
         <div class="section-divider mb-4">
             <div class="section-divider-label">
                 Groups
-                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <PermissionView Action="AuthAction.Update" Resource="@User.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                     <button class="btn btn-primary btn-sm" @onclick="() => _groupPickerModal.ShowAsync()" disabled="@_loading">Add Groups</button>
                 </PermissionView>
             </div>
@@ -66,7 +66,7 @@ else
         <div class="section-divider mb-4">
             <div class="section-divider-label">
                 Roles
-                <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <PermissionView Action="AuthAction.Update" Resource="@User.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                     <button class="btn btn-primary btn-sm" @onclick="() => _rolePickerModal.ShowAsync()" disabled="@_loading">Add Roles</button>
                 </PermissionView>
             </div>
@@ -87,7 +87,7 @@ else
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     <a href="@AppRoutes.Roles/@role.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
-                                    <PermissionView Action="AuthAction.Update" Resource="@PermissionConstants.USER_RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                    <PermissionView Action="AuthAction.Update" Resource="@User.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                                         <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemoveRole(role.Id, role.Name)" title="Remove"><i class="bi bi-trash"></i></button>
                                     </PermissionView>
                                 </div>

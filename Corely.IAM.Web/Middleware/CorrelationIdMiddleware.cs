@@ -3,7 +3,7 @@ using Serilog.Context;
 
 namespace Corely.IAM.Web.Middleware;
 
-public class CorrelationIdMiddleware(RequestDelegate next)
+internal class CorrelationIdMiddleware(RequestDelegate next)
 {
     private const string CORRELATION_ID_HEADER = "X-Correlation-ID";
 

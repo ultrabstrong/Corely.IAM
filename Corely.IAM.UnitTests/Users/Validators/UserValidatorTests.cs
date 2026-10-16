@@ -1,5 +1,4 @@
 ﻿using Corely.IAM.UnitTests.ClassData;
-using Corely.IAM.Users.Constants;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Validators;
 using FluentValidation.TestHelper;
@@ -26,8 +25,8 @@ public class UserValidatorTests
 
     public static IEnumerable<object[]> InvalidUsernameData() =>
         [
-            [new string('a', UserConstants.USERNAME_MIN_LENGTH - 1)],
-            [new string('a', UserConstants.USERNAME_MAX_LENGTH + 1)],
+            [new string('a', User.USERNAME_MIN_LENGTH - 1)],
+            [new string('a', User.USERNAME_MAX_LENGTH + 1)],
         ];
 
     [Theory]
@@ -44,7 +43,7 @@ public class UserValidatorTests
 
     public static IEnumerable<object[]> InvalidEmailData() =>
         [
-            [new string('a', UserConstants.EMAIL_MAX_LENGTH + 1)],
+            [new string('a', User.EMAIL_MAX_LENGTH + 1)],
             ["invalid"],
         ];
 }

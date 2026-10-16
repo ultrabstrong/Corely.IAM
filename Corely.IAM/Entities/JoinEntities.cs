@@ -1,30 +1,30 @@
 namespace Corely.IAM.Entities;
 
-public class UserAccount
+internal class UserAccount
 {
     public Guid UsersId { get; set; }
     public Guid AccountsId { get; set; }
 }
 
-public class UserGroup
+internal class UserGroup
 {
     public Guid UsersId { get; set; }
     public Guid GroupsId { get; set; }
 }
 
-public class UserRole
+internal class UserRole
 {
     public Guid UsersId { get; set; }
     public Guid RolesId { get; set; }
 }
 
-public class GroupRole
+internal class GroupRole
 {
     public Guid GroupsId { get; set; }
     public Guid RolesId { get; set; }
 }
 
-public class RolePermission
+internal class RolePermission
 {
     public Guid RolesId { get; set; }
     public Guid PermissionsId { get; set; }

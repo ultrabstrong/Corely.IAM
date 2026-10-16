@@ -1,11 +1,13 @@
 using System.Security.Claims;
 using Corely.IAM.Users.Models;
-using Corely.IAM.Web.Security;
 
 namespace Corely.IAM.Web.Services;
 
-public class UserContextClaimsBuilder : IUserContextClaimsBuilder
+internal class UserContextClaimsBuilder : IUserContextClaimsBuilder
 {
+    public const string ACCOUNT_ID_CLAIM = "AccountId";
+    public const string ACCOUNT_NAME_CLAIM = "AccountName";
+
     public ClaimsPrincipal BuildPrincipal(UserContext? userContext)
     {
         if (userContext?.User == null)
@@ -26,18 +28,8 @@ public class UserContextClaimsBuilder : IUserContextClaimsBuilder
 
         if (userContext.CurrentAccount != null)
         {
-            claims.Add(
-                new Claim(
-                    AuthenticationConstants.ACCOUNT_ID_CLAIM,
-                    userContext.CurrentAccount.Id.ToString()
-                )
-            );
-            claims.Add(
-                new Claim(
-                    AuthenticationConstants.ACCOUNT_NAME_CLAIM,
-                    userContext.CurrentAccount.AccountName
-                )
-            );
+            claims.Add(new Claim(ACCOUNT_ID_CLAIM, userContext.CurrentAccount.Id.ToString()));
+            claims.Add(new Claim(ACCOUNT_NAME_CLAIM, userContext.CurrentAccount.AccountName));
         }
 
         var identity = new ClaimsIdentity(claims, "Cookie");

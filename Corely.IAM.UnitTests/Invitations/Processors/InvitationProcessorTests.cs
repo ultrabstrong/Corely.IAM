@@ -2,7 +2,6 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
-using Corely.IAM.Invitations.Constants;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Invitations.Processors;
@@ -144,7 +143,7 @@ public class InvitationProcessorTests
             account.Id,
             "invite@example.com",
             "Join us",
-            InvitationConstants.MIN_EXPIRY_SECONDS
+            CreateInvitationRequest.MIN_EXPIRY_SECONDS
         );
 
         var result = await _invitationProcessor.CreateInvitationAsync(request);
@@ -165,7 +164,7 @@ public class InvitationProcessorTests
             Guid.CreateVersion7(),
             "invite@example.com",
             null,
-            InvitationConstants.MIN_EXPIRY_SECONDS
+            CreateInvitationRequest.MIN_EXPIRY_SECONDS
         );
 
         var result = await _invitationProcessor.CreateInvitationAsync(request);
@@ -189,7 +188,7 @@ public class InvitationProcessorTests
             account.Id,
             memberEmail,
             null,
-            InvitationConstants.MIN_EXPIRY_SECONDS
+            CreateInvitationRequest.MIN_EXPIRY_SECONDS
         );
 
         var result = await _invitationProcessor.CreateInvitationAsync(request);
@@ -214,7 +213,7 @@ public class InvitationProcessorTests
                 account.Id,
                 "acceptor@test.com",
                 null,
-                InvitationConstants.MIN_EXPIRY_SECONDS
+                CreateInvitationRequest.MIN_EXPIRY_SECONDS
             )
         );
 
@@ -283,7 +282,7 @@ public class InvitationProcessorTests
                 account.Id,
                 email,
                 "First",
-                InvitationConstants.MIN_EXPIRY_SECONDS
+                CreateInvitationRequest.MIN_EXPIRY_SECONDS
             )
         );
         var result2 = await _invitationProcessor.CreateInvitationAsync(
@@ -291,7 +290,7 @@ public class InvitationProcessorTests
                 account.Id,
                 email,
                 "Second",
-                InvitationConstants.MIN_EXPIRY_SECONDS
+                CreateInvitationRequest.MIN_EXPIRY_SECONDS
             )
         );
 
@@ -322,7 +321,7 @@ public class InvitationProcessorTests
                 account.Id,
                 "intended@test.com",
                 null,
-                InvitationConstants.MIN_EXPIRY_SECONDS
+                CreateInvitationRequest.MIN_EXPIRY_SECONDS
             )
         );
 
@@ -356,7 +355,7 @@ public class InvitationProcessorTests
                 account.Id,
                 "alice@example.com",
                 null,
-                InvitationConstants.MIN_EXPIRY_SECONDS
+                CreateInvitationRequest.MIN_EXPIRY_SECONDS
             )
         );
 
@@ -535,7 +534,7 @@ public class InvitationProcessorTests
                 account.Id,
                 "one@test.com",
                 null,
-                InvitationConstants.MIN_EXPIRY_SECONDS
+                CreateInvitationRequest.MIN_EXPIRY_SECONDS
             )
         );
         await _invitationProcessor.CreateInvitationAsync(
@@ -543,7 +542,7 @@ public class InvitationProcessorTests
                 account.Id,
                 "two@test.com",
                 null,
-                InvitationConstants.MIN_EXPIRY_SECONDS
+                CreateInvitationRequest.MIN_EXPIRY_SECONDS
             )
         );
 

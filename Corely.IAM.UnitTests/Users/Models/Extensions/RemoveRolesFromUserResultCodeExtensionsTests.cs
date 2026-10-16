@@ -29,11 +29,11 @@ public class RemoveRolesFromUserResultCodeExtensionsTests
         DeregisterRolesFromUserResultCode.UnauthorizedError
     )]
     public void ToDeregisterRolesFromUserResultCode_MapsCorrectly(
-        RemoveRolesFromUserResultCode input,
+        Enum input,
         DeregisterRolesFromUserResultCode expected
     )
     {
-        var result = input.ToDeregisterRolesFromUserResultCode();
+        var result = ((RemoveRolesFromUserResultCode)input).ToDeregisterRolesFromUserResultCode();
 
         Assert.Equal(expected, result);
     }

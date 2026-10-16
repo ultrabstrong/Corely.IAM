@@ -5,8 +5,8 @@ using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
@@ -152,7 +152,7 @@ public class GroupListAuthorizationScopeTests
             {
                 Id = Guid.CreateVersion7(),
                 AccountId = _accountId,
-                ResourceType = PermissionConstants.GROUP_RESOURCE_TYPE,
+                ResourceType = Group.RESOURCE_TYPE,
                 ResourceId = resourceId,
                 Read = true,
                 Roles = [role],

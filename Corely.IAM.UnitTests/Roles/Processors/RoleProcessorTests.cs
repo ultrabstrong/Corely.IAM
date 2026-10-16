@@ -1,9 +1,9 @@
 ﻿using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
-using Corely.IAM.Permissions.Constants;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.Permissions.Entities;
-using Corely.IAM.Roles.Constants;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
@@ -168,7 +168,7 @@ public class RoleProcessorTests
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var roles = await roleRepo.ListAsync(r => r.AccountId == ownerAccount.Id);
         Assert.Single(roles);
-        Assert.Contains(roles, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+        Assert.Contains(roles, r => r.Name == Role.OWNER_ROLE_NAME);
     }
 
     [Fact]
@@ -435,7 +435,7 @@ public class RoleProcessorTests
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var ownerRole = await roleRepo.GetAsync(r =>
-            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == account.Id && r.Name == Role.OWNER_ROLE_NAME
         );
 
         var result = await _roleProcessor.DeleteRoleAsync(ownerRole!.Id);
@@ -536,7 +536,7 @@ public class RoleProcessorTests
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var systemRole = await roleRepo.GetAsync(r =>
-            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == account.Id && r.Name == Role.OWNER_ROLE_NAME
         );
 
         var permission = await CreatePermissionAsync(account.Id, isSystemDefined: false);
@@ -559,7 +559,7 @@ public class RoleProcessorTests
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var ownerRole = await roleRepo.GetAsync(r =>
-            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == account.Id && r.Name == Role.OWNER_ROLE_NAME
         );
 
         var nonSystemPermission = await CreatePermissionAsync(account.Id, isSystemDefined: false);
@@ -587,7 +587,7 @@ public class RoleProcessorTests
 
         var roleRepo = _serviceFactory.GetRequiredService<IRepo<RoleEntity>>();
         var ownerRole = await roleRepo.GetAsync(r =>
-            r.AccountId == account.Id && r.Name == RoleConstants.OWNER_ROLE_NAME
+            r.AccountId == account.Id && r.Name == Role.OWNER_ROLE_NAME
         );
 
         var permissionRepo = _serviceFactory.GetRequiredService<IRepo<PermissionEntity>>();
@@ -633,7 +633,7 @@ public class RoleProcessorTests
                 Id = Guid.CreateVersion7(),
                 AccountId = account2.Id,
                 Account = new AccountEntity { Id = account2.Id },
-                ResourceType = PermissionConstants.GROUP_RESOURCE_TYPE,
+                ResourceType = Group.RESOURCE_TYPE,
                 ResourceId = Guid.Empty,
                 Create = true,
                 Read = true,

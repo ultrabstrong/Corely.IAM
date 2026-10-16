@@ -1,4 +1,3 @@
-using Corely.IAM.Platform.Constants;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Platform.Validators;
 
@@ -13,43 +12,43 @@ public class SecurityPolicyValidatorTests
         {
             {
                 nameof(SecurityPolicy.PasswordMinimumLength),
-                SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_MIN,
-                SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_MAX
+                SecurityPolicy.PASSWORD_MINIMUM_LENGTH_MIN,
+                SecurityPolicy.PASSWORD_MINIMUM_LENGTH_MAX
             },
             {
                 nameof(SecurityPolicy.PasswordMaximumLength),
-                SecurityPolicyConstants.PASSWORD_MAXIMUM_LENGTH_MIN,
-                SecurityPolicyConstants.PASSWORD_MAXIMUM_LENGTH_MAX
+                SecurityPolicy.PASSWORD_MAXIMUM_LENGTH_MIN,
+                SecurityPolicy.PASSWORD_MAXIMUM_LENGTH_MAX
             },
             {
                 nameof(SecurityPolicy.MaxLoginAttempts),
-                SecurityPolicyConstants.MAX_LOGIN_ATTEMPTS_MIN,
-                SecurityPolicyConstants.MAX_LOGIN_ATTEMPTS_MAX
+                SecurityPolicy.MAX_LOGIN_ATTEMPTS_MIN,
+                SecurityPolicy.MAX_LOGIN_ATTEMPTS_MAX
             },
             {
                 nameof(SecurityPolicy.LockoutCooldownSeconds),
-                SecurityPolicyConstants.LOCKOUT_COOLDOWN_SECONDS_MIN,
-                SecurityPolicyConstants.LOCKOUT_COOLDOWN_SECONDS_MAX
+                SecurityPolicy.LOCKOUT_COOLDOWN_SECONDS_MIN,
+                SecurityPolicy.LOCKOUT_COOLDOWN_SECONDS_MAX
             },
             {
                 nameof(SecurityPolicy.AuthTokenTtlSeconds),
-                SecurityPolicyConstants.AUTH_TOKEN_TTL_SECONDS_MIN,
-                SecurityPolicyConstants.AUTH_TOKEN_TTL_SECONDS_MAX
+                SecurityPolicy.AUTH_TOKEN_TTL_SECONDS_MIN,
+                SecurityPolicy.AUTH_TOKEN_TTL_SECONDS_MAX
             },
             {
                 nameof(SecurityPolicy.AuthSessionTtlSeconds),
-                SecurityPolicyConstants.AUTH_SESSION_TTL_SECONDS_MIN,
-                SecurityPolicyConstants.AUTH_SESSION_TTL_SECONDS_MAX
+                SecurityPolicy.AUTH_SESSION_TTL_SECONDS_MIN,
+                SecurityPolicy.AUTH_SESSION_TTL_SECONDS_MAX
             },
             {
                 nameof(SecurityPolicy.MfaChallengeTimeoutSeconds),
-                SecurityPolicyConstants.MFA_CHALLENGE_TIMEOUT_SECONDS_MIN,
-                SecurityPolicyConstants.MFA_CHALLENGE_TIMEOUT_SECONDS_MAX
+                SecurityPolicy.MFA_CHALLENGE_TIMEOUT_SECONDS_MIN,
+                SecurityPolicy.MFA_CHALLENGE_TIMEOUT_SECONDS_MAX
             },
             {
                 nameof(SecurityPolicy.TotpRecoveryCodeCount),
-                SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_MIN,
-                SecurityPolicyConstants.TOTP_RECOVERY_CODE_COUNT_MAX
+                SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MIN,
+                SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MAX
             },
         };
 
@@ -57,8 +56,8 @@ public class SecurityPolicyValidatorTests
     {
         var policy = SecurityPolicy.Default with
         {
-            PasswordMaximumLength = SecurityPolicyConstants.PASSWORD_MAXIMUM_LENGTH_MAX,
-            AuthSessionTtlSeconds = SecurityPolicyConstants.AUTH_SESSION_TTL_SECONDS_MAX,
+            PasswordMaximumLength = SecurityPolicy.PASSWORD_MAXIMUM_LENGTH_MAX,
+            AuthSessionTtlSeconds = SecurityPolicy.AUTH_SESSION_TTL_SECONDS_MAX,
         };
         return setting switch
         {
@@ -68,7 +67,7 @@ public class SecurityPolicyValidatorTests
             },
             nameof(SecurityPolicy.PasswordMaximumLength) => policy with
             {
-                PasswordMinimumLength = SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_MIN,
+                PasswordMinimumLength = SecurityPolicy.PASSWORD_MINIMUM_LENGTH_MIN,
                 PasswordMaximumLength = value,
             },
             nameof(SecurityPolicy.MaxLoginAttempts) => policy with { MaxLoginAttempts = value },
@@ -82,7 +81,7 @@ public class SecurityPolicyValidatorTests
             },
             nameof(SecurityPolicy.AuthSessionTtlSeconds) => policy with
             {
-                AuthTokenTtlSeconds = SecurityPolicyConstants.AUTH_TOKEN_TTL_SECONDS_MIN,
+                AuthTokenTtlSeconds = SecurityPolicy.AUTH_TOKEN_TTL_SECONDS_MIN,
                 AuthSessionTtlSeconds = value,
             },
             nameof(SecurityPolicy.MfaChallengeTimeoutSeconds) => policy with
@@ -120,8 +119,7 @@ public class SecurityPolicyValidatorTests
     [Fact]
     public void PasswordLengthRanges_NeverLetTheMinimumExceedTheMaximum() =>
         Assert.True(
-            SecurityPolicyConstants.PASSWORD_MINIMUM_LENGTH_MAX
-                <= SecurityPolicyConstants.PASSWORD_MAXIMUM_LENGTH_MIN
+            SecurityPolicy.PASSWORD_MINIMUM_LENGTH_MAX <= SecurityPolicy.PASSWORD_MAXIMUM_LENGTH_MIN
         );
 
     [Fact]

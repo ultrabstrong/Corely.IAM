@@ -2,7 +2,7 @@ using Corely.IAM.DataAccess;
 using Corely.IAM.IntegrationTests.Infrastructure;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Processors;
-using Corely.IAM.Roles.Constants;
+using Corely.IAM.Roles.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -36,7 +36,7 @@ public class MissingOwnerDefaultsTests : IAsyncLifetime
             InvoiceOwnerDefaultAsync(db, _scenario.AccountId)
         );
         Assert.True(recreated.IsSystemDefined);
-        Assert.Contains(recreated.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+        Assert.Contains(recreated.Roles!, r => r.Name == Role.OWNER_ROLE_NAME);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class MissingOwnerDefaultsTests : IAsyncLifetime
         );
         Assert.Equal(id, adopted.Id);
         Assert.True(adopted.IsSystemDefined);
-        Assert.Contains(adopted.Roles!, r => r.Name == RoleConstants.OWNER_ROLE_NAME);
+        Assert.Contains(adopted.Roles!, r => r.Name == Role.OWNER_ROLE_NAME);
     }
 
     private Task<int> CreateMissingOwnerDefaultsAsync() =>

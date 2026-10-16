@@ -5,6 +5,11 @@ namespace Corely.IAM.Users.Models;
 
 public class User
 {
+    public const string RESOURCE_TYPE = "user";
+    public const int USERNAME_MIN_LENGTH = 5;
+    public const int USERNAME_MAX_LENGTH = 30;
+    public const int EMAIL_MAX_LENGTH = 254;
+
     public Guid Id { get; set; }
     public string Username { get; set; } = null!;
     public string Email { get; set; } = null!;

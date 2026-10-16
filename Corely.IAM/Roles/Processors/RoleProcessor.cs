@@ -5,10 +5,8 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Mappers;
 using Corely.IAM.Roles.Models;
@@ -99,7 +97,7 @@ internal class RoleProcessor(
         {
             Id = Guid.CreateVersion7(),
             AccountId = ownerAccountId,
-            Name = RoleConstants.OWNER_ROLE_NAME,
+            Name = Role.OWNER_ROLE_NAME,
             IsSystemDefined = true,
         };
 
@@ -334,7 +332,7 @@ internal class RoleProcessor(
 
         var blockedSystemPermissionIds = new List<Guid>();
 
-        if (roleEntity.IsSystemDefined && roleEntity.Name == RoleConstants.OWNER_ROLE_NAME)
+        if (roleEntity.IsSystemDefined && roleEntity.Name == Role.OWNER_ROLE_NAME)
         {
             var ownerPermissions = permissionsToRemove.Where(p => p.IsSystemDefined).ToList();
             if (ownerPermissions.Count > 0)

@@ -1,8 +1,7 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.Permissions.Processors;
@@ -22,7 +21,7 @@ internal class PermissionProcessorAuthorizationDecorator(
             !_authorizationProvider.HasAccountContext(request.OwnerAccountId)
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Create,
-                PermissionConstants.PERMISSION_RESOURCE_TYPE
+                Permission.RESOURCE_TYPE
             )
         )
         {
@@ -65,7 +64,7 @@ internal class PermissionProcessorAuthorizationDecorator(
             !_authorizationProvider.HasAccountContext(request.AccountId)
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Read,
-                PermissionConstants.PERMISSION_RESOURCE_TYPE
+                Permission.RESOURCE_TYPE
             )
         )
         {
@@ -81,7 +80,7 @@ internal class PermissionProcessorAuthorizationDecorator(
             request,
             await _authorizationProvider.GetAuthorizedResourceIdsAsync(
                 AuthAction.Read,
-                PermissionConstants.PERMISSION_RESOURCE_TYPE
+                Permission.RESOURCE_TYPE
             )
         );
     }
@@ -94,7 +93,7 @@ internal class PermissionProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(accountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.PERMISSION_RESOURCE_TYPE,
+            Permission.RESOURCE_TYPE,
             permissionId
         )
             ? await _inner.GetPermissionByIdAsync(permissionId, hydrate, accountId)
@@ -115,7 +114,7 @@ internal class PermissionProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.PERMISSION_RESOURCE_TYPE,
+            Permission.RESOURCE_TYPE,
             request.PermissionId
         )
             ? await _inner.UpdatePermissionAsync(request)
@@ -131,7 +130,7 @@ internal class PermissionProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(accountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
-            PermissionConstants.PERMISSION_RESOURCE_TYPE,
+            Permission.RESOURCE_TYPE,
             permissionId
         )
             ? await _inner.DeletePermissionAsync(permissionId, accountId)

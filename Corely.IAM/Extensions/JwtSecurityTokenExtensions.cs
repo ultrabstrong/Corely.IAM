@@ -1,5 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
-using Corely.IAM.Users.Constants;
+using Corely.IAM.Security.Models;
 
 namespace Corely.IAM.Extensions;
 
@@ -12,7 +12,7 @@ internal static class JwtSecurityTokenExtensions
 
         public DateTime? SessionStartedUtc()
         {
-            var sessionStartedClaim = token.ClaimValue(UserConstants.SESSION_STARTED_AT_CLAIM);
+            var sessionStartedClaim = token.ClaimValue(TokenIssueContext.SESSION_STARTED_AT_CLAIM);
             if (
                 !string.IsNullOrWhiteSpace(sessionStartedClaim)
                 && long.TryParse(sessionStartedClaim, out var sessionStartedUnix)
@@ -33,7 +33,7 @@ internal static class JwtSecurityTokenExtensions
 
         public Guid? SignedInAccountId() =>
             Guid.TryParse(
-                token.ClaimValue(UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM),
+                token.ClaimValue(TokenIssueContext.SIGNED_IN_ACCOUNT_ID_CLAIM),
                 out var accountId
             )
                 ? accountId

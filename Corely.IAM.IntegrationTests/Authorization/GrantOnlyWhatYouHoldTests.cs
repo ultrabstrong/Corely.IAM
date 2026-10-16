@@ -1,9 +1,8 @@
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.IntegrationTests.Infrastructure;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
 using Corely.IAM.Permissions.Models;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Providers;
@@ -32,10 +31,10 @@ public class GrantOnlyWhatYouHoldTests : IAsyncLifetime
         foreach (
             var (type, create, update) in new[]
             {
-                (PermissionConstants.PERMISSION_RESOURCE_TYPE, true, false),
-                (PermissionConstants.ROLE_RESOURCE_TYPE, false, true),
-                (PermissionConstants.USER_RESOURCE_TYPE, false, true),
-                (PermissionConstants.GROUP_RESOURCE_TYPE, false, true),
+                (Permission.RESOURCE_TYPE, true, false),
+                (Role.RESOURCE_TYPE, false, true),
+                (User.RESOURCE_TYPE, false, true),
+                (Group.RESOURCE_TYPE, false, true),
             }
         )
         {
@@ -59,7 +58,7 @@ public class GrantOnlyWhatYouHoldTests : IAsyncLifetime
 
         _powerRoleId = await AsOwnerAsync(r => CreateRoleAsync(r, "Power"));
         var userDelete = await AsOwnerAsync(r =>
-            CreatePermissionAsync(r, PermissionConstants.USER_RESOURCE_TYPE, delete: true)
+            CreatePermissionAsync(r, User.RESOURCE_TYPE, delete: true)
         );
         await AsOwnerAsync(r => AttachAsync(r, userDelete, _powerRoleId));
         _powerGroupId = await AsOwnerAsync(async r =>
@@ -85,9 +84,7 @@ public class GrantOnlyWhatYouHoldTests : IAsyncLifetime
 
         _ownerRoleId = await _scenario.Host.QueryAsync(db =>
             db.Set<RoleEntity>()
-                .Where(r =>
-                    r.AccountId == _scenario.AccountId && r.Name == RoleConstants.OWNER_ROLE_NAME
-                )
+                .Where(r => r.AccountId == _scenario.AccountId && r.Name == Role.OWNER_ROLE_NAME)
                 .Select(r => r.Id)
                 .SingleAsync()
         );
@@ -102,7 +99,7 @@ public class GrantOnlyWhatYouHoldTests : IAsyncLifetime
             r.RegisterPermissionAsync(
                 new RegisterPermissionRequest(
                     _scenario.AccountId,
-                    PermissionConstants.GROUP_RESOURCE_TYPE,
+                    Group.RESOURCE_TYPE,
                     _scenario.EditorGroupId,
                     Read: true,
                     Update: true
@@ -114,9 +111,9 @@ public class GrantOnlyWhatYouHoldTests : IAsyncLifetime
     }
 
     [Theory]
-    [InlineData(PermissionConstants.USER_RESOURCE_TYPE, false, true)]
+    [InlineData(User.RESOURCE_TYPE, false, true)]
     [InlineData(IamScenario.INVOICE_RESOURCE_TYPE, true, false)]
-    [InlineData(PermissionConstants.ACCOUNT_RESOURCE_TYPE, false, false)]
+    [InlineData(Account.RESOURCE_TYPE, false, false)]
     public async Task Delegate_CannotCreatePermission_ForActionsTheyDoNotHold(
         string resourceType,
         bool create,
@@ -211,12 +208,7 @@ public class GrantOnlyWhatYouHoldTests : IAsyncLifetime
     public async Task Delegate_CannotAttachAPermission_TheyDoNotHold()
     {
         var userDelete = await AsOwnerAsync(r =>
-            CreatePermissionAsync(
-                r,
-                PermissionConstants.USER_RESOURCE_TYPE,
-                update: true,
-                delete: true
-            )
+            CreatePermissionAsync(r, User.RESOURCE_TYPE, update: true, delete: true)
         );
 
         var result = await AsDelegateAsync(r =>

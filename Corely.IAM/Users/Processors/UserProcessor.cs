@@ -1,8 +1,8 @@
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Models;
-using Corely.IAM.Roles.Constants;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Mappers;
@@ -353,7 +353,7 @@ internal class UserProcessor(
 
         var blockedOwnerRoleIds = new List<Guid>();
         var ownerRoles = rolesToRemove
-            .Where(r => r.Name == RoleConstants.OWNER_ROLE_NAME && r.IsSystemDefined)
+            .Where(r => r.Name == Role.OWNER_ROLE_NAME && r.IsSystemDefined)
             .ToList();
 
         if (ownerRoles.Count > 0)

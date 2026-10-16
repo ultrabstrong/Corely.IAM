@@ -41,7 +41,7 @@ public class BlazorUserContextAccessorTests
     {
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Headers["Cookie"] =
-            $"{AuthenticationConstants.AUTH_TOKEN_COOKIE}={cookieValue}";
+            $"{AuthCookieManager.AUTH_TOKEN_COOKIE}={cookieValue}";
         _mockHttpContextAccessor.Setup(a => a.HttpContext).Returns(httpContext);
     }
 

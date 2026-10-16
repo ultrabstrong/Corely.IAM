@@ -1,4 +1,3 @@
-using Corely.IAM.TotpAuths.Constants;
 using Corely.IAM.TotpAuths.Models;
 using FluentValidation;
 
@@ -8,6 +7,6 @@ internal class ConfirmTotpRequestValidator : AbstractValidator<ConfirmTotpReques
 {
     public ConfirmTotpRequestValidator()
     {
-        RuleFor(x => x.Code).NotEmpty().Length(TotpAuthConstants.TOTP_CODE_LENGTH);
+        RuleFor(x => x.Code).NotEmpty().Length(ConfirmTotpRequest.CODE_LENGTH);
     }
 }

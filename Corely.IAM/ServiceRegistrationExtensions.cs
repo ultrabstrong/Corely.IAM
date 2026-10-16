@@ -8,7 +8,7 @@ using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.GoogleAuths.Providers;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Invitations.Processors;
-using Corely.IAM.PasswordRecoveries.Constants;
+using Corely.IAM.PasswordRecoveries.Entities;
 using Corely.IAM.PasswordRecoveries.Processors;
 using Corely.IAM.Permissions;
 using Corely.IAM.Permissions.Processors;
@@ -96,7 +96,7 @@ public static class ServiceRegistrationExtensions
                 new IamHashCodes(options.HashCode, options.TokenHashCode)
             );
             serviceCollection.AddSingleton<ISecretProvider>(_ => new RandomSecretProvider(
-                PasswordRecoveryConstants.TOKEN_SECRET_LENGTH
+                PasswordRecoveryEntity.TOKEN_SECRET_LENGTH
             ));
 
             serviceCollection.AddSingleton<ISecurityProvider, SecurityProvider>();

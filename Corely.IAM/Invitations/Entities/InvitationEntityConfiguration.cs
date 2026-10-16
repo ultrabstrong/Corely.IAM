@@ -1,6 +1,7 @@
 using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
-using Corely.IAM.Invitations.Constants;
+using Corely.IAM.Invitations.Models;
+using Corely.IAM.Users.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,21 +17,13 @@ internal sealed class InvitationEntityConfiguration : EntityConfigurationBase<In
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).ValueGeneratedNever();
 
-        builder
-            .Property(e => e.Token)
-            .IsRequired()
-            .HasMaxLength(InvitationConstants.TOKEN_MAX_LENGTH);
+        builder.Property(e => e.Token).IsRequired().HasMaxLength(InvitationEntity.TOKEN_MAX_LENGTH);
 
         builder.HasIndex(e => e.Token).IsUnique();
 
-        builder
-            .Property(e => e.Email)
-            .IsRequired()
-            .HasMaxLength(InvitationConstants.EMAIL_MAX_LENGTH);
+        builder.Property(e => e.Email).IsRequired().HasMaxLength(User.EMAIL_MAX_LENGTH);
 
-        builder
-            .Property(e => e.Description)
-            .HasMaxLength(InvitationConstants.DESCRIPTION_MAX_LENGTH);
+        builder.Property(e => e.Description).HasMaxLength(Invitation.DESCRIPTION_MAX_LENGTH);
 
         builder.HasIndex(e => e.AccountId);
 

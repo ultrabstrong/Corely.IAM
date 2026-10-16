@@ -83,13 +83,15 @@ public class ModificationServiceTests
         ModifyPasswordResultCode.UnauthorizedError
     )]
     public async Task ModifyPassword_ReturnsTheUpdateResult_WhenChecksPass(
-        UpdateBasicAuthResultCode updateResultCode,
+        Enum updateResultCode,
         ModifyPasswordResultCode expected
     )
     {
         _mockBasicAuthProcessor
             .Setup(x => x.UpdateBasicAuthAsync(It.IsAny<UpdateBasicAuthRequest>()))
-            .ReturnsAsync(new UpdateBasicAuthResult(updateResultCode, "update"));
+            .ReturnsAsync(
+                new UpdateBasicAuthResult((UpdateBasicAuthResultCode)updateResultCode, "update")
+            );
 
         var result = await _service.ModifyPasswordAsync(new("current", "NewPassword1!", "123456"));
 

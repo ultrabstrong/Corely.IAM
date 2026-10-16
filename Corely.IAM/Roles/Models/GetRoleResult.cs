@@ -1,8 +1,8 @@
 namespace Corely.IAM.Roles.Models;
 
-public record GetRoleResult(GetRoleResultCode ResultCode, string Message, Role? Role);
+internal record GetRoleResult(GetRoleResultCode ResultCode, string Message, Role? Role);
 
-public enum GetRoleResultCode
+internal enum GetRoleResultCode
 {
     Success,
     RoleNotFoundError,

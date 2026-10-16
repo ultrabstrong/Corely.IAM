@@ -1,6 +1,6 @@
 namespace Corely.IAM.Users.Models;
 
-public record IsSoleOwnerOfAccountResult(
+internal record IsSoleOwnerOfAccountResult(
     bool IsSoleOwner,
     bool UserHasOwnerRole,
     bool HasSingleOwnershipSource = true

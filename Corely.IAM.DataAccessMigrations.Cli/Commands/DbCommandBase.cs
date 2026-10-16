@@ -26,7 +26,7 @@ internal abstract class DbCommandBase(string name, string description)
     [Option(
         "--history-table",
         Description = "Migrations history table. Defaults to "
-            + MigrationConstants.DEFAULT_HISTORY_TABLE
+            + IamDbContext.DEFAULT_MIGRATIONS_HISTORY_TABLE
             + ". Pass __EFMigrationsHistory for a database migrated before that default existed."
     )]
     private string HistoryTable { get; init; } = null!;

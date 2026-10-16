@@ -8,7 +8,7 @@
     <h1><i class="bi bi-diagram-3 me-2"></i>Groups</h1>
     <div class="d-flex gap-2 align-items-center">
         <a href="@AppRoutes.Dashboard" class="btn btn-outline-secondary" title="Back to dashboard"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
-        <PermissionView Action="AuthAction.Create" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE">
+        <PermissionView Action="AuthAction.Create" Resource="@Group.RESOURCE_TYPE">
             <button class="btn btn-primary" @onclick="() => _createModal.Show()"><i class="bi bi-plus-lg me-1"></i>Create</button>
         </PermissionView>
     </div>
@@ -70,7 +70,7 @@ else
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     <a href="@AppRoutes.Groups/@group.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
-                                    <PermissionView Action="AuthAction.Delete" Resource="@PermissionConstants.GROUP_RESOURCE_TYPE" ResourceIds="new[] { group.Id }">
+                                    <PermissionView Action="AuthAction.Delete" Resource="@Group.RESOURCE_TYPE" ResourceIds="new[] { group.Id }">
                                         <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(group.Id, group.Name)" title="Delete"><i class="bi bi-trash"></i></button>
                                     </PermissionView>
                                 </div>

@@ -1,5 +1,4 @@
-﻿using Corely.IAM.Security.Constants;
-using Corely.IAM.Security.Models;
+﻿using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Validators;
 using Corely.IAM.UnitTests.ClassData;
 using Corely.Security.Encryption.Models;
@@ -37,7 +36,7 @@ public class SymmetricKeyValidatorTests
 
     public static IEnumerable<object[]> InvalidKeyData() =>
         [
-            [new string('a', SymmetricKeyConstants.KEY_MAX_LENGTH + 1)],
+            [new string('a', SymmetricKey.KEY_MAX_LENGTH + 1)],
         ];
 
     [Fact]
@@ -45,7 +44,7 @@ public class SymmetricKeyValidatorTests
     {
         var symmetricKey = new SymmetricKey
         {
-            Version = SymmetricKeyConstants.VERSION_MIN_VALUE - 1,
+            Version = SymmetricKey.VERSION_MIN_VALUE - 1,
             Key = new SymmetricEncryptedValue(new AesEncryptionProvider()) { Secret = "key" },
         };
 

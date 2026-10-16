@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Web.Middleware;
 
-public class AuthenticationTokenMiddleware(
+internal class AuthenticationTokenMiddleware(
     RequestDelegate next,
     ILogger<AuthenticationTokenMiddleware> logger,
     IAuthCookieManager authCookieManager,
@@ -24,7 +24,7 @@ public class AuthenticationTokenMiddleware(
         ISecurityPolicyProvider securityPolicyProvider
     )
     {
-        var token = context.Request.Cookies[AuthenticationConstants.AUTH_TOKEN_COOKIE];
+        var token = context.Request.Cookies[AuthCookieManager.AUTH_TOKEN_COOKIE];
 
         if (!string.IsNullOrWhiteSpace(token))
             await ValidateAndSetContextAsync(

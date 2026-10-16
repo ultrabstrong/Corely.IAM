@@ -1,18 +1,22 @@
 using System;
 using Corely.DataAccess.EntityFramework.Configurations;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.DataAccess;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
-using Corely.IAM.Permissions.Constants;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Platform.Providers;
+using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
@@ -226,11 +230,11 @@ public class ServiceRegistrationExtensionsTests
     }
 
     [Theory]
-    [InlineData(PermissionConstants.ACCOUNT_RESOURCE_TYPE)]
-    [InlineData(PermissionConstants.USER_RESOURCE_TYPE)]
-    [InlineData(PermissionConstants.GROUP_RESOURCE_TYPE)]
-    [InlineData(PermissionConstants.ROLE_RESOURCE_TYPE)]
-    [InlineData(PermissionConstants.PERMISSION_RESOURCE_TYPE)]
+    [InlineData(Account.RESOURCE_TYPE)]
+    [InlineData(User.RESOURCE_TYPE)]
+    [InlineData(Group.RESOURCE_TYPE)]
+    [InlineData(Role.RESOURCE_TYPE)]
+    [InlineData(Permission.RESOURCE_TYPE)]
     public void AddIAMServices_WithMockDb_ResourceTypeRegistry_ContainsIAMDefinedTypes(
         string resourceType
     )

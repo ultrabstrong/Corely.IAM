@@ -1,6 +1,6 @@
 namespace Corely.IAM.Groups.Models;
 
-public record RemoveUsersFromGroupRequest(
+internal record RemoveUsersFromGroupRequest(
     List<Guid> UserIds,
     Guid GroupId,
     Guid AccountId = default

@@ -1,6 +1,6 @@
 ﻿using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Models;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Corely.IAM.Users.Entities;
@@ -33,6 +33,6 @@ internal class UserSymmetricKeyEntityConfiguration : EntityConfigurationBase<Use
         builder
             .Property(m => m.EncryptedKey)
             .IsRequired()
-            .HasMaxLength(SymmetricKeyConstants.KEY_MAX_LENGTH);
+            .HasMaxLength(SymmetricKey.KEY_MAX_LENGTH);
     }
 }

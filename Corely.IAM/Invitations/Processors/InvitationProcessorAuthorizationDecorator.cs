@@ -1,10 +1,11 @@
 using Corely.Common.Extensions;
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.Invitations.Processors;
@@ -24,7 +25,7 @@ internal class InvitationProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            Account.RESOURCE_TYPE,
             request.AccountId
         )
             ? await _inner.CreateInvitationAsync(request)
@@ -52,7 +53,7 @@ internal class InvitationProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            Account.RESOURCE_TYPE,
             request.AccountId
         )
             ? await _inner.RevokeInvitationAsync(request)
@@ -68,7 +69,7 @@ internal class InvitationProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.ACCOUNT_RESOURCE_TYPE,
+            Account.RESOURCE_TYPE,
             request.AccountId
         )
             ? await _inner.ListInvitationsAsync(request, authorizedResourceIds)

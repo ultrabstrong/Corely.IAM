@@ -1,6 +1,5 @@
 using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
-using Corely.IAM.TotpAuths.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -20,7 +19,7 @@ internal sealed class TotpRecoveryCodeEntityConfiguration
         builder
             .Property(e => e.CodeHash)
             .IsRequired()
-            .HasMaxLength(TotpAuthConstants.RECOVERY_CODE_HASH_MAX_LENGTH);
+            .HasMaxLength(TotpRecoveryCodeEntity.CODE_HASH_MAX_LENGTH);
 
         builder.Property(e => e.UsedUtc).IsRequired(false);
 

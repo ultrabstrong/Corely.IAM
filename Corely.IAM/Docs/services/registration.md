@@ -48,7 +48,7 @@ The creating user is automatically added to the account and assigned the Owner r
 ```csharp
 var result = await registrationService.RegisterPermissionAsync(
     new RegisterPermissionRequest(
-        resourceType: PermissionConstants.USER_RESOURCE_TYPE,
+        resourceType: User.RESOURCE_TYPE,
         resourceId: Guid.Empty,
         create: true, read: true, update: false, delete: false, execute: false,
         description: "Create and read users"));

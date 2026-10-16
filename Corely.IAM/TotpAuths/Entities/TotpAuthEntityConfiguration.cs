@@ -1,6 +1,5 @@
 using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
-using Corely.IAM.TotpAuths.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -21,7 +20,7 @@ internal sealed class TotpAuthEntityConfiguration : EntityConfigurationBase<Totp
         builder
             .Property(e => e.EncryptedSecret)
             .IsRequired()
-            .HasMaxLength(TotpAuthConstants.ENCRYPTED_SECRET_MAX_LENGTH);
+            .HasMaxLength(TotpAuthEntity.ENCRYPTED_SECRET_MAX_LENGTH);
 
         builder.Property(e => e.IsEnabled).IsRequired().HasDefaultValue(false);
     }

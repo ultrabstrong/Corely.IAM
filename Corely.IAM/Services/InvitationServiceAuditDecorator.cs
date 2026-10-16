@@ -1,10 +1,11 @@
 using Corely.Common.Extensions;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Enums;
 
 namespace Corely.IAM.Services;
 
@@ -29,7 +30,7 @@ internal class InvitationServiceAuditDecorator(
 
     public Task<AcceptInvitationResult> AcceptInvitationAsync(AcceptInvitationRequest request) =>
         _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Update, PermissionConstants.ACCOUNT_RESOURCE_TYPE)
+            new AuditCall(SERVICE, AuthAction.Update, Account.RESOURCE_TYPE)
             {
                 AccountId = Guid.Empty,
             },
@@ -57,7 +58,7 @@ internal class InvitationServiceAuditDecorator(
         );
 
     private static AuditCall OnAccount(AuthAction action, Guid accountId) =>
-        new(SERVICE, action, PermissionConstants.ACCOUNT_RESOURCE_TYPE)
+        new(SERVICE, action, Account.RESOURCE_TYPE)
         {
             AccountId = accountId,
             ResourceIds = [accountId],

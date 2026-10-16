@@ -80,7 +80,7 @@ else
         _settings = result.Settings;
         _canUpdate = await AuthorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE
+            PlatformSettings.RESOURCE_TYPE
         );
         Reset();
     }

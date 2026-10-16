@@ -1,8 +1,8 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Constants;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.Roles.Processors;
@@ -18,10 +18,7 @@ internal class RoleProcessorAuthorizationDecorator(
 
     public async Task<CreateRoleResult> CreateRoleAsync(CreateRoleRequest createRoleRequest) =>
         _authorizationProvider.HasAccountContext(createRoleRequest.OwnerAccountId)
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Create,
-            PermissionConstants.ROLE_RESOURCE_TYPE
-        )
+        && await _authorizationProvider.IsAuthorizedAsync(AuthAction.Create, Role.RESOURCE_TYPE)
             ? await _inner.CreateRoleAsync(createRoleRequest)
             : new CreateRoleResult(
                 CreateRoleResultCode.UnauthorizedError,
@@ -34,11 +31,7 @@ internal class RoleProcessorAuthorizationDecorator(
     ) => _inner.CreateDefaultSystemRolesAsync(ownerAccountId);
 
     public async Task<GetRoleResult> GetRoleAsync(Guid roleId) =>
-        await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
-            roleId
-        )
+        await _authorizationProvider.IsAuthorizedAsync(AuthAction.Read, Role.RESOURCE_TYPE, roleId)
             ? await _inner.GetRoleAsync(roleId)
             : new GetRoleResult(
                 GetRoleResultCode.UnauthorizedError,
@@ -47,10 +40,7 @@ internal class RoleProcessorAuthorizationDecorator(
             );
 
     public async Task<GetRoleResult> GetRoleAsync(string roleName, Guid ownerAccountId) =>
-        await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE
-        )
+        await _authorizationProvider.IsAuthorizedAsync(AuthAction.Read, Role.RESOURCE_TYPE)
             ? await _inner.GetRoleAsync(roleName, ownerAccountId)
             : new GetRoleResult(
                 GetRoleResultCode.UnauthorizedError,
@@ -65,10 +55,7 @@ internal class RoleProcessorAuthorizationDecorator(
     {
         if (
             !_authorizationProvider.HasAccountContext(request.AccountId)
-            || !await _authorizationProvider.IsAuthorizedAsync(
-                AuthAction.Read,
-                PermissionConstants.ROLE_RESOURCE_TYPE
-            )
+            || !await _authorizationProvider.IsAuthorizedAsync(AuthAction.Read, Role.RESOURCE_TYPE)
         )
         {
             return new ListResult<Role>(
@@ -83,7 +70,7 @@ internal class RoleProcessorAuthorizationDecorator(
             request,
             await _authorizationProvider.GetAuthorizedResourceIdsAsync(
                 AuthAction.Read,
-                PermissionConstants.ROLE_RESOURCE_TYPE
+                Role.RESOURCE_TYPE
             )
         );
     }
@@ -96,7 +83,7 @@ internal class RoleProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(accountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             roleId
         )
             ? await _inner.GetRoleByIdAsync(roleId, hydrate, accountId)
@@ -114,12 +101,12 @@ internal class RoleProcessorAuthorizationDecorator(
             !_authorizationProvider.HasAccountContext(request.AccountId)
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Update,
-                PermissionConstants.ROLE_RESOURCE_TYPE,
+                Role.RESOURCE_TYPE,
                 request.RoleId
             )
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Read,
-                PermissionConstants.PERMISSION_RESOURCE_TYPE,
+                Permission.RESOURCE_TYPE,
                 [.. request.PermissionIds]
             )
         )
@@ -151,12 +138,12 @@ internal class RoleProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             request.RoleId
         )
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
-            PermissionConstants.PERMISSION_RESOURCE_TYPE,
+            Permission.RESOURCE_TYPE,
             [.. request.PermissionIds]
         )
             ? await _inner.RemovePermissionsFromRoleAsync(request)
@@ -171,7 +158,7 @@ internal class RoleProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(request.AccountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             request.RoleId
         )
             ? await _inner.UpdateRoleAsync(request)
@@ -184,7 +171,7 @@ internal class RoleProcessorAuthorizationDecorator(
         _authorizationProvider.HasAccountContext(accountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             roleId
         )
             ? await _inner.DeleteRoleAsync(roleId, accountId)

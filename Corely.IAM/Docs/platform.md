@@ -162,8 +162,9 @@ stricter password rule applies the next time a password is set, never to a store
 | Two factor prompt timeout | 300 seconds | 60 to 900 | `SecurityOptions:MfaChallengeTimeoutSeconds` |
 | Recovery codes per user | 10 | 5 to 20 | `SecurityOptions:TotpRecoveryCodeCount` |
 
-The limits are `SecurityPolicyConstants`. Configuration is checked against them when the app starts,
-and an out of range value stops it starting. A save outside them returns `ValidationError`. A minimum
+The limits are constants on `SecurityPolicy`, such as `SecurityPolicy.MAX_LOGIN_ATTEMPTS_MIN`.
+Configuration is checked against them when the app starts, and an out of range value stops it
+starting. A save outside them returns `ValidationError`. A minimum
 password length below 8 suits a demo, not production.
 
 Startup logs a warning when configuration still carries any of these keys alongside saved settings,

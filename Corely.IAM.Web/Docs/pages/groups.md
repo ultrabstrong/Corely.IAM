@@ -14,8 +14,8 @@ Group table with search, sort, pagination, and create/delete operations.
 - **Delete**: confirmation modal per row
 
 **Authorization gates:**
-- `AuthAction.Create` + `GROUP_RESOURCE_TYPE`: Create button
-- `AuthAction.Delete` + `GROUP_RESOURCE_TYPE` + `ResourceIds: [groupId]`: Delete button per row
+- `AuthAction.Create` + `Group.RESOURCE_TYPE`: Create button
+- `AuthAction.Delete` + `Group.RESOURCE_TYPE` + `ResourceIds: [groupId]`: Delete button per row
 
 ---
 
@@ -32,8 +32,8 @@ Group properties with user and role management.
 - **Effective permissions panel**: inherited permissions through assigned roles
 
 **Authorization gates:**
-- `AuthAction.Update` + `GROUP_RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit, Add Users, Add Roles, Remove User, Remove Role
-- `AuthAction.Delete` + `GROUP_RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete button
+- `AuthAction.Update` + `Group.RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit, Add Users, Add Roles, Remove User, Remove Role
+- `AuthAction.Delete` + `Group.RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete button
 
 **Behavior:**
 - Loads with `hydrate: true` for user and role relations

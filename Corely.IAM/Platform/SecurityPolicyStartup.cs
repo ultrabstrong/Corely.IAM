@@ -1,6 +1,5 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
-using Corely.IAM.Platform.Constants;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Validators;
@@ -33,7 +32,7 @@ internal sealed class SecurityPolicyStartup(
         {
             var hasSettingsRow = await scope
                 .ServiceProvider.GetRequiredService<IReadonlyRepo<PlatformSecuritySettingsEntity>>()
-                .AnyAsync(s => s.Id == PlatformConstants.PLATFORM_SETTINGS_ID);
+                .AnyAsync(s => s.Id == PlatformSecuritySettingsEntity.SINGLE_ROW_ID);
             if (hasSettingsRow)
             {
                 if (configuredPolicy.ConfiguredKeys.Count > 0)

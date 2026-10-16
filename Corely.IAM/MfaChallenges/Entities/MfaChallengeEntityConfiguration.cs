@@ -1,6 +1,5 @@
 using Corely.DataAccess;
 using Corely.DataAccess.EntityFramework.Configurations;
-using Corely.IAM.MfaChallenges.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,14 +18,14 @@ internal sealed class MfaChallengeEntityConfiguration : EntityConfigurationBase<
         builder
             .Property(e => e.ChallengeToken)
             .IsRequired()
-            .HasMaxLength(MfaChallengeConstants.CHALLENGE_TOKEN_MAX_LENGTH);
+            .HasMaxLength(MfaChallengeEntity.CHALLENGE_TOKEN_MAX_LENGTH);
 
         builder.HasIndex(e => e.ChallengeToken).IsUnique();
 
         builder
             .Property(e => e.DeviceId)
             .IsRequired()
-            .HasMaxLength(MfaChallengeConstants.DEVICE_ID_MAX_LENGTH);
+            .HasMaxLength(MfaChallengeEntity.DEVICE_ID_MAX_LENGTH);
 
         builder.Property(e => e.AccountId).IsRequired(false);
         builder.Property(e => e.CompletedUtc).IsRequired(false);

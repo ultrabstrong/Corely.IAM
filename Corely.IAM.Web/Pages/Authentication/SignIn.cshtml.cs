@@ -33,7 +33,7 @@ public class SignInModel(
 
     public IActionResult OnGet()
     {
-        if (HttpContext.Request.Cookies.ContainsKey(AuthenticationConstants.AUTH_TOKEN_COOKIE))
+        if (HttpContext.Request.Cookies.ContainsKey(AuthCookieManager.AUTH_TOKEN_COOKIE))
         {
             return Redirect(AppRoutes.Dashboard);
         }

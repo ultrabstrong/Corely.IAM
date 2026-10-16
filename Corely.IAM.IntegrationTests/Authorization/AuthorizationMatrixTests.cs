@@ -1,6 +1,9 @@
+using Corely.IAM.Groups.Models;
 using Corely.IAM.IntegrationTests.Infrastructure;
-using Corely.IAM.Permissions.Constants;
-using Corely.IAM.Security.Constants;
+using Corely.IAM.Permissions.Models;
+using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.IntegrationTests.Authorization;
 
@@ -13,7 +16,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.DirectMemberUsername,
             scenario.AccountId,
             AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
+            User.RESOURCE_TYPE,
             scenario.OwnerUserId
         );
 
@@ -27,7 +30,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.DirectMemberUsername,
             scenario.AccountId,
             AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
+            User.RESOURCE_TYPE,
             Guid.NewGuid()
         );
 
@@ -45,7 +48,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.DirectMemberUsername,
             scenario.AccountId,
             action,
-            PermissionConstants.USER_RESOURCE_TYPE,
+            User.RESOURCE_TYPE,
             scenario.OwnerUserId
         );
 
@@ -59,7 +62,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.DirectMemberUsername,
             scenario.AccountId,
             AuthAction.Read,
-            PermissionConstants.GROUP_RESOURCE_TYPE,
+            Group.RESOURCE_TYPE,
             scenario.EditorGroupId
         );
 
@@ -73,7 +76,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.GroupMemberUsername,
             scenario.AccountId,
             AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             scenario.EditorRoleId
         );
 
@@ -87,7 +90,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.GroupMemberUsername,
             scenario.AccountId,
             AuthAction.Update,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             scenario.EditorRoleId
         );
 
@@ -101,7 +104,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.GroupMemberUsername,
             scenario.AccountId,
             AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             scenario.UngrantedRoleId
         );
 
@@ -115,7 +118,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.GroupMemberUsername,
             scenario.AccountId,
             AuthAction.Delete,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             scenario.EditorRoleId
         );
 
@@ -129,7 +132,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.DirectMemberUsername,
             scenario.AccountId,
             AuthAction.Update,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             scenario.EditorRoleId
         );
 
@@ -143,7 +146,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.GroupMemberUsername,
             scenario.AccountId,
             AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             scenario.EditorRoleId,
             scenario.UngrantedRoleId
         );
@@ -161,7 +164,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.OwnerUsername,
             scenario.AccountId,
             AuthAction.Delete,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             scenario.UngrantedRoleId
         );
 
@@ -175,7 +178,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.DirectMemberUsername,
             null,
             AuthAction.Read,
-            PermissionConstants.USER_RESOURCE_TYPE,
+            User.RESOURCE_TYPE,
             scenario.OwnerUserId
         );
 
@@ -197,7 +200,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.OutsiderUsername,
             null,
             action,
-            PermissionConstants.USER_RESOURCE_TYPE,
+            User.RESOURCE_TYPE,
             scenario.OwnerUserId
         );
 
@@ -211,7 +214,7 @@ public class AuthorizationMatrixTests(IamScenario scenario) : IClassFixture<IamS
             scenario.OutsiderUsername,
             null,
             AuthAction.Read,
-            PermissionConstants.ROLE_RESOURCE_TYPE,
+            Role.RESOURCE_TYPE,
             scenario.EditorRoleId
         );
 

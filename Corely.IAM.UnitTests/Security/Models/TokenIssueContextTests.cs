@@ -2,7 +2,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Security.Models;
-using Corely.IAM.Users.Constants;
 using Corely.IAM.Users.Entities;
 
 namespace Corely.IAM.UnitTests.Security.Models;
@@ -27,14 +26,14 @@ public class TokenIssueContextTests
 
         Assert.Equal(context.UserEntity.Id.ToString(), Value(claims, JwtRegisteredClaimNames.Sub));
         Assert.Equal("jti", Value(claims, JwtRegisteredClaimNames.Jti));
-        Assert.Equal("device", Value(claims, UserConstants.DEVICE_ID_CLAIM));
+        Assert.Equal("device", Value(claims, TokenIssueContext.DEVICE_ID_CLAIM));
         Assert.Equal(
             new DateTimeOffset(_issuedAt).ToUnixTimeSeconds().ToString(),
             Value(claims, JwtRegisteredClaimNames.Iat)
         );
         Assert.Equal(
             new DateTimeOffset(_sessionStarted).ToUnixTimeSeconds().ToString(),
-            Value(claims, UserConstants.SESSION_STARTED_AT_CLAIM)
+            Value(claims, TokenIssueContext.SESSION_STARTED_AT_CLAIM)
         );
     }
 
@@ -48,7 +47,7 @@ public class TokenIssueContextTests
 
         Assert.Equal(
             [a.Id.ToString(), b.Id.ToString()],
-            claims.Where(c => c.Type == UserConstants.ACCOUNT_ID_CLAIM).Select(c => c.Value)
+            claims.Where(c => c.Type == TokenIssueContext.ACCOUNT_ID_CLAIM).Select(c => c.Value)
         );
     }
 
@@ -59,11 +58,11 @@ public class TokenIssueContextTests
 
         Assert.Equal(
             account.Id.ToString(),
-            Value(Claims(Context([account], account)), UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM)
+            Value(Claims(Context([account], account)), TokenIssueContext.SIGNED_IN_ACCOUNT_ID_CLAIM)
         );
         Assert.DoesNotContain(
             Claims(Context([account], null)),
-            c => c.Type == UserConstants.SIGNED_IN_ACCOUNT_ID_CLAIM
+            c => c.Type == TokenIssueContext.SIGNED_IN_ACCOUNT_ID_CLAIM
         );
     }
 

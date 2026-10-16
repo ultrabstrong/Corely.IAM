@@ -1,3 +1,4 @@
+using Corely.Common.Providers.Redaction;
 using Corely.Common.Redaction;
 using Corely.IAM.DevTools.SerilogCustomization;
 using Serilog.Events;
@@ -49,6 +50,39 @@ public class SerilogRedactionEnricherTests
         ]).Enrich(logEvent, null!);
 
         Assert.Equal("user *** ###", Value(logEvent, "Text"));
+    }
+
+    [Fact]
+    public void Enrich_RedactsAPassword_InsideALoggedObject()
+    {
+        var logEvent = Event(
+            new LogEventProperty(
+                "Request",
+                new StructureValue([
+                    new LogEventProperty("Username", new ScalarValue("owner")),
+                    new LogEventProperty("Password", new ScalarValue("hunter22")),
+                ])
+            )
+        );
+
+        new SerilogRedactionEnricher([new PasswordRedactionProvider()]).Enrich(logEvent, null!);
+
+        var rendered = logEvent.Properties["Request"].ToString();
+        Assert.DoesNotContain("hunter22", rendered);
+        Assert.Contains("owner", rendered);
+    }
+
+    [Fact]
+    public void Enrich_LeavesALoggedObject_Structured_WhenNothingIsRedacted()
+    {
+        var request = new StructureValue([
+            new LogEventProperty("Username", new ScalarValue("owner")),
+        ]);
+        var logEvent = Event(new LogEventProperty("Request", request));
+
+        new SerilogRedactionEnricher([new PasswordRedactionProvider()]).Enrich(logEvent, null!);
+
+        Assert.Same(request, logEvent.Properties["Request"]);
     }
 
     private sealed class Replace(string find, string with) : IRedactionProvider

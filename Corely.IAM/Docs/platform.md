@@ -120,13 +120,21 @@ The same work is available as `IPlatformService.CompletePlatformOwnerPermissions
 
 ## Platform settings
 
-The platform account holds the platform settings, read and changed with `platform_settings`: whether
-auditing is on, the longest retention, the actions accounts may record, and what is recorded for
-system context and outside any account. Only a grant held in the platform account counts. A platform
-member holding Read on `audit` there reads every entry, and Delete on `audit` there purges any
-account's entries and those outside any account. See [Auditing](auditing.md).
+The platform account holds the platform settings. Each area has its own resource type, so a thin role
+can be given one area without the others: Read on the type shows the area, Update changes it. Only a
+grant held in the platform account counts.
 
-The portal splits them into pages under `/platform-settings`: Audit, and Security.
+| Area | Type | Holds |
+|------|------|-------|
+| Audit | `platform_audit_settings` (`PlatformSettings.RESOURCE_TYPE`) | Whether auditing is on, the longest retention, the actions accounts may record, what is recorded for system context and outside any account |
+| Security | `platform_security_settings` (`SecurityPolicy.RESOURCE_TYPE`) | Password rules, lockout, token lifetimes, two factor. See [below](#where-security-settings-come-from) |
+
+A platform member holding Read on `audit` there reads every entry, and Delete on `audit` there
+purges any account's entries and those outside any account. See [Auditing](auditing.md).
+
+The portal shows each area as a page under `/platform-settings`, listing only the areas the user can
+read. A host or a library adds its own area as a page with its own resource type; see Corely.IAM.Web's
+[platform settings pages](../../Corely.IAM.Web/Docs/pages/audit.md#platform-settings-platform-settings).
 
 ## Where security settings come from
 
@@ -138,8 +146,8 @@ Password rules, lockout, token lifetimes and the two factor settings come from o
 | A platform account | The platform's security settings. Configuration is ignored |
 
 Bootstrap writes the platform's security settings, so a platform account always has them. A platform
-member holding Update on `platform_settings` changes them on the Security page, or in code under
-system context:
+member holding Update on `platform_security_settings` changes them on the Security page, or in code
+under system context:
 
 ```csharp
 var current = (await platformService.GetSecuritySettingsAsync()).Settings!;
@@ -163,9 +171,9 @@ stricter password rule applies the next time a password is set, never to a store
 | Recovery codes per user | 10 | 5 to 20 | `SecurityOptions:TotpRecoveryCodeCount` |
 
 The limits are constants on `SecurityPolicy`, such as `SecurityPolicy.MAX_LOGIN_ATTEMPTS_MIN`.
-Configuration is checked against them when the app starts, and an out of range value stops it
-starting. A save outside them returns `ValidationError`. A minimum
-password length below 8 suits a demo, not production.
+Configuration is checked against them in `AddIAMServices`, so an out of range value stops any host
+using IAM, whether a web app, a console tool or a host that is built but never started. A save outside
+them returns `ValidationError`. A minimum password length below 8 suits a demo, not production.
 
 Startup logs a warning when configuration still carries any of these keys alongside saved settings,
 naming the keys to remove. It also warns when a platform account has no saved settings, which happens
@@ -180,9 +188,8 @@ whichever place they come from.
 | `Account.IsPlatformAccount` | Marks the platform account |
 | `IPlatformService.BootstrapPlatformAsync(BootstrapPlatformRequest)` | What the CLI command runs; returns the owner's credentials |
 | `IPlatformService.CompletePlatformOwnerPermissionsAsync()` | Gives the platform Owner role any missing full access rows; returns how many it added |
-| `IPlatformService.GetSecuritySettingsAsync()` | The security settings in force; needs Read on `platform_settings` in the platform account |
+| `IPlatformService.GetSecuritySettingsAsync()` | The security settings in force; needs Read on `platform_security_settings` in the platform account |
 | `IPlatformService.UpdateSecuritySettingsAsync(SecurityPolicy)` | Saves them; needs Update there. `NotFoundError` without a platform account |
 | `ISecurityPolicyProvider.GetPolicyAsync()` | The security settings in force, with no permission check, for code that applies them |
-| `BootstrapPlatformResultCode.InvalidSecuritySettingsError` | The configured security settings are out of range; nothing was written |
 | `EffectiveRole.ViaPlatformAccount` | True when a role in effective permissions comes from the platform account |
 | `DeregisterAccountResultCode.PlatformAccountError` | Refusal to delete the platform account |

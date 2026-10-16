@@ -178,11 +178,20 @@ internal class Bootstrap()
         try
         {
             settings = new ConfigurationBuilder().AddJsonFile(settingsPath).Build();
-            return true;
         }
         catch (Exception ex) when (ex is FormatException or InvalidDataException)
         {
             Error($"Cannot read the settings file {settingsPath}: {ex.Message}");
+            return false;
+        }
+        try
+        {
+            ConfiguredSecurityPolicy.From(settings);
+            return true;
+        }
+        catch (InvalidOperationException ex)
+        {
+            Error($"{settingsPath}: {ex.Message}");
             return false;
         }
     }

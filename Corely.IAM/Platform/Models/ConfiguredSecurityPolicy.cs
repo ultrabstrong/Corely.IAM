@@ -1,3 +1,4 @@
+using Corely.IAM.Platform.Validators;
 using Corely.IAM.Security.Models;
 using Corely.Security.PasswordValidation.Models;
 using Microsoft.Extensions.Configuration;
@@ -40,6 +41,16 @@ internal sealed record ConfiguredSecurityPolicy(
             .. passwordSection.GetChildren().Select(c => c.Path),
         ];
 
-        return new(securityOptions.ToSecurityPolicy(passwordOptions), configuredKeys);
+        var policy = securityOptions.ToSecurityPolicy(passwordOptions);
+        var validation = new SecurityPolicyValidator().Validate(policy);
+        if (!validation.IsValid)
+        {
+            throw new InvalidOperationException(
+                "The security settings in configuration are invalid: "
+                    + string.Join(" ", validation.Errors.Select(e => e.ErrorMessage))
+            );
+        }
+
+        return new(policy, configuredKeys);
     }
 }

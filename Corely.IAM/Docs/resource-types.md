@@ -22,10 +22,11 @@ Resource types are compile-time concepts that categorize what a permission grant
 | `Permission.RESOURCE_TYPE` | `"permission"` | Permissions | All five |
 | `AuditEntry.RESOURCE_TYPE` | `"audit"` | Audit log | Read (view and export), Delete (purge) |
 | `AccountAuditSettings.RESOURCE_TYPE` | `"audit_settings"` | Audit settings | Read, Update |
-| `PlatformSettings.RESOURCE_TYPE` | `"platform_settings"` | Platform settings | None |
+| `PlatformSettings.RESOURCE_TYPE` | `"platform_audit_settings"` | Platform audit settings | None |
+| `SecurityPolicy.RESOURCE_TYPE` | `"platform_security_settings"` | Platform security settings | None |
 
-`platform_settings` is meaningful only in the [platform account](platform.md), whose owner holds full
-access on every type; an account owner elsewhere gets nothing on it. See [Auditing](auditing.md) for
+The two platform settings types are meaningful only in the [platform account](platform.md), whose
+owner holds full access on every type; an account owner elsewhere gets nothing on them. See [Auditing](auditing.md) for
 what the audit types allow.
 
 The owner actions of the built-in types are not configurable. There is no wildcard type: `"*"` is

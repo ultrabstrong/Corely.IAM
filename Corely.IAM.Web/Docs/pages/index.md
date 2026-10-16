@@ -29,7 +29,7 @@ Corely.IAM.Web provides two types of pages: **Razor Pages** for pre-authenticati
 | `/permissions` | PermissionList | Blazor | Permission table + create |
 | `/permissions/{Id}` | PermissionDetail | Blazor | Permission detail (read-only) |
 | `/audit` | AuditLog | Blazor | Audit entries across accounts, export, purge |
-| `/platform-settings` | PlatformSettingsRedirect | Blazor | Opens the platform audit settings |
+| `/platform-settings` | PlatformSettingsRedirect | Blazor | Opens the first platform settings page the user can read |
 | `/platform-settings/audit` | PlatformAuditSettingsPage | Blazor | Platform audit settings, in the platform account |
 | `/platform-settings/security` | PlatformSecuritySettingsPage | Blazor | Platform security settings, in the platform account |
 

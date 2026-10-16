@@ -45,8 +45,8 @@ or accepting an invitation is recorded as an account member.
 
 ## Settings
 
-Platform settings are one row, read and changed by holders of `platform_settings` in the platform
-account:
+Platform audit settings are one row, read and changed by holders of `platform_audit_settings` in the
+platform account:
 
 | Setting | Meaning |
 |---------|---------|

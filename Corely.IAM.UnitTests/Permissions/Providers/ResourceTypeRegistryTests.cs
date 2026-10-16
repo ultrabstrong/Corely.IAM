@@ -54,7 +54,8 @@ public class ResourceTypeRegistryTests
         "Audit settings",
         new[] { AuthAction.Read, AuthAction.Update }
     )]
-    [InlineData(PlatformSettings.RESOURCE_TYPE, "Platform settings", new AuthAction[0])]
+    [InlineData(PlatformSettings.RESOURCE_TYPE, "Platform audit settings", new AuthAction[0])]
+    [InlineData(SecurityPolicy.RESOURCE_TYPE, "Platform security settings", new AuthAction[0])]
     public void Constructor_PreRegistersAuditTypes_WithTheirOwnerActions(
         string name,
         string expectedDescription,
@@ -73,7 +74,7 @@ public class ResourceTypeRegistryTests
     {
         var all = _registry.GetAll();
 
-        Assert.Equal(8, all.Count);
+        Assert.Equal(9, all.Count);
     }
 
     [Fact]

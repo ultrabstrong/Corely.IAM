@@ -18,6 +18,21 @@ public class ConfiguredSecurityPolicyTests
     }
 
     [Fact]
+    public void From_Throws_WhenConfigurationIsOutOfRange()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            ConfiguredSecurityPolicy.From(
+                Configuration(new() { ["PasswordValidationOptions:MinimumLength"] = "1" })
+            )
+        );
+
+        Assert.Contains(
+            "The security settings in configuration are invalid: 'Password Minimum Length'",
+            ex.Message
+        );
+    }
+
+    [Fact]
     public void From_ReadsBothSections_AndKeepsDefaultsForMissingKeys()
     {
         var configured = ConfiguredSecurityPolicy.From(

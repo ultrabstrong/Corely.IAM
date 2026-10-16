@@ -119,33 +119,6 @@ public class PlatformSecuritySettingsTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Bootstrap_IsRefused_BeforeWritingAnything_WhenTheConfiguredSettingsAreInvalid()
-    {
-        using var host = new IamTestHost(
-            configurationOverrides: new Dictionary<string, string?>
-            {
-                ["SecurityOptions:MaxLoginAttempts"] = "0",
-            }
-        );
-
-        var result = await host.WithScopeAsync(services =>
-            services
-                .GetRequiredService<IPlatformService>()
-                .BootstrapPlatformAsync(
-                    new BootstrapPlatformRequest(
-                        "Platform",
-                        "platform-owner",
-                        "platform-owner@example.com"
-                    )
-                )
-        );
-
-        Assert.Equal(BootstrapPlatformResultCode.InvalidSecuritySettingsError, result.ResultCode);
-        Assert.False(await host.QueryAsync(db => db.Users.AnyAsync()));
-        Assert.False(await host.QueryAsync(db => db.Accounts.AnyAsync()));
-    }
-
-    [Fact]
     public async Task AnInvalidSave_IsRefused_AndChangesNothing()
     {
         await BootstrapAsync();

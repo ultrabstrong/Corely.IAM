@@ -1,10 +1,11 @@
 {
+  "Provider": "MySql",
   "ConnectionStrings": {
     "DataRepoConnection": "Server=localhost;Port=3306;Database=IAM;Uid=root;Pwd=admin;"
   },
   "SystemSymmetricEncryptionKey": "xZoYnypljZSkbaf/+oa47LKGRd3EdKnVy6siXjOOVEk=",
   "PasswordValidationOptions": {
-    "MinimumLength": 1,
+    "MinimumLength": 3,
     "RequireUppercase": false,
     "RequireLowercase": false,
     "RequireDigit": false,

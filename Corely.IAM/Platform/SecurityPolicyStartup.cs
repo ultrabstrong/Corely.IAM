@@ -2,7 +2,6 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Models;
-using Corely.IAM.Validators;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -18,16 +17,6 @@ internal sealed class SecurityPolicyStartup(
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
-        var validation = scope
-            .ServiceProvider.GetRequiredService<IValidationProvider>()
-            .Validate(configuredPolicy.Policy);
-        if (!validation.IsValid)
-        {
-            throw new InvalidOperationException(
-                $"The security settings in configuration are invalid: {validation.Message}"
-            );
-        }
-
         try
         {
             var hasSettingsRow = await scope

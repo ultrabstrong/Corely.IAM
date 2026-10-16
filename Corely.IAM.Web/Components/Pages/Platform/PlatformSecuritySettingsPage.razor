@@ -118,7 +118,7 @@ else
         _settings = result.Settings;
         _canUpdate = await AuthorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
-            PlatformSettings.RESOURCE_TYPE
+            SecurityPolicy.RESOURCE_TYPE
         );
         Reset(PASSWORDS);
         Reset(SIGN_IN);

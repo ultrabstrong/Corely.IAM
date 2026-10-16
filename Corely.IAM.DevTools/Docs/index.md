@@ -28,7 +28,9 @@ All commands support `--help` for full argument and option details.
 
 ## Setup
 
-DevTools requires a local settings file for commands that interact with the database.
+DevTools requires a local settings file for commands that interact with the database. Without a
+provider, connection string and system key, or with a security setting outside IAM's range, those
+commands are left out, and every run starts with a warning naming them and the reason.
 
 ### 1) Initialize Settings
 
@@ -208,10 +210,10 @@ dotnet run -- totp regenerate-codes
 # Disable TOTP (requires a valid code)
 dotnet run -- totp disable "123456"
 
-# Standalone: generate a TOTP code from a secret (no auth needed)
+# Standalone: generate a TOTP code from a secret (no settings or sign in needed)
 dotnet run -- totp generate-code "JBSWY3DPEHPK3PXP"
 
-# Standalone: validate a TOTP code against a secret (no auth needed)
+# Standalone: validate a TOTP code against a secret (no settings or sign in needed)
 dotnet run -- totp validate-code "JBSWY3DPEHPK3PXP" "123456"
 ```
 

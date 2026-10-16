@@ -27,18 +27,6 @@ public class SecurityPolicyStartupTests
         );
 
     [Fact]
-    public async Task Start_Throws_WhenConfigurationIsOutOfRange()
-    {
-        var startup = Startup(new(SecurityPolicy.Default with { MaxLoginAttempts = 0 }, []));
-
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            startup.StartAsync(CancellationToken.None)
-        );
-
-        Assert.Contains("Max Login Attempts", ex.Message);
-    }
-
-    [Fact]
     public async Task Start_IsQuiet_WithoutAPlatformAccount()
     {
         await Startup(new(SecurityPolicy.Default, ["SecurityOptions:MaxLoginAttempts"]))

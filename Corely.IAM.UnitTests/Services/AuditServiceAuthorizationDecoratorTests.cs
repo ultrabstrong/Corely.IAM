@@ -185,6 +185,22 @@ public class AuditServiceAuthorizationDecoratorTests
     }
 
     [Fact]
+    public async Task PlatformSettings_AreRefused_ToAHolderOfOnlyTheSecuritySettingsType()
+    {
+        _mockAccessProvider
+            .Setup(x =>
+                x.HoldsInPlatformAccountAsync(It.IsAny<AuthAction>(), SecurityPolicy.RESOURCE_TYPE)
+            )
+            .ReturnsAsync(true);
+
+        var read = await _decorator.GetPlatformSettingsAsync();
+        var update = await _decorator.UpdatePlatformSettingsAsync(PlatformSettings.Default);
+
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, read.ResultCode);
+        Assert.Equal(ModifyResultCode.UnauthorizedError, update.ResultCode);
+    }
+
+    [Fact]
     public async Task GetPlatformSettings_IsRefused_WithoutReadInThePlatformAccount()
     {
         var result = await _decorator.GetPlatformSettingsAsync();

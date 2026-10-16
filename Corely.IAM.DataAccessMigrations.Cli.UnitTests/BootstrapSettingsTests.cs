@@ -52,6 +52,19 @@ public class BootstrapSettingsTests : IDisposable
     }
 
     [Fact]
+    public void Bootstrap_IsRefused_WhenTheSettingsAreOutOfRange()
+    {
+        var settings = Path.Combine(_directory, "appsettings.json");
+        File.WriteAllText(settings, """{ "SecurityOptions": { "MaxLoginAttempts": 0 } }""");
+
+        var output = Bootstrap("--settings", settings);
+
+        Assert.Contains("The security settings in configuration are invalid", output);
+        Assert.Contains("'Max Login Attempts'", output);
+        Assert.False(File.Exists(Path.Combine(_directory, "secrets.txt")));
+    }
+
+    [Fact]
     public void Bootstrap_WritesNoSecretsFile_WhenTheSettingsAreRefused()
     {
         Bootstrap();

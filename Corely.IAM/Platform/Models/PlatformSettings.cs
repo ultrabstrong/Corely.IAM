@@ -10,7 +10,7 @@ public record PlatformSettings(
     AuditActions AccountlessActions
 )
 {
-    public const string RESOURCE_TYPE = "platform_settings";
+    public const string RESOURCE_TYPE = "platform_audit_settings";
     public const int DEFAULT_AUDIT_MAX_RETENTION_DAYS = 365;
 
     public static PlatformSettings Default { get; } =

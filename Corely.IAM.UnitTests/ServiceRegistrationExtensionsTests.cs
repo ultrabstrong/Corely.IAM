@@ -75,6 +75,23 @@ public class ServiceRegistrationExtensionsTests
     }
 
     [Fact]
+    public void AddIAMServices_Throws_WhenConfiguredSecuritySettingsAreOutOfRange()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?> { ["SecurityOptions:MaxLoginAttempts"] = "1" }
+            )
+            .Build();
+        var options = IAMOptions.Create(configuration, _securityConfigurationProvider);
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            CreateServiceCollection().AddIAMServices(options)
+        );
+
+        Assert.Contains("'Max Login Attempts'", ex.Message);
+    }
+
+    [Fact]
     public void AddIAMServices_WithNullServiceCollection_ThrowsArgumentNullException()
     {
         IServiceCollection services = null!;

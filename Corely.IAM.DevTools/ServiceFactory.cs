@@ -1,4 +1,5 @@
 using Corely.DataAccess.EntityFramework.Configurations;
+using Corely.IAM.TotpAuths.Providers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,42 +19,53 @@ internal static class ServiceFactory
                 builder.AddSerilog(logger: Log.Logger, dispose: false);
             });
 
-            var encryptionKey = configuration["SystemSymmetricEncryptionKey"];
-            var connectionString = configuration.GetConnectionString("DataRepoConnection");
-            var provider = ConfigurationProvider.TryGetProvider();
-
-            if (
-                !string.IsNullOrEmpty(encryptionKey)
-                && !string.IsNullOrEmpty(connectionString)
-                && provider.HasValue
-            )
+            var missing = ConfigurationProvider.MissingIamSettings;
+            if (missing.Count > 0)
             {
-                var securityConfigurationProvider = new SecurityConfigurationProvider(
-                    encryptionKey
+                AddWithoutIam(
+                    services,
+                    $"{ConfigurationProvider.SETTINGS_FILE_NAME} is missing {string.Join(", ", missing)}. Run 'config show' to see it."
                 );
+                return services;
+            }
 
-                Func<IServiceProvider, IEFConfiguration> efConfig = provider.Value switch
-                {
-                    DatabaseProvider.MySql => sp => new MySqlEFConfiguration(
-                        connectionString,
-                        sp.GetRequiredService<ILoggerFactory>()
-                    ),
-                    DatabaseProvider.MsSql => sp => new MsSqlEFConfiguration(
-                        connectionString,
-                        sp.GetRequiredService<ILoggerFactory>()
-                    ),
-                    _ => throw new InvalidOperationException($"Unsupported provider: {provider}"),
-                };
+            var encryptionKey = configuration["SystemSymmetricEncryptionKey"]!;
+            var connectionString = configuration.GetConnectionString("DataRepoConnection")!;
+            var provider = ConfigurationProvider.GetProvider();
 
-                var options = IAMOptions.Create(
-                    configuration,
-                    securityConfigurationProvider,
-                    efConfig
-                );
+            var securityConfigurationProvider = new SecurityConfigurationProvider(encryptionKey);
+
+            Func<IServiceProvider, IEFConfiguration> efConfig = provider switch
+            {
+                DatabaseProvider.MySql => sp => new MySqlEFConfiguration(
+                    connectionString,
+                    sp.GetRequiredService<ILoggerFactory>()
+                ),
+                DatabaseProvider.MsSql => sp => new MsSqlEFConfiguration(
+                    connectionString,
+                    sp.GetRequiredService<ILoggerFactory>()
+                ),
+                _ => throw new InvalidOperationException($"Unsupported provider: {provider}"),
+            };
+
+            var options = IAMOptions.Create(configuration, securityConfigurationProvider, efConfig);
+            try
+            {
                 services.AddIAMServices(options);
+            }
+            catch (InvalidOperationException ex)
+            {
+                AddWithoutIam(services, ex.Message);
             }
 
             return services;
         }
+    }
+
+    private static void AddWithoutIam(IServiceCollection services, string reason)
+    {
+        services.AddSingleton(new IamServicesUnavailable(reason));
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<ITotpProvider, TotpProvider>();
     }
 }

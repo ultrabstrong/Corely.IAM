@@ -18,7 +18,7 @@ Find and replace.
 | `PermissionConstants.PERMISSION_RESOURCE_TYPE` | `Permission.RESOURCE_TYPE` |
 | `AuditConstants.AUDIT_RESOURCE_TYPE` | `AuditEntry.RESOURCE_TYPE` |
 | `AuditConstants.AUDIT_SETTINGS_RESOURCE_TYPE` | `AccountAuditSettings.RESOURCE_TYPE` |
-| `AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE` | `PlatformSettings.RESOURCE_TYPE` |
+| `AuditConstants.PLATFORM_SETTINGS_RESOURCE_TYPE` | Split in two; see below |
 | `RoleConstants.OWNER_ROLE_NAME` | `Role.OWNER_ROLE_NAME` |
 | `RoleConstants.ROLE_NAME_MIN_LENGTH`, `ROLE_NAME_MAX_LENGTH` | `Role.NAME_MIN_LENGTH`, `Role.NAME_MAX_LENGTH` |
 | `GroupConstants.GROUP_NAME_MIN_LENGTH`, `GROUP_NAME_MAX_LENGTH` | `Group.NAME_MIN_LENGTH`, `Group.NAME_MAX_LENGTH` |
@@ -49,6 +49,30 @@ using Corely.IAM.Security.Constants;
 // 5.0
 using Corely.IAM.Security.Enums;
 ```
+
+## Platform settings permission split in two
+
+`platform_settings` is gone. Each platform settings area has its own type, so a role can be given one
+without the other:
+
+| Area | Type |
+|------|------|
+| Audit settings (`IAuditService.GetPlatformSettingsAsync`, `UpdatePlatformSettingsAsync`) | `platform_audit_settings`, `PlatformSettings.RESOURCE_TYPE` |
+| Security settings (`IPlatformService.GetSecuritySettingsAsync`, `UpdateSecuritySettingsAsync`) | `platform_security_settings`, `SecurityPolicy.RESOURCE_TYPE` |
+
+The platform owner receives both at the next start, and its Owner role keeps its old system defined
+`platform_settings` permission, which nothing checks. A role you built that holds `platform_settings`
+keeps a permission nothing checks too: give it the new types it needs, then delete the old one.
+
+## Out of range security configuration fails at registration
+
+The `SecurityOptions` and `PasswordValidationOptions` ranges were checked when the host started.
+`AddIAMServices` now checks them, so a console tool or script that builds a host without starting it
+is refused too, with the same message.
+
+Since no configured settings can be out of range,
+`BootstrapPlatformResultCode.InvalidSecuritySettingsError` is gone; `corely-iam-db platform
+bootstrap` refuses an out of range `--settings` file before it writes anything.
 
 ## Types now internal
 

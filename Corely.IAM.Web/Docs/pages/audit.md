@@ -34,9 +34,46 @@ navigation bar for every signed in user.
 ## Platform settings (`/platform-settings`)
 
 The platform settings, linked from the account menu while the platform account is the current
-account. `/platform-settings` opens the Audit page; a menu on the left switches between the pages.
-Each page needs Read on `platform_settings` held in the platform account, and anyone else sees an
-access message. **Edit** is shown with Update on `platform_settings`, and each page saves on its own.
+account and the user can read at least one area. Each area is a page with its own resource type,
+and the menu on the left lists only the pages the user holds Read on. `/platform-settings` opens the
+first of them, or says there is none. A page needs Read on its type held in the platform account,
+and anyone else sees an access message. **Edit** is shown with Update on the type, and each page
+saves on its own.
+
+| Page | Type |
+|------|------|
+| Audit | `platform_audit_settings` |
+| Security | `platform_security_settings` |
+
+### Adding a page
+
+A host or a library adds its own area through `IAMWebOptions.PlatformSettingsPages`. Each entry
+names the page's title, path, Bootstrap icon and the resource type it needs; the host registers that
+type with no owner actions and checks it in its own service. Pages appear after IAM's, in the order
+they are added, and each layer adds its own without knowing about the others:
+
+```csharp
+// an app
+builder.Services.AddIAMWeb(o =>
+    o.PlatformSettingsPages.Add(
+        new("SFTP", "/platform-settings/sftp", "bi-hdd-network", "app_sftp_settings")));
+
+// a library's own setup method
+services.Configure<IAMWebOptions>(o =>
+    o.PlatformSettingsPages.Add(
+        new("Billing", "/platform-settings/billing", "bi-receipt", "billing_settings")));
+```
+
+The page wraps its content in `PlatformSettingsFrame`, as IAM's pages do, so it shares the header
+and the menu:
+
+```razor
+@page "/platform-settings/sftp"
+
+<PlatformSettingsFrame>
+    ...
+</PlatformSettingsFrame>
+```
 
 ### PlatformAuditSettingsPage (`/platform-settings/audit`)
 

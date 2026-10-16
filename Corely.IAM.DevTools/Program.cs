@@ -76,6 +76,7 @@ internal class Program
 
     static RootCommand GetRootCommand(IServiceProvider serviceProvider)
     {
+        var skipped = new List<(Type Type, Exception Error)>();
         var commandInstances = AppDomain
             .CurrentDomain.GetAssemblies()
             .SelectMany(assembly => assembly.GetTypes())
@@ -85,7 +86,7 @@ internal class Program
                 && type.Namespace.StartsWith(typeof(CommandBase).Namespace!)
                 && type.IsSubclassOf(typeof(CommandBase))
             )
-            .Select(type => TryGetService(serviceProvider, type) as CommandBase)
+            .Select(type => TryGetService(serviceProvider, type, skipped) as CommandBase)
             .Where(instance => instance != null)
             .ToList();
 
@@ -94,40 +95,69 @@ internal class Program
         {
             if (command != null)
             {
-                AddSubCommands(serviceProvider, command);
+                AddSubCommands(serviceProvider, command, skipped);
                 rootCommand.Subcommands.Add(command);
             }
         }
 
+        ReportSkipped(serviceProvider, skipped);
         return rootCommand;
     }
 
-    static void AddSubCommands(IServiceProvider serviceProvider, CommandBase command)
+    static void AddSubCommands(
+        IServiceProvider serviceProvider,
+        CommandBase command,
+        List<(Type Type, Exception Error)> skipped
+    )
     {
         var subCommandInstances = command
             .GetType()
             .GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)
             .Where(type => type.IsSubclassOf(typeof(CommandBase)))
-            .Select(type => TryGetService(serviceProvider, type) as CommandBase)
+            .Select(type => TryGetService(serviceProvider, type, skipped) as CommandBase)
             .Where(instance => instance != null)
             .ToList();
 
         foreach (var subCommand in subCommandInstances)
         {
-            AddSubCommands(serviceProvider, subCommand!);
+            AddSubCommands(serviceProvider, subCommand!, skipped);
             command.Subcommands.Add(subCommand!);
         }
     }
 
-    static object? TryGetService(IServiceProvider serviceProvider, Type type)
+    static object? TryGetService(
+        IServiceProvider serviceProvider,
+        Type type,
+        List<(Type Type, Exception Error)> skipped
+    )
     {
         try
         {
             return serviceProvider.GetService(type);
         }
-        catch
+        catch (Exception ex)
         {
+            skipped.Add((type, ex));
             return null;
         }
+    }
+
+    static void ReportSkipped(
+        IServiceProvider serviceProvider,
+        List<(Type Type, Exception Error)> skipped
+    )
+    {
+        if (skipped.Count == 0)
+            return;
+
+        var groups = skipped.Select(s => (s.Type.DeclaringType ?? s.Type).Name).Distinct().Order();
+        var reason =
+            serviceProvider.GetService<IamServicesUnavailable>()?.Reason
+            ?? skipped[0].Error.GetBaseException().Message;
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine(
+            $"{skipped.Count} commands are unavailable ({string.Join(", ", groups)}): {reason}"
+        );
+        Console.ResetColor();
     }
 }

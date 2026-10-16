@@ -32,7 +32,8 @@ internal class ResourceTypeRegistry : IResourceTypeRegistry
             AuthAction.Read,
             AuthAction.Update
         );
-        AddIamType(PlatformSettings.RESOURCE_TYPE, "Platform settings", []);
+        AddIamType(PlatformSettings.RESOURCE_TYPE, "Platform audit settings", []);
+        AddIamType(SecurityPolicy.RESOURCE_TYPE, "Platform security settings", []);
     }
 
     public IReadOnlyCollection<ResourceTypeInfo> GetAll() =>

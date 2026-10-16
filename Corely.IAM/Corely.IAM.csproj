@@ -25,6 +25,7 @@
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     <InternalsVisibleTo Include="Corely.IAM.DataAccessMigrations.Cli" />
     <InternalsVisibleTo Include="Corely.IAM.DataAccessMigrations.MySql" />
+    <InternalsVisibleTo Include="Corely.IAM.DevTools" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Corely.Common" Version="2.0.4" />

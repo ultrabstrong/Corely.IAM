@@ -12,11 +12,17 @@ public class SerilogRedactionEnricher(List<IRedactionProvider> redactors) : ILog
     {
         foreach (var property in logEvent.Properties.ToList())
         {
-            foreach (var redactor in _redactors)
+            if (property.Value is not ScalarValue { Value: string text })
+                continue;
+
+            var redacted = _redactors.Aggregate(
+                text,
+                (value, redactor) => redactor.Redact(value) ?? value
+            );
+            if (redacted != text)
             {
-                var redactedValue = redactor.Redact(property.Value.ToString());
                 logEvent.AddOrUpdateProperty(
-                    new LogEventProperty(property.Key, new ScalarValue(redactedValue))
+                    new LogEventProperty(property.Key, new ScalarValue(redacted))
                 );
             }
         }

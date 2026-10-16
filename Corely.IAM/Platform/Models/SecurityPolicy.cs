@@ -19,6 +19,8 @@ public record SecurityPolicy(
     int TotpRecoveryCodeCount
 )
 {
+    public const string RESOURCE_TYPE = "platform_security_settings";
+
     public const int PASSWORD_MINIMUM_LENGTH_DEFAULT = 8;
     public const int PASSWORD_MINIMUM_LENGTH_MIN = 3;
     public const int PASSWORD_MINIMUM_LENGTH_MAX = 64;

@@ -196,6 +196,38 @@ public class PlatformAccountTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task PlatformMember_WithOnlySecuritySettings_SavesThemButIsRefusedAuditSettings()
+    {
+        await GivePlatformRoleAsync(
+            (SecurityPolicy.RESOURCE_TYPE, [AuthAction.Read, AuthAction.Update])
+        );
+
+        var (security, saved, audit) = await _scenario.ActAsAsync(
+            _scenario.OutsiderUsername,
+            _platformAccountId,
+            async services =>
+            {
+                var platform = services.GetRequiredService<IPlatformService>();
+                var security = await platform.GetSecuritySettingsAsync();
+                var saved = await platform.UpdateSecuritySettingsAsync(
+                    security.Settings! with
+                    {
+                        MaxLoginAttempts = 6,
+                    }
+                );
+                var audit = await services
+                    .GetRequiredService<IAuditService>()
+                    .GetPlatformSettingsAsync();
+                return (security, saved, audit);
+            }
+        );
+
+        Assert.Equal(RetrieveResultCode.Success, security.ResultCode);
+        Assert.Equal(ModifyResultCode.Success, saved.ResultCode);
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, audit.ResultCode);
+    }
+
+    [Fact]
     public async Task PlatformMember_HoldsOnlyPlatformRolePermissions_InAnotherAccount()
     {
         await GivePlatformRoleAsync(

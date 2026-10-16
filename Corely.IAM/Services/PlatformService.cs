@@ -85,15 +85,6 @@ internal class PlatformService(
             );
         }
 
-        var settingsValidation = _validationProvider.Validate(_configuredSecurityPolicy.Policy);
-        if (!settingsValidation.IsValid)
-        {
-            return Failed(
-                BootstrapPlatformResultCode.InvalidSecuritySettingsError,
-                settingsValidation.Message
-            );
-        }
-
         var password = GeneratePassword();
         var user = await _registrationService.RegisterUserAsync(
             new RegisterUserRequest(request.OwnerUsername, request.OwnerEmail, password)

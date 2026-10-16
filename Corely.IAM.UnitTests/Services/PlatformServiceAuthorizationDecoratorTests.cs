@@ -1,6 +1,5 @@
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Models;
-using Corely.IAM.Permissions.Models;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
@@ -20,7 +19,7 @@ public class PlatformServiceAuthorizationDecoratorTests
 
     private void Holds(AuthAction action, bool holds) =>
         _access
-            .Setup(a => a.HoldsInPlatformAccountAsync(action, PlatformSettings.RESOURCE_TYPE))
+            .Setup(a => a.HoldsInPlatformAccountAsync(action, SecurityPolicy.RESOURCE_TYPE))
             .ReturnsAsync(holds);
 
     [Fact]
@@ -70,6 +69,25 @@ public class PlatformServiceAuthorizationDecoratorTests
 
         Assert.Equal(ModifyResultCode.UnauthorizedError, result.ResultCode);
         _inner.Verify(s => s.UpdateSecuritySettingsAsync(It.IsAny<SecurityPolicy>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SecuritySettings_AreRefused_ToAHolderOfOnlyTheAuditSettingsType()
+    {
+        _access
+            .Setup(a =>
+                a.HoldsInPlatformAccountAsync(
+                    It.IsAny<AuthAction>(),
+                    PlatformSettings.RESOURCE_TYPE
+                )
+            )
+            .ReturnsAsync(true);
+
+        var read = await _decorator.GetSecuritySettingsAsync();
+        var update = await _decorator.UpdateSecuritySettingsAsync(SecurityPolicy.Default);
+
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, read.ResultCode);
+        Assert.Equal(ModifyResultCode.UnauthorizedError, update.ResultCode);
     }
 
     [Fact]

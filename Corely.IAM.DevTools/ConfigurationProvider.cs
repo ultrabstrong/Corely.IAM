@@ -75,6 +75,18 @@ internal static class ConfigurationProvider
 
     public static bool HasProvider => TryGetProvider() != null;
 
+    public static IReadOnlyList<string> MissingIamSettings =>
+        [
+            .. new (bool Present, string Name)[]
+            {
+                (HasProvider, "Provider"),
+                (HasConnectionString, "ConnectionStrings:DataRepoConnection"),
+                (HasSystemSymmetricEncryptionKey, "SystemSymmetricEncryptionKey"),
+            }
+                .Where(s => !s.Present)
+                .Select(s => s.Name),
+        ];
+
     public static string SettingsFilePath =>
         Path.Combine(AppContext.BaseDirectory, SETTINGS_FILE_NAME);
 

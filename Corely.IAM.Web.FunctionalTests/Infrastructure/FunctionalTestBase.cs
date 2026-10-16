@@ -28,6 +28,8 @@ public abstract class FunctionalTestBase : IAsyncLifetime
     protected virtual IReadOnlyDictionary<string, string> Settings =>
         new Dictionary<string, string>();
 
+    protected virtual void ConfigureTestServices(IServiceCollection services) { }
+
     public async ValueTask InitializeAsync()
     {
         Factory = new IamWebApplicationFactory
@@ -36,6 +38,7 @@ public abstract class FunctionalTestBase : IAsyncLifetime
             AuthSessionTtlSeconds = AuthSessionTtlSeconds,
             EnvironmentName = EnvironmentName,
             Settings = Settings,
+            TestServices = ConfigureTestServices,
         };
         await Factory.InitializeDatabaseAsync();
         await SeedAsync();

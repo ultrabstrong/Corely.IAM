@@ -1,5 +1,6 @@
 using Corely.IAM.PasswordRecoveries.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
@@ -8,9 +9,12 @@ namespace Corely.IAM.WebApp.Pages.Authentication;
 
 public class ForgotPasswordModel(
     IPasswordRecoveryService passwordRecoveryService,
-    IOptions<DemoFeaturesOptions> demoFeaturesOptions
+    IOptions<DemoFeaturesOptions> demoFeaturesOptions,
+    IHumanVerifier humanVerifier
 ) : PageModel
 {
+    public const string HUMAN_CHECK_ACTION = "forgot-password";
+
     private readonly IPasswordRecoveryService _passwordRecoveryService = passwordRecoveryService;
     private readonly DemoFeaturesOptions _demoFeaturesOptions = demoFeaturesOptions.Value;
 
@@ -30,6 +34,17 @@ public class ForgotPasswordModel(
         if (string.IsNullOrWhiteSpace(Email))
         {
             ErrorMessage = "Email is required.";
+            return Page();
+        }
+
+        var humanCheck = await humanVerifier.VerifyAsync(
+            HttpContext,
+            HUMAN_CHECK_ACTION,
+            HttpContext.RequestAborted
+        );
+        if (!humanCheck.Succeeded)
+        {
+            ErrorMessage = humanCheck.RefusalMessage;
             return Page();
         }
 

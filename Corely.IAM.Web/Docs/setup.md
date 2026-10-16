@@ -167,6 +167,7 @@ Working examples: `Corely.IAM.Demos.UsersOnly` and `Corely.IAM.Demos.SharedAccou
 | `IUserContextClaimsBuilder` | Singleton | Maps `UserContext` to `ClaimsPrincipal` |
 | Cookie Authentication | none | ASP.NET Core cookie auth with `/signin` and `/signout` paths |
 | Authorization | none | ASP.NET Core authorization middleware |
+| `IHumanVerifier` | Scoped | Bot check on sign up; passes everything unless the host registers its own. See [Security](security.md#human-check) |
 
 ## What AddIAMWebBlazor() Registers
 

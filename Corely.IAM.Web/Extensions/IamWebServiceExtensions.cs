@@ -4,6 +4,7 @@ using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Corely.IAM.Web.Extensions;
 
@@ -20,6 +21,7 @@ public static class IamWebServiceExtensions
             services.AddSingleton<IAuthCookieManager, AuthCookieManager>();
             services.AddSingleton<IUserContextClaimsBuilder, UserContextClaimsBuilder>();
             services.AddScoped<IPostAuthenticationFlowService, PostAuthenticationFlowService>();
+            services.TryAddScoped<IHumanVerifier, NoHumanVerifier>();
 
             services
                 .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

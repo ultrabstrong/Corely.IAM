@@ -40,6 +40,7 @@
             <label for="confirmPassword" class="form-label">Confirm Password</label>
             <input type="password" class="form-control" id="confirmPassword" name="ConfirmPassword" required />
         </div>
+        @await Html.PartialAsync("_HumanCheck", Corely.IAM.Web.Pages.Authentication.RegisterModel.HUMAN_CHECK_ACTION)
         <button type="submit" data-busy-spinner class="btn btn-primary w-100">Sign Up</button>
     </form>
 

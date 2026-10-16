@@ -49,3 +49,12 @@ Primarily useful when IAM is hosted behind an API and consumed by external servi
 - [ ] Validate the client JWT signature against the stored public key, enforce short expiry and replay protection
 - [ ] Issue a standard IAM JWT on success — everything downstream (RBAC, authorization decorators) works unchanged
 - [ ] Support key rotation (disable + re-enable, or multiple active public keys with a grace period)
+
+### Human check on sign in after repeated failures
+Show the `IHumanVerifier` check on sign in once an IP or a username has failed a few times recently.
+`SecurityPolicy` locks an account after `MaxLoginAttempts`, but that is per user and does nothing
+against one IP trying many usernames.
+
+- [ ] Count recent sign in failures by IP (and by username), with a window and a threshold
+- [ ] Render `_HumanCheck` and ask the verifier on `SignIn` only past the threshold
+- [ ] Decide where the count lives so it holds across instances

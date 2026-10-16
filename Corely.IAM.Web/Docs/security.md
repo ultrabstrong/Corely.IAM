@@ -88,3 +88,49 @@ above:
 | `style-src` | `https://accounts.google.com/gsi/style` |
 
 Without them the browser blocks the script and the Google button never appears.
+
+## Human check
+
+The sign up page asks an `IHumanVerifier` before it creates a user. The default passes everything, so
+a host that adds nothing sees no change. To put a bot check (Cloudflare Turnstile, hCaptcha,
+reCAPTCHA) in front of sign up and your own forms, the host brings the provider:
+
+1. **Implement `IHumanVerifier`** and register it. Registered before or after `AddIAMWeb`, it
+   replaces the default.
+
+   ```csharp
+   builder.Services.AddScoped<IHumanVerifier, TurnstileVerifier>();
+   ```
+
+   `VerifyAsync(httpContext, action, cancellationToken)` reads the provider's token from the posted
+   form and returns `Success`, `MissingToken`, `Rejected` or `Unavailable`. `action` names the form:
+   `"register"` for sign up.
+2. **Override the widget slot.** The sign up form renders `Pages/Authentication/_HumanCheck.cshtml`,
+   empty in this package, above its submit button, with the action name as its model. Add a file at
+   that path in the host to render the provider's widget:
+
+   ```cshtml
+   @model string
+   <div class="cf-turnstile" data-sitekey="..." data-action="@Model" data-theme="auto"></div>
+   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+   ```
+3. **Check your own forms.** A forgot password page sends an email per request, so check it too:
+   call the verifier with your own action name, show `result.RefusalMessage` when it does not
+   succeed, and render the same partial. `Corely.IAM.WebApp`'s `ForgotPassword` page does this.
+4. **Allow the provider in your content security policy.** Turnstile needs
+   `https://challenges.cloudflare.com` in `script-src` and `frame-src`.
+
+What a verifier must check:
+
+- **The provider's verdict on the server.** The widget alone proves nothing.
+- **The hostname and action the provider reports,** so a token solved on another site or another
+  form is `Rejected`. Behind a proxy the request's `Host` can be an internal name, so take the
+  hostnames to accept from configuration.
+- **Fail closed.** A timeout, an error status or an unreadable reply is `Unavailable`, and the page
+  refuses the post. Let request cancellation propagate.
+- **Never log the token or the provider secret.**
+- **The client IP, if you send it, from forwarded headers.** Behind a proxy `RemoteIpAddress` is the
+  proxy's.
+
+The widget sends visitor data to the provider; say so in your privacy policy. A human check does
+not replace rate limiting: add `AddRateLimiter` on sign in, sign up and forgot password.

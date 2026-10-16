@@ -32,6 +32,7 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
     public string EnvironmentName { get; init; } = Environments.Development;
     public IReadOnlyDictionary<string, string> Settings { get; init; } =
         new Dictionary<string, string>();
+    public Action<IServiceCollection> TestServices { get; init; } = _ => { };
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -77,6 +78,8 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
             }
 
             services.AddLogging(logging => logging.SetMinimumLevel(LogLevel.Warning));
+
+            TestServices(services);
         });
     }
 

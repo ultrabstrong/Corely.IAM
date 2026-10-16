@@ -14,9 +14,12 @@ public class RegisterModel(
     IAuthenticationService authenticationService,
     IAuthCookieManager authCookieManager,
     ISecurityPolicyProvider securityPolicyProvider,
-    IOptions<SecurityOptions> securityOptions
+    IOptions<SecurityOptions> securityOptions,
+    IHumanVerifier humanVerifier
 ) : PageModel
 {
+    public const string HUMAN_CHECK_ACTION = "register";
+
     public string? GoogleClientId { get; } = securityOptions.Value.GoogleClientId;
 
     public string? GoogleCallbackUrl { get; set; }
@@ -56,6 +59,17 @@ public class RegisterModel(
         if (Password != ConfirmPassword)
         {
             ErrorMessage = "Passwords do not match.";
+            return Page();
+        }
+
+        var humanCheck = await humanVerifier.VerifyAsync(
+            HttpContext,
+            HUMAN_CHECK_ACTION,
+            HttpContext.RequestAborted
+        );
+        if (!humanCheck.Succeeded)
+        {
+            ErrorMessage = humanCheck.RefusalMessage;
             return Page();
         }
 

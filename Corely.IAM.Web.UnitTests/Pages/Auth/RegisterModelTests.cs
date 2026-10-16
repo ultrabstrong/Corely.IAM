@@ -18,6 +18,7 @@ public class RegisterModelTests
     private readonly Mock<IRegistrationService> _mockRegistrationService;
     private readonly Mock<IAuthenticationService> _mockAuthService;
     private readonly Mock<IAuthCookieManager> _mockCookieManager;
+    private readonly Mock<IHumanVerifier> _mockHumanVerifier = new();
     private readonly RegisterModel _model;
 
     public RegisterModelTests()
@@ -25,14 +26,71 @@ public class RegisterModelTests
         _mockRegistrationService = new Mock<IRegistrationService>();
         _mockAuthService = new Mock<IAuthenticationService>();
         _mockCookieManager = new Mock<IAuthCookieManager>();
+        HumanCheckReturns(VerifyHumanResultCode.Success);
         _model = new RegisterModel(
             _mockRegistrationService.Object,
             _mockAuthService.Object,
             _mockCookieManager.Object,
             new FixedSecurityPolicyProvider(),
-            Options.Create(new SecurityOptions())
+            Options.Create(new SecurityOptions()),
+            _mockHumanVerifier.Object
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();
+    }
+
+    private void HumanCheckReturns(VerifyHumanResultCode code) =>
+        _mockHumanVerifier
+            .Setup(v =>
+                v.VerifyAsync(
+                    It.IsAny<HttpContext>(),
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(new VerifyHumanResult(code, code.ToString()));
+
+    [Theory]
+    [InlineData(VerifyHumanResultCode.MissingToken, VerifyHumanResult.COMPLETE_THE_CHECK)]
+    [InlineData(VerifyHumanResultCode.Rejected, VerifyHumanResult.COMPLETE_THE_CHECK)]
+    [InlineData(VerifyHumanResultCode.Unavailable, VerifyHumanResult.CHECK_UNAVAILABLE)]
+    public async Task OnPost_HumanCheckRefused_ReturnsPageWithoutRegistering(
+        VerifyHumanResultCode code,
+        string expectedMessage
+    )
+    {
+        _model.Username = "testuser";
+        _model.Email = "test@test.com";
+        _model.Password = "password1";
+        _model.ConfirmPassword = "password1";
+        HumanCheckReturns(code);
+
+        var result = await _model.OnPostAsync();
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal(expectedMessage, _model.ErrorMessage);
+        _mockRegistrationService.Verify(
+            s => s.RegisterUserAsync(It.IsAny<RegisterUserRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task OnPost_AsksTheHumanCheck_ForTheRegisterAction()
+    {
+        _model.Password = "password1";
+        _model.ConfirmPassword = "password1";
+        _mockRegistrationService
+            .Setup(s => s.RegisterUserAsync(It.IsAny<RegisterUserRequest>()))
+            .ReturnsAsync(
+                new RegisterUserResult(RegisterUserResultCode.UserCreationError, "x", Guid.Empty)
+            );
+
+        await _model.OnPostAsync();
+
+        _mockHumanVerifier.Verify(
+            v => v.VerifyAsync(It.IsAny<HttpContext>(), "register", It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]

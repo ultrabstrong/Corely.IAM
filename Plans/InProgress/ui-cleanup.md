@@ -1,6 +1,6 @@
 # UI cleanup in Corely.IAM.Web
 
-**Status: new.** Designed, not started.
+**Status: in progress.**
 
 Eight fixes to `Corely.IAM.Web`'s pages, most of them found by clicking through DocsToData's portal
 on a phone. Each stands alone; they share a plan because they share a release and a click through.
@@ -42,7 +42,7 @@ shows the same flatness.
 
 Check every input state in both themes: empty, filled, focused, invalid, disabled, read only.
 
-## 3. Every table becomes cards on a phone, enforced by a test
+## 3. Every table becomes cards on a phone
 
 `table-cards` turns rows into cards below 768px, and is on every table in the package except
 `Components/Shared/AuditActionMatrix.razor`, the audit settings matrix on the account and platform
@@ -54,10 +54,10 @@ audit pages. On a phone that matrix scrolls sideways.
 2. **The rule.** Add to `CLAUDE.md`, under a UI section: every `<table>` carries `table-cards`, with
    its cells given the `cell-*` roles, so it reads as cards on a phone. A table that cannot is a
    design question, raised before it is built.
-3. **The test.** A unit test in `Corely.IAM.Web.UnitTests` reads every `.razor` and `.cshtml` file in
-   the package and fails for a `<table` without `table-cards`, naming the file. An exception goes in
-   the test's allowed list with the reason beside it, the way `PublicSurfaceTests` keeps its list. It
-   fails today on the matrix, which proves it.
+
+No test enforces it: one would have to read source files from disk, which ties it to the folder
+layout, for a rule that about fifteen tables already follow. The rule and the phone click through
+before release cover it.
 
 ## 4. Encryption and signing on a phone
 
@@ -88,8 +88,11 @@ the edits on the page.
 
 Which changes count as weakening is a reading of the setting, so it gets a seam of its own: a member
 on `SecurityPolicy` and on `PlatformSettings` that compares two values and returns the weakening
-changes, with unit tests per setting. The audited actions matrix needs the same reading; find where
-its selections are modelled and put the member there.
+changes, with unit tests per setting. The audited actions matrix is already covered by the
+`PlatformSettings` member: its three rows are the `AuditActions` flags `AuditAllowedActions`,
+`SystemContextActions` and `AccountlessActions`, and dropping a flag from any of them weakens auditing.
+Which flags were dropped is a reading of the enum, so it goes on the existing
+`Audits/Models/Extensions/AuditActionsExtensions.cs`, tested there.
 
 ## 6. Section titles in a card header, without the line
 
@@ -130,10 +133,13 @@ failure into `RegisterAccountResultCode.AccountCreationError`.
    Update `Docs/result-codes.md`.
 2. `CreateAccount.cshtml.cs`: "An account named {name} already exists. Choose another name." for
    that code; the generic message stays for the others.
-3. `Corely.IAM.WebApp/Components/Pages/Home.razor` creates accounts too and shows `result.Message`;
-   give it the same wording.
+3. `Corely.IAM.WebApp/Components/Pages/Home.razor` and
+   `Corely.IAM.Demos.SharedAccount/Components/Pages/Home.razor` create accounts too and show
+   `result.Message`; give them the same wording.
 
-Tests: the registration service maps the code (unit); the page shows the message (functional).
+Tests: the registration service maps the code (unit, in `RegistrationServiceTests`); the page shows
+the message (functional). Check `AuditDecoratorMappingTests` for a mapping of
+`RegisterAccountResultCode` that needs the new value.
 
 ## 8. The sign in layout's user menu on a phone
 
@@ -143,10 +149,14 @@ as it would inside a collapsed hamburger, so opening the menu pushes the header 
 dropping over the page. The header has no hamburger, so it should be `navbar-expand`, expanded at
 every width. DocsToData's portal hit this in its copy of the layout and fixed it the same way.
 
+`Pages/Shared/_LegalLayout.cshtml` has the same header with no menu in it, so nothing breaks there
+today; change it to `navbar-expand` too so the two headers stay alike. Check the demo hosts' layouts
+for the same header.
+
 ## Release
 
-`Corely.IAM` gains an enum value (7), a minor version. `Corely.IAM.Web` gets markup, styles and a
-test (1 to 8), a minor version that depends on the new `Corely.IAM`, so `Corely.IAM` is released
+`Corely.IAM` gains an enum value (7), a minor version. `Corely.IAM.Web` gets markup and styles
+(1 to 8), a minor version that depends on the new `Corely.IAM`, so `Corely.IAM` is released
 first. A host that switches exhaustively over `RegisterAccountResultCode` gets a new case to handle;
 say so in the release notes.
 

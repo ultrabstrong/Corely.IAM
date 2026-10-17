@@ -75,6 +75,86 @@ public record SecurityPolicy(
             TOTP_RECOVERY_CODE_COUNT_DEFAULT
         );
 
+    public IReadOnlyList<SettingChange> ChangesTo(SecurityPolicy updated) =>
+        new[]
+        {
+            SettingChange.Between(
+                "Minimum length",
+                PasswordMinimumLength,
+                updated.PasswordMinimumLength,
+                updated.PasswordMinimumLength < PasswordMinimumLength
+            ),
+            SettingChange.Between(
+                "Maximum length",
+                PasswordMaximumLength,
+                updated.PasswordMaximumLength,
+                false
+            ),
+            SettingChange.Between(
+                "Uppercase letter required",
+                RequireUppercase,
+                updated.RequireUppercase,
+                RequireUppercase && !updated.RequireUppercase
+            ),
+            SettingChange.Between(
+                "Lowercase letter required",
+                RequireLowercase,
+                updated.RequireLowercase,
+                RequireLowercase && !updated.RequireLowercase
+            ),
+            SettingChange.Between(
+                "Digit required",
+                RequireDigit,
+                updated.RequireDigit,
+                RequireDigit && !updated.RequireDigit
+            ),
+            SettingChange.Between(
+                "Symbol required",
+                RequireNonAlphanumeric,
+                updated.RequireNonAlphanumeric,
+                RequireNonAlphanumeric && !updated.RequireNonAlphanumeric
+            ),
+            SettingChange.Between(
+                "Failed sign ins before lockout",
+                MaxLoginAttempts,
+                updated.MaxLoginAttempts,
+                updated.MaxLoginAttempts > MaxLoginAttempts
+            ),
+            SettingChange.Between(
+                "Lockout length (seconds)",
+                LockoutCooldownSeconds,
+                updated.LockoutCooldownSeconds,
+                updated.LockoutCooldownSeconds < LockoutCooldownSeconds
+            ),
+            SettingChange.Between(
+                "Sign in token lifetime (seconds)",
+                AuthTokenTtlSeconds,
+                updated.AuthTokenTtlSeconds,
+                updated.AuthTokenTtlSeconds > AuthTokenTtlSeconds
+            ),
+            SettingChange.Between(
+                "Session lifetime (seconds)",
+                AuthSessionTtlSeconds,
+                updated.AuthSessionTtlSeconds,
+                updated.AuthSessionTtlSeconds > AuthSessionTtlSeconds
+            ),
+            SettingChange.Between(
+                "Code prompt timeout (seconds)",
+                MfaChallengeTimeoutSeconds,
+                updated.MfaChallengeTimeoutSeconds,
+                false
+            ),
+            SettingChange.Between(
+                "Recovery codes per user",
+                TotpRecoveryCodeCount,
+                updated.TotpRecoveryCodeCount,
+                false
+            ),
+        }
+            .OfType<SettingChange>()
+            .OrderByDescending(change => change.Weakens)
+            .ToList();
+
     internal PasswordValidationOptions ToPasswordValidationOptions() =>
         new()
         {

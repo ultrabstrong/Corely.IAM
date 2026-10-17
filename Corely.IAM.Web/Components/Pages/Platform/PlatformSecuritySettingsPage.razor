@@ -80,6 +80,9 @@ else
 }
 </PlatformSettingsFrame>
 
+<ConfirmModal @ref="_confirmModal" Title="@($"Save {_pendingSection.ToLower()} settings")" Message="@_confirmMessage" ConfirmText="Save"
+              Type="@(_changes.Any(c => c.Weakens) ? ConfirmModalType.Warning : ConfirmModalType.Primary)" OnConfirm="() => SaveAsync(_pendingSection)" />
+
 @code {
     private IPlatformService PlatformService => ScopedServices.GetRequiredService<IPlatformService>();
     private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
@@ -88,6 +91,10 @@ else
     private const string SIGN_IN = "Sign in";
     private const string TWO_FACTOR = "Two factor";
 
+    private ConfirmModal _confirmModal = null!;
+    private IReadOnlyList<SettingChange> _changes = [];
+    private string _confirmMessage = "";
+    private string _pendingSection = PASSWORDS;
     private SecurityPolicy? _settings;
     private bool _canUpdate;
     private readonly HashSet<string> _editingSections = [];
@@ -191,7 +198,7 @@ else
             @if (IsEditing(section))
             {
                 <div class="d-flex gap-2">
-                    <button class="btn btn-primary btn-sm" @onclick="() => SaveAsync(section)" disabled="@_loading">Save</button>
+                    <button class="btn btn-primary btn-sm" @onclick="() => RequestSave(section)" disabled="@_loading">Save</button>
                     <button class="btn btn-outline-secondary btn-sm" @onclick="() => CancelEdit(section)" disabled="@_loading">Cancel</button>
                 </div>
             }
@@ -201,6 +208,20 @@ else
     {
         Reset(section);
         _editingSections.Remove(section);
+    }
+
+    private async Task RequestSave(string section)
+    {
+        _changes = _settings!.ChangesTo(WithEdits(section));
+        if (_changes.Count == 0)
+        {
+            await SaveAsync(section);
+            return;
+        }
+
+        _pendingSection = section;
+        _confirmMessage = string.Join("; ", _changes.Select(c => c.Describe()));
+        _confirmModal.Show();
     }
 
     private async Task SaveAsync(string section)

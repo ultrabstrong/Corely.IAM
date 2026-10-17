@@ -1,4 +1,5 @@
 using Corely.IAM.Audits.Models;
+using Corely.IAM.Audits.Models.Extensions;
 
 namespace Corely.IAM.Platform.Models;
 
@@ -21,6 +22,44 @@ public record PlatformSettings(
             AuditActions.None,
             AuditActions.Create | AuditActions.Update | AuditActions.Delete | AuditActions.Execute
         );
+
+    public IReadOnlyList<SettingChange> ChangesTo(PlatformSettings updated) =>
+        new[]
+        {
+            SettingChange.Between(
+                "Auditing",
+                AuditEnabled,
+                updated.AuditEnabled,
+                AuditEnabled && !updated.AuditEnabled
+            ),
+            SettingChange.Between(
+                "Maximum retention (days)",
+                AuditMaxRetentionDays,
+                updated.AuditMaxRetentionDays,
+                updated.AuditMaxRetentionDays < AuditMaxRetentionDays
+            ),
+            SettingChange.Between(
+                "Allowed for accounts",
+                AuditAllowedActions,
+                updated.AuditAllowedActions,
+                AuditAllowedActions.Dropped(updated.AuditAllowedActions) != AuditActions.None
+            ),
+            SettingChange.Between(
+                "Logged for system context",
+                SystemContextActions,
+                updated.SystemContextActions,
+                SystemContextActions.Dropped(updated.SystemContextActions) != AuditActions.None
+            ),
+            SettingChange.Between(
+                "Logged outside any account",
+                AccountlessActions,
+                updated.AccountlessActions,
+                AccountlessActions.Dropped(updated.AccountlessActions) != AuditActions.None
+            ),
+        }
+            .OfType<SettingChange>()
+            .OrderByDescending(change => change.Weakens)
+            .ToList();
 
     public AuditActions RecordedActions(AuditCohort cohort, AccountAuditSettings? account)
     {

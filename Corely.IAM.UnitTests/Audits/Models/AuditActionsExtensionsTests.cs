@@ -32,4 +32,23 @@ public class AuditActionsExtensionsTests
     {
         Assert.Equal(expected, actions.Includes(action));
     }
+
+    [Theory]
+    [InlineData(AuditActions.All, AuditActions.All, AuditActions.None)]
+    [InlineData(
+        AuditActions.All,
+        AuditActions.Create | AuditActions.Read,
+        AuditActions.Update | AuditActions.Delete | AuditActions.Execute
+    )]
+    [InlineData(AuditActions.Create, AuditActions.Read, AuditActions.Create)]
+    [InlineData(AuditActions.None, AuditActions.All, AuditActions.None)]
+    [InlineData(AuditActions.Read, AuditActions.None, AuditActions.Read)]
+    public void Dropped_ReturnsTheFlagsTheUpdateLacks(
+        AuditActions actions,
+        AuditActions updated,
+        AuditActions expected
+    )
+    {
+        Assert.Equal(expected, actions.Dropped(updated));
+    }
 }

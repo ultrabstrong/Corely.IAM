@@ -958,7 +958,7 @@ span.cell-icon {
 }
 
 @media (min-width: 768px) {
-    .section-divider > :is(.table-responsive, table) {
+    .section-divider > :is(.table-responsive, table):not(:has(.audit-matrix), .audit-matrix) {
         margin-left: calc(-1 * var(--section-pad));
         margin-right: calc(-1 * var(--section-pad));
         width: calc(100% + 2 * var(--section-pad));

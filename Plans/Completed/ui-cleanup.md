@@ -1,6 +1,7 @@
 # UI cleanup in Corely.IAM.Web
 
-**Status: in progress.**
+**Status: built, not yet released.** All eight items are on master; `Corely.IAM` and
+`Corely.IAM.Web` release together at their next minor versions, `Corely.IAM` first.
 
 Eight fixes to `Corely.IAM.Web`'s pages, most of them found by clicking through DocsToData's portal
 on a phone. Each stands alone; they share a plan because they share a release and a click through.
@@ -162,3 +163,24 @@ say so in the release notes.
 
 Click through the WebApp and both demo hosts at 390px, 768px and desktop, light and dark, before
 release.
+
+## As built
+
+- **3.** No test enforces the rule; the plan dropped it before building. The rule is the "UI" section
+  of `CLAUDE.md`.
+- **5.** The changes are `SettingChange` records from `SecurityPolicy.ChangesTo` and
+  `PlatformSettings.ChangesTo`, weakening changes first; dropped audit flags come from
+  `AuditActions.Dropped`. `ConfirmModal` takes a plain message, so the changes show on one line
+  separated by semicolons. A save with no changes skips the modal. Code prompt timeout, recovery
+  codes per user and maximum password length never count as weakening.
+- **6.** Done in `iam-web.css` alone: `.section-divider-label` became the tinted header, no page
+  markup changed. While editing, a section's Save and Cancel replace its Edit button in that header
+  rather than sitting under the body (audit settings, both platform settings pages, and the account,
+  role, group and permission details).
+- **Added during the click through.**
+  - Below 576px, cards and sections run the full screen width with no side border or radius. Every
+    layout's main element carries `iam-main`, and the rule targets `.section-divider`, `.auth-card`
+    and `.iam-card` inside it.
+  - The light mode table header is lighter (`--iam-thead-bg`).
+  - A system defined role or permission is marked one way everywhere: the SYSTEM badge under its
+    name and GUID, never a "Managed by" column or the Actions column.

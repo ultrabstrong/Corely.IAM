@@ -133,7 +133,9 @@ else if (_userContext?.CurrentAccount != null)
             }
             else
             {
-                _message = result.Message ?? "Failed to create account.";
+                _message = result.ResultCode == RegisterAccountResultCode.AccountExistsError
+                    ? $"An account named {_newAccountName} already exists. Choose another name."
+                    : result.Message ?? "Failed to create account.";
                 _messageType = AlertType.Danger;
             }
         }

@@ -317,9 +317,14 @@ internal class RegistrationService(
                     request.AccountName
                 );
                 return new RegisterAccountResult(
-                    createAccountResult.ResultCode == CreateAccountResultCode.UnauthorizedError
-                        ? RegisterAccountResultCode.UnauthorizedError
-                        : RegisterAccountResultCode.AccountCreationError,
+                    createAccountResult.ResultCode switch
+                    {
+                        CreateAccountResultCode.UnauthorizedError =>
+                            RegisterAccountResultCode.UnauthorizedError,
+                        CreateAccountResultCode.AccountExistsError =>
+                            RegisterAccountResultCode.AccountExistsError,
+                        _ => RegisterAccountResultCode.AccountCreationError,
+                    },
                     createAccountResult.Message,
                     Guid.Empty
                 );

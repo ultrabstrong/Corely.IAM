@@ -108,7 +108,9 @@ else
         if (result.ResultCode == RegisterAccountResultCode.Success)
             SwitchInto(result.CreatedAccountId);
         else
-            _message = result.Message;
+            _message = result.ResultCode == RegisterAccountResultCode.AccountExistsError
+                ? $"An account named {_teamName.Trim()} already exists. Choose another name."
+                : result.Message;
     }
 
     private async Task JoinTeamAsync()

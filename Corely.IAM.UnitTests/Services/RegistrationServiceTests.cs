@@ -305,9 +305,24 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterAccount_Fails_WhenAccountProcessorFails()
+    public async Task RegisterAccount_ReturnsAccountExistsError_WhenAccountNameIsTaken()
     {
         _createAccountResultCode = CreateAccountResultCode.AccountExistsError;
+        var request = _fixture.Create<RegisterAccountRequest>();
+
+        var result = await _registrationService.RegisterAccountAsync(request);
+
+        Assert.Equal(RegisterAccountResultCode.AccountExistsError, result.ResultCode);
+        _unitOfWorkProviderMock.Verify(
+            m => m.RollbackAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task RegisterAccount_Fails_WhenAccountProcessorFails()
+    {
+        _createAccountResultCode = CreateAccountResultCode.ValidationError;
         var request = _fixture.Create<RegisterAccountRequest>();
 
         var result = await _registrationService.RegisterAccountAsync(request);

@@ -4,6 +4,7 @@ public enum RegisterAccountResultCode
 {
     Success,
     AccountCreationError,
+    AccountExistsError,
     SystemRoleAssignmentError,
     UnauthorizedError,
 }

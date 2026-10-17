@@ -84,6 +84,40 @@ public class AccountSelectionTests : FunctionalTestBase
     }
 
     [Fact]
+    public async Task SelectAccountPage_LinksToAcceptInvitation()
+    {
+        await CreateAdditionalAccountAsync(SeedData.SecondAccountName);
+        using (var signIn = await SignInAsync())
+            Assert.Equal(HttpStatusCode.Redirect, signIn.StatusCode);
+
+        using var response = await Client.GetAsync(AppRoutes.SelectAccount);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains($"href=\"{AppRoutes.AcceptInvitation}\"", html);
+    }
+
+    [Fact]
+    public async Task CreatingAnAccountWithATakenName_ShowsThatTheNameIsTaken()
+    {
+        await CreateAdditionalAccountAsync(SeedData.SecondAccountName);
+        using (var signIn = await SignInAsync())
+            Assert.Equal(HttpStatusCode.Redirect, signIn.StatusCode);
+
+        using var response = await Client.PostFormAsync(
+            AppRoutes.CreateAccount,
+            new Dictionary<string, string> { ["accountName"] = SeedData.SecondAccountName }
+        );
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(
+            $"An account named {SeedData.SecondAccountName} already exists. Choose another name.",
+            html
+        );
+    }
+
+    [Fact]
     public async Task SelectAccountPage_IsNotReachableAnonymously()
     {
         using var response = await Client.GetAsync(AppRoutes.SelectAccount);

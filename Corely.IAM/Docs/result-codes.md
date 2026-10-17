@@ -35,6 +35,16 @@ Complete reference of all result code enums across Corely.IAM.
 | `UserOwnerNotFoundError` | Owner user not found |
 | `ValidationError` | Input validation failed |
 
+### RegisterAccountResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | Account registered with its owner |
+| `AccountCreationError` | Account creation failed for a reason other than the two below |
+| `AccountExistsError` | Account name already exists |
+| `SystemRoleAssignmentError` | Owner roles could not be assigned |
+| `UnauthorizedError` | Insufficient permissions |
+
 ### DeleteAccountResultCode
 
 | Code | Meaning |

@@ -48,7 +48,10 @@ public class CreateAccountModel(
 
         if (createResult.ResultCode != RegisterAccountResultCode.Success)
         {
-            ErrorMessage = "Failed to create account. Please try again.";
+            ErrorMessage =
+                createResult.ResultCode == RegisterAccountResultCode.AccountExistsError
+                    ? $"An account named {accountName} already exists. Choose another name."
+                    : "Failed to create account. Please try again.";
             return Page();
         }
 

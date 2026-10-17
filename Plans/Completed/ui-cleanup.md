@@ -168,10 +168,12 @@ release.
 
 - **3.** No test enforces the rule; the plan dropped it before building. The rule is the "UI" section
   of `CLAUDE.md`.
-- **5.** The changes are `SettingChange` records from `SecurityPolicy.ChangesTo` and
-  `PlatformSettings.ChangesTo`, weakening changes first; dropped audit flags come from
-  `AuditActions.Dropped`. `ConfirmModal` takes a plain message, so the changes show on one line
-  separated by semicolons. A save with no changes skips the modal. Code prompt timeout, recovery
+- **5.** The changes are `SettingChange` records (a public `PlatformSetting` enum names the
+  setting) from `SecurityPolicy.ChangesTo` and `PlatformSettings.ChangesTo`, weakening changes
+  first; dropped audit flags come from `AuditActions.Dropped`. The modal lists each change as a
+  sentence saying what it will do ("Accounts can no longer record Read. Accounts that record Read
+  now will stop."), from `SettingChangeExtensions.Consequence()` in `Corely.IAM.Web`, through a new
+  optional `ChildContent` on `ConfirmModal`. A save with no changes skips the modal. Code prompt timeout, recovery
   codes per user and maximum password length never count as weakening.
 - **6.** Done in `iam-web.css` alone: `.section-divider-label` became the tinted header, no page
   markup changed. While editing, a section's Save and Cancel replace its Edit button in that header

@@ -652,6 +652,10 @@ span.cell-icon {
     width: auto;
 }
 
+.matrix-action-name {
+    display: none;
+}
+
 @media (min-width: 768px) {
     .cell-only,
     .cell-icon {
@@ -785,6 +789,29 @@ span.cell-icon {
     .table-cards tr:has(.cell-badge):not(:has(.cell-only)) > td.cell-actions {
         grid-row: 1 / span 2;
         align-self: center;
+    }
+
+    .audit-matrix.table-cards tbody tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 1rem;
+    }
+
+    .audit-matrix .cell-title {
+        flex: 0 0 100%;
+    }
+
+    .audit-matrix td.matrix-action {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .audit-matrix .matrix-action-name {
+        display: inline;
+        font-size: 0.875rem;
     }
 
     .nav-tabs.flex-nowrap .nav-link {

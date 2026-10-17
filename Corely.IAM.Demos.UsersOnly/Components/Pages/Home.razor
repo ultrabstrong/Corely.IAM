@@ -27,7 +27,7 @@ else
         @foreach (var note in _notes)
         {
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>@note.Text</span>
+                <span class="text-break me-2">@note.Text</span>
                 <button class="btn btn-sm btn-outline-danger" title="Delete" @onclick="() => DeleteAsync(note.Id)">
                     <i class="bi bi-trash"></i>
                 </button>

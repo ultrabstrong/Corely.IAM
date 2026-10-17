@@ -77,8 +77,10 @@ else
 }
 </PlatformSettingsFrame>
 
-<ConfirmModal @ref="_confirmModal" Title="@($"Save {_pendingSection.ToLower()} settings")" Message="@_confirmMessage" ConfirmText="Save"
-              Type="@(_changes.Any(c => c.Weakens) ? ConfirmModalType.Warning : ConfirmModalType.Primary)" OnConfirm="() => SaveAsync(_pendingSection)" />
+<ConfirmModal @ref="_confirmModal" Title="@($"Save {_pendingSection.ToLower()} settings")" ConfirmText="Save"
+              Type="@(_changes.Any(c => c.Weakens) ? ConfirmModalType.Warning : ConfirmModalType.Primary)" OnConfirm="() => SaveAsync(_pendingSection)">
+    <SettingChangeList Changes="_changes" />
+</ConfirmModal>
 
 @code {
     private IPlatformService PlatformService => ScopedServices.GetRequiredService<IPlatformService>();
@@ -90,7 +92,6 @@ else
 
     private ConfirmModal _confirmModal = null!;
     private IReadOnlyList<SettingChange> _changes = [];
-    private string _confirmMessage = "";
     private string _pendingSection = PASSWORDS;
     private SecurityPolicy? _settings;
     private bool _canUpdate;
@@ -213,7 +214,6 @@ else
         }
 
         _pendingSection = section;
-        _confirmMessage = string.Join("; ", _changes.Select(c => c.Describe()));
         _confirmModal.Show();
     }
 

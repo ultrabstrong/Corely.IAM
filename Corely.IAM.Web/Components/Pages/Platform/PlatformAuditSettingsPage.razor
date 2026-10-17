@@ -53,8 +53,10 @@ else
 }
 </PlatformSettingsFrame>
 
-<ConfirmModal @ref="_confirmModal" Title="Save platform settings" Message="@_confirmMessage" ConfirmText="Save"
-              Type="@(_changes.Any(c => c.Weakens) ? ConfirmModalType.Warning : ConfirmModalType.Primary)" OnConfirm="SaveAsync" />
+<ConfirmModal @ref="_confirmModal" Title="Save platform settings" ConfirmText="Save"
+              Type="@(_changes.Any(c => c.Weakens) ? ConfirmModalType.Warning : ConfirmModalType.Primary)" OnConfirm="SaveAsync">
+    <SettingChangeList Changes="_changes" />
+</ConfirmModal>
 
 @code {
     private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
@@ -62,7 +64,6 @@ else
 
     private ConfirmModal _confirmModal = null!;
     private IReadOnlyList<SettingChange> _changes = [];
-    private string _confirmMessage = "";
     private PlatformSettings? _settings;
     private bool _canUpdate;
     private bool _isEditing;
@@ -118,7 +119,6 @@ else
             return;
         }
 
-        _confirmMessage = string.Join("; ", _changes.Select(c => c.Describe()));
         _confirmModal.Show();
     }
 

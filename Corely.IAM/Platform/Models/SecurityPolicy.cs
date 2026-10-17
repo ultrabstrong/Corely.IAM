@@ -1,3 +1,4 @@
+using Corely.IAM.Platform.Enums;
 using Corely.Security.PasswordValidation.Models;
 using Corely.Security.PasswordValidation.Providers;
 using Microsoft.Extensions.Options;
@@ -79,73 +80,73 @@ public record SecurityPolicy(
         new[]
         {
             SettingChange.Between(
-                "Minimum length",
+                PlatformSetting.PasswordMinimumLength,
                 PasswordMinimumLength,
                 updated.PasswordMinimumLength,
                 updated.PasswordMinimumLength < PasswordMinimumLength
             ),
             SettingChange.Between(
-                "Maximum length",
+                PlatformSetting.PasswordMaximumLength,
                 PasswordMaximumLength,
                 updated.PasswordMaximumLength,
                 false
             ),
             SettingChange.Between(
-                "Uppercase letter required",
+                PlatformSetting.RequireUppercase,
                 RequireUppercase,
                 updated.RequireUppercase,
                 RequireUppercase && !updated.RequireUppercase
             ),
             SettingChange.Between(
-                "Lowercase letter required",
+                PlatformSetting.RequireLowercase,
                 RequireLowercase,
                 updated.RequireLowercase,
                 RequireLowercase && !updated.RequireLowercase
             ),
             SettingChange.Between(
-                "Digit required",
+                PlatformSetting.RequireDigit,
                 RequireDigit,
                 updated.RequireDigit,
                 RequireDigit && !updated.RequireDigit
             ),
             SettingChange.Between(
-                "Symbol required",
+                PlatformSetting.RequireNonAlphanumeric,
                 RequireNonAlphanumeric,
                 updated.RequireNonAlphanumeric,
                 RequireNonAlphanumeric && !updated.RequireNonAlphanumeric
             ),
             SettingChange.Between(
-                "Failed sign ins before lockout",
+                PlatformSetting.MaxLoginAttempts,
                 MaxLoginAttempts,
                 updated.MaxLoginAttempts,
                 updated.MaxLoginAttempts > MaxLoginAttempts
             ),
             SettingChange.Between(
-                "Lockout length (seconds)",
+                PlatformSetting.LockoutCooldownSeconds,
                 LockoutCooldownSeconds,
                 updated.LockoutCooldownSeconds,
                 updated.LockoutCooldownSeconds < LockoutCooldownSeconds
             ),
             SettingChange.Between(
-                "Sign in token lifetime (seconds)",
+                PlatformSetting.AuthTokenTtlSeconds,
                 AuthTokenTtlSeconds,
                 updated.AuthTokenTtlSeconds,
                 updated.AuthTokenTtlSeconds > AuthTokenTtlSeconds
             ),
             SettingChange.Between(
-                "Session lifetime (seconds)",
+                PlatformSetting.AuthSessionTtlSeconds,
                 AuthSessionTtlSeconds,
                 updated.AuthSessionTtlSeconds,
                 updated.AuthSessionTtlSeconds > AuthSessionTtlSeconds
             ),
             SettingChange.Between(
-                "Code prompt timeout (seconds)",
+                PlatformSetting.MfaChallengeTimeoutSeconds,
                 MfaChallengeTimeoutSeconds,
                 updated.MfaChallengeTimeoutSeconds,
                 false
             ),
             SettingChange.Between(
-                "Recovery codes per user",
+                PlatformSetting.TotpRecoveryCodeCount,
                 TotpRecoveryCodeCount,
                 updated.TotpRecoveryCodeCount,
                 false

@@ -1,5 +1,6 @@
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Models.Extensions;
+using Corely.IAM.Platform.Enums;
 
 namespace Corely.IAM.Platform.Models;
 
@@ -27,31 +28,31 @@ public record PlatformSettings(
         new[]
         {
             SettingChange.Between(
-                "Auditing",
+                PlatformSetting.AuditEnabled,
                 AuditEnabled,
                 updated.AuditEnabled,
                 AuditEnabled && !updated.AuditEnabled
             ),
             SettingChange.Between(
-                "Maximum retention (days)",
+                PlatformSetting.AuditMaxRetentionDays,
                 AuditMaxRetentionDays,
                 updated.AuditMaxRetentionDays,
                 updated.AuditMaxRetentionDays < AuditMaxRetentionDays
             ),
             SettingChange.Between(
-                "Allowed for accounts",
+                PlatformSetting.AuditAllowedActions,
                 AuditAllowedActions,
                 updated.AuditAllowedActions,
                 AuditAllowedActions.Dropped(updated.AuditAllowedActions) != AuditActions.None
             ),
             SettingChange.Between(
-                "Logged for system context",
+                PlatformSetting.SystemContextActions,
                 SystemContextActions,
                 updated.SystemContextActions,
                 SystemContextActions.Dropped(updated.SystemContextActions) != AuditActions.None
             ),
             SettingChange.Between(
-                "Logged outside any account",
+                PlatformSetting.AccountlessActions,
                 AccountlessActions,
                 updated.AccountlessActions,
                 AccountlessActions.Dropped(updated.AccountlessActions) != AuditActions.None

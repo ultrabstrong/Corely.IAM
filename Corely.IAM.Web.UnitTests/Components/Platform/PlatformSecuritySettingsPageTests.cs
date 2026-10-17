@@ -84,8 +84,14 @@ public class PlatformSecuritySettingsPageTests : TestContext
         cut.FindAll("input[type=number]")[0].Change("10");
         cut.FindAll("button").First(b => b.TextContent == "Save").Click();
 
-        Assert.Contains("Failed sign ins before lockout:", cut.Find(".modal-body").TextContent);
-        Assert.Contains("weakens security", cut.Find(".modal-body").TextContent);
+        Assert.Contains(
+            "Users can fail to sign in 10 times before being locked out, up from 7.",
+            cut.Find(".modal-body li").TextContent
+        );
+        Assert.Contains(
+            "Some of these changes weaken security or auditing for every account.",
+            cut.Find(".modal-body").TextContent
+        );
         cut.Find(".modal-footer .btn-secondary").Click();
         _platformService.Verify(
             x => x.UpdateSecuritySettingsAsync(It.IsAny<SecurityPolicy>()),

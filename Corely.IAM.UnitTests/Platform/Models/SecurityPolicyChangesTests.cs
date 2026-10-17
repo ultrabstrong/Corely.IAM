@@ -108,8 +108,8 @@ public class SecurityPolicyChangesTests
         var change = Assert.Single(_base.ChangesTo(_base with { RequireNonAlphanumeric = true }));
 
         Assert.False(change.Weakens);
-        Assert.Equal("Off", change.OldValue);
-        Assert.Equal("On", change.NewValue);
+        Assert.Equal(false, change.OldValue);
+        Assert.Equal(true, change.NewValue);
     }
 
     [Fact]
@@ -128,17 +128,6 @@ public class SecurityPolicyChangesTests
         Assert.Equal([true, true, false, false], changes.Select(c => c.Weakens));
     }
 
-    [Fact]
-    public void Describe_MarksWeakeningChanges()
-    {
-        var change = Assert.Single(_base.ChangesTo(_base with { MaxLoginAttempts = 10 }));
-
-        Assert.Equal(
-            "Failed sign ins before lockout: 5 to 10 (weakens security)",
-            change.Describe()
-        );
-    }
-
     private static void AssertSingle(SecurityPolicy updated, bool weakens)
     {
         var change = Assert.Single(_base.ChangesTo(updated));
@@ -153,7 +142,7 @@ public class SecurityPolicyChangesTests
         var change = Assert.Single(before.ChangesTo(updated));
 
         Assert.True(change.Weakens);
-        Assert.Equal("On", change.OldValue);
-        Assert.Equal("Off", change.NewValue);
+        Assert.Equal(true, change.OldValue);
+        Assert.Equal(false, change.NewValue);
     }
 }

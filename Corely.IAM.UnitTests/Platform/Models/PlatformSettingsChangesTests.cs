@@ -19,8 +19,8 @@ public class PlatformSettingsChangesTests
         var change = Assert.Single(_base.ChangesTo(_base with { AuditEnabled = false }));
 
         Assert.True(change.Weakens);
-        Assert.Equal("On", change.OldValue);
-        Assert.Equal("Off", change.NewValue);
+        Assert.Equal(true, change.OldValue);
+        Assert.Equal(false, change.NewValue);
     }
 
     [Fact]

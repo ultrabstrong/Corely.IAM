@@ -8,7 +8,14 @@
                     <button type="button" class="btn-close" @onclick="Cancel" disabled="@_loading"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="@(Type == ConfirmModalType.Danger ? "text-danger" : "")">@Message</p>
+                    @if (ChildContent is not null)
+                    {
+                        @ChildContent
+                    }
+                    else
+                    {
+                        <p class="@(Type == ConfirmModalType.Danger ? "text-danger" : "")">@Message</p>
+                    }
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="Cancel" disabled="@_loading">Cancel</button>
@@ -31,6 +38,9 @@
 
     [Parameter]
     public string Message { get; set; } = "Are you sure?";
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
 
     [Parameter]
     public string ConfirmText { get; set; } = "Confirm";

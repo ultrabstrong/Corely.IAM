@@ -1,0 +1,15 @@
+<ul>
+    @foreach (var change in Changes)
+    {
+        <li>@change.Consequence()</li>
+    }
+</ul>
+@if (Changes.Any(c => c.Weakens))
+{
+    <p class="mb-0">Some of these changes weaken security or auditing for every account.</p>
+}
+
+@code {
+    [Parameter]
+    public IReadOnlyList<SettingChange> Changes { get; set; } = [];
+}

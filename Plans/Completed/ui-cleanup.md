@@ -1,7 +1,6 @@
 # UI cleanup in Corely.IAM.Web
 
-**Status: built, not yet released.** All eight items are on master; `Corely.IAM` and
-`Corely.IAM.Web` release together at their next minor versions, `Corely.IAM` first.
+**Status: released** in `Corely.IAM` 5.1.0 and `Corely.IAM.Web` 6.1.0.
 
 Eight fixes to `Corely.IAM.Web`'s pages, most of them found by clicking through DocsToData's portal
 on a phone. Each stands alone; they share a plan because they share a release and a click through.

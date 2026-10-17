@@ -40,16 +40,19 @@ else
                         }
                     </div>
                 }
+                else if (_isEditing)
+                {
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
+                    </div>
+                }
             </div>
             @if (_isEditing)
             {
                 <div class="props-grid mb-3">
                     <span class="prop-label">Name</span>
                     <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editDescription" placeholder="@_permission.DisplayName" /></div>
-                </div>
-                <div class="d-flex gap-2 mb-3">
-                    <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
                 </div>
             }
             <div class="props-grid">

@@ -35,7 +35,6 @@ else
                 <ToggleSetting Id="requireNonAlphanumeric" Label="A symbol" @bind-Value="_requireNonAlphanumeric" Editing="IsEditing(PASSWORDS)" />
             </div>
         </div>
-        @SaveButtons(PASSWORDS)
         <ul class="settings-notes">
             <li>A stricter rule applies the next time a password is set. Saved passwords are not checked against it.</li>
         </ul>
@@ -57,7 +56,6 @@ else
             <NumberSetting Label="Session lifetime (seconds)" @bind-Value="_authSessionTtlSeconds" Editing="IsEditing(SIGN_IN)"
                            Min="SecurityPolicy.AUTH_SESSION_TTL_SECONDS_MIN" Max="SecurityPolicy.AUTH_SESSION_TTL_SECONDS_MAX" />
         </div>
-        @SaveButtons(SIGN_IN)
     </div>
 
     <div class="section-divider mb-4">
@@ -71,7 +69,6 @@ else
             <NumberSetting Label="Recovery codes per user" @bind-Value="_totpRecoveryCodeCount" Editing="IsEditing(TWO_FACTOR)"
                            Min="SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MIN" Max="SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MAX" />
         </div>
-        @SaveButtons(TWO_FACTOR)
     </div>
 
     <ul class="settings-notes">
@@ -191,11 +188,7 @@ else
             {
                 <button class="btn btn-outline-primary btn-sm" @onclick="() => _editingSections.Add(section)">Edit</button>
             }
-        </text>;
-
-    private RenderFragment SaveButtons(string section) =>
-        @<text>
-            @if (IsEditing(section))
+            else if (IsEditing(section))
             {
                 <div class="d-flex gap-2">
                     <button class="btn btn-primary btn-sm" @onclick="() => RequestSave(section)" disabled="@_loading">Save</button>

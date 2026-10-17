@@ -23,6 +23,13 @@ else
             {
                 <button class="btn btn-outline-primary btn-sm" @onclick="() => _isEditing = true">Edit</button>
             }
+            else if (_isEditing)
+            {
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary btn-sm" @onclick="RequestSave" disabled="@_loading">Save</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit" disabled="@_loading">Cancel</button>
+                </div>
+            }
         </div>
         <div class="settings-grid mb-3">
             <span class="prop-label">Auditing</span>
@@ -36,13 +43,6 @@ else
             <AuditActionRow IdPrefix="platform-system" Label="Logged for system context" @bind-Value="_systemContextActions" Editing="_isEditing" />
             <AuditActionRow IdPrefix="platform-accountless" Label="Logged outside any account" @bind-Value="_accountlessActions" Editing="_isEditing" />
         </AuditActionMatrix>
-        @if (_isEditing)
-        {
-            <div class="d-flex gap-2 mt-3">
-                <button class="btn btn-primary btn-sm" @onclick="RequestSave" disabled="@_loading">Save</button>
-                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit" disabled="@_loading">Cancel</button>
-            </div>
-        }
         <ul class="settings-notes">
             <li>Allowed for accounts is the most each account can choose to log for its own members.</li>
             <li>The maximum retention also covers entries outside any account, system context and deleted accounts.</li>

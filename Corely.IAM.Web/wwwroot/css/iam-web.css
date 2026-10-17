@@ -25,9 +25,9 @@
     --iam-badge-direct-fg: #155724;
     --iam-badge-group-bg: #e2e3f1;
     --iam-badge-group-fg: #383d6e;
-    --iam-thead-bg: #ebebeb;
+    --iam-thead-bg: #f5f6f7;
     --iam-thead-fg: #6b6b6b;
-    --iam-thead-border: #d4d4d4;
+    --iam-thead-border: #e3e5e8;
     --iam-input-bg: #f1f4f8;
     --iam-header-bg: var(--bs-tertiary-bg);
 }
@@ -923,10 +923,8 @@ span.cell-icon {
 }
 
 @media (max-width: 575.98px) {
-    main.container:not(.justify-content-center)
-        :is(.section-divider, .card):not(
-            :is(.section-divider, .card, .modal) :is(.section-divider, .card)
-        ) {
+    .iam-main :is(.section-divider, .auth-card, .iam-card),
+    .iam-main > div > .table-cards tbody tr {
         margin-left: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
         margin-right: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
         border-left-width: 0;
@@ -934,15 +932,8 @@ span.cell-icon {
         border-radius: 0;
     }
 
-    main.container:not(.justify-content-center)
-        .table-cards:not(:is(.section-divider, .card, .modal) *)
-        tbody
-        tr {
-        margin-left: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
-        margin-right: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
-        border-left-width: 0;
-        border-right-width: 0;
-        border-radius: 0;
+    .iam-main .auth-container {
+        width: 100%;
     }
 }
 

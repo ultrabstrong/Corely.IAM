@@ -9,6 +9,13 @@
                 <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit" disabled="@_busy">Edit</button>
             </PermissionView>
         }
+        else if (_settings is not null)
+        {
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_busy">Save</button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit" disabled="@_busy">Cancel</button>
+            </div>
+        }
     </div>
 
     <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
@@ -33,13 +40,6 @@
                            Editing="_isEditing" Min="0" Max="_maxRetentionDays"
                            Hint="@(_isEditing ? "The platform's maximum is the top of the range." : null)" />
         </div>
-        @if (_isEditing)
-        {
-            <div class="d-flex gap-2">
-                <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_busy">Save</button>
-                <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit" disabled="@_busy">Cancel</button>
-            </div>
-        }
         <ul class="settings-notes">
             <li>An action left off is not recorded for that group in this account.</li>
             <li>Deleting a user and deleting an account are always recorded.</li>

@@ -1,12 +1,12 @@
 <tr>
-    <th scope="row" class="fw-normal">@Label</th>
+    <th scope="row" class="fw-normal cell-title">@Label</th>
     @foreach (var action in Enum.GetValues<AuthAction>())
     {
         var current = action;
         var allowed = Allowed.Has(current);
         var on = allowed && Value.Has(current);
         var id = $"{IdPrefix}-{current}";
-        <td class="text-center">
+        <td class="text-center matrix-action">
             @if (Editing)
             {
                 <input class="form-check-input" type="checkbox" id="@id"
@@ -21,6 +21,7 @@
                 <span id="@id" class="permission-badge @(on ? "active" : "inactive") @(allowed ? "" : "not-allowed")"
                       title="@(allowed ? $"{current}: {(on ? "logged" : "not logged")}" : NOT_ALLOWED)">@current.Letter()<span class="visually-hidden">@(allowed ? (on ? " Enabled" : " Disabled") : " Not allowed")</span></span>
             }
+            <span class="matrix-action-name">@current</span>
         </td>
     }
 </tr>

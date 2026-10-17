@@ -556,6 +556,11 @@ built" section for anything that turned out differently. Never leave it for a la
 remember as done - account-scoped password rules, for one. Check it before assuming such a change
 exists. It is not a log of every decision: add an entry only when the user asks for one.
 
+## UI
+
+Every `<table>` carries `table-cards`, with its cells given the `cell-*` roles, so it reads as cards
+on a phone. A table that cannot is a design question, raised before it is built.
+
 ## Documentation
 
 `Docs/` describes **how the current version works**. Nothing else.

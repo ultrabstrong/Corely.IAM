@@ -922,6 +922,30 @@ span.cell-icon {
     }
 }
 
+@media (max-width: 575.98px) {
+    main.container:not(.justify-content-center)
+        :is(.section-divider, .card):not(
+            :is(.section-divider, .card, .modal) :is(.section-divider, .card)
+        ) {
+        margin-left: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
+        margin-right: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
+        border-left-width: 0;
+        border-right-width: 0;
+        border-radius: 0;
+    }
+
+    main.container:not(.justify-content-center)
+        .table-cards:not(:is(.section-divider, .card, .modal) *)
+        tbody
+        tr {
+        margin-left: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
+        margin-right: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
+        border-left-width: 0;
+        border-right-width: 0;
+        border-radius: 0;
+    }
+}
+
 .section-divider + .section-divider {
     margin-top: 1.5rem;
 }

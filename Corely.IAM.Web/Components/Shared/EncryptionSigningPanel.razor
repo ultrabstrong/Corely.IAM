@@ -44,13 +44,13 @@
                 <textarea class="form-control form-control-sm" rows="2" @bind="_symInput"
                           placeholder="Plaintext to encrypt, or ciphertext to decrypt"></textarea>
             </div>
-            <div class="d-flex gap-2 mb-3">
+            <div class="d-flex gap-2 mb-3 enc-actions">
                 <button class="btn btn-primary btn-sm" @onclick="SymEncryptAsync" disabled="@_busy">Encrypt</button>
                 <button class="btn btn-outline-primary btn-sm" @onclick="SymDecryptAsync" disabled="@_busy">Decrypt</button>
                 <button class="btn btn-outline-secondary btn-sm" @onclick="SymReEncryptAsync" disabled="@_busy">Re-encrypt</button>
                 @if (RotateKeyAsync != null)
                 {
-                    <button class="btn btn-outline-warning btn-sm ms-auto" @onclick="() => ConfirmRotate(KeyType.SymmetricEncryption)" disabled="@_busy">Rotate key</button>
+                    <button class="btn btn-outline-warning btn-sm ms-auto enc-rotate" @onclick="() => ConfirmRotate(KeyType.SymmetricEncryption)" disabled="@_busy">Rotate key</button>
                 }
             </div>
             @if (_symOutput != null)
@@ -94,13 +94,13 @@
                 <textarea class="form-control form-control-sm" rows="2" @bind="_asymInput"
                           placeholder="Plaintext to encrypt, or ciphertext to decrypt"></textarea>
             </div>
-            <div class="d-flex gap-2 mb-3">
+            <div class="d-flex gap-2 mb-3 enc-actions">
                 <button class="btn btn-primary btn-sm" @onclick="AsymEncryptAsync" disabled="@_busy">Encrypt</button>
                 <button class="btn btn-outline-primary btn-sm" @onclick="AsymDecryptAsync" disabled="@_busy">Decrypt</button>
                 <button class="btn btn-outline-secondary btn-sm" @onclick="AsymReEncryptAsync" disabled="@_busy">Re-encrypt</button>
                 @if (RotateKeyAsync != null)
                 {
-                    <button class="btn btn-outline-warning btn-sm ms-auto" @onclick="() => ConfirmRotate(KeyType.AsymmetricEncryption)" disabled="@_busy">Rotate key</button>
+                    <button class="btn btn-outline-warning btn-sm ms-auto enc-rotate" @onclick="() => ConfirmRotate(KeyType.AsymmetricEncryption)" disabled="@_busy">Rotate key</button>
                 }
             </div>
             @if (_asymOutput != null)
@@ -149,12 +149,12 @@
                 <textarea class="form-control form-control-sm font-monospace" rows="2" @bind="_sigSignature"
                           placeholder="Signature value (populated by Sign, required for Verify)"></textarea>
             </div>
-            <div class="d-flex gap-2 mb-3">
+            <div class="d-flex gap-2 mb-3 enc-actions">
                 <button class="btn btn-primary btn-sm" @onclick="SignAsync" disabled="@_busy">Sign</button>
                 <button class="btn btn-outline-primary btn-sm" @onclick="VerifyAsync" disabled="@_busy">Verify</button>
                 @if (RotateKeyAsync != null)
                 {
-                    <button class="btn btn-outline-warning btn-sm ms-auto" @onclick="() => ConfirmRotate(KeyType.AsymmetricSignature)" disabled="@_busy">Rotate key</button>
+                    <button class="btn btn-outline-warning btn-sm ms-auto enc-rotate" @onclick="() => ConfirmRotate(KeyType.AsymmetricSignature)" disabled="@_busy">Rotate key</button>
                 }
             </div>
             @if (_sigResult != null)

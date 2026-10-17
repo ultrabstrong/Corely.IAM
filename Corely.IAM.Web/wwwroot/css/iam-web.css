@@ -28,6 +28,8 @@
     --iam-thead-bg: #ebebeb;
     --iam-thead-fg: #6b6b6b;
     --iam-thead-border: #d4d4d4;
+    --iam-input-bg: #f1f4f8;
+    --iam-header-bg: var(--bs-tertiary-bg);
 }
 
 [data-bs-theme="dark"] {
@@ -55,6 +57,8 @@
     --iam-thead-bg: #343a40;
     --iam-thead-fg: #adb5bd;
     --iam-thead-border: #495057;
+    --iam-input-bg: #2b3035;
+    --iam-header-bg: var(--bs-tertiary-bg);
 }
 
 h1[tabindex="-1"]:focus {
@@ -854,20 +858,40 @@ span.cell-icon {
 }
 
 .section-divider {
-    padding: 1.25rem;
+    --section-pad: 1.25rem;
+    padding: var(--section-pad);
     background-color: var(--bs-body-bg);
     border: 1px solid var(--iam-card-border);
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
 }
 
 @media (max-width: 767.98px) {
     .section-divider {
-        padding: 0.85rem;
+        --section-pad: 0.85rem;
     }
 
     .section-divider .table-cards tbody tr {
         padding: 0.6rem;
+    }
+
+    .nav-tabs.flex-nowrap {
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .enc-actions {
+        flex-wrap: wrap;
+    }
+
+    .enc-actions > .btn {
+        flex: 1 1 calc(50% - 0.25rem);
+    }
+
+    .enc-actions > .enc-rotate {
+        flex-basis: 100%;
+        margin-left: 0 !important;
     }
 }
 
@@ -876,27 +900,43 @@ span.cell-icon {
 }
 
 .section-divider-label {
-    font-weight: 600;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--iam-strong);
     display: flex;
+    justify-content: space-between;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    margin: calc(-1 * var(--section-pad)) calc(-1 * var(--section-pad)) var(--section-pad);
+    padding: 0.5rem 0.75rem;
+    background-color: var(--iam-header-bg);
+    border-bottom: 1px solid var(--iam-card-border);
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--iam-heading);
 }
 
-.section-divider-label::after {
-    content: "";
-    flex: 1;
-    height: 2px;
-    background: var(--bs-border-color);
-    order: 1;
+@media (min-width: 768px) {
+    .section-divider > :is(.table-responsive, table) {
+        margin-left: calc(-1 * var(--section-pad));
+        margin-right: calc(-1 * var(--section-pad));
+        width: calc(100% + 2 * var(--section-pad));
+    }
 }
 
-.section-divider-label > * {
-    order: 2;
+.form-control,
+.form-select {
+    background-color: var(--iam-input-bg);
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--iam-input-bg);
+}
+
+.form-control:disabled,
+.form-control[readonly],
+.form-select:disabled {
+    background-color: var(--bs-secondary-bg);
 }
 
 .ep-flat-header {

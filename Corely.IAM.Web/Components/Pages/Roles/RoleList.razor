@@ -49,14 +49,13 @@ else
                                    @bind:after="OnSearchChangedAsync" />
                         </div>
                     </th>
-                    <th>Managed By</th>
                     <th class="table-actions">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @if (_items.Count == 0)
                 {
-                    <tr><td colspan="4" class="text-muted text-center">No roles found</td></tr>
+                    <tr><td colspan="3"class="text-muted text-center">No roles found</td></tr>
                 }
                 else
                 {
@@ -66,18 +65,14 @@ else
                             <td class="cell-title">
                                 @role.Name
                                 <br /><CopyableId Value="role.Id" />
-                            </td>
-                            <td class="@(role.Description is null ? "cell-hide" : "text-muted")">@(role.Description ?? "—")</td>
-                            <td class="cell-badge">
                                 @if (role.IsSystemDefined)
                                 {
-                                    <span class="sys-badge">System</span>
-                                }
-                                else
-                                {
-                                    <span class="user-badge">User</span>
+                                    <div class="title-badges">
+                                        <span class="sys-badge">System</span>
+                                    </div>
                                 }
                             </td>
+                            <td class="@(role.Description is null ? "cell-hide" : "text-muted")">@(role.Description ?? "—")</td>
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     <a href="@AppRoutes.Roles/@role.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>

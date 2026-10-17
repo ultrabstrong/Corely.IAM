@@ -561,6 +561,8 @@ exists. It is not a log of every decision: add an entry only when the user asks 
 Every `<table>` carries `table-cards`, with its cells given the `cell-*` roles, so it reads as cards
 on a phone. A table that cannot is a design question, raised before it is built.
 
+A system defined item is marked by the SYSTEM badge under its name and GUID; user made items get no badge; there is no "Managed by" column and nothing in the Actions column.
+
 ## Documentation
 
 `Docs/` describes **how the current version works**. Nothing else.

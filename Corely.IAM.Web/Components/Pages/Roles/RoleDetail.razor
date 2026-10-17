@@ -93,14 +93,16 @@ else
                                 <td class="cell-title">
                                     @permission.Name
                                     <br /><CopyableId Value="permission.Id" />
+                                    @if (permission.IsSystemDefined)
+                                    {
+                                        <div class="title-badges">
+                                            <span class="sys-badge">System</span>
+                                        </div>
+                                    }
                                 </td>
                                 <td class="table-actions cell-actions">
                                     <div class="row-actions">
-                                        @if (permission.IsSystemDefined && _role.IsSystemDefined && _role.Name == Corely.IAM.Roles.Models.Role.OWNER_ROLE_NAME)
-                                        {
-                                            <span class="sys-badge">System</span>
-                                        }
-                                        else
+                                        @if (!(permission.IsSystemDefined && _role.IsSystemDefined && _role.Name == Corely.IAM.Roles.Models.Role.OWNER_ROLE_NAME))
                                         {
                                             <PermissionView Action="AuthAction.Update" Resource="@Role.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                                                 <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemovePermission(permission.Id, permission.Name)" title="Remove"><i class="bi bi-trash"></i></button>

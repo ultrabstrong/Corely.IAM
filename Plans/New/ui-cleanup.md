@@ -91,15 +91,31 @@ on `SecurityPolicy` and on `PlatformSettings` that compares two values and retur
 changes, with unit tests per setting. The audited actions matrix needs the same reading; find where
 its selections are modelled and put the member there.
 
-## 6. No line after section titles
+## 6. Section titles in a card header, without the line
 
 `.section-divider-label::after` in `iam-web.css` draws a 2px rule from every section title to the
 right edge of its card ("Users", "Details", "Invitations" on the account page, and every detail page).
-Inside a card that already has a border it is only clutter.
+Inside a card that already has a border it is only clutter, and the title sits in the card's body
+with nothing setting it apart.
 
-Remove the `::after` rule and its `order` trick, and keep the title's buttons on the right with
-`justify-content: space-between`. Check every page that uses `.section-divider`: account, user, group,
-role and permission details, profile, audit entry, both platform settings pages.
+Give each section the shape DocsToData's portal uses on its workflow page
+(`DocumentWorkflowEditor.razor`, "Workflow Details" and "Steps"): a Bootstrap `card` whose
+`card-header` holds the title on the left and the section's buttons on the right
+(`d-flex justify-content-between align-items-center`), on the header's own tinted background, with
+the content in `card-body`.
+
+1. Change `.section-divider` and `.section-divider-label` to that shape, or replace them with `card`,
+   `card-header` and `card-body` in the markup if restyling the existing classes cannot reach it
+   cleanly. Either way the `::after` rule and its `order` trick go.
+2. Keep the header's title style (weight, size, colour) consistent with `.detail-section
+   .card-header`, which already has this shape for some panels, so there is one section header look
+   in the package, not two.
+3. A table directly in a section sits flush to the card's edges under the header, as it does on the
+   portal's steps card.
+
+Check every page that uses `.section-divider`: account, user, group, role and permission details,
+profile, audit entry, both platform settings pages, and the shared sections (password, TOTP, linked
+accounts, encryption and signing, effective permissions, audit settings).
 
 ## 7. Say when an account name is taken
 

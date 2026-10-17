@@ -2,7 +2,7 @@
 
 **Status: new.** Designed, not started.
 
-Seven fixes to `Corely.IAM.Web`'s pages, most of them found by clicking through DocsToData's portal
+Eight fixes to `Corely.IAM.Web`'s pages, most of them found by clicking through DocsToData's portal
 on a phone. Each stands alone; they share a plan because they share a release and a click through.
 
 ## 1. Link the accept invitation page into the account pages
@@ -135,10 +135,18 @@ failure into `RegisterAccountResultCode.AccountCreationError`.
 
 Tests: the registration service maps the code (unit); the page shows the message (functional).
 
+## 8. The sign in layout's user menu on a phone
+
+`Pages/Shared/_AuthLayout.cshtml` puts the signed in user's menu in a header marked
+`navbar-expand-lg` with no collapse button. Below 992px Bootstrap lays a navbar's menus out inline,
+as it would inside a collapsed hamburger, so opening the menu pushes the header taller instead of
+dropping over the page. The header has no hamburger, so it should be `navbar-expand`, expanded at
+every width. DocsToData's portal hit this in its copy of the layout and fixed it the same way.
+
 ## Release
 
 `Corely.IAM` gains an enum value (7), a minor version. `Corely.IAM.Web` gets markup, styles and a
-test (1 to 7), a minor version that depends on the new `Corely.IAM`, so `Corely.IAM` is released
+test (1 to 8), a minor version that depends on the new `Corely.IAM`, so `Corely.IAM` is released
 first. A host that switches exhaustively over `RegisterAccountResultCode` gets a new case to handle;
 say so in the release notes.
 

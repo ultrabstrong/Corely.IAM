@@ -7,7 +7,10 @@
     --iam-border-subtle: #e9ecef;
     --iam-card-border: #e2eaf6;
     --iam-muted: #6c757d;
-    --iam-faint: #9ca3af;
+    --iam-faint: #6b7280;
+    --iam-caution: #7a5200;
+    --iam-outline-primary: #0d6efd;
+    --iam-outline-danger: #dc3545;
     --iam-heading: #495057;
     --iam-strong: #343a40;
     --iam-accent: #0d6efd;
@@ -18,7 +21,7 @@
     --iam-hover-faint: rgba(0, 0, 0, 0.03);
     --iam-badge-neutral-bg: #e9ecef;
     --iam-badge-neutral-fg: #6c757d;
-    --iam-badge-off-fg: #adb5bd;
+    --iam-badge-off-fg: #78808a;
     --iam-badge-info-bg: #d1ecf1;
     --iam-badge-info-fg: #0c5460;
     --iam-badge-direct-bg: #d4edda;
@@ -37,6 +40,9 @@
     --iam-card-border: #3a4048;
     --iam-muted: #adb5bd;
     --iam-faint: #8b929a;
+    --iam-caution: #ffc107;
+    --iam-outline-primary: #6ea8fe;
+    --iam-outline-danger: #ea868f;
     --iam-heading: #ced4da;
     --iam-strong: #dee2e6;
     --iam-accent: #6ea8fe;
@@ -47,7 +53,7 @@
     --iam-hover-faint: rgba(255, 255, 255, 0.04);
     --iam-badge-neutral-bg: #343a40;
     --iam-badge-neutral-fg: #adb5bd;
-    --iam-badge-off-fg: #6c757d;
+    --iam-badge-off-fg: #8a929a;
     --iam-badge-info-bg: #032830;
     --iam-badge-info-fg: #6edff6;
     --iam-badge-direct-bg: #051b11;
@@ -1120,4 +1126,19 @@ span.cell-icon {
     bottom: 0;
     z-index: 9999;
     background: rgba(0, 0, 0, 0.7);
+}
+
+.iam-main .btn-outline-primary {
+    --bs-btn-color: var(--iam-outline-primary);
+    --bs-btn-border-color: var(--iam-outline-primary);
+}
+
+.iam-main .btn-outline-danger {
+    --bs-btn-color: var(--iam-outline-danger);
+    --bs-btn-border-color: var(--iam-outline-danger);
+}
+
+.iam-main .btn-outline-warning {
+    --bs-btn-color: var(--iam-caution);
+    --bs-btn-border-color: var(--iam-caution);
 }

@@ -39,7 +39,7 @@ else
         @if (_isEditing)
         {
             <div class="d-flex gap-2 mt-3">
-                <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
+                <button class="btn btn-primary btn-sm" @onclick="RequestSave" disabled="@_loading">Save</button>
                 <button class="btn btn-outline-secondary btn-sm" @onclick="CancelEdit" disabled="@_loading">Cancel</button>
             </div>
         }
@@ -53,10 +53,16 @@ else
 }
 </PlatformSettingsFrame>
 
+<ConfirmModal @ref="_confirmModal" Title="Save platform settings" Message="@_confirmMessage" ConfirmText="Save"
+              Type="@(_changes.Any(c => c.Weakens) ? ConfirmModalType.Warning : ConfirmModalType.Primary)" OnConfirm="SaveAsync" />
+
 @code {
     private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
     private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
 
+    private ConfirmModal _confirmModal = null!;
+    private IReadOnlyList<SettingChange> _changes = [];
+    private string _confirmMessage = "";
     private PlatformSettings? _settings;
     private bool _canUpdate;
     private bool _isEditing;
@@ -100,19 +106,27 @@ else
         _isEditing = false;
     }
 
+    private PlatformSettings WithEdits() =>
+        new(_auditEnabled, _maxRetentionDays, _allowedActions, _systemContextActions, _accountlessActions);
+
+    private async Task RequestSave()
+    {
+        _changes = _settings!.ChangesTo(WithEdits());
+        if (_changes.Count == 0)
+        {
+            await SaveAsync();
+            return;
+        }
+
+        _confirmMessage = string.Join("; ", _changes.Select(c => c.Describe()));
+        _confirmModal.Show();
+    }
+
     private async Task SaveAsync()
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await AuditService.UpdatePlatformSettingsAsync(
-                new PlatformSettings(
-                    _auditEnabled,
-                    _maxRetentionDays,
-                    _allowedActions,
-                    _systemContextActions,
-                    _accountlessActions
-                )
-            );
+            var result = await AuditService.UpdatePlatformSettingsAsync(WithEdits());
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Platform settings saved.", result.Message);
             if (result.ResultCode == ModifyResultCode.Success)
             {

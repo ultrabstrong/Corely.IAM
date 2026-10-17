@@ -8,6 +8,8 @@ internal static class AuditActionsExtensions
     {
         public bool Includes(AuthAction action) => (actions & action.ToAuditActions()) != 0;
 
+        public AuditActions Dropped(AuditActions updated) => actions & ~updated;
+
         public bool IsKnown() => (actions & ~AuditActions.All) == 0;
     }
 }

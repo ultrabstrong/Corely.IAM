@@ -67,10 +67,31 @@ public class PlatformSecuritySettingsPageTests : TestContext
         cut.FindAll("button").Where(b => b.TextContent == "Edit").ElementAt(1).Click();
         cut.FindAll("input[type=number]")[0].Change("4");
         cut.FindAll("button").First(b => b.TextContent == "Save").Click();
+        cut.Find(".modal-footer .btn-primary").Click();
 
         var expected = _settings with { MaxLoginAttempts = 4 };
         _platformService.Verify(x => x.UpdateSecuritySettingsAsync(expected), Times.Once);
         cut.WaitForAssertion(() => Assert.Contains("Sign in settings saved.", cut.Markup));
+    }
+
+    [Fact]
+    public void Save_ListsTheChangesAndSavesNothingUntilConfirmed()
+    {
+        var cut = Render<PlatformSecuritySettingsPage>();
+        cut.WaitForAssertion(() => cut.FindAll("button").First(b => b.TextContent == "Edit"));
+
+        cut.FindAll("button").Where(b => b.TextContent == "Edit").ElementAt(1).Click();
+        cut.FindAll("input[type=number]")[0].Change("10");
+        cut.FindAll("button").First(b => b.TextContent == "Save").Click();
+
+        Assert.Contains("Failed sign ins before lockout:", cut.Find(".modal-body").TextContent);
+        Assert.Contains("weakens security", cut.Find(".modal-body").TextContent);
+        cut.Find(".modal-footer .btn-secondary").Click();
+        _platformService.Verify(
+            x => x.UpdateSecuritySettingsAsync(It.IsAny<SecurityPolicy>()),
+            Times.Never
+        );
+        Assert.Equal("10", cut.FindAll("input[type=number]")[0].GetAttribute("value"));
     }
 
     [Fact]
@@ -102,6 +123,7 @@ public class PlatformSecuritySettingsPageTests : TestContext
         cut.Find("input[aria-label='Minimum length']").Change("12");
         cut.Find("input[aria-label='Failed sign ins before lockout']").Change("4");
         cut.FindAll("button").Where(b => b.TextContent == "Save").ElementAt(1).Click();
+        cut.Find(".modal-footer .btn-primary").Click();
 
         var expected = _settings with { MaxLoginAttempts = 4 };
         _platformService.Verify(x => x.UpdateSecuritySettingsAsync(expected), Times.Once);

@@ -1,6 +1,8 @@
 # UI cleanup in Corely.IAM.Web
 
-**Status: released** in `Corely.IAM` 5.1.0 and `Corely.IAM.Web` 6.1.0.
+**Status: released** in `Corely.IAM` 5.1.0 and `Corely.IAM.Web` 6.1.0, with fixes from the release
+click through in 6.1.1 (sign in card position on a phone, audit table scroll, long demo notes) and
+6.1.2 (contrast of faint text, the caution button, dark outline buttons and inactive action badges).
 
 Eight fixes to `Corely.IAM.Web`'s pages, most of them found by clicking through DocsToData's portal
 on a phone. Each stands alone; they share a plan because they share a release and a click through.

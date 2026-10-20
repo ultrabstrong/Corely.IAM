@@ -1,4 +1,23 @@
-# Shared Components
+# Components
+
+The management components a host places in its own page shells ([Hosting Pages](../hosting-pages.md)),
+and the shared components they are built from.
+
+## Management Components
+
+| Component | Namespace | Doc |
+|-----------|-----------|-----|
+| `AccountDetail` | `Corely.IAM.Web.Components.Accounts` | [Accounts](accounts.md) |
+| `UserList`, `UserDetail` | `Corely.IAM.Web.Components.Users` | [Users](users.md) |
+| `GroupList`, `GroupDetail` | `Corely.IAM.Web.Components.Groups` | [Groups](groups.md) |
+| `RoleList`, `RoleDetail` | `Corely.IAM.Web.Components.Roles` | [Roles](roles.md) |
+| `PermissionList`, `PermissionDetail` | `Corely.IAM.Web.Components.Permissions` | [Permissions](permissions.md) |
+| `AuditLog`, `AuditEntryDetail` | `Corely.IAM.Web.Components.Audit` | [Audit](audit.md) |
+| `AcceptInvitation` | `Corely.IAM.Web.Components.Invitations` | [Invitations](invitations.md) |
+| `Profile` | `Corely.IAM.Web.Components` | [Profile](profile.md) |
+| `PlatformSettingsRedirect`, `PlatformAuditSettings`, `PlatformSecuritySettings`, `PlatformSettingsFrame` | `Corely.IAM.Web.Components.Platform` | [Audit](audit.md#platform-settings) |
+
+## Shared Components
 
 Reusable Blazor components in the `Corely.IAM.Web.Components.Shared` namespace.
 
@@ -10,7 +29,8 @@ Reusable Blazor components in the `Corely.IAM.Web.Components.Shared` namespace.
 | `EntityPickerModal` | Multi-select modal with search and pagination | `FetchItemsAsync`, `ExcludeIds`, `OnConfirm` |
 | `FormModal` | Generic form modal with confirm/cancel | `Title`, `ChildContent`, `OnConfirm` |
 | `ConfirmModal` | Destructive action confirmation | `Title`, `Message`, `Type`, `OnConfirm` |
-| `EffectivePermissionsPanel` | Permission tree with role/group derivation | `Permissions` |
+| `EffectivePermissionsPanel` | Permission tree with role/group derivation | `AccountId`, `Permissions` |
+| `AccountScope` | Renders its content only in the account its route names, switching first | `AccountId`, `ChildContent` |
 | `EncryptionSigningPanel` | Tabbed crypto provider UI for testing | `SymProvider`, `AsymProvider`, `SigProvider` |
 | `Alert` | Dismissible Bootstrap alert | `Message`, `Type`, `Dismissible` |
 | `Pagination` | Page navigation control | `Skip`, `Take`, `TotalCount`, `OnPageChanged` |
@@ -25,7 +45,7 @@ A component that calls services inherits `OwningComponentBase`, takes those serv
 scope. Blazor Server shares one DI scope across a browser tab, so without this every component in the tab
 would use one `DbContext`, and two loading together fail with "A second operation was started on this
 context instance". `PermissionView`, `TotpSection`, `PasswordSection`, `LinkedAccountsSection`,
-`AuthenticatedContent`, `AccountHeader` and `NavBar` work this way; components that only render what they
+`AuthenticatedContent`, `AccountHeader` and `AccountScope` work this way; components that only render what they
 are given, such as `EncryptionSigningPanel`, do not need to.
 
 ```csharp
@@ -37,6 +57,14 @@ resolves from the tab's scope even inside `OwningComponentBase`.
 
 ## Topics
 
+- [Accounts](accounts.md)
+- [Users](users.md)
+- [Groups](groups.md)
+- [Roles](roles.md)
+- [Permissions](permissions.md)
+- [Invitations](invitations.md)
+- [Profile](profile.md)
+- [Audit and platform settings](audit.md)
 - [PermissionView](permission-view.md)
 - [EntityPickerModal](entity-picker-modal.md)
 - [FormModal](form-modal.md)

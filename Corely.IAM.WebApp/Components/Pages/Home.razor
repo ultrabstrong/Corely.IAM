@@ -37,7 +37,7 @@
 
                 <div class="mt-3 pt-3 border-top">
                     <p class="text-muted mb-2"><small>Have an invitation token?</small></p>
-                    <a href="@AppRoutes.AcceptInvitation" class="btn btn-outline-primary btn-sm">
+                    <a href="@WebAppRoutes.AcceptInvitation" class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-envelope-open me-1"></i>Accept Invitation
                     </a>
                 </div>
@@ -51,7 +51,7 @@ else if (_userContext?.CurrentAccount != null)
 
     <div class="row g-3">
         <div class="col-md-3">
-            <a href="@AppRoutes.Users" class="card border-0 shadow entity-card h-100 text-decoration-none text-body">
+            <a href="@WebAppRoutes.Users(_userContext.CurrentAccount.Id)" class="card border-0 shadow entity-card h-100 text-decoration-none text-body">
                 <div class="p-3 text-center bg-success-subtle" style="border-radius: var(--bs-card-inner-border-radius) var(--bs-card-inner-border-radius) 0 0;">
                     <i class="bi bi-people fs-3 text-success"></i>
                 </div>
@@ -61,7 +61,7 @@ else if (_userContext?.CurrentAccount != null)
             </a>
         </div>
         <div class="col-md-3">
-            <a href="@AppRoutes.Groups" class="card border-0 shadow entity-card h-100 text-decoration-none text-body">
+            <a href="@WebAppRoutes.Groups(_userContext.CurrentAccount.Id)" class="card border-0 shadow entity-card h-100 text-decoration-none text-body">
                 <div class="p-3 text-center bg-info-subtle" style="border-radius: var(--bs-card-inner-border-radius) var(--bs-card-inner-border-radius) 0 0;">
                     <i class="bi bi-diagram-3 fs-3 text-info"></i>
                 </div>
@@ -71,7 +71,7 @@ else if (_userContext?.CurrentAccount != null)
             </a>
         </div>
         <div class="col-md-3">
-            <a href="@AppRoutes.Roles" class="card border-0 shadow entity-card h-100 text-decoration-none text-body">
+            <a href="@WebAppRoutes.Roles(_userContext.CurrentAccount.Id)" class="card border-0 shadow entity-card h-100 text-decoration-none text-body">
                 <div class="p-3 text-center bg-warning-subtle" style="border-radius: var(--bs-card-inner-border-radius) var(--bs-card-inner-border-radius) 0 0;">
                     <i class="bi bi-shield fs-3 text-warning"></i>
                 </div>
@@ -81,7 +81,7 @@ else if (_userContext?.CurrentAccount != null)
             </a>
         </div>
         <div class="col-md-3">
-            <a href="@AppRoutes.Permissions" class="card border-0 shadow entity-card h-100 text-decoration-none text-body">
+            <a href="@WebAppRoutes.Permissions(_userContext.CurrentAccount.Id)" class="card border-0 shadow entity-card h-100 text-decoration-none text-body">
                 <div class="p-3 text-center bg-danger-subtle" style="border-radius: var(--bs-card-inner-border-radius) var(--bs-card-inner-border-radius) 0 0;">
                     <i class="bi bi-key fs-3 text-danger"></i>
                 </div>
@@ -128,7 +128,7 @@ else if (_userContext?.CurrentAccount != null)
             if (result.ResultCode == RegisterAccountResultCode.Success)
             {
                 NavigationManager.NavigateTo(
-                    $"/switch-account?accountId={result.CreatedAccountId}&returnUrl=/",
+                    $"{AppRoutes.SwitchAccount}?accountId={result.CreatedAccountId}&returnUrl={WebAppRoutes.Home}",
                     forceLoad: true);
             }
             else

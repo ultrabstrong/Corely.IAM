@@ -2,6 +2,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -15,7 +16,8 @@ public class RegisterModel(
     IAuthCookieManager authCookieManager,
     ISecurityPolicyProvider securityPolicyProvider,
     IOptions<SecurityOptions> securityOptions,
-    IHumanVerifier humanVerifier
+    IHumanVerifier humanVerifier,
+    IOptions<IAMWebOptions> iamWebOptions
 ) : PageModel
 {
     public const string HUMAN_CHECK_ACTION = "register";
@@ -42,7 +44,7 @@ public class RegisterModel(
     {
         if (HttpContext.Request.Cookies.ContainsKey(AuthCookieManager.AUTH_TOKEN_COOKIE))
         {
-            return Redirect(AppRoutes.Dashboard);
+            return Redirect(iamWebOptions.Value.HomePath);
         }
 
         if (!string.IsNullOrWhiteSpace(GoogleClientId))
@@ -97,7 +99,7 @@ public class RegisterModel(
                 Request.IsHttps,
                 (await securityPolicyProvider.GetPolicyAsync()).AuthSessionTtlSeconds
             );
-            return Redirect(AppRoutes.Dashboard);
+            return Redirect(iamWebOptions.Value.HomePath);
         }
 
         return Redirect(AppRoutes.SignIn);

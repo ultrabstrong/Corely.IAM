@@ -3,8 +3,8 @@ using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Web.Components;
-using Corely.IAM.Web.Components.Pages.Users;
 using Corely.IAM.Web.Components.Shared;
+using Corely.IAM.Web.Components.Users;
 using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,6 +31,7 @@ public class UserListLoadingStateTests : TestContext
                     currentAccount: new Account { Id = Guid.CreateVersion7(), AccountName = "Test" }
                 )
             );
+        Services.AddSingleton<IIamWebLinks>(new FakeIamWebLinks());
 
         Services.AddSingleton(_mockUserContextAccessor.Object);
         Services.AddSingleton(_mockRetrievalService.Object);

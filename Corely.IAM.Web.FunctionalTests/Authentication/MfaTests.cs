@@ -1,5 +1,6 @@
 using System.Net;
 using Corely.IAM.Web.FunctionalTests.Infrastructure;
+using Corely.IAM.WebApp;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
@@ -34,7 +35,7 @@ public class MfaTests : FunctionalTestBase
         using (var signIn = await SignInAsync())
             Assert.Equal(HttpStatusCode.Redirect, signIn.StatusCode);
 
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Contains(AppRoutes.SignIn, response.Headers.Location!.OriginalString);

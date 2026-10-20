@@ -85,15 +85,15 @@ public class RegisterWithGoogleModelTests
             .Setup(s => s.SignInWithGoogleAsync(It.IsAny<SignInWithGoogleRequest>()))
             .ReturnsAsync(signInResult);
         _mockPostAuthenticationFlowService
-            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult))
-            .ReturnsAsync(new RedirectResult(AppRoutes.Dashboard));
+            .Setup(s => s.CompleteSignInAsync(_model.HttpContext, signInResult, null))
+            .ReturnsAsync(new RedirectResult("/"));
 
         var result = await _model.OnPostAsync();
 
         var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(AppRoutes.Dashboard, redirect.Url);
+        Assert.Equal("/", redirect.Url);
         _mockPostAuthenticationFlowService.Verify(
-            s => s.CompleteSignInAsync(_model.HttpContext, signInResult),
+            s => s.CompleteSignInAsync(_model.HttpContext, signInResult, null),
             Times.Once
         );
     }

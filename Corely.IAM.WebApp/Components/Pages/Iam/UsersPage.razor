@@ -1,0 +1,12 @@
+@page "/accounts/{AccountId:guid}/users"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Users - Corely IAM</PageTitle>
+
+<AccountScope AccountId="AccountId">
+    <UserList />
+</AccountScope>
+
+@code {
+    [Parameter] public Guid AccountId { get; set; }
+}

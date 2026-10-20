@@ -9,6 +9,7 @@ public interface IPostAuthenticationFlowService
 {
     Task<IActionResult> CompleteSignInAsync(
         HttpContext httpContext,
-        SignInResultModel signInResult
+        SignInResultModel signInResult,
+        string? returnUrl = null
     );
 }

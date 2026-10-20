@@ -1,5 +1,6 @@
 using Corely.IAM.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Web.Extensions;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,9 @@ public class VerifyMfaModel(
     [BindProperty]
     public string MfaChallengeToken { get; set; } = string.Empty;
 
+    [BindProperty]
+    public string? ReturnUrl { get; set; }
+
     public string? ErrorMessage { get; set; }
 
     public IActionResult OnGet()
@@ -29,6 +33,7 @@ public class VerifyMfaModel(
         }
 
         MfaChallengeToken = token;
+        ReturnUrl = (TempData[SignInModel.RETURN_URL_TEMP_DATA_KEY] as string).AsLocalUrl();
         return Page();
     }
 
@@ -64,6 +69,10 @@ public class VerifyMfaModel(
             return Page();
         }
 
-        return await postAuthenticationFlowService.CompleteSignInAsync(HttpContext, result);
+        return await postAuthenticationFlowService.CompleteSignInAsync(
+            HttpContext,
+            result,
+            ReturnUrl.AsLocalUrl()
+        );
     }
 }

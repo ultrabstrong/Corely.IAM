@@ -1,6 +1,8 @@
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Services;
+using Corely.IAM.Web.Configuration;
+using Corely.IAM.Web.Extensions;
 using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -11,14 +13,15 @@ namespace Corely.IAM.Web.Pages.Authentication;
 public class SwitchAccountModel(
     IAuthenticationService authenticationService,
     IAuthCookieManager authCookieManager,
-    ISecurityPolicyProvider securityPolicyProvider
+    ISecurityPolicyProvider securityPolicyProvider,
+    IOptions<IAMWebOptions> iamWebOptions
 ) : PageModel
 {
     public async Task<IActionResult> OnGetAsync(Guid? accountId = null, string? returnUrl = null)
     {
         if (accountId == null)
         {
-            return Redirect(AppRoutes.Dashboard);
+            return Redirect(iamWebOptions.Value.HomePath);
         }
 
         return await SwitchAndRedirectAsync(accountId.Value, returnUrl);
@@ -48,11 +51,6 @@ public class SwitchAccountModel(
             (await securityPolicyProvider.GetPolicyAsync()).AuthSessionTtlSeconds
         );
 
-        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-        {
-            return Redirect(returnUrl);
-        }
-
-        return Redirect(AppRoutes.Dashboard);
+        return Redirect(returnUrl.AsLocalUrl() ?? iamWebOptions.Value.HomePath);
     }
 }

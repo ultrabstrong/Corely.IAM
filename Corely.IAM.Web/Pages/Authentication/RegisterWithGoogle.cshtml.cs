@@ -1,6 +1,7 @@
 using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Web.Extensions;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -24,12 +25,14 @@ public class RegisterWithGoogleModel(
             return Redirect(AppRoutes.SignIn);
         }
         TempData.Keep("GoogleIdToken");
+        TempData.Keep(SignInModel.RETURN_URL_TEMP_DATA_KEY);
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         var googleIdToken = TempData["GoogleIdToken"]?.ToString();
+        var returnUrl = (TempData[SignInModel.RETURN_URL_TEMP_DATA_KEY] as string).AsLocalUrl();
         if (string.IsNullOrWhiteSpace(googleIdToken))
         {
             return Redirect(AppRoutes.SignIn);
@@ -62,6 +65,7 @@ public class RegisterWithGoogleModel(
         if (signInResult.ResultCode == SignInResultCode.MfaRequiredChallenge)
         {
             TempData["MfaChallengeToken"] = signInResult.MfaChallengeToken;
+            TempData[SignInModel.RETURN_URL_TEMP_DATA_KEY] = returnUrl;
             return Redirect(AppRoutes.VerifyMfa);
         }
 
@@ -71,6 +75,10 @@ public class RegisterWithGoogleModel(
             return Page();
         }
 
-        return await postAuthenticationFlowService.CompleteSignInAsync(HttpContext, signInResult);
+        return await postAuthenticationFlowService.CompleteSignInAsync(
+            HttpContext,
+            signInResult,
+            returnUrl
+        );
     }
 }

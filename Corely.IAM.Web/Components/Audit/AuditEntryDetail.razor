@@ -1,0 +1,104 @@
+@inherits EntityDetailPageBase
+@inject IIamWebLinks Links
+
+<div class="management-header">
+    <h1><i class="bi bi-journal-text me-2"></i>@(_entry?.Description() ?? "Audit entry") <span class="resource-label">Audit entry</span></h1>
+    <a href="@Links.Audit(CurrentAccountId)" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Audit log</a>
+</div>
+
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+@if (_loading && _entry == null)
+{
+    <LoadingSpinner />
+}
+else if (_entry == null)
+{
+    <div class="alert alert-warning">Audit entry not found.</div>
+}
+else
+{
+    <div class="detail-section">
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">What happened</div>
+            <div class="settings-grid">
+                <span class="prop-label">Activity</span>
+                <div class="setting-wide">@_entry.Description()</div>
+                <span class="prop-label">Result</span>
+                <div class="setting-wide">
+                    <span class="badge rounded-pill @(_entry.Succeeded() ? "bg-success-subtle text-success-emphasis" : "bg-danger-subtle text-danger-emphasis")">
+                        <i class="bi @(_entry.Succeeded() ? "bi-check-circle-fill" : "bi-x-circle-fill") me-1" aria-hidden="true"></i>@_entry.ResultText()
+                    </span>
+                </div>
+                <span class="prop-label">When</span>
+                <div class="setting-wide">@_entry.OccurredUtc.ToString("yyyy-MM-dd HH:mm:ss") <span class="text-body-tertiary">UTC</span></div>
+                <span class="prop-label">Actor</span>
+                <div class="setting-wide">
+                    @_entry.ActorDisplayName()
+                    @if (_entry.IsPlatformMember)
+                    {
+                        <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis ms-1">Platform member</span>
+                    }
+                    @if (_entry.ActorUserId is Guid actorId)
+                    {
+                        <div><CopyableId Value="actorId" /></div>
+                    }
+                </div>
+                <span class="prop-label">Account</span>
+                <div class="setting-wide">
+                    @_entry.AccountDisplayName()
+                    @if (_entry.AccountId is Guid accountId)
+                    {
+                        <div><CopyableId Value="accountId" /></div>
+                    }
+                </div>
+                <span class="prop-label">Action</span>
+                <div class="setting-wide"><span class="sys-badge ms-0">@_entry.Action</span></div>
+                <span class="prop-label">Resource type</span>
+                <div class="setting-wide"><span class="type-badge ms-0">@_entry.ResourceType</span></div>
+                <span class="prop-label">Resource IDs (@_entry.ResourceIds.Count)</span>
+                <div class="setting-wide">
+                    @if (_entry.ResourceIds.Count == 0)
+                    {
+                        <span>—</span>
+                    }
+                    @foreach (var id in _entry.ResourceIds)
+                    {
+                        <div><CopyableId Value="id" /></div>
+                    }
+                </div>
+                @if (_entry.Details is not null)
+                {
+                    <span class="prop-label">Details</span>
+                    <div class="setting-wide">@_entry.Details</div>
+                }
+                <span class="prop-label">Source</span>
+                <div class="setting-wide">@_entry.Source</div>
+            </div>
+        </div>
+
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">Technical</div>
+            <div class="settings-grid">
+                <span class="prop-label">Entry ID</span>
+                <div class="setting-wide"><CopyableId Value="_entry.Id" /></div>
+                <span class="prop-label">Call</span>
+                <div class="setting-wide"><code>@_entry.Service.@_entry.Operation</code></div>
+                <span class="prop-label">Result code</span>
+                <div class="setting-wide"><code>@_entry.ResultCode</code></div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
+
+    private AuditEntry? _entry;
+
+    protected override async Task LoadCoreAsync()
+    {
+        var result = await AuditService.GetEntryAsync(Id);
+        _entry = result.ResultCode == RetrieveResultCode.Success ? result.Item : null;
+    }
+}

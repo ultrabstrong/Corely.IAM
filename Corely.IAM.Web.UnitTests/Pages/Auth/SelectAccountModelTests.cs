@@ -4,6 +4,7 @@ using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Pages.Authentication;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.UnitTests.Helpers;
@@ -35,7 +36,8 @@ public class SelectAccountModelTests
             _mockUserContextProvider.Object,
             _mockCookieManager.Object,
             new FixedSecurityPolicyProvider(),
-            _mockRetrievalService.Object
+            _mockRetrievalService.Object,
+            Options.Create(new IAMWebOptions())
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();
     }
@@ -124,6 +126,6 @@ public class SelectAccountModelTests
         var result = await _model.OnPostAsync(accountId);
 
         var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(AppRoutes.Dashboard, redirect.Url);
+        Assert.Equal("/", redirect.Url);
     }
 }

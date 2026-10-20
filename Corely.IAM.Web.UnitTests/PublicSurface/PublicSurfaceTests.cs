@@ -35,10 +35,12 @@ public class PublicSurfaceTests
     }
 
     [Fact]
-    public void RegistrationAndComponents_AreRoots()
+    public void RegistrationComponentsAndLinks_AreRoots()
     {
         Assert.True(IsRoot(typeof(IamWebServiceExtensions)));
         Assert.True(IsRoot(typeof(EncryptionSigningPanel)));
+        Assert.True(IsRoot(typeof(AccountScope)));
+        Assert.True(IsRoot(typeof(IIamWebLinks)));
     }
 
     private static bool IsRoot(Type type) =>

@@ -2,6 +2,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -14,7 +15,8 @@ public class CreateAccountModel(
     IAuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
     IAuthCookieManager authCookieManager,
-    ISecurityPolicyProvider securityPolicyProvider
+    ISecurityPolicyProvider securityPolicyProvider,
+    IOptions<IAMWebOptions> iamWebOptions
 ) : PageModel
 {
     public string AccountName { get; set; } = string.Empty;
@@ -72,6 +74,6 @@ public class CreateAccountModel(
             (await securityPolicyProvider.GetPolicyAsync()).AuthSessionTtlSeconds
         );
 
-        return Redirect(AppRoutes.Dashboard);
+        return Redirect(iamWebOptions.Value.HomePath);
     }
 }

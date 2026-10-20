@@ -3,7 +3,7 @@ using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Components;
-using Corely.IAM.Web.Components.Pages.Platform;
+using Corely.IAM.Web.Components.Platform;
 using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +13,7 @@ using TestContext = Bunit.TestContext;
 
 namespace Corely.IAM.Web.UnitTests.Components.Platform;
 
-public class PlatformSecuritySettingsPageTests : TestContext
+public class PlatformSecuritySettingsTests : TestContext
 {
     private readonly Mock<IPlatformService> _platformService = new();
     private readonly Mock<IAuthorizationProvider> _authorizationProvider = new();
@@ -22,12 +22,13 @@ public class PlatformSecuritySettingsPageTests : TestContext
         MaxLoginAttempts = 7,
     };
 
-    public PlatformSecuritySettingsPageTests()
+    public PlatformSecuritySettingsTests()
     {
         var userContextAccessor = new Mock<IBlazorUserContextAccessor>();
         userContextAccessor
             .Setup(x => x.GetUserContextAsync())
             .ReturnsAsync(PageTestHelpers.CreateUserContext());
+        Services.AddSingleton<IIamWebLinks>(new FakeIamWebLinks());
         Services.AddSingleton(userContextAccessor.Object);
         Services.AddSingleton(_platformService.Object);
         Services.AddSingleton(_authorizationProvider.Object);
@@ -49,7 +50,7 @@ public class PlatformSecuritySettingsPageTests : TestContext
     [Fact]
     public void Page_ShowsTheSettingsInForce_AndTheRecommendedMinimum()
     {
-        var cut = Render<PlatformSecuritySettingsPage>();
+        var cut = Render<PlatformSecuritySettings>();
 
         cut.WaitForAssertion(() => Assert.Contains("8 or more is recommended", cut.Markup));
         Assert.Contains(">7<", cut.Markup.Replace(" ", ""));
@@ -61,7 +62,7 @@ public class PlatformSecuritySettingsPageTests : TestContext
         _platformService
             .Setup(x => x.UpdateSecuritySettingsAsync(It.IsAny<SecurityPolicy>()))
             .ReturnsAsync(new ModifyResult(ModifyResultCode.Success, ""));
-        var cut = Render<PlatformSecuritySettingsPage>();
+        var cut = Render<PlatformSecuritySettings>();
         cut.WaitForAssertion(() => cut.FindAll("button").First(b => b.TextContent == "Edit"));
 
         cut.FindAll("button").Where(b => b.TextContent == "Edit").ElementAt(1).Click();
@@ -77,7 +78,7 @@ public class PlatformSecuritySettingsPageTests : TestContext
     [Fact]
     public void Save_ListsTheChangesAndSavesNothingUntilConfirmed()
     {
-        var cut = Render<PlatformSecuritySettingsPage>();
+        var cut = Render<PlatformSecuritySettings>();
         cut.WaitForAssertion(() => cut.FindAll("button").First(b => b.TextContent == "Edit"));
 
         cut.FindAll("button").Where(b => b.TextContent == "Edit").ElementAt(1).Click();
@@ -103,7 +104,7 @@ public class PlatformSecuritySettingsPageTests : TestContext
     [Fact]
     public void Edit_LeavesTheOtherSectionsEditable()
     {
-        var cut = Render<PlatformSecuritySettingsPage>();
+        var cut = Render<PlatformSecuritySettings>();
         cut.WaitForAssertion(() =>
             Assert.Equal(3, cut.FindAll("button").Count(b => b.TextContent == "Edit"))
         );
@@ -121,7 +122,7 @@ public class PlatformSecuritySettingsPageTests : TestContext
         _platformService
             .Setup(x => x.UpdateSecuritySettingsAsync(It.IsAny<SecurityPolicy>()))
             .ReturnsAsync(new ModifyResult(ModifyResultCode.Success, ""));
-        var cut = Render<PlatformSecuritySettingsPage>();
+        var cut = Render<PlatformSecuritySettings>();
         cut.WaitForAssertion(() => cut.FindAll("button").First(b => b.TextContent == "Edit"));
 
         cut.FindAll("button").Where(b => b.TextContent == "Edit").ElementAt(1).Click();
@@ -139,7 +140,7 @@ public class PlatformSecuritySettingsPageTests : TestContext
     [Fact]
     public void Page_ShowsRulesAsEnabledOrDisabled_AndRangesBesideValues()
     {
-        var cut = Render<PlatformSecuritySettingsPage>();
+        var cut = Render<PlatformSecuritySettings>();
 
         cut.WaitForAssertion(() =>
             Assert.Equal(
@@ -165,7 +166,7 @@ public class PlatformSecuritySettingsPageTests : TestContext
                     "Max Login Attempts is out of range"
                 )
             );
-        var cut = Render<PlatformSecuritySettingsPage>();
+        var cut = Render<PlatformSecuritySettings>();
         cut.WaitForAssertion(() => cut.FindAll("button").First(b => b.TextContent == "Edit"));
 
         cut.FindAll("button").First(b => b.TextContent == "Edit").Click();

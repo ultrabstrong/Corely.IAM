@@ -1,21 +1,22 @@
 # Corely.IAM.Web
 
-Reusable Razor Class Library (RCL) that provides a complete Blazor Server UI for the Corely.IAM identity and access management library. Drop it into any ASP.NET Core host app to get a fully-functional IAM web interface with minimal wiring.
+Reusable Razor Class Library (RCL) that provides the Blazor Server UI for the Corely.IAM identity and access management library: authentication pages, and management components the host places at its own paths.
 
-> **Upgrading from 4.x?** See [MIGRATION-IAM.Web-5.0.md](https://github.com/ultrabstrong/Corely.IAM/blob/master/MIGRATION-IAM.Web-5.0.md).
-> The package no longer sets security headers; the host sets its own.
+> **Upgrading from 6.x?** See [MIGRATION-IAM.Web-7.0.md](https://github.com/ultrabstrong/Corely.IAM/blob/master/MIGRATION-IAM.Web-7.0.md).
+> The package ships components only: the host writes a page per component and supplies every link.
 
 ---
 
 ## What the library provides
 
-- **Blazor pages**: Users, Groups, Roles, Permissions, Account detail, Profile, Dashboard, Home
+- **Management components**: account, users, groups, roles, permissions, audit, profile, invitations and platform settings, each placed by the host in a short page shell
 - **Razor Pages**: Sign In, Register, Sign Out, Select Account, Switch Account, Create Account
 - **Shared components**: Alert, Pagination, ConfirmModal, FormModal, EntityPickerModal, EffectivePermissionsPanel, PermissionView, LoadingSpinner, and more
 - **Middleware**: correlation ID, JWT cookie → UserContext. Security headers are the host's; see [Security](Docs/security.md#security-headers)
 - **Authentication**: cookie-based auth wired to Corely.IAM's JWT token system
 - **Static assets**: `iam-web.css` (custom styles), `modal-keyboard.js`
-- **Route constants**: `AppRoutes` class with all page paths
+- **Account route guard**: `AccountScope`, so a host can put the account in its paths
+- **Route constants**: `AppRoutes` names the authentication endpoints, the only fixed paths
 
 ---
 
@@ -23,7 +24,8 @@ Reusable Razor Class Library (RCL) that provides a complete Blazor Server UI for
 
 - **`SecurityConfigurationProvider`**: reads the system encryption key from config and implements `ISecurityConfigurationProvider`. The library defines the interface; the host provides the implementation.
 - **Database / EF configuration**: choosing and wiring the EF provider (SQL Server, MySQL)
-- **Blazor host shell**: `App.razor`, `Routes.razor`, `Program.cs`
+- **Blazor host shell**: `App.razor`, `Routes.razor`, `Program.cs`, its layout and navigation
+- **Page shells and links**: a page per component at the host's paths, and an `IIamWebLinks` saying where each lives ([Hosting Pages](Docs/hosting-pages.md))
 - **Static asset references**: Bootstrap, Bootstrap Icons (must be served by the host)
 - **Logging**: Serilog or any other provider of your choice
 
@@ -67,7 +69,7 @@ using Corely.IAM.Web.Extensions;
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddIAMWeb();       // Razor Pages, auth, cookie manager
-builder.Services.AddIAMWebBlazor(); // Blazor auth state, user context accessor
+builder.Services.AddIAMWebBlazor<MyIamLinks>(); // Blazor auth state, the host's IIamWebLinks
 
 // Instantiate your SecurityConfigurationProvider and wire up IAM core services
 var securityConfigProvider = new SecurityConfigurationProvider(builder.Configuration);
@@ -80,11 +82,12 @@ builder.Services.AddIAMServicesWithEF(builder.Configuration, securityConfigProvi
 - Cookie authentication scheme (login path `/signin`, logout path `/signout`)
 - Authorization services
 
-`AddIAMWebBlazor()` registers:
+`AddIAMWebBlazor<TLinks>()` registers:
 - `IBlazorUserContextAccessor`: access the current user context from Blazor components
 - `AuthenticationStateProvider`: Blazor auth state backed by the cookie
 - `IAccountDisplayState`: reactive state for displaying the current account name in the navbar
 - Cascading authentication state
+- `IIamWebLinks`: the host's `TLinks`
 
 ### 4. Set up the middleware pipeline
 
@@ -103,7 +106,6 @@ app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();
 app.MapRazorComponents<App>()
     .WithStaticAssets()
-    .AddAdditionalAssemblies(typeof(Corely.IAM.Web.AppRoutes).Assembly)
     .AddInteractiveServerRenderMode();
 ```
 
@@ -116,29 +118,40 @@ app.MapRazorComponents<App>()
 It sets no security headers. Set them in the host, before this call; [Security](Docs/security.md#security-headers)
 has a starting set.
 
-### 5. Set up the Blazor router (`Routes.razor`)
+### 5. Write the page shells and the router (`Routes.razor`)
 
-The library's Blazor pages live in the `Corely.IAM.Web` assembly. Register it as an additional assembly so the router discovers them:
+The library has no routed Blazor pages, so the router routes only the host's assembly. Each page is
+a short shell around a component, at a path the host chooses:
 
 ```razor
-<Router AppAssembly="typeof(Routes).Assembly"
-        AdditionalAssemblies="new[] { typeof(Corely.IAM.Web.AppRoutes).Assembly }">
+@page "/accounts/{AccountId:guid}/users"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Users</PageTitle>
+
+<AccountScope AccountId="AccountId">
+    <UserList />
+</AccountScope>
+
+@code {
+    [Parameter] public Guid AccountId { get; set; }
+}
+```
+
+```razor
+<Router AppAssembly="typeof(Routes).Assembly">
     <Found Context="routeData">
-        <AuthorizeRouteView RouteData="routeData"
-                            DefaultLayout="typeof(Corely.IAM.Web.Components.Layout.MainLayout)">
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
             <NotAuthorized>
                 <Corely.IAM.Web.Components.Shared.RedirectToLogin />
             </NotAuthorized>
         </AuthorizeRouteView>
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
-    <NotFound>
-        <LayoutView Layout="typeof(Corely.IAM.Web.Components.Layout.MainLayout)">
-            <p>Page not found.</p>
-        </LayoutView>
-    </NotFound>
 </Router>
 ```
+
+[Hosting Pages](Docs/hosting-pages.md) covers every shell, `IIamWebLinks` and `AccountScope`.
+`Corely.IAM.WebApp` has a working shell for every component.
 
 ### 6. Reference static assets in `App.razor`
 
@@ -202,24 +215,11 @@ dotnet run -- sym-encrypt --create
 
 ---
 
-## Available routes (`AppRoutes`)
+## Fixed routes (`AppRoutes`)
 
-All routes are defined as constants on `Corely.IAM.Web.AppRoutes`:
-
-| Constant | Path | Description |
-|----------|------|-------------|
-| `Dashboard` | `/` | Home dashboard |
-| `Users` | `/users` | User list |
-| `Groups` | `/groups` | Group list |
-| `Roles` | `/roles` | Role list |
-| `Permissions` | `/permissions` | Permission list |
-| `Accounts` | `/accounts` | Account detail (by ID) |
-| `Profile` | `/profile` | Current user profile |
-| `SignIn` | `/signin` | Sign in (Razor Page) |
-| `SignOut` | `/signout` | Sign out (Razor Page) |
-| `Register` | `/register` | Registration (Razor Page) |
-| `SelectAccount` | `/select-account` | Account picker (Razor Page) |
-| `CreateAccount` | `/create-account` | Create account (Razor Page) |
+The authentication endpoints are Razor Pages at fixed routes, named on `Corely.IAM.Web.AppRoutes`:
+`SignIn`, `Register`, `SignOut`, `SelectAccount`, `SwitchAccount`, `CreateAccount`, `VerifyMfa`,
+`GoogleCallback`, `RegisterWithGoogle`, `Privacy` and `Terms`. Every other path is the host's.
 
 ---
 
@@ -241,12 +241,13 @@ Import the library's namespace in your `_Imports.razor` or reference components 
 | `PermissionView` | Conditionally renders children based on CRUDX permission check |
 | `Pagination` | Server-side pagination controls |
 | `LoadingSpinner` | Loading indicator |
-| `RedirectToLogin` | Redirects unauthenticated users to `/signin` |
+| `RedirectToLogin` | Redirects unauthenticated users to `/signin`, returning to the page afterwards |
+| `AccountScope` | Renders its content only in the account its route names, switching first |
 
 ---
 
 ## Architecture notes
 
-- The library targets **net10.0** and uses **Blazor Interactive Server** render mode throughout. Pre-rendering is disabled on all pages (`prerender: false`).
-- All Blazor pages inherit from base classes in `Components/` (`EntityDetailPageBase`, `EntityListPageBase`, `AuthenticatedPageBase`) which handle loading state, error messages, confirmation dialogs, and navigation guards.
+- The library targets **net10.0** and uses **Blazor Interactive Server** render mode throughout. Pre-rendering is disabled in every shell (`prerender: false`).
+- All management components inherit from base classes in `Components/` (`EntityDetailPageBase`, `EntityListPageBase`, `AuthenticatedPageBase`) which handle loading state, error messages, confirmation dialogs, and navigation guards.
 - The `IBlazorUserContextAccessor` service is the correct way to access the current user context from Blazor components. Do not use `IHttpContextAccessor` directly in Blazor components.

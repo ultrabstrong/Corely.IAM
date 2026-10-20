@@ -1,4 +1,5 @@
 using Corely.IAM.Users.Models;
+using Corely.IAM.Web.Extensions;
 using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,7 @@ public abstract class AuthenticatedPageBase : OwningComponentBase
 
     protected UserContext? UserContext { get; private set; }
     protected bool IsAuthenticated => UserContext?.User != null;
+    protected Guid CurrentAccountId => UserContext?.CurrentAccount?.Id ?? Guid.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -22,7 +24,7 @@ public abstract class AuthenticatedPageBase : OwningComponentBase
 
         if (!IsAuthenticated)
         {
-            NavigationManager.NavigateTo(AppRoutes.SignIn, forceLoad: true);
+            NavigationManager.NavigateTo(NavigationManager.SignInUri(), forceLoad: true);
             return;
         }
 

@@ -1,0 +1,13 @@
+@page "/accounts/{AccountId:guid}/roles/{Id:guid}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Role - Corely IAM</PageTitle>
+
+<AccountScope AccountId="AccountId">
+    <RoleDetail Id="Id" />
+</AccountScope>
+
+@code {
+    [Parameter] public Guid AccountId { get; set; }
+    [Parameter] public Guid Id { get; set; }
+}

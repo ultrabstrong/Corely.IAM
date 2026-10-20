@@ -3,6 +3,6 @@
 @code {
     protected override void OnInitialized()
     {
-        NavigationManager.NavigateTo(AppRoutes.SignIn, forceLoad: true);
+        NavigationManager.NavigateTo(NavigationManager.SignInUri(), forceLoad: true);
     }
 }

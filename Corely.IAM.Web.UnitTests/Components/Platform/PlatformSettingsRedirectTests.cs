@@ -1,7 +1,8 @@
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
-using Corely.IAM.Web.Components.Pages.Platform;
+using Corely.IAM.Web.Components.Platform;
+using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.AspNetCore.Components;
@@ -12,6 +13,8 @@ namespace Corely.IAM.Web.UnitTests.Components.Platform;
 
 public class PlatformSettingsRedirectTests : TestContext
 {
+    private const string SECURITY_PATH = "/settings/security";
+
     private readonly Mock<IAuthorizationProvider> _authorizationProvider = new();
 
     public PlatformSettingsRedirectTests()
@@ -22,6 +25,15 @@ public class PlatformSettingsRedirectTests : TestContext
             .ReturnsAsync(PageTestHelpers.CreateUserContext());
         Services.AddSingleton(userContextAccessor.Object);
         Services.AddSingleton(_authorizationProvider.Object);
+        Services.Configure<IAMWebOptions>(o =>
+        {
+            o.PlatformSettingsPages.Add(
+                new("Audit", "/settings/audit", "bi-journal-text", PlatformSettings.RESOURCE_TYPE)
+            );
+            o.PlatformSettingsPages.Add(
+                new("Security", SECURITY_PATH, "bi-shield-lock", SecurityPolicy.RESOURCE_TYPE)
+            );
+        });
     }
 
     private void CanRead(params string[] resourceTypes) =>
@@ -39,7 +51,7 @@ public class PlatformSettingsRedirectTests : TestContext
 
         Render<PlatformSettingsRedirect>();
 
-        Assert.EndsWith(AppRoutes.PlatformSecuritySettings, navigation.Uri);
+        Assert.EndsWith(SECURITY_PATH, navigation.Uri);
     }
 
     [Fact]

@@ -37,22 +37,6 @@ public abstract class DemoAppTestsBase<TNotesContext> : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, home.StatusCode);
     }
 
-    [Theory]
-    [InlineData(AppRoutes.Users)]
-    [InlineData(AppRoutes.Groups)]
-    [InlineData(AppRoutes.Roles)]
-    [InlineData(AppRoutes.Permissions)]
-    [InlineData(AppRoutes.Audit)]
-    [InlineData(AppRoutes.PlatformSettings)]
-    public async Task TheLibrarysAdminPagesAreNotRouted(string route)
-    {
-        await SignUpAsync();
-
-        using var response = await _client.GetAsync(route);
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
     [Fact]
     public async Task SignInPagesUseTheAppsOwnLayout()
     {
@@ -96,6 +80,6 @@ public abstract class DemoAppTestsBase<TNotesContext> : IAsyncLifetime
         );
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.Equal(AppRoutes.Dashboard, response.Headers.Location!.OriginalString);
+        Assert.Equal("/", response.Headers.Location!.OriginalString);
     }
 }

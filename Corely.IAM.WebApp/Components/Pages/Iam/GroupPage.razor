@@ -1,0 +1,13 @@
+@page "/accounts/{AccountId:guid}/groups/{Id:guid}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Group - Corely IAM</PageTitle>
+
+<AccountScope AccountId="AccountId">
+    <GroupDetail Id="Id" />
+</AccountScope>
+
+@code {
+    [Parameter] public Guid AccountId { get; set; }
+    [Parameter] public Guid Id { get; set; }
+}

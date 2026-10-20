@@ -1,5 +1,6 @@
 using System.Net;
 using Corely.IAM.Web.FunctionalTests.Infrastructure;
+using Corely.IAM.WebApp;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
@@ -10,7 +11,7 @@ public class RevocationTests : FunctionalTestBase
     {
         await SignInSuccessfullyAsync();
 
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -19,12 +20,12 @@ public class RevocationTests : FunctionalTestBase
     public async Task AfterRevocation_RedirectsToSignIn()
     {
         await SignInSuccessfullyAsync();
-        using (var before = await Client.GetAsync(AppRoutes.Dashboard))
+        using (var before = await Client.GetAsync(WebAppRoutes.Home))
             Assert.Equal(HttpStatusCode.OK, before.StatusCode);
 
         await RevokeCurrentTokenOutOfBandAsync();
 
-        using var after = await Client.GetAsync(AppRoutes.Dashboard);
+        using var after = await Client.GetAsync(WebAppRoutes.Home);
 
         Assert.Equal(HttpStatusCode.Redirect, after.StatusCode);
         Assert.Contains(AppRoutes.SignIn, after.Headers.Location!.OriginalString);
@@ -36,7 +37,7 @@ public class RevocationTests : FunctionalTestBase
         await SignInSuccessfullyAsync();
         await RevokeCurrentTokenOutOfBandAsync();
 
-        using var response = await Client.GetAsync(AppRoutes.Profile);
+        using var response = await Client.GetAsync(WebAppRoutes.Profile);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         var location = response.Headers.Location!.OriginalString;
@@ -49,7 +50,7 @@ public class RevocationTests : FunctionalTestBase
         await SignInSuccessfullyAsync();
         await RevokeCurrentTokenOutOfBandAsync();
 
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
 
         Assert.False(HasAuthCookies);
@@ -73,10 +74,10 @@ public class RevocationTests : FunctionalTestBase
 
         await RevokeCurrentTokenOutOfBandAsync();
 
-        using var revoked = await Client.GetAsync(AppRoutes.Dashboard);
+        using var revoked = await Client.GetAsync(WebAppRoutes.Home);
         Assert.Equal(HttpStatusCode.Redirect, revoked.StatusCode);
 
-        using var stillValid = await sibling.GetAsync(AppRoutes.Dashboard);
+        using var stillValid = await sibling.GetAsync(WebAppRoutes.Home);
         Assert.Equal(HttpStatusCode.OK, stillValid.StatusCode);
     }
 }

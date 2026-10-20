@@ -6,6 +6,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Extensions;
 using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +20,8 @@ public class SelectAccountModel(
     IUserContextProvider userContextProvider,
     IAuthCookieManager authCookieManager,
     ISecurityPolicyProvider securityPolicyProvider,
-    IRetrievalService retrievalService
+    IRetrievalService retrievalService,
+    IOptions<IAMWebOptions> iamWebOptions
 ) : PageModel
 {
     private const int PageSize = 10;
@@ -35,6 +37,9 @@ public class SelectAccountModel(
 
     [BindProperty(SupportsGet = true)]
     public int PageNumber { get; set; } = 1;
+
+    [BindProperty(SupportsGet = true)]
+    public string? ReturnUrl { get; set; }
 
     public string? ErrorMessage { get; set; }
 
@@ -71,7 +76,7 @@ public class SelectAccountModel(
             (await securityPolicyProvider.GetPolicyAsync()).AuthSessionTtlSeconds
         );
 
-        return Redirect(AppRoutes.Dashboard);
+        return Redirect(ReturnUrl.AsLocalUrl() ?? iamWebOptions.Value.HomePath);
     }
 
     private async Task LoadAccountsAsync()

@@ -1,6 +1,7 @@
 using System.Net;
 using Corely.IAM.Web.FunctionalTests.Infrastructure;
 using Corely.IAM.Web.Security;
+using Corely.IAM.WebApp;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
@@ -9,7 +10,7 @@ public class UnauthenticatedAccessTests : FunctionalTestBase
     [Fact]
     public async Task AnonymousRequestToProtectedPage_RedirectsToSignIn()
     {
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Contains(AppRoutes.SignIn, response.Headers.Location!.OriginalString);
@@ -18,19 +19,26 @@ public class UnauthenticatedAccessTests : FunctionalTestBase
     [Fact]
     public async Task AnonymousRequestToProtectedPage_PreservesReturnUrl()
     {
-        using var response = await Client.GetAsync(AppRoutes.Profile);
+        using var response = await Client.GetAsync(WebAppRoutes.Profile);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         var location = response.Headers.Location!.OriginalString;
         Assert.Contains("ReturnUrl", location, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Theory]
-    [InlineData(AppRoutes.Audit)]
-    [InlineData(AppRoutes.PlatformSettings)]
-    public async Task AnonymousRequestToAuditPages_RedirectsToSignIn(string route)
+    [Fact]
+    public async Task AnonymousRequestToAuditPage_RedirectsToSignIn()
     {
-        using var response = await Client.GetAsync(route);
+        using var response = await Client.GetAsync(WebAppRoutes.Audit(AccountId));
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains(AppRoutes.SignIn, response.Headers.Location!.OriginalString);
+    }
+
+    [Fact]
+    public async Task AnonymousRequestToPlatformSettings_RedirectsToSignIn()
+    {
+        using var response = await Client.GetAsync(WebAppRoutes.PlatformSettings);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Contains(AppRoutes.SignIn, response.Headers.Location!.OriginalString);
@@ -52,7 +60,7 @@ public class UnauthenticatedAccessTests : FunctionalTestBase
         using var corrupt = new TestClient(Factory.CreateTestClient());
         corrupt.Cookies.Apply(BuildCookieHeader("not.a.jwt"));
 
-        using var response = await corrupt.GetAsync(AppRoutes.Dashboard);
+        using var response = await corrupt.GetAsync(WebAppRoutes.Home);
 
         Assert.NotEqual(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);

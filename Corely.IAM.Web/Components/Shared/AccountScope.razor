@@ -1,0 +1,35 @@
+@inherits OwningComponentBase
+@inject NavigationManager NavigationManager
+
+@if (_matches)
+{
+    @ChildContent
+}
+else
+{
+    <LoadingSpinner />
+}
+
+@code {
+    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
+
+    [Parameter, EditorRequired]
+    public Guid AccountId { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool _matches;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var userContext = await BlazorUserContextAccessor.GetUserContextAsync();
+        _matches = userContext?.CurrentAccount?.Id == AccountId;
+        if (_matches)
+            return;
+        NavigationManager.NavigateTo(
+            userContext?.User == null ? NavigationManager.SignInUri() : NavigationManager.SwitchAccountUri(AccountId),
+            forceLoad: true
+        );
+    }
+}

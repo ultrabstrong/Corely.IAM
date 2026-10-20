@@ -1,0 +1,45 @@
+# Groups
+
+## GroupList
+
+**Parameters**: none. Wrap it in `AccountScope` in the shell; see [Hosting pages](../hosting-pages.md).
+
+Group table with search, sort, pagination, and create/delete operations.
+
+**Base class**: `EntityListPageBase<Group>`
+
+**Features:**
+- **Search**: name, description (debounced 300ms)
+- **Sort**: ascending/descending on name or description
+- **Pagination**: 25 items per page
+- **Create**: modal form with group name field
+- **Delete**: confirmation modal per row
+
+**Authorization gates:**
+- `AuthAction.Create` + `Group.RESOURCE_TYPE`: Create button
+- `AuthAction.Delete` + `Group.RESOURCE_TYPE` + `ResourceIds: [groupId]`: Delete button per row
+
+---
+
+## GroupDetail
+
+**Parameters**: `Id` (`Guid`, required), the group. Wrap it in `AccountScope` in the shell; see [Hosting pages](../hosting-pages.md).
+
+Group properties with user and role management.
+
+**Base class**: `EntityDetailPageBase`
+
+**Features:**
+- **Edit properties**: name, description (toggleable edit mode with cancel support)
+- **Users section**: paginated (10 per page), add/remove via `EntityPickerModal`. Add Users shows only when the caller could grant every permission the group hands out (`CanGrantGroupAsync`)
+- **Roles section**: paginated (10 per page), add/remove via `EntityPickerModal`, offering only roles the caller could grant (`GetGrantableRoleIdsAsync`)
+- **Effective permissions panel**: inherited permissions through assigned roles
+
+**Authorization gates:**
+- `AuthAction.Update` + `Group.RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit, Add Users, Add Roles, Remove User, Remove Role
+- `AuthAction.Delete` + `Group.RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete button
+
+**Behavior:**
+- Loads with `hydrate: true` for user and role relations
+- Edit mode stores original values for cancel functionality
+- Delete navigates to the host's `IIamWebLinks.Groups`

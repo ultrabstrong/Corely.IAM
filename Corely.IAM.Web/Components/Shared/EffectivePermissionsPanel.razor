@@ -1,3 +1,4 @@
+@inject IIamWebLinks Links
 @if (Permissions != null && Permissions.Count > 0)
 {
     @if (UseCard)
@@ -21,6 +22,9 @@
 }
 
 @code {
+    [Parameter, EditorRequired]
+    public Guid AccountId { get; set; }
+
     [Parameter]
     public List<EffectivePermission>? Permissions { get; set; }
 
@@ -92,7 +96,7 @@
                             }
                             else
                             {
-                                <a href="@AppRoutes.Roles/@role.RoleId" class="text-decoration-none">@role.RoleName</a>
+                                <a href="@Links.Role(AccountId, role.RoleId)" class="text-decoration-none">@role.RoleName</a>
                             }
                             @if (role.IsDirect)
                             {
@@ -107,7 +111,7 @@
                                     }
                                     else
                                     {
-                                        <text>via </text><a href="@AppRoutes.Groups/@group.Key" class="text-decoration-none">@group.Value</a>
+                                        <text>via </text><a href="@Links.Group(AccountId, group.Key)" class="text-decoration-none">@group.Value</a>
                                     }
                                 </span>
                             }

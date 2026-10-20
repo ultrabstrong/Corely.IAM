@@ -6,7 +6,6 @@ using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Web.Components;
-using Corely.IAM.Web.Components.Pages;
 using Corely.IAM.Web.Components.Shared;
 using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
@@ -25,6 +24,7 @@ public class ProfileTests : TestContext
 
     public ProfileTests()
     {
+        Services.AddSingleton<IIamWebLinks>(new FakeIamWebLinks());
         Services.AddSingleton(_mockUserContextAccessor.Object);
         Services.AddSingleton(_mockRetrievalService.Object);
         Services.AddSingleton(_mockModificationService.Object);

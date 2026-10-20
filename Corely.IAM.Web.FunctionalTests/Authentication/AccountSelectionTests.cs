@@ -1,5 +1,6 @@
 using System.Net;
 using Corely.IAM.Web.FunctionalTests.Infrastructure;
+using Corely.IAM.WebApp;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
@@ -38,7 +39,7 @@ public class AccountSelectionTests : FunctionalTestBase
         );
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
-        Assert.Equal(AppRoutes.Dashboard, response.Headers.Location!.OriginalString);
+        Assert.Equal(WebAppRoutes.Home, response.Headers.Location!.OriginalString);
         Assert.True(HasAuthCookies);
     }
 
@@ -94,7 +95,7 @@ public class AccountSelectionTests : FunctionalTestBase
         var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains($"href=\"{AppRoutes.AcceptInvitation}\"", html);
+        Assert.Contains($"href=\"{WebAppRoutes.AcceptInvitation}\"", html);
     }
 
     [Fact]

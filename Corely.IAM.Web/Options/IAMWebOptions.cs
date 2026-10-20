@@ -1,4 +1,3 @@
-using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 
@@ -8,23 +7,11 @@ public sealed class IAMWebOptions
 {
     public string? ForgotPasswordPath { get; set; }
 
-    public List<PlatformSettingsPage> PlatformSettingsPages { get; } =
-    [
-        new(
-            "Audit",
-            AppRoutes.PlatformAuditSettings,
-            "bi-journal-text",
-            PlatformSettings.RESOURCE_TYPE
-        ),
-        new(
-            "Security",
-            AppRoutes.PlatformSecuritySettings,
-            "bi-shield-lock",
-            SecurityPolicy.RESOURCE_TYPE
-        ),
-    ];
+    public string HomePath { get; set; } = "/";
 
-    internal async Task<IReadOnlyList<PlatformSettingsPage>> ReadablePlatformSettingsPagesAsync(
+    public List<PlatformSettingsPage> PlatformSettingsPages { get; } = [];
+
+    public async Task<IReadOnlyList<PlatformSettingsPage>> ReadablePlatformSettingsPagesAsync(
         IAuthorizationProvider authorizationProvider
     )
     {

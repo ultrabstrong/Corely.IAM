@@ -14,4 +14,6 @@ public interface IAuthCookieManager
     void DeleteAuthCookies(IResponseCookies cookies);
     void DeleteDeviceIdCookie(IResponseCookies cookies);
     string GetOrCreateDeviceId(HttpContext context);
+    void SetReturnUrlCookie(HttpContext context, string returnUrl);
+    string? TakeReturnUrlCookie(HttpContext context);
 }

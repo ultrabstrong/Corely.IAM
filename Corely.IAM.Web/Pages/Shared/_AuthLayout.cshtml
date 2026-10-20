@@ -1,12 +1,16 @@
 @using System.Reflection
 @using Corely.IAM.Users.Providers
+@using Microsoft.Extensions.DependencyInjection
+@using Microsoft.Extensions.Options
 @inject IUserContextProvider UserContextProvider
+@inject IServiceProvider Services
+@inject IOptions<Corely.IAM.Web.Configuration.IAMWebOptions> IamWebOptions
 @{
     var title = ViewData["Title"]?.ToString() ?? "Corely IAM";
     var version = Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "0.0.0";
     var userContext = UserContextProvider.GetUserContext();
     var username = userContext?.User?.Username;
-    var userProfileUrl = Corely.IAM.Web.AppRoutes.Profile;
+    var userProfileUrl = Services.GetService<Corely.IAM.Web.IIamWebLinks>()?.Profile();
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -22,7 +26,7 @@
 <body class="d-flex flex-column min-vh-100 bg-body-tertiary">
     <header class="navbar navbar-expand navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">Corely IAM</a>
+            <a class="navbar-brand" href="@IamWebOptions.Value.HomePath">Corely IAM</a>
             @if (userContext != null)
             {
                 <ul class="navbar-nav ms-auto">
@@ -31,7 +35,10 @@
                             <i class="bi bi-person"></i> @username
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="@userProfileUrl"><i class="bi bi-person-gear me-2"></i>Profile</a></li>
+                            @if (userProfileUrl != null)
+                            {
+                                <li><a class="dropdown-item" href="@userProfileUrl"><i class="bi bi-person-gear me-2"></i>Profile</a></li>
+                            }
                             <li><a class="dropdown-item" href="@Corely.IAM.Web.AppRoutes.CreateAccount"><i class="bi bi-plus-circle me-2"></i>Create account</a></li>
                             <li><button type="button" class="dropdown-item theme-toggle-static" data-theme-toggle aria-label="Use dark theme"><i class="bi bi-moon-stars me-2" aria-hidden="true"></i><i class="bi bi-sun me-2" aria-hidden="true"></i>Switch theme</button></li>
                             <li><hr class="dropdown-divider" /></li>
@@ -57,7 +64,7 @@
         <div class="container d-flex justify-content-between align-items-center">
             <span>&copy; @DateTime.UtcNow.Year Corely IAM</span>
             <a href="https://github.com/ultrabstrong/Corely.IAM" target="_blank"><i class="bi bi-github me-1"></i>Source</a>
-            <span><a href="/privacy">Privacy Policy</a> | <a href="/terms">Terms of Use</a> | v@(version)</span>
+            <span><a href="@Corely.IAM.Web.AppRoutes.Privacy">Privacy Policy</a> | <a href="@Corely.IAM.Web.AppRoutes.Terms">Terms of Use</a> | v@(version)</span>
         </div>
     </footer>
 

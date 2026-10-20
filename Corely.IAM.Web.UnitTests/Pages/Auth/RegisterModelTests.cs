@@ -1,6 +1,7 @@
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Pages.Authentication;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.UnitTests.Helpers;
@@ -33,7 +34,8 @@ public class RegisterModelTests
             _mockCookieManager.Object,
             new FixedSecurityPolicyProvider(),
             Options.Create(new SecurityOptions()),
-            _mockHumanVerifier.Object
+            _mockHumanVerifier.Object,
+            Options.Create(new IAMWebOptions())
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();
     }
@@ -103,7 +105,7 @@ public class RegisterModelTests
         var result = _model.OnGet();
 
         var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(AppRoutes.Dashboard, redirect.Url);
+        Assert.Equal("/", redirect.Url);
     }
 
     [Fact]
@@ -195,7 +197,7 @@ public class RegisterModelTests
         var result = await _model.OnPostAsync();
 
         var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(AppRoutes.Dashboard, redirect.Url);
+        Assert.Equal("/", redirect.Url);
         _mockAuthService.Verify(
             s =>
                 s.SignInAsync(

@@ -1,6 +1,6 @@
 # Page Base Classes
 
-Class hierarchy for all Blazor management pages in Corely.IAM.Web.
+Class hierarchy for the Blazor management components in Corely.IAM.Web, and for a host's own pages.
 
 ## Hierarchy
 
@@ -14,12 +14,13 @@ OwningComponentBase (Blazor)
 
 ## AuthenticatedPageBase
 
-Ensures user context is loaded. Redirects unauthenticated users to `/signin`.
+Ensures user context is loaded. Redirects unauthenticated users to `/signin`, returning to the page afterwards.
 
 | Member | Type | Description |
 |--------|------|-------------|
 | `UserContext` | `UserContext?` | Current authenticated user context |
 | `IsAuthenticated` | `bool` | `true` if `UserContext?.User != null` |
+| `CurrentAccountId` | `Guid` | The current account's id from the token, or `Guid.Empty` |
 | `OnInitializedAuthenticatedAsync()` | `virtual Task` | Override point, called after successful authentication |
 
 **Behavior:** Sealed `OnInitializedAsync()` calls `BlazorUserContextAccessor.GetUserContextAsync()`. If not authenticated, redirects to sign-in with `forceLoad: true`.

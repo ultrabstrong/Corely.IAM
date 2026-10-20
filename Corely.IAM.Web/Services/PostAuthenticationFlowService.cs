@@ -3,9 +3,12 @@ using Corely.IAM.Models;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Web.Configuration;
+using Corely.IAM.Web.Extensions;
 using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using SignInResultModel = Corely.IAM.Models.SignInResult;
 
 namespace Corely.IAM.Web.Services;
@@ -14,7 +17,8 @@ internal class PostAuthenticationFlowService(
     IAuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
     IAuthCookieManager authCookieManager,
-    ISecurityPolicyProvider securityPolicyProvider
+    ISecurityPolicyProvider securityPolicyProvider,
+    IOptions<IAMWebOptions> iamWebOptions
 ) : IPostAuthenticationFlowService
 {
     private readonly IAuthenticationService _authenticationService =
@@ -30,7 +34,8 @@ internal class PostAuthenticationFlowService(
 
     public async Task<IActionResult> CompleteSignInAsync(
         HttpContext httpContext,
-        SignInResultModel signInResult
+        SignInResultModel signInResult,
+        string? returnUrl = null
     )
     {
         ArgumentNullException.ThrowIfNull(httpContext);
@@ -58,15 +63,17 @@ internal class PostAuthenticationFlowService(
             authSessionTtlSeconds
         );
 
+        var homePath = iamWebOptions.Value.HomePath;
+        var localReturnUrl = returnUrl.AsLocalUrl();
         var userContext = _userContextProvider.GetUserContext();
         if (userContext == null || userContext.AvailableAccounts.Count == 0)
         {
-            return new RedirectResult(AppRoutes.Dashboard);
+            return new RedirectResult(homePath);
         }
 
         if (userContext.AvailableAccounts.Count > 1)
         {
-            return new RedirectResult(AppRoutes.SelectAccount);
+            return new RedirectResult(localReturnUrl ?? AppRoutes.SelectAccount);
         }
 
         var switchResult = await _authenticationService.SwitchAccountAsync(
@@ -85,6 +92,6 @@ internal class PostAuthenticationFlowService(
             authSessionTtlSeconds
         );
 
-        return new RedirectResult(AppRoutes.Dashboard);
+        return new RedirectResult(localReturnUrl ?? homePath);
     }
 }

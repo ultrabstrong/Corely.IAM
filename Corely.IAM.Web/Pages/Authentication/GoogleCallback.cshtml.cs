@@ -1,5 +1,6 @@
 using Corely.IAM.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Web.Extensions;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -34,15 +35,19 @@ public class GoogleCallbackModel(
             new SignInWithGoogleRequest(credential, deviceId)
         );
 
+        var returnUrl = authCookieManager.TakeReturnUrlCookie(HttpContext).AsLocalUrl();
+
         if (result.ResultCode == SignInResultCode.MfaRequiredChallenge)
         {
             TempData["MfaChallengeToken"] = result.MfaChallengeToken;
+            TempData[SignInModel.RETURN_URL_TEMP_DATA_KEY] = returnUrl;
             return Redirect(AppRoutes.VerifyMfa);
         }
 
         if (result.ResultCode == SignInResultCode.GoogleAuthNotLinkedError)
         {
             TempData["GoogleIdToken"] = credential;
+            TempData[SignInModel.RETURN_URL_TEMP_DATA_KEY] = returnUrl;
             return Redirect(AppRoutes.RegisterWithGoogle);
         }
 
@@ -57,6 +62,10 @@ public class GoogleCallbackModel(
             return Page();
         }
 
-        return await postAuthenticationFlowService.CompleteSignInAsync(HttpContext, result);
+        return await postAuthenticationFlowService.CompleteSignInAsync(
+            HttpContext,
+            result,
+            returnUrl
+        );
     }
 }

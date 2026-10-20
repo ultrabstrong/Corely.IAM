@@ -36,6 +36,13 @@ public static class IamWebServiceExtensions
             return services;
         }
 
+        public IServiceCollection AddIAMWebBlazor<TLinks>()
+            where TLinks : class, IIamWebLinks
+        {
+            services.AddSingleton<IIamWebLinks, TLinks>();
+            return services.AddIAMWebBlazor();
+        }
+
         public IServiceCollection AddIAMWebBlazor()
         {
             services.AddScoped<IBlazorUserContextAccessor, BlazorUserContextAccessor>();

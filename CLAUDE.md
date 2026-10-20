@@ -561,6 +561,10 @@ exists. It is not a log of every decision: add an entry only when the user asks 
 Every `<table>` carries `table-cards`, with its cells given the `cell-*` roles, so it reads as cards
 on a phone. A table that cannot is a design question, raised before it is built.
 
+**Corely.IAM.Web ships components, never routed Blazor pages.** The host writes a shell per page and supplies every link through `IIamWebLinks`; `HostOwnedPathsTests` fails on a `RouteAttribute` in the assembly or a page path added to `AppRoutes`, which names only the authentication endpoints. `Corely.IAM.WebApp` holds a shell for every component.
+
+**A component's account comes from the token, never from the route.** A host puts the account in its paths and wraps the page in `AccountScope`, which switches into that account before anything renders; the component still loads everything for `UserContext.CurrentAccount`. A component that took its account from a route parameter would make a URL an authorization input.
+
 A system defined item is marked by the SYSTEM badge under its name and GUID; user made items get no badge; there is no "Managed by" column and nothing in the Actions column.
 
 ## Documentation

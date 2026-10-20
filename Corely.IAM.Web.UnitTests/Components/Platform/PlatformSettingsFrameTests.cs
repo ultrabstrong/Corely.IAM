@@ -1,7 +1,7 @@
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
-using Corely.IAM.Web.Components.Pages.Platform;
+using Corely.IAM.Web.Components.Platform;
 using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
@@ -15,6 +15,8 @@ public class PlatformSettingsFrameTests : TestContext
 {
     private const string HOST_TYPE = "host_settings";
     private const string HOST_PATH = "/platform-settings/host";
+    private const string AUDIT_PATH = "/settings/audit";
+    private const string SECURITY_PATH = "/settings/security";
 
     private readonly Mock<IAuthorizationProvider> _authorizationProvider = new();
 
@@ -24,11 +26,19 @@ public class PlatformSettingsFrameTests : TestContext
         userContextAccessor
             .Setup(x => x.GetUserContextAsync())
             .ReturnsAsync(PageTestHelpers.CreateUserContext());
+        Services.AddSingleton<IIamWebLinks>(new FakeIamWebLinks());
         Services.AddSingleton(userContextAccessor.Object);
         Services.AddSingleton(_authorizationProvider.Object);
         Services.Configure<IAMWebOptions>(o =>
-            o.PlatformSettingsPages.Add(new("Host", HOST_PATH, "bi-gear", HOST_TYPE))
-        );
+        {
+            o.PlatformSettingsPages.Add(
+                new("Audit", AUDIT_PATH, "bi-journal-text", PlatformSettings.RESOURCE_TYPE)
+            );
+            o.PlatformSettingsPages.Add(
+                new("Security", SECURITY_PATH, "bi-shield-lock", SecurityPolicy.RESOURCE_TYPE)
+            );
+            o.PlatformSettingsPages.Add(new("Host", HOST_PATH, "bi-gear", HOST_TYPE));
+        });
     }
 
     private void CanRead(params string[] resourceTypes) =>
@@ -45,17 +55,14 @@ public class PlatformSettingsFrameTests : TestContext
         Render<PlatformSettingsFrame>(p => p.AddChildContent("content"));
 
     [Fact]
-    public void Menu_ListsIamsPagesThenTheHostsPage_WhenAllAreReadable()
+    public void Menu_ListsTheHostsPagesInOrder_WhenAllAreReadable()
     {
         CanRead(PlatformSettings.RESOURCE_TYPE, SecurityPolicy.RESOURCE_TYPE, HOST_TYPE);
 
         var cut = RenderFrame();
 
         cut.WaitForAssertion(() =>
-            Assert.Equal(
-                [AppRoutes.PlatformAuditSettings, AppRoutes.PlatformSecuritySettings, HOST_PATH],
-                MenuPaths(cut)
-            )
+            Assert.Equal([AUDIT_PATH, SECURITY_PATH, HOST_PATH], MenuPaths(cut))
         );
     }
 
@@ -66,9 +73,7 @@ public class PlatformSettingsFrameTests : TestContext
 
         var cut = RenderFrame();
 
-        cut.WaitForAssertion(() =>
-            Assert.Equal([AppRoutes.PlatformSecuritySettings], MenuPaths(cut))
-        );
+        cut.WaitForAssertion(() => Assert.Equal([SECURITY_PATH], MenuPaths(cut)));
         Assert.Contains("content", cut.Markup);
     }
 }

@@ -6,6 +6,7 @@ public static class AppRoutes
     public const string Register = "/register";
     public const string SignOut = "/signout";
     public const string SelectAccount = "/select-account";
+    public const string SwitchAccount = "/switch-account";
     public const string CreateAccount = "/create-account";
     public const string VerifyMfa = "/verify-mfa";
     public const string GoogleCallback = "/google-callback";
@@ -13,17 +14,4 @@ public static class AppRoutes
 
     public const string Privacy = "/privacy";
     public const string Terms = "/terms";
-
-    public const string Dashboard = "/";
-    public const string AcceptInvitation = "/accept-invitation";
-    public const string Profile = "/profile";
-    public const string Accounts = "/accounts";
-    public const string Users = "/users";
-    public const string Groups = "/groups";
-    public const string Roles = "/roles";
-    public const string Permissions = "/permissions";
-    public const string Audit = "/audit";
-    public const string PlatformSettings = "/platform-settings";
-    public const string PlatformAuditSettings = "/platform-settings/audit";
-    public const string PlatformSecuritySettings = "/platform-settings/security";
 }

@@ -1,0 +1,29 @@
+@inherits OwningComponentBase
+@using Corely.IAM.Web.Configuration
+@inject NavigationManager Navigation
+@inject IOptions<IAMWebOptions> IamWebOptions
+
+@if (_noneReadable)
+{
+    <div class="alert alert-warning">You do not have access to any platform settings.</div>
+}
+
+@code {
+    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
+    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
+
+    private bool _noneReadable;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await BlazorUserContextAccessor.GetUserContextAsync() == null)
+            return;
+        var pages = await IamWebOptions.Value.ReadablePlatformSettingsPagesAsync(AuthorizationProvider);
+        if (pages.Count == 0)
+        {
+            _noneReadable = true;
+            return;
+        }
+        Navigation.NavigateTo(pages[0].Path, replace: true);
+    }
+}

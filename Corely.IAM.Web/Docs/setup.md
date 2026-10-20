@@ -10,11 +10,14 @@ Reference the `Corely.IAM.Web` project or package. It depends on `Corely.IAM` tr
 
 ```csharp
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
-builder.Services.AddIAMWeb();
-builder.Services.AddIAMWebBlazor();
+builder.Services.AddIAMWeb(options =>
+{
+    options.HomePath = "/"; // where sign in lands with nowhere better to go
+});
+builder.Services.AddIAMWebBlazor<MyIamLinks>(); // your IIamWebLinks
 ```
 
-Call `AddIAMWeb()` and `AddIAMWebBlazor()` before `AddIAMServices()`.
+Call `AddIAMWeb()` and `AddIAMWebBlazor<TLinks>()` before `AddIAMServices()`. `TLinks` is the host's `IIamWebLinks`, which tells the components where each page lives; see [Hosting Pages](hosting-pages.md).
 
 ## 3) Register IAM Core Services
 
@@ -57,13 +60,17 @@ app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();
 app.MapRazorComponents<App>()
     .WithStaticAssets()
-    .AddAdditionalAssemblies(typeof(Corely.IAM.Web.AppRoutes).Assembly)
     .AddInteractiveServerRenderMode();
 ```
 
-`AddAdditionalAssemblies` registers the Corely.IAM.Web Blazor components for routing. `AddInteractiveServerRenderMode` enables Blazor Server interactivity for the management pages.
+The package has no routed Blazor pages, so its assembly is not added to the router or to `AddAdditionalAssemblies`. `MapRazorPages()` maps its authentication pages. `AddInteractiveServerRenderMode` enables Blazor Server interactivity for the host's shells.
 
-## 6) Include Static Assets
+## 6) Write the Page Shells
+
+One short page per component, at the host's paths. [Hosting Pages](hosting-pages.md) has the shell,
+the `AccountScope` guard and the `IIamWebLinks` implementation.
+
+## 7) Include Static Assets
 
 CSS is auto-served from `_content/Corely.IAM.Web/`. Reference it in your layout:
 
@@ -71,7 +78,7 @@ CSS is auto-served from `_content/Corely.IAM.Web/`. Reference it in your layout:
 <link rel="stylesheet" href="_content/Corely.IAM.Web/css/iam-web.css" />
 ```
 
-## 7) Configure appsettings
+## 8) Configure appsettings
 
 ```json
 {
@@ -117,17 +124,11 @@ An app that uses IAM for sign-in only (users without accounts, or one shared acc
 wants the sign-in pages and none of the management portal. See
 [Usage Shapes](../../Corely.IAM/Docs/usage-shapes.md) for the IAM side.
 
-**Leave out `AddAdditionalAssemblies`.** It routes every Blazor page in this package, including
-`/users`, `/groups`, `/roles`, and `/permissions`. Without it the Razor Pages (sign in, register,
-sign out, account switching) still work, because `MapRazorPages()` maps them regardless.
+**Write only the shells you need.** Nothing is routed until the host writes a shell, so an app that
+wants only sign in writes none, and can register `AddIAMWebBlazor()` without links as long as it
+renders no component that links to another IAM page.
 
-```csharp
-app.MapRazorPages();
-app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
-```
-
-**Compose your own profile page.** `/profile` comes only with the full set, but its sections are
-public components:
+**Or compose your own profile page.** The `Profile` component needs links; its sections do not:
 
 ```razor
 <TotpSection />
@@ -147,7 +148,7 @@ flight:
 ```
 
 Your own layout's `[Authorize]` pages send an anonymous visitor to `/signin` through the
-`RedirectToLogin` component:
+`RedirectToLogin` component, with the page they asked for as the return URL:
 
 ```razor
 <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MyLayout)">
@@ -169,13 +170,14 @@ Working examples: `Corely.IAM.Demos.UsersOnly` and `Corely.IAM.Demos.SharedAccou
 | Authorization | none | ASP.NET Core authorization middleware |
 | `IHumanVerifier` | Scoped | Bot check on sign up; passes everything unless the host registers its own. See [Security](security.md#human-check) |
 
-## What AddIAMWebBlazor() Registers
+## What AddIAMWebBlazor<TLinks>() Registers
 
 | Service | Lifetime | Purpose |
 |---------|----------|---------|
 | `IBlazorUserContextAccessor` | Scoped | Cached user context for Blazor components |
 | `AuthenticationStateProvider` | Scoped | Blazor auth state derived from `UserContext` |
-| `IAccountDisplayState` | Scoped | Account name display + change notifications for NavBar |
+| `IAccountDisplayState` | Scoped | Account name display + change notifications for the host's navigation |
+| `IIamWebLinks` | Singleton | The host's links, with `AddIAMWebBlazor<TLinks>()` only |
 | Cascading Auth State | none | Propagates auth state to all Blazor components |
 
 ## What UseIAMWebAuthentication() Adds

@@ -1,5 +1,6 @@
 using System.Net;
 using Corely.IAM.Web.FunctionalTests.Infrastructure;
+using Corely.IAM.WebApp;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
@@ -49,7 +50,7 @@ public class SignOutTests : FunctionalTestBase
         using (var signOut = await Client.GetAsync(AppRoutes.SignOut))
             Assert.Equal(HttpStatusCode.Redirect, signOut.StatusCode);
 
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
     }

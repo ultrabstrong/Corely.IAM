@@ -3,7 +3,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Components;
-using Corely.IAM.Web.Components.Pages.Audit;
+using Corely.IAM.Web.Components.Audit;
 using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +38,7 @@ public class AuditEntryDetailTests : TestContext
         userContextAccessor
             .Setup(x => x.GetUserContextAsync())
             .ReturnsAsync(PageTestHelpers.CreateUserContext());
+        Services.AddSingleton<IIamWebLinks>(new FakeIamWebLinks());
         Services.AddSingleton(userContextAccessor.Object);
         Services.AddSingleton(_auditService.Object);
         Services.AddSingleton<ILogger<EntityPageBase>>(NullLogger<EntityPageBase>.Instance);

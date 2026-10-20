@@ -19,18 +19,15 @@ public class IAMWebOptionsTests
             .ReturnsAsync((AuthAction _, string type, Guid[] _) => resourceTypes.Contains(type));
 
     [Fact]
-    public void PlatformSettingsPages_StartWithIamsAuditAndSecurity()
+    public void PlatformSettingsPages_StartEmpty_ForTheHostToFill()
     {
-        var pages = new IAMWebOptions().PlatformSettingsPages;
+        Assert.Empty(new IAMWebOptions().PlatformSettingsPages);
+    }
 
-        Assert.Equal(
-            [PlatformSettings.RESOURCE_TYPE, SecurityPolicy.RESOURCE_TYPE],
-            pages.Select(p => p.ResourceType)
-        );
-        Assert.Equal(
-            [AppRoutes.PlatformAuditSettings, AppRoutes.PlatformSecuritySettings],
-            pages.Select(p => p.Path)
-        );
+    [Fact]
+    public void HomePath_DefaultsToRoot()
+    {
+        Assert.Equal("/", new IAMWebOptions().HomePath);
     }
 
     [Fact]
@@ -38,6 +35,12 @@ public class IAMWebOptionsTests
     {
         CanRead(SecurityPolicy.RESOURCE_TYPE, HOST_TYPE);
         var options = new IAMWebOptions();
+        options.PlatformSettingsPages.Add(
+            new("Audit", "/settings/audit", "bi-journal-text", PlatformSettings.RESOURCE_TYPE)
+        );
+        options.PlatformSettingsPages.Add(
+            new("Security", "/settings/security", "bi-shield-lock", SecurityPolicy.RESOURCE_TYPE)
+        );
         options.PlatformSettingsPages.Add(
             new("Host", "/platform-settings/host", "bi-gear", HOST_TYPE)
         );

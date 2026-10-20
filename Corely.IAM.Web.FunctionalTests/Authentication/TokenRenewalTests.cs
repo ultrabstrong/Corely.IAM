@@ -1,5 +1,6 @@
 using System.Net;
 using Corely.IAM.Web.FunctionalTests.Infrastructure;
+using Corely.IAM.WebApp;
 
 namespace Corely.IAM.Web.FunctionalTests.Authentication;
 
@@ -14,7 +15,7 @@ public class TokenRenewalTests : FunctionalTestBase
         await SignInSuccessfullyAsync();
         Clock.AdvanceSeconds(AuthTokenTtlSeconds + 10);
 
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -26,7 +27,7 @@ public class TokenRenewalTests : FunctionalTestBase
         var before = TestJwt.GetJti(CurrentAuthToken!);
 
         Clock.AdvanceSeconds(AuthTokenTtlSeconds + 10);
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         Assert.NotEqual(before, TestJwt.GetJti(CurrentAuthToken!));
@@ -40,7 +41,7 @@ public class TokenRenewalTests : FunctionalTestBase
         Assert.NotNull(before);
 
         Clock.AdvanceSeconds(AuthTokenTtlSeconds + 10);
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         Assert.Equal(before, TestJwt.GetSessionStartedAt(CurrentAuthToken!));
@@ -53,7 +54,7 @@ public class TokenRenewalTests : FunctionalTestBase
         var previousTokenId = Guid.Parse(CurrentAuthTokenId!);
 
         Clock.AdvanceSeconds(AuthTokenTtlSeconds + 10);
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var previousRow = await GetAuthTokenRowAsync(previousTokenId);
@@ -68,7 +69,7 @@ public class TokenRenewalTests : FunctionalTestBase
         var previousTokenId = CurrentAuthTokenId;
 
         Clock.AdvanceSeconds(AuthTokenTtlSeconds + 10);
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         Assert.NotEqual(previousTokenId, CurrentAuthTokenId);
@@ -81,7 +82,7 @@ public class TokenRenewalTests : FunctionalTestBase
         var before = TestJwt.GetJti(CurrentAuthToken!);
 
         Clock.AdvanceSeconds(AuthTokenTtlSeconds / 2);
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         Assert.Equal(before, TestJwt.GetJti(CurrentAuthToken!));
@@ -98,7 +99,7 @@ public class TokenRenewalTests : FunctionalTestBase
             .UtcDateTime;
 
         Clock.AdvanceSeconds(AuthSessionTtlSeconds - (AuthTokenTtlSeconds / 2));
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var expiresUtc = TestJwt.GetExpiresUtc(CurrentAuthToken!);
@@ -115,7 +116,7 @@ public class TokenRenewalTests : FunctionalTestBase
         await RevokeCurrentTokenOutOfBandAsync();
 
         Clock.AdvanceSeconds(AuthTokenTtlSeconds + 10);
-        using var response = await Client.GetAsync(AppRoutes.Dashboard);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.False(HasAuthCookies);

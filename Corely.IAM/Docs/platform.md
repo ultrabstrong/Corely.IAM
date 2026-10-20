@@ -132,9 +132,9 @@ grant held in the platform account counts.
 A platform member holding Read on `audit` there reads every entry, and Delete on `audit` there
 purges any account's entries and those outside any account. See [Auditing](auditing.md).
 
-The portal shows each area as a page under `/platform-settings`, listing only the areas the user can
-read. A host or a library adds its own area as a page with its own resource type; see Corely.IAM.Web's
-[platform settings pages](../../Corely.IAM.Web/Docs/pages/audit.md#platform-settings-platform-settings).
+Corely.IAM.Web shows each area as a page at a path the host chooses, listing only the areas the user
+can read. A host or a library adds its own area as a page with its own resource type; see Corely.IAM.Web's
+[platform settings components](../../Corely.IAM.Web/Docs/components/audit.md#platform-settings).
 
 ## Where security settings come from
 

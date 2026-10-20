@@ -6,13 +6,14 @@ Displays effective permissions aggregated by role, showing how permissions are d
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
+| `AccountId` | `Guid` | required | The current account, for the role and group links |
 | `Permissions` | `List<EffectivePermission>?` | none | Permissions to display |
 | `UseCard` | `bool` | `true` | Wrap in card layout (vs. section divider) |
 
 ## Usage
 
 ```razor
-<EffectivePermissionsPanel Permissions="@_effectivePermissions" />
+<EffectivePermissionsPanel AccountId="CurrentAccountId" Permissions="@_effectivePermissions" />
 ```
 
 ## Display
@@ -30,4 +31,4 @@ Displays effective permissions aggregated by role, showing how permissions are d
 - Aggregates CRUDX flags across all permissions (true if ANY permission grants the action)
 - Groups permissions by role and tracks derivation sources
 - Sorted alphabetically by role name
-- Links to role detail pages via `AppRoutes.Roles/{Id}`
+- Links to role and group detail pages through the host's `IIamWebLinks.Role` and `IIamWebLinks.Group`

@@ -1,0 +1,12 @@
+@page "/accounts/{AccountId:guid}/permissions"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Permissions - Corely IAM</PageTitle>
+
+<AccountScope AccountId="AccountId">
+    <PermissionList />
+</AccountScope>
+
+@code {
+    [Parameter] public Guid AccountId { get; set; }
+}

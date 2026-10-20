@@ -1,6 +1,7 @@
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Pages.Authentication;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.UnitTests.Helpers;
@@ -26,7 +27,8 @@ public class SwitchAccountModelTests
         _model = new SwitchAccountModel(
             _mockAuthService.Object,
             _mockCookieManager.Object,
-            new FixedSecurityPolicyProvider()
+            new FixedSecurityPolicyProvider(),
+            Options.Create(new IAMWebOptions())
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();
 
@@ -42,7 +44,7 @@ public class SwitchAccountModelTests
         var result = await _model.OnGetAsync();
 
         var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(AppRoutes.Dashboard, redirect.Url);
+        Assert.Equal("/", redirect.Url);
     }
 
     [Fact]
@@ -122,7 +124,7 @@ public class SwitchAccountModelTests
         var result = await _model.OnPostAsync(accountId, "https://evil.com/redirect");
 
         var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(AppRoutes.Dashboard, redirect.Url);
+        Assert.Equal("/", redirect.Url);
     }
 
     [Fact]
@@ -138,7 +140,7 @@ public class SwitchAccountModelTests
         var result = await _model.OnPostAsync(accountId, null);
 
         var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(AppRoutes.Dashboard, redirect.Url);
+        Assert.Equal("/", redirect.Url);
     }
 
     [Fact]

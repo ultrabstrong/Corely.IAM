@@ -1,6 +1,9 @@
 @page "/select-account"
 @model Corely.IAM.Web.Pages.Authentication.SelectAccountModel
+@using Microsoft.Extensions.DependencyInjection
+@inject IServiceProvider Services
 @{
+    var acceptInvitationUrl = Services.GetService<Corely.IAM.Web.IIamWebLinks>()?.AcceptInvitation();
     Layout = "_AuthLayout";
     ViewData["Title"] = "Select Account";
 }
@@ -17,12 +20,13 @@
         <div class="input-group mb-3">
             <input type="text" class="form-control" name="Search" value="@Model.Search"
                    placeholder="Search by name..." autocomplete="off" autofocus />
+            <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
             <button class="btn btn-outline-secondary" type="submit">
                 <i class="bi bi-search"></i>
             </button>
             @if (!string.IsNullOrWhiteSpace(Model.Search))
             {
-                <a href="@Corely.IAM.Web.AppRoutes.SelectAccount" class="btn btn-outline-secondary">
+                <a href="@Url.Page("SelectAccount", new { Model.ReturnUrl })" class="btn btn-outline-secondary">
                     <i class="bi bi-x-lg"></i>
                 </a>
             }
@@ -35,6 +39,7 @@
             <form method="post" class="d-inline">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="AccountId" value="@account.Id" />
+                <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
                 <button type="submit" class="list-group-item list-group-item-action">
                     <div class="fw-semibold">@account.AccountName</div>
                     <small class="text-muted font-monospace">@account.Id</small>
@@ -54,7 +59,7 @@
         <nav class="mt-3">
             <ul class="pagination pagination-sm justify-content-center mb-0">
                 <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
-                    <a class="page-link" href="@Url.Page("SelectAccount", new { PageNumber = Model.PageNumber - 1, Search = Model.Search })">
+                    <a class="page-link" href="@Url.Page("SelectAccount", new { PageNumber = Model.PageNumber - 1, Search = Model.Search, Model.ReturnUrl })">
                         <i class="bi bi-chevron-left"></i>
                     </a>
                 </li>
@@ -62,7 +67,7 @@
                     <span class="page-link">@Model.PageNumber / @Model.TotalPages</span>
                 </li>
                 <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
-                    <a class="page-link" href="@Url.Page("SelectAccount", new { PageNumber = Model.PageNumber + 1, Search = Model.Search })">
+                    <a class="page-link" href="@Url.Page("SelectAccount", new { PageNumber = Model.PageNumber + 1, Search = Model.Search, Model.ReturnUrl })">
                         <i class="bi bi-chevron-right"></i>
                     </a>
                 </li>
@@ -75,8 +80,11 @@
         <a href="@Corely.IAM.Web.AppRoutes.CreateAccount" class="btn btn-outline-primary w-100">
             <i class="bi bi-plus-circle"></i> Create New Account
         </a>
-        <a href="@Corely.IAM.Web.AppRoutes.AcceptInvitation" class="btn btn-outline-primary w-100 mt-2">
-            <i class="bi bi-envelope-open"></i> Accept an invitation
-        </a>
+        @if (acceptInvitationUrl != null)
+        {
+            <a href="@acceptInvitationUrl" class="btn btn-outline-primary w-100 mt-2">
+                <i class="bi bi-envelope-open"></i> Accept an invitation
+            </a>
+        }
     </div>
 </div>

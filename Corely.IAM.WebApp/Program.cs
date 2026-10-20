@@ -1,5 +1,7 @@
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM;
+using Corely.IAM.Platform.Models;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Web.Extensions;
 using Corely.IAM.WebApp;
 using Corely.IAM.WebApp.Auditing;
@@ -27,8 +29,24 @@ builder.Services.Configure<DemoFeaturesOptions>(
 builder.Services.AddIAMWeb(options =>
 {
     options.ForgotPasswordPath = WebAppRoutes.ForgotPassword;
+    options.PlatformSettingsPages.Add(
+        new(
+            "Audit",
+            WebAppRoutes.PlatformAuditSettings,
+            "bi-journal-text",
+            PlatformSettings.RESOURCE_TYPE
+        )
+    );
+    options.PlatformSettingsPages.Add(
+        new(
+            "Security",
+            WebAppRoutes.PlatformSecuritySettings,
+            "bi-shield-lock",
+            SecurityPolicy.RESOURCE_TYPE
+        )
+    );
 });
-builder.Services.AddIAMWebBlazor();
+builder.Services.AddIAMWebBlazor<WebAppLinks>();
 
 var securityConfigProvider = new SecurityConfigurationProvider(builder.Configuration);
 
@@ -94,10 +112,7 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();
-app.MapRazorComponents<App>()
-    .WithStaticAssets()
-    .AddAdditionalAssemblies(typeof(Corely.IAM.Web.AppRoutes).Assembly)
-    .AddInteractiveServerRenderMode();
+app.MapRazorComponents<App>().WithStaticAssets().AddInteractiveServerRenderMode();
 
 app.Run();
 

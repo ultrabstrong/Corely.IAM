@@ -1,6 +1,7 @@
 # Corely.IAM.Web: components only, the host owns every path
 
-Status: planned 2026-10-20, not started. First of three plans in order: this one, then
+**Status: built, awaiting release** as `Corely.IAM.Web` 7.0.0 (`Corely.IAM` unchanged), verified against
+DocsToData through a local package feed. First of three plans in order: this one, then
 `Corely.Billing/Plans/web-components-only.md`, then `DocsToData/Plans/New/account-scoped-routes.md`.
 
 ## Why
@@ -268,3 +269,47 @@ Walk the tiers as `CLAUDE.md` says; expected placement:
 
 Left to the building session: names of the moved components where a `Page` suffix or a clash with a
 host's own page appears. Record them under As built.
+
+## As built
+
+1. **`IIamWebLinks` gained `AcceptInvitation()`.** Select Account's invitation link and the WebApp's
+   nav need it, and the accept invitation page is a host path now.
+2. **`AddIAMWebBlazor()` without links stays**, beside `AddIAMWebBlazor<TLinks>()`. The two demo hosts
+   render only building blocks (`TotpSection`, `ThemeToggle`) and would otherwise need a links class
+   full of pages they do not have. A host that renders a linking component without links fails with
+   DI's own message, which names `IIamWebLinks`. There is still no default implementation.
+3. **The Razor Pages resolve `IIamWebLinks` optionally.** `_AuthLayout`'s Profile link and Select
+   Account's invitation link show only when the host registered links.
+4. **`AccountDetail` has no `Id`.** It inherits `EntityPageBase` and always shows the current account,
+   so the route's account is never used for data.
+5. **`EffectivePermissionsPanel` requires `AccountId`**, for its role and group links.
+   `LoggingErrorBoundary`'s Go Home uses `IAMWebOptions.HomePath` instead of links, so it needs none.
+6. **`AuditLog` is account scoped in the shells** as the interface says, though what it lists still
+   spans every account the viewer may read; the docs say so.
+7. **`AcceptInvitation` keeps reading `?token=` itself** (`[SupplyParameterFromQuery]` works on a
+   component), so an invitation link carries the token to whatever path the host gives the page.
+8. **Names:** the platform pair dropped `Page` (`PlatformAuditSettings`, `PlatformSecuritySettings`);
+   every other component kept its name. Namespaces follow the folders
+   (`Corely.IAM.Web.Components.Users` and so on; `Profile` is in `Corely.IAM.Web.Components`). The
+   WebApp's shells are `<Name>Page`, and its settings index is `PlatformSettingsIndexPage` to avoid the
+   `PlatformSettingsPage` record.
+9. **`IAMWebOptions.PlatformSettingsPages` starts empty** and `ReadablePlatformSettingsPagesAsync` is
+   public, so a host's own navigation can use it.
+10. **Google sign in carries the return URL in a `return_url` cookie** (HttpOnly, SameSite=Lax, 10
+    minutes, deleted when read), through `IAuthCookieManager.SetReturnUrlCookie` and
+    `TakeReturnUrlCookie`; `login_uri` must match the registered redirect URI, so the query string
+    could not carry it. `RegisterWithGoogle` passes it on through `TempData`.
+11. **One local URL rule,** `string.AsLocalUrl()` (`StringExtensions`), used at every step including
+    `SwitchAccount`, which used `Url.IsLocalUrl` before.
+12. **Tests:** `AccountScopeTests`, `HostOwnedPathsTests` (no `RouteAttribute` in the assembly,
+    `AppRoutes` holds only the endpoints, `UserList`'s links come from the host),
+    `StringExtensionsTests`, return URL cases in `PostAuthenticationFlowServiceTests`, and
+    `ReturnUrlTests` on the functional tier. Breaking `AccountScope`'s comparison turned
+    `AccountScopeTests` red, and dropping the local check in `SwitchAccount` turned
+    `SwitchAccount_NeverRedirectsOffSite` red; both restored. The demos' "admin pages are not routed"
+    theory went, since the assembly scan now proves it for every host.
+13. **DocsToData check:** the portal built and passed its unit and functional tests on the local
+    package; in a browser, a signed out deep link returned after sign in, a platform member's MFA sign
+    in landed on another account's page and switched into it, an account the user cannot enter landed
+    on account selection, and the account, users, groups, audit, audit entry and platform settings
+    shells all rendered with host links and no console errors.

@@ -67,8 +67,6 @@ internal class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
         return deviceId;
     }
 
-    // Google posts its credential to the callback, so the page that started sign in cannot hand
-    // the return URL over in a form field. A short lived cookie carries it instead.
     public void SetReturnUrlCookie(HttpContext context, string returnUrl)
     {
         context.Response.Cookies.Append(

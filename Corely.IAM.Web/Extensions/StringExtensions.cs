@@ -4,8 +4,6 @@ internal static class StringExtensions
 {
     extension(string? url)
     {
-        // The URL when it stays on this site, otherwise null: the same rule as IUrlHelper.IsLocalUrl,
-        // without the "~/" form, so a return URL can never send a signed in user elsewhere.
         public string? AsLocalUrl()
         {
             if (string.IsNullOrWhiteSpace(url) || url[0] != '/')

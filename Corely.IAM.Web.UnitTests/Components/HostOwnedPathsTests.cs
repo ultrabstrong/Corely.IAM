@@ -15,7 +15,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Corely.IAM.Web.UnitTests.Components;
 
-// The library ships components; the host decides every path. These keep it that way.
 public class HostOwnedPathsTests : BunitContext
 {
     private static readonly Assembly _assembly = typeof(AppRoutes).Assembly;

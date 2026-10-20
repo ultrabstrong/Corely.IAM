@@ -1,7 +1,5 @@
 namespace Corely.IAM.Web.UnitTests.Helpers;
 
-// Every link is "/fake/<method>/<arguments>", so a test can tell which link a component asked for
-// and that it came from the host rather than a path of the library's own.
 public class FakeIamWebLinks : IIamWebLinks
 {
     public const string PREFIX = "/fake";

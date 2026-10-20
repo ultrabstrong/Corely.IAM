@@ -28,7 +28,14 @@ public class SignInTests : FunctionalTestBase
 
         Assert.True(authCookie.HttpOnly);
         Assert.True(authCookie.Secure);
-        Assert.Equal("strict", authCookie.SameSite, ignoreCase: true);
+        Assert.Equal("lax", authCookie.SameSite, ignoreCase: true);
+        Assert.Equal(
+            "lax",
+            Client
+                .LastSetCookies.Last(c => c.Name == AuthCookieManager.AUTH_TOKEN_ID_COOKIE)
+                .SameSite,
+            ignoreCase: true
+        );
     }
 
     [Fact]

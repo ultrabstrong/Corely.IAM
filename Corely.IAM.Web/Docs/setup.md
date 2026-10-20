@@ -164,7 +164,7 @@ Working examples: `Corely.IAM.Demos.UsersOnly` and `Corely.IAM.Demos.SharedAccou
 |---------|----------|---------|
 | Razor Pages | none | Pre-authentication page routing |
 | `IHttpContextAccessor` | Singleton | HTTP context for cookie management |
-| `IAuthCookieManager` | Singleton | Set/delete auth cookies (HttpOnly, Secure, SameSite=Strict) |
+| `IAuthCookieManager` | Singleton | Set/delete auth cookies (HttpOnly, Secure, SameSite=Lax) |
 | `IUserContextClaimsBuilder` | Singleton | Maps `UserContext` to `ClaimsPrincipal` |
 | Cookie Authentication | none | ASP.NET Core cookie auth with `/signin` and `/signout` paths |
 | Authorization | none | ASP.NET Core authorization middleware |

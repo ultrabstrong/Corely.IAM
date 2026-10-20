@@ -27,7 +27,7 @@ public interface IAuthCookieManager
 }
 ```
 
-- All auth cookies use HttpOnly, Secure, SameSite=Strict flags
+- Auth cookies use HttpOnly, Secure and SameSite=Lax; see [Security](security.md#cookie-security) for why
 - `GetOrCreateDeviceId()` creates a 90-day persistent cookie with a v7 UUID
 
 ## IBlazorUserContextAccessor

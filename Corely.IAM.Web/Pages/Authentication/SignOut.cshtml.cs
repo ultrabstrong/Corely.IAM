@@ -1,5 +1,6 @@
 using Corely.IAM.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Web.Extensions;
 using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -11,15 +12,10 @@ public class SignOutModel(
     IAuthCookieManager authCookieManager
 ) : PageModel
 {
-    public async Task<IActionResult> OnGetAsync()
-    {
-        return await SignOutCoreAsync();
-    }
+    public async Task<IActionResult> OnGetAsync() =>
+        Request.IsSameOrigin() ? await SignOutCoreAsync() : Page();
 
-    public async Task<IActionResult> OnPostAsync()
-    {
-        return await SignOutCoreAsync();
-    }
+    public async Task<IActionResult> OnPostAsync() => await SignOutCoreAsync();
 
     private async Task<IActionResult> SignOutCoreAsync()
     {

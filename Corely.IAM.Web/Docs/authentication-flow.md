@@ -10,7 +10,7 @@ Pre-authentication pages are Razor Pages (server-rendered, no Blazor dependency)
 | `/register` | Register | Registration form (username, email, password, confirm) |
 | `/select-account` | SelectAccount | Account selection with search and pagination |
 | `/create-account` | CreateAccount | New account form |
-| `/signout` | SignOut | Sign out and clear cookies |
+| `/signout` | SignOut | Sign out and clear cookies; asks first unless the request is same origin |
 | `/verify-mfa` | VerifyMfa | MFA code entry after sign-in |
 | `/google-callback` | GoogleCallback | Google Identity Services callback |
 
@@ -88,7 +88,7 @@ cookie middleware, and `RedirectToLogin`, `AuthenticatedPageBase` and `AccountSc
 | Google sign in | A `return_url` cookie (HttpOnly, 10 minutes), since Google posts to `/google-callback` |
 | `/register-with-google` | `TempData` |
 | `/select-account` | `?returnUrl=` and a hidden field, through to the switch |
-| `/switch-account` | `?returnUrl=` |
+| `/switch-account` | `?returnUrl=`, kept on the confirm form when another site sent the request |
 
 Every step keeps a return URL only when it is a path on this site (`/accounts/…`); anything else,
 `https://…`, `//host` and `/\host` included, is dropped and the flow goes on as if there were
@@ -98,8 +98,8 @@ none. An open redirect here would be a phishing tool.
 
 | Cookie | Purpose | Flags |
 |--------|---------|-------|
-| `authentication_token` | JWT token | HttpOnly, Secure, SameSite=Strict, TTL-based expiry |
-| `auth_token_id` | Token ID for revocation | HttpOnly, Secure, SameSite=Strict, TTL-based expiry |
+| `authentication_token` | JWT token | HttpOnly, Secure, SameSite=Lax, TTL-based expiry |
+| `auth_token_id` | Token ID for revocation | HttpOnly, Secure, SameSite=Lax, TTL-based expiry |
 | `device_id` | Device fingerprint | HttpOnly, Secure, SameSite=Strict, 90-day expiry |
 | `return_url` | Return URL across Google sign in | HttpOnly, Secure, SameSite=Lax, 10 minutes, deleted when read |
 

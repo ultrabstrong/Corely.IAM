@@ -11,9 +11,20 @@ All authentication cookies use:
 |------|-------|
 | `HttpOnly` | `true`: not accessible from JavaScript |
 | `Secure` | `true` (when HTTPS): only sent over encrypted connections |
-| `SameSite` | `Strict`: not sent with cross-site requests |
+| `SameSite` | `Lax` on `authentication_token` and `auth_token_id`, `Strict` on `device_id` |
 | `Path` | `/`: available site-wide |
 
+`Lax` sends the auth cookies when someone follows a link to the site from elsewhere, an email
+included, so a deep link opens signed in. It never sends them on another site's POST, or on a
+request a page makes in the background, the Blazor circuit's WebSocket among them. Two rules keep it
+safe, and are tested:
+
+1. **Every POST carries an antiforgery token.** SameSite is defence in depth, not the CSRF defence.
+2. **No GET changes state when another site started it.** `/signout` and `/switch-account` act on
+   GET only when the browser's `Sec-Fetch-Site` header says `same-origin`, which is how a host's own
+   links and `AccountScope` reach them. From anywhere else, or with no header, each shows a
+   confirm button that posts with an antiforgery token. `CrossSiteRequestTests` sends a cross site
+   GET to every endpoint in `AppRoutes` and fails if any changes the session.
 ## Auth Cookies
 
 | Cookie | Purpose | Expiry |

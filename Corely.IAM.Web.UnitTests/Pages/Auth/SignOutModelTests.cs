@@ -27,6 +27,8 @@ public class SignOutModelTests
     [Fact]
     public async Task OnGet_SignsOutAndRedirectsToSignIn()
     {
+        _model.HttpContext.Request.Headers["Sec-Fetch-Site"] = "same-origin";
+
         var result = await _model.OnGetAsync();
 
         var redirect = Assert.IsType<RedirectResult>(result);
@@ -35,6 +37,27 @@ public class SignOutModelTests
             m => m.DeleteAuthCookies(It.IsAny<IResponseCookies>()),
             Times.Once
         );
+    }
+
+    [Theory]
+    [InlineData("cross-site")]
+    [InlineData("same-site")]
+    [InlineData(null)]
+    public async Task OnGet_AsksFirstWithoutSigningOut_ForARequestAnotherSiteStarted(
+        string? fetchSite
+    )
+    {
+        if (fetchSite is not null)
+            _model.HttpContext.Request.Headers["Sec-Fetch-Site"] = fetchSite;
+
+        var result = await _model.OnGetAsync();
+
+        Assert.IsType<PageResult>(result);
+        _mockCookieManager.Verify(
+            m => m.DeleteAuthCookies(It.IsAny<IResponseCookies>()),
+            Times.Never
+        );
+        _mockAuthService.Verify(s => s.SignOutAsync(It.IsAny<SignOutRequest>()), Times.Never);
     }
 
     [Fact]

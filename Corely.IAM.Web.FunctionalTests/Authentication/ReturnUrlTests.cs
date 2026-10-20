@@ -91,7 +91,8 @@ public class ReturnUrlTests : FunctionalTestBase
         var page = WebAppRoutes.Users(secondAccountId);
 
         using var response = await Client.GetAsync(
-            $"{AppRoutes.SwitchAccount}?accountId={secondAccountId}&returnUrl={Uri.EscapeDataString(page)}"
+            $"{AppRoutes.SwitchAccount}?accountId={secondAccountId}&returnUrl={Uri.EscapeDataString(page)}",
+            "same-origin"
         );
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
@@ -105,7 +106,8 @@ public class ReturnUrlTests : FunctionalTestBase
         var otherAccountId = Guid.CreateVersion7();
 
         using var response = await Client.GetAsync(
-            $"{AppRoutes.SwitchAccount}?accountId={otherAccountId}&returnUrl={Uri.EscapeDataString(WebAppRoutes.Users(otherAccountId))}"
+            $"{AppRoutes.SwitchAccount}?accountId={otherAccountId}&returnUrl={Uri.EscapeDataString(WebAppRoutes.Users(otherAccountId))}",
+            "same-origin"
         );
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
@@ -153,7 +155,8 @@ public class ReturnUrlTests : FunctionalTestBase
         await SignInSuccessfullyAsync();
 
         using var response = await Client.GetAsync(
-            $"{AppRoutes.SwitchAccount}?accountId={AccountId}&returnUrl={Uri.EscapeDataString(OFF_SITE)}"
+            $"{AppRoutes.SwitchAccount}?accountId={AccountId}&returnUrl={Uri.EscapeDataString(OFF_SITE)}",
+            "same-origin"
         );
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);

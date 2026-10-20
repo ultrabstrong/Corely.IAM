@@ -4,3 +4,11 @@
     Layout = "_AuthLayout";
     ViewData["Title"] = "Sign Out";
 }
+
+<div class="auth-card text-center">
+    <h4 class="mb-3">Sign out?</h4>
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <button type="submit" data-busy-spinner class="btn btn-primary w-100">Sign out</button>
+    </form>
+</div>

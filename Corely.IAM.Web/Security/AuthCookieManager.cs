@@ -24,7 +24,7 @@ internal class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
         {
             HttpOnly = true,
             Secure = isHttps,
-            SameSite = SameSiteMode.Strict,
+            SameSite = SameSiteMode.Lax,
             Path = "/",
             Expires = _timeProvider.GetUtcNow().AddSeconds(authCookieTtlSeconds),
         };

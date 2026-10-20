@@ -31,6 +31,7 @@ public class SwitchAccountModelTests
             Options.Create(new IAMWebOptions())
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();
+        _model.HttpContext.Request.Headers["Sec-Fetch-Site"] = "same-origin";
 
         var mockUrlHelper = new Mock<IUrlHelper>();
         mockUrlHelper.Setup(u => u.IsLocalUrl(It.IsAny<string>())).Returns(false);
@@ -158,5 +159,22 @@ public class SwitchAccountModelTests
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(AppRoutes.SelectAccount, redirect.Url);
+    }
+
+    [Fact]
+    public async Task OnGet_AsksFirstWithoutSwitching_ForARequestAnotherSiteStarted()
+    {
+        var accountId = Guid.CreateVersion7();
+        _model.HttpContext.Request.Headers["Sec-Fetch-Site"] = "cross-site";
+
+        var result = await _model.OnGetAsync(accountId, "/local-path");
+
+        Assert.IsType<PageResult>(result);
+        Assert.Equal(accountId, _model.AccountId);
+        Assert.Equal("/local-path", _model.ReturnUrl);
+        _mockAuthService.Verify(
+            x => x.SwitchAccountAsync(It.IsAny<SwitchAccountRequest>()),
+            Times.Never
+        );
     }
 }

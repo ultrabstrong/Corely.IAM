@@ -17,11 +17,22 @@ public class SwitchAccountModel(
     IOptions<IAMWebOptions> iamWebOptions
 ) : PageModel
 {
+    public Guid AccountId { get; private set; }
+
+    public string? ReturnUrl { get; private set; }
+
     public async Task<IActionResult> OnGetAsync(Guid? accountId = null, string? returnUrl = null)
     {
         if (accountId == null)
         {
             return Redirect(iamWebOptions.Value.HomePath);
+        }
+
+        if (!Request.IsSameOrigin())
+        {
+            AccountId = accountId.Value;
+            ReturnUrl = returnUrl.AsLocalUrl();
+            return Page();
         }
 
         return await SwitchAndRedirectAsync(accountId.Value, returnUrl);

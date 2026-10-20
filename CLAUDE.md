@@ -561,6 +561,8 @@ exists. It is not a log of every decision: add an entry only when the user asks 
 Every `<table>` carries `table-cards`, with its cells given the `cell-*` roles, so it reads as cards
 on a phone. A table that cannot is a design question, raised before it is built.
 
+**No GET changes state when another site started it.** The auth cookies are `SameSite=Lax` so a link from elsewhere (an email) opens signed in, and Lax is only safe while that holds. An endpoint that changes state on GET acts only when `Sec-Fetch-Site` is `same-origin` (`HttpRequest.IsSameOrigin()`) and otherwise renders a confirm button that posts with an antiforgery token, as `/signout` and `/switch-account` do. `CrossSiteRequestTests` fails when one does not. Never answer a cross site link with a page that submits itself: another site can open it.
+
 **Corely.IAM.Web ships components, never routed Blazor pages.** The host writes a shell per page and supplies every link through `IIamWebLinks`; `HostOwnedPathsTests` fails on a `RouteAttribute` in the assembly or a page path added to `AppRoutes`, which names only the authentication endpoints. `Corely.IAM.WebApp` holds a shell for every component.
 
 **A component's account comes from the token, never from the route.** A host puts the account in its paths and wraps the page in `AccountScope`, which switches into that account before anything renders; the component still loads everything for `UserContext.CurrentAccount`. A component that took its account from a route parameter would make a URL an authorization input.

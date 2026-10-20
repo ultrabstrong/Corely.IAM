@@ -10,9 +10,11 @@ public sealed partial class TestClient(HttpClient client) : IDisposable
 
     public IReadOnlyList<SentCookie> LastSetCookies { get; private set; } = [];
 
-    public async Task<HttpResponseMessage> GetAsync(string path)
+    public async Task<HttpResponseMessage> GetAsync(string path, string? fetchSite = null)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, path);
+        if (fetchSite is not null)
+            request.Headers.Add("Sec-Fetch-Site", fetchSite);
         return await SendAsync(request);
     }
 

@@ -676,6 +676,10 @@ span.cell-icon {
         width: 100%;
     }
 
+    .table-responsive:has(> .table-cards) {
+        overflow-x: visible;
+    }
+
     .table-cards thead:not(:has(.th-search)),
     .table-cards thead th:not(:has(.th-search)),
     :is(.table-cards, .detail-cards, .props-grid) .cell-hide {

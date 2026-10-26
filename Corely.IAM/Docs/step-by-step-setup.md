@@ -86,10 +86,12 @@ This single call registers all IAM services, processors, repositories, validator
 Use the [Migration CLI](../../Corely.IAM.DataAccessMigrations.Cli/Docs/index.md) to create the database and apply migrations:
 
 ```bash
-cd Corely.IAM.DataAccessMigrations.Cli
-dotnet run -- config init mssql -c "your-connection-string"
-dotnet run -- db create
+dotnet tool install --global Corely.IAM.DataAccessMigrations.Cli
+corely-iam-db db create -p MsSql -c "your-connection-string"
 ```
+
+The provider and connection string can also come from `CORELY_IAM_DB_PROVIDER` and
+`CORELY_IAM_DB_CONNECTION`. There is no settings file.
 
 ## 7) Set User Context
 

@@ -134,6 +134,56 @@ if (result == UserAuthTokenValidationResultCode.Success)
 
 Validation checks: JWT format, required claims, user existence, token not revoked, token not expired, signature validity.
 
+## In an API
+
+`Corely.IAM.Web` validates and renews from cookies on its own. An API host that takes bearer tokens
+writes the same steps itself: a middleware that sets the context from the `Authorization` header, and
+endpoints for sign in and renewal. The client keeps both tokens and renews when a call returns 401.
+
+```csharp
+app.Use(async (context, next) =>
+{
+    var header = context.Request.Headers.Authorization.ToString();
+    if (header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+    {
+        var result = await context.RequestServices
+            .GetRequiredService<IAuthenticationService>()
+            .AuthenticateWithTokenAsync(header["Bearer ".Length..]);
+        if (result != UserAuthTokenValidationResultCode.Success)
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
+        }
+    }
+
+    await next(context);
+});
+
+app.MapPost("/auth/signin", async (SignInRequest request, IAuthenticationService auth) =>
+{
+    var result = await auth.SignInAsync(request);
+    return result.ResultCode == SignInResultCode.Success
+        ? Results.Ok(new { result.AuthToken, result.RefreshToken, result.RefreshExpiresUtc })
+        : Results.Unauthorized();
+});
+
+app.MapPost("/auth/renew", async (RenewAuthTokenRequest request, IAuthenticationService auth) =>
+{
+    var result = await auth.RenewAuthTokenAsync(request);
+    return result.ResultCode switch
+    {
+        RenewAuthTokenResultCode.Success =>
+            Results.Ok(new { result.AuthToken, result.RefreshToken, result.RefreshExpiresUtc }),
+        RenewAuthTokenResultCode.RefreshTokenAlreadyRotatedError => Results.Conflict(),
+        _ => Results.Unauthorized(),
+    };
+});
+```
+
+A request without a header passes through with no context, so IAM's own authorization refuses
+anything that needs a user. On 409 from `/auth/renew` another call of the same client renewed first:
+the client keeps the pair that call received. On 401 it signs in again.
+
 ## Token Claims
 
 | Claim | Type | Description |

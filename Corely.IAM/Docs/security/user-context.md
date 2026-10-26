@@ -112,10 +112,7 @@ If using `Corely.IAM.Web`, the `AuthenticationTokenMiddleware` handles steps 1-2
 | Code | Meaning |
 |------|---------|
 | `Success` | Token valid, context set |
-| `InvalidTokenError` | JWT format invalid |
-| `TokenNotFoundError` | Token not in database |
-| `TokenRevokedError` | Token has been revoked |
-| `TokenExpiredError` | Token has expired |
-| `UserNotFoundError` | User from token not found |
-| `MissingDeviceIdClaim` | Device ID claim missing |
-| `SignatureValidationError` | JWT signature invalid |
+| `InvalidTokenFormat` | Not a readable JWT |
+| `MissingUserIdClaim` | No `sub` claim, or one that is not a GUID |
+| `MissingDeviceIdClaim` | No `device_id` claim |
+| `TokenValidationFailed` | Unknown user, missing or unreadable `jti`, token not tracked, revoked or expired, or a bad signature, issuer or audience |

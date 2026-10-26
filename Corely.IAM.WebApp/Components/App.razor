@@ -22,19 +22,36 @@
         <a class="dismiss">X</a>
     </div>
 
-    <div id="components-reconnect-modal" class="components-reconnect-hide">
-        <div class="d-flex flex-column align-items-center justify-content-center vh-100">
-            <div class="spinner-border text-primary mb-3" role="status">
-                <span class="visually-hidden">Reconnecting...</span>
+    <div id="components-reconnect-modal" class="components-reconnect-modal">
+        <div class="components-reconnect-card">
+            <div class="components-reconnect-show">
+                <div class="spinner-border text-primary me-3" role="status"></div>
+                <div>
+                    <strong>Connection lost</strong>
+                    <p class="mb-0 text-muted small">Attempting to reconnect...</p>
+                </div>
             </div>
-            <p class="text-muted">Attempting to reconnect to the server...</p>
-            <p class="text-muted small">
-                <a href="javascript:location.reload()">Reload page</a>
-            </p>
+            <div class="components-reconnect-failed">
+                <i class="bi bi-exclamation-triangle-fill text-danger me-3 fs-3"></i>
+                <div>
+                    <strong>Connection failed</strong>
+                    <p class="mb-0 text-muted small">
+                        Please <a href="" onclick="location.reload(); return false;">reload the page</a>.
+                    </p>
+                </div>
+            </div>
+            <div class="components-reconnect-rejected">
+                <div class="spinner-border text-primary me-3" role="status"></div>
+                <div>
+                    <strong>A new version is up</strong>
+                    <p class="mb-0 text-muted small">Reloading the page...</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="_content/Corely.IAM.Web/js/reconnect-reload.js"></script>
     <script src="_content/Corely.IAM.Web/lib/qrcodejs/qrcode.min.js"></script>
     <script src="_content/Corely.IAM.Web/js/qrcode-interop.js"></script>
     <script src="_framework/blazor.web.js"></script>

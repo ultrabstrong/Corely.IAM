@@ -2,7 +2,7 @@
 
 Corely.IAM.Web 8.0 targets Corely.IAM 6.0 (see [MIGRATION-6.0.md](MIGRATION-6.0.md)), whose sessions
 renew with a refresh token. The auth cookies carry it; a host that only uses IAM's pages and
-middleware has nothing to change.
+middleware has nothing to change for that. The reconnect overlay's markup changed too.
 
 ## Cookies
 
@@ -34,6 +34,13 @@ cookieManager.SetAuthCookies(
 ```
 
 `DeleteAuthCookies` deletes the refresh cookie too.
+
+## Reconnect overlay
+
+The overlay styles moved from `#components-reconnect-modal` to classes, and show a card on a dimmed
+page. Give the element `class="components-reconnect-modal"` and the card markup in
+[styling.md](Corely.IAM.Web/Docs/styling.md); without it the overlay is unstyled. Add
+`_content/Corely.IAM.Web/js/reconnect-reload.js` to reload on its own when the circuit is rejected.
 
 ## Security settings page
 

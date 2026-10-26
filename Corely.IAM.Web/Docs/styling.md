@@ -131,4 +131,18 @@ Override CSS variables or add a custom stylesheet after the IAM.Web reference:
 ## Notes
 
 - Bootstrap 5 is the primary framework; most styling uses Bootstrap utility classes directly
-- Blazor reconnect overlay styles are included for connection loss handling
+- Blazor reconnect overlay styles are included for connection loss handling. They style a card on a
+  dimmed page, with one message per state; `Corely.IAM.WebApp/Components/App.razor` has the markup.
+  `_content/Corely.IAM.Web/js/reconnect-reload.js` reloads the page when the server rejects the
+  circuit, as after a deploy:
+
+```html
+<div id="components-reconnect-modal" class="components-reconnect-modal">
+    <div class="components-reconnect-card">
+        <div class="components-reconnect-show">...</div>
+        <div class="components-reconnect-failed">...</div>
+        <div class="components-reconnect-rejected">...</div>
+    </div>
+</div>
+<script src="_content/Corely.IAM.Web/js/reconnect-reload.js"></script>
+```

@@ -9,6 +9,7 @@ internal enum UserAuthTokenResultCode
     SignatureKeyNotFoundError,
     AccountNotFoundError,
     TwoFactorRequiredError,
+    SessionNotFoundError,
 }
 
 internal record UserAuthTokenResult(

@@ -59,4 +59,6 @@ ones past their refresh expiry. It needs system context, and IAM ships no runner
 | Sessions stayed open until `AuthSessionTtlSeconds` | They also end after `AuthSessionIdleTimeoutSeconds` unused (default 1 day) |
 | Changing a password, setting or removing one, turning TOTP on or off, regenerating recovery codes, and linking or unlinking Google left other sessions alive | They end every other session of the user |
 | `SecurityPolicy` had 12 settings | It gains `AuthSessionIdleTimeoutSeconds` and `RefreshReuseGraceSeconds`; a `SecurityPolicy` built positionally needs both |
+| `SwitchAccountAsync` started a new session | It continues the current one and spends its refresh token; the result carries the new pair |
+| The telemetry decorator logged sign in, switch, MFA, Google and renew results at Trace | It logs that they ran, not their results, which carry tokens |
 | `UserSession.ExpiresUtc` was the access token's expiry | It is the refresh token's expiry, when the session ends if left alone |

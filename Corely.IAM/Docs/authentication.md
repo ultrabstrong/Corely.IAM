@@ -76,7 +76,7 @@ var result = await authenticationService.SwitchAccountAsync(
     new SwitchAccountRequest(targetAccountId));
 ```
 
-This revokes the previous token and issues a new one with `signedInAccountId` set to the target account.
+This spends the current token and issues a new pair with `signedInAccountId` set to the target account, in the same session: the session start, its lifetime and its idle timeout carry over, and the spent refresh token counts as reused if it comes back. A token whose session has ended cannot switch.
 
 ## Sign-Out
 

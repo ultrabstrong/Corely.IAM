@@ -3,6 +3,7 @@ using System.Security.Claims;
 using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Platform.Models;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
@@ -1178,5 +1179,92 @@ public class AuthenticationProviderTests
                 validation.ResultCode
             );
         }
+    }
+
+    [Fact]
+    public async Task GetUserAuthToken_ContinuingAToken_KeepsItsSessionAndSpendsIt()
+    {
+        var account = await CreateAccountAsync();
+        var userEntity = await CreateUserAsync([account]);
+        var signedIn = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+
+        var switched = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id, signedIn.TokenId)
+        );
+
+        Assert.Equal(UserAuthTokenResultCode.Success, switched.ResultCode);
+        var signedInRow = await TrackedTokenAsync(signedIn.TokenId!.Value);
+        var switchedRow = await TrackedTokenAsync(switched.TokenId!.Value);
+        Assert.Equal(signedInRow.SessionId, switchedRow.SessionId);
+        Assert.Equal(signedInRow.SessionStartedUtc, switchedRow.SessionStartedUtc);
+        Assert.Equal(switched.TokenId, signedInRow.ReplacedByTokenId);
+        Assert.NotNull(signedInRow.RevokedUtc);
+    }
+
+    [Fact]
+    public async Task GetUserAuthToken_ContinuingARevokedToken_IsRefused()
+    {
+        var account = await CreateAccountAsync();
+        var userEntity = await CreateUserAsync([account]);
+        var signedIn = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        await _authenticationProvider.RevokeAllUserAuthTokensAsync(userEntity.Id);
+
+        var switched = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id, signedIn.TokenId)
+        );
+
+        Assert.Equal(UserAuthTokenResultCode.SessionNotFoundError, switched.ResultCode);
+        Assert.Null(switched.Token);
+    }
+
+    [Fact]
+    public async Task GetUserAuthToken_ContinuingAnotherUsersToken_IsRefused()
+    {
+        var account = await CreateAccountAsync();
+        var owner = await CreateUserAsync([account]);
+        var signedIn = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(owner.Id, TEST_DEVICE_ID)
+        );
+
+        var switched = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(
+                Guid.CreateVersion7(),
+                TEST_DEVICE_ID,
+                null,
+                signedIn.TokenId
+            )
+        );
+
+        Assert.NotEqual(UserAuthTokenResultCode.Success, switched.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_RefreshTokenSpentBySwitch_EndsTheSessionWhenReused()
+    {
+        var (authenticationProvider, advance) = CreateClockedProvider();
+        var account = await CreateAccountAsync();
+        var userEntity = await CreateUserAsync([account]);
+        var signedIn = await authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        var switched = await authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id, signedIn.TokenId)
+        );
+        advance(SecurityPolicy.REFRESH_REUSE_GRACE_SECONDS_DEFAULT + 1);
+
+        var reuse = await authenticationProvider.RenewUserAuthTokenAsync(signedIn.RefreshToken!);
+
+        Assert.Equal(RenewUserAuthTokenResultCode.RefreshTokenReusedError, reuse.ResultCode);
+        var switchedValidation = await authenticationProvider.ValidateUserAuthTokenAsync(
+            switched.Token!
+        );
+        Assert.Equal(
+            UserAuthTokenValidationResultCode.TokenValidationFailed,
+            switchedValidation.ResultCode
+        );
     }
 }

@@ -73,6 +73,44 @@ internal class AuthenticationProvider(
         if (tokenIssueContext.ResultCode.HasValue)
             return UserAuthTokenResult.Failed(tokenIssueContext.ResultCode.Value);
 
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var tokenId = Guid.CreateVersion7();
+        var sessionId = Guid.CreateVersion7();
+        var sessionStartedUtc = now;
+
+        if (request.ContinuedTokenId is { } continuedTokenId)
+        {
+            var continuedToken = await _authTokenRepo.GetAsync(t =>
+                t.Id == continuedTokenId
+                && t.UserId == request.UserId
+                && t.RevokedUtc == null
+                && t.RefreshExpiresUtc > now
+            );
+            var claimed =
+                continuedToken == null
+                    ? 0
+                    : await _authTokenRepo.ExecuteUpdateAsync(
+                        t =>
+                            t.Id == continuedTokenId
+                            && t.RevokedUtc == null
+                            && t.ReplacedByTokenId == null,
+                        s =>
+                            s.SetProperty(t => t.RevokedUtc, now)
+                                .SetProperty(t => t.ReplacedByTokenId, tokenId)
+                    );
+            if (claimed == 0)
+            {
+                _logger.LogInformation(
+                    "Session of token {TokenId} is no longer active and cannot be continued",
+                    continuedTokenId
+                );
+                return UserAuthTokenResult.Failed(UserAuthTokenResultCode.SessionNotFoundError);
+            }
+
+            sessionId = continuedToken!.SessionId;
+            sessionStartedUtc = continuedToken.SessionStartedUtc;
+        }
+
         await RevokeExistingTokensForUserAccountDeviceAsync(
             request.UserId,
             tokenIssueContext.Context!.SignedInAccount?.Id,
@@ -82,9 +120,9 @@ internal class AuthenticationProvider(
         return await CreateUserAuthTokenAsync(
             tokenIssueContext.Context,
             request.DeviceId,
-            Guid.CreateVersion7(),
-            Guid.CreateVersion7(),
-            _timeProvider.GetUtcNow().UtcDateTime
+            tokenId,
+            sessionId,
+            sessionStartedUtc
         );
     }
 

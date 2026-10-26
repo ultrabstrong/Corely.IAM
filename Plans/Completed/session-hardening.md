@@ -32,7 +32,13 @@ Where the build differs from the plan below:
 - **A session start read from the database is normalized to UTC** before tokens are issued. Its
   unspecified `DateTimeKind` made the JWT library treat it as local time and shift a renewed token's
   expiry by the machine's offset; the functional clamp test caught it.
-- **The telemetry decorator no longer logs the renew request**, which now carries the refresh token.
+- **Switching account continues the session.** A security review after the first push found that
+  `SwitchAccountAsync` started a fresh session, so a stolen access token could be traded for a new
+  seven day session and refresh token. `GetUserAuthTokenRequest.ContinuedTokenId` now carries the
+  current token; the switch claims it like a renewal (spent, `ReplacedByTokenId` set) and keeps its
+  `SessionId` and `SessionStartedUtc`. A token whose session ended returns `SessionNotFoundError`.
+- **The telemetry decorator logs no tokens.** It stopped logging the renew request, and the results
+  of sign in, switch, MFA verification, Google sign in and renewal, all of which carry tokens.
 - **The Blazor Server unknown is unchanged by this work.** A circuit still holds its context for the
   connection and renews only on page requests, as before.
 

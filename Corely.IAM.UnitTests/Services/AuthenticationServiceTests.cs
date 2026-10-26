@@ -1259,4 +1259,34 @@ public class AuthenticationServiceTests
         Assert.Equal(DeleteExpiredAuthTokensResultCode.UnauthorizedError, result.ResultCode);
         _authenticationProviderMock.Verify(x => x.DeleteExpiredAuthTokensAsync(), Times.Never);
     }
+
+    [Fact]
+    public async Task SwitchAccountAsync_ContinuesTheCurrentSession()
+    {
+        var tokenId = Guid.CreateVersion7();
+        var accountId = Guid.CreateVersion7();
+        _userContextProviderMock
+            .Setup(x => x.GetUserContext())
+            .Returns(
+                new UserContext(
+                    new User { Id = Guid.CreateVersion7() },
+                    null,
+                    TEST_DEVICE_ID,
+                    [],
+                    tokenId
+                )
+            );
+
+        await _authenticationService.SwitchAccountAsync(new SwitchAccountRequest(accountId));
+
+        _authenticationProviderMock.Verify(
+            x =>
+                x.GetUserAuthTokenAsync(
+                    It.Is<GetUserAuthTokenRequest>(r =>
+                        r.AccountId == accountId && r.ContinuedTokenId == tokenId
+                    )
+                ),
+            Times.Once
+        );
+    }
 }

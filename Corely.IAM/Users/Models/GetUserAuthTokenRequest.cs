@@ -1,3 +1,8 @@
 ﻿namespace Corely.IAM.Users.Models;
 
-internal record GetUserAuthTokenRequest(Guid UserId, string DeviceId, Guid? AccountId = null);
+internal record GetUserAuthTokenRequest(
+    Guid UserId,
+    string DeviceId,
+    Guid? AccountId = null,
+    Guid? ContinuedTokenId = null
+);

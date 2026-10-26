@@ -19,16 +19,14 @@ internal class AuthenticationServiceTelemetryDecorator(
     public async Task<SignInResult> SignInAsync(SignInRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),
-            () => _inner.SignInAsync(request),
-            logResult: true
+            () => _inner.SignInAsync(request)
         );
 
     public async Task<SignInResult> SwitchAccountAsync(SwitchAccountRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),
             request,
-            () => _inner.SwitchAccountAsync(request),
-            logResult: true
+            () => _inner.SwitchAccountAsync(request)
         );
 
     public async Task<RetrieveListResult<UserSession>> ListSessionsAsync() =>
@@ -70,22 +68,19 @@ internal class AuthenticationServiceTelemetryDecorator(
     public async Task<SignInResult> SignInWithGoogleAsync(SignInWithGoogleRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),
-            () => _inner.SignInWithGoogleAsync(request),
-            logResult: true
+            () => _inner.SignInWithGoogleAsync(request)
         );
 
     public async Task<SignInResult> VerifyMfaAsync(VerifyMfaRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),
-            () => _inner.VerifyMfaAsync(request),
-            logResult: true
+            () => _inner.VerifyMfaAsync(request)
         );
 
     public async Task<RenewAuthTokenResult> RenewAuthTokenAsync(RenewAuthTokenRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),
-            () => _inner.RenewAuthTokenAsync(request),
-            logResult: true
+            () => _inner.RenewAuthTokenAsync(request)
         );
 
     public async Task<DeleteExpiredAuthTokensResult> DeleteExpiredAuthTokensAsync() =>

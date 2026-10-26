@@ -25,6 +25,10 @@ internal static class UserAuthTokenResultCodeExtensions
                     SignInResultCode.TwoFactorRequiredError,
                     $"Two factor sign in is required to enter account {accountId} as a platform member"
                 ),
+                UserAuthTokenResultCode.SessionNotFoundError => SignInResult.Failed(
+                    SignInResultCode.InvalidAuthTokenError,
+                    "The current session is no longer active"
+                ),
                 _ => SignInResult.Failed(
                     SignInResultCode.UserNotFoundError,
                     "Unknown error creating auth token"

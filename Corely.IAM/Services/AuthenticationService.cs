@@ -400,7 +400,8 @@ internal class AuthenticationService(
             context.User.Id,
             request.AccountId,
             context.DeviceId,
-            "account switch"
+            "account switch",
+            context.AuthTokenId
         );
 
         if (result.ResultCode == SignInResultCode.Success)
@@ -611,11 +612,12 @@ internal class AuthenticationService(
         Guid userId,
         Guid? accountId,
         string deviceId,
-        string operationName
+        string operationName,
+        Guid? continuedTokenId = null
     )
     {
         var authTokenResult = await _authenticationProvider.GetUserAuthTokenAsync(
-            new GetUserAuthTokenRequest(userId, deviceId, accountId)
+            new GetUserAuthTokenRequest(userId, deviceId, accountId, continuedTokenId)
         );
 
         if (authTokenResult.ResultCode != UserAuthTokenResultCode.Success)

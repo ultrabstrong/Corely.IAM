@@ -1267,4 +1267,323 @@ public class AuthenticationProviderTests
             switchedValidation.ResultCode
         );
     }
+
+    private static SecurityOptions ShortWindows() =>
+        new()
+        {
+            AuthTokenTtlSeconds = 300,
+            AuthSessionIdleTimeoutSeconds = 600,
+            AuthSessionTtlSeconds = 3600,
+            RefreshReuseGraceSeconds = 30,
+        };
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_RefusesAPreUpgradeRowWithoutASecretHash()
+    {
+        var userEntity = await CreateUserAsync();
+        var legacyId = Guid.CreateVersion7();
+        var now = DateTime.UtcNow;
+        await _serviceFactory
+            .GetRequiredService<IRepo<UserAuthTokenEntity>>()
+            .CreateAsync(
+                new UserAuthTokenEntity
+                {
+                    Id = legacyId,
+                    UserId = userEntity.Id,
+                    DeviceId = TEST_DEVICE_ID,
+                    SessionId = legacyId,
+                    SessionStartedUtc = now,
+                    IssuedUtc = now,
+                    ExpiresUtc = now.AddHours(1),
+                    RefreshSecretHash = string.Empty,
+                    RefreshExpiresUtc = now.AddHours(1),
+                }
+            );
+
+        var renewResult = await _authenticationProvider.RenewUserAuthTokenAsync(
+            new RefreshToken(legacyId, "guessed").ToString()
+        );
+
+        Assert.Equal(RenewUserAuthTokenResultCode.TokenValidationFailed, renewResult.ResultCode);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("garbage")]
+    [InlineData("0193b8a27c4e7d3a9f1e2b5c8d9e0f1a.secret")]
+    public async Task RenewUserAuthTokenAsync_RefusesMalformedOrUnknownTokens(string token)
+    {
+        var renewResult = await _authenticationProvider.RenewUserAuthTokenAsync(token);
+
+        Assert.Equal(RenewUserAuthTokenResultCode.TokenValidationFailed, renewResult.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_RenewsOneSecondBeforeTheIdleExpiry()
+    {
+        var (provider, advance) = CreateClockedProvider(ShortWindows());
+        var userEntity = await CreateUserAsync();
+        var token = await provider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        advance(599);
+
+        var renewResult = await provider.RenewUserAuthTokenAsync(token.RefreshToken!);
+
+        Assert.Equal(RenewUserAuthTokenResultCode.Success, renewResult.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_RefusesAtExactlyTheIdleExpiry()
+    {
+        var (provider, advance) = CreateClockedProvider(ShortWindows());
+        var userEntity = await CreateUserAsync();
+        var token = await provider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        advance(600);
+
+        var renewResult = await provider.RenewUserAuthTokenAsync(token.RefreshToken!);
+
+        Assert.Equal(RenewUserAuthTokenResultCode.SessionExpiredError, renewResult.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_RefusesAtExactlyTheSessionLifetime_EvenWhenRecentlyRenewed()
+    {
+        var (provider, advance) = CreateClockedProvider(ShortWindows());
+        var userEntity = await CreateUserAsync();
+        var token = await provider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        var refreshToken = token.RefreshToken!;
+        for (var elapsed = 0; elapsed < 3000; elapsed += 500)
+        {
+            advance(500);
+            var renewed = await provider.RenewUserAuthTokenAsync(refreshToken);
+            Assert.Equal(RenewUserAuthTokenResultCode.Success, renewed.ResultCode);
+            refreshToken = renewed.RefreshToken!;
+        }
+        advance(600);
+
+        var renewResult = await provider.RenewUserAuthTokenAsync(refreshToken);
+
+        Assert.Equal(RenewUserAuthTokenResultCode.SessionExpiredError, renewResult.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_RefreshNeverOutlivesTheSessionLifetime()
+    {
+        var (provider, advance) = CreateClockedProvider(ShortWindows());
+        var userEntity = await CreateUserAsync();
+        var token = await provider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        var started = (await TrackedTokenAsync(token.TokenId!.Value)).SessionStartedUtc;
+        advance(3300);
+        var late = await provider.RenewUserAuthTokenAsync(token.RefreshToken!);
+
+        Assert.Equal(RenewUserAuthTokenResultCode.SessionExpiredError, late.ResultCode);
+
+        var (fresh, freshAdvance) = CreateClockedProvider(ShortWindows());
+        var second = await fresh.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, "device-2")
+        );
+        var refreshToken = second.RefreshToken!;
+        for (var i = 0; i < 6; i++)
+        {
+            freshAdvance(590);
+            var renewed = await fresh.RenewUserAuthTokenAsync(refreshToken);
+            Assert.Equal(RenewUserAuthTokenResultCode.Success, renewed.ResultCode);
+            var row = await TrackedTokenAsync(renewed.TokenId!.Value);
+            Assert.True(row.RefreshExpiresUtc <= row.SessionStartedUtc.AddSeconds(3600));
+            Assert.True(row.ExpiresUtc <= row.RefreshExpiresUtc);
+            refreshToken = renewed.RefreshToken!;
+        }
+        Assert.NotEqual(default, started);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_ReuseOneSecondInsideTheGrace_KeepsTheSession()
+    {
+        var (provider, advance) = CreateClockedProvider(ShortWindows());
+        var userEntity = await CreateUserAsync();
+        var token = await provider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        var renewed = await provider.RenewUserAuthTokenAsync(token.RefreshToken!);
+        advance(29);
+
+        var reuse = await provider.RenewUserAuthTokenAsync(token.RefreshToken!);
+
+        Assert.Equal(
+            RenewUserAuthTokenResultCode.RefreshTokenAlreadyRotatedError,
+            reuse.ResultCode
+        );
+        var next = await provider.RenewUserAuthTokenAsync(renewed.RefreshToken!);
+        Assert.Equal(RenewUserAuthTokenResultCode.Success, next.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_ReuseAtExactlyTheGraceEdge_EndsTheSession()
+    {
+        var (provider, advance) = CreateClockedProvider(ShortWindows());
+        var userEntity = await CreateUserAsync();
+        var token = await provider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        var renewed = await provider.RenewUserAuthTokenAsync(token.RefreshToken!);
+        advance(30);
+
+        var reuse = await provider.RenewUserAuthTokenAsync(token.RefreshToken!);
+
+        Assert.Equal(RenewUserAuthTokenResultCode.RefreshTokenReusedError, reuse.ResultCode);
+        var next = await provider.RenewUserAuthTokenAsync(renewed.RefreshToken!);
+        Assert.Equal(RenewUserAuthTokenResultCode.TokenValidationFailed, next.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_ReuseOfAnOlderGeneration_EndsTheSession()
+    {
+        var (provider, advance) = CreateClockedProvider(ShortWindows());
+        var userEntity = await CreateUserAsync();
+        var first = await provider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        advance(100);
+        var second = await provider.RenewUserAuthTokenAsync(first.RefreshToken!);
+        advance(100);
+        var third = await provider.RenewUserAuthTokenAsync(second.RefreshToken!);
+        advance(100);
+
+        var reuse = await provider.RenewUserAuthTokenAsync(first.RefreshToken!);
+
+        Assert.Equal(RenewUserAuthTokenResultCode.RefreshTokenReusedError, reuse.ResultCode);
+        var current = await provider.ValidateUserAuthTokenAsync(third.Token!);
+        Assert.Equal(UserAuthTokenValidationResultCode.TokenValidationFailed, current.ResultCode);
+    }
+
+    [Fact]
+    public async Task ValidateUserAuthTokenAsync_AcceptsOneSecondBeforeAndRefusesAtTheAccessExpiry()
+    {
+        var (provider, advance) = CreateClockedProvider(ShortWindows());
+        var userEntity = await CreateUserAsync();
+        var token = await provider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        advance(299);
+        var before = await provider.ValidateUserAuthTokenAsync(token.Token!);
+        advance(1);
+        var at = await provider.ValidateUserAuthTokenAsync(token.Token!);
+
+        Assert.Equal(UserAuthTokenValidationResultCode.Success, before.ResultCode);
+        Assert.Equal(UserAuthTokenValidationResultCode.TokenValidationFailed, at.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_ShortenedSessionLifetime_EndsAnExistingSessionAtItsNextRenewal()
+    {
+        var current = DateTimeOffset.UtcNow;
+        var clock = new Mock<TimeProvider>();
+        clock.Setup(t => t.GetUtcNow()).Returns(() => current);
+        var issuing = CreateAuthenticationProvider(clock.Object, ShortWindows());
+        var shortened = CreateAuthenticationProvider(
+            clock.Object,
+            new SecurityOptions
+            {
+                AuthTokenTtlSeconds = 300,
+                AuthSessionIdleTimeoutSeconds = 600,
+                AuthSessionTtlSeconds = 400,
+            }
+        );
+        var userEntity = await CreateUserAsync();
+        var token = await issuing.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        current = current.AddSeconds(450);
+
+        var renewResult = await shortened.RenewUserAuthTokenAsync(token.RefreshToken!);
+
+        Assert.Equal(RenewUserAuthTokenResultCode.SessionExpiredError, renewResult.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_ShortenedIdleTimeout_AppliesFromTheNextRenewal()
+    {
+        var current = DateTimeOffset.UtcNow;
+        var clock = new Mock<TimeProvider>();
+        clock.Setup(t => t.GetUtcNow()).Returns(() => current);
+        var issuing = CreateAuthenticationProvider(clock.Object, ShortWindows());
+        var shortened = CreateAuthenticationProvider(
+            clock.Object,
+            new SecurityOptions
+            {
+                AuthTokenTtlSeconds = 300,
+                AuthSessionIdleTimeoutSeconds = 300,
+                AuthSessionTtlSeconds = 3600,
+            }
+        );
+        var userEntity = await CreateUserAsync();
+        var token = await issuing.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        current = current.AddSeconds(450);
+
+        var stillIssuedUnderTheOldTimeout = await shortened.RenewUserAuthTokenAsync(
+            token.RefreshToken!
+        );
+        current = current.AddSeconds(301);
+        var underTheNewTimeout = await shortened.RenewUserAuthTokenAsync(
+            stillIssuedUnderTheOldTimeout.RefreshToken!
+        );
+
+        Assert.Equal(
+            RenewUserAuthTokenResultCode.Success,
+            stillIssuedUnderTheOldTimeout.ResultCode
+        );
+        Assert.Equal(
+            RenewUserAuthTokenResultCode.SessionExpiredError,
+            underTheNewTimeout.ResultCode
+        );
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_SignedOutSession_IsRefusedWithoutReuseDetection()
+    {
+        var userEntity = await CreateUserAsync();
+        var token = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        await _authenticationProvider.RevokeUserAuthTokenAsync(
+            new RevokeUserAuthTokenRequest(
+                userEntity.Id,
+                token.TokenId!.Value.ToString(),
+                TEST_DEVICE_ID,
+                null
+            )
+        );
+
+        var renewResult = await _authenticationProvider.RenewUserAuthTokenAsync(
+            token.RefreshToken!
+        );
+
+        Assert.Equal(RenewUserAuthTokenResultCode.TokenValidationFailed, renewResult.ResultCode);
+    }
+
+    [Fact]
+    public async Task RenewUserAuthTokenAsync_UserDeletedMidSession_IsRefused()
+    {
+        var userEntity = await CreateUserAsync();
+        var token = await _authenticationProvider.GetUserAuthTokenAsync(
+            new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
+        );
+        await _serviceFactory.GetRequiredService<IRepo<UserEntity>>().DeleteAsync(userEntity);
+
+        var renewResult = await _authenticationProvider.RenewUserAuthTokenAsync(
+            token.RefreshToken!
+        );
+
+        Assert.NotEqual(RenewUserAuthTokenResultCode.Success, renewResult.ResultCode);
+        Assert.Null(renewResult.Token);
+    }
 }

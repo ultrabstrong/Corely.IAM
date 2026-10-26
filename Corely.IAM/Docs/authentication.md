@@ -67,6 +67,19 @@ requests renewing at the same moment look the same.
 
 The refresh token is `<token id>.<secret>`. Only a salted hash of the secret is stored.
 
+Changing these settings affects running sessions as follows:
+
+| Setting changed | Running sessions |
+|-----------------|------------------|
+| `AuthSessionTtlSeconds` shortened | A session already past the new lifetime ends at its next renewal |
+| `AuthSessionIdleTimeoutSeconds` shortened | A refresh token keeps the expiry it was issued with; the new timeout applies from its next renewal |
+| `AuthTokenTtlSeconds` changed | Applies to the next access token issued |
+| `RefreshReuseGraceSeconds` changed | Applies to the next reuse checked |
+
+Renewal happens only when a client presents the refresh token. A Blazor Server circuit holds its
+user context for the life of the connection and makes no HTTP requests while it is open, so a user
+active in one circuit for longer than the idle timeout is asked to sign in on their next page load.
+
 ## Account Switching
 
 After sign-in, switch the active account without re-entering credentials:

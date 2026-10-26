@@ -141,6 +141,7 @@ internal class AuthenticationProvider(
         var trackedToken = await _authTokenRepo.GetAsync(t => t.Id == parsedRefreshToken.TokenId);
         if (
             trackedToken == null
+            || string.IsNullOrWhiteSpace(trackedToken.RefreshSecretHash)
             || !trackedToken
                 .RefreshSecretHash.ToHashedValue(_hashProviderFactory)
                 .Verify(parsedRefreshToken.Secret)

@@ -147,6 +147,102 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
         Assert.Null(exception);
     }
 
+    [RequiresDockerFact]
+    public async Task RenewalRotatesWithinTheSession()
+    {
+        var signIn = await SignInAsync("renew-device");
+        Host.TimeProvider.AdvanceSeconds(60);
+
+        var renewed = await RenewAsync(signIn.RefreshToken!);
+
+        Assert.Equal(RenewAuthTokenResultCode.Success, renewed.ResultCode);
+        var rows = await Host.QueryAsync(db =>
+            db.UserAuthTokens.AsNoTracking().Where(t => t.DeviceId == "renew-device").ToListAsync()
+        );
+        Assert.Equal(2, rows.Count);
+        Assert.Single(rows.Select(r => r.SessionId).Distinct());
+        Assert.Single(rows.Select(r => r.SessionStartedUtc).Distinct());
+        Assert.Equal(
+            renewed.AuthTokenId,
+            rows.Single(r => r.Id == signIn.AuthTokenId).ReplacedByTokenId
+        );
+    }
+
+    [RequiresDockerFact]
+    public async Task RenewalHonorsTheIdleExpiryToTheSecond()
+    {
+        var signIn = await SignInAsync("boundary-device");
+        Host.TimeProvider.AdvanceSeconds(
+            SecurityPolicy.AUTH_SESSION_IDLE_TIMEOUT_SECONDS_DEFAULT - 1
+        );
+        var justBefore = await RenewAsync(signIn.RefreshToken!);
+        Host.TimeProvider.AdvanceSeconds(SecurityPolicy.AUTH_SESSION_IDLE_TIMEOUT_SECONDS_DEFAULT);
+
+        var atExpiry = await RenewAsync(justBefore.RefreshToken!);
+
+        Assert.Equal(RenewAuthTokenResultCode.Success, justBefore.ResultCode);
+        Assert.Equal(RenewAuthTokenResultCode.SessionExpiredError, atExpiry.ResultCode);
+    }
+
+    [RequiresDockerFact]
+    public async Task ParallelRenewalsOfOneToken_LetExactlyOneWin()
+    {
+        var signIn = await SignInAsync("race-device");
+        Host.TimeProvider.AdvanceSeconds(60);
+
+        var results = await Task.WhenAll(
+            Enumerable.Range(0, 8).Select(_ => Task.Run(() => RenewAsync(signIn.RefreshToken!)))
+        );
+
+        Assert.Single(results, r => r.ResultCode == RenewAuthTokenResultCode.Success);
+        Assert.All(
+            results.Where(r => r.ResultCode != RenewAuthTokenResultCode.Success),
+            r =>
+                Assert.Equal(RenewAuthTokenResultCode.RefreshTokenAlreadyRotatedError, r.ResultCode)
+        );
+        var active = await Host.QueryAsync(db =>
+            db.UserAuthTokens.AsNoTracking()
+                .CountAsync(t => t.DeviceId == "race-device" && t.RevokedUtc == null)
+        );
+        Assert.Equal(1, active);
+    }
+
+    [RequiresDockerFact]
+    public async Task ExpiredTokenCleanupTranslates()
+    {
+        await SignInAsync("cleanup-device");
+        Host.TimeProvider.AdvanceSeconds(
+            SecurityPolicy.AUTH_SESSION_IDLE_TIMEOUT_SECONDS_DEFAULT + 1
+        );
+
+        var result = await Host.WithScopeAsync(services =>
+        {
+            var authentication = services.GetRequiredService<IAuthenticationService>();
+            authentication.AuthenticateAsSystem("cleanup");
+            return authentication.DeleteExpiredAuthTokensAsync();
+        });
+
+        Assert.Equal(DeleteExpiredAuthTokensResultCode.Success, result.ResultCode);
+        var remaining = await Host.QueryAsync(db =>
+            db.UserAuthTokens.AsNoTracking().CountAsync(t => t.DeviceId == "cleanup-device")
+        );
+        Assert.Equal(0, remaining);
+    }
+
+    private Task<SignInResult> SignInAsync(string deviceId) =>
+        Host.WithScopeAsync(services =>
+            services
+                .GetRequiredService<IAuthenticationService>()
+                .SignInAsync(new SignInRequest("provider-owner", Password, deviceId))
+        );
+
+    private Task<RenewAuthTokenResult> RenewAsync(string refreshToken) =>
+        Host.WithScopeAsync(services =>
+            services
+                .GetRequiredService<IAuthenticationService>()
+                .RenewAuthTokenAsync(new RenewAuthTokenRequest(refreshToken))
+        );
+
     private async Task SeedAsync()
     {
         _ownerUserId = await Host.WithScopeAsync(async services =>

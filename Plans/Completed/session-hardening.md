@@ -39,6 +39,12 @@ Where the build differs from the plan below:
   `SessionId` and `SessionStartedUtc`. A token whose session ended returns `SessionNotFoundError`.
 - **The telemetry decorator logs no tokens.** It stopped logging the renew request, and the results
   of sign in, switch, MFA verification, Google sign in and renewal, all of which carry tokens.
+- **An edge case audit after the first push** found that a pre-upgrade row (empty
+  `RefreshSecretHash`) made a crafted refresh token throw instead of being refused; it is refused now.
+  It added boundary tests (each expiry and the grace edge to the second), policy changes mid-session,
+  credential changes and account switches on SQLite, and on SQL Server and MySQL a renewal round
+  trip, the idle boundary, cleanup, and eight parallel renewals of one token, of which exactly one
+  wins.
 - **The Blazor Server unknown is unchanged by this work.** A circuit still holds its context for the
   connection and renews only on page requests, as before.
 

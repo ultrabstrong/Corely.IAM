@@ -16,6 +16,8 @@ public record SecurityPolicy(
     int LockoutCooldownSeconds,
     int AuthTokenTtlSeconds,
     int AuthSessionTtlSeconds,
+    int AuthSessionIdleTimeoutSeconds,
+    int RefreshReuseGraceSeconds,
     int MfaChallengeTimeoutSeconds,
     int TotpRecoveryCodeCount
 )
@@ -52,6 +54,14 @@ public record SecurityPolicy(
     public const int AUTH_SESSION_TTL_SECONDS_MIN = 3600;
     public const int AUTH_SESSION_TTL_SECONDS_MAX = 7776000;
 
+    public const int AUTH_SESSION_IDLE_TIMEOUT_SECONDS_DEFAULT = 86400;
+    public const int AUTH_SESSION_IDLE_TIMEOUT_SECONDS_MIN = 300;
+    public const int AUTH_SESSION_IDLE_TIMEOUT_SECONDS_MAX = 7776000;
+
+    public const int REFRESH_REUSE_GRACE_SECONDS_DEFAULT = 30;
+    public const int REFRESH_REUSE_GRACE_SECONDS_MIN = 0;
+    public const int REFRESH_REUSE_GRACE_SECONDS_MAX = 120;
+
     public const int MFA_CHALLENGE_TIMEOUT_SECONDS_DEFAULT = 300;
     public const int MFA_CHALLENGE_TIMEOUT_SECONDS_MIN = 60;
     public const int MFA_CHALLENGE_TIMEOUT_SECONDS_MAX = 900;
@@ -72,6 +82,8 @@ public record SecurityPolicy(
             LOCKOUT_COOLDOWN_SECONDS_DEFAULT,
             AUTH_TOKEN_TTL_SECONDS_DEFAULT,
             AUTH_SESSION_TTL_SECONDS_DEFAULT,
+            AUTH_SESSION_IDLE_TIMEOUT_SECONDS_DEFAULT,
+            REFRESH_REUSE_GRACE_SECONDS_DEFAULT,
             MFA_CHALLENGE_TIMEOUT_SECONDS_DEFAULT,
             TOTP_RECOVERY_CODE_COUNT_DEFAULT
         );
@@ -140,6 +152,18 @@ public record SecurityPolicy(
                 updated.AuthSessionTtlSeconds > AuthSessionTtlSeconds
             ),
             SettingChange.Between(
+                PlatformSetting.AuthSessionIdleTimeoutSeconds,
+                AuthSessionIdleTimeoutSeconds,
+                updated.AuthSessionIdleTimeoutSeconds,
+                updated.AuthSessionIdleTimeoutSeconds > AuthSessionIdleTimeoutSeconds
+            ),
+            SettingChange.Between(
+                PlatformSetting.RefreshReuseGraceSeconds,
+                RefreshReuseGraceSeconds,
+                updated.RefreshReuseGraceSeconds,
+                updated.RefreshReuseGraceSeconds > RefreshReuseGraceSeconds
+            ),
+            SettingChange.Between(
                 PlatformSetting.MfaChallengeTimeoutSeconds,
                 MfaChallengeTimeoutSeconds,
                 updated.MfaChallengeTimeoutSeconds,
@@ -155,6 +179,19 @@ public record SecurityPolicy(
             .OfType<SettingChange>()
             .OrderByDescending(change => change.Weakens)
             .ToList();
+
+    internal DateTime RefreshExpiresUtc(DateTime sessionStartedUtc, DateTime now)
+    {
+        var idleExpiresUtc = now.AddSeconds(AuthSessionIdleTimeoutSeconds);
+        var sessionExpiresUtc = sessionStartedUtc.AddSeconds(AuthSessionTtlSeconds);
+        return idleExpiresUtc < sessionExpiresUtc ? idleExpiresUtc : sessionExpiresUtc;
+    }
+
+    internal DateTime AccessTokenExpiresUtc(DateTime refreshExpiresUtc, DateTime now)
+    {
+        var tokenExpiresUtc = now.AddSeconds(AuthTokenTtlSeconds);
+        return tokenExpiresUtc < refreshExpiresUtc ? tokenExpiresUtc : refreshExpiresUtc;
+    }
 
     internal PasswordValidationOptions ToPasswordValidationOptions() =>
         new()

@@ -15,6 +15,7 @@ public interface IAuthenticationService
     Task<ModifyResult> RevokeOtherSessionsAsync();
     Task<bool> SignOutAsync(SignOutRequest request);
     Task SignOutAllAsync();
+    Task<DeleteExpiredAuthTokensResult> DeleteExpiredAuthTokensAsync();
     Task<UserAuthTokenValidationResultCode> AuthenticateWithTokenAsync(string authToken);
     void AuthenticateAsSystem(string deviceId);
 }

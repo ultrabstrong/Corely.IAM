@@ -1,6 +1,7 @@
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.GoogleAuths.Processors;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -10,7 +11,9 @@ namespace Corely.IAM.UnitTests.Services;
 
 public class GoogleAuthServiceTests
 {
+    private readonly Mock<IAuthenticationProvider> _mockAuthenticationProvider = new();
     private readonly Guid _userId = Guid.CreateVersion7();
+    private readonly Guid _tokenId = Guid.CreateVersion7();
     private readonly Mock<IGoogleAuthProcessor> _googleAuthProcessorMock = new();
     private readonly Mock<IUserContextProvider> _userContextProviderMock = new();
     private readonly GoogleAuthService _service;
@@ -25,14 +28,16 @@ public class GoogleAuthServiceTests
                     new User { Id = _userId, Email = "user@test.com" },
                     new Account { Id = Guid.CreateVersion7() },
                     "device-1",
-                    []
+                    [],
+                    _tokenId
                 )
             );
 
         _service = new GoogleAuthService(
             _googleAuthProcessorMock.Object,
             _userContextProviderMock.Object,
-            serviceFactory.GetRequiredService<IValidationProvider>()
+            serviceFactory.GetRequiredService<IValidationProvider>(),
+            _mockAuthenticationProvider.Object
         );
     }
 
@@ -59,6 +64,10 @@ public class GoogleAuthServiceTests
         var result = await _service.LinkGoogleAuthAsync(new LinkGoogleAuthRequest("valid-token"));
 
         Assert.Equal(expected, result);
+        _mockAuthenticationProvider.Verify(
+            x => x.RevokeAllUserAuthTokensAsync(_userId, _tokenId),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -72,6 +81,27 @@ public class GoogleAuthServiceTests
         var result = await _service.UnlinkGoogleAuthAsync();
 
         Assert.Equal(expected, result);
+        _mockAuthenticationProvider.Verify(
+            x => x.RevokeAllUserAuthTokensAsync(_userId, _tokenId),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task UnlinkGoogleAuthAsync_KeepsOtherSessions_WhenUnlinkFails()
+    {
+        _googleAuthProcessorMock
+            .Setup(x => x.UnlinkGoogleAuthAsync(_userId))
+            .ReturnsAsync(
+                new UnlinkGoogleAuthResult(UnlinkGoogleAuthResultCode.NotLinkedError, "none")
+            );
+
+        await _service.UnlinkGoogleAuthAsync();
+
+        _mockAuthenticationProvider.Verify(
+            x => x.RevokeAllUserAuthTokensAsync(It.IsAny<Guid>(), It.IsAny<Guid?>()),
+            Times.Never
+        );
     }
 
     [Fact]

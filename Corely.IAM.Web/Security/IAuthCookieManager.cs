@@ -8,8 +8,9 @@ public interface IAuthCookieManager
         IResponseCookies cookies,
         string authToken,
         Guid authTokenId,
-        bool isHttps,
-        int authCookieTtlSeconds
+        string refreshToken,
+        DateTime refreshExpiresUtc,
+        bool isHttps
     );
     void DeleteAuthCookies(IResponseCookies cookies);
     void DeleteDeviceIdCookie(IResponseCookies cookies);

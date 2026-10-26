@@ -61,6 +61,22 @@ public class SecurityPolicyChangesTests
     }
 
     [Theory]
+    [InlineData(172800, true)]
+    [InlineData(3600, false)]
+    public void ChangesTo_IdleTimeout_WeakensOnlyWhenLengthened(int value, bool weakens)
+    {
+        AssertSingle(_base with { AuthSessionIdleTimeoutSeconds = value }, weakens);
+    }
+
+    [Theory]
+    [InlineData(60, true)]
+    [InlineData(0, false)]
+    public void ChangesTo_RefreshReuseGrace_WeakensOnlyWhenLengthened(int value, bool weakens)
+    {
+        AssertSingle(_base with { RefreshReuseGraceSeconds = value }, weakens);
+    }
+
+    [Theory]
     [InlineData(600)]
     [InlineData(120)]
     public void ChangesTo_MfaChallengeTimeout_NeverWeakens(int value)

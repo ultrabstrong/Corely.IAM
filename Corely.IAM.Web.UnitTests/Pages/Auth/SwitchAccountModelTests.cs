@@ -27,7 +27,6 @@ public class SwitchAccountModelTests
         _model = new SwitchAccountModel(
             _mockAuthService.Object,
             _mockCookieManager.Object,
-            new FixedSecurityPolicyProvider(),
             Options.Create(new IAMWebOptions())
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();
@@ -58,7 +57,16 @@ public class SwitchAccountModelTests
             .Setup(s =>
                 s.SwitchAccountAsync(It.Is<SwitchAccountRequest>(r => r.AccountId == accountId))
             )
-            .ReturnsAsync(new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId));
+            .ReturnsAsync(
+                new SignInResult(
+                    SignInResultCode.Success,
+                    null,
+                    "auth-token",
+                    tokenId,
+                    RefreshToken: "refresh-token",
+                    RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+                )
+            );
 
         var result = await _model.OnGetAsync(accountId, "/local-path");
 
@@ -70,8 +78,9 @@ public class SwitchAccountModelTests
                     It.IsAny<IResponseCookies>(),
                     "auth-token",
                     tokenId,
-                    It.IsAny<bool>(),
-                    It.IsAny<int>()
+                    It.IsAny<string>(),
+                    It.IsAny<DateTime>(),
+                    It.IsAny<bool>()
                 ),
             Times.Once
         );
@@ -104,7 +113,16 @@ public class SwitchAccountModelTests
             .Setup(s =>
                 s.SwitchAccountAsync(It.Is<SwitchAccountRequest>(r => r.AccountId == accountId))
             )
-            .ReturnsAsync(new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId));
+            .ReturnsAsync(
+                new SignInResult(
+                    SignInResultCode.Success,
+                    null,
+                    "auth-token",
+                    tokenId,
+                    RefreshToken: "refresh-token",
+                    RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+                )
+            );
 
         var result = await _model.OnPostAsync(accountId, "/local-path");
 
@@ -120,7 +138,16 @@ public class SwitchAccountModelTests
 
         _mockAuthService
             .Setup(s => s.SwitchAccountAsync(It.IsAny<SwitchAccountRequest>()))
-            .ReturnsAsync(new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId));
+            .ReturnsAsync(
+                new SignInResult(
+                    SignInResultCode.Success,
+                    null,
+                    "auth-token",
+                    tokenId,
+                    RefreshToken: "refresh-token",
+                    RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+                )
+            );
 
         var result = await _model.OnPostAsync(accountId, "https://evil.com/redirect");
 
@@ -136,7 +163,16 @@ public class SwitchAccountModelTests
 
         _mockAuthService
             .Setup(s => s.SwitchAccountAsync(It.IsAny<SwitchAccountRequest>()))
-            .ReturnsAsync(new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId));
+            .ReturnsAsync(
+                new SignInResult(
+                    SignInResultCode.Success,
+                    null,
+                    "auth-token",
+                    tokenId,
+                    RefreshToken: "refresh-token",
+                    RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+                )
+            );
 
         var result = await _model.OnPostAsync(accountId, null);
 

@@ -16,6 +16,8 @@ internal sealed record ConfiguredSecurityPolicy(
         nameof(SecurityOptions.LockoutCooldownSeconds),
         nameof(SecurityOptions.AuthTokenTtlSeconds),
         nameof(SecurityOptions.AuthSessionTtlSeconds),
+        nameof(SecurityOptions.AuthSessionIdleTimeoutSeconds),
+        nameof(SecurityOptions.RefreshReuseGraceSeconds),
         nameof(SecurityOptions.MfaChallengeTimeoutSeconds),
         nameof(SecurityOptions.TotpRecoveryCodeCount),
     ];

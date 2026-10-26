@@ -1,6 +1,7 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Models.Extensions;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Models;
@@ -32,9 +33,12 @@ internal class ModificationService(
     IKeyRotationProcessor keyRotationProcessor,
     IBasicAuthProcessor basicAuthProcessor,
     IReauthenticationProvider reauthenticationProvider,
-    IUserContextProvider userContextProvider
+    IUserContextProvider userContextProvider,
+    IAuthenticationProvider authenticationProvider
 ) : IModificationService
 {
+    private readonly IAuthenticationProvider _authenticationProvider =
+        authenticationProvider.ThrowIfNull(nameof(authenticationProvider));
     private readonly ILogger<ModificationService> _logger = logger.ThrowIfNull(nameof(logger));
     private readonly IAccountProcessor _accountProcessor = accountProcessor.ThrowIfNull(
         nameof(accountProcessor)
@@ -118,7 +122,8 @@ internal class ModificationService(
     public async Task<ModifyPasswordResult> ModifyPasswordAsync(ModifyPasswordRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var userId = _userContextProvider.GetUserContext()!.User!.Id;
+        var context = _userContextProvider.GetUserContext()!;
+        var userId = context.User!.Id;
         _logger.LogInformation("Modifying password for user {UserId}", userId);
 
         var passwordResult = await _reauthenticationProvider.VerifyCurrentPasswordAsync(
@@ -148,6 +153,8 @@ internal class ModificationService(
         var updateResult = await _basicAuthProcessor.UpdateBasicAuthAsync(
             new(userId, request.NewPassword)
         );
+        if (updateResult.ResultCode == UpdateBasicAuthResultCode.Success)
+            await _authenticationProvider.RevokeAllUserAuthTokensAsync(userId, context.AuthTokenId);
         return new ModifyPasswordResult(
             updateResult.ResultCode.ToModifyPasswordResultCode(),
             updateResult.Message

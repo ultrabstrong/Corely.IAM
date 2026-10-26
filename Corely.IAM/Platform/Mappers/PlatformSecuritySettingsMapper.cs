@@ -19,6 +19,8 @@ internal static class PlatformSecuritySettingsMapper
                 entity.LockoutCooldownSeconds,
                 entity.AuthTokenTtlSeconds,
                 entity.AuthSessionTtlSeconds,
+                entity.AuthSessionIdleTimeoutSeconds,
+                entity.RefreshReuseGraceSeconds,
                 entity.MfaChallengeTimeoutSeconds,
                 entity.TotpRecoveryCodeCount
             );
@@ -35,6 +37,8 @@ internal static class PlatformSecuritySettingsMapper
             entity.LockoutCooldownSeconds = policy.LockoutCooldownSeconds;
             entity.AuthTokenTtlSeconds = policy.AuthTokenTtlSeconds;
             entity.AuthSessionTtlSeconds = policy.AuthSessionTtlSeconds;
+            entity.AuthSessionIdleTimeoutSeconds = policy.AuthSessionIdleTimeoutSeconds;
+            entity.RefreshReuseGraceSeconds = policy.RefreshReuseGraceSeconds;
             entity.MfaChallengeTimeoutSeconds = policy.MfaChallengeTimeoutSeconds;
             entity.TotpRecoveryCodeCount = policy.TotpRecoveryCodeCount;
         }

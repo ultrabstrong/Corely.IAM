@@ -29,6 +29,7 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
 
     public int AuthTokenTtlSeconds { get; init; } = 3600;
     public int AuthSessionTtlSeconds { get; init; } = 604800;
+    public int AuthSessionIdleTimeoutSeconds { get; init; } = 86400;
     public string EnvironmentName { get; init; } = Environments.Development;
     public IReadOnlyDictionary<string, string> Settings { get; init; } =
         new Dictionary<string, string>();
@@ -46,6 +47,8 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
                 ["Security:SystemKey"] = CreateSystemKey(),
                 ["SecurityOptions:AuthTokenTtlSeconds"] = AuthTokenTtlSeconds.ToString(),
                 ["SecurityOptions:AuthSessionTtlSeconds"] = AuthSessionTtlSeconds.ToString(),
+                ["SecurityOptions:AuthSessionIdleTimeoutSeconds"] =
+                    AuthSessionIdleTimeoutSeconds.ToString(),
                 ["SecurityOptions:MaxLoginAttempts"] = "5",
                 ["SecurityOptions:MfaChallengeTimeoutSeconds"] = "300",
                 ["SecurityOptions:GoogleClientId"] = "",

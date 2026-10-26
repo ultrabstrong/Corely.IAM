@@ -357,7 +357,7 @@ public class PlatformAccountTests : IAsyncLifetime
         var renewed = await _scenario.Host.WithScopeAsync(services =>
             services
                 .GetRequiredService<IAuthenticationService>()
-                .RenewAuthTokenAsync(new RenewAuthTokenRequest(token.AuthToken!))
+                .RenewAuthTokenAsync(new RenewAuthTokenRequest(token.RefreshToken!))
         );
 
         Assert.Equal(RenewAuthTokenResultCode.TwoFactorRequiredError, renewed.ResultCode);

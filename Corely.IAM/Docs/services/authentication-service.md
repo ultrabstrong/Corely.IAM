@@ -15,6 +15,8 @@ Manages sign-in, sign-out, account switching, and user session management. See [
 | `SignOutAllAsync` | *(none)* | `void` |
 | `SignInWithGoogleAsync` | `SignInWithGoogleRequest` | `SignInResult` |
 | `VerifyMfaAsync` | `VerifyMfaRequest` | `SignInResult` |
+| `RenewAuthTokenAsync` | `RenewAuthTokenRequest` | `RenewAuthTokenResult` |
+| `DeleteExpiredAuthTokensAsync` | *(none)* | `DeleteExpiredAuthTokensResult` |
 
 ## Usage
 
@@ -28,8 +30,21 @@ if (result.ResultCode == SignInResultCode.Success)
 {
     var token = result.AuthToken;
     var tokenId = result.AuthTokenId;
+    var refreshToken = result.RefreshToken;
 }
 ```
+
+### Renew
+
+```csharp
+var renewed = await authenticationService.RenewAuthTokenAsync(
+    new RenewAuthTokenRequest(refreshToken));
+```
+
+Returns a new access token and a new refresh token, and spends the old refresh token. A spent one
+presented again returns `RefreshTokenReusedError` and ends the session, or
+`RefreshTokenAlreadyRotatedError` within the reuse grace. See
+[Authentication](../authentication.md#renewal).
 
 ### Switch Account
 
@@ -105,7 +120,9 @@ Accepts either a 6-digit TOTP code or a recovery code in `XXXX-XXXX` format. See
 
 - `SignInAsync` does not require prior authentication
 - `SwitchAccountAsync` requires user context
+- `RenewAuthTokenAsync` needs only the refresh token
 - `ListSessionsAsync`, `RevokeSessionAsync`, `RevokeOtherSessionsAsync`, `SignOutAsync`, and `SignOutAllAsync` require a non-system user context
+- `DeleteExpiredAuthTokensAsync` requires system context
 
 ## Notes
 

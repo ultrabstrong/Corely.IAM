@@ -1,5 +1,4 @@
 using Corely.IAM.Models;
-using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Configuration;
@@ -14,7 +13,6 @@ public class RegisterModel(
     IRegistrationService registrationService,
     IAuthenticationService authenticationService,
     IAuthCookieManager authCookieManager,
-    ISecurityPolicyProvider securityPolicyProvider,
     IOptions<SecurityOptions> securityOptions,
     IHumanVerifier humanVerifier,
     IOptions<IAMWebOptions> iamWebOptions
@@ -96,8 +94,9 @@ public class RegisterModel(
                 Response.Cookies,
                 signInResult.AuthToken!,
                 signInResult.AuthTokenId!.Value,
-                Request.IsHttps,
-                (await securityPolicyProvider.GetPolicyAsync()).AuthSessionTtlSeconds
+                signInResult.RefreshToken!,
+                signInResult.RefreshExpiresUtc!.Value,
+                Request.IsHttps
             );
             return Redirect(iamWebOptions.Value.HomePath);
         }

@@ -48,10 +48,18 @@ else
                            Min="SecurityPolicy.LOCKOUT_COOLDOWN_SECONDS_MIN" Max="SecurityPolicy.LOCKOUT_COOLDOWN_SECONDS_MAX" />
             <NumberSetting Label="Sign in token lifetime (seconds)" @bind-Value="_authTokenTtlSeconds" Editing="IsEditing(SIGN_IN)"
                            Min="SecurityPolicy.AUTH_TOKEN_TTL_SECONDS_MIN" Max="SecurityPolicy.AUTH_TOKEN_TTL_SECONDS_MAX"
-                           Hint="No longer than the session lifetime" />
+                           Hint="No longer than the session lifetime or the idle timeout" />
             <NumberSetting Label="Session lifetime (seconds)" @bind-Value="_authSessionTtlSeconds" Editing="IsEditing(SIGN_IN)"
                            Min="SecurityPolicy.AUTH_SESSION_TTL_SECONDS_MIN" Max="SecurityPolicy.AUTH_SESSION_TTL_SECONDS_MAX" />
+            <NumberSetting Label="Idle timeout (seconds)" @bind-Value="_authSessionIdleTimeoutSeconds" Editing="IsEditing(SIGN_IN)"
+                           Min="SecurityPolicy.AUTH_SESSION_IDLE_TIMEOUT_SECONDS_MIN" Max="SecurityPolicy.AUTH_SESSION_IDLE_TIMEOUT_SECONDS_MAX" />
+            <NumberSetting Label="Refresh reuse grace (seconds)" @bind-Value="_refreshReuseGraceSeconds" Editing="IsEditing(SIGN_IN)"
+                           Min="SecurityPolicy.REFRESH_REUSE_GRACE_SECONDS_MIN" Max="SecurityPolicy.REFRESH_REUSE_GRACE_SECONDS_MAX" />
         </div>
+        <ul class="settings-notes">
+            <li>A session ends at its lifetime, or sooner when it goes unused for the idle timeout.</li>
+            <li>A refresh token used again after it was replaced ends its session, unless the reuse falls within the grace, as when two requests renew at once.</li>
+        </ul>
     </div>
 
     <div class="section-divider mb-4">
@@ -98,6 +106,8 @@ else
     private int _lockoutCooldownSeconds;
     private int _authTokenTtlSeconds;
     private int _authSessionTtlSeconds;
+    private int _authSessionIdleTimeoutSeconds;
+    private int _refreshReuseGraceSeconds;
     private int _mfaChallengeTimeoutSeconds;
     private int _totpRecoveryCodeCount;
 
@@ -139,6 +149,8 @@ else
                 _lockoutCooldownSeconds = _settings.LockoutCooldownSeconds;
                 _authTokenTtlSeconds = _settings.AuthTokenTtlSeconds;
                 _authSessionTtlSeconds = _settings.AuthSessionTtlSeconds;
+                _authSessionIdleTimeoutSeconds = _settings.AuthSessionIdleTimeoutSeconds;
+                _refreshReuseGraceSeconds = _settings.RefreshReuseGraceSeconds;
                 break;
             case TWO_FACTOR:
                 _mfaChallengeTimeoutSeconds = _settings!.MfaChallengeTimeoutSeconds;
@@ -165,6 +177,8 @@ else
                 LockoutCooldownSeconds = _lockoutCooldownSeconds,
                 AuthTokenTtlSeconds = _authTokenTtlSeconds,
                 AuthSessionTtlSeconds = _authSessionTtlSeconds,
+                AuthSessionIdleTimeoutSeconds = _authSessionIdleTimeoutSeconds,
+                RefreshReuseGraceSeconds = _refreshReuseGraceSeconds,
             },
             _ => _settings! with
             {

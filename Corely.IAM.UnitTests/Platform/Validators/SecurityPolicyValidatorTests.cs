@@ -41,6 +41,16 @@ public class SecurityPolicyValidatorTests
                 SecurityPolicy.AUTH_SESSION_TTL_SECONDS_MAX
             },
             {
+                nameof(SecurityPolicy.AuthSessionIdleTimeoutSeconds),
+                SecurityPolicy.AUTH_SESSION_IDLE_TIMEOUT_SECONDS_MIN,
+                SecurityPolicy.AUTH_SESSION_IDLE_TIMEOUT_SECONDS_MAX
+            },
+            {
+                nameof(SecurityPolicy.RefreshReuseGraceSeconds),
+                SecurityPolicy.REFRESH_REUSE_GRACE_SECONDS_MIN,
+                SecurityPolicy.REFRESH_REUSE_GRACE_SECONDS_MAX
+            },
+            {
                 nameof(SecurityPolicy.MfaChallengeTimeoutSeconds),
                 SecurityPolicy.MFA_CHALLENGE_TIMEOUT_SECONDS_MIN,
                 SecurityPolicy.MFA_CHALLENGE_TIMEOUT_SECONDS_MAX
@@ -83,6 +93,15 @@ public class SecurityPolicyValidatorTests
             {
                 AuthTokenTtlSeconds = SecurityPolicy.AUTH_TOKEN_TTL_SECONDS_MIN,
                 AuthSessionTtlSeconds = value,
+            },
+            nameof(SecurityPolicy.AuthSessionIdleTimeoutSeconds) => policy with
+            {
+                AuthTokenTtlSeconds = SecurityPolicy.AUTH_TOKEN_TTL_SECONDS_MIN,
+                AuthSessionIdleTimeoutSeconds = value,
+            },
+            nameof(SecurityPolicy.RefreshReuseGraceSeconds) => policy with
+            {
+                RefreshReuseGraceSeconds = value,
             },
             nameof(SecurityPolicy.MfaChallengeTimeoutSeconds) => policy with
             {
@@ -139,4 +158,36 @@ public class SecurityPolicyValidatorTests
             e => e.ErrorMessage.Contains("session lifetime", StringComparison.Ordinal)
         );
     }
+
+    [Fact]
+    public void TokenLifetime_CannotExceedTheIdleTimeout()
+    {
+        var result = _validator.Validate(
+            SecurityPolicy.Default with
+            {
+                AuthTokenTtlSeconds = 3601,
+                AuthSessionIdleTimeoutSeconds = 3600,
+            }
+        );
+
+        Assert.False(result.IsValid);
+        Assert.Contains(
+            result.Errors,
+            e => e.ErrorMessage.Contains("idle timeout", StringComparison.Ordinal)
+        );
+    }
+
+    [Fact]
+    public void IdleTimeout_MayExceedTheSessionLifetime() =>
+        Assert.True(
+            _validator
+                .Validate(
+                    SecurityPolicy.Default with
+                    {
+                        AuthSessionTtlSeconds = 3600,
+                        AuthSessionIdleTimeoutSeconds = 86400,
+                    }
+                )
+                .IsValid
+        );
 }

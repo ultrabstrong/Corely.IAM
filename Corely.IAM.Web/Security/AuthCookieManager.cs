@@ -7,6 +7,7 @@ internal class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
 {
     public const string AUTH_TOKEN_COOKIE = "authentication_token";
     public const string AUTH_TOKEN_ID_COOKIE = "auth_token_id";
+    public const string REFRESH_TOKEN_COOKIE = "refresh_token";
     public const string DEVICE_ID_COOKIE = "device_id";
     public const string RETURN_URL_COOKIE = "return_url";
 
@@ -16,8 +17,9 @@ internal class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
         IResponseCookies cookies,
         string authToken,
         Guid authTokenId,
-        bool isHttps,
-        int authCookieTtlSeconds
+        string refreshToken,
+        DateTime refreshExpiresUtc,
+        bool isHttps
     )
     {
         var cookieOptions = new CookieOptions
@@ -26,11 +28,12 @@ internal class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
             Secure = isHttps,
             SameSite = SameSiteMode.Lax,
             Path = "/",
-            Expires = _timeProvider.GetUtcNow().AddSeconds(authCookieTtlSeconds),
+            Expires = new DateTimeOffset(refreshExpiresUtc, TimeSpan.Zero),
         };
 
         cookies.Append(AUTH_TOKEN_COOKIE, authToken, cookieOptions);
         cookies.Append(AUTH_TOKEN_ID_COOKIE, authTokenId.ToString(), cookieOptions);
+        cookies.Append(REFRESH_TOKEN_COOKIE, refreshToken, cookieOptions);
     }
 
     public void DeleteAuthCookies(IResponseCookies cookies)
@@ -38,6 +41,7 @@ internal class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
         var cookieOptions = new CookieOptions { Path = "/" };
         cookies.Delete(AUTH_TOKEN_COOKIE, cookieOptions);
         cookies.Delete(AUTH_TOKEN_ID_COOKIE, cookieOptions);
+        cookies.Delete(REFRESH_TOKEN_COOKIE, cookieOptions);
     }
 
     public void DeleteDeviceIdCookie(IResponseCookies cookies)

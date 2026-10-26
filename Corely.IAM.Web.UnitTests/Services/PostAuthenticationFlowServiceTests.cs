@@ -29,12 +29,6 @@ public class PostAuthenticationFlowServiceTests
             _mockAuthenticationService.Object,
             _mockUserContextProvider.Object,
             _mockAuthCookieManager.Object,
-            new FixedSecurityPolicyProvider(
-                SecurityPolicy.Default with
-                {
-                    AuthSessionTtlSeconds = AUTH_SESSION_TTL_SECONDS,
-                }
-            ),
             Options.Create(new IAMWebOptions())
         );
     }
@@ -47,7 +41,9 @@ public class PostAuthenticationFlowServiceTests
             SignInResultCode.Success,
             null,
             "auth-token",
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
         );
         _mockUserContextProvider
             .Setup(x => x.GetUserContext())
@@ -67,8 +63,9 @@ public class PostAuthenticationFlowServiceTests
                     httpContext.Response.Cookies,
                     signInResult.AuthToken!,
                     signInResult.AuthTokenId!.Value,
-                    false,
-                    AUTH_SESSION_TTL_SECONDS
+                    It.IsAny<string>(),
+                    It.IsAny<DateTime>(),
+                    false
                 ),
             Times.Once
         );
@@ -82,7 +79,9 @@ public class PostAuthenticationFlowServiceTests
             SignInResultCode.Success,
             null,
             "auth-token",
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
         );
         var account1 = new Account { Id = Guid.CreateVersion7(), AccountName = "One" };
         var account2 = new Account { Id = Guid.CreateVersion7(), AccountName = "Two" };
@@ -108,13 +107,17 @@ public class PostAuthenticationFlowServiceTests
             SignInResultCode.Success,
             null,
             "auth-token",
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
         );
         var switchedResult = new SignInResultModel(
             SignInResultCode.Success,
             null,
             "switched-token",
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
         );
         var account = new Account { Id = Guid.CreateVersion7(), AccountName = "One" };
         _mockUserContextProvider
@@ -140,8 +143,9 @@ public class PostAuthenticationFlowServiceTests
                     httpContext.Response.Cookies,
                     It.IsAny<string>(),
                     It.IsAny<Guid>(),
-                    false,
-                    AUTH_SESSION_TTL_SECONDS
+                    It.IsAny<string>(),
+                    It.IsAny<DateTime>(),
+                    false
                 ),
             Times.Exactly(2)
         );
@@ -155,7 +159,9 @@ public class PostAuthenticationFlowServiceTests
             SignInResultCode.Success,
             null,
             "auth-token",
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
         );
         var account = new Account { Id = Guid.CreateVersion7(), AccountName = "One" };
         _mockUserContextProvider
@@ -184,8 +190,9 @@ public class PostAuthenticationFlowServiceTests
                     httpContext.Response.Cookies,
                     signInResult.AuthToken!,
                     signInResult.AuthTokenId!.Value,
-                    false,
-                    AUTH_SESSION_TTL_SECONDS
+                    It.IsAny<string>(),
+                    It.IsAny<DateTime>(),
+                    false
                 ),
             Times.Once
         );
@@ -194,7 +201,14 @@ public class PostAuthenticationFlowServiceTests
     private const string LOCAL_RETURN_URL = "/accounts/1/grants";
 
     private static SignInResultModel SignedIn() =>
-        new(SignInResultCode.Success, null, "auth-token", Guid.CreateVersion7());
+        new(
+            SignInResultCode.Success,
+            null,
+            "auth-token",
+            Guid.CreateVersion7(),
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+        );
 
     private void WithAccounts(params Account[] accounts) =>
         _mockUserContextProvider
@@ -277,7 +291,6 @@ public class PostAuthenticationFlowServiceTests
             _mockAuthenticationService.Object,
             _mockUserContextProvider.Object,
             _mockAuthCookieManager.Object,
-            new FixedSecurityPolicyProvider(),
             Options.Create(new IAMWebOptions { HomePath = "/home" })
         );
         WithAccounts();

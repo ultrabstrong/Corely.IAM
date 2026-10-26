@@ -1,4 +1,5 @@
 using Corely.Common.Extensions;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Providers;
@@ -9,9 +10,12 @@ namespace Corely.IAM.Services;
 internal class MfaService(
     ITotpAuthProcessor totpAuthProcessor,
     IUserContextProvider userContextProvider,
-    IValidationProvider validationProvider
+    IValidationProvider validationProvider,
+    IAuthenticationProvider authenticationProvider
 ) : IMfaService
 {
+    private readonly IAuthenticationProvider _authenticationProvider =
+        authenticationProvider.ThrowIfNull(nameof(authenticationProvider));
     private readonly ITotpAuthProcessor _totpAuthProcessor = totpAuthProcessor.ThrowIfNull(
         nameof(totpAuthProcessor)
     );
@@ -47,7 +51,13 @@ internal class MfaService(
 
         var context = _userContextProvider.GetUserContext()!;
 
-        return await _totpAuthProcessor.ConfirmTotpAsync(context.User!.Id, request.Code);
+        var result = await _totpAuthProcessor.ConfirmTotpAsync(context.User!.Id, request.Code);
+        if (result.ResultCode == ConfirmTotpResultCode.Success)
+            await _authenticationProvider.RevokeAllUserAuthTokensAsync(
+                context.User.Id,
+                context.AuthTokenId
+            );
+        return result;
     }
 
     public async Task<DisableTotpResult> DisableTotpAsync(DisableTotpRequest request)
@@ -64,14 +74,26 @@ internal class MfaService(
 
         var context = _userContextProvider.GetUserContext()!;
 
-        return await _totpAuthProcessor.DisableTotpAsync(context.User!.Id, request.Code);
+        var result = await _totpAuthProcessor.DisableTotpAsync(context.User!.Id, request.Code);
+        if (result.ResultCode == DisableTotpResultCode.Success)
+            await _authenticationProvider.RevokeAllUserAuthTokensAsync(
+                context.User.Id,
+                context.AuthTokenId
+            );
+        return result;
     }
 
     public async Task<RegenerateTotpRecoveryCodesResult> RegenerateTotpRecoveryCodesAsync()
     {
         var context = _userContextProvider.GetUserContext()!;
 
-        return await _totpAuthProcessor.RegenerateTotpRecoveryCodesAsync(context.User!.Id);
+        var result = await _totpAuthProcessor.RegenerateTotpRecoveryCodesAsync(context.User!.Id);
+        if (result.ResultCode == RegenerateTotpRecoveryCodesResultCode.Success)
+            await _authenticationProvider.RevokeAllUserAuthTokensAsync(
+                context.User.Id,
+                context.AuthTokenId
+            );
+        return result;
     }
 
     public async Task<TotpStatusResult> GetTotpStatusAsync()

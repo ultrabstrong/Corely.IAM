@@ -24,6 +24,7 @@ public abstract class FunctionalTestBase : IAsyncLifetime
 
     protected virtual int AuthTokenTtlSeconds => 3600;
     protected virtual int AuthSessionTtlSeconds => 604800;
+    protected virtual int AuthSessionIdleTimeoutSeconds => 86400;
     protected virtual string EnvironmentName => Environments.Development;
     protected virtual IReadOnlyDictionary<string, string> Settings =>
         new Dictionary<string, string>();
@@ -36,6 +37,7 @@ public abstract class FunctionalTestBase : IAsyncLifetime
         {
             AuthTokenTtlSeconds = AuthTokenTtlSeconds,
             AuthSessionTtlSeconds = AuthSessionTtlSeconds,
+            AuthSessionIdleTimeoutSeconds = AuthSessionIdleTimeoutSeconds,
             EnvironmentName = EnvironmentName,
             Settings = Settings,
             TestServices = ConfigureTestServices,
@@ -171,6 +173,18 @@ public abstract class FunctionalTestBase : IAsyncLifetime
     protected string? CurrentAuthToken => Client.Cookies[AuthCookieManager.AUTH_TOKEN_COOKIE];
 
     protected string? CurrentAuthTokenId => Client.Cookies[AuthCookieManager.AUTH_TOKEN_ID_COOKIE];
+
+    protected string? CurrentRefreshToken => Client.Cookies[AuthCookieManager.REFRESH_TOKEN_COOKIE];
+
+    protected TestClient CreateClientWith(IReadOnlyDictionary<string, string> cookies)
+    {
+        var client = new TestClient(Factory.CreateTestClient());
+        client.Cookies.Restore(cookies);
+        return client;
+    }
+
+    internal async Task<UserAuthTokenEntity> CurrentAuthTokenRowAsync() =>
+        (await GetAuthTokenRowAsync(Guid.Parse(CurrentAuthTokenId!)))!;
 
     protected bool HasAuthCookies => Client.Cookies.Contains(AuthCookieManager.AUTH_TOKEN_COOKIE);
 

@@ -191,6 +191,27 @@ Complete reference of all result code enums across Corely.IAM.
 | `MissingDeviceIdClaim` | Device ID claim missing |
 | `SignatureValidationError` | JWT signature invalid |
 
+### RenewAuthTokenResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | New access and refresh tokens issued |
+| `InvalidAuthTokenError` | Refresh token malformed, unknown, wrong or revoked |
+| `UserNotFoundError` | User from the session not found |
+| `SignatureKeyNotFoundError` | User signature key missing |
+| `AccountNotFoundError` | The session's account is no longer reachable |
+| `SessionExpiredError` | Idle timeout or session lifetime passed |
+| `TwoFactorRequiredError` | A platform member lost TOTP while in an account they do not belong to |
+| `RefreshTokenReusedError` | A spent refresh token came back after the reuse grace; the session was ended |
+| `RefreshTokenAlreadyRotatedError` | Another renewal spent the token moments ago; the session continues |
+
+### DeleteExpiredAuthTokensResultCode
+
+| Code | Meaning |
+|------|---------|
+| `Success` | Expired token rows deleted |
+| `UnauthorizedError` | Not in system context |
+
 ## Invitation Result Codes
 
 ### CreateInvitationResultCode

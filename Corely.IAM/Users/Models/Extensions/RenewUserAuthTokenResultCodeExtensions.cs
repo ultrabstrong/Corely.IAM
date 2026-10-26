@@ -9,18 +9,6 @@ internal static class RenewUserAuthTokenResultCodeExtensions
         public RenewAuthTokenResult ToFailedRenewAuthTokenResult() =>
             resultCode switch
             {
-                RenewUserAuthTokenResultCode.InvalidTokenFormat => RenewAuthTokenResult.Failed(
-                    RenewAuthTokenResultCode.InvalidTokenFormat,
-                    "Auth token is in an invalid format"
-                ),
-                RenewUserAuthTokenResultCode.MissingUserIdClaim => RenewAuthTokenResult.Failed(
-                    RenewAuthTokenResultCode.MissingUserIdClaim,
-                    "User ID claim is missing"
-                ),
-                RenewUserAuthTokenResultCode.MissingDeviceIdClaim => RenewAuthTokenResult.Failed(
-                    RenewAuthTokenResultCode.MissingDeviceIdClaim,
-                    "Device ID claim is missing"
-                ),
                 RenewUserAuthTokenResultCode.UserNotFoundError => RenewAuthTokenResult.Failed(
                     RenewAuthTokenResultCode.UserNotFoundError,
                     "User not found"
@@ -42,6 +30,15 @@ internal static class RenewUserAuthTokenResultCodeExtensions
                     RenewAuthTokenResultCode.TwoFactorRequiredError,
                     "Two factor sign in is required to stay in this account as a platform member"
                 ),
+                RenewUserAuthTokenResultCode.RefreshTokenReusedError => RenewAuthTokenResult.Failed(
+                    RenewAuthTokenResultCode.RefreshTokenReusedError,
+                    "Refresh token was already used, so its session has been ended"
+                ),
+                RenewUserAuthTokenResultCode.RefreshTokenAlreadyRotatedError =>
+                    RenewAuthTokenResult.Failed(
+                        RenewAuthTokenResultCode.RefreshTokenAlreadyRotatedError,
+                        "Refresh token was just replaced by another renewal"
+                    ),
                 _ => RenewAuthTokenResult.Failed(
                     RenewAuthTokenResultCode.InvalidAuthTokenError,
                     "Auth token is invalid"

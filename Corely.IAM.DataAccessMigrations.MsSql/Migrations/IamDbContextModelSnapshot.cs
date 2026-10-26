@@ -17,7 +17,7 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.11")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -592,6 +592,9 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("int");
 
+                    b.Property<int>("AuthSessionIdleTimeoutSeconds")
+                        .HasColumnType("int");
+
                     b.Property<int>("AuthSessionTtlSeconds")
                         .HasColumnType("int");
 
@@ -619,6 +622,9 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("PasswordMinimumLength")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RefreshReuseGraceSeconds")
                         .HasColumnType("int");
 
                     b.Property<bool>("RequireDigit")
@@ -837,7 +843,24 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                     b.Property<DateTime>("IssuedUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime>("RefreshExpiresUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RefreshSecretHash")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<Guid?>("ReplacedByTokenId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("RevokedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("SessionStartedUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid>("UserId")
@@ -846,6 +869,10 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ExpiresUtc");
+
+                    b.HasIndex("RefreshExpiresUtc");
+
+                    b.HasIndex("SessionId");
 
                     b.HasIndex("UserId");
 

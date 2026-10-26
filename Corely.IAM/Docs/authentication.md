@@ -8,6 +8,7 @@ JWT-based authentication with custom claims, device tracking, and multi-account 
 - **Custom claims**: `account_id`, `signed_in_account_id`, `device_id` embedded in token
 - **Account switching**: issue new tokens scoped to a different account without re-authenticating
 - **Device tracking**: tokens bound to device IDs for session management
+- **Refresh tokens**: renew a short lived access token with a single use refresh token; a reused one ends its session
 - **Session management**: list active sessions, revoke one session, or revoke all other sessions
 - **Login metrics**: failed attempt counting and lockout cooldown
 - **Bulk sign-out**: revoke all tokens for a user across all devices
@@ -21,8 +22,8 @@ JWT-based authentication with custom claims, device tracking, and multi-account 
 2. `BasicAuthProcessor` validates credentials against hashed password
 3. On success, `AuthenticationProvider` generates a JWT signed with the user's private key
 4. Token includes claims: `sub` (user ID), `jti` (token ID), `iat`, `deviceId`, `accountId` (one per available account)
-5. A tracking record is created in the database for revocation support
-6. Returns `SignInResult` with token string and token ID
+5. A tracking record is created in the database for revocation support, holding the hash of a new refresh token
+6. Returns `SignInResult` with the access token, its ID, the refresh token and when the refresh token expires
 
 ```csharp
 var result = await authenticationService.SignInAsync(
@@ -32,8 +33,39 @@ if (result.ResultCode == SignInResultCode.Success)
 {
     var token = result.AuthToken;
     var tokenId = result.AuthTokenId;
+    var refreshToken = result.RefreshToken;
 }
 ```
+
+## Renewal
+
+The access token lives `AuthTokenTtlSeconds`. Renew it with the refresh token, never with the access
+token:
+
+```csharp
+var renewed = await authenticationService.RenewAuthTokenAsync(
+    new RenewAuthTokenRequest(refreshToken));
+
+if (renewed.ResultCode == RenewAuthTokenResultCode.Success)
+{
+    accessToken = renewed.AuthToken;
+    refreshToken = renewed.RefreshToken;
+}
+```
+
+Each renewal issues a new access token and a new refresh token in the same session, and spends the
+old refresh token. The session ends at the first of:
+
+- `AuthSessionTtlSeconds` after sign in, however often it renews
+- `AuthSessionIdleTimeoutSeconds` after the last renewal
+- a sign out, a revocation, or a credential change on another session
+
+A spent refresh token presented again ends the whole session and returns `RefreshTokenReusedError`:
+only a copy taken by someone else can be presented twice. Within `RefreshReuseGraceSeconds` of being
+spent it returns `RefreshTokenAlreadyRotatedError` instead and leaves the session alone, since two
+requests renewing at the same moment look the same.
+
+The refresh token is `<token id>.<secret>`. Only a salted hash of the secret is stored.
 
 ## Account Switching
 
@@ -58,6 +90,10 @@ await authenticationService.SignOutAllAsync();
 
 `SignOutAsync` revokes the specific token. `SignOutAllAsync` revokes all active tokens for the user across all devices.
 
+Changing a credential ends every other session of the user and keeps the current one: changing,
+setting or removing the password, turning TOTP on or off, regenerating recovery codes, and linking or
+unlinking Google. A password reset through recovery ends every session.
+
 ## Session Management
 
 Tracked auth tokens are the backing store for user sessions. Each active `UserAuthTokenEntity` represents one active session for a `(user, signed-in account, device)` combination.
@@ -69,7 +105,7 @@ await authenticationService.RevokeSessionAsync(new RevokeSessionRequest(sessionI
 await authenticationService.RevokeOtherSessionsAsync();
 ```
 
-`ListSessionsAsync()` returns the current user's active sessions only; revoked and expired tokens are excluded. Each session includes its tracked token ID, device ID, signed-in account ID, issued/expiry timestamps, and whether it is the current session.
+`ListSessionsAsync()` returns the current user's active sessions only; revoked and expired tokens are excluded. Each session includes its tracked token ID, device ID, signed-in account ID, when its current token was issued, when the session ends if left alone, and whether it is the current session.
 
 ## Password Recovery
 
@@ -105,7 +141,6 @@ Validation checks: JWT format, required claims, user existence, token not revoke
 | `sub` | `Guid` | User ID |
 | `jti` | `Guid` | Token ID (for revocation) |
 | `iat` | `long` | Unix timestamp of issuance |
-| `session_started_at` | `long` | Unix timestamp of the session start used to enforce the maximum session lifetime |
 | `device_id` | `string` | Device identifier |
 | `account_id` | `Guid[]` | All accounts the user can access (multiple claims) |
 | `signed_in_account_id` | `Guid` | Currently active account |
@@ -118,8 +153,10 @@ Failed login attempts are tracked per user. After `MaxLoginAttempts` consecutive
 |--------|---------|-------------|
 | `MaxLoginAttempts` | 5 | Consecutive failures before lockout |
 | `LockoutCooldownSeconds` | 900 | Lockout duration (15 minutes) |
-| `AuthTokenTtlSeconds` | 3600 | Token lifetime (1 hour) |
+| `AuthTokenTtlSeconds` | 3600 | Access token lifetime (1 hour) |
 | `AuthSessionTtlSeconds` | 604800 | Maximum renewable session lifetime (7 days) |
+| `AuthSessionIdleTimeoutSeconds` | 86400 | Session ends when not renewed for this long (1 day) |
+| `RefreshReuseGraceSeconds` | 30 | How long a spent refresh token is refused without ending its session |
 
 Configure in `appsettings.json` under the `SecurityOptions` section. With a platform account these come
 from the platform's security settings instead; see
@@ -128,10 +165,29 @@ from the platform's security settings instead; see
 ## Notes
 
 - Tokens are signed with per-user asymmetric keys (not a shared secret)
-- Renewals rotate tracked tokens while preserving the original session start so sessions stay bounded
+- Renewals rotate tracked tokens within one session, so the session start and its bound carry over
 - The system key encrypts stored private keys. It is never embedded in tokens
 - `IUserContextSetter` is `internal`. Only `AuthenticationService` and test infrastructure can set context directly
 - If using `Corely.IAM.Web`, the `AuthenticationTokenMiddleware` handles token validation and context setup automatically
+
+## Deleting Expired Tokens
+
+Tracked token rows stay after they expire. `DeleteExpiredAuthTokensAsync` deletes every row past its
+refresh expiry, in system context. IAM ships the operation; the host ships the schedule:
+
+```csharp
+using var timer = new PeriodicTimer(TimeSpan.FromHours(1));
+while (await timer.WaitForNextTickAsync(stoppingToken))
+{
+    using var scope = serviceProvider.CreateScope();
+    scope.ServiceProvider.GetRequiredService<IAuthenticationService>().AuthenticateAsSystem("token-cleanup");
+    var result = await scope.ServiceProvider
+        .GetRequiredService<IAuthenticationService>()
+        .DeleteExpiredAuthTokensAsync();
+}
+```
+
+A replaced row is kept until its refresh expiry so that a reuse of it is still recognized.
 
 ## System Context (Headless Processes)
 

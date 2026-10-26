@@ -103,6 +103,13 @@ internal class AuthenticationServiceAuditDecorator(
     public Task SignOutAllAsync() =>
         _auditProvider.RecordAsync(OnUser(AuthAction.Execute), () => _inner.SignOutAllAsync());
 
+    public Task<DeleteExpiredAuthTokensResult> DeleteExpiredAuthTokensAsync() =>
+        _auditProvider.RecordAsync(
+            OnUser(AuthAction.Delete),
+            () => _inner.DeleteExpiredAuthTokensAsync(),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
     public Task<UserAuthTokenValidationResultCode> AuthenticateWithTokenAsync(string authToken) =>
         _inner.AuthenticateWithTokenAsync(authToken);
 

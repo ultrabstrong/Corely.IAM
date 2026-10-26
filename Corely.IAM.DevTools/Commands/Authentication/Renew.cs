@@ -12,7 +12,7 @@ internal partial class Authentication : CommandBase
         private readonly IAuthenticationService _authenticationService;
 
         public Renew(IAuthenticationService authenticationService)
-            : base("renew", "Renew the saved auth token")
+            : base("renew", "Renew the saved auth token with its refresh token")
         {
             _authenticationService = authenticationService.ThrowIfNull(
                 nameof(authenticationService)
@@ -27,11 +27,11 @@ internal partial class Authentication : CommandBase
                 return;
             }
 
-            var authToken = await ReadAuthTokenAsync();
-            if (string.IsNullOrWhiteSpace(authToken))
+            var refreshToken = await ReadRefreshTokenAsync();
+            if (string.IsNullOrWhiteSpace(refreshToken))
                 return;
 
-            var result = await _authenticationService.RenewAuthTokenAsync(new(authToken));
+            var result = await _authenticationService.RenewAuthTokenAsync(new(refreshToken));
             if (result.ResultCode != RenewAuthTokenResultCode.Success)
             {
                 Error($"Auth token renewal failed: {result.ResultCode}");
@@ -45,7 +45,7 @@ internal partial class Authentication : CommandBase
             Success("Auth token renewed successfully.");
         }
 
-        private static async Task<string?> ReadAuthTokenAsync()
+        private static async Task<string?> ReadRefreshTokenAsync()
         {
             try
             {
@@ -54,13 +54,15 @@ internal partial class Authentication : CommandBase
                 );
                 var jsonDoc = JsonDocument.Parse(fileContent);
 
-                if (!jsonDoc.RootElement.TryGetProperty("AuthToken", out var authTokenElement))
+                if (
+                    !jsonDoc.RootElement.TryGetProperty("RefreshToken", out var refreshTokenElement)
+                )
                 {
-                    Error("Auth token file does not contain 'AuthToken' property.");
+                    Error("Auth token file does not contain 'RefreshToken' property.");
                     return null;
                 }
 
-                return authTokenElement.GetString();
+                return refreshTokenElement.GetString();
             }
             catch (Exception ex)
             {

@@ -8,16 +8,16 @@ public class RenewUserAuthTokenResultCodeExtensionsTests
 {
     [Theory]
     [InlineData(
-        RenewUserAuthTokenResultCode.InvalidTokenFormat,
-        RenewAuthTokenResultCode.InvalidTokenFormat
+        RenewUserAuthTokenResultCode.TwoFactorRequiredError,
+        RenewAuthTokenResultCode.TwoFactorRequiredError
     )]
     [InlineData(
-        RenewUserAuthTokenResultCode.MissingUserIdClaim,
-        RenewAuthTokenResultCode.MissingUserIdClaim
+        RenewUserAuthTokenResultCode.RefreshTokenReusedError,
+        RenewAuthTokenResultCode.RefreshTokenReusedError
     )]
     [InlineData(
-        RenewUserAuthTokenResultCode.MissingDeviceIdClaim,
-        RenewAuthTokenResultCode.MissingDeviceIdClaim
+        RenewUserAuthTokenResultCode.RefreshTokenAlreadyRotatedError,
+        RenewAuthTokenResultCode.RefreshTokenAlreadyRotatedError
     )]
     [InlineData(
         RenewUserAuthTokenResultCode.UserNotFoundError,
@@ -50,5 +50,6 @@ public class RenewUserAuthTokenResultCodeExtensionsTests
         Assert.False(string.IsNullOrWhiteSpace(result.Message));
         Assert.Null(result.AuthToken);
         Assert.Null(result.AuthTokenId);
+        Assert.Null(result.RefreshToken);
     }
 }

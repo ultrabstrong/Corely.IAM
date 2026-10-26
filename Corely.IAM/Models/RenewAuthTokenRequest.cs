@@ -1,3 +1,3 @@
 namespace Corely.IAM.Models;
 
-public record RenewAuthTokenRequest(string AuthToken);
+public record RenewAuthTokenRequest(string RefreshToken);

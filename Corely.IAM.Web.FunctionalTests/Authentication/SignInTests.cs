@@ -36,10 +36,16 @@ public class SignInTests : FunctionalTestBase
                 .SameSite,
             ignoreCase: true
         );
+        var refreshCookie = Client.LastSetCookies.Last(c =>
+            c.Name == AuthCookieManager.REFRESH_TOKEN_COOKIE
+        );
+        Assert.True(refreshCookie.HttpOnly);
+        Assert.True(refreshCookie.Secure);
+        Assert.Equal("lax", refreshCookie.SameSite, ignoreCase: true);
     }
 
     [Fact]
-    public async Task SignIn_CookieExpiryReflectsSessionTtlNotTokenTtl()
+    public async Task SignIn_CookieExpiryReflectsTheIdleTimeoutNotTokenTtl()
     {
         using var response = await SignInAsync();
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
@@ -49,19 +55,19 @@ public class SignInTests : FunctionalTestBase
         );
 
         Assert.NotNull(authCookie.Expires);
-        var expectedExpiry = Clock.GetUtcNow().AddSeconds(AuthSessionTtlSeconds);
+        var expectedExpiry = Clock.GetUtcNow().AddSeconds(AuthSessionIdleTimeoutSeconds);
         Assert.True(
             (authCookie.Expires!.Value - expectedExpiry).Duration() < TimeSpan.FromMinutes(1),
-            $"Cookie expiry {authCookie.Expires} should track the session TTL ({expectedExpiry})."
+            $"Cookie expiry {authCookie.Expires} should track the idle timeout ({expectedExpiry})."
         );
     }
 
     [Fact]
-    public async Task SignIn_IssuedTokenCarriesSessionStartedAtClaim()
+    public async Task SignIn_SetsARefreshCookie()
     {
         await SignInSuccessfullyAsync();
 
-        Assert.NotNull(TestJwt.GetSessionStartedAt(CurrentAuthToken!));
+        Assert.NotNull(CurrentRefreshToken);
     }
 
     [Fact]

@@ -28,6 +28,8 @@ internal sealed class PlatformSecuritySettingsEntityConfiguration
         builder.Property(e => e.LockoutCooldownSeconds).IsRequired();
         builder.Property(e => e.AuthTokenTtlSeconds).IsRequired();
         builder.Property(e => e.AuthSessionTtlSeconds).IsRequired();
+        builder.Property(e => e.AuthSessionIdleTimeoutSeconds).IsRequired();
+        builder.Property(e => e.RefreshReuseGraceSeconds).IsRequired();
         builder.Property(e => e.MfaChallengeTimeoutSeconds).IsRequired();
         builder.Property(e => e.TotpRecoveryCodeCount).IsRequired();
     }

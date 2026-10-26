@@ -18,7 +18,9 @@ internal record UserAuthTokenResult(
     User? User,
     Account? CurrentAccount,
     List<Account> AvailableAccounts,
-    bool EnteredAsPlatformMember = false
+    bool EnteredAsPlatformMember = false,
+    string? RefreshToken = null,
+    DateTime? RefreshExpiresUtc = null
 )
 {
     internal static UserAuthTokenResult Failed(UserAuthTokenResultCode resultCode) =>

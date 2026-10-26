@@ -6,6 +6,7 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Extensions;
+using Corely.IAM.Platform.Models;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Mappers;
@@ -14,6 +15,8 @@ using Corely.IAM.TotpAuths.Entities;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Mappers;
 using Corely.IAM.Users.Models;
+using Corely.Security.Hashing.Factories;
+using Corely.Security.Secrets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -28,10 +31,20 @@ internal class AuthenticationProvider(
     IPlatformAccessProvider platformAccessProvider,
     ISecurityProvider securityProcessor,
     ISecurityPolicyProvider securityPolicyProvider,
+    IHashProviderFactory hashProviderFactory,
+    IamHashCodes hashCodes,
+    ISecretProvider secretProvider,
     ILogger<AuthenticationProvider> logger,
     TimeProvider timeProvider
 ) : IAuthenticationProvider
 {
+    private readonly IHashProviderFactory _hashProviderFactory = hashProviderFactory.ThrowIfNull(
+        nameof(hashProviderFactory)
+    );
+    private readonly IamHashCodes _hashCodes = hashCodes.ThrowIfNull(nameof(hashCodes));
+    private readonly ISecretProvider _secretProvider = secretProvider.ThrowIfNull(
+        nameof(secretProvider)
+    );
     private readonly IRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
     private readonly IRepo<UserAuthTokenEntity> _authTokenRepo = authTokenRepo.ThrowIfNull(
         nameof(authTokenRepo)
@@ -69,70 +82,66 @@ internal class AuthenticationProvider(
         return await CreateUserAuthTokenAsync(
             tokenIssueContext.Context,
             request.DeviceId,
-            request.SessionStartedUtc
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            _timeProvider.GetUtcNow().UtcDateTime
         );
     }
 
-    public async Task<RenewUserAuthTokenResult> RenewUserAuthTokenAsync(string authToken)
+    public async Task<RenewUserAuthTokenResult> RenewUserAuthTokenAsync(string refreshToken)
     {
-        ArgumentNullException.ThrowIfNull(authToken, nameof(authToken));
+        ArgumentNullException.ThrowIfNull(refreshToken, nameof(refreshToken));
 
-        var tokenHandler = new JwtSecurityTokenHandler();
-        if (!tokenHandler.CanReadToken(authToken))
+        if (!RefreshToken.TryParse(refreshToken, out var parsedRefreshToken))
         {
-            _logger.LogInformation("Auth token is in invalid format");
-            return RenewUserAuthTokenResult.Failed(RenewUserAuthTokenResultCode.InvalidTokenFormat);
-        }
-
-        var jwtToken = tokenHandler.ReadJwtToken(authToken);
-
-        var subClaim = jwtToken.ClaimValue(JwtRegisteredClaimNames.Sub);
-        if (string.IsNullOrWhiteSpace(subClaim) || !Guid.TryParse(subClaim, out var userId))
-        {
-            _logger.LogInformation("Auth token does not contain valid sub (userId) claim");
-            return RenewUserAuthTokenResult.Failed(RenewUserAuthTokenResultCode.MissingUserIdClaim);
-        }
-
-        var deviceId = jwtToken.ClaimValue(TokenIssueContext.DEVICE_ID_CLAIM);
-        if (string.IsNullOrWhiteSpace(deviceId))
-        {
-            _logger.LogInformation("Auth token does not contain device ID");
-            return RenewUserAuthTokenResult.Failed(
-                RenewUserAuthTokenResultCode.MissingDeviceIdClaim
-            );
-        }
-
-        var jti = jwtToken.ClaimValue(JwtRegisteredClaimNames.Jti);
-        if (string.IsNullOrWhiteSpace(jti) || !Guid.TryParse(jti, out var tokenId))
-        {
-            _logger.LogInformation("Auth token does not contain a valid jti claim");
+            _logger.LogInformation("Refresh token is in an invalid format");
             return RenewUserAuthTokenResult.Failed(
                 RenewUserAuthTokenResultCode.TokenValidationFailed
             );
         }
 
-        var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.Id == tokenId && t.UserId == userId
-        );
-        if (trackedToken == null || trackedToken.RevokedUtc != null)
+        var trackedToken = await _authTokenRepo.GetAsync(t => t.Id == parsedRefreshToken.TokenId);
+        if (
+            trackedToken == null
+            || !trackedToken
+                .RefreshSecretHash.ToHashedValue(_hashProviderFactory)
+                .Verify(parsedRefreshToken.Secret)
+        )
         {
-            _logger.LogInformation("Auth token not found or already revoked in server tracking");
+            _logger.LogInformation("Refresh token not found in server tracking");
             return RenewUserAuthTokenResult.Failed(
                 RenewUserAuthTokenResultCode.TokenValidationFailed
             );
         }
 
-        if (!string.Equals(trackedToken.DeviceId, deviceId, StringComparison.Ordinal))
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var policy = await _securityPolicyProvider.GetPolicyAsync();
+
+        if (trackedToken.ReplacedByTokenId.HasValue)
+            return await RefusedReplacedRefreshTokenAsync(trackedToken, now, policy);
+
+        if (trackedToken.RevokedUtc != null)
         {
-            _logger.LogInformation(
-                "Auth token device ID mismatch for tracked token {TokenId}",
-                trackedToken.Id
-            );
+            _logger.LogInformation("Refresh token {TokenId} was revoked", trackedToken.Id);
             return RenewUserAuthTokenResult.Failed(
                 RenewUserAuthTokenResultCode.TokenValidationFailed
             );
         }
 
+        if (
+            trackedToken.RefreshExpiresUtc <= now
+            || trackedToken.SessionStartedUtc.AddSeconds(policy.AuthSessionTtlSeconds) <= now
+        )
+        {
+            trackedToken.RevokedUtc = now;
+            await _authTokenRepo.UpdateAsync(trackedToken);
+            return RenewUserAuthTokenResult.Failed(
+                RenewUserAuthTokenResultCode.SessionExpiredError
+            );
+        }
+
+        var userId = trackedToken.UserId;
+        var deviceId = trackedToken.DeviceId;
         var tokenIssueContext = await GetTokenIssueContextAsync(userId, trackedToken.AccountId);
         if (tokenIssueContext.ResultCode.HasValue)
         {
@@ -152,44 +161,30 @@ internal class AuthenticationProvider(
             );
         }
 
-        if (!ValidateJwtToken(authToken, tokenIssueContext.Context!.UserEntity, false))
-            return RenewUserAuthTokenResult.Failed(
-                RenewUserAuthTokenResultCode.TokenValidationFailed
-            );
-
-        var sessionStartedUtc = jwtToken.SessionStartedUtc();
-        if (!sessionStartedUtc.HasValue)
-        {
-            _logger.LogInformation("Auth token does not contain a valid session start timestamp");
-            return RenewUserAuthTokenResult.Failed(
-                RenewUserAuthTokenResultCode.TokenValidationFailed
-            );
-        }
-
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var policy = await _securityPolicyProvider.GetPolicyAsync();
-        if (sessionStartedUtc.Value.AddSeconds(policy.AuthSessionTtlSeconds) <= now)
-        {
-            trackedToken.RevokedUtc = now;
-            await _authTokenRepo.UpdateAsync(trackedToken);
-            return RenewUserAuthTokenResult.Failed(
-                RenewUserAuthTokenResultCode.SessionExpiredError
-            );
-        }
-
-        trackedToken.RevokedUtc = now;
-        await _authTokenRepo.UpdateAsync(trackedToken);
-
-        await RevokeExistingTokensForUserAccountDeviceAsync(
-            userId,
-            tokenIssueContext.Context.SignedInAccount?.Id,
-            deviceId
+        var renewedTokenId = Guid.CreateVersion7();
+        var claimed = await _authTokenRepo.ExecuteUpdateAsync(
+            t => t.Id == trackedToken.Id && t.RevokedUtc == null && t.ReplacedByTokenId == null,
+            s =>
+                s.SetProperty(t => t.RevokedUtc, now)
+                    .SetProperty(t => t.ReplacedByTokenId, renewedTokenId)
         );
+        if (claimed == 0)
+        {
+            _logger.LogInformation(
+                "Refresh token {TokenId} was replaced by a concurrent renewal",
+                trackedToken.Id
+            );
+            return RenewUserAuthTokenResult.Failed(
+                RenewUserAuthTokenResultCode.RefreshTokenAlreadyRotatedError
+            );
+        }
 
         var renewedTokenResult = await CreateUserAuthTokenAsync(
-            tokenIssueContext.Context,
+            tokenIssueContext.Context!,
             deviceId,
-            sessionStartedUtc
+            renewedTokenId,
+            trackedToken.SessionId,
+            trackedToken.SessionStartedUtc
         );
         return renewedTokenResult.ResultCode switch
         {
@@ -201,7 +196,9 @@ internal class AuthenticationProvider(
                 renewedTokenResult.CurrentAccount,
                 deviceId,
                 renewedTokenResult.AvailableAccounts,
-                renewedTokenResult.EnteredAsPlatformMember
+                renewedTokenResult.EnteredAsPlatformMember,
+                renewedTokenResult.RefreshToken,
+                renewedTokenResult.RefreshExpiresUtc
             ),
             UserAuthTokenResultCode.UserNotFoundError => RenewUserAuthTokenResult.Failed(
                 RenewUserAuthTokenResultCode.UserNotFoundError
@@ -362,7 +359,7 @@ internal class AuthenticationProvider(
             && t.AccountId == request.AccountId
             && t.DeviceId == request.DeviceId
             && t.RevokedUtc == null
-            && t.ExpiresUtc > now
+            && t.RefreshExpiresUtc > now
         );
 
         if (trackedToken == null)
@@ -394,7 +391,7 @@ internal class AuthenticationProvider(
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var activeTokens = await _authTokenRepo.ListAsync(t =>
-            t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > now
+            t.UserId == userId && t.RevokedUtc == null && t.RefreshExpiresUtc > now
         );
 
         return activeTokens
@@ -403,7 +400,7 @@ internal class AuthenticationProvider(
                 t.DeviceId,
                 t.AccountId,
                 t.IssuedUtc,
-                t.ExpiresUtc,
+                t.RefreshExpiresUtc,
                 currentSessionId.HasValue && t.Id == currentSessionId.Value
             ))
             .OrderByDescending(s => s.IsCurrentSession)
@@ -415,7 +412,10 @@ internal class AuthenticationProvider(
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var trackedToken = await _authTokenRepo.GetAsync(t =>
-            t.Id == tokenId && t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > now
+            t.Id == tokenId
+            && t.UserId == userId
+            && t.RevokedUtc == null
+            && t.RefreshExpiresUtc > now
         );
 
         if (trackedToken == null)
@@ -434,7 +434,7 @@ internal class AuthenticationProvider(
             t.Id == currentTokenId
             && t.UserId == userId
             && t.RevokedUtc == null
-            && t.ExpiresUtc > now
+            && t.RefreshExpiresUtc > now
         );
 
         if (!currentTokenIsActive)
@@ -445,19 +445,23 @@ internal class AuthenticationProvider(
                 t.UserId == userId
                 && t.Id != currentTokenId
                 && t.RevokedUtc == null
-                && t.ExpiresUtc > now,
+                && t.RefreshExpiresUtc > now,
             s => s.SetProperty(t => t.RevokedUtc, now)
         );
 
         return true;
     }
 
-    public async Task RevokeAllUserAuthTokensAsync(Guid userId)
+    public async Task RevokeAllUserAuthTokensAsync(Guid userId, Guid? exceptTokenId = null)
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
 
         var revokedCount = await _authTokenRepo.ExecuteUpdateAsync(
-            t => t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > now,
+            t =>
+                t.UserId == userId
+                && t.Id != exceptTokenId
+                && t.RevokedUtc == null
+                && t.RefreshExpiresUtc > now,
             s => s.SetProperty(t => t.RevokedUtc, now)
         );
 
@@ -469,6 +473,15 @@ internal class AuthenticationProvider(
             revokedCount,
             userId
         );
+    }
+
+    public async Task<int> DeleteExpiredAuthTokensAsync()
+    {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var deletedCount = await _authTokenRepo.ExecuteDeleteAsync(t => t.RefreshExpiresUtc <= now);
+
+        _logger.LogInformation("Deleted {Count} expired auth tokens", deletedCount);
+        return deletedCount;
     }
 
     private async Task<UserEntity?> GetUserWithKeysAndAccountsAsync(
@@ -546,10 +559,45 @@ internal class AuthenticationProvider(
         );
     }
 
+    private async Task<RenewUserAuthTokenResult> RefusedReplacedRefreshTokenAsync(
+        UserAuthTokenEntity trackedToken,
+        DateTime now,
+        SecurityPolicy policy
+    )
+    {
+        if (trackedToken.RevokedUtc?.AddSeconds(policy.RefreshReuseGraceSeconds) > now)
+        {
+            _logger.LogInformation(
+                "Refresh token {TokenId} was replaced moments ago; refusing without ending its session",
+                trackedToken.Id
+            );
+            return RenewUserAuthTokenResult.Failed(
+                RenewUserAuthTokenResultCode.RefreshTokenAlreadyRotatedError
+            );
+        }
+
+        var revokedCount = await _authTokenRepo.ExecuteUpdateAsync(
+            t => t.SessionId == trackedToken.SessionId && t.RevokedUtc == null,
+            s => s.SetProperty(t => t.RevokedUtc, now)
+        );
+        _logger.LogWarning(
+            "Replaced refresh token {TokenId} was reused; ended session {SessionId} for user {UserId}, revoking {Count} token(s)",
+            trackedToken.Id,
+            trackedToken.SessionId,
+            trackedToken.UserId,
+            revokedCount
+        );
+        return RenewUserAuthTokenResult.Failed(
+            RenewUserAuthTokenResultCode.RefreshTokenReusedError
+        );
+    }
+
     private async Task<UserAuthTokenResult> CreateUserAuthTokenAsync(
         TokenIssueContext tokenIssueContext,
         string deviceId,
-        DateTime? sessionStartedUtc
+        Guid tokenId,
+        Guid sessionId,
+        DateTime sessionStartedUtc
     )
     {
         var privateKey = _securityProcessor.DecryptWithSystemKey(
@@ -563,19 +611,11 @@ internal class AuthenticationProvider(
 
         var policy = await _securityPolicyProvider.GetPolicyAsync();
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var resolvedSessionStartedUtc = sessionStartedUtc ?? now;
-        var sessionExpiresUtc = resolvedSessionStartedUtc.AddSeconds(policy.AuthSessionTtlSeconds);
-        var expires = now.AddSeconds(policy.AuthTokenTtlSeconds);
-        if (expires > sessionExpiresUtc)
-            expires = sessionExpiresUtc;
+        sessionStartedUtc = DateTime.SpecifyKind(sessionStartedUtc, DateTimeKind.Utc);
+        var refreshExpiresUtc = policy.RefreshExpiresUtc(sessionStartedUtc, now);
+        var expires = policy.AccessTokenExpiresUtc(refreshExpiresUtc, now);
 
-        var tokenId = Guid.CreateVersion7();
-        var claims = tokenIssueContext.Claims(
-            tokenId.ToString(),
-            now,
-            resolvedSessionStartedUtc,
-            deviceId
-        );
+        var claims = tokenIssueContext.Claims(tokenId.ToString(), now, deviceId);
 
         var token = new JwtSecurityToken(
             issuer: typeof(AuthenticationProvider).FullName,
@@ -585,6 +625,7 @@ internal class AuthenticationProvider(
             signingCredentials: credentials
         );
 
+        var refreshSecret = _secretProvider.CreateSecret();
         await _authTokenRepo.CreateAsync(
             new UserAuthTokenEntity
             {
@@ -592,8 +633,14 @@ internal class AuthenticationProvider(
                 UserId = tokenIssueContext.UserEntity.Id,
                 AccountId = tokenIssueContext.SignedInAccount?.Id,
                 DeviceId = deviceId,
+                SessionId = sessionId,
+                SessionStartedUtc = sessionStartedUtc,
                 IssuedUtc = now,
                 ExpiresUtc = expires,
+                RefreshSecretHash = refreshSecret
+                    .ToHashedValueFromPlainText(_hashProviderFactory, _hashCodes.TokenHashCode)
+                    .ToHashString()!,
+                RefreshExpiresUtc = refreshExpiresUtc,
             }
         );
 
@@ -608,7 +655,9 @@ internal class AuthenticationProvider(
             IsEnteredAsPlatformMember(
                 tokenIssueContext.UserEntity,
                 tokenIssueContext.SignedInAccount
-            )
+            ),
+            new RefreshToken(tokenId, refreshSecret).ToString(),
+            refreshExpiresUtc
         );
     }
 
@@ -718,7 +767,7 @@ internal class AuthenticationProvider(
                 && t.AccountId == accountId
                 && t.DeviceId == deviceId
                 && t.RevokedUtc == null
-                && t.ExpiresUtc > now,
+                && t.RefreshExpiresUtc > now,
             s => s.SetProperty(t => t.RevokedUtc, now)
         );
 

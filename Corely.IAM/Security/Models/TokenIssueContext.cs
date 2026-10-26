@@ -16,14 +16,8 @@ internal sealed record TokenIssueContext(
     public const string ACCOUNT_ID_CLAIM = "account_id";
     public const string SIGNED_IN_ACCOUNT_ID_CLAIM = "signed_in_account_id";
     public const string DEVICE_ID_CLAIM = "device_id";
-    public const string SESSION_STARTED_AT_CLAIM = "session_started_at";
 
-    public List<Claim> Claims(
-        string jti,
-        DateTime issuedAt,
-        DateTime sessionStartedUtc,
-        string deviceId
-    )
+    public List<Claim> Claims(string jti, DateTime issuedAt, string deviceId)
     {
         var claims = new List<Claim>
         {
@@ -32,11 +26,6 @@ internal sealed record TokenIssueContext(
             new(
                 JwtRegisteredClaimNames.Iat,
                 new DateTimeOffset(issuedAt).ToUnixTimeSeconds().ToString(),
-                ClaimValueTypes.Integer64
-            ),
-            new(
-                SESSION_STARTED_AT_CLAIM,
-                new DateTimeOffset(sessionStartedUtc).ToUnixTimeSeconds().ToString(),
                 ClaimValueTypes.Integer64
             ),
             new(DEVICE_ID_CLAIM, deviceId),

@@ -60,6 +60,12 @@ internal static class SettingChangeExtensions
                 PlatformSetting.AuthSessionTtlSeconds => Now<int>(change) > Was<int>(change)
                     ? $"Sessions will last {Duration(Now<int>(change))}, instead of {Duration(Was<int>(change))}."
                     : $"Sessions will end after {Duration(Now<int>(change))}, instead of {Duration(Was<int>(change))}.",
+                PlatformSetting.AuthSessionIdleTimeoutSeconds => Now<int>(change) > Was<int>(change)
+                    ? $"Idle sessions will stay open for {Duration(Now<int>(change))}, instead of {Duration(Was<int>(change))}."
+                    : $"Idle sessions will end after {Duration(Now<int>(change))}, instead of {Duration(Was<int>(change))}.",
+                PlatformSetting.RefreshReuseGraceSeconds => Now<int>(change) == 0
+                    ? "Any reuse of a replaced refresh token will end its session at once."
+                    : $"A replaced refresh token reused within {Duration(Now<int>(change))} will be refused without ending its session.",
                 PlatformSetting.MfaChallengeTimeoutSeconds =>
                     $"Users will have {Duration(Now<int>(change))} to enter a code, instead of {Duration(Was<int>(change))}.",
                 PlatformSetting.TotpRecoveryCodeCount =>

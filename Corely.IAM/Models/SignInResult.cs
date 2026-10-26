@@ -22,7 +22,9 @@ public record SignInResult(
     string? Message,
     string? AuthToken,
     Guid? AuthTokenId,
-    string? MfaChallengeToken = null
+    string? MfaChallengeToken = null,
+    string? RefreshToken = null,
+    DateTime? RefreshExpiresUtc = null
 )
 {
     internal static SignInResult Failed(SignInResultCode resultCode, string message) =>

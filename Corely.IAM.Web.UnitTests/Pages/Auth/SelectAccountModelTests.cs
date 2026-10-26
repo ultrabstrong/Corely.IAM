@@ -35,7 +35,6 @@ public class SelectAccountModelTests
             _mockAuthService.Object,
             _mockUserContextProvider.Object,
             _mockCookieManager.Object,
-            new FixedSecurityPolicyProvider(),
             _mockRetrievalService.Object,
             Options.Create(new IAMWebOptions())
         );
@@ -120,7 +119,14 @@ public class SelectAccountModelTests
                 s.SwitchAccountAsync(It.Is<SwitchAccountRequest>(r => r.AccountId == accountId))
             )
             .ReturnsAsync(
-                new SignInResult(SignInResultCode.Success, null, "switched-token", tokenId)
+                new SignInResult(
+                    SignInResultCode.Success,
+                    null,
+                    "switched-token",
+                    tokenId,
+                    RefreshToken: "refresh-token",
+                    RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+                )
             );
 
         var result = await _model.OnPostAsync(accountId);

@@ -17,6 +17,8 @@ internal class PlatformSecuritySettingsEntity : IHasCreatedUtc, IHasModifiedUtc
     public int LockoutCooldownSeconds { get; set; }
     public int AuthTokenTtlSeconds { get; set; }
     public int AuthSessionTtlSeconds { get; set; }
+    public int AuthSessionIdleTimeoutSeconds { get; set; }
+    public int RefreshReuseGraceSeconds { get; set; }
     public int MfaChallengeTimeoutSeconds { get; set; }
     public int TotpRecoveryCodeCount { get; set; }
     public DateTime CreatedUtc { get; set; }

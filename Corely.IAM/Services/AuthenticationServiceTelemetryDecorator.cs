@@ -84,8 +84,14 @@ internal class AuthenticationServiceTelemetryDecorator(
     public async Task<RenewAuthTokenResult> RenewAuthTokenAsync(RenewAuthTokenRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),
-            request,
             () => _inner.RenewAuthTokenAsync(request),
+            logResult: true
+        );
+
+    public async Task<DeleteExpiredAuthTokensResult> DeleteExpiredAuthTokensAsync() =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(AuthenticationService),
+            () => _inner.DeleteExpiredAuthTokensAsync(),
             logResult: true
         );
 

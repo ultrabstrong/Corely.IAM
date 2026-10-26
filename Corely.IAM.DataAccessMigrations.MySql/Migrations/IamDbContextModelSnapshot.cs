@@ -16,7 +16,7 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.11")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("Corely.IAM.Accounts.Entities.AccountAsymmetricKeyEntity", b =>
@@ -589,6 +589,9 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("int");
 
+                    b.Property<int>("AuthSessionIdleTimeoutSeconds")
+                        .HasColumnType("int");
+
                     b.Property<int>("AuthSessionTtlSeconds")
                         .HasColumnType("int");
 
@@ -616,6 +619,9 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("PasswordMinimumLength")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RefreshReuseGraceSeconds")
                         .HasColumnType("int");
 
                     b.Property<bool>("RequireDigit")
@@ -834,7 +840,24 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Property<DateTime>("IssuedUtc")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<DateTime>("RefreshExpiresUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("RefreshSecretHash")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<Guid?>("ReplacedByTokenId")
+                        .HasColumnType("char(36)");
+
                     b.Property<DateTime?>("RevokedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("SessionStartedUtc")
                         .HasColumnType("datetime(6)");
 
                     b.Property<Guid>("UserId")
@@ -843,6 +866,10 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ExpiresUtc");
+
+                    b.HasIndex("RefreshExpiresUtc");
+
+                    b.HasIndex("SessionId");
 
                     b.HasIndex("UserId");
 

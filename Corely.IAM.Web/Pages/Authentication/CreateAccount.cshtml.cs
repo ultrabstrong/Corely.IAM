@@ -1,5 +1,4 @@
 using Corely.IAM.Models;
-using Corely.IAM.Platform.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Configuration;
@@ -15,7 +14,6 @@ public class CreateAccountModel(
     IAuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
     IAuthCookieManager authCookieManager,
-    ISecurityPolicyProvider securityPolicyProvider,
     IOptions<IAMWebOptions> iamWebOptions
 ) : PageModel
 {
@@ -70,8 +68,9 @@ public class CreateAccountModel(
             Response.Cookies,
             switchResult.AuthToken!,
             switchResult.AuthTokenId!.Value,
-            Request.IsHttps,
-            (await securityPolicyProvider.GetPolicyAsync()).AuthSessionTtlSeconds
+            switchResult.RefreshToken!,
+            switchResult.RefreshExpiresUtc!.Value,
+            Request.IsHttps
         );
 
         return Redirect(iamWebOptions.Value.HomePath);

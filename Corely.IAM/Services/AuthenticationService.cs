@@ -335,7 +335,9 @@ internal class AuthenticationService(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var renewResult = await _authenticationProvider.RenewUserAuthTokenAsync(request.AuthToken);
+        var renewResult = await _authenticationProvider.RenewUserAuthTokenAsync(
+            request.RefreshToken
+        );
 
         if (
             renewResult.ResultCode != RenewUserAuthTokenResultCode.Success
@@ -345,19 +347,11 @@ internal class AuthenticationService(
             return renewResult.ResultCode.ToFailedRenewAuthTokenResult();
         }
 
-        if (string.IsNullOrWhiteSpace(renewResult.DeviceId))
-        {
-            return RenewAuthTokenResult.Failed(
-                RenewAuthTokenResultCode.MissingDeviceIdClaim,
-                "Device ID claim is missing"
-            );
-        }
-
         _userContextSetter.SetUserContext(
             new UserContext(
                 renewResult.User,
                 renewResult.CurrentAccount,
-                renewResult.DeviceId,
+                renewResult.DeviceId!,
                 renewResult.AvailableAccounts,
                 renewResult.TokenId,
                 renewResult.EnteredAsPlatformMember
@@ -368,7 +362,9 @@ internal class AuthenticationService(
             RenewAuthTokenResultCode.Success,
             null,
             renewResult.Token,
-            renewResult.TokenId
+            renewResult.TokenId,
+            renewResult.RefreshToken,
+            renewResult.RefreshExpiresUtc
         );
     }
 
@@ -562,6 +558,23 @@ internal class AuthenticationService(
         _logger.LogDebug("All sessions signed out for user {UserId}", userId);
     }
 
+    public async Task<DeleteExpiredAuthTokensResult> DeleteExpiredAuthTokensAsync()
+    {
+        if (_userContextProvider.GetUserContext()?.IsSystemContext != true)
+            return new DeleteExpiredAuthTokensResult(
+                DeleteExpiredAuthTokensResultCode.UnauthorizedError,
+                "Deleting expired auth tokens requires system context",
+                0
+            );
+
+        var deletedCount = await _authenticationProvider.DeleteExpiredAuthTokensAsync();
+        return new DeleteExpiredAuthTokensResult(
+            DeleteExpiredAuthTokensResultCode.Success,
+            string.Empty,
+            deletedCount
+        );
+    }
+
     private async Task<SignInResult> CreateMfaChallengeAsync(
         Guid userId,
         string deviceId,
@@ -631,7 +644,9 @@ internal class AuthenticationService(
             SignInResultCode.Success,
             null,
             authTokenResult.Token,
-            authTokenResult.TokenId
+            authTokenResult.TokenId,
+            RefreshToken: authTokenResult.RefreshToken,
+            RefreshExpiresUtc: authTokenResult.RefreshExpiresUtc
         );
     }
 

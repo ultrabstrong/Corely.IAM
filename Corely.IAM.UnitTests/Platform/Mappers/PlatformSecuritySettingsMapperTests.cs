@@ -32,6 +32,8 @@ public class PlatformSecuritySettingsMapperTests
         120,
         600,
         7200,
+        3600,
+        15,
         120,
         7
     );

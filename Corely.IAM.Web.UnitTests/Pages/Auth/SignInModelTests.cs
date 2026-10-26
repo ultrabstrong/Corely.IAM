@@ -109,7 +109,14 @@ public class SignInModelTests
         _model.Username = "testuser";
         _model.Password = "goodpass";
         var tokenId = Guid.CreateVersion7();
-        var signInResult = new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId);
+        var signInResult = new SignInResult(
+            SignInResultCode.Success,
+            null,
+            "auth-token",
+            tokenId,
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+        );
         _mockAuthService
             .Setup(s => s.SignInAsync(It.IsAny<SignInRequest>()))
             .ReturnsAsync(signInResult);
@@ -133,7 +140,14 @@ public class SignInModelTests
         _model.Username = "testuser";
         _model.Password = "goodpass";
         var tokenId = Guid.CreateVersion7();
-        var signInResult = new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId);
+        var signInResult = new SignInResult(
+            SignInResultCode.Success,
+            null,
+            "auth-token",
+            tokenId,
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+        );
 
         _mockAuthService
             .Setup(s => s.SignInAsync(It.IsAny<SignInRequest>()))
@@ -158,7 +172,14 @@ public class SignInModelTests
         _model.Username = "testuser";
         _model.Password = "goodpass";
         var tokenId = Guid.CreateVersion7();
-        var signInResult = new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId);
+        var signInResult = new SignInResult(
+            SignInResultCode.Success,
+            null,
+            "auth-token",
+            tokenId,
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+        );
 
         _mockAuthService
             .Setup(s => s.SignInAsync(It.IsAny<SignInRequest>()))
@@ -179,7 +200,14 @@ public class SignInModelTests
         _model.Username = "testuser";
         _model.Password = "goodpass";
         var tokenId = Guid.CreateVersion7();
-        var signInResult = new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId);
+        var signInResult = new SignInResult(
+            SignInResultCode.Success,
+            null,
+            "auth-token",
+            tokenId,
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+        );
 
         _mockAuthService
             .Setup(s => s.SignInAsync(It.IsAny<SignInRequest>()))

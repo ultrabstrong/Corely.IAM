@@ -98,8 +98,9 @@ none. An open redirect here would be a phishing tool.
 
 | Cookie | Purpose | Flags |
 |--------|---------|-------|
-| `authentication_token` | JWT token | HttpOnly, Secure, SameSite=Lax, TTL-based expiry |
-| `auth_token_id` | Token ID for revocation | HttpOnly, Secure, SameSite=Lax, TTL-based expiry |
+| `authentication_token` | JWT access token | HttpOnly, Secure, SameSite=Lax, expires with the session |
+| `auth_token_id` | Token ID for revocation | HttpOnly, Secure, SameSite=Lax, expires with the session |
+| `refresh_token` | Refresh token for renewal | HttpOnly, Secure, SameSite=Lax, expires with the session |
 | `device_id` | Device fingerprint | HttpOnly, Secure, SameSite=Strict, 90-day expiry |
 | `return_url` | Return URL across Google sign in | HttpOnly, Secure, SameSite=Lax, 10 minutes, deleted when read |
 
@@ -109,18 +110,19 @@ All auth cookies use `Path=/`. The `device_id` cookie is created on first visit 
 
 `AuthenticationTokenMiddleware` runs on every request:
 
-1. Reads `authentication_token` cookie
+1. Reads the `authentication_token` and `refresh_token` cookies
 2. Calls `IAuthenticationService.AuthenticateWithTokenAsync(token)` to validate the JWT
-3. If validation fails but the bounded session is still renewable, calls `IAuthenticationService.RenewAuthTokenAsync(...)`, rotates the tracked token, and updates the auth cookies
+3. If the access token is missing or fails, calls `IAuthenticationService.RenewAuthTokenAsync(...)` with the refresh token and writes the new pair to the cookies
 4. On success: builds `ClaimsPrincipal` via `IUserContextClaimsBuilder` and sets `HttpContext.User`
-5. On irrecoverable failure: clears all auth cookies
+5. On `RefreshTokenAlreadyRotatedError` (another request renewed the same token a moment earlier): leaves the cookies alone and serves the request unauthenticated
+6. On any other failure: clears all auth cookies
 
 This happens before ASP.NET Core's `UseAuthentication()` and `UseAuthorization()` middleware.
 
 ## Notes
 
 - Pre-auth pages use the `_AuthLayout` layout (centered card with tab navigation between Sign In and Sign Up)
-- The auth cookies use the session lifetime from `ISecurityPolicyProvider` (`SecurityOptions.AuthSessionTtlSeconds`, or the platform's security settings when there is a platform account) so the browser can present an expired access token for renewal inside the bounded session window
+- The auth cookies expire when the refresh token does: the idle timeout or the session lifetime, whichever comes first. Each renewal moves them
 - If a user navigates to `/signin` while already authenticated, they are redirected to the return URL, or `HomePath`
 - `GetOrCreateDeviceId()` creates a new device ID cookie if one doesn't exist, using a v7 UUID
 

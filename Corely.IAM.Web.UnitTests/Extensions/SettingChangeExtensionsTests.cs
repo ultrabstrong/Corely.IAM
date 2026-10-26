@@ -173,6 +173,30 @@ public class SettingChangeExtensionsTests
         "Sessions will end after 2 hours, instead of 7 days."
     )]
     [InlineData(
+        PlatformSetting.AuthSessionIdleTimeoutSeconds,
+        86400,
+        172800,
+        "Idle sessions will stay open for 2 days, instead of 1 day."
+    )]
+    [InlineData(
+        PlatformSetting.AuthSessionIdleTimeoutSeconds,
+        86400,
+        3600,
+        "Idle sessions will end after 1 hour, instead of 1 day."
+    )]
+    [InlineData(
+        PlatformSetting.RefreshReuseGraceSeconds,
+        30,
+        60,
+        "A replaced refresh token reused within 1 minute will be refused without ending its session."
+    )]
+    [InlineData(
+        PlatformSetting.RefreshReuseGraceSeconds,
+        30,
+        0,
+        "Any reuse of a replaced refresh token will end its session at once."
+    )]
+    [InlineData(
         PlatformSetting.MfaChallengeTimeoutSeconds,
         300,
         90,

@@ -1,6 +1,5 @@
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
-using Corely.IAM.Platform.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -15,8 +14,6 @@ namespace Corely.IAM.Web.UnitTests.Middleware;
 
 public class AuthenticationTokenMiddlewareTests
 {
-    private const int AUTH_SESSION_TTL_SECONDS = 604800;
-
     private readonly Mock<IAuthenticationService> _mockAuthenticationService;
     private readonly Mock<IUserContextProvider> _mockUserContextProvider;
     private readonly Mock<ILogger<AuthenticationTokenMiddleware>> _mockLogger;
@@ -25,12 +22,6 @@ public class AuthenticationTokenMiddlewareTests
     );
     private readonly IUserContextClaimsBuilder _userContextClaimsBuilder =
         new UserContextClaimsBuilder();
-    private readonly FixedSecurityPolicyProvider _securityPolicyProvider = new(
-        SecurityPolicy.Default with
-        {
-            AuthSessionTtlSeconds = AUTH_SESSION_TTL_SECONDS,
-        }
-    );
 
     public AuthenticationTokenMiddlewareTests()
     {
@@ -64,8 +55,7 @@ public class AuthenticationTokenMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             _mockAuthenticationService.Object,
-            _mockUserContextProvider.Object,
-            _securityPolicyProvider
+            _mockUserContextProvider.Object
         );
 
         Assert.True(nextCalled);
@@ -102,8 +92,7 @@ public class AuthenticationTokenMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             _mockAuthenticationService.Object,
-            _mockUserContextProvider.Object,
-            _securityPolicyProvider
+            _mockUserContextProvider.Object
         );
 
         Assert.True(nextCalled);
@@ -135,19 +124,24 @@ public class AuthenticationTokenMiddlewareTests
         };
         var middleware = CreateMiddleware(next);
         var httpContext = new DefaultHttpContext();
-        httpContext.Request.Headers["Cookie"] = $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=bad-token";
+        httpContext.Request.Headers["Cookie"] =
+            $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=bad-token; {AuthCookieManager.REFRESH_TOKEN_COOKIE}=bad-refresh";
 
         _mockAuthenticationService
             .Setup(x => x.AuthenticateWithTokenAsync("bad-token"))
             .ReturnsAsync(resultCode);
         _mockAuthenticationService
             .Setup(x =>
-                x.RenewAuthTokenAsync(It.Is<RenewAuthTokenRequest>(r => r.AuthToken == "bad-token"))
+                x.RenewAuthTokenAsync(
+                    It.Is<RenewAuthTokenRequest>(r => r.RefreshToken == "bad-refresh")
+                )
             )
             .ReturnsAsync(
                 new RenewAuthTokenResult(
                     RenewAuthTokenResultCode.InvalidAuthTokenError,
                     "invalid",
+                    null,
+                    null,
                     null,
                     null
                 )
@@ -156,8 +150,7 @@ public class AuthenticationTokenMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             _mockAuthenticationService.Object,
-            _mockUserContextProvider.Object,
-            _securityPolicyProvider
+            _mockUserContextProvider.Object
         );
 
         Assert.True(nextCalled);
@@ -184,7 +177,7 @@ public class AuthenticationTokenMiddlewareTests
         var middleware = CreateMiddleware(next);
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Headers["Cookie"] =
-            $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=expired-token";
+            $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=expired-token; {AuthCookieManager.REFRESH_TOKEN_COOKIE}=refresh-token";
 
         var account = new Account { Id = Guid.CreateVersion7(), AccountName = "TestAccount" };
         var userContext = PageTestHelpers.CreateUserContext(
@@ -197,7 +190,7 @@ public class AuthenticationTokenMiddlewareTests
         _mockAuthenticationService
             .Setup(x =>
                 x.RenewAuthTokenAsync(
-                    It.Is<RenewAuthTokenRequest>(r => r.AuthToken == "expired-token")
+                    It.Is<RenewAuthTokenRequest>(r => r.RefreshToken == "refresh-token")
                 )
             )
             .ReturnsAsync(
@@ -205,7 +198,9 @@ public class AuthenticationTokenMiddlewareTests
                     RenewAuthTokenResultCode.Success,
                     null,
                     "renewed-token",
-                    Guid.CreateVersion7()
+                    Guid.CreateVersion7(),
+                    "renewed-refresh",
+                    DateTime.UtcNow.AddDays(1)
                 )
             );
         _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(userContext);
@@ -213,15 +208,117 @@ public class AuthenticationTokenMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             _mockAuthenticationService.Object,
-            _mockUserContextProvider.Object,
-            _securityPolicyProvider
+            _mockUserContextProvider.Object
         );
 
         Assert.True(nextCalled);
         Assert.True(httpContext.User.Identity?.IsAuthenticated);
         Assert.Contains(
             httpContext.Response.Headers.SetCookie,
+            c => c != null && c.Contains($"{AuthCookieManager.AUTH_TOKEN_COOKIE}=renewed-token")
+        );
+        Assert.Contains(
+            httpContext.Response.Headers.SetCookie,
+            c =>
+                c != null && c.Contains($"{AuthCookieManager.REFRESH_TOKEN_COOKIE}=renewed-refresh")
+        );
+    }
+
+    [Fact]
+    public async Task Invoke_OnlyRefreshCookie_RenewsWithoutValidatingAnAccessToken()
+    {
+        var middleware = CreateMiddleware(_ => Task.CompletedTask);
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Headers["Cookie"] =
+            $"{AuthCookieManager.REFRESH_TOKEN_COOKIE}=refresh-token";
+        var userContext = PageTestHelpers.CreateUserContext();
+        _mockAuthenticationService
+            .Setup(x =>
+                x.RenewAuthTokenAsync(
+                    It.Is<RenewAuthTokenRequest>(r => r.RefreshToken == "refresh-token")
+                )
+            )
+            .ReturnsAsync(
+                new RenewAuthTokenResult(
+                    RenewAuthTokenResultCode.Success,
+                    null,
+                    "renewed-token",
+                    Guid.CreateVersion7(),
+                    "renewed-refresh",
+                    DateTime.UtcNow.AddDays(1)
+                )
+            );
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(userContext);
+
+        await middleware.InvokeAsync(
+            httpContext,
+            _mockAuthenticationService.Object,
+            _mockUserContextProvider.Object
+        );
+
+        Assert.True(httpContext.User.Identity?.IsAuthenticated);
+        _mockAuthenticationService.Verify(
+            x => x.AuthenticateWithTokenAsync(It.IsAny<string>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task Invoke_RefreshTokenAlreadyRotated_KeepsCookies()
+    {
+        var middleware = CreateMiddleware(_ => Task.CompletedTask);
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Headers["Cookie"] =
+            $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=expired-token; {AuthCookieManager.REFRESH_TOKEN_COOKIE}=refresh-token";
+        _mockAuthenticationService
+            .Setup(x => x.AuthenticateWithTokenAsync("expired-token"))
+            .ReturnsAsync(UserAuthTokenValidationResultCode.TokenValidationFailed);
+        _mockAuthenticationService
+            .Setup(x => x.RenewAuthTokenAsync(It.IsAny<RenewAuthTokenRequest>()))
+            .ReturnsAsync(
+                new RenewAuthTokenResult(
+                    RenewAuthTokenResultCode.RefreshTokenAlreadyRotatedError,
+                    "rotated",
+                    null,
+                    null,
+                    null,
+                    null
+                )
+            );
+
+        await middleware.InvokeAsync(
+            httpContext,
+            _mockAuthenticationService.Object,
+            _mockUserContextProvider.Object
+        );
+
+        Assert.False(httpContext.User.Identity?.IsAuthenticated ?? false);
+        Assert.Equal(0, httpContext.Response.Headers.SetCookie.Count);
+    }
+
+    [Fact]
+    public async Task Invoke_InvalidAccessTokenAndNoRefreshCookie_DeletesCookiesWithoutRenewing()
+    {
+        var middleware = CreateMiddleware(_ => Task.CompletedTask);
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Headers["Cookie"] = $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=bad-token";
+        _mockAuthenticationService
+            .Setup(x => x.AuthenticateWithTokenAsync("bad-token"))
+            .ReturnsAsync(UserAuthTokenValidationResultCode.TokenValidationFailed);
+
+        await middleware.InvokeAsync(
+            httpContext,
+            _mockAuthenticationService.Object,
+            _mockUserContextProvider.Object
+        );
+
+        Assert.Contains(
+            httpContext.Response.Headers.SetCookie,
             c => c != null && c.Contains(AuthCookieManager.AUTH_TOKEN_COOKIE)
+        );
+        _mockAuthenticationService.Verify(
+            x => x.RenewAuthTokenAsync(It.IsAny<RenewAuthTokenRequest>()),
+            Times.Never
         );
     }
 
@@ -246,8 +343,7 @@ public class AuthenticationTokenMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             _mockAuthenticationService.Object,
-            _mockUserContextProvider.Object,
-            _securityPolicyProvider
+            _mockUserContextProvider.Object
         );
 
         Assert.True(nextCalled);
@@ -283,8 +379,7 @@ public class AuthenticationTokenMiddlewareTests
         await middleware.InvokeAsync(
             httpContext,
             _mockAuthenticationService.Object,
-            _mockUserContextProvider.Object,
-            _securityPolicyProvider
+            _mockUserContextProvider.Object
         );
 
         Assert.True(nextCalled);

@@ -165,8 +165,10 @@ stricter password rule applies the next time a password is set, never to a store
 | Require symbol | off | | `PasswordValidationOptions:RequireNonAlphanumeric` |
 | Failed sign ins before lockout | 5 | 3 to 20 | `SecurityOptions:MaxLoginAttempts` |
 | Lockout length | 900 seconds | 60 to 86400 | `SecurityOptions:LockoutCooldownSeconds` |
-| Sign in token lifetime | 3600 seconds | 300 to 86400, and no longer than the session | `SecurityOptions:AuthTokenTtlSeconds` |
+| Sign in token lifetime | 3600 seconds | 300 to 86400, and no longer than the session or the idle timeout | `SecurityOptions:AuthTokenTtlSeconds` |
 | Session lifetime | 604800 seconds | 3600 to 7776000 | `SecurityOptions:AuthSessionTtlSeconds` |
+| Idle timeout | 86400 seconds | 300 to 7776000 | `SecurityOptions:AuthSessionIdleTimeoutSeconds` |
+| Refresh reuse grace | 30 seconds | 0 to 120 | `SecurityOptions:RefreshReuseGraceSeconds` |
 | Two factor prompt timeout | 300 seconds | 60 to 900 | `SecurityOptions:MfaChallengeTimeoutSeconds` |
 | Recovery codes per user | 10 | 5 to 20 | `SecurityOptions:TotpRecoveryCodeCount` |
 

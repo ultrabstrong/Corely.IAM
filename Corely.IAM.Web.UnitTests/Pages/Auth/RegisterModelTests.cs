@@ -32,7 +32,6 @@ public class RegisterModelTests
             _mockRegistrationService.Object,
             _mockAuthService.Object,
             _mockCookieManager.Object,
-            new FixedSecurityPolicyProvider(),
             Options.Create(new SecurityOptions()),
             _mockHumanVerifier.Object,
             Options.Create(new IAMWebOptions())
@@ -192,7 +191,16 @@ public class RegisterModelTests
             );
         _mockAuthService
             .Setup(s => s.SignInAsync(It.IsAny<SignInRequest>()))
-            .ReturnsAsync(new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId));
+            .ReturnsAsync(
+                new SignInResult(
+                    SignInResultCode.Success,
+                    null,
+                    "auth-token",
+                    tokenId,
+                    RefreshToken: "refresh-token",
+                    RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+                )
+            );
 
         var result = await _model.OnPostAsync();
 

@@ -69,7 +69,9 @@ public class RegisterWithGoogleModelTests
             SignInResultCode.Success,
             null,
             "token",
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
         );
 
         _mockRegistrationService

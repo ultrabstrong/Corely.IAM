@@ -26,6 +26,7 @@ namespace Corely.IAM.UnitTests.Services;
 
 public class RegistrationServiceTests
 {
+    private readonly Mock<IAuthenticationProvider> _mockAuthenticationProvider = new();
     private readonly ServiceFactory _serviceFactory = new();
     private readonly Fixture _fixture = new();
     private readonly Mock<IUnitOfWorkProvider> _unitOfWorkProviderMock = new();
@@ -105,7 +106,8 @@ public class RegistrationServiceTests
             new Mock<IUserContextSetter>().Object,
             _reauthenticationProviderMock.Object,
             _serviceFactory.GetRequiredService<IValidationProvider>(),
-            _unitOfWorkProviderMock.Object
+            _unitOfWorkProviderMock.Object,
+            _mockAuthenticationProvider.Object
         );
     }
 
@@ -731,6 +733,10 @@ public class RegistrationServiceTests
         _reauthenticationProviderMock.Verify(
             m => m.VerifyTotpCodeAsync(It.IsAny<Guid>(), "123456"),
             Times.Once
+        );
+        _mockAuthenticationProvider.Verify(
+            m => m.RevokeAllUserAuthTokensAsync(It.IsAny<Guid>(), It.IsAny<Guid?>()),
+            expected == RegisterPasswordResultCode.Success ? Times.Once() : Times.Never()
         );
     }
 

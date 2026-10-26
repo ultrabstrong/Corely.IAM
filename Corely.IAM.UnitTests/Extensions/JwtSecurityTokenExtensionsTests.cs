@@ -9,9 +9,6 @@ public class JwtSecurityTokenExtensionsTests
 {
     private static JwtSecurityToken Token(params Claim[] claims) => new(claims: claims);
 
-    private static Claim Unix(string type, DateTime utc) =>
-        new(type, new DateTimeOffset(utc).ToUnixTimeSeconds().ToString());
-
     [Fact]
     public void ClaimValue_ReturnsTheFirstMatchingClaim()
     {
@@ -24,36 +21,6 @@ public class JwtSecurityTokenExtensionsTests
     public void ClaimValue_ReturnsNull_WhenAbsent()
     {
         Assert.Null(Token().ClaimValue("a"));
-    }
-
-    [Fact]
-    public void SessionStartedUtc_PrefersTheSessionClaim()
-    {
-        var started = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc);
-        var token = Token(
-            Unix(TokenIssueContext.SESSION_STARTED_AT_CLAIM, started),
-            Unix(JwtRegisteredClaimNames.Iat, started.AddHours(1))
-        );
-
-        Assert.Equal(started, token.SessionStartedUtc());
-    }
-
-    [Fact]
-    public void SessionStartedUtc_FallsBackToIssuedAt()
-    {
-        var issued = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc);
-        var token = Token(
-            new Claim(TokenIssueContext.SESSION_STARTED_AT_CLAIM, "not a number"),
-            Unix(JwtRegisteredClaimNames.Iat, issued)
-        );
-
-        Assert.Equal(issued, token.SessionStartedUtc());
-    }
-
-    [Fact]
-    public void SessionStartedUtc_ReturnsNull_WhenNeitherClaimReadable()
-    {
-        Assert.Null(Token().SessionStartedUtc());
     }
 
     [Fact]

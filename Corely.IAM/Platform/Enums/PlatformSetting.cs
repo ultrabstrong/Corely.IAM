@@ -17,6 +17,8 @@ public enum PlatformSetting
     LockoutCooldownSeconds,
     AuthTokenTtlSeconds,
     AuthSessionTtlSeconds,
+    AuthSessionIdleTimeoutSeconds,
+    RefreshReuseGraceSeconds,
     MfaChallengeTimeoutSeconds,
     TotpRecoveryCodeCount,
 }

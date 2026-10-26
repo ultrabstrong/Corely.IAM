@@ -24,6 +24,7 @@ namespace Corely.IAM.UnitTests.Services;
 
 public class DeregistrationServiceTests
 {
+    private readonly Mock<IAuthenticationProvider> _mockAuthenticationProvider = new();
     private const string TEST_DEVICE_ID = "test-device";
 
     private readonly Mock<ILogger<DeregistrationService>> _mockLogger = new();
@@ -68,7 +69,8 @@ public class DeregistrationServiceTests
             _mockUserContextSetter.Object,
             _mockAuthorizationCacheClearer.Object,
             _mockReauthenticationProvider.Object,
-            _auditSettingsCache
+            _auditSettingsCache,
+            _mockAuthenticationProvider.Object
         );
 
         _mockReauthenticationProvider
@@ -115,6 +117,10 @@ public class DeregistrationServiceTests
             Times.Once
         );
         _mockBasicAuthProcessor.Verify(x => x.DeleteBasicAuthAsync(userId), Times.Once);
+        _mockAuthenticationProvider.Verify(
+            x => x.RevokeAllUserAuthTokensAsync(userId, It.IsAny<Guid?>()),
+            expected == DeregisterBasicAuthResultCode.Success ? Times.Once() : Times.Never()
+        );
     }
 
     [Theory]

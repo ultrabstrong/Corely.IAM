@@ -26,6 +26,13 @@ public sealed class CookieJar
 
     public bool Contains(string name) => _cookies.ContainsKey(name);
 
+    public void Restore(IReadOnlyDictionary<string, string> cookies)
+    {
+        _cookies.Clear();
+        foreach (var (name, value) in cookies)
+            _cookies[name] = value;
+    }
+
     public string? ToHeaderValue() =>
         _cookies.Count == 0 ? null : string.Join("; ", _cookies.Select(c => $"{c.Key}={c.Value}"));
 

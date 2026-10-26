@@ -1230,4 +1230,33 @@ public class AuthenticationServiceTests
     }
 
     #endregion
+
+    [Fact]
+    public async Task DeleteExpiredAuthTokensAsync_DeletesThroughTheProvider_InSystemContext()
+    {
+        _userContextProviderMock
+            .Setup(x => x.GetUserContext())
+            .Returns(new UserContext(true, TEST_DEVICE_ID));
+        _authenticationProviderMock.Setup(x => x.DeleteExpiredAuthTokensAsync()).ReturnsAsync(3);
+
+        var result = await _authenticationService.DeleteExpiredAuthTokensAsync();
+
+        Assert.Equal(DeleteExpiredAuthTokensResultCode.Success, result.ResultCode);
+        Assert.Equal(3, result.DeletedCount);
+    }
+
+    [Fact]
+    public async Task DeleteExpiredAuthTokensAsync_IsRefused_OutsideSystemContext()
+    {
+        _userContextProviderMock
+            .Setup(x => x.GetUserContext())
+            .Returns(
+                new UserContext(new User { Id = Guid.CreateVersion7() }, null, TEST_DEVICE_ID, [])
+            );
+
+        var result = await _authenticationService.DeleteExpiredAuthTokensAsync();
+
+        Assert.Equal(DeleteExpiredAuthTokensResultCode.UnauthorizedError, result.ResultCode);
+        _authenticationProviderMock.Verify(x => x.DeleteExpiredAuthTokensAsync(), Times.Never);
+    }
 }

@@ -27,6 +27,50 @@ public class SecurityPolicyTests
         Assert.True(options.RequireNonAlphanumeric);
     }
 
+    private static readonly DateTime _now = new(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+
+    [Fact]
+    public void RefreshExpiresUtc_IsTheIdleTimeout_WhileTheSessionHasLongerLeft()
+    {
+        var policy = SecurityPolicy.Default with
+        {
+            AuthSessionIdleTimeoutSeconds = 600,
+            AuthSessionTtlSeconds = 86400,
+        };
+
+        Assert.Equal(_now.AddSeconds(600), policy.RefreshExpiresUtc(_now, _now));
+    }
+
+    [Fact]
+    public void RefreshExpiresUtc_IsTheSessionEnd_WhenThatComesFirst()
+    {
+        var policy = SecurityPolicy.Default with
+        {
+            AuthSessionIdleTimeoutSeconds = 600,
+            AuthSessionTtlSeconds = 3600,
+        };
+        var sessionStarted = _now.AddSeconds(-3300);
+
+        Assert.Equal(_now.AddSeconds(300), policy.RefreshExpiresUtc(sessionStarted, _now));
+    }
+
+    [Fact]
+    public void AccessTokenExpiresUtc_IsTheTokenLifetime_WhenTheRefreshLastsLonger()
+    {
+        var policy = SecurityPolicy.Default with { AuthTokenTtlSeconds = 300 };
+
+        Assert.Equal(_now.AddSeconds(300), policy.AccessTokenExpiresUtc(_now.AddHours(1), _now));
+    }
+
+    [Fact]
+    public void AccessTokenExpiresUtc_NeverOutlivesTheRefreshToken()
+    {
+        var policy = SecurityPolicy.Default with { AuthTokenTtlSeconds = 3600 };
+        var refreshExpires = _now.AddSeconds(60);
+
+        Assert.Equal(refreshExpires, policy.AccessTokenExpiresUtc(refreshExpires, _now));
+    }
+
     [Theory]
     [InlineData("Abcdefg1", true)]
     [InlineData("Abcdef1", false)]

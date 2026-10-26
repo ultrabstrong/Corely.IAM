@@ -60,7 +60,14 @@ public class VerifyMfaModelTests
     public async Task OnPost_WithValidCode_SetsCookiesAndRedirects()
     {
         var tokenId = Guid.CreateVersion7();
-        var signInResult = new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId);
+        var signInResult = new SignInResult(
+            SignInResultCode.Success,
+            null,
+            "auth-token",
+            tokenId,
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+        );
         _model.MfaChallengeToken = "test-challenge-token";
         _model.Code = "123456";
         _mockAuthService
@@ -147,7 +154,14 @@ public class VerifyMfaModelTests
     public async Task OnPost_WithValidCode_OneAccount_AutoSwitchesAndRedirects()
     {
         var tokenId = Guid.CreateVersion7();
-        var signInResult = new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId);
+        var signInResult = new SignInResult(
+            SignInResultCode.Success,
+            null,
+            "auth-token",
+            tokenId,
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+        );
         _model.MfaChallengeToken = "test-challenge-token";
         _model.Code = "123456";
         _mockAuthService
@@ -171,7 +185,14 @@ public class VerifyMfaModelTests
     public async Task OnPost_WithValidCode_MultipleAccounts_RedirectsToSelectAccount()
     {
         var tokenId = Guid.CreateVersion7();
-        var signInResult = new SignInResult(SignInResultCode.Success, null, "auth-token", tokenId);
+        var signInResult = new SignInResult(
+            SignInResultCode.Success,
+            null,
+            "auth-token",
+            tokenId,
+            RefreshToken: "refresh-token",
+            RefreshExpiresUtc: DateTime.UtcNow.AddDays(1)
+        );
         _model.MfaChallengeToken = "test-challenge-token";
         _model.Code = "123456";
         _mockAuthService

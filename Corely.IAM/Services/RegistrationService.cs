@@ -45,9 +45,12 @@ internal class RegistrationService(
     IUserContextSetter userContextSetter,
     IReauthenticationProvider reauthenticationProvider,
     IValidationProvider validationProvider,
-    IUnitOfWorkProvider uowProvider
+    IUnitOfWorkProvider uowProvider,
+    IAuthenticationProvider authenticationProvider
 ) : IRegistrationService
 {
+    private readonly IAuthenticationProvider _authenticationProvider =
+        authenticationProvider.ThrowIfNull(nameof(authenticationProvider));
     private const int MAX_USERNAME_RETRIES = 10;
 
     private readonly ILogger<RegistrationService> _logger = logger.ThrowIfNull(nameof(logger));
@@ -735,7 +738,8 @@ internal class RegistrationService(
     public async Task<RegisterPasswordResult> RegisterPasswordAsync(RegisterPasswordRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var userId = _userContextProvider.GetUserContext()!.User!.Id;
+        var context = _userContextProvider.GetUserContext()!;
+        var userId = context.User!.Id;
         _logger.LogInformation("Registering password for user {UserId}", userId);
 
         var totpResult = await _reauthenticationProvider.VerifyTotpCodeAsync(
@@ -753,6 +757,8 @@ internal class RegistrationService(
         var createResult = await _basicAuthProcessor.CreateBasicAuthAsync(
             new(userId, request.Password)
         );
+        if (createResult.ResultCode == CreateBasicAuthResultCode.Success)
+            await _authenticationProvider.RevokeAllUserAuthTokensAsync(userId, context.AuthTokenId);
         return new RegisterPasswordResult(
             createResult.ResultCode.ToRegisterPasswordResultCode(),
             createResult.Message

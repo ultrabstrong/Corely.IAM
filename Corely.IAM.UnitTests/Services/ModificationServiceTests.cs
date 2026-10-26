@@ -23,6 +23,7 @@ namespace Corely.IAM.UnitTests.Services;
 
 public class ModificationServiceTests
 {
+    private readonly Mock<IAuthenticationProvider> _mockAuthenticationProvider = new();
     private readonly Mock<IAccountProcessor> _mockAccountProcessor = new();
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
     private readonly Mock<IGroupProcessor> _mockGroupProcessor = new();
@@ -58,7 +59,8 @@ public class ModificationServiceTests
             _mockKeyRotationProcessor.Object,
             _mockBasicAuthProcessor.Object,
             _mockReauthenticationProvider.Object,
-            _mockUserContextProvider.Object
+            _mockUserContextProvider.Object,
+            _mockAuthenticationProvider.Object
         );
     }
 
@@ -112,6 +114,10 @@ public class ModificationServiceTests
                     )
                 ),
             Times.Once
+        );
+        _mockAuthenticationProvider.Verify(
+            x => x.RevokeAllUserAuthTokensAsync(_userId, It.IsAny<Guid?>()),
+            expected == ModifyPasswordResultCode.Success ? Times.Once() : Times.Never()
         );
     }
 

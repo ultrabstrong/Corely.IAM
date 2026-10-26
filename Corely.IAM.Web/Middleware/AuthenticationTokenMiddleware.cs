@@ -1,5 +1,4 @@
 using Corely.IAM.Models;
-using Corely.IAM.Platform.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -20,19 +19,19 @@ internal class AuthenticationTokenMiddleware(
     public async Task InvokeAsync(
         HttpContext context,
         IAuthenticationService authenticationService,
-        IUserContextProvider userContextProvider,
-        ISecurityPolicyProvider securityPolicyProvider
+        IUserContextProvider userContextProvider
     )
     {
         var token = context.Request.Cookies[AuthCookieManager.AUTH_TOKEN_COOKIE];
+        var refreshToken = context.Request.Cookies[AuthCookieManager.REFRESH_TOKEN_COOKIE];
 
-        if (!string.IsNullOrWhiteSpace(token))
+        if (!string.IsNullOrWhiteSpace(token) || !string.IsNullOrWhiteSpace(refreshToken))
             await ValidateAndSetContextAsync(
                 context,
                 authenticationService,
                 userContextProvider,
-                securityPolicyProvider,
-                token
+                token,
+                refreshToken
             );
 
         await next(context);
@@ -42,39 +41,59 @@ internal class AuthenticationTokenMiddleware(
         HttpContext context,
         IAuthenticationService authenticationService,
         IUserContextProvider userContextProvider,
-        ISecurityPolicyProvider securityPolicyProvider,
-        string token
+        string? token,
+        string? refreshToken
     )
     {
         try
         {
-            var result = await authenticationService.AuthenticateWithTokenAsync(token);
-            if (result == UserAuthTokenValidationResultCode.Success)
+            if (!string.IsNullOrWhiteSpace(token))
             {
-                SetUserPrincipal(context, userContextProvider);
+                var result = await authenticationService.AuthenticateWithTokenAsync(token);
+                if (result == UserAuthTokenValidationResultCode.Success)
+                {
+                    SetUserPrincipal(context, userContextProvider);
+                    return;
+                }
+
+                logger.LogDebug(
+                    "Token validation failed with {ResultCode}, attempting renewal",
+                    result
+                );
+            }
+
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                DeleteAuthStateCookies(context.Response.Cookies);
                 return;
             }
 
-            logger.LogDebug(
-                "Token validation failed with {ResultCode}, attempting renewal",
-                result
-            );
-
-            var renewResult = await authenticationService.RenewAuthTokenAsync(new(token));
+            var renewResult = await authenticationService.RenewAuthTokenAsync(new(refreshToken));
             if (
                 renewResult.ResultCode == RenewAuthTokenResultCode.Success
                 && !string.IsNullOrWhiteSpace(renewResult.AuthToken)
                 && renewResult.AuthTokenId.HasValue
+                && !string.IsNullOrWhiteSpace(renewResult.RefreshToken)
+                && renewResult.RefreshExpiresUtc.HasValue
             )
             {
                 authCookieManager.SetAuthCookies(
                     context.Response.Cookies,
                     renewResult.AuthToken,
                     renewResult.AuthTokenId.Value,
-                    context.Request.IsHttps,
-                    (await securityPolicyProvider.GetPolicyAsync()).AuthSessionTtlSeconds
+                    renewResult.RefreshToken,
+                    renewResult.RefreshExpiresUtc.Value,
+                    context.Request.IsHttps
                 );
                 SetUserPrincipal(context, userContextProvider);
+                return;
+            }
+
+            if (renewResult.ResultCode == RenewAuthTokenResultCode.RefreshTokenAlreadyRotatedError)
+            {
+                logger.LogDebug(
+                    "Refresh token was replaced by a concurrent renewal, keeping cookies"
+                );
                 return;
             }
 

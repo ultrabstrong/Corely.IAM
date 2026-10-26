@@ -12,6 +12,10 @@ public class SecurityOptions
     public int AuthTokenTtlSeconds { get; set; } = SecurityPolicy.AUTH_TOKEN_TTL_SECONDS_DEFAULT;
     public int AuthSessionTtlSeconds { get; set; } =
         SecurityPolicy.AUTH_SESSION_TTL_SECONDS_DEFAULT;
+    public int AuthSessionIdleTimeoutSeconds { get; set; } =
+        SecurityPolicy.AUTH_SESSION_IDLE_TIMEOUT_SECONDS_DEFAULT;
+    public int RefreshReuseGraceSeconds { get; set; } =
+        SecurityPolicy.REFRESH_REUSE_GRACE_SECONDS_DEFAULT;
     public int MfaChallengeTimeoutSeconds { get; set; } =
         SecurityPolicy.MFA_CHALLENGE_TIMEOUT_SECONDS_DEFAULT;
     public int TotpRecoveryCodeCount { get; set; } =
@@ -32,6 +36,8 @@ public class SecurityOptions
             LockoutCooldownSeconds,
             AuthTokenTtlSeconds,
             AuthSessionTtlSeconds,
+            AuthSessionIdleTimeoutSeconds,
+            RefreshReuseGraceSeconds,
             MfaChallengeTimeoutSeconds,
             TotpRecoveryCodeCount
         );

@@ -45,7 +45,8 @@ public class RegistrationServiceRegisterWithGoogleTests
             new Mock<IUserContextSetter>().Object,
             new Mock<IReauthenticationProvider>().Object,
             _serviceFactory.GetRequiredService<IValidationProvider>(),
-            _unitOfWorkProviderMock.Object
+            _unitOfWorkProviderMock.Object,
+            new Mock<IAuthenticationProvider>().Object
         );
     }
 

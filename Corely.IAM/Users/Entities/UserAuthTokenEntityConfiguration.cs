@@ -24,6 +24,21 @@ internal sealed class UserAuthTokenEntityConfiguration
 
         builder.HasIndex(e => e.ExpiresUtc);
 
+        builder.Property(e => e.SessionId).IsRequired();
+        builder.HasIndex(e => e.SessionId);
+
+        builder.Property(e => e.SessionStartedUtc).IsRequired();
+
+        builder
+            .Property(e => e.RefreshSecretHash)
+            .IsRequired()
+            .HasMaxLength(UserAuthTokenEntity.REFRESH_SECRET_HASH_MAX_LENGTH);
+
+        builder.Property(e => e.RefreshExpiresUtc).IsRequired();
+        builder.HasIndex(e => e.RefreshExpiresUtc);
+
+        builder.Property(e => e.ReplacedByTokenId).IsRequired(false);
+
         builder
             .HasOne(e => e.User)
             .WithMany(u => u.AuthTokens)

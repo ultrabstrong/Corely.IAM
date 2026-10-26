@@ -34,17 +34,34 @@ public class TokenRenewalTests : FunctionalTestBase
     }
 
     [Fact]
-    public async Task IdlePastTokenTtl_PreservesSessionStartedAt()
+    public async Task IdlePastTokenTtl_KeepsTheSession()
     {
         await SignInSuccessfullyAsync();
-        var before = TestJwt.GetSessionStartedAt(CurrentAuthToken!);
+        var before = await CurrentAuthTokenRowAsync();
+
+        Clock.AdvanceSeconds(AuthTokenTtlSeconds + 10);
+        using var response = await Client.GetAsync(WebAppRoutes.Home);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var after = await CurrentAuthTokenRowAsync();
+        Assert.NotEqual(before.Id, after.Id);
+        Assert.Equal(before.SessionId, after.SessionId);
+        Assert.Equal(before.SessionStartedUtc, after.SessionStartedUtc);
+    }
+
+    [Fact]
+    public async Task Renewal_RotatesTheRefreshCookie()
+    {
+        await SignInSuccessfullyAsync();
+        var before = CurrentRefreshToken;
         Assert.NotNull(before);
 
         Clock.AdvanceSeconds(AuthTokenTtlSeconds + 10);
         using var response = await Client.GetAsync(WebAppRoutes.Home);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        Assert.Equal(before, TestJwt.GetSessionStartedAt(CurrentAuthToken!));
+        Assert.NotNull(CurrentRefreshToken);
+        Assert.NotEqual(before, CurrentRefreshToken);
     }
 
     [Fact]
@@ -92,11 +109,9 @@ public class TokenRenewalTests : FunctionalTestBase
     public async Task Renewal_ClampsExpiryToTheSessionBound()
     {
         await SignInSuccessfullyAsync();
-        var sessionStartedAt = TestJwt.GetSessionStartedAt(CurrentAuthToken!)!.Value;
-        var sessionExpiresUtc = DateTimeOffset
-            .FromUnixTimeSeconds(sessionStartedAt)
-            .AddSeconds(AuthSessionTtlSeconds)
-            .UtcDateTime;
+        var sessionExpiresUtc = (await CurrentAuthTokenRowAsync()).SessionStartedUtc.AddSeconds(
+            AuthSessionTtlSeconds
+        );
 
         Clock.AdvanceSeconds(AuthSessionTtlSeconds - (AuthTokenTtlSeconds / 2));
         using var response = await Client.GetAsync(WebAppRoutes.Home);
@@ -119,6 +134,42 @@ public class TokenRenewalTests : FunctionalTestBase
         using var response = await Client.GetAsync(WebAppRoutes.Home);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.False(HasAuthCookies);
+    }
+
+    [Fact]
+    public async Task ConcurrentRenewal_RefusesTheLoserWithoutSigningOut()
+    {
+        await SignInSuccessfullyAsync();
+        var stale = Client.Cookies.Cookies.ToDictionary();
+        Clock.AdvanceSeconds(AuthTokenTtlSeconds + 10);
+
+        using var winner = await Client.GetAsync(WebAppRoutes.Home);
+        using var staleClient = CreateClientWith(stale);
+        using var loser = await staleClient.GetAsync(WebAppRoutes.Home);
+
+        Assert.Equal(HttpStatusCode.OK, winner.StatusCode);
+        Assert.DoesNotContain(staleClient.LastSetCookies, c => c.IsDeletion);
+        using var next = await Client.GetAsync(WebAppRoutes.Home);
+        Assert.Equal(HttpStatusCode.OK, next.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReusedRefreshCookie_EndsTheSessionForEveryHolder()
+    {
+        await SignInSuccessfullyAsync();
+        var stolen = Client.Cookies.Cookies.ToDictionary();
+        Clock.AdvanceSeconds(AuthTokenTtlSeconds + 10);
+        using (var renewed = await Client.GetAsync(WebAppRoutes.Home))
+            Assert.Equal(HttpStatusCode.OK, renewed.StatusCode);
+
+        Clock.AdvanceSeconds(60);
+        using var attackerClient = CreateClientWith(stolen);
+        using var attacker = await attackerClient.GetAsync(WebAppRoutes.Home);
+        using var owner = await Client.GetAsync(WebAppRoutes.Home);
+
+        Assert.Equal(HttpStatusCode.Redirect, attacker.StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect, owner.StatusCode);
         Assert.False(HasAuthCookies);
     }
 }

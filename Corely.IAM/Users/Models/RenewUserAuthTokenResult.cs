@@ -5,15 +5,14 @@ namespace Corely.IAM.Users.Models;
 internal enum RenewUserAuthTokenResultCode
 {
     Success,
-    InvalidTokenFormat,
-    MissingUserIdClaim,
-    MissingDeviceIdClaim,
     TokenValidationFailed,
     UserNotFoundError,
     SignatureKeyNotFoundError,
     AccountNotFoundError,
     SessionExpiredError,
     TwoFactorRequiredError,
+    RefreshTokenReusedError,
+    RefreshTokenAlreadyRotatedError,
 }
 
 internal record RenewUserAuthTokenResult(
@@ -24,7 +23,9 @@ internal record RenewUserAuthTokenResult(
     Account? CurrentAccount,
     string? DeviceId,
     List<Account> AvailableAccounts,
-    bool EnteredAsPlatformMember = false
+    bool EnteredAsPlatformMember = false,
+    string? RefreshToken = null,
+    DateTime? RefreshExpiresUtc = null
 )
 {
     internal static RenewUserAuthTokenResult Failed(RenewUserAuthTokenResultCode resultCode) =>

@@ -1,6 +1,5 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Models;
-using Corely.IAM.Platform.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Configuration;
@@ -17,7 +16,6 @@ internal class PostAuthenticationFlowService(
     IAuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
     IAuthCookieManager authCookieManager,
-    ISecurityPolicyProvider securityPolicyProvider,
     IOptions<IAMWebOptions> iamWebOptions
 ) : IPostAuthenticationFlowService
 {
@@ -29,8 +27,6 @@ internal class PostAuthenticationFlowService(
     private readonly IAuthCookieManager _authCookieManager = authCookieManager.ThrowIfNull(
         nameof(authCookieManager)
     );
-    private readonly ISecurityPolicyProvider _securityPolicyProvider =
-        securityPolicyProvider.ThrowIfNull(nameof(securityPolicyProvider));
 
     public async Task<IActionResult> CompleteSignInAsync(
         HttpContext httpContext,
@@ -45,6 +41,8 @@ internal class PostAuthenticationFlowService(
             signInResult.ResultCode != SignInResultCode.Success
             || string.IsNullOrWhiteSpace(signInResult.AuthToken)
             || !signInResult.AuthTokenId.HasValue
+            || string.IsNullOrWhiteSpace(signInResult.RefreshToken)
+            || !signInResult.RefreshExpiresUtc.HasValue
         )
         {
             throw new InvalidOperationException(
@@ -52,15 +50,13 @@ internal class PostAuthenticationFlowService(
             );
         }
 
-        var authSessionTtlSeconds = (
-            await _securityPolicyProvider.GetPolicyAsync()
-        ).AuthSessionTtlSeconds;
         _authCookieManager.SetAuthCookies(
             httpContext.Response.Cookies,
-            signInResult.AuthToken,
-            signInResult.AuthTokenId.Value,
-            httpContext.Request.IsHttps,
-            authSessionTtlSeconds
+            signInResult.AuthToken!,
+            signInResult.AuthTokenId!.Value,
+            signInResult.RefreshToken!,
+            signInResult.RefreshExpiresUtc!.Value,
+            httpContext.Request.IsHttps
         );
 
         var homePath = iamWebOptions.Value.HomePath;
@@ -88,8 +84,9 @@ internal class PostAuthenticationFlowService(
             httpContext.Response.Cookies,
             switchResult.AuthToken!,
             switchResult.AuthTokenId!.Value,
-            httpContext.Request.IsHttps,
-            authSessionTtlSeconds
+            switchResult.RefreshToken!,
+            switchResult.RefreshExpiresUtc!.Value,
+            httpContext.Request.IsHttps
         );
 
         return new RedirectResult(localReturnUrl ?? homePath);

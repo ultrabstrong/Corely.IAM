@@ -3,6 +3,7 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Audits.Providers;
+using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Models.Extensions;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Models;
@@ -38,9 +39,12 @@ internal class DeregistrationService(
     IUserContextSetter userContextSetter,
     IAuthorizationCacheClearer authorizationCacheClearer,
     IReauthenticationProvider reauthenticationProvider,
-    AuditSettingsCache auditSettingsCache
+    AuditSettingsCache auditSettingsCache,
+    IAuthenticationProvider authenticationProvider
 ) : IDeregistrationService
 {
+    private readonly IAuthenticationProvider _authenticationProvider =
+        authenticationProvider.ThrowIfNull(nameof(authenticationProvider));
     private readonly ILogger<DeregistrationService> _logger = logger.ThrowIfNull(nameof(logger));
     private readonly IPermissionProcessor _permissionProcessor = permissionProcessor.ThrowIfNull(
         nameof(permissionProcessor)
@@ -579,7 +583,8 @@ internal class DeregistrationService(
     )
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
-        var userId = _userContextProvider.GetUserContext()!.User!.Id;
+        var context = _userContextProvider.GetUserContext()!;
+        var userId = context.User!.Id;
         _logger.LogInformation("Deregistering password for user {UserId}", userId);
 
         var passwordResult = await _reauthenticationProvider.VerifyCurrentPasswordAsync(
@@ -607,6 +612,8 @@ internal class DeregistrationService(
         }
 
         var result = await _basicAuthProcessor.DeleteBasicAuthAsync(userId);
+        if (result.ResultCode == DeleteBasicAuthResultCode.Success)
+            await _authenticationProvider.RevokeAllUserAuthTokensAsync(userId, context.AuthTokenId);
         return new DeregisterBasicAuthResult(
             result.ResultCode.ToDeregisterBasicAuthResultCode(),
             result.Message

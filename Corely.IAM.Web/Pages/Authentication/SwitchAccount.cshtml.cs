@@ -1,5 +1,4 @@
 using Corely.IAM.Models;
-using Corely.IAM.Platform.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Extensions;
@@ -13,7 +12,6 @@ namespace Corely.IAM.Web.Pages.Authentication;
 public class SwitchAccountModel(
     IAuthenticationService authenticationService,
     IAuthCookieManager authCookieManager,
-    ISecurityPolicyProvider securityPolicyProvider,
     IOptions<IAMWebOptions> iamWebOptions
 ) : PageModel
 {
@@ -58,8 +56,9 @@ public class SwitchAccountModel(
             Response.Cookies,
             result.AuthToken!,
             result.AuthTokenId!.Value,
-            Request.IsHttps,
-            (await securityPolicyProvider.GetPolicyAsync()).AuthSessionTtlSeconds
+            result.RefreshToken!,
+            result.RefreshExpiresUtc!.Value,
+            Request.IsHttps
         );
 
         return Redirect(returnUrl.AsLocalUrl() ?? iamWebOptions.Value.HomePath);

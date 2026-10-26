@@ -40,6 +40,19 @@ internal class SecurityPolicyValidator : AbstractValidator<SecurityPolicy>
         RuleFor(m => m.AuthTokenTtlSeconds)
             .LessThanOrEqualTo(m => m.AuthSessionTtlSeconds)
             .WithMessage("The sign in token lifetime cannot exceed the session lifetime");
+        RuleFor(m => m.AuthSessionIdleTimeoutSeconds)
+            .InclusiveBetween(
+                SecurityPolicy.AUTH_SESSION_IDLE_TIMEOUT_SECONDS_MIN,
+                SecurityPolicy.AUTH_SESSION_IDLE_TIMEOUT_SECONDS_MAX
+            );
+        RuleFor(m => m.AuthTokenTtlSeconds)
+            .LessThanOrEqualTo(m => m.AuthSessionIdleTimeoutSeconds)
+            .WithMessage("The sign in token lifetime cannot exceed the idle timeout");
+        RuleFor(m => m.RefreshReuseGraceSeconds)
+            .InclusiveBetween(
+                SecurityPolicy.REFRESH_REUSE_GRACE_SECONDS_MIN,
+                SecurityPolicy.REFRESH_REUSE_GRACE_SECONDS_MAX
+            );
         RuleFor(m => m.MfaChallengeTimeoutSeconds)
             .InclusiveBetween(
                 SecurityPolicy.MFA_CHALLENGE_TIMEOUT_SECONDS_MIN,

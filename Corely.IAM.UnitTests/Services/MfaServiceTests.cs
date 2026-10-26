@@ -1,4 +1,5 @@
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Processors;
@@ -10,7 +11,9 @@ namespace Corely.IAM.UnitTests.Services;
 
 public class MfaServiceTests
 {
+    private readonly Mock<IAuthenticationProvider> _mockAuthenticationProvider = new();
     private readonly Guid _userId = Guid.CreateVersion7();
+    private readonly Guid _tokenId = Guid.CreateVersion7();
     private readonly Mock<ITotpAuthProcessor> _totpAuthProcessorMock = new();
     private readonly Mock<IUserContextProvider> _userContextProviderMock = new();
     private readonly MfaService _service;
@@ -25,14 +28,16 @@ public class MfaServiceTests
                     new User { Id = _userId, Email = "user@test.com" },
                     new Account { Id = Guid.CreateVersion7() },
                     "device-1",
-                    []
+                    [],
+                    _tokenId
                 )
             );
 
         _service = new MfaService(
             _totpAuthProcessorMock.Object,
             _userContextProviderMock.Object,
-            serviceFactory.GetRequiredService<IValidationProvider>()
+            serviceFactory.GetRequiredService<IValidationProvider>(),
+            _mockAuthenticationProvider.Object
         );
     }
 
@@ -78,6 +83,10 @@ public class MfaServiceTests
         var result = await _service.ConfirmTotpAsync(new ConfirmTotpRequest("123456"));
 
         Assert.Equal(expected, result);
+        _mockAuthenticationProvider.Verify(
+            x => x.RevokeAllUserAuthTokensAsync(_userId, _tokenId),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -103,6 +112,25 @@ public class MfaServiceTests
         var result = await _service.DisableTotpAsync(new DisableTotpRequest("123456"));
 
         Assert.Equal(expected, result);
+        _mockAuthenticationProvider.Verify(
+            x => x.RevokeAllUserAuthTokensAsync(_userId, _tokenId),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task DisableTotpAsync_KeepsOtherSessions_WhenTheCodeIsWrong()
+    {
+        _totpAuthProcessorMock
+            .Setup(x => x.DisableTotpAsync(_userId, "123456"))
+            .ReturnsAsync(new DisableTotpResult(DisableTotpResultCode.InvalidCodeError, "bad"));
+
+        await _service.DisableTotpAsync(new DisableTotpRequest("123456"));
+
+        _mockAuthenticationProvider.Verify(
+            x => x.RevokeAllUserAuthTokensAsync(It.IsAny<Guid>(), It.IsAny<Guid?>()),
+            Times.Never
+        );
     }
 
     [Fact]
@@ -120,6 +148,10 @@ public class MfaServiceTests
         var result = await _service.RegenerateTotpRecoveryCodesAsync();
 
         Assert.Equal(expected, result);
+        _mockAuthenticationProvider.Verify(
+            x => x.RevokeAllUserAuthTokensAsync(_userId, _tokenId),
+            Times.Once
+        );
     }
 
     [Fact]

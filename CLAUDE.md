@@ -180,6 +180,26 @@ git push origin Corely.IAM-v2.3.2
   tag without a version bump. It never fails the build.
 - The old `v*` tags are history and stay.
 
+### Proving a change in a consumer before tagging
+
+When a change's real proof lives in a consumer (DocsToData, Corely.Billing), prove it there on a
+local build before tagging, because a broken version cannot be taken back. That applies when the
+change touches sessions, cookies or tokens, Blazor rendering, a migration or its generated script,
+or fixes a bug a consumer found. Documentation and logic this repository's own tiers cover do not
+need it.
+
+```powershell
+./scripts/Use-LocalBuild.ps1 -Package Corely.IAM.Web -Consumer C:\source\git\ultrabstrong\DocsToData
+./scripts/Use-LocalBuild.ps1 -Package Corely.IAM.Web -Consumer C:\source\git\ultrabstrong\DocsToData -Revert
+```
+
+Between the two, run the consumer's affected tests, repeatedly for anything timing dependent. The
+script packs `<version>-local.<timestamp>`, which never collides with the published version in
+the package cache, and corrects the build's dependencies on this repository's other packages, which
+packing a prerelease would otherwise give the same prerelease version. Revert before committing in
+the consumer. Never pass `-p:Version` to a pack for this: it stamps the referenced assemblies too,
+and the consumer fails to load them.
+
 ## Running the WebApp Locally
 
 One command, from the repository root, in PowerShell 7:

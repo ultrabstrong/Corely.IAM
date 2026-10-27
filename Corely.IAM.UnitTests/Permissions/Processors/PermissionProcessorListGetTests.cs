@@ -9,6 +9,7 @@ using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
@@ -143,7 +144,8 @@ public class PermissionProcessorListGetTests
 
         var result = await _permissionProcessor.GetPermissionByIdAsync(
             permission.Id,
-            hydrate: false
+            hydrate: false,
+            AccountScope.Any
         );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
@@ -158,7 +160,8 @@ public class PermissionProcessorListGetTests
     {
         var result = await _permissionProcessor.GetPermissionByIdAsync(
             Guid.CreateVersion7(),
-            hydrate: false
+            hydrate: false,
+            AccountScope.Any
         );
 
         Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
@@ -173,7 +176,8 @@ public class PermissionProcessorListGetTests
 
         var result = await _permissionProcessor.GetPermissionByIdAsync(
             permission.Id,
-            hydrate: true
+            hydrate: true,
+            AccountScope.Any
         );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
@@ -193,7 +197,8 @@ public class PermissionProcessorListGetTests
 
         var result = await _permissionProcessor.GetPermissionByIdAsync(
             permission.Id,
-            hydrate: true
+            hydrate: true,
+            AccountScope.Any
         );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);

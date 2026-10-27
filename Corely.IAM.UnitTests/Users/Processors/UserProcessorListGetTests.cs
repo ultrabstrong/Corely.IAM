@@ -4,6 +4,7 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
@@ -198,7 +199,11 @@ public class UserProcessorListGetTests
     {
         var user = await CreateUserEntityAsync("testuser1");
 
-        var result = await _userProcessor.GetUserByIdAsync(user.Id, hydrate: false);
+        var result = await _userProcessor.GetUserByIdAsync(
+            user.Id,
+            hydrate: false,
+            AccountScope.Any
+        );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -212,7 +217,11 @@ public class UserProcessorListGetTests
     [Fact]
     public async Task GetUserById_ReturnsNotFoundWhenUserDoesNotExist()
     {
-        var result = await _userProcessor.GetUserByIdAsync(Guid.CreateVersion7(), hydrate: false);
+        var result = await _userProcessor.GetUserByIdAsync(
+            Guid.CreateVersion7(),
+            hydrate: false,
+            AccountScope.Any
+        );
 
         Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
         Assert.Null(result.Data);
@@ -231,7 +240,11 @@ public class UserProcessorListGetTests
             roles: [role]
         );
 
-        var result = await _userProcessor.GetUserByIdAsync(user.Id, hydrate: true);
+        var result = await _userProcessor.GetUserByIdAsync(
+            user.Id,
+            hydrate: true,
+            AccountScope.Any
+        );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -289,7 +302,11 @@ public class UserProcessorListGetTests
             roles: [roleCurrentAccount, roleOtherAccount]
         );
 
-        var result = await _userProcessor.GetUserByIdAsync(user.Id, hydrate: true);
+        var result = await _userProcessor.GetUserByIdAsync(
+            user.Id,
+            hydrate: true,
+            AccountScope.Any
+        );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -304,7 +321,11 @@ public class UserProcessorListGetTests
     {
         var user = await CreateUserEntityAsync("emptyuser");
 
-        var result = await _userProcessor.GetUserByIdAsync(user.Id, hydrate: true);
+        var result = await _userProcessor.GetUserByIdAsync(
+            user.Id,
+            hydrate: true,
+            AccountScope.Any
+        );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);

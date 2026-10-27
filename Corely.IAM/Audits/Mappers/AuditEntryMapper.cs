@@ -24,7 +24,10 @@ internal static class AuditEntryMapper
                 entity.ResourceIds.ToResourceIdList(),
                 entity.ResultCode,
                 entity.Details
-            );
+            )
+            {
+                ActorApiKeyId = entity.ActorApiKeyId,
+            };
     }
 
     extension(IEnumerable<Guid> resourceIds)

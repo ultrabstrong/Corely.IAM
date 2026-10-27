@@ -22,7 +22,11 @@ internal static class PlatformSecuritySettingsMapper
                 entity.AuthSessionIdleTimeoutSeconds,
                 entity.RefreshReuseGraceSeconds,
                 entity.MfaChallengeTimeoutSeconds,
-                entity.TotpRecoveryCodeCount
+                entity.TotpRecoveryCodeCount,
+                entity.ApiKeysEnabled,
+                entity.PlatformAccountApiKeysEnabled,
+                entity.ApiKeyMaxLifetimeDays,
+                ResourceTypeSet.FromStoredValue(entity.ApiKeyResourceTypes)
             );
 
         public void Apply(SecurityPolicy policy)
@@ -41,6 +45,10 @@ internal static class PlatformSecuritySettingsMapper
             entity.RefreshReuseGraceSeconds = policy.RefreshReuseGraceSeconds;
             entity.MfaChallengeTimeoutSeconds = policy.MfaChallengeTimeoutSeconds;
             entity.TotpRecoveryCodeCount = policy.TotpRecoveryCodeCount;
+            entity.ApiKeysEnabled = policy.ApiKeysEnabled;
+            entity.PlatformAccountApiKeysEnabled = policy.PlatformAccountApiKeysEnabled;
+            entity.ApiKeyMaxLifetimeDays = policy.ApiKeyMaxLifetimeDays;
+            entity.ApiKeyResourceTypes = policy.ApiKeyResourceTypes.ToStoredValue();
         }
     }
 

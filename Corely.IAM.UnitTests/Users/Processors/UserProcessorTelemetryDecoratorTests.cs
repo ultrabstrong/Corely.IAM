@@ -1,4 +1,5 @@
 using Corely.IAM.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
@@ -100,7 +101,8 @@ public class UserProcessorTelemetryDecoratorTests
     {
         var request = new AssignRolesToUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new AssignRolesToUserResult(
             AssignRolesToUserResultCode.Success,
@@ -124,7 +126,8 @@ public class UserProcessorTelemetryDecoratorTests
     {
         var request = new RemoveRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new RemoveRolesFromUserResult(
             RemoveRolesFromUserResultCode.Success,

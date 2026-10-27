@@ -1,4 +1,4 @@
-﻿using Corely.IAM.Models;
+using Corely.IAM.Models;
 
 namespace Corely.IAM.Roles.Models;
 
@@ -17,5 +17,6 @@ public class Role
 
     public List<ChildRef>? Users { get; set; }
     public List<ChildRef>? Groups { get; set; }
+    public List<ChildRef>? ApiKeys { get; set; }
     public List<ChildRef>? Permissions { get; set; }
 }

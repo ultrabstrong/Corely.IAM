@@ -3,12 +3,16 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Groups.Mappers;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions;
+using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Platform.Providers;
+using Corely.IAM.Roles.Mappers;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
+using Corely.IAM.Users.Mappers;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
@@ -192,6 +196,10 @@ internal class AccountProcessor(
                         .ThenInclude(r => r.Groups)
                     .Include(a => a.Roles)!
                         .ThenInclude(r => r.Permissions)
+                    .Include(a => a.Roles)!
+                        .ThenInclude(r => r.ApiKeys)
+                    .Include(a => a.Groups)!
+                        .ThenInclude(g => g.ApiKeys)
                     .Include(a => a.Groups)!
                         .ThenInclude(g => g.Users)
                     .Include(a => a.Groups)!
@@ -232,6 +240,7 @@ internal class AccountProcessor(
                 role.Users?.Clear();
                 role.Groups?.Clear();
                 role.Permissions?.Clear();
+                role.ApiKeys?.Clear();
             }
         }
 
@@ -241,6 +250,7 @@ internal class AccountProcessor(
             {
                 group.Users?.Clear();
                 group.Roles?.Clear();
+                group.ApiKeys?.Clear();
             }
         }
 
@@ -479,29 +489,10 @@ internal class AccountProcessor(
 
         if (hydrate)
         {
-            account.Users = accountEntity
-                .Users?.Select(u => new ChildRef(u.Id, u.Username))
-                .ToList();
-            account.Groups = accountEntity.Groups?.Select(g => new ChildRef(g.Id, g.Name)).ToList();
-            account.Roles = accountEntity
-                .Roles?.Select(r => new ChildRef(r.Id, r.Name, r.IsSystemDefined))
-                .ToList();
-            account.Permissions = accountEntity
-                .Permissions?.Select(p => new ChildRef(
-                    p.Id,
-                    p.Description
-                        ?? PermissionLabelProvider.GetName(
-                            p.ResourceType,
-                            p.ResourceId,
-                            p.Create,
-                            p.Read,
-                            p.Update,
-                            p.Delete,
-                            p.Execute
-                        ),
-                    p.IsSystemDefined
-                ))
-                .ToList();
+            account.Users = accountEntity.Users?.Select(u => u.ToChildRef()).ToList();
+            account.Groups = accountEntity.Groups?.Select(g => g.ToChildRef()).ToList();
+            account.Roles = accountEntity.Roles?.Select(r => r.ToChildRef()).ToList();
+            account.Permissions = accountEntity.Permissions?.Select(p => p.ToChildRef()).ToList();
         }
 
         return new GetResult<Account>(RetrieveResultCode.Success, string.Empty, account);

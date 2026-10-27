@@ -1,4 +1,5 @@
 using Corely.DataAccess.Interfaces.Entities;
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Models;
 
 namespace Corely.IAM.Audits.Entities;

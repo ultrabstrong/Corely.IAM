@@ -3,12 +3,14 @@ using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Middleware;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Web.UnitTests.Middleware;
 
@@ -30,13 +32,60 @@ public class AuthenticationTokenMiddlewareTests
         _mockLogger = new Mock<ILogger<AuthenticationTokenMiddleware>>();
     }
 
-    private AuthenticationTokenMiddleware CreateMiddleware(RequestDelegate next)
+    private AuthenticationTokenMiddleware CreateMiddleware(
+        RequestDelegate next,
+        bool acceptBearerTokens = false
+    )
     {
         return new AuthenticationTokenMiddleware(
             next,
             _mockLogger.Object,
             _authCookieManager,
-            _userContextClaimsBuilder
+            _userContextClaimsBuilder,
+            Options.Create(new IAMWebOptions { AcceptBearerTokens = acceptBearerTokens })
+        );
+    }
+
+    [Fact]
+    public async Task Invoke_WithBearerHeader_IgnoresTheCookies_WhenBearerTokensAreAccepted()
+    {
+        var context = new DefaultHttpContext();
+        context.Request.Headers.Cookie = $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=cookie-token";
+        context.Request.Headers.Authorization = "Bearer header-token";
+        var middleware = CreateMiddleware(_ => Task.CompletedTask, acceptBearerTokens: true);
+
+        await middleware.InvokeAsync(
+            context,
+            _mockAuthenticationService.Object,
+            _mockUserContextProvider.Object
+        );
+
+        _mockAuthenticationService.Verify(
+            s => s.AuthenticateWithTokenAsync(It.IsAny<string>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task Invoke_WithBearerHeader_ReadsTheCookies_WhenBearerTokensAreOff()
+    {
+        var context = new DefaultHttpContext();
+        context.Request.Headers.Cookie = $"{AuthCookieManager.AUTH_TOKEN_COOKIE}=cookie-token";
+        context.Request.Headers.Authorization = "Bearer header-token";
+        _mockAuthenticationService
+            .Setup(s => s.AuthenticateWithTokenAsync("cookie-token"))
+            .ReturnsAsync(UserAuthTokenValidationResultCode.Success);
+        var middleware = CreateMiddleware(_ => Task.CompletedTask);
+
+        await middleware.InvokeAsync(
+            context,
+            _mockAuthenticationService.Object,
+            _mockUserContextProvider.Object
+        );
+
+        _mockAuthenticationService.Verify(
+            s => s.AuthenticateWithTokenAsync("cookie-token"),
+            Times.Once
         );
     }
 

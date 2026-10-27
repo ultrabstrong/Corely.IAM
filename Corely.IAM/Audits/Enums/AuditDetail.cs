@@ -1,4 +1,4 @@
-namespace Corely.IAM.Audits.Models;
+namespace Corely.IAM.Audits.Enums;
 
 public enum AuditDetail
 {

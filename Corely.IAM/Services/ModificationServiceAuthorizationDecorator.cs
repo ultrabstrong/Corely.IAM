@@ -1,5 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
@@ -34,6 +35,13 @@ internal class ModificationServiceAuthorizationDecorator(
 
     public Task<ModifyResult> ModifyPermissionAsync(UpdatePermissionRequest request) =>
         _inner.ModifyPermissionAsync(request);
+
+    public Task<ModifyResult> ModifyApiKeyAsync(UpdateApiKeyRequest request) =>
+        _inner.ModifyApiKeyAsync(request);
+
+    public Task<RotateApiKeySecretResult> RotateApiKeySecretAsync(
+        RotateApiKeySecretRequest request
+    ) => _inner.RotateApiKeySecretAsync(request);
 
     public Task<ModifyResult> RotateAccountKeyAsync(RotateAccountKeyRequest request) =>
         _inner.RotateAccountKeyAsync(request);

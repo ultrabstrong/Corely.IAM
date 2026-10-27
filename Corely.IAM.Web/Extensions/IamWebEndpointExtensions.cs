@@ -1,0 +1,128 @@
+using Corely.IAM.Models;
+using Corely.IAM.Services;
+using Corely.IAM.Users.Providers;
+using Corely.IAM.Web.Configuration;
+using Corely.IAM.Web.Endpoints;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+
+namespace Corely.IAM.Web.Extensions;
+
+public static class IamWebEndpointExtensions
+{
+    public const string TOKEN_ENDPOINTS_TAG = "IAM tokens";
+
+    extension(IEndpointRouteBuilder endpoints)
+    {
+        public RouteGroupBuilder MapIAMTokenEndpoints(string prefix = "/api/auth")
+        {
+            if (
+                !endpoints
+                    .ServiceProvider.GetRequiredService<IOptions<IAMWebOptions>>()
+                    .Value.AcceptBearerTokens
+            )
+                throw new InvalidOperationException(
+                    $"{nameof(MapIAMTokenEndpoints)} needs bearer tokens turned on. Add "
+                        + $"options.{nameof(IAMWebOptions.AcceptBearerTokens)} = true to AddIAMWeb(options => ...). "
+                        + "Without it, every API call made with a token these endpoints issue is refused with 401."
+                );
+
+            var group = endpoints.MapGroup(prefix).WithTags(TOKEN_ENDPOINTS_TAG).AsIAMApi();
+
+            group
+                .MapPost("/apikey", SignInWithApiKeyAsync)
+                .WithName("IamSignInWithApiKey")
+                .WithSummary("Exchange an API key for an access token and a refresh token")
+                .WithDescription(
+                    "Send the key as ciam_<prefix>_<secret>. Use the access token as a Bearer token on every call. "
+                        + "Every refusal returns 401 with no detail, whatever the reason."
+                );
+
+            group
+                .MapPost("/renew", RenewAsync)
+                .WithName("IamRenewToken")
+                .WithSummary("Trade a refresh token for a new pair")
+                .WithDescription(
+                    "Each refresh token works once. 409 means another call of the same client renewed first: keep the pair "
+                        + "that call received. 401 means the session has ended: sign in again. Reusing a spent refresh token "
+                        + "after a short grace period ends the whole session."
+                );
+
+            group
+                .MapPost("/signout", SignOutAsync)
+                .WithName("IamSignOut")
+                .WithSummary("End the session of the Bearer token on this request")
+                .WithDescription("Requires the Authorization header. Cookies are not accepted.")
+                .RequireAuthorization();
+
+            return group;
+        }
+    }
+
+    extension<TBuilder>(TBuilder builder)
+        where TBuilder : IEndpointConventionBuilder
+    {
+        public TBuilder AsIAMApi() => builder.WithMetadata(IamApiEndpointMetadata.Instance);
+    }
+
+    private static async Task<
+        Results<Ok<TokenPairResponse>, UnauthorizedHttpResult>
+    > SignInWithApiKeyAsync(ApiKeySignInBody body, IAuthenticationService authenticationService)
+    {
+        if (string.IsNullOrWhiteSpace(body.ApiKey))
+            return TypedResults.Unauthorized();
+
+        var result = await authenticationService.SignInWithApiKeyAsync(
+            new SignInWithApiKeyRequest(
+                body.ApiKey,
+                string.IsNullOrWhiteSpace(body.DeviceId)
+                    ? ApiKeySignInBody.DEFAULT_DEVICE_ID
+                    : body.DeviceId
+            )
+        );
+
+        return result.ToTokenPairResponse() is { } pair
+            ? TypedResults.Ok(pair)
+            : TypedResults.Unauthorized();
+    }
+
+    private static async Task<
+        Results<Ok<TokenPairResponse>, Conflict, UnauthorizedHttpResult>
+    > RenewAsync(RenewTokenBody body, IAuthenticationService authenticationService)
+    {
+        if (string.IsNullOrWhiteSpace(body.RefreshToken))
+            return TypedResults.Unauthorized();
+
+        var result = await authenticationService.RenewAuthTokenAsync(
+            new RenewAuthTokenRequest(body.RefreshToken)
+        );
+
+        if (result.ResultCode == RenewAuthTokenResultCode.RefreshTokenAlreadyRotatedError)
+            return TypedResults.Conflict();
+
+        return result.ToTokenPairResponse() is { } pair
+            ? TypedResults.Ok(pair)
+            : TypedResults.Unauthorized();
+    }
+
+    private static async Task<Results<NoContent, UnauthorizedHttpResult>> SignOutAsync(
+        HttpRequest request,
+        IAuthenticationService authenticationService,
+        IUserContextProvider userContextProvider
+    )
+    {
+        if (
+            !request.HasBearerToken()
+            || userContextProvider.GetUserContext()?.AuthTokenId is not { } tokenId
+        )
+            return TypedResults.Unauthorized();
+
+        return await authenticationService.SignOutAsync(new SignOutRequest(tokenId.ToString()))
+            ? TypedResults.NoContent()
+            : TypedResults.Unauthorized();
+    }
+}

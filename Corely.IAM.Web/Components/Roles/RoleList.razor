@@ -134,7 +134,7 @@ else
                 _ => null
             };
         }
-        var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(UserContext!.CurrentAccount!.Id, filter, order, _skip, _take));
+        var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(CurrentAccountId, filter, order, _skip, _take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             _items = result.Data.Items;
@@ -151,7 +151,7 @@ else
         if (string.IsNullOrWhiteSpace(_newRoleName)) return;
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.RegisterRoleAsync(new RegisterRoleRequest(_newRoleName, UserContext!.CurrentAccount!.Id));
+            var result = await RegistrationService.RegisterRoleAsync(new RegisterRoleRequest(_newRoleName, CurrentAccountId));
             SetResultMessage(result.ResultCode == CreateRoleResultCode.Success, "Role created.", result.Message);
             _newRoleName = string.Empty;
             await ReloadAsync();
@@ -164,7 +164,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterRoleAsync(new DeregisterRoleRequest(_confirmItemId, UserContext!.CurrentAccount!.Id));
+            var result = await DeregistrationService.DeregisterRoleAsync(new DeregisterRoleRequest(_confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterRoleResultCode.Success, "Role deleted.", result.Message);
             await ReloadAsync();
         });

@@ -1,8 +1,10 @@
 using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -29,6 +31,16 @@ public static class IamWebServiceExtensions
                 {
                     options.LoginPath = "/signin";
                     options.LogoutPath = "/signout";
+                    options.Events.OnRedirectToLogin = context =>
+                        context.HttpContext.IsIAMApiRequest()
+                            ? context.Response.BearerChallengeAsync(
+                                StatusCodes.Status401Unauthorized
+                            )
+                            : RedirectAsync(context);
+                    options.Events.OnRedirectToAccessDenied = context =>
+                        context.HttpContext.IsIAMApiRequest()
+                            ? context.Response.BearerChallengeAsync(StatusCodes.Status403Forbidden)
+                            : RedirectAsync(context);
                 });
 
             services.AddAuthorization();
@@ -52,5 +64,11 @@ public static class IamWebServiceExtensions
 
             return services;
         }
+    }
+
+    private static Task RedirectAsync(RedirectContext<CookieAuthenticationOptions> context)
+    {
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
     }
 }

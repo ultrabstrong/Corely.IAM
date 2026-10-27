@@ -3,7 +3,7 @@
 @inject Corely.IAM.Permissions.Providers.IResourceTypeRegistry ResourceTypeRegistry
 
 <div class="management-header">
-    <h1><i class="bi bi-key me-2"></i>Permissions</h1>
+    <h1><i class="bi bi-patch-check me-2"></i>Permissions</h1>
     <div class="d-flex gap-2 align-items-center">
         <a href="@Links.Dashboard()" class="btn btn-outline-secondary" title="Back to dashboard"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
         <PermissionView Action="AuthAction.Create" Resource="@Permission.RESOURCE_TYPE">
@@ -193,7 +193,7 @@ else
                 _ => null
             };
         }
-        var result = await RetrievalService.ListPermissionsAsync(new ListPermissionsRequest(UserContext!.CurrentAccount!.Id, filter, order, _skip, _take));
+        var result = await RetrievalService.ListPermissionsAsync(new ListPermissionsRequest(CurrentAccountId, filter, order, _skip, _take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             _items = result.Data.Items;
@@ -232,7 +232,7 @@ else
         await ExecuteSafeAsync(async () =>
         {
             var result = await RegistrationService.RegisterPermissionAsync(
-                new RegisterPermissionRequest(UserContext!.CurrentAccount!.Id, _newResourceType, resourceId, _newCreate, _newRead, _newUpdate, _newDelete, _newExecute, string.IsNullOrWhiteSpace(_newDescription) ? null : _newDescription.Trim()));
+                new RegisterPermissionRequest(CurrentAccountId, _newResourceType, resourceId, _newCreate, _newRead, _newUpdate, _newDelete, _newExecute, string.IsNullOrWhiteSpace(_newDescription) ? null : _newDescription.Trim()));
             SetResultMessage(result.ResultCode == CreatePermissionResultCode.Success, "Permission created.", result.Message);
             ResetCreateForm();
             await ReloadAsync();
@@ -262,7 +262,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterPermissionAsync(new DeregisterPermissionRequest(_confirmItemId, UserContext!.CurrentAccount!.Id));
+            var result = await DeregistrationService.DeregisterPermissionAsync(new DeregisterPermissionRequest(_confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterPermissionResultCode.Success, "Permission deleted.", result.Message);
             await ReloadAsync();
         });

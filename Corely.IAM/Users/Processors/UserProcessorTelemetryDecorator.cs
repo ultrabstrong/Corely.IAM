@@ -1,6 +1,7 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Extensions;
 using Corely.IAM.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Microsoft.Extensions.Logging;
@@ -118,7 +119,7 @@ internal class UserProcessorTelemetryDecorator(
     public async Task<GetResult<User>> GetUserByIdAsync(
         Guid userId,
         bool hydrate,
-        Guid accountId = default
+        AccountScope accountId
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(UserProcessor),

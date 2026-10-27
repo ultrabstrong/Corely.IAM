@@ -5,6 +5,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Platform.Providers;
+using Corely.IAM.Security.Entities;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
@@ -49,16 +50,26 @@ public class AuthenticationProviderTests
     ) =>
         new(
             _serviceFactory.GetRequiredService<IRepo<UserEntity>>(),
-            _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<TotpAuthEntity>>(),
             _serviceFactory.GetRequiredService<IPlatformAccessProvider>(),
+            CreateSessionTokenProvider(timeProvider, securityOptions),
+            _serviceFactory.GetRequiredService<ILogger<AuthenticationProvider>>(),
+            timeProvider ?? TimeProvider.System
+        );
+
+    private SessionTokenProvider CreateSessionTokenProvider(
+        TimeProvider? timeProvider = null,
+        SecurityOptions? securityOptions = null
+    ) =>
+        new(
+            _serviceFactory.GetRequiredService<IRepo<AuthTokenEntity>>(),
             _serviceFactory.GetRequiredService<ISecurityProvider>(),
             FixedSecurityPolicyProvider.From(securityOptions ?? new SecurityOptions()),
             _serviceFactory.GetRequiredService<IHashProviderFactory>(),
             _serviceFactory.GetRequiredService<IamHashCodes>(),
             _serviceFactory.GetRequiredService<ISecretProvider>(),
-            _serviceFactory.GetRequiredService<ILogger<AuthenticationProvider>>(),
+            _serviceFactory.GetRequiredService<ILogger<SessionTokenProvider>>(),
             timeProvider ?? TimeProvider.System
         );
 
@@ -121,7 +132,7 @@ public class AuthenticationProviderTests
         var jwtToken = tokenHandler.ReadJwtToken(authTokenResult.Token);
 
         Assert.Equal(typeof(AuthenticationProvider).FullName, jwtToken.Issuer);
-        Assert.Equal(TokenIssueContext.JWT_AUDIENCE, jwtToken.Audiences.First());
+        Assert.Equal(SessionTokenProvider.AUDIENCE, jwtToken.Audiences.First());
         Assert.Contains(
             jwtToken.Claims,
             c => c.Type == JwtRegisteredClaimNames.Sub && c.Value == userEntity.Id.ToString()
@@ -198,7 +209,7 @@ public class AuthenticationProviderTests
             new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID, account.Id)
         );
 
-        var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
+        var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<AuthTokenEntity>>();
         var tokenEntity = await authTokenRepo.GetAsync(t => t.Id == result.TokenId);
 
         Assert.NotNull(tokenEntity);
@@ -214,7 +225,7 @@ public class AuthenticationProviderTests
             new GetUserAuthTokenRequest(userEntity.Id, TEST_DEVICE_ID)
         );
 
-        var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
+        var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<AuthTokenEntity>>();
         var tokenEntity = await authTokenRepo.GetAsync(t => t.Id == result.TokenId);
 
         Assert.NotNull(tokenEntity);
@@ -301,7 +312,7 @@ public class AuthenticationProviderTests
 
         Assert.NotEqual(account1.Id, account2.Id);
 
-        var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
+        var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<AuthTokenEntity>>();
         var token1Entity = await authTokenRepo.GetAsync(t => t.Id == tokenForAccount1.TokenId);
         var token2Entity = await authTokenRepo.GetAsync(t => t.Id == tokenForAccount2.TokenId);
 
@@ -361,7 +372,7 @@ public class AuthenticationProviderTests
             new GetUserAuthTokenRequest(userEntity.Id, deviceId)
         );
 
-        var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
+        var authTokenRepo = _serviceFactory.GetRequiredService<IRepo<AuthTokenEntity>>();
         var tokenEntity = await authTokenRepo.GetAsync(t => t.Id == result.TokenId);
 
         Assert.NotNull(tokenEntity);
@@ -660,7 +671,7 @@ public class AuthenticationProviderTests
         var jwtToken = tokenHandler.ReadJwtToken(result.Token);
 
         var deviceIdClaim = jwtToken.Claims.FirstOrDefault(c =>
-            c.Type == TokenIssueContext.DEVICE_ID_CLAIM
+            c.Type == SessionTokenProvider.DEVICE_ID_CLAIM
         );
         Assert.NotNull(deviceIdClaim);
         Assert.Equal(deviceId, deviceIdClaim.Value);
@@ -798,10 +809,10 @@ public class AuthenticationProviderTests
         );
     }
 
-    private async Task<UserAuthTokenEntity> TrackedTokenAsync(Guid tokenId) =>
+    private async Task<AuthTokenEntity> TrackedTokenAsync(Guid tokenId) =>
         (
             await _serviceFactory
-                .GetRequiredService<IRepo<UserAuthTokenEntity>>()
+                .GetRequiredService<IRepo<AuthTokenEntity>>()
                 .GetAsync(t => t.Id == tokenId)
         )!;
 
@@ -1132,11 +1143,25 @@ public class AuthenticationProviderTests
     }
 
     [Fact]
-    public async Task DeleteExpiredAuthTokensAsync_DeletesOnlyRowsPastTheirRefreshExpiry()
+    public async Task DeleteExpiredAsync_DeletesOnlyRowsPastTheirRefreshExpiry()
     {
-        var (authenticationProvider, advance) = CreateClockedProvider(
-            new SecurityOptions { AuthTokenTtlSeconds = 300, AuthSessionIdleTimeoutSeconds = 600 }
+        var securityOptions = new SecurityOptions
+        {
+            AuthTokenTtlSeconds = 300,
+            AuthSessionIdleTimeoutSeconds = 600,
+        };
+        var currentTime = DateTimeOffset.UtcNow;
+        var timeProviderMock = new Mock<TimeProvider>();
+        timeProviderMock.Setup(t => t.GetUtcNow()).Returns(() => currentTime);
+        var authenticationProvider = CreateAuthenticationProvider(
+            timeProviderMock.Object,
+            securityOptions
         );
+        var sessionTokenProvider = CreateSessionTokenProvider(
+            timeProviderMock.Object,
+            securityOptions
+        );
+        void advance(int seconds) => currentTime = currentTime.AddSeconds(seconds);
         var userEntity = await CreateUserAsync();
         var expiring = await authenticationProvider.GetUserAuthTokenAsync(
             new GetUserAuthTokenRequest(userEntity.Id, "device-a")
@@ -1147,10 +1172,10 @@ public class AuthenticationProviderTests
         );
         advance(201);
 
-        var deleted = await authenticationProvider.DeleteExpiredAuthTokensAsync();
+        var deleted = await sessionTokenProvider.DeleteExpiredAsync();
 
         Assert.Equal(1, deleted);
-        var repo = _serviceFactory.GetRequiredService<IRepo<UserAuthTokenEntity>>();
+        var repo = _serviceFactory.GetRequiredService<IRepo<AuthTokenEntity>>();
         Assert.Null(await repo.GetAsync(t => t.Id == expiring.TokenId));
         Assert.NotNull(await repo.GetAsync(t => t.Id == live.TokenId));
     }
@@ -1284,9 +1309,9 @@ public class AuthenticationProviderTests
         var legacyId = Guid.CreateVersion7();
         var now = DateTime.UtcNow;
         await _serviceFactory
-            .GetRequiredService<IRepo<UserAuthTokenEntity>>()
+            .GetRequiredService<IRepo<AuthTokenEntity>>()
             .CreateAsync(
-                new UserAuthTokenEntity
+                new AuthTokenEntity
                 {
                     Id = legacyId,
                     UserId = userEntity.Id,

@@ -1,4 +1,5 @@
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
@@ -32,6 +33,9 @@ public class PlatformSecuritySettingsTests : TestContext
         Services.AddSingleton(userContextAccessor.Object);
         Services.AddSingleton(_platformService.Object);
         Services.AddSingleton(_authorizationProvider.Object);
+        var registry = new Mock<IResourceTypeRegistry>();
+        registry.Setup(x => x.GetAll()).Returns([]);
+        Services.AddSingleton(registry.Object);
         Services.AddSingleton<ILogger<EntityPageBase>>(NullLogger<EntityPageBase>.Instance);
         _platformService
             .Setup(x => x.GetSecuritySettingsAsync())
@@ -106,12 +110,12 @@ public class PlatformSecuritySettingsTests : TestContext
     {
         var cut = Render<PlatformSecuritySettings>();
         cut.WaitForAssertion(() =>
-            Assert.Equal(3, cut.FindAll("button").Count(b => b.TextContent == "Edit"))
+            Assert.Equal(4, cut.FindAll("button").Count(b => b.TextContent == "Edit"))
         );
 
         cut.FindAll("button").Where(b => b.TextContent == "Edit").ElementAt(2).Click();
 
-        Assert.Equal(2, cut.FindAll("button").Count(b => b.TextContent == "Edit"));
+        Assert.Equal(3, cut.FindAll("button").Count(b => b.TextContent == "Edit"));
         Assert.Equal(2, cut.FindAll("input[type=number]").Count);
         Assert.Empty(cut.FindAll("input[type=checkbox]"));
     }

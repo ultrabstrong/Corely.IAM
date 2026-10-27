@@ -1,5 +1,6 @@
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Roles.Processors;
@@ -101,7 +102,8 @@ public class RoleProcessorTelemetryDecoratorTests
     {
         var request = new AssignPermissionsToRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new AssignPermissionsToRoleResult(
             AssignPermissionsToRoleResultCode.Success,

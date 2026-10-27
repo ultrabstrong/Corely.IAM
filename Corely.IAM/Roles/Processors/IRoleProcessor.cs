@@ -1,5 +1,6 @@
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 
 namespace Corely.IAM.Roles.Processors;
 
@@ -13,7 +14,7 @@ internal interface IRoleProcessor
         ListRolesRequest request,
         IReadOnlySet<Guid>? authorizedResourceIds = null
     );
-    Task<GetResult<Role>> GetRoleByIdAsync(Guid roleId, bool hydrate, Guid accountId = default);
+    Task<GetResult<Role>> GetRoleByIdAsync(Guid roleId, bool hydrate, AccountScope accountId);
     Task<AssignPermissionsToRoleResult> AssignPermissionsToRoleAsync(
         AssignPermissionsToRoleRequest request
     );
@@ -21,5 +22,5 @@ internal interface IRoleProcessor
         RemovePermissionsFromRoleRequest request
     );
     Task<ModifyResult> UpdateRoleAsync(UpdateRoleRequest request);
-    Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, Guid accountId = default);
+    Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, AccountScope accountId);
 }

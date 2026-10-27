@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Web.Services;
 
@@ -58,6 +59,32 @@ public class UserContextClaimsBuilderTests
         Assert.NotNull(principal);
         Assert.NotNull(principal.Identity);
         Assert.False(principal.Identity.IsAuthenticated);
+    }
+
+    [Fact]
+    public void BuildPrincipal_ApiKey_ReturnsAuthenticatedPrincipalWithTheKeysClaims()
+    {
+        var apiKeyId = Guid.CreateVersion7();
+        var account = CreateAccount(name: "Acme");
+        var context = new UserContext(
+            new ApiKey { Id = apiKeyId, Name = "billing-sync" },
+            account,
+            "device"
+        );
+
+        var principal = _builder.BuildPrincipal(context);
+
+        Assert.True(principal.Identity!.IsAuthenticated);
+        Assert.Equal(apiKeyId.ToString(), principal.FindFirstValue(ClaimTypes.NameIdentifier));
+        Assert.Equal(
+            apiKeyId.ToString(),
+            principal.FindFirstValue(UserContextClaimsBuilder.API_KEY_ID_CLAIM)
+        );
+        Assert.Equal("billing-sync", principal.FindFirstValue(ClaimTypes.Name));
+        Assert.Equal(
+            account.Id.ToString(),
+            principal.FindFirstValue(UserContextClaimsBuilder.ACCOUNT_ID_CLAIM)
+        );
     }
 
     [Fact]

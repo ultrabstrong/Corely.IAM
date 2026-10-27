@@ -1,5 +1,6 @@
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Models;
+using Corely.IAM.Models;
 
 namespace Corely.IAM.Groups.Mappers;
 
@@ -29,6 +30,8 @@ internal static class GroupMapper
 
     extension(GroupEntity entity)
     {
+        public ChildRef ToChildRef() => new(entity.Id, entity.Name);
+
         public Group ToModel()
         {
             return new Group

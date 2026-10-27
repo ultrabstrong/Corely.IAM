@@ -19,7 +19,11 @@ public record SecurityPolicy(
     int AuthSessionIdleTimeoutSeconds,
     int RefreshReuseGraceSeconds,
     int MfaChallengeTimeoutSeconds,
-    int TotpRecoveryCodeCount
+    int TotpRecoveryCodeCount,
+    bool ApiKeysEnabled,
+    bool PlatformAccountApiKeysEnabled,
+    int ApiKeyMaxLifetimeDays,
+    ResourceTypeSet ApiKeyResourceTypes
 )
 {
     public const string RESOURCE_TYPE = "platform_security_settings";
@@ -70,6 +74,13 @@ public record SecurityPolicy(
     public const int TOTP_RECOVERY_CODE_COUNT_MIN = 5;
     public const int TOTP_RECOVERY_CODE_COUNT_MAX = 20;
 
+    public const bool API_KEYS_ENABLED_DEFAULT = false;
+    public const bool PLATFORM_ACCOUNT_API_KEYS_ENABLED_DEFAULT = false;
+
+    public const int API_KEY_MAX_LIFETIME_DAYS_DEFAULT = 365;
+    public const int API_KEY_MAX_LIFETIME_DAYS_MIN = 1;
+    public const int API_KEY_MAX_LIFETIME_DAYS_MAX = 3650;
+
     public static SecurityPolicy Default { get; } =
         new(
             PASSWORD_MINIMUM_LENGTH_DEFAULT,
@@ -85,8 +96,21 @@ public record SecurityPolicy(
             AUTH_SESSION_IDLE_TIMEOUT_SECONDS_DEFAULT,
             REFRESH_REUSE_GRACE_SECONDS_DEFAULT,
             MFA_CHALLENGE_TIMEOUT_SECONDS_DEFAULT,
-            TOTP_RECOVERY_CODE_COUNT_DEFAULT
+            TOTP_RECOVERY_CODE_COUNT_DEFAULT,
+            API_KEYS_ENABLED_DEFAULT,
+            PLATFORM_ACCOUNT_API_KEYS_ENABLED_DEFAULT,
+            API_KEY_MAX_LIFETIME_DAYS_DEFAULT,
+            ResourceTypeSet.Empty
         );
+
+    public bool AllowsApiKeysIn(bool isPlatformAccount) =>
+        ApiKeysEnabled && (!isPlatformAccount || PlatformAccountApiKeysEnabled);
+
+    internal DateTime ApiKeySecretExpiresUtc(DateTime? requestedUtc, DateTime utcNow) =>
+        requestedUtc ?? utcNow.AddDays(ApiKeyMaxLifetimeDays);
+
+    internal bool AllowsApiKeySecretExpiry(DateTime expiresUtc, DateTime utcNow) =>
+        expiresUtc > utcNow && expiresUtc <= utcNow.AddDays(ApiKeyMaxLifetimeDays);
 
     public IReadOnlyList<SettingChange> ChangesTo(SecurityPolicy updated) =>
         new[]
@@ -174,6 +198,30 @@ public record SecurityPolicy(
                 TotpRecoveryCodeCount,
                 updated.TotpRecoveryCodeCount,
                 false
+            ),
+            SettingChange.Between(
+                PlatformSetting.ApiKeysEnabled,
+                ApiKeysEnabled,
+                updated.ApiKeysEnabled,
+                updated.ApiKeysEnabled
+            ),
+            SettingChange.Between(
+                PlatformSetting.PlatformAccountApiKeysEnabled,
+                PlatformAccountApiKeysEnabled,
+                updated.PlatformAccountApiKeysEnabled,
+                updated.PlatformAccountApiKeysEnabled
+            ),
+            SettingChange.Between(
+                PlatformSetting.ApiKeyMaxLifetimeDays,
+                ApiKeyMaxLifetimeDays,
+                updated.ApiKeyMaxLifetimeDays,
+                updated.ApiKeyMaxLifetimeDays > ApiKeyMaxLifetimeDays
+            ),
+            SettingChange.Between(
+                PlatformSetting.ApiKeyResourceTypes,
+                ApiKeyResourceTypes,
+                updated.ApiKeyResourceTypes,
+                updated.ApiKeyResourceTypes.Types.Any(t => !ApiKeyResourceTypes.Contains(t))
             ),
         }
             .OfType<SettingChange>()

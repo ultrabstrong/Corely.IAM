@@ -29,6 +29,10 @@ internal sealed class WebAppLinks : IIamWebLinks
     public string Permission(Guid accountId, Guid permissionId) =>
         WebAppRoutes.Permission(accountId, permissionId);
 
+    public string ApiKeys(Guid accountId) => WebAppRoutes.ApiKeys(accountId);
+
+    public string ApiKey(Guid accountId, Guid apiKeyId) => WebAppRoutes.ApiKey(accountId, apiKeyId);
+
     public string Audit(Guid accountId) => WebAppRoutes.Audit(accountId);
 
     public string AuditEntry(Guid accountId, Guid entryId) =>

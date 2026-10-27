@@ -6,6 +6,8 @@ using Corely.DataAccess.Interfaces.UnitOfWork;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.ApiKeys.Models;
+using Corely.IAM.ApiKeys.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Models.Extensions;
 using Corely.IAM.BasicAuths.Processors;
@@ -41,6 +43,7 @@ internal class RegistrationService(
     IGroupProcessor groupProcessor,
     IRoleProcessor roleProcessor,
     IPermissionProcessor permissionProcessor,
+    IApiKeyProcessor apiKeyProcessor,
     IUserContextProvider userContextProvider,
     IUserContextSetter userContextSetter,
     IReauthenticationProvider reauthenticationProvider,
@@ -70,6 +73,9 @@ internal class RegistrationService(
         googleIdTokenValidator.ThrowIfNull(nameof(googleIdTokenValidator));
     private readonly IGroupProcessor _groupProcessor = groupProcessor.ThrowIfNull(
         nameof(groupProcessor)
+    );
+    private readonly IApiKeyProcessor _apiKeyProcessor = apiKeyProcessor.ThrowIfNull(
+        nameof(apiKeyProcessor)
     );
     private readonly IRoleProcessor _roleProcessor = roleProcessor.ThrowIfNull(
         nameof(roleProcessor)
@@ -677,6 +683,92 @@ internal class RegistrationService(
             result.Message ?? string.Empty,
             result.AddedRoleCount,
             result.InvalidRoleIds
+        );
+    }
+
+    public async Task<RegisterApiKeyResult> RegisterApiKeyAsync(RegisterApiKeyRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation("Registering API key {ApiKeyName}", request.Name);
+
+        var result = await _apiKeyProcessor.CreateApiKeyAsync(
+            new(request.Name, request.AccountId, request.Description, request.ExpiresUtc)
+        );
+        if (result.ResultCode != CreateApiKeyResultCode.Success)
+        {
+            _logger.LogInformation(
+                "Registering API key failed for API key name {ApiKeyName}",
+                request.Name
+            );
+            return new RegisterApiKeyResult(result.ResultCode, result.Message, Guid.Empty, null);
+        }
+
+        _logger.LogInformation(
+            "API key {ApiKeyName} registered with Id {ApiKeyId}",
+            request.Name,
+            result.CreatedId
+        );
+        return new RegisterApiKeyResult(
+            result.ResultCode,
+            string.Empty,
+            result.CreatedId,
+            result.Key
+        );
+    }
+
+    public async Task<RegisterRolesWithApiKeyResult> RegisterRolesWithApiKeyAsync(
+        RegisterRolesWithApiKeyRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Registering role ids {@RoleIds} with API key id {ApiKeyId}",
+            request.RoleIds,
+            request.ApiKeyId
+        );
+
+        var result = await _apiKeyProcessor.AssignRolesToApiKeyAsync(
+            new(request.RoleIds, request.ApiKeyId, request.AccountId)
+        );
+
+        _logger.LogInformation(
+            "Registered {RegisteredRoleCount} roles with API key id {ApiKeyId}",
+            result.AddedRoleCount,
+            request.ApiKeyId
+        );
+        return new RegisterRolesWithApiKeyResult(
+            result.ResultCode,
+            result.Message,
+            result.AddedRoleCount,
+            result.InvalidRoleIds
+        );
+    }
+
+    public async Task<RegisterApiKeysWithGroupResult> RegisterApiKeysWithGroupAsync(
+        RegisterApiKeysWithGroupRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Registering API key ids {@ApiKeyIds} with group id {GroupId}",
+            request.ApiKeyIds,
+            request.GroupId
+        );
+
+        var result = await _groupProcessor.AddApiKeysToGroupAsync(
+            new(request.ApiKeyIds, request.GroupId, request.AccountId)
+        );
+
+        _logger.LogInformation(
+            "Registered {RegisteredApiKeyCount} API keys with group id {GroupId}",
+            result.AddedApiKeyCount,
+            request.GroupId
+        );
+        return new RegisterApiKeysWithGroupResult(
+            result.ResultCode,
+            result.Message,
+            result.AddedApiKeyCount,
+            result.InvalidApiKeyIds
         );
     }
 

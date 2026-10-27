@@ -8,6 +8,7 @@ using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
@@ -181,7 +182,11 @@ public class RoleProcessorListGetTests
     {
         var (role, _) = await CreateRoleAsync();
 
-        var result = await _roleProcessor.GetRoleByIdAsync(role.Id, hydrate: false);
+        var result = await _roleProcessor.GetRoleByIdAsync(
+            role.Id,
+            hydrate: false,
+            AccountScope.Any
+        );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -195,7 +200,11 @@ public class RoleProcessorListGetTests
     [Fact]
     public async Task GetRoleById_ReturnsNotFoundError_WhenNotFound()
     {
-        var result = await _roleProcessor.GetRoleByIdAsync(Guid.CreateVersion7(), hydrate: false);
+        var result = await _roleProcessor.GetRoleByIdAsync(
+            Guid.CreateVersion7(),
+            hydrate: false,
+            AccountScope.Any
+        );
 
         Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
         Assert.Null(result.Data);
@@ -206,7 +215,11 @@ public class RoleProcessorListGetTests
     {
         var role = await CreateRoleWithChildrenAsync();
 
-        var result = await _roleProcessor.GetRoleByIdAsync(role.Id, hydrate: true);
+        var result = await _roleProcessor.GetRoleByIdAsync(
+            role.Id,
+            hydrate: true,
+            AccountScope.Any
+        );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -251,7 +264,11 @@ public class RoleProcessorListGetTests
         role.Permissions = [system, custom];
         await _serviceFactory.GetRequiredService<IRepo<RoleEntity>>().UpdateAsync(role);
 
-        var result = await _roleProcessor.GetRoleByIdAsync(role.Id, hydrate: true);
+        var result = await _roleProcessor.GetRoleByIdAsync(
+            role.Id,
+            hydrate: true,
+            AccountScope.Any
+        );
 
         Assert.NotNull(result.Data?.Permissions);
         Assert.True(result.Data.Permissions.Single(p => p.Id == system.Id).IsSystemDefined);

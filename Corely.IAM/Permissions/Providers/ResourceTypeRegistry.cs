@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Permissions.Models;
@@ -25,6 +26,7 @@ internal class ResourceTypeRegistry : IResourceTypeRegistry
         AddIamType(Group.RESOURCE_TYPE, "Groups");
         AddIamType(Role.RESOURCE_TYPE, "Roles");
         AddIamType(Permission.RESOURCE_TYPE, "Permissions");
+        AddIamType(ApiKey.RESOURCE_TYPE, "API keys");
         AddIamType(AuditEntry.RESOURCE_TYPE, "Audit log", AuthAction.Read, AuthAction.Delete);
         AddIamType(
             AccountAuditSettings.RESOURCE_TYPE,

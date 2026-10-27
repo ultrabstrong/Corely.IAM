@@ -50,7 +50,9 @@ internal static class DemoSeed
 
         using (var scope = services.CreateScope())
         {
-            await SignInAsync(scope.ServiceProvider, "olivia", accountId);
+            scope
+                .ServiceProvider.GetRequiredService<IAuthenticationService>()
+                .AuthenticateAsSystem("demo-seed");
             var registration = scope.ServiceProvider.GetRequiredService<IRegistrationService>();
             foreach (var memberId in memberIds)
             {

@@ -1,4 +1,6 @@
 using Corely.IAM.Groups.Models;
+using Corely.IAM.Models;
+using Corely.IAM.Permissions;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Permissions.Models;
@@ -458,4 +460,43 @@ public class PermissionMapperTests
             Delete = true,
             Execute = true,
         };
+
+    [Fact]
+    public void PermissionEntity_ToChildRef_UsesTheDescription_WhenThereIsOne()
+    {
+        var entity = new PermissionEntity
+        {
+            Id = Guid.CreateVersion7(),
+            Description = "Read invoices",
+            ResourceType = "invoice",
+            Read = true,
+            IsSystemDefined = true,
+        };
+
+        Assert.Equal(new ChildRef(entity.Id, "Read invoices", true), entity.ToChildRef());
+    }
+
+    [Fact]
+    public void PermissionEntity_ToChildRef_FallsBackToTheGeneratedLabel()
+    {
+        var entity = new PermissionEntity
+        {
+            Id = Guid.CreateVersion7(),
+            ResourceType = "invoice",
+            Read = true,
+        };
+
+        Assert.Equal(
+            PermissionLabelProvider.GetName(
+                "invoice",
+                Guid.Empty,
+                false,
+                true,
+                false,
+                false,
+                false
+            ),
+            entity.ToChildRef().Name
+        );
+    }
 }

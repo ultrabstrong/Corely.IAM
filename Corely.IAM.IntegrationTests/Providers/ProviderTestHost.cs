@@ -41,6 +41,8 @@ public sealed class ProviderTestHost(DatabaseProvider provider) : IAsyncLifetime
                     ["SecurityOptions:AuthTokenTtlSeconds"] = "3600",
                     ["SecurityOptions:AuthSessionTtlSeconds"] = "604800",
                     ["SecurityOptions:MaxLoginAttempts"] = "5",
+                    ["SecurityOptions:ApiKeysEnabled"] = "true",
+                    ["SecurityOptions:ApiKeyResourceTypes:0"] = "user",
                 }
             )
             .Build();

@@ -1,13 +1,18 @@
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.ApiKeys.Entities;
+using Corely.IAM.ApiKeys.Mappers;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Mappers;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Roles.Mappers;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Entities;
+using Corely.IAM.Users.Mappers;
 using Corely.IAM.Users.Processors;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
@@ -21,6 +26,7 @@ internal class GroupProcessor(
     IReadonlyRepo<AccountEntity> accountRepo,
     IReadonlyRepo<UserEntity> userRepo,
     IReadonlyRepo<RoleEntity> roleRepo,
+    IReadonlyRepo<ApiKeyEntity> apiKeyRepo,
     IUserOwnershipProcessor userOwnershipProcessor,
     IUserContextProvider userContextProvider,
     IValidationProvider validationProvider,
@@ -33,6 +39,9 @@ internal class GroupProcessor(
     );
     private readonly IReadonlyRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
     private readonly IReadonlyRepo<RoleEntity> _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
+    private readonly IReadonlyRepo<ApiKeyEntity> _apiKeyRepo = apiKeyRepo.ThrowIfNull(
+        nameof(apiKeyRepo)
+    );
     private readonly IUserOwnershipProcessor _userOwnershipProcessor =
         userOwnershipProcessor.ThrowIfNull(nameof(userOwnershipProcessor));
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
@@ -95,7 +104,9 @@ internal class GroupProcessor(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var groupEntity = await _groupRepo.GetAsync(g => g.Id == request.GroupId);
+        var groupEntity = await _groupRepo.GetAsync(
+            request.AccountId.ByIdPredicate<GroupEntity>(request.GroupId)
+        );
         if (groupEntity == null)
         {
             _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
@@ -165,7 +176,7 @@ internal class GroupProcessor(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
         var groupEntity = await _groupRepo.GetAsync(
-            g => g.Id == request.GroupId,
+            request.AccountId.ByIdPredicate<GroupEntity>(request.GroupId),
             include: q => q.Include(g => g.Users).Include(g => g.Roles)
         );
         if (groupEntity == null)
@@ -247,13 +258,128 @@ internal class GroupProcessor(
         );
     }
 
+    public async Task<AddApiKeysToGroupResult> AddApiKeysToGroupAsync(
+        AddApiKeysToGroupRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var groupEntity = await _groupRepo.GetAsync(
+            request.AccountId.ByIdPredicate<GroupEntity>(request.GroupId),
+            include: q => q.Include(g => g.ApiKeys)
+        );
+        if (groupEntity == null)
+        {
+            _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
+            return new AddApiKeysToGroupResult(
+                AddApiKeysToGroupResultCode.GroupNotFoundError,
+                $"Group with Id {request.GroupId} not found",
+                0,
+                request.ApiKeyIds
+            );
+        }
+
+        var memberApiKeyIds = groupEntity.ApiKeys?.Select(k => k.Id).ToList() ?? [];
+        var apiKeyEntities = await _apiKeyRepo.ListAsync(k =>
+            request.ApiKeyIds.Contains(k.Id)
+            && k.AccountId == groupEntity.AccountId
+            && !memberApiKeyIds.Contains(k.Id)
+        );
+        if (apiKeyEntities.Count == 0)
+        {
+            _logger.LogWarning(
+                "All API key ids are invalid (not found, from different account, or already exist in group) : {@InvalidApiKeyIds}",
+                request.ApiKeyIds
+            );
+            return new AddApiKeysToGroupResult(
+                AddApiKeysToGroupResultCode.InvalidApiKeyIdsError,
+                "All API key ids are invalid (not found, from different account, or already exist in group)",
+                0,
+                request.ApiKeyIds
+            );
+        }
+
+        groupEntity.ApiKeys ??= [];
+        foreach (var apiKey in apiKeyEntities)
+        {
+            groupEntity.ApiKeys.Add(apiKey);
+        }
+        await _groupRepo.UpdateAsync(groupEntity);
+
+        var invalidApiKeyIds = request.ApiKeyIds.Except(apiKeyEntities.Select(k => k.Id)).ToList();
+        return new AddApiKeysToGroupResult(
+            invalidApiKeyIds.Count > 0
+                ? AddApiKeysToGroupResultCode.PartialSuccess
+                : AddApiKeysToGroupResultCode.Success,
+            invalidApiKeyIds.Count > 0
+                ? "Some API key ids are invalid (not found, from different account, or already exist in group)"
+                : string.Empty,
+            apiKeyEntities.Count,
+            invalidApiKeyIds
+        );
+    }
+
+    public async Task<RemoveApiKeysFromGroupResult> RemoveApiKeysFromGroupAsync(
+        RemoveApiKeysFromGroupRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var groupEntity = await _groupRepo.GetAsync(
+            request.AccountId.ByIdPredicate<GroupEntity>(request.GroupId),
+            include: q => q.Include(g => g.ApiKeys)
+        );
+        if (groupEntity == null)
+        {
+            _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
+            return new RemoveApiKeysFromGroupResult(
+                RemoveApiKeysFromGroupResultCode.GroupNotFoundError,
+                $"Group with Id {request.GroupId} not found",
+                0,
+                request.ApiKeyIds
+            );
+        }
+
+        var apiKeysToRemove =
+            groupEntity.ApiKeys?.Where(k => request.ApiKeyIds.Contains(k.Id)).ToList() ?? [];
+        if (apiKeysToRemove.Count == 0)
+        {
+            return new RemoveApiKeysFromGroupResult(
+                RemoveApiKeysFromGroupResultCode.InvalidApiKeyIdsError,
+                "All API key ids are invalid (not found or not a member)",
+                0,
+                request.ApiKeyIds
+            );
+        }
+
+        foreach (var apiKey in apiKeysToRemove)
+        {
+            groupEntity.ApiKeys!.Remove(apiKey);
+        }
+        await _groupRepo.UpdateAsync(groupEntity);
+
+        var invalidApiKeyIds = request.ApiKeyIds.Except(apiKeysToRemove.Select(k => k.Id)).ToList();
+        return new RemoveApiKeysFromGroupResult(
+            invalidApiKeyIds.Count > 0
+                ? RemoveApiKeysFromGroupResultCode.PartialSuccess
+                : RemoveApiKeysFromGroupResultCode.Success,
+            invalidApiKeyIds.Count > 0
+                ? "Some API key ids were not in group (not found or not a member)"
+                : string.Empty,
+            apiKeysToRemove.Count,
+            invalidApiKeyIds
+        );
+    }
+
     public async Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(
         AssignRolesToGroupRequest request
     )
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var groupEntity = await _groupRepo.GetAsync(g => g.Id == request.GroupId);
+        var groupEntity = await _groupRepo.GetAsync(
+            request.AccountId.ByIdPredicate<GroupEntity>(request.GroupId)
+        );
         if (groupEntity == null)
         {
             _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
@@ -323,7 +449,7 @@ internal class GroupProcessor(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
         var groupEntity = await _groupRepo.GetAsync(
-            g => g.Id == request.GroupId,
+            request.AccountId.ByIdPredicate<GroupEntity>(request.GroupId),
             include: q => q.Include(g => g.Roles).Include(g => g.Users)
         );
 
@@ -445,8 +571,8 @@ internal class GroupProcessor(
             return new ModifyResult(ModifyResultCode.ValidationError, validation.Message);
         }
 
-        var entity = await _groupRepo.GetAsync(e =>
-            e.Id == request.GroupId && e.AccountId == request.AccountId
+        var entity = await _groupRepo.GetAsync(
+            AccountScope.Of(request.AccountId).ByIdPredicate<GroupEntity>(request.GroupId)
         );
         if (entity == null)
         {
@@ -463,11 +589,11 @@ internal class GroupProcessor(
         return new ModifyResult(ModifyResultCode.Success, string.Empty);
     }
 
-    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId, Guid accountId = default)
+    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId, AccountScope accountId)
     {
         var groupEntity = await _groupRepo.GetAsync(
-            g => g.Id == groupId,
-            include: q => q.Include(g => g.Users).Include(g => g.Roles)
+            accountId.ByIdPredicate<GroupEntity>(groupId),
+            include: q => q.Include(g => g.Users).Include(g => g.Roles).Include(g => g.ApiKeys)
         );
         if (groupEntity == null)
         {
@@ -508,6 +634,7 @@ internal class GroupProcessor(
 
         groupEntity.Users?.Clear();
         groupEntity.Roles?.Clear();
+        groupEntity.ApiKeys?.Clear();
 
         await _groupRepo.DeleteAsync(groupEntity);
 
@@ -535,7 +662,7 @@ internal class GroupProcessor(
     public async Task<GetResult<Group>> GetGroupByIdAsync(
         Guid groupId,
         bool hydrate,
-        Guid accountId = default
+        AccountScope accountId
     )
     {
         GroupEntity? groupEntity;
@@ -543,15 +670,13 @@ internal class GroupProcessor(
         if (hydrate)
         {
             groupEntity = await _groupRepo.GetAsync(
-                g => g.Id == groupId && (accountId == default || g.AccountId == accountId),
-                include: q => q.Include(g => g.Users).Include(g => g.Roles)
+                accountId.ByIdPredicate<GroupEntity>(groupId),
+                include: q => q.Include(g => g.Users).Include(g => g.Roles).Include(g => g.ApiKeys)
             );
         }
         else
         {
-            groupEntity = await _groupRepo.GetAsync(g =>
-                g.Id == groupId && (accountId == default || g.AccountId == accountId)
-            );
+            groupEntity = await _groupRepo.GetAsync(accountId.ByIdPredicate<GroupEntity>(groupId));
         }
 
         if (groupEntity == null)
@@ -574,10 +699,9 @@ internal class GroupProcessor(
 
         if (hydrate)
         {
-            group.Users = groupEntity.Users?.Select(u => new ChildRef(u.Id, u.Username)).ToList();
-            group.Roles = groupEntity
-                .Roles?.Select(r => new ChildRef(r.Id, r.Name, r.IsSystemDefined))
-                .ToList();
+            group.Users = groupEntity.Users?.Select(u => u.ToChildRef()).ToList();
+            group.ApiKeys = groupEntity.ApiKeys?.Select(k => k.ToChildRef()).ToList();
+            group.Roles = groupEntity.Roles?.Select(r => r.ToChildRef()).ToList();
         }
 
         return new GetResult<Group>(RetrieveResultCode.Success, string.Empty, group);

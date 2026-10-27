@@ -2,6 +2,9 @@
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Models.Extensions;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.ApiKeys.Models;
+using Corely.IAM.ApiKeys.Models.Extensions;
+using Corely.IAM.ApiKeys.Processors;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Models.Extensions;
@@ -35,6 +38,7 @@ internal class DeregistrationService(
     IAccountProcessor accountProcessor,
     IUserProcessor userProcessor,
     IBasicAuthProcessor basicAuthProcessor,
+    IApiKeyProcessor apiKeyProcessor,
     IUserContextProvider userContextProvider,
     IUserContextSetter userContextSetter,
     IAuthorizationCacheClearer authorizationCacheClearer,
@@ -63,6 +67,9 @@ internal class DeregistrationService(
     );
     private readonly IBasicAuthProcessor _basicAuthProcessor = basicAuthProcessor.ThrowIfNull(
         nameof(basicAuthProcessor)
+    );
+    private readonly IApiKeyProcessor _apiKeyProcessor = apiKeyProcessor.ThrowIfNull(
+        nameof(apiKeyProcessor)
     );
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
@@ -184,6 +191,84 @@ internal class DeregistrationService(
         return new DeregisterRoleResult(DeregisterRoleResultCode.Success, string.Empty);
     }
 
+    public async Task<DeregisterApiKeyResult> DeregisterApiKeyAsync(DeregisterApiKeyRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation("Deregistering API key {ApiKeyId}", request.ApiKeyId);
+
+        var result = await _apiKeyProcessor.DeleteApiKeyAsync(request.ApiKeyId, request.AccountId);
+        if (result.ResultCode != DeleteApiKeyResultCode.Success)
+        {
+            _logger.LogInformation(
+                "Deregistering API key failed for API key id {ApiKeyId}",
+                request.ApiKeyId
+            );
+            return new DeregisterApiKeyResult(
+                result.ResultCode.ToDeregisterApiKeyResultCode(),
+                result.Message
+            );
+        }
+
+        _logger.LogInformation("API key {ApiKeyId} deregistered", request.ApiKeyId);
+        return new DeregisterApiKeyResult(DeregisterApiKeyResultCode.Success, string.Empty);
+    }
+
+    public async Task<DeregisterRolesFromApiKeyResult> DeregisterRolesFromApiKeyAsync(
+        DeregisterRolesFromApiKeyRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Deregistering role ids {@RoleIds} from API key id {ApiKeyId}",
+            request.RoleIds,
+            request.ApiKeyId
+        );
+
+        var result = await _apiKeyProcessor.RemoveRolesFromApiKeyAsync(
+            new(request.RoleIds, request.ApiKeyId, request.AccountId)
+        );
+
+        _logger.LogInformation(
+            "Deregistered {RemovedRoleCount} roles from API key id {ApiKeyId}",
+            result.RemovedRoleCount,
+            request.ApiKeyId
+        );
+        return new DeregisterRolesFromApiKeyResult(
+            result.ResultCode.ToDeregisterRolesFromApiKeyResultCode(),
+            result.Message,
+            result.RemovedRoleCount,
+            result.InvalidRoleIds
+        );
+    }
+
+    public async Task<DeregisterApiKeysFromGroupResult> DeregisterApiKeysFromGroupAsync(
+        DeregisterApiKeysFromGroupRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Deregistering API key ids {@ApiKeyIds} from group id {GroupId}",
+            request.ApiKeyIds,
+            request.GroupId
+        );
+
+        var result = await _groupProcessor.RemoveApiKeysFromGroupAsync(
+            new(request.ApiKeyIds, request.GroupId, request.AccountId)
+        );
+
+        _logger.LogInformation(
+            "Deregistered {RemovedApiKeyCount} API keys from group id {GroupId}",
+            result.RemovedApiKeyCount,
+            request.GroupId
+        );
+        return new DeregisterApiKeysFromGroupResult(
+            result.ResultCode.ToDeregisterApiKeysFromGroupResultCode(),
+            result.Message,
+            result.RemovedApiKeyCount,
+            result.InvalidApiKeyIds
+        );
+    }
+
     public async Task<DeregisterPermissionResult> DeregisterPermissionAsync(
         DeregisterPermissionRequest request
     )
@@ -242,7 +327,7 @@ internal class DeregistrationService(
             );
         }
 
-        if (!context.IsSystemContext && request.UserId == context.User!.Id)
+        if (!context.IsSystemContext && request.UserId == context.User?.Id)
         {
             context.AvailableAccounts.RemoveAll(a => a.Id == accountId);
             _userContextSetter.SetUserContext(context with { CurrentAccount = null });

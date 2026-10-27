@@ -2,6 +2,7 @@ using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Audits.Entities;
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Mappers;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Models.Extensions;

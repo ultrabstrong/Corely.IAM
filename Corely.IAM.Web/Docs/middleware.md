@@ -1,15 +1,16 @@
 # Middleware
 
-`UseIAMWebAuthentication()` registers four middleware components in a specific order. It sets no
+`UseIAMWebAuthentication()` registers five middleware components in a specific order. It sets no
 security headers; see [Security headers](security.md#security-headers).
 
 ## Pipeline Order
 
 ```
 1. CorrelationIdMiddleware
-2. AuthenticationTokenMiddleware
-3. UseAuthentication()
-4. UseAuthorization()
+2. BearerTokenMiddleware
+3. AuthenticationTokenMiddleware
+4. UseAuthentication()
+5. UseAuthorization()
 ```
 
 Order matters: each middleware builds on the previous.
@@ -22,6 +23,12 @@ Assigns a correlation ID for request tracing.
 - If absent, generates a new v7 UUID
 - Sets the header on the response
 - Pushes the ID into Serilog's `LogContext` for structured logging
+
+## BearerTokenMiddleware
+
+Does nothing unless `IAMWebOptions.AcceptBearerTokens` is set. Then a request with an
+`Authorization: Bearer` header is authenticated from that token alone, and the cookie middleware below
+skips it. See [Bearer API](bearer-api.md).
 
 ## AuthenticationTokenMiddleware
 

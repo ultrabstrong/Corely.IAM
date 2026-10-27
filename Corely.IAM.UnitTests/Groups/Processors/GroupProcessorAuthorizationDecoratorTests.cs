@@ -1,8 +1,10 @@
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 
@@ -75,7 +77,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     {
         var request = new AddUsersToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new AddUsersToGroupResult(
             AddUsersToGroupResultCode.Success,
@@ -126,7 +129,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     {
         var request = new AddUsersToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x =>
@@ -148,7 +152,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     {
         var request = new AddUsersToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x =>
@@ -180,7 +185,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     {
         var request = new RemoveUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new RemoveUsersFromGroupResult(
             RemoveUsersFromGroupResultCode.Success,
@@ -231,7 +237,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     {
         var request = new RemoveUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x =>
@@ -253,7 +260,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     {
         var request = new RemoveUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x =>
@@ -285,7 +293,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     {
         var request = new AssignRolesToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new AssignRolesToGroupResult(
             AssignRolesToGroupResultCode.Success,
@@ -336,7 +345,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     {
         var request = new AssignRolesToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x =>
@@ -358,7 +368,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     {
         var request = new AssignRolesToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x =>
@@ -390,7 +401,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     {
         var request = new RemoveRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new RemoveRolesFromGroupResult(
             RemoveRolesFromGroupResultCode.Success,
@@ -441,7 +453,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     {
         var request = new RemoveRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x =>
@@ -463,7 +476,8 @@ public class GroupProcessorAuthorizationDecoratorTests
     {
         var request = new RemoveRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x =>
@@ -499,17 +513,20 @@ public class GroupProcessorAuthorizationDecoratorTests
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Delete, Group.RESOURCE_TYPE, groupId))
             .ReturnsAsync(true);
         _mockInnerProcessor
-            .Setup(x => x.DeleteGroupAsync(groupId, It.IsAny<Guid>()))
+            .Setup(x => x.DeleteGroupAsync(groupId, It.IsAny<AccountScope>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.DeleteGroupAsync(groupId);
+        var result = await _decorator.DeleteGroupAsync(groupId, AccountScope.Any);
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
             x => x.IsAuthorizedAsync(AuthAction.Delete, Group.RESOURCE_TYPE, groupId),
             Times.Once
         );
-        _mockInnerProcessor.Verify(x => x.DeleteGroupAsync(groupId, It.IsAny<Guid>()), Times.Once);
+        _mockInnerProcessor.Verify(
+            x => x.DeleteGroupAsync(groupId, It.IsAny<AccountScope>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -520,11 +537,11 @@ public class GroupProcessorAuthorizationDecoratorTests
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Delete, Group.RESOURCE_TYPE, groupId))
             .ReturnsAsync(false);
 
-        var result = await _decorator.DeleteGroupAsync(groupId);
+        var result = await _decorator.DeleteGroupAsync(groupId, AccountScope.Any);
 
         Assert.Equal(DeleteGroupResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerProcessor.Verify(
-            x => x.DeleteGroupAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
+            x => x.DeleteGroupAsync(It.IsAny<Guid>(), It.IsAny<AccountScope>()),
             Times.Never
         );
     }
@@ -544,7 +561,11 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AssignRolesToGroup_RefusesWithoutCallingInner_ForUncoveredGrant()
     {
-        var request = new AssignRolesToGroupRequest([Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new AssignRolesToGroupRequest(
+            [Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
+            AccountScope.Any
+        );
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>())
@@ -567,7 +588,11 @@ public class GroupProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AddUsersToGroup_RefusesWithoutCallingInner_ForUncoveredGrant()
     {
-        var request = new AddUsersToGroupRequest([Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new AddUsersToGroupRequest(
+            [Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
+            AccountScope.Any
+        );
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>())
@@ -583,6 +608,75 @@ public class GroupProcessorAuthorizationDecoratorTests
         Assert.Equal("Cannot grant permissions you do not hold", result.Message);
         _mockInnerProcessor.Verify(
             x => x.AddUsersToGroupAsync(It.IsAny<AddUsersToGroupRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task AddApiKeysToGroup_NeedsUpdateOnTheGroup_ReadOnTheKeys_AndTheGrant()
+    {
+        var request = new AddApiKeysToGroupRequest(
+            [Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(AuthAction.Update, Group.RESOURCE_TYPE, request.GroupId)
+            )
+            .ReturnsAsync(true);
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(AuthAction.Read, ApiKey.RESOURCE_TYPE, It.IsAny<Guid[]>())
+            )
+            .ReturnsAsync(true);
+
+        await _decorator.AddApiKeysToGroupAsync(request);
+
+        _mockInnerProcessor.Verify(x => x.AddApiKeysToGroupAsync(request), Times.Once);
+        _mockAuthorizationProvider.Verify(x => x.CanGrantGroupAsync(request.GroupId), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddApiKeysToGroup_ReturnsUnauthorized_WhenTheCallerCannotGrantTheGroup()
+    {
+        var request = new AddApiKeysToGroupRequest(
+            [Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7()
+        );
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>())
+            )
+            .ReturnsAsync(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.CanGrantGroupAsync(request.GroupId))
+            .ReturnsAsync(false);
+
+        var result = await _decorator.AddApiKeysToGroupAsync(request);
+
+        Assert.Equal(AddApiKeysToGroupResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerProcessor.Verify(
+            x => x.AddApiKeysToGroupAsync(It.IsAny<AddApiKeysToGroupRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task RemoveApiKeysFromGroup_ReturnsUnauthorized_WithoutUpdateOnTheGroup()
+    {
+        var result = await _decorator.RemoveApiKeysFromGroupAsync(
+            new RemoveApiKeysFromGroupRequest(
+                [Guid.CreateVersion7()],
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7()
+            )
+        );
+
+        Assert.Equal(RemoveApiKeysFromGroupResultCode.UnauthorizedError, result.ResultCode);
+        _mockInnerProcessor.Verify(
+            x => x.RemoveApiKeysFromGroupAsync(It.IsAny<RemoveApiKeysFromGroupRequest>()),
             Times.Never
         );
     }

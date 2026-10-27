@@ -51,8 +51,7 @@ internal partial class Registration : CommandBase
 
         private async Task RegisterUserWithAccountAsync()
         {
-            if (!await SetUserContextFromAuthTokenFileAsync(_authenticationService))
-                return;
+            _authenticationService.AuthenticateAsSystem("devtools");
 
             var request =
                 SampleJsonFileHelper.ReadMultipleRequestJson<RegisterUserWithAccountRequest>(

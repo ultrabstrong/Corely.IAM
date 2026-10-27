@@ -29,6 +29,11 @@ public class FakeIamWebLinks : IIamWebLinks
     public string Permission(Guid accountId, Guid permissionId) =>
         $"{PREFIX}/permission/{accountId}/{permissionId}";
 
+    public string ApiKeys(Guid accountId) => $"{PREFIX}/api-keys/{accountId}";
+
+    public string ApiKey(Guid accountId, Guid apiKeyId) =>
+        $"{PREFIX}/api-key/{accountId}/{apiKeyId}";
+
     public string Audit(Guid accountId) => $"{PREFIX}/audit/{accountId}";
 
     public string AuditEntry(Guid accountId, Guid entryId) =>

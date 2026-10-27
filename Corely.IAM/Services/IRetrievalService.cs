@@ -1,4 +1,5 @@
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
@@ -24,6 +25,10 @@ public interface IRetrievalService
     Task<RetrieveListResult<Role>> ListRolesAsync(ListRolesRequest request);
 
     Task<RetrieveSingleResult<Role>> GetRoleAsync(Guid roleId, bool hydrate = false);
+
+    Task<RetrieveListResult<ApiKey>> ListApiKeysAsync(ListApiKeysRequest request);
+
+    Task<RetrieveSingleResult<ApiKey>> GetApiKeyAsync(Guid apiKeyId, bool hydrate = false);
 
     Task<RetrieveListResult<User>> ListUsersAsync(ListUsersRequest request);
 

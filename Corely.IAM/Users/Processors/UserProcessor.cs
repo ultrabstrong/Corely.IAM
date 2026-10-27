@@ -1,8 +1,12 @@
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.Accounts.Mappers;
+using Corely.IAM.Groups.Mappers;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Roles.Mappers;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Mappers;
@@ -259,6 +263,7 @@ internal class UserProcessor(
             request.RoleIds.Contains(r.Id)
             && !r.Users!.Any(u => u.Id == request.UserId)
             && accountIds.Contains(r.AccountId)
+            && (request.AccountId.IsAny || r.AccountId == request.AccountId.Id)
         );
 
         if (roleEntities.Count == 0)
@@ -335,7 +340,13 @@ internal class UserProcessor(
         }
 
         var rolesToRemove =
-            userEntity.Roles?.Where(r => request.RoleIds.Contains(r.Id)).ToList() ?? [];
+            userEntity
+                .Roles?.Where(r =>
+                    request.RoleIds.Contains(r.Id)
+                    && (request.AccountId.IsAny || r.AccountId == request.AccountId.Id)
+                )
+                .ToList()
+            ?? [];
 
         if (rolesToRemove.Count == 0)
         {
@@ -509,13 +520,13 @@ internal class UserProcessor(
     public async Task<GetResult<User>> GetUserByIdAsync(
         Guid userId,
         bool hydrate,
-        Guid accountId = default
+        AccountScope accountId
     )
     {
         UserEntity? userEntity;
 
-        var currentAccountId =
-            accountId != default ? accountId
+        Guid? currentAccountId =
+            !accountId.IsAny ? accountId.Id
             : hydrate ? _userContextProvider.GetUserContext()?.CurrentAccount?.Id
             : null;
 
@@ -524,7 +535,7 @@ internal class UserProcessor(
             userEntity = await _userRepo.GetAsync(
                 u =>
                     u.Id == userId
-                    && (accountId == default || u.Accounts!.Any(a => a.Id == accountId)),
+                    && (accountId.IsAny || u.Accounts!.Any(a => a.Id == accountId.Id)),
                 include: currentAccountId == null
                     ? q => q.Include(u => u.Accounts).Include(u => u.Groups).Include(u => u.Roles)
                     : q =>
@@ -536,7 +547,7 @@ internal class UserProcessor(
         else
         {
             userEntity = await _userRepo.GetAsync(u =>
-                u.Id == userId && (accountId == default || u.Accounts!.Any(a => a.Id == accountId))
+                u.Id == userId && (accountId.IsAny || u.Accounts!.Any(a => a.Id == accountId.Id))
             );
         }
 
@@ -554,16 +565,14 @@ internal class UserProcessor(
 
         if (hydrate)
         {
-            user.Accounts = userEntity
-                .Accounts?.Select(a => new ChildRef(a.Id, a.AccountName))
-                .ToList();
+            user.Accounts = userEntity.Accounts?.Select(a => a.ToChildRef()).ToList();
             user.Groups = userEntity
                 .Groups?.Where(g => currentAccountId == null || g.AccountId == currentAccountId)
-                .Select(g => new ChildRef(g.Id, g.Name))
+                .Select(g => g.ToChildRef())
                 .ToList();
             user.Roles = userEntity
                 .Roles?.Where(r => currentAccountId == null || r.AccountId == currentAccountId)
-                .Select(r => new ChildRef(r.Id, r.Name, r.IsSystemDefined))
+                .Select(r => r.ToChildRef())
                 .ToList();
         }
 

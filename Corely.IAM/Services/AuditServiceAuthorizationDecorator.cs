@@ -1,4 +1,5 @@
 using Corely.Common.Extensions;
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Models;

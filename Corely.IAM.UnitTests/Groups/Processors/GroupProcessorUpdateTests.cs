@@ -1,11 +1,13 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
@@ -38,6 +40,7 @@ public class GroupProcessorUpdateTests
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<RoleEntity>>(),
+            _serviceFactory.GetRequiredService<IReadonlyRepo<ApiKeyEntity>>(),
             _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
@@ -74,7 +77,7 @@ public class GroupProcessorUpdateTests
 
         Assert.Equal(ModifyResultCode.Success, result.ResultCode);
 
-        var getResult = await _groupProcessor.GetGroupByIdAsync(group.Id, false);
+        var getResult = await _groupProcessor.GetGroupByIdAsync(group.Id, false, AccountScope.Any);
         Assert.NotNull(getResult.Data);
         Assert.Equal("UpdatedName", getResult.Data.Name);
         Assert.Equal("UpdatedDesc", getResult.Data.Description);

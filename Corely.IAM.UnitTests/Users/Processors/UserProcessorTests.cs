@@ -6,6 +6,7 @@ using Corely.IAM.Groups.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
@@ -380,7 +381,7 @@ public class UserProcessorTests
     [Fact]
     public async Task AssignRolesToUser_Fails_WhenUserDoesNotExist()
     {
-        var request = new AssignRolesToUserRequest([], Guid.CreateVersion7());
+        var request = new AssignRolesToUserRequest([], Guid.CreateVersion7(), AccountScope.Any);
         var result = await _userProcessor.AssignRolesToUserAsync(request);
         Assert.Equal(AssignRolesToUserResultCode.UserNotFoundError, result.ResultCode);
     }
@@ -389,7 +390,7 @@ public class UserProcessorTests
     public async Task AssignRolesToUser_Fails_WhenRolesNotProvided()
     {
         var (user, _) = await CreateUserAsync();
-        var request = new AssignRolesToUserRequest([], user.Id);
+        var request = new AssignRolesToUserRequest([], user.Id, AccountScope.Any);
 
         var result = await _userProcessor.AssignRolesToUserAsync(request);
 
@@ -401,7 +402,7 @@ public class UserProcessorTests
     {
         var (user, account) = await CreateUserAsync();
         var role = await CreateRoleAsync(account.Id);
-        var request = new AssignRolesToUserRequest([role.Id], user.Id);
+        var request = new AssignRolesToUserRequest([role.Id], user.Id, AccountScope.Any);
 
         var result = await _userProcessor.AssignRolesToUserAsync(request);
 
@@ -424,7 +425,11 @@ public class UserProcessorTests
         var (user, account) = await CreateUserAsync();
         var existingRole = await CreateRoleAsync(account.Id, user.Id);
         var newRole = await CreateRoleAsync(account.Id);
-        var request = new AssignRolesToUserRequest([existingRole.Id, newRole.Id], user.Id);
+        var request = new AssignRolesToUserRequest(
+            [existingRole.Id, newRole.Id],
+            user.Id,
+            AccountScope.Any
+        );
 
         var result = await _userProcessor.AssignRolesToUserAsync(request);
 
@@ -440,7 +445,11 @@ public class UserProcessorTests
         var (user, account) = await CreateUserAsync();
         var role = await CreateRoleAsync(account.Id);
         var invalidRoleId = Guid.CreateVersion7();
-        var request = new AssignRolesToUserRequest([role.Id, invalidRoleId], user.Id);
+        var request = new AssignRolesToUserRequest(
+            [role.Id, invalidRoleId],
+            user.Id,
+            AccountScope.Any
+        );
 
         var result = await _userProcessor.AssignRolesToUserAsync(request);
 
@@ -458,7 +467,8 @@ public class UserProcessorTests
         var roleDifferentAccount = await CreateRoleAsync(Guid.CreateVersion7());
         var request = new AssignRolesToUserRequest(
             [roleSameAccount.Id, roleDifferentAccount.Id],
-            user.Id
+            user.Id,
+            AccountScope.Any
         );
 
         var result = await _userProcessor.AssignRolesToUserAsync(request);
@@ -478,7 +488,7 @@ public class UserProcessorTests
             (await CreateRoleAsync(account.Id, user.Id)).Id,
             (await CreateRoleAsync(account.Id, user.Id)).Id,
         };
-        var request = new AssignRolesToUserRequest(roleIds, user.Id);
+        var request = new AssignRolesToUserRequest(roleIds, user.Id, AccountScope.Any);
 
         var result = await _userProcessor.AssignRolesToUserAsync(request);
 
@@ -492,7 +502,7 @@ public class UserProcessorTests
     {
         var (user, _) = await CreateUserAsync();
         var roleIds = _fixture.CreateMany<Guid>().ToList();
-        var request = new AssignRolesToUserRequest(roleIds, user.Id);
+        var request = new AssignRolesToUserRequest(roleIds, user.Id, AccountScope.Any);
 
         var result = await _userProcessor.AssignRolesToUserAsync(request);
 
@@ -510,7 +520,7 @@ public class UserProcessorTests
             (await CreateRoleAsync(Guid.CreateVersion7())).Id,
             (await CreateRoleAsync(Guid.CreateVersion7())).Id,
         };
-        var request = new AssignRolesToUserRequest(roleIds, user.Id);
+        var request = new AssignRolesToUserRequest(roleIds, user.Id, AccountScope.Any);
 
         var result = await _userProcessor.AssignRolesToUserAsync(request);
 
@@ -597,7 +607,8 @@ public class UserProcessorTests
     {
         var request = new RemoveRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
 
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
@@ -616,7 +627,7 @@ public class UserProcessorTests
         user!.Roles = [role!];
         await userRepo.UpdateAsync(user);
 
-        var request = new RemoveRolesFromUserRequest([role.Id], user.Id);
+        var request = new RemoveRolesFromUserRequest([role.Id], user.Id, AccountScope.Any);
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
         Assert.Equal(RemoveRolesFromUserResultCode.Success, result.ResultCode);
@@ -642,7 +653,7 @@ public class UserProcessorTests
         user1!.Roles = [ownerRole!];
         await userRepo.UpdateAsync(user1);
 
-        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], user1.Id);
+        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], user1.Id, AccountScope.Any);
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
         Assert.Equal(RemoveRolesFromUserResultCode.Success, result.ResultCode);
@@ -671,7 +682,7 @@ public class UserProcessorTests
         user!.Roles = [ownerRole!];
         await userRepo.UpdateAsync(user);
 
-        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], user.Id);
+        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], user.Id, AccountScope.Any);
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
         Assert.Equal(RemoveRolesFromUserResultCode.Success, result.ResultCode);
@@ -694,7 +705,7 @@ public class UserProcessorTests
         user!.Roles = [ownerRole!];
         await userRepo.UpdateAsync(user);
 
-        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], user.Id);
+        var request = new RemoveRolesFromUserRequest([ownerRole!.Id], user.Id, AccountScope.Any);
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
         Assert.Equal(RemoveRolesFromUserResultCode.UserIsSoleOwnerError, result.ResultCode);
@@ -719,7 +730,11 @@ public class UserProcessorTests
         user!.Roles = [ownerRole!, regularRole!];
         await userRepo.UpdateAsync(user);
 
-        var request = new RemoveRolesFromUserRequest([ownerRole!.Id, regularRole.Id], user.Id);
+        var request = new RemoveRolesFromUserRequest(
+            [ownerRole!.Id, regularRole.Id],
+            user.Id,
+            AccountScope.Any
+        );
         var result = await _userProcessor.RemoveRolesFromUserAsync(request);
 
         Assert.Equal(RemoveRolesFromUserResultCode.PartialSuccess, result.ResultCode);

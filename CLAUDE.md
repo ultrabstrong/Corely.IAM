@@ -305,16 +305,39 @@ Service decorators use `IsNonSystemUserContext()` for "self" operations (MFA, pa
 
 ### Domain Structure
 
-Each domain (Accounts, Users, BasicAuths, Groups, Roles, Permissions) follows a consistent folder layout:
+Each domain (Accounts, Users, BasicAuths, Groups, Roles, Permissions, ApiKeys) follows a consistent folder layout:
 
 ```
 Domain/
 ├── Entities/         # EF Core entities
+├── Enums/            # Enums that are not result codes
 ├── Models/           # Request/response/domain models
+│   └── Extensions/   # Result code conversions to the service result codes
 ├── Processors/       # Business logic + authorization/telemetry decorators
 ├── Mappers/          # Entity ↔ Model mapping
 └── Validators/       # FluentValidation rules
 ```
+
+### Adding a resource type
+
+A new resource is built to the same shape as Roles, Groups and ApiKeys, end to end. Before writing a
+layer, open the same file in a sibling domain and match it. A feature that seems to need its own
+service, naming or layout is a question for the owner, asked before it is built, never a choice made
+on the way.
+
+| Layer | Shape |
+|-------|-------|
+| Type | `X.RESOURCE_TYPE` and field limits on the model, registered in `ResourceTypeRegistry` with its owner actions |
+| Entity | Plain data with an `XEntityConfiguration`. Many to many through `JoinEntities.cs`, cleared before a delete |
+| Mapper | `CreateXRequest.ToX()`, `X.ToEntity()`, `XEntity.ToModel()`, `XEntity.ToChildRef()`. No `new ChildRef(...)` outside a mapper |
+| Validator | `XValidator` on the model, `UpdateXRequestValidator` on the update; limits read from the model |
+| Processor | `CreateXAsync(CreateXRequest)`, `UpdateXAsync(UpdateXRequest)`, `DeleteXAsync(Guid id, AccountScope accountId)`, `GetXByIdAsync(Guid id, bool hydrate, AccountScope accountId)`, `ListXAsync(ListXRequest, IReadOnlySet<Guid>? authorizedResourceIds = null)`. Its requests and results are internal; a result code enum is public only when a service result carries it |
+| Decorators | `XProcessorAuthorizationDecorator`: account context, CRUDX on the type and the ids, `CanGrant*` when handing something out. `XProcessorTelemetryDecorator`: `logResult: false` when the result carries a secret or token |
+| Services | No service per resource. `RegisterXAsync` and `RegisterYWithXAsync` on `IRegistrationService`, `ModifyXAsync` on `IModificationService`, `DeregisterXAsync` and `DeregisterYFromXAsync` on `IDeregistrationService`, `ListXAsync` and `GetXAsync(Guid id, bool hydrate = false)` on `IRetrievalService`, each with its method in all of that service's decorators. The public `RegisterXRequest`/`RegisterXResult` and the rest live in `Corely.IAM/Models`, ids first and `AccountId` after |
+| Result codes | A processor code becomes the service code through `<ProcessorCode>Extensions.To<ServiceCode>()` in the domain's `Models/Extensions` |
+| Membership | On the side the existing ones use: roles on the holder (`AssignRolesToUserAsync`), members on the group (`AddUsersToGroupAsync`). Partial success reports the count and the invalid ids |
+| Web | `XList` and `XDetail`, `IIamWebLinks.Xs` and `X`, a WebApp shell per component, a navigation item gated on Read, one icon used on every page that shows the type, and `Docs/components/x.md` |
+| Tests | Unit: `XProcessorTests`, `XProcessorAuthorizationDecoratorTests`, `XProcessorTelemetryDecoratorTests`, mapper tests. Integration: what only EF can prove. Functional: HTTP only |
 
 ### Data Layer
 
@@ -339,6 +362,16 @@ New services go in `Services/` with an interface, registered in `ServiceRegistra
 - Always use `ISymmetricEncryptedValue` or `IAsymmetricEncryptedValue` — never store decrypted values as strings
 - CRUDX permission model (Create, Read, Update, Delete, Execute). Every permission names exactly one resource type; there is no wildcard type. `ResourceId == Guid.Empty` covers all resources of that type
 - The Owner role gets one system-defined permission per type with owner actions, declared in `RegisterResourceType(name, description, params AuthAction[] ownerActions)`; the five IAM types carry all five actions. System-defined permissions cannot be deleted or detached from the Owner role
+- **Every processor lookup of a row by id is scoped to the account the call names.** Account owned
+  entities implement `IAccountOwnedEntity`, and a by-id lookup of one is
+  `scope.ByIdPredicate<TEntity>(id)`; a filter inside a larger query is
+  `(scope.IsAny || e.AccountId == scope.Id)`. The scope is an `AccountScope`, required wherever a
+  processor takes one. `AccountScope.Of(id)` matches that account only, and an empty or default scope
+  matches nothing. `AccountScope.Any` comes only from `UserContext.CurrentAccountScope` in system
+  context with no current account. Authorization matches resource ids against the caller's
+  permissions, and a wildcard permission matches any id in any account, so the scoped lookup is what
+  keeps the owner of one account out of another account's rows. `CrossAccountCoverageTests` attacks
+  every public service method and fails when a new one has neither a case nor a reasoned exemption
 - Granting is bounded: creating a permission, attaching permissions to a role, assigning roles to a user or group, and adding users to a group are refused unless the caller holds everything handed out (`IAuthorizationProvider.CanGrant*`, called from the processor authorization decorators). System context bypasses it
 - Platform account: one account flagged `IsPlatformAccount`, created only by `corely-iam-db platform bootstrap`. A member's permissions there are added to their permissions in whatever account they act in (`AuthorizationProvider` loads both), and Account Read there lets them switch into any account (`IPlatformAccessProvider`). A hosted service gives its Owner role full access on every registered type at startup. See `Corely.IAM/Docs/platform.md`
 - Security settings (password rules, lockout, token lifetimes, two factor) are one `SecurityPolicy`, read through `ISecurityPolicyProvider`: the platform account's saved row when it exists, `SecurityOptions` and `PasswordValidationOptions` configuration otherwise. Never read those values from `IOptions<SecurityOptions>`. Every setting has a range in constants on `SecurityPolicy`, checked by `SecurityPolicyValidator` in `AddIAMServices` (so no host can run on out of range configuration, started or not), on bootstrap and on save; a setting added to the model goes on the entity too, and `PlatformSecuritySettingsMapperTests` fails until it does

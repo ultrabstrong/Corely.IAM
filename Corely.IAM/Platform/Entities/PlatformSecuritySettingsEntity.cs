@@ -21,6 +21,10 @@ internal class PlatformSecuritySettingsEntity : IHasCreatedUtc, IHasModifiedUtc
     public int RefreshReuseGraceSeconds { get; set; }
     public int MfaChallengeTimeoutSeconds { get; set; }
     public int TotpRecoveryCodeCount { get; set; }
+    public bool ApiKeysEnabled { get; set; }
+    public bool PlatformAccountApiKeysEnabled { get; set; }
+    public int ApiKeyMaxLifetimeDays { get; set; }
+    public string ApiKeyResourceTypes { get; set; } = string.Empty;
     public DateTime CreatedUtc { get; set; }
     public DateTime? ModifiedUtc { get; set; }
 }

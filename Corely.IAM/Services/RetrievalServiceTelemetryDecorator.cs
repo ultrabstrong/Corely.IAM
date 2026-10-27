@@ -1,5 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Extensions;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
@@ -74,6 +75,25 @@ internal class RetrievalServiceTelemetryDecorator(
             nameof(RetrievalService),
             new { roleId, hydrate },
             () => _inner.GetRoleAsync(roleId, hydrate),
+            logResult: true
+        );
+
+    public async Task<RetrieveListResult<ApiKey>> ListApiKeysAsync(ListApiKeysRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            request,
+            () => _inner.ListApiKeysAsync(request),
+            logResult: true
+        );
+
+    public async Task<RetrieveSingleResult<ApiKey>> GetApiKeyAsync(
+        Guid apiKeyId,
+        bool hydrate = false
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            new { apiKeyId, hydrate },
+            () => _inner.GetApiKeyAsync(apiKeyId, hydrate),
             logResult: true
         );
 

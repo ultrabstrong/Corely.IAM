@@ -1,5 +1,6 @@
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
+using Corely.IAM.Invitations.Enums;
 
 namespace Corely.IAM.Invitations.Models;
 

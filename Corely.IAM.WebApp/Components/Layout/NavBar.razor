@@ -18,8 +18,12 @@
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="@WebAppRoutes.Users(_accountId)"><i class="bi bi-people me-2"></i>Users</a></li>
                             <li><a class="dropdown-item" href="@WebAppRoutes.Groups(_accountId)"><i class="bi bi-diagram-3 me-2"></i>Groups</a></li>
-                            <li><a class="dropdown-item" href="@WebAppRoutes.Roles(_accountId)"><i class="bi bi-shield-check me-2"></i>Roles</a></li>
-                            <li><a class="dropdown-item" href="@WebAppRoutes.Permissions(_accountId)"><i class="bi bi-key me-2"></i>Permissions</a></li>
+                            <li><a class="dropdown-item" href="@WebAppRoutes.Roles(_accountId)"><i class="bi bi-shield me-2"></i>Roles</a></li>
+                            <li><a class="dropdown-item" href="@WebAppRoutes.Permissions(_accountId)"><i class="bi bi-patch-check me-2"></i>Permissions</a></li>
+                            @if (_canSeeApiKeys)
+                            {
+                                <li><a class="dropdown-item" href="@WebAppRoutes.ApiKeys(_accountId)"><i class="bi bi-key me-2"></i>API keys</a></li>
+                            }
                         </ul>
                     </li>
                 </ul>
@@ -85,6 +89,7 @@
     private bool _isAuthenticated;
     private bool _hasAccount;
     private bool _canOpenPlatformSettings;
+    private bool _canSeeApiKeys;
     private bool _hasAnyAccounts;
     private bool _hasMultipleAccounts;
     private Guid _accountId;
@@ -101,6 +106,7 @@
         _canOpenPlatformSettings =
             context?.CurrentAccount?.IsPlatformAccount == true
             && (await IamWebOptions.Value.ReadablePlatformSettingsPagesAsync(AuthorizationProvider)).Count > 0;
+        await RefreshApiKeysVisibilityAsync();
         var enterableAccounts = _isAuthenticated ? await CountEnterableAccountsAsync() : 0;
         _hasAnyAccounts = enterableAccounts > 0;
         _hasMultipleAccounts = enterableAccounts > 1;
@@ -108,6 +114,26 @@
         _username = context?.User?.Username;
         _accountName = context?.CurrentAccount?.AccountName;
         AccountDisplayState.OnChanged += OnAccountNameChanged;
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private async Task RefreshApiKeysVisibilityAsync()
+    {
+        var account = (await BlazorUserContextAccessor.GetUserContextAsync())?.CurrentAccount;
+        _canSeeApiKeys =
+            account != null
+            && (await ScopedServices.GetRequiredService<ISecurityPolicyProvider>().GetPolicyAsync())
+                .AllowsApiKeysIn(account.IsPlatformAccount)
+            && await AuthorizationProvider.IsAuthorizedAsync(AuthAction.Read, ApiKey.RESOURCE_TYPE);
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        InvokeAsync(async () =>
+        {
+            await RefreshApiKeysVisibilityAsync();
+            StateHasChanged();
+        });
     }
 
     private async Task<int> CountEnterableAccountsAsync()
@@ -124,6 +150,7 @@
     protected override void Dispose(bool disposing)
     {
         AccountDisplayState.OnChanged -= OnAccountNameChanged;
+        NavigationManager.LocationChanged -= OnLocationChanged;
         base.Dispose(disposing);
     }
 }

@@ -59,7 +59,7 @@ public class SessionLifecycleTests : IAsyncLifetime
         var second = await RenewAsync(first.RefreshToken!);
 
         var rows = await _scenario.Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking()
+            db.AuthTokens.AsNoTracking()
                 .Where(t => t.UserId == _scenario.DirectMemberUserId && t.DeviceId == "device-a")
                 .OrderBy(t => t.IssuedUtc)
                 .ToListAsync()
@@ -109,7 +109,7 @@ public class SessionLifecycleTests : IAsyncLifetime
         Assert.Equal(SignInResultCode.Success, switched.result.ResultCode);
         Assert.Equal(RenewAuthTokenResultCode.RefreshTokenReusedError, oldRefresh.ResultCode);
         var sessions = await _scenario.Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking()
+            db.AuthTokens.AsNoTracking()
                 .Where(t => t.UserId == _scenario.DirectMemberUserId && t.DeviceId == "device-a")
                 .Select(t => t.SessionId)
                 .Distinct()
@@ -133,7 +133,7 @@ public class SessionLifecycleTests : IAsyncLifetime
         Assert.Equal(DeleteExpiredAuthTokensResultCode.Success, result.ResultCode);
         Assert.True(result.DeletedCount >= 1);
         var remaining = await _scenario.Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking()
+            db.AuthTokens.AsNoTracking()
                 .Where(t => t.UserId == _scenario.DirectMemberUserId)
                 .Select(t => t.Id)
                 .ToListAsync()
@@ -163,7 +163,7 @@ public class SessionLifecycleTests : IAsyncLifetime
 
     private Task<int> ActiveRowCountAsync(string deviceId) =>
         _scenario.Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking()
+            db.AuthTokens.AsNoTracking()
                 .CountAsync(t =>
                     t.UserId == _scenario.DirectMemberUserId
                     && t.DeviceId == deviceId

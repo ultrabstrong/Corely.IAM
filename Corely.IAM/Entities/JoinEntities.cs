@@ -24,6 +24,18 @@ internal class GroupRole
     public Guid RolesId { get; set; }
 }
 
+internal class ApiKeyGroup
+{
+    public Guid ApiKeysId { get; set; }
+    public Guid GroupsId { get; set; }
+}
+
+internal class ApiKeyRole
+{
+    public Guid ApiKeysId { get; set; }
+    public Guid RolesId { get; set; }
+}
+
 internal class RolePermission
 {
     public Guid RolesId { get; set; }

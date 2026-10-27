@@ -29,6 +29,11 @@ public static class WebAppRoutes
 
     public static string Permissions(Guid accountId) => $"{Account(accountId)}/permissions";
 
+    public static string ApiKeys(Guid accountId) => $"{Account(accountId)}/api-keys";
+
+    public static string ApiKey(Guid accountId, Guid apiKeyId) =>
+        $"{ApiKeys(accountId)}/{apiKeyId}";
+
     public static string Permission(Guid accountId, Guid permissionId) =>
         $"{Permissions(accountId)}/{permissionId}";
 

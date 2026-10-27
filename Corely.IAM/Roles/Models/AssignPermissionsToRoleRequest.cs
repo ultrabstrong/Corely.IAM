@@ -1,7 +1,9 @@
+using Corely.IAM.Security.Models;
+
 namespace Corely.IAM.Roles.Models;
 
 internal record AssignPermissionsToRoleRequest(
     List<Guid> PermissionIds,
     Guid RoleId,
-    Guid AccountId = default
+    AccountScope AccountId
 );

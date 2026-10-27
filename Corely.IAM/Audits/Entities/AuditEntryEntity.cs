@@ -1,3 +1,4 @@
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Security.Enums;
 
@@ -10,6 +11,7 @@ internal class AuditEntryEntity
     public Guid Id { get; set; }
     public DateTime OccurredUtc { get; set; }
     public Guid? ActorUserId { get; set; }
+    public Guid? ActorApiKeyId { get; set; }
     public AuditCohort Cohort { get; set; }
     public Guid? AccountId { get; set; }
     public string Source { get; set; } = null!;

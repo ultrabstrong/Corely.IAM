@@ -56,6 +56,17 @@ internal class RegistrationServiceAuthorizationDecorator(
         RegisterRolesWithUserRequest request
     ) => await _inner.RegisterRolesWithUserAsync(request);
 
+    public async Task<RegisterApiKeyResult> RegisterApiKeyAsync(RegisterApiKeyRequest request) =>
+        await _inner.RegisterApiKeyAsync(request);
+
+    public async Task<RegisterRolesWithApiKeyResult> RegisterRolesWithApiKeyAsync(
+        RegisterRolesWithApiKeyRequest request
+    ) => await _inner.RegisterRolesWithApiKeyAsync(request);
+
+    public async Task<RegisterApiKeysWithGroupResult> RegisterApiKeysWithGroupAsync(
+        RegisterApiKeysWithGroupRequest request
+    ) => await _inner.RegisterApiKeysWithGroupAsync(request);
+
     public async Task<RegisterPermissionsWithRoleResult> RegisterPermissionsWithRoleAsync(
         RegisterPermissionsWithRoleRequest request
     ) => await _inner.RegisterPermissionsWithRoleAsync(request);

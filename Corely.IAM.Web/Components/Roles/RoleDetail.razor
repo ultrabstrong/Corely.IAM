@@ -116,6 +116,24 @@ else
                         OnPageChanged="newSkip => { _permissionsSkip = newSkip; StateHasChanged(); }" />
         </div>
 
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">Users</div>
+            @HolderTable(_role.Users, "No users hold this role", id => Links.User(CurrentAccountId, id))
+        </div>
+
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">Groups</div>
+            @HolderTable(_role.Groups, "No groups hold this role", id => Links.Group(CurrentAccountId, id))
+        </div>
+
+        @if (_showApiKeys)
+        {
+            <div class="section-divider mb-4">
+                <div class="section-divider-label">API keys</div>
+                @HolderTable(_role.ApiKeys, "No API keys hold this role", id => Links.ApiKey(CurrentAccountId, id))
+            </div>
+        }
+
         <EffectivePermissionsPanel AccountId="CurrentAccountId" Permissions="_effectivePermissions" UseCard="false" />
 
     </div>
@@ -138,7 +156,10 @@ else
     private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
     private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
 
+    private ISecurityPolicyProvider SecurityPolicyProvider => ScopedServices.GetRequiredService<ISecurityPolicyProvider>();
+
     private Role? _role;
+    private bool _showApiKeys;
     private string _editName = string.Empty;
     private string? _editDescription;
     private string _originalName = string.Empty;
@@ -167,6 +188,8 @@ else
             _assignedPermissionIds = (_role.Permissions ?? []).Select(p => p.Id).ToHashSet();
             _hiddenPermissionIds = [.. _assignedPermissionIds];
             _effectivePermissions = result.EffectivePermissions;
+            _showApiKeys = (await SecurityPolicyProvider.GetPolicyAsync()).AllowsApiKeysIn(UserContext?.CurrentAccount?.IsPlatformAccount == true)
+                && await AuthorizationProvider.IsAuthorizedAsync(AuthAction.Read, ApiKey.RESOURCE_TYPE);
         }
     }
 
@@ -176,7 +199,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterRoleAsync(new DeregisterRoleRequest(Id, UserContext!.CurrentAccount!.Id));
+            var result = await DeregistrationService.DeregisterRoleAsync(new DeregisterRoleRequest(Id, CurrentAccountId));
             if (result.ResultCode == DeregisterRoleResultCode.Success)
             {
                 NavigationManager.NavigateTo(Links.Roles(CurrentAccountId));
@@ -202,7 +225,7 @@ else
 
     private async Task<(List<PickerItem>, int)> FetchAvailablePermissionsAsync(int skip, int take)
     {
-        var result = await RetrievalService.ListPermissionsAsync(new ListPermissionsRequest(UserContext!.CurrentAccount!.Id, Skip: skip, Take: take));
+        var result = await RetrievalService.ListPermissionsAsync(new ListPermissionsRequest(CurrentAccountId, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             var grantable = await AuthorizationProvider.GetGrantablePermissionIdsAsync(result.Data.Items.Select(x => x.Id));
@@ -220,7 +243,7 @@ else
         if (string.IsNullOrWhiteSpace(_editName)) return;
         await ExecuteSafeAsync(async () =>
         {
-            var result = await ModificationService.ModifyRoleAsync(new UpdateRoleRequest(Id, UserContext!.CurrentAccount!.Id, _editName, _editDescription));
+            var result = await ModificationService.ModifyRoleAsync(new UpdateRoleRequest(Id, CurrentAccountId, _editName, _editDescription));
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Role updated.", result.Message);
             if (result.ResultCode == ModifyResultCode.Success)
             {
@@ -234,7 +257,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.RegisterPermissionsWithRoleAsync(new RegisterPermissionsWithRoleRequest(permissionIds, Id, UserContext!.CurrentAccount!.Id));
+            var result = await RegistrationService.RegisterPermissionsWithRoleAsync(new RegisterPermissionsWithRoleRequest(permissionIds, Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == AssignPermissionsToRoleResultCode.Success, $"{permissionIds.Count} permission(s) added.", result.Message);
             await ReloadAsync();
         });
@@ -246,9 +269,34 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterPermissionsFromRoleAsync(new DeregisterPermissionsFromRoleRequest([_confirmItemId], Id, UserContext!.CurrentAccount!.Id));
+            var result = await DeregistrationService.DeregisterPermissionsFromRoleAsync(new DeregisterPermissionsFromRoleRequest([_confirmItemId], Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterPermissionsFromRoleResultCode.Success, "Permission removed.", result.Message);
             await ReloadAsync();
         });
     }
+
+    private static RenderFragment HolderTable(List<ChildRef>? holders, string empty, Func<Guid, string> link) =>
+        @<table class="table table-striped table-hover table-cards mb-0">
+            <thead class="list-head"><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+            <tbody>
+                @if (holders == null || holders.Count == 0)
+                {
+                    <tr><td colspan="2" class="text-muted text-center">@empty</td></tr>
+                }
+                else
+                {
+                    @foreach (var holder in holders)
+                    {
+                        <tr>
+                            <td class="cell-title">@holder.Name<br /><CopyableId Value="holder.Id" /></td>
+                            <td class="table-actions cell-actions">
+                                <div class="row-actions">
+                                    <a href="@link(holder.Id)" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>;
 }

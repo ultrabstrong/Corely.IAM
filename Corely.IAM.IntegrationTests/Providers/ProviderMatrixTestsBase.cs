@@ -1,3 +1,4 @@
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.DataAccess;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
@@ -97,7 +98,7 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
         });
 
         var active = await Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking()
+            db.AuthTokens.AsNoTracking()
                 .CountAsync(t => t.UserId == _ownerUserId && t.RevokedUtc == null)
         );
 
@@ -138,7 +139,7 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
     {
         var exception = await Record.ExceptionAsync(() =>
             Host.QueryAsync(db =>
-                db.UserAuthTokens.AsNoTracking()
+                db.AuthTokens.AsNoTracking()
                     .Where(t => t.AccountId == _accountId && t.RevokedUtc == null)
                     .ToListAsync()
             )
@@ -157,7 +158,7 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
 
         Assert.Equal(RenewAuthTokenResultCode.Success, renewed.ResultCode);
         var rows = await Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking().Where(t => t.DeviceId == "renew-device").ToListAsync()
+            db.AuthTokens.AsNoTracking().Where(t => t.DeviceId == "renew-device").ToListAsync()
         );
         Assert.Equal(2, rows.Count);
         Assert.Single(rows.Select(r => r.SessionId).Distinct());
@@ -201,7 +202,7 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
                 Assert.Equal(RenewAuthTokenResultCode.RefreshTokenAlreadyRotatedError, r.ResultCode)
         );
         var active = await Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking()
+            db.AuthTokens.AsNoTracking()
                 .CountAsync(t => t.DeviceId == "race-device" && t.RevokedUtc == null)
         );
         Assert.Equal(1, active);
@@ -224,9 +225,51 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
 
         Assert.Equal(DeleteExpiredAuthTokensResultCode.Success, result.ResultCode);
         var remaining = await Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking().CountAsync(t => t.DeviceId == "cleanup-device")
+            db.AuthTokens.AsNoTracking().CountAsync(t => t.DeviceId == "cleanup-device")
         );
         Assert.Equal(0, remaining);
+    }
+
+    [RequiresDockerFact]
+    public async Task ApiKeysExchangeAndLoadPermissions_AndTheirRolesStayDeletable()
+    {
+        var created = await ActAsOwnerAsync(services =>
+            services
+                .GetRequiredService<IRegistrationService>()
+                .RegisterApiKeyAsync(new RegisterApiKeyRequest("provider-key", _accountId))
+        );
+        var assigned = await ActAsOwnerAsync(services =>
+            services
+                .GetRequiredService<IRegistrationService>()
+                .RegisterRolesWithApiKeyAsync(
+                    new RegisterRolesWithApiKeyRequest(
+                        [_roleId],
+                        created.CreatedApiKeyId,
+                        _accountId
+                    )
+                )
+        );
+
+        var canReadUsers = await Host.WithScopeAsync(async services =>
+        {
+            var signIn = await services
+                .GetRequiredService<IAuthenticationService>()
+                .SignInWithApiKeyAsync(new SignInWithApiKeyRequest(created.Key!, "key-device"));
+            Assert.Equal(SignInResultCode.Success, signIn.ResultCode);
+            return await services
+                .GetRequiredService<IAuthorizationProvider>()
+                .IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE);
+        });
+        var roleDeleted = await ActAsOwnerAsync(services =>
+            services
+                .GetRequiredService<IDeregistrationService>()
+                .DeregisterRoleAsync(new DeregisterRoleRequest(_roleId, _accountId))
+        );
+
+        Assert.Equal(CreateApiKeyResultCode.Success, created.ResultCode);
+        Assert.Equal(AssignRolesToApiKeyResultCode.Success, assigned.ResultCode);
+        Assert.True(canReadUsers);
+        Assert.Equal(DeregisterRoleResultCode.Success, roleDeleted.ResultCode);
     }
 
     private Task<SignInResult> SignInAsync(string deviceId) =>

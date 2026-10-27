@@ -13,6 +13,7 @@ public interface IRegistrationService
     Task<RegisterGroupResult> RegisterGroupAsync(RegisterGroupRequest request);
     Task<RegisterRoleResult> RegisterRoleAsync(RegisterRoleRequest request);
     Task<RegisterPermissionResult> RegisterPermissionAsync(RegisterPermissionRequest request);
+    Task<RegisterApiKeyResult> RegisterApiKeyAsync(RegisterApiKeyRequest request);
     Task<RegisterUserWithAccountResult> RegisterUserWithAccountAsync(
         RegisterUserWithAccountRequest request
     );
@@ -24,6 +25,12 @@ public interface IRegistrationService
     );
     Task<RegisterRolesWithUserResult> RegisterRolesWithUserAsync(
         RegisterRolesWithUserRequest request
+    );
+    Task<RegisterRolesWithApiKeyResult> RegisterRolesWithApiKeyAsync(
+        RegisterRolesWithApiKeyRequest request
+    );
+    Task<RegisterApiKeysWithGroupResult> RegisterApiKeysWithGroupAsync(
+        RegisterApiKeysWithGroupRequest request
     );
     Task<RegisterPermissionsWithRoleResult> RegisterPermissionsWithRoleAsync(
         RegisterPermissionsWithRoleRequest request

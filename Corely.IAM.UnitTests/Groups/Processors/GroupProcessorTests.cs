@@ -1,11 +1,13 @@
-﻿using AutoFixture;
+using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.ApiKeys.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.UnitTests.ClassData;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Processors;
@@ -31,6 +33,7 @@ public class GroupProcessorTests
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<RoleEntity>>(),
+            _serviceFactory.GetRequiredService<IReadonlyRepo<ApiKeyEntity>>(),
             _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
@@ -192,7 +195,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task AddUsersToGroup_Fails_WhenGroupDoesNotExist()
     {
-        var request = new AddUsersToGroupRequest([], Guid.CreateVersion7());
+        var request = new AddUsersToGroupRequest([], Guid.CreateVersion7(), AccountScope.Any);
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
         Assert.Equal(AddUsersToGroupResultCode.GroupNotFoundError, result.ResultCode);
     }
@@ -201,7 +204,7 @@ public class GroupProcessorTests
     public async Task AddUsersToGroup_Fails_WhenUsersNotProvided()
     {
         var (group, _) = await CreateGroupAsync();
-        var request = new AddUsersToGroupRequest([], group.Id);
+        var request = new AddUsersToGroupRequest([], group.Id, AccountScope.Any);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -217,7 +220,7 @@ public class GroupProcessorTests
     {
         var (group, account) = await CreateGroupAsync();
         var user = await CreateUserAsync(account.Id);
-        var request = new AddUsersToGroupRequest([user.Id], group.Id);
+        var request = new AddUsersToGroupRequest([user.Id], group.Id, AccountScope.Any);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -240,7 +243,11 @@ public class GroupProcessorTests
         var (group, account) = await CreateGroupAsync();
         var existingUser = await CreateUserAsync(account.Id, group.Id);
         var newUser = await CreateUserAsync(account.Id);
-        var request = new AddUsersToGroupRequest([existingUser.Id, newUser.Id], group.Id);
+        var request = new AddUsersToGroupRequest(
+            [existingUser.Id, newUser.Id],
+            group.Id,
+            AccountScope.Any
+        );
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -259,7 +266,7 @@ public class GroupProcessorTests
     {
         var (group, account) = await CreateGroupAsync();
         var user = await CreateUserAsync(account.Id);
-        var request = new AddUsersToGroupRequest([user.Id, Guid.Empty], group.Id);
+        var request = new AddUsersToGroupRequest([user.Id, Guid.Empty], group.Id, AccountScope.Any);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -280,7 +287,8 @@ public class GroupProcessorTests
         var userDifferentAccount = await CreateUserAsync(Guid.CreateVersion7());
         var request = new AddUsersToGroupRequest(
             [userSameAccount.Id, userDifferentAccount.Id],
-            group.Id
+            group.Id,
+            AccountScope.Any
         );
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
@@ -304,7 +312,7 @@ public class GroupProcessorTests
             (await CreateUserAsync(account.Id, group.Id)).Id,
             (await CreateUserAsync(account.Id, group.Id)).Id,
         };
-        var request = new AddUsersToGroupRequest(userIds, group.Id);
+        var request = new AddUsersToGroupRequest(userIds, group.Id, AccountScope.Any);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -322,7 +330,7 @@ public class GroupProcessorTests
     {
         var (group, _) = await CreateGroupAsync();
         var userIds = _fixture.CreateMany<Guid>().ToList();
-        var request = new AddUsersToGroupRequest(userIds, group.Id);
+        var request = new AddUsersToGroupRequest(userIds, group.Id, AccountScope.Any);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -344,7 +352,7 @@ public class GroupProcessorTests
             (await CreateUserAsync(Guid.CreateVersion7())).Id,
             (await CreateUserAsync(Guid.CreateVersion7())).Id,
         };
-        var request = new AddUsersToGroupRequest(userIds, group.Id);
+        var request = new AddUsersToGroupRequest(userIds, group.Id, AccountScope.Any);
 
         var result = await _groupProcessor.AddUsersToGroupAsync(request);
 
@@ -360,7 +368,7 @@ public class GroupProcessorTests
     [Fact]
     public async Task AssignRolesToGroup_Fails_WhenGroupDoesNotExist()
     {
-        var request = new AssignRolesToGroupRequest([], Guid.CreateVersion7());
+        var request = new AssignRolesToGroupRequest([], Guid.CreateVersion7(), AccountScope.Any);
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
         Assert.Equal(AssignRolesToGroupResultCode.GroupNotFoundError, result.ResultCode);
     }
@@ -369,7 +377,7 @@ public class GroupProcessorTests
     public async Task AssignRolesToGroup_Fails_WhenRolesNotProvided()
     {
         var (group, _) = await CreateGroupAsync();
-        var request = new AssignRolesToGroupRequest([], group.Id);
+        var request = new AssignRolesToGroupRequest([], group.Id, AccountScope.Any);
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
 
@@ -385,7 +393,7 @@ public class GroupProcessorTests
     {
         var (group, account) = await CreateGroupAsync();
         var role = await CreateRoleAsync(account.Id);
-        var request = new AssignRolesToGroupRequest([role.Id], group.Id);
+        var request = new AssignRolesToGroupRequest([role.Id], group.Id, AccountScope.Any);
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
 
@@ -408,7 +416,11 @@ public class GroupProcessorTests
         var (group, account) = await CreateGroupAsync();
         var existingRole = await CreateRoleAsync(account.Id, group.Id);
         var newRole = await CreateRoleAsync(account.Id, Guid.CreateVersion7());
-        var request = new AssignRolesToGroupRequest([existingRole.Id, newRole.Id], group.Id);
+        var request = new AssignRolesToGroupRequest(
+            [existingRole.Id, newRole.Id],
+            group.Id,
+            AccountScope.Any
+        );
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
 
@@ -428,7 +440,11 @@ public class GroupProcessorTests
         var (group, account) = await CreateGroupAsync();
         var role = await CreateRoleAsync(account.Id);
         var invalidRoleId = Guid.CreateVersion7();
-        var request = new AssignRolesToGroupRequest([role.Id, invalidRoleId], group.Id);
+        var request = new AssignRolesToGroupRequest(
+            [role.Id, invalidRoleId],
+            group.Id,
+            AccountScope.Any
+        );
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
 
@@ -449,7 +465,8 @@ public class GroupProcessorTests
         var roleDifferentAccount = await CreateRoleAsync(Guid.CreateVersion7());
         var request = new AssignRolesToGroupRequest(
             [roleSameAccount.Id, roleDifferentAccount.Id],
-            group.Id
+            group.Id,
+            AccountScope.Any
         );
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
@@ -473,7 +490,7 @@ public class GroupProcessorTests
             (await CreateRoleAsync(account.Id, group.Id)).Id,
             (await CreateRoleAsync(account.Id, group.Id)).Id,
         };
-        var request = new AssignRolesToGroupRequest(roleIds, group.Id);
+        var request = new AssignRolesToGroupRequest(roleIds, group.Id, AccountScope.Any);
         await _groupProcessor.AssignRolesToGroupAsync(request);
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
@@ -491,7 +508,7 @@ public class GroupProcessorTests
     {
         var (group, _) = await CreateGroupAsync();
         var roleIds = _fixture.CreateMany<Guid>().ToList();
-        var request = new AssignRolesToGroupRequest(roleIds, group.Id);
+        var request = new AssignRolesToGroupRequest(roleIds, group.Id, AccountScope.Any);
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
 
@@ -513,7 +530,7 @@ public class GroupProcessorTests
             (await CreateRoleAsync(Guid.CreateVersion7())).Id,
             (await CreateRoleAsync(Guid.CreateVersion7())).Id,
         };
-        var request = new AssignRolesToGroupRequest(roleIds, group.Id);
+        var request = new AssignRolesToGroupRequest(roleIds, group.Id, AccountScope.Any);
 
         var result = await _groupProcessor.AssignRolesToGroupAsync(request);
 
@@ -531,7 +548,7 @@ public class GroupProcessorTests
     {
         var (group, _) = await CreateGroupAsync();
 
-        var result = await _groupProcessor.DeleteGroupAsync(group.Id);
+        var result = await _groupProcessor.DeleteGroupAsync(group.Id, AccountScope.Any);
 
         Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
 
@@ -543,7 +560,10 @@ public class GroupProcessorTests
     [Fact]
     public async Task DeleteGroup_ReturnsNotFound_WhenGroupDoesNotExist()
     {
-        var result = await _groupProcessor.DeleteGroupAsync(Guid.CreateVersion7());
+        var result = await _groupProcessor.DeleteGroupAsync(
+            Guid.CreateVersion7(),
+            AccountScope.Any
+        );
 
         Assert.Equal(DeleteGroupResultCode.GroupNotFoundError, result.ResultCode);
     }
@@ -553,7 +573,8 @@ public class GroupProcessorTests
     {
         var request = new RemoveUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
 
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
@@ -568,7 +589,7 @@ public class GroupProcessorTests
         var user = await CreateUserAsync(account.Id);
         var (group, _) = await CreateGroupWithUsersAsync(user.Id);
 
-        var request = new RemoveUsersFromGroupRequest([user.Id], group.Id);
+        var request = new RemoveUsersFromGroupRequest([user.Id], group.Id, AccountScope.Any);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
         Assert.Equal(RemoveUsersFromGroupResultCode.Success, result.ResultCode);
@@ -582,7 +603,7 @@ public class GroupProcessorTests
         var (group, _) = await CreateGroupAsync();
 
         var invalidUserId = Guid.CreateVersion7();
-        var request = new RemoveUsersFromGroupRequest([invalidUserId], group.Id);
+        var request = new RemoveUsersFromGroupRequest([invalidUserId], group.Id, AccountScope.Any);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
         Assert.Equal(RemoveUsersFromGroupResultCode.PartialSuccess, result.ResultCode);
@@ -598,7 +619,11 @@ public class GroupProcessorTests
         var (group, _) = await CreateGroupWithUsersAsync(user.Id);
 
         var invalidUserId = Guid.CreateVersion7();
-        var request = new RemoveUsersFromGroupRequest([user.Id, invalidUserId], group.Id);
+        var request = new RemoveUsersFromGroupRequest(
+            [user.Id, invalidUserId],
+            group.Id,
+            AccountScope.Any
+        );
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
         Assert.Equal(RemoveUsersFromGroupResultCode.PartialSuccess, result.ResultCode);
@@ -705,7 +730,7 @@ public class GroupProcessorTests
             assignOwnerRoleToGroup: false
         );
 
-        var request = new RemoveUsersFromGroupRequest(userIds, groupId);
+        var request = new RemoveUsersFromGroupRequest(userIds, groupId, AccountScope.Any);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
         Assert.Equal(RemoveUsersFromGroupResultCode.Success, result.ResultCode);
@@ -717,7 +742,11 @@ public class GroupProcessorTests
     {
         var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 3);
 
-        var request = new RemoveUsersFromGroupRequest([userIds[0], userIds[1]], groupId);
+        var request = new RemoveUsersFromGroupRequest(
+            [userIds[0], userIds[1]],
+            groupId,
+            AccountScope.Any
+        );
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
         Assert.Equal(RemoveUsersFromGroupResultCode.Success, result.ResultCode);
@@ -733,7 +762,7 @@ public class GroupProcessorTests
 
         await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
 
-        var request = new RemoveUsersFromGroupRequest(userIds, groupId);
+        var request = new RemoveUsersFromGroupRequest(userIds, groupId, AccountScope.Any);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
         Assert.Equal(RemoveUsersFromGroupResultCode.Success, result.ResultCode);
@@ -745,7 +774,7 @@ public class GroupProcessorTests
     {
         var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 2);
 
-        var request = new RemoveUsersFromGroupRequest(userIds, groupId);
+        var request = new RemoveUsersFromGroupRequest(userIds, groupId, AccountScope.Any);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
         Assert.Equal(RemoveUsersFromGroupResultCode.UserIsSoleOwnerError, result.ResultCode);
@@ -758,7 +787,7 @@ public class GroupProcessorTests
     {
         var (groupId, _, userIds) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 1);
 
-        var request = new RemoveUsersFromGroupRequest(userIds, groupId);
+        var request = new RemoveUsersFromGroupRequest(userIds, groupId, AccountScope.Any);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
         Assert.Equal(RemoveUsersFromGroupResultCode.UserIsSoleOwnerError, result.ResultCode);
@@ -775,7 +804,7 @@ public class GroupProcessorTests
 
         await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
 
-        var request = new RemoveUsersFromGroupRequest(userIds, groupId);
+        var request = new RemoveUsersFromGroupRequest(userIds, groupId, AccountScope.Any);
         var result = await _groupProcessor.RemoveUsersFromGroupAsync(request);
 
         Assert.Equal(RemoveUsersFromGroupResultCode.Success, result.ResultCode);
@@ -790,7 +819,7 @@ public class GroupProcessorTests
             assignOwnerRoleToGroup: false
         );
 
-        var result = await _groupProcessor.DeleteGroupAsync(groupId);
+        var result = await _groupProcessor.DeleteGroupAsync(groupId, AccountScope.Any);
 
         Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
     }
@@ -826,7 +855,7 @@ public class GroupProcessorTests
         createdGroup.Roles = [ownerRole];
         await groupRepo.UpdateAsync(createdGroup);
 
-        var result = await _groupProcessor.DeleteGroupAsync(createdGroup.Id);
+        var result = await _groupProcessor.DeleteGroupAsync(createdGroup.Id, AccountScope.Any);
 
         Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
     }
@@ -840,7 +869,7 @@ public class GroupProcessorTests
 
         await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
 
-        var result = await _groupProcessor.DeleteGroupAsync(groupId);
+        var result = await _groupProcessor.DeleteGroupAsync(groupId, AccountScope.Any);
 
         Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
     }
@@ -850,7 +879,7 @@ public class GroupProcessorTests
     {
         var (groupId, _, _) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 2);
 
-        var result = await _groupProcessor.DeleteGroupAsync(groupId);
+        var result = await _groupProcessor.DeleteGroupAsync(groupId, AccountScope.Any);
 
         Assert.Equal(DeleteGroupResultCode.GroupHasSoleOwnersError, result.ResultCode);
         Assert.Contains("owner role", result.Message);
@@ -861,7 +890,7 @@ public class GroupProcessorTests
     {
         var (groupId, _, _) = await CreateGroupWithOwnerRoleAndUsersAsync(userCount: 1);
 
-        var result = await _groupProcessor.DeleteGroupAsync(groupId);
+        var result = await _groupProcessor.DeleteGroupAsync(groupId, AccountScope.Any);
 
         Assert.Equal(DeleteGroupResultCode.GroupHasSoleOwnersError, result.ResultCode);
     }
@@ -875,7 +904,7 @@ public class GroupProcessorTests
 
         await AssignDirectOwnerRoleToUserAsync(userIds[0], accountId);
 
-        var result = await _groupProcessor.DeleteGroupAsync(groupId);
+        var result = await _groupProcessor.DeleteGroupAsync(groupId, AccountScope.Any);
 
         Assert.Equal(DeleteGroupResultCode.Success, result.ResultCode);
     }
@@ -885,7 +914,8 @@ public class GroupProcessorTests
     {
         var request = new RemoveRolesFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
 
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
@@ -898,7 +928,11 @@ public class GroupProcessorTests
     {
         var (group, _) = await CreateGroupAsync();
 
-        var request = new RemoveRolesFromGroupRequest([Guid.CreateVersion7()], group.Id);
+        var request = new RemoveRolesFromGroupRequest(
+            [Guid.CreateVersion7()],
+            group.Id,
+            AccountScope.Any
+        );
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
 
         Assert.Equal(RemoveRolesFromGroupResultCode.InvalidRoleIdsError, result.ResultCode);
@@ -914,7 +948,7 @@ public class GroupProcessorTests
         group!.Roles = [role];
         await groupRepo.UpdateAsync(group);
 
-        var request = new RemoveRolesFromGroupRequest([role.Id], group.Id);
+        var request = new RemoveRolesFromGroupRequest([role.Id], group.Id, AccountScope.Any);
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
 
         Assert.Equal(RemoveRolesFromGroupResultCode.Success, result.ResultCode);
@@ -952,7 +986,11 @@ public class GroupProcessorTests
         createdGroup.Roles = [createdRole];
         await groupRepo.UpdateAsync(createdGroup);
 
-        var request = new RemoveRolesFromGroupRequest([createdRole.Id], createdGroup.Id);
+        var request = new RemoveRolesFromGroupRequest(
+            [createdRole.Id],
+            createdGroup.Id,
+            AccountScope.Any
+        );
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
 
         Assert.Equal(RemoveRolesFromGroupResultCode.Success, result.ResultCode);
@@ -975,7 +1013,7 @@ public class GroupProcessorTests
         );
         var ownerRoleId = group!.Roles!.First(r => r.Name == Role.OWNER_ROLE_NAME).Id;
 
-        var request = new RemoveRolesFromGroupRequest([ownerRoleId], groupId);
+        var request = new RemoveRolesFromGroupRequest([ownerRoleId], groupId, AccountScope.Any);
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
 
         Assert.Equal(RemoveRolesFromGroupResultCode.Success, result.ResultCode);
@@ -996,7 +1034,7 @@ public class GroupProcessorTests
         );
         var ownerRoleId = group!.Roles!.First(r => r.Name == Role.OWNER_ROLE_NAME).Id;
 
-        var request = new RemoveRolesFromGroupRequest([ownerRoleId], groupId);
+        var request = new RemoveRolesFromGroupRequest([ownerRoleId], groupId, AccountScope.Any);
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
 
         Assert.Equal(
@@ -1039,7 +1077,8 @@ public class GroupProcessorTests
 
         var request = new RemoveRolesFromGroupRequest(
             [ownerRoleId, createdRegularRole.Id],
-            groupId
+            groupId,
+            AccountScope.Any
         );
         var result = await _groupProcessor.RemoveRolesFromGroupAsync(request);
 
@@ -1057,5 +1096,106 @@ public class GroupProcessorTests
 
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    private async Task<ApiKeyEntity> CreateApiKeyAsync(Guid accountId) =>
+        await _serviceFactory
+            .GetRequiredService<IRepo<ApiKeyEntity>>()
+            .CreateAsync(
+                new ApiKeyEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    AccountId = accountId,
+                    Name = $"key-{Guid.CreateVersion7()}",
+                }
+            );
+
+    [Fact]
+    public async Task AddApiKeysToGroup_Fails_WhenGroupDoesNotExist()
+    {
+        var result = await _groupProcessor.AddApiKeysToGroupAsync(
+            new AddApiKeysToGroupRequest(
+                [Guid.CreateVersion7()],
+                Guid.CreateVersion7(),
+                AccountScope.Any
+            )
+        );
+
+        Assert.Equal(AddApiKeysToGroupResultCode.GroupNotFoundError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task AddApiKeysToGroup_SkipsMembersUnknownAndForeignKeys()
+    {
+        var (group, account) = await CreateGroupAsync();
+        var otherAccount = await CreateAccountAsync();
+        var member = await CreateApiKeyAsync(account.Id);
+        var fresh = await CreateApiKeyAsync(account.Id);
+        var foreign = await CreateApiKeyAsync(otherAccount.Id);
+        await _groupProcessor.AddApiKeysToGroupAsync(
+            new AddApiKeysToGroupRequest([member.Id], group.Id, AccountScope.Any)
+        );
+
+        var result = await _groupProcessor.AddApiKeysToGroupAsync(
+            new AddApiKeysToGroupRequest(
+                [member.Id, fresh.Id, foreign.Id, Guid.CreateVersion7()],
+                group.Id,
+                AccountScope.Any
+            )
+        );
+
+        Assert.Equal(AddApiKeysToGroupResultCode.PartialSuccess, result.ResultCode);
+        Assert.Equal(1, result.AddedApiKeyCount);
+        Assert.Equal(3, result.InvalidApiKeyIds.Count);
+        Assert.DoesNotContain(fresh.Id, result.InvalidApiKeyIds);
+    }
+
+    [Fact]
+    public async Task AddApiKeysToGroup_ReturnsInvalidApiKeyIds_WhenNoneApply()
+    {
+        var (group, _) = await CreateGroupAsync();
+
+        var result = await _groupProcessor.AddApiKeysToGroupAsync(
+            new AddApiKeysToGroupRequest([Guid.CreateVersion7()], group.Id, AccountScope.Any)
+        );
+
+        Assert.Equal(AddApiKeysToGroupResultCode.InvalidApiKeyIdsError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task RemoveApiKeysFromGroup_RemovesMembers_AndReportsTheRest()
+    {
+        var (group, account) = await CreateGroupAsync();
+        var member = await CreateApiKeyAsync(account.Id);
+        await _groupProcessor.AddApiKeysToGroupAsync(
+            new AddApiKeysToGroupRequest([member.Id], group.Id, AccountScope.Any)
+        );
+        var notMember = Guid.CreateVersion7();
+
+        var result = await _groupProcessor.RemoveApiKeysFromGroupAsync(
+            new RemoveApiKeysFromGroupRequest([member.Id, notMember], group.Id, AccountScope.Any)
+        );
+        var again = await _groupProcessor.RemoveApiKeysFromGroupAsync(
+            new RemoveApiKeysFromGroupRequest([member.Id], group.Id, AccountScope.Any)
+        );
+
+        Assert.Equal(RemoveApiKeysFromGroupResultCode.PartialSuccess, result.ResultCode);
+        Assert.Equal(1, result.RemovedApiKeyCount);
+        Assert.Equal([notMember], result.InvalidApiKeyIds);
+        Assert.Equal(RemoveApiKeysFromGroupResultCode.InvalidApiKeyIdsError, again.ResultCode);
+    }
+
+    [Fact]
+    public async Task RemoveApiKeysFromGroup_Fails_WhenGroupDoesNotExist()
+    {
+        var result = await _groupProcessor.RemoveApiKeysFromGroupAsync(
+            new RemoveApiKeysFromGroupRequest(
+                [Guid.CreateVersion7()],
+                Guid.CreateVersion7(),
+                AccountScope.Any
+            )
+        );
+
+        Assert.Equal(RemoveApiKeysFromGroupResultCode.GroupNotFoundError, result.ResultCode);
     }
 }

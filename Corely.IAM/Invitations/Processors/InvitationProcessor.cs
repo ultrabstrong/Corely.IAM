@@ -8,9 +8,11 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Invitations.Entities;
+using Corely.IAM.Invitations.Enums;
 using Corely.IAM.Invitations.Mappers;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
@@ -103,7 +105,15 @@ internal class InvitationProcessor(
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        var userId = GetRequiredUserContext("create invitations").User!.Id;
+        if (GetRequiredUserContext("create invitations").User?.Id is not { } userId)
+        {
+            return new CreateInvitationResult(
+                CreateInvitationResultCode.UnauthorizedError,
+                "Only a user can create an invitation",
+                null,
+                null
+            );
+        }
 
         var tokenBytes = RandomNumberGenerator.GetBytes(InvitationEntity.TOKEN_LENGTH);
         var token = Convert
@@ -268,8 +278,8 @@ internal class InvitationProcessor(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var invitationEntity = await _invitationRepo.GetAsync(i =>
-            i.Id == request.InvitationId && i.AccountId == request.AccountId
+        var invitationEntity = await _invitationRepo.GetAsync(
+            AccountScope.Of(request.AccountId).ByIdPredicate<InvitationEntity>(request.InvitationId)
         );
         if (invitationEntity == null)
         {

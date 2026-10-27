@@ -4,6 +4,7 @@ using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Web.Extensions;
 using Corely.IAM.WebApp;
+using Corely.IAM.WebApp.Api;
 using Corely.IAM.WebApp.Auditing;
 using Corely.IAM.WebApp.Components;
 using Corely.IAM.WebApp.DataAccess;
@@ -29,6 +30,7 @@ builder.Services.Configure<DemoFeaturesOptions>(
 builder.Services.AddIAMWeb(options =>
 {
     options.ForgotPasswordPath = WebAppRoutes.ForgotPassword;
+    options.AcceptBearerTokens = true;
     options.PlatformSettingsPages.Add(
         new(
             "Audit",
@@ -47,6 +49,7 @@ builder.Services.AddIAMWeb(options =>
     );
 });
 builder.Services.AddIAMWebBlazor<WebAppLinks>();
+builder.Services.AddWebAppApi();
 
 var securityConfigProvider = new SecurityConfigurationProvider(builder.Configuration);
 
@@ -110,6 +113,9 @@ app.UseIAMWebAuthentication();
 app.UseHttpsRedirection();
 app.UseAntiforgery();
 
+app.MapOpenApi(WebAppApiExtensions.OPENAPI_PATH);
+app.MapIAMTokenEndpoints(WebAppApiExtensions.AUTH_PREFIX);
+app.MapWebAppApi();
 app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();
 app.MapRazorComponents<App>().WithStaticAssets().AddInteractiveServerRenderMode();

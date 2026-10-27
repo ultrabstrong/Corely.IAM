@@ -1,6 +1,7 @@
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Mappers;
 using Corely.IAM.Groups.Models;
+using Corely.IAM.Models;
 
 namespace Corely.IAM.UnitTests.Groups.Mappers;
 
@@ -78,5 +79,13 @@ public class GroupMapperTests
         Assert.Equal(entity.Name, result.Name);
         Assert.Equal(entity.Description, result.Description);
         Assert.Equal(entity.AccountId, result.AccountId);
+    }
+
+    [Fact]
+    public void GroupEntity_ToChildRef_CarriesIdAndName()
+    {
+        var entity = new GroupEntity { Id = Guid.CreateVersion7(), Name = "Editors" };
+
+        Assert.Equal(new ChildRef(entity.Id, "Editors"), entity.ToChildRef());
     }
 }

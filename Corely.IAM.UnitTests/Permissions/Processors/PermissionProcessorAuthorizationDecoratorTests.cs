@@ -2,6 +2,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Processors;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.UnitTests.Permissions.Processors;
@@ -123,10 +124,10 @@ public class PermissionProcessorAuthorizationDecoratorTests
             )
             .ReturnsAsync(true);
         _mockInnerProcessor
-            .Setup(x => x.DeletePermissionAsync(permissionId, It.IsAny<Guid>()))
+            .Setup(x => x.DeletePermissionAsync(permissionId, It.IsAny<AccountScope>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.DeletePermissionAsync(permissionId);
+        var result = await _decorator.DeletePermissionAsync(permissionId, AccountScope.Any);
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
@@ -134,7 +135,7 @@ public class PermissionProcessorAuthorizationDecoratorTests
             Times.Once
         );
         _mockInnerProcessor.Verify(
-            x => x.DeletePermissionAsync(permissionId, It.IsAny<Guid>()),
+            x => x.DeletePermissionAsync(permissionId, It.IsAny<AccountScope>()),
             Times.Once
         );
     }
@@ -149,11 +150,11 @@ public class PermissionProcessorAuthorizationDecoratorTests
             )
             .ReturnsAsync(false);
 
-        var result = await _decorator.DeletePermissionAsync(permissionId);
+        var result = await _decorator.DeletePermissionAsync(permissionId, AccountScope.Any);
 
         Assert.Equal(DeletePermissionResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerProcessor.Verify(
-            x => x.DeletePermissionAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
+            x => x.DeletePermissionAsync(It.IsAny<Guid>(), It.IsAny<AccountScope>()),
             Times.Never
         );
     }

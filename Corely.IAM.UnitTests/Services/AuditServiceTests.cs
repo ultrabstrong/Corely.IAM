@@ -1,6 +1,8 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.ApiKeys.Entities;
 using Corely.IAM.Audits.Entities;
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Models;
@@ -42,6 +44,7 @@ public class AuditServiceTests
             _serviceFactory.GetRequiredService<IRepo<PlatformSettingsEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>(),
+            _serviceFactory.GetRequiredService<IReadonlyRepo<ApiKeyEntity>>(),
             _accessProvider.Object,
             _policy,
             _cache,

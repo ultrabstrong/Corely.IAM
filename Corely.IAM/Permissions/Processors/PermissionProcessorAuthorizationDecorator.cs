@@ -2,6 +2,7 @@ using Corely.Common.Extensions;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.Permissions.Processors;
@@ -88,9 +89,9 @@ internal class PermissionProcessorAuthorizationDecorator(
     public async Task<GetResult<Permission>> GetPermissionByIdAsync(
         Guid permissionId,
         bool hydrate,
-        Guid accountId = default
+        AccountScope accountId
     ) =>
-        _authorizationProvider.HasAccountContext(accountId)
+        _authorizationProvider.HasAccountContext(accountId.Id)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             Permission.RESOURCE_TYPE,
@@ -125,9 +126,9 @@ internal class PermissionProcessorAuthorizationDecorator(
 
     public async Task<DeletePermissionResult> DeletePermissionAsync(
         Guid permissionId,
-        Guid accountId = default
+        AccountScope accountId
     ) =>
-        _authorizationProvider.HasAccountContext(accountId)
+        _authorizationProvider.HasAccountContext(accountId.Id)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
             Permission.RESOURCE_TYPE,

@@ -1,3 +1,4 @@
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Platform.Enums;
 using Corely.IAM.Platform.Models;
@@ -70,6 +71,18 @@ internal static class SettingChangeExtensions
                     $"Users will have {Duration(Now<int>(change))} to enter a code, instead of {Duration(Was<int>(change))}.",
                 PlatformSetting.TotpRecoveryCodeCount =>
                     $"New sets of recovery codes will hold {Now<int>(change)} codes, instead of {Was<int>(change)}.",
+                PlatformSetting.ApiKeysEnabled => Now<bool>(change)
+                    ? "Accounts can create API keys, and API keys can sign in."
+                    : "API keys stop signing in and renewing, and none can be created. Signed in keys stop when their access token expires.",
+                PlatformSetting.PlatformAccountApiKeysEnabled => Now<bool>(change)
+                    ? "The platform account can hold API keys. A platform key signs in without two factor."
+                    : "API keys in the platform account stop signing in, and none can be created there.",
+                PlatformSetting.ApiKeyMaxLifetimeDays =>
+                    $"New API key secrets can live up to {Now<int>(change)} days, instead of {Was<int>(change)}.",
+                PlatformSetting.ApiKeyResourceTypes => ResourceTypesText(
+                    Was<ResourceTypeSet>(change),
+                    Now<ResourceTypeSet>(change)
+                ),
                 _ => throw new ArgumentOutOfRangeException(nameof(change)),
             };
     }
@@ -87,6 +100,24 @@ internal static class SettingChangeExtensions
         now < was
             ? $"Audit entries older than {now} days will be deleted, on every account."
             : $"Accounts can keep audit entries for up to {now} days.";
+
+    private static string ResourceTypesText(ResourceTypeSet was, ResourceTypeSet now)
+    {
+        var added = now.Types.Where(t => !was.Contains(t)).ToList();
+        var removed = was.Types.Where(t => !now.Contains(t)).ToList();
+        return string.Join(
+            " ",
+            new[]
+            {
+                added.Count > 0
+                    ? $"API keys can use their permissions on {string.Join(", ", added)}."
+                    : null,
+                removed.Count > 0
+                    ? $"API keys lose their permissions on {string.Join(", ", removed)}."
+                    : null,
+            }.OfType<string>()
+        );
+    }
 
     private static string RuleText(bool required, string need) =>
         required

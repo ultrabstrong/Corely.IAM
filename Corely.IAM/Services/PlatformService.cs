@@ -264,6 +264,15 @@ internal class PlatformService(
         if (!validation.IsValid)
             return new ModifyResult(ModifyResultCode.ValidationError, validation.Message);
 
+        var unknownTypes = settings
+            .ApiKeyResourceTypes.Types.Where(t => !_resourceTypeRegistry.Exists(t))
+            .ToList();
+        if (unknownTypes.Count > 0)
+            return new ModifyResult(
+                ModifyResultCode.ValidationError,
+                $"Not registered resource types: {string.Join(", ", unknownTypes)}"
+            );
+
         if (!await _accountRepo.AnyAsync(a => a.IsPlatformAccount))
         {
             return new ModifyResult(

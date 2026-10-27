@@ -1,5 +1,6 @@
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.ApiKeys.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.Groups.Models;
@@ -56,6 +57,7 @@ public class ModificationServiceTests
             _mockGroupProcessor.Object,
             _mockRoleProcessor.Object,
             _mockPermissionProcessor.Object,
+            new Mock<IApiKeyProcessor>().Object,
             _mockKeyRotationProcessor.Object,
             _mockBasicAuthProcessor.Object,
             _mockReauthenticationProvider.Object,

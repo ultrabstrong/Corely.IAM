@@ -109,7 +109,7 @@ unlinking Google. A password reset through recovery ends every session.
 
 ## Session Management
 
-Tracked auth tokens are the backing store for user sessions. Each active `UserAuthTokenEntity` represents one active session for a `(user, signed-in account, device)` combination.
+Tracked auth tokens are the backing store for user sessions. Each active row in `AuthTokens` represents one active session for a `(user, signed-in account, device)` combination. API key sessions live in the same table.
 
 ```csharp
 var sessions = await authenticationService.ListSessionsAsync();
@@ -149,9 +149,11 @@ Validation checks: JWT format, required claims, user existence, token not revoke
 
 ## In an API
 
-`Corely.IAM.Web` validates and renews from cookies on its own. An API host that takes bearer tokens
-writes the same steps itself: a middleware that sets the context from the `Authorization` header, and
-endpoints for sign in and renewal. The client keeps both tokens and renews when a call returns 401.
+`Corely.IAM.Web` does all of this for an ASP.NET Core host: set `AcceptBearerTokens` and map its
+token endpoints, as its [Bearer API](../../Corely.IAM.Web/Docs/bearer-api.md) guide shows. A host
+without it writes the same steps itself: a middleware that sets the context from the `Authorization`
+header, and endpoints for sign in and renewal. The client keeps both tokens and renews when a call
+returns 401.
 
 ```csharp
 app.Use(async (context, next) =>
@@ -196,6 +198,64 @@ app.MapPost("/auth/renew", async (RenewAuthTokenRequest request, IAuthentication
 A request without a header passes through with no context, so IAM's own authorization refuses
 anything that needs a user. On 409 from `/auth/renew` another call of the same client renewed first:
 the client keeps the pair that call received. On 401 it signs in again.
+
+## API Keys
+
+An API key is its own principal in one account, for a script or service that calls the host's API
+without a user. Keys are off until the platform's security settings turn them on, and then they act
+only on the resource types those settings allow (see
+[where security settings come from](platform.md#where-security-settings-come-from)). An account
+member holding the `api_key` permissions manages them through the same services as users, groups and
+roles:
+
+```csharp
+var created = await registrationService.RegisterApiKeyAsync(
+    new RegisterApiKeyRequest("Billing sync", accountId, ExpiresUtc: utcNow.AddDays(90)));
+var key = created.Key;
+
+await registrationService.RegisterRolesWithApiKeyAsync(
+    new RegisterRolesWithApiKeyRequest([readOnlyRoleId], created.CreatedApiKeyId, accountId));
+await registrationService.RegisterApiKeysWithGroupAsync(
+    new RegisterApiKeysWithGroupRequest([created.CreatedApiKeyId], groupId, accountId));
+```
+
+| Service | Methods |
+|---------|---------|
+| `IRegistrationService` | `RegisterApiKeyAsync`, `RegisterRolesWithApiKeyAsync`, `RegisterApiKeysWithGroupAsync` |
+| `IModificationService` | `ModifyApiKeyAsync`, `RotateApiKeySecretAsync` |
+| `IDeregistrationService` | `DeregisterApiKeyAsync`, `DeregisterRolesFromApiKeyAsync`, `DeregisterApiKeysFromGroupAsync` |
+| `IRetrievalService` | `ListApiKeysAsync`, `GetApiKeyAsync` |
+
+The key reads `ciam_<prefix>_<secret>` and is returned once. IAM stores a salted hash of the secret.
+A key holds roles and groups like a user, and granting to it is bounded the same way: the caller
+must hold what they hand out. Rotating a secret is bounded too, since the new secret lets its holder
+act as the key: the caller must hold everything the key holds through its roles and groups.
+
+A key has a primary and a secondary secret, each with its own expiry, no later than
+`ApiKeyMaxLifetimeDays` from issue. Rotating one slot ends the sessions signed in with it and leaves
+the other slot working, so a client moves to the new secret before the old one is rotated:
+
+```csharp
+var rotated = await modificationService.RotateApiKeySecretAsync(
+    new RotateApiKeySecretRequest(apiKeyId, accountId, ApiKeySlot.Secondary));
+```
+
+The client exchanges the key for the same pair of tokens a user gets, and renews and signs out the
+same way:
+
+```csharp
+var result = await authService.SignInWithApiKeyAsync(new SignInWithApiKeyRequest(key, "billing-sync"));
+```
+
+The access token carries `principal_type` = `api_key` and the key's id as `sub`, and is signed with
+the account's key. `AuthenticateWithTokenAsync` accepts it, and `UserContext.ApiKey` is set in place
+of `UserContext.User`. A key cannot switch account, accept an invitation, read the audit log or call
+any operation on a user's own credentials. Failed sign ins lock a key as they lock a user.
+
+| Refusal | Result |
+|---------|--------|
+| Keys off, a platform account key while those are off, an unknown, expired or wrong secret, or a locked key | `SignInResultCode.InvalidApiKeyError` |
+| Creating a key while keys are off | `CreateApiKeyResultCode.ApiKeysDisabledError` |
 
 ## Token Claims
 

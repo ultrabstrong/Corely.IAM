@@ -87,6 +87,36 @@ internal class DeregistrationServiceTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<DeregisterApiKeyResult> DeregisterApiKeyAsync(
+        DeregisterApiKeyRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(DeregistrationService),
+            request,
+            () => _inner.DeregisterApiKeyAsync(request),
+            logResult: true
+        );
+
+    public async Task<DeregisterRolesFromApiKeyResult> DeregisterRolesFromApiKeyAsync(
+        DeregisterRolesFromApiKeyRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(DeregistrationService),
+            request,
+            () => _inner.DeregisterRolesFromApiKeyAsync(request),
+            logResult: true
+        );
+
+    public async Task<DeregisterApiKeysFromGroupResult> DeregisterApiKeysFromGroupAsync(
+        DeregisterApiKeysFromGroupRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(DeregistrationService),
+            request,
+            () => _inner.DeregisterApiKeysFromGroupAsync(request),
+            logResult: true
+        );
+
     public async Task<DeregisterRolesFromUserResult> DeregisterRolesFromUserAsync(
         DeregisterRolesFromUserRequest request
     ) =>

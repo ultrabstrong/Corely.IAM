@@ -11,17 +11,18 @@ Creates entities, establishes relationships between entities, and manages invita
 | `RegisterGroupAsync` | `RegisterGroupRequest` | `RegisterGroupResult` |
 | `RegisterRoleAsync` | `RegisterRoleRequest` | `RegisterRoleResult` |
 | `RegisterPermissionAsync` | `RegisterPermissionRequest` | `RegisterPermissionResult` |
+| `RegisterApiKeyAsync` | `RegisterApiKeyRequest` | `RegisterApiKeyResult` |
 | `RegisterUserWithAccountAsync` | `RegisterUserWithAccountRequest` | `RegisterUserWithAccountResult` |
 | `RegisterUsersWithGroupAsync` | `RegisterUsersWithGroupRequest` | `RegisterUsersWithGroupResult` |
 | `RegisterRolesWithGroupAsync` | `RegisterRolesWithGroupRequest` | `RegisterRolesWithGroupResult` |
 | `RegisterRolesWithUserAsync` | `RegisterRolesWithUserRequest` | `RegisterRolesWithUserResult` |
 | `RegisterPermissionsWithRoleAsync` | `RegisterPermissionsWithRoleRequest` | `RegisterPermissionsWithRoleResult` |
-| `CreateInvitationAsync` | `CreateInvitationRequest` | `CreateInvitationResult` |
-| `AcceptInvitationAsync` | `AcceptInvitationRequest` | `AcceptInvitationResult` |
-| `RevokeInvitationAsync` | `Guid invitationId` | `RevokeInvitationResult` |
+| `RegisterRolesWithApiKeyAsync` | `RegisterRolesWithApiKeyRequest` | `RegisterRolesWithApiKeyResult` |
+| `RegisterApiKeysWithGroupAsync` | `RegisterApiKeysWithGroupRequest` | `RegisterApiKeysWithGroupResult` |
 | `RegisterUserWithGoogleAsync` | `RegisterUserWithGoogleRequest` | `RegisterUserWithGoogleResult` |
 | `RegisterPasswordAsync` | `RegisterPasswordRequest` | `RegisterPasswordResult` |
-| `ListInvitationsAsync` | `ListInvitationsRequest` | `RetrieveListResult<Invitation>` |
+
+`RegisterUserWithAccountAsync` runs only in system context, for hosts and tools that seed accounts. Anyone else joins an account by creating it or by accepting an invitation (`IInvitationService`).
 
 > **Note:** TOTP and Google Auth methods have been moved to dedicated services. See [MFA](../mfa.md) (`IMfaService`) and [Google Sign-In](../google-signin.md) (`IGoogleAuthService`).
 

@@ -1,5 +1,6 @@
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Audits.Entities;
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.IntegrationTests.Infrastructure;

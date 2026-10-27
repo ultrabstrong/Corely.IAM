@@ -1,4 +1,5 @@
 using Corely.IAM.Audits.Entities;
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Mappers;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Security.Enums;

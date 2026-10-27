@@ -12,6 +12,7 @@ and the shared components they are built from.
 | `GroupList`, `GroupDetail` | `Corely.IAM.Web.Components.Groups` | [Groups](groups.md) |
 | `RoleList`, `RoleDetail` | `Corely.IAM.Web.Components.Roles` | [Roles](roles.md) |
 | `PermissionList`, `PermissionDetail` | `Corely.IAM.Web.Components.Permissions` | [Permissions](permissions.md) |
+| `ApiKeyList`, `ApiKeyDetail` | `Corely.IAM.Web.Components.ApiKeys` | [API keys](api-keys.md) |
 | `AuditLog`, `AuditEntryDetail` | `Corely.IAM.Web.Components.Audit` | [Audit](audit.md) |
 | `AcceptInvitation` | `Corely.IAM.Web.Components.Invitations` | [Invitations](invitations.md) |
 | `Profile` | `Corely.IAM.Web.Components` | [Profile](profile.md) |
@@ -62,6 +63,7 @@ resolves from the tab's scope even inside `OwningComponentBase`.
 - [Groups](groups.md)
 - [Roles](roles.md)
 - [Permissions](permissions.md)
+- [API keys](api-keys.md)
 - [Invitations](invitations.md)
 - [Profile](profile.md)
 - [Audit and platform settings](audit.md)

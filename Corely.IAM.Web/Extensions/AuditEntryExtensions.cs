@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Models;
 
 namespace Corely.IAM.Web.Extensions;

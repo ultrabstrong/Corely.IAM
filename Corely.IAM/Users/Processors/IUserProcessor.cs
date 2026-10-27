@@ -1,4 +1,5 @@
 using Corely.IAM.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 
@@ -15,7 +16,7 @@ internal interface IUserProcessor
     Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(
         Guid roleId,
         Guid userId,
-        Guid accountId = default
+        Guid accountId
     );
     Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(RemoveRolesFromUserRequest request);
     Task<DeleteUserResult> DeleteUserAsync(Guid userId);
@@ -23,5 +24,5 @@ internal interface IUserProcessor
         ListUsersRequest request,
         IReadOnlySet<Guid>? authorizedResourceIds = null
     );
-    Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate, Guid accountId = default);
+    Task<GetResult<User>> GetUserByIdAsync(Guid userId, bool hydrate, AccountScope accountId);
 }

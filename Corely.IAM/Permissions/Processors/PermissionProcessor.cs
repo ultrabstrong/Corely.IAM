@@ -7,7 +7,9 @@ using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Roles.Mappers;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
@@ -226,16 +228,16 @@ internal class PermissionProcessor(
     public async Task<GetResult<Permission>> GetPermissionByIdAsync(
         Guid permissionId,
         bool hydrate,
-        Guid accountId = default
+        AccountScope accountId
     )
     {
         var permissionEntity = hydrate
             ? await _permissionRepo.GetAsync(
-                p => p.Id == permissionId && (accountId == default || p.AccountId == accountId),
+                accountId.ByIdPredicate<PermissionEntity>(permissionId),
                 include: q => q.Include(p => p.Roles)
             )
-            : await _permissionRepo.GetAsync(p =>
-                p.Id == permissionId && (accountId == default || p.AccountId == accountId)
+            : await _permissionRepo.GetAsync(
+                accountId.ByIdPredicate<PermissionEntity>(permissionId)
             );
 
         if (permissionEntity == null)
@@ -258,9 +260,7 @@ internal class PermissionProcessor(
 
         if (hydrate && permissionEntity.Roles != null)
         {
-            permission.Roles = permissionEntity
-                .Roles.Select(r => new ChildRef(r.Id, r.Name, r.IsSystemDefined))
-                .ToList();
+            permission.Roles = permissionEntity.Roles.Select(r => r.ToChildRef()).ToList();
         }
 
         return new GetResult<Permission>(RetrieveResultCode.Success, string.Empty, permission);
@@ -323,8 +323,8 @@ internal class PermissionProcessor(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var entity = await _permissionRepo.GetAsync(p =>
-            p.Id == request.PermissionId && p.AccountId == request.AccountId
+        var entity = await _permissionRepo.GetAsync(
+            AccountScope.Of(request.AccountId).ByIdPredicate<PermissionEntity>(request.PermissionId)
         );
         if (entity == null)
         {
@@ -344,11 +344,11 @@ internal class PermissionProcessor(
 
     public async Task<DeletePermissionResult> DeletePermissionAsync(
         Guid permissionId,
-        Guid accountId = default
+        AccountScope accountId
     )
     {
         var permissionEntity = await _permissionRepo.GetAsync(
-            p => p.Id == permissionId,
+            accountId.ByIdPredicate<PermissionEntity>(permissionId),
             include: q => q.Include(p => p.Roles)
         );
         if (permissionEntity == null)

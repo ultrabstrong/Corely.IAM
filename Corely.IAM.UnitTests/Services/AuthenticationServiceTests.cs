@@ -1,7 +1,8 @@
-﻿using AutoFixture;
+using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Providers;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.GoogleAuths.Models;
@@ -9,6 +10,7 @@ using Corely.IAM.GoogleAuths.Processors;
 using Corely.IAM.GoogleAuths.Providers;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
@@ -39,6 +41,8 @@ public class AuthenticationServiceTests
     private readonly Mock<IGoogleAuthProcessor> _googleAuthProcessorMock;
     private readonly Mock<IGoogleIdTokenValidator> _googleIdTokenValidatorMock;
     private readonly Mock<TimeProvider> _timeProviderMock;
+    private readonly Mock<IApiKeyAuthenticationProvider> _apiKeyAuthenticationProviderMock = new();
+    private readonly Mock<ISessionTokenProvider> _sessionTokenProviderMock = new();
     private readonly AuthenticationService _authenticationService;
 
     private UserEntity? _testUserEntity;
@@ -60,6 +64,9 @@ public class AuthenticationServiceTests
         _googleIdTokenValidatorMock = new Mock<IGoogleIdTokenValidator>();
         _timeProviderMock = new Mock<TimeProvider>();
         _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(DateTimeOffset.UtcNow);
+        _sessionTokenProviderMock
+            .Setup(m => m.BeginRenewalAsync(It.IsAny<string>()))
+            .ReturnsAsync(new SessionTokenRenewal(SessionTokenRenewalCode.Ready, null));
 
         _authenticationService = new AuthenticationService(
             _serviceFactory.GetRequiredService<ILogger<AuthenticationService>>(),
@@ -80,6 +87,8 @@ public class AuthenticationServiceTests
                     LockoutCooldownSeconds = LOCKOUT_COOLDOWN_SECONDS,
                 }
             ),
+            _apiKeyAuthenticationProviderMock.Object,
+            _sessionTokenProviderMock.Object,
             _timeProviderMock.Object
         );
     }
@@ -139,7 +148,7 @@ public class AuthenticationServiceTests
                 )
             );
 
-        mock.Setup(m => m.RenewUserAuthTokenAsync(It.IsAny<string>()))
+        mock.Setup(m => m.RenewUserAuthTokenAsync(It.IsAny<SessionTokenRenewal>()))
             .ReturnsAsync(
                 new RenewUserAuthTokenResult(
                     RenewUserAuthTokenResultCode.Success,
@@ -1073,7 +1082,7 @@ public class AuthenticationServiceTests
     public async Task RenewAuthTokenAsync_ReturnsSessionExpiredError_WhenProviderRejectsRenewal()
     {
         _authenticationProviderMock
-            .Setup(m => m.RenewUserAuthTokenAsync("expired-token"))
+            .Setup(m => m.RenewUserAuthTokenAsync(It.IsAny<SessionTokenRenewal>()))
             .ReturnsAsync(
                 new RenewUserAuthTokenResult(
                     RenewUserAuthTokenResultCode.SessionExpiredError,
@@ -1232,12 +1241,12 @@ public class AuthenticationServiceTests
     #endregion
 
     [Fact]
-    public async Task DeleteExpiredAuthTokensAsync_DeletesThroughTheProvider_InSystemContext()
+    public async Task DeleteExpiredAuthTokensAsync_DeletesThroughTheSessionTokenProvider_InSystemContext()
     {
         _userContextProviderMock
             .Setup(x => x.GetUserContext())
             .Returns(new UserContext(true, TEST_DEVICE_ID));
-        _authenticationProviderMock.Setup(x => x.DeleteExpiredAuthTokensAsync()).ReturnsAsync(3);
+        _sessionTokenProviderMock.Setup(x => x.DeleteExpiredAsync()).ReturnsAsync(3);
 
         var result = await _authenticationService.DeleteExpiredAuthTokensAsync();
 
@@ -1257,7 +1266,7 @@ public class AuthenticationServiceTests
         var result = await _authenticationService.DeleteExpiredAuthTokensAsync();
 
         Assert.Equal(DeleteExpiredAuthTokensResultCode.UnauthorizedError, result.ResultCode);
-        _authenticationProviderMock.Verify(x => x.DeleteExpiredAuthTokensAsync(), Times.Never);
+        _sessionTokenProviderMock.Verify(x => x.DeleteExpiredAsync(), Times.Never);
     }
 
     [Fact]

@@ -12,6 +12,8 @@ Queries entities with filtering, ordering, and pagination. Also retrieves encryp
 | `GetPermissionAsync` | `Guid permissionId, bool hydrate` | `RetrieveSingleResult<Permission>` |
 | `ListGroupsAsync` | `ListGroupsRequest` | `RetrieveListResult<Group>` |
 | `GetGroupAsync` | `Guid groupId, bool hydrate` | `RetrieveSingleResult<Group>` |
+| `ListApiKeysAsync` | `ListApiKeysRequest` | `RetrieveListResult<ApiKey>` |
+| `GetApiKeyAsync` | `Guid apiKeyId, bool hydrate` | `RetrieveSingleResult<ApiKey>` |
 | `ListRolesAsync` | `ListRolesRequest` | `RetrieveListResult<Role>` |
 | `GetRoleAsync` | `Guid roleId, bool hydrate` | `RetrieveSingleResult<Role>` |
 | `ListUsersAsync` | `ListUsersRequest` | `RetrieveListResult<User>` |

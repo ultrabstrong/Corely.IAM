@@ -1,4 +1,5 @@
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Mappers;
@@ -189,5 +190,13 @@ public class UserMapperTests
     public void AccountModels_ReturnsEmpty_WhenAccountsNotLoaded()
     {
         Assert.Empty(new UserEntity().AccountModels());
+    }
+
+    [Fact]
+    public void UserEntity_ToChildRef_CarriesIdAndUsername()
+    {
+        var entity = new UserEntity { Id = Guid.CreateVersion7(), Username = "jdoe" };
+
+        Assert.Equal(new ChildRef(entity.Id, "jdoe"), entity.ToChildRef());
     }
 }

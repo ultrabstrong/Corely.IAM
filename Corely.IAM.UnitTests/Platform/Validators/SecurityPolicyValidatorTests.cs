@@ -56,6 +56,11 @@ public class SecurityPolicyValidatorTests
                 SecurityPolicy.MFA_CHALLENGE_TIMEOUT_SECONDS_MAX
             },
             {
+                nameof(SecurityPolicy.ApiKeyMaxLifetimeDays),
+                SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_MIN,
+                SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_MAX
+            },
+            {
                 nameof(SecurityPolicy.TotpRecoveryCodeCount),
                 SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MIN,
                 SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MAX
@@ -106,6 +111,10 @@ public class SecurityPolicyValidatorTests
             nameof(SecurityPolicy.MfaChallengeTimeoutSeconds) => policy with
             {
                 MfaChallengeTimeoutSeconds = value,
+            },
+            nameof(SecurityPolicy.ApiKeyMaxLifetimeDays) => policy with
+            {
+                ApiKeyMaxLifetimeDays = value,
             },
             nameof(SecurityPolicy.TotpRecoveryCodeCount) => policy with
             {

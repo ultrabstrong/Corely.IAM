@@ -1,11 +1,13 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
@@ -38,6 +40,7 @@ public class GroupProcessorListGetTests
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<RoleEntity>>(),
+            _serviceFactory.GetRequiredService<IReadonlyRepo<ApiKeyEntity>>(),
             _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
@@ -157,7 +160,11 @@ public class GroupProcessorListGetTests
     {
         var group = await CreateGroupEntityAsync("TestGroup");
 
-        var result = await _groupProcessor.GetGroupByIdAsync(group.Id, hydrate: false);
+        var result = await _groupProcessor.GetGroupByIdAsync(
+            group.Id,
+            hydrate: false,
+            AccountScope.Any
+        );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -170,7 +177,11 @@ public class GroupProcessorListGetTests
     [Fact]
     public async Task GetGroupById_ReturnsNotFoundWhenGroupDoesNotExist()
     {
-        var result = await _groupProcessor.GetGroupByIdAsync(Guid.CreateVersion7(), hydrate: false);
+        var result = await _groupProcessor.GetGroupByIdAsync(
+            Guid.CreateVersion7(),
+            hydrate: false,
+            AccountScope.Any
+        );
 
         Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
         Assert.Null(result.Data);
@@ -183,7 +194,11 @@ public class GroupProcessorListGetTests
         var role = await CreateRoleEntityAsync("TestRole");
         var group = await CreateGroupEntityAsync("HydratedGroup", users: [user], roles: [role]);
 
-        var result = await _groupProcessor.GetGroupByIdAsync(group.Id, hydrate: true);
+        var result = await _groupProcessor.GetGroupByIdAsync(
+            group.Id,
+            hydrate: true,
+            AccountScope.Any
+        );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);
@@ -205,7 +220,11 @@ public class GroupProcessorListGetTests
     {
         var group = await CreateGroupEntityAsync("EmptyGroup");
 
-        var result = await _groupProcessor.GetGroupByIdAsync(group.Id, hydrate: true);
+        var result = await _groupProcessor.GetGroupByIdAsync(
+            group.Id,
+            hydrate: true,
+            AccountScope.Any
+        );
 
         Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
         Assert.NotNull(result.Data);

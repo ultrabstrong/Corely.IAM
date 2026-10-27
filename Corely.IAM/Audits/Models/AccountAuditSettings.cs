@@ -1,3 +1,4 @@
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Platform.Models;
 
 namespace Corely.IAM.Audits.Models;

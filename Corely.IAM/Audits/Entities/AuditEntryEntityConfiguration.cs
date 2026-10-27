@@ -19,6 +19,7 @@ internal sealed class AuditEntryEntityConfiguration : EntityConfigurationBase<Au
 
         builder.Property(e => e.OccurredUtc).IsRequired();
         builder.Property(e => e.ActorUserId).IsRequired(false);
+        builder.Property(e => e.ActorApiKeyId).IsRequired(false);
         builder.Property(e => e.AccountId).IsRequired(false);
         builder.Property(e => e.Cohort).IsRequired();
         builder.Property(e => e.Action).IsRequired();

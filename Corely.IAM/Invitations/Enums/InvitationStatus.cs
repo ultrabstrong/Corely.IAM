@@ -1,4 +1,4 @@
-namespace Corely.IAM.Invitations.Models;
+namespace Corely.IAM.Invitations.Enums;
 
 public enum InvitationStatus
 {

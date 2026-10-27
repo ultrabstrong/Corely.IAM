@@ -74,6 +74,41 @@ else
                            Min="SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MIN" Max="SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MAX" />
         </div>
     </div>
+
+    <div class="section-divider mb-4">
+        <div class="section-divider-label">
+            @API_KEYS
+            @EditButton(API_KEYS)
+        </div>
+        <div class="settings-grid mb-3">
+            <span class="prop-label">API keys</span>
+            <div class="setting-wide toggle-list">
+                <ToggleSetting Id="apiKeysEnabled" Label="Accounts can create and use API keys" @bind-Value="_apiKeysEnabled" Editing="IsEditing(API_KEYS)" />
+            </div>
+            @if (_apiKeysEnabled)
+            {
+                <span class="prop-label">Platform account</span>
+                <div class="setting-wide toggle-list">
+                    <ToggleSetting Id="platformAccountApiKeysEnabled" Label="The platform account can hold API keys" @bind-Value="_platformAccountApiKeysEnabled" Editing="IsEditing(API_KEYS)" />
+                </div>
+                <NumberSetting Label="Longest secret lifetime (days)" @bind-Value="_apiKeyMaxLifetimeDays" Editing="IsEditing(API_KEYS)"
+                               Min="SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_MIN" Max="SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_MAX" />
+                <span class="prop-label">Resource types</span>
+                <div class="setting-wide toggle-list">
+                    @foreach (var type in _resourceTypes)
+                    {
+                        var allowed = _apiKeyResourceTypes.Contains(type.Name);
+                        <ToggleSetting Id="@($"apiKeyType-{type.Name}")" Label="@($"{type.Description} ({type.Name})")" Value="allowed"
+                                       ValueChanged="on => ToggleResourceType(type.Name, on)" Editing="IsEditing(API_KEYS)" />
+                    }
+                </div>
+            }
+        </div>
+        <ul class="settings-notes">
+            <li>A host needs its own API to use API keys: IAM issues and checks them but serves no endpoint for them.</li>
+            <li>An API key uses only its permissions on the resource types switched on here, whatever its roles grant.</li>
+        </ul>
+    </div>
 }
 </PlatformSettingsFrame>
 
@@ -89,6 +124,7 @@ else
     private const string PASSWORDS = "Passwords";
     private const string SIGN_IN = "Sign in";
     private const string TWO_FACTOR = "Two factor";
+    private const string API_KEYS = "API keys";
 
     private ConfirmModal _confirmModal = null!;
     private IReadOnlyList<SettingChange> _changes = [];
@@ -110,6 +146,11 @@ else
     private int _refreshReuseGraceSeconds;
     private int _mfaChallengeTimeoutSeconds;
     private int _totpRecoveryCodeCount;
+    private bool _apiKeysEnabled;
+    private bool _platformAccountApiKeysEnabled;
+    private int _apiKeyMaxLifetimeDays;
+    private HashSet<string> _apiKeyResourceTypes = new(StringComparer.OrdinalIgnoreCase);
+    private IReadOnlyList<ResourceTypeInfo> _resourceTypes = [];
 
     protected override async Task LoadCoreAsync()
     {
@@ -127,9 +168,11 @@ else
             AuthAction.Update,
             SecurityPolicy.RESOURCE_TYPE
         );
+        _resourceTypes = [.. ScopedServices.GetRequiredService<IResourceTypeRegistry>().GetAll().OrderBy(t => t.Name)];
         Reset(PASSWORDS);
         Reset(SIGN_IN);
         Reset(TWO_FACTOR);
+        Reset(API_KEYS);
     }
 
     private void Reset(string section)
@@ -156,6 +199,12 @@ else
                 _mfaChallengeTimeoutSeconds = _settings!.MfaChallengeTimeoutSeconds;
                 _totpRecoveryCodeCount = _settings.TotpRecoveryCodeCount;
                 break;
+            case API_KEYS:
+                _apiKeysEnabled = _settings!.ApiKeysEnabled;
+                _platformAccountApiKeysEnabled = _settings.PlatformAccountApiKeysEnabled;
+                _apiKeyMaxLifetimeDays = _settings.ApiKeyMaxLifetimeDays;
+                _apiKeyResourceTypes = new(_settings.ApiKeyResourceTypes.Types, StringComparer.OrdinalIgnoreCase);
+                break;
         }
     }
 
@@ -180,6 +229,13 @@ else
                 AuthSessionIdleTimeoutSeconds = _authSessionIdleTimeoutSeconds,
                 RefreshReuseGraceSeconds = _refreshReuseGraceSeconds,
             },
+            API_KEYS => _settings! with
+            {
+                ApiKeysEnabled = _apiKeysEnabled,
+                PlatformAccountApiKeysEnabled = _platformAccountApiKeysEnabled,
+                ApiKeyMaxLifetimeDays = _apiKeyMaxLifetimeDays,
+                ApiKeyResourceTypes = new ResourceTypeSet(_apiKeyResourceTypes),
+            },
             _ => _settings! with
             {
                 MfaChallengeTimeoutSeconds = _mfaChallengeTimeoutSeconds,
@@ -188,6 +244,14 @@ else
         };
 
     private bool IsEditing(string section) => _editingSections.Contains(section);
+
+    private void ToggleResourceType(string resourceType, bool allowed)
+    {
+        if (allowed)
+            _apiKeyResourceTypes.Add(resourceType);
+        else
+            _apiKeyResourceTypes.Remove(resourceType);
+    }
 
     private RenderFragment EditButton(string section) =>
         @<text>

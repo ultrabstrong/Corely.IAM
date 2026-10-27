@@ -1,12 +1,14 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Platform.Models;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
@@ -44,6 +46,7 @@ public class GroupListAuthorizationScopeTests
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<UserEntity>>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<RoleEntity>>(),
+            _serviceFactory.GetRequiredService<IReadonlyRepo<ApiKeyEntity>>(),
             _serviceFactory.GetRequiredService<IUserOwnershipProcessor>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
@@ -53,6 +56,7 @@ public class GroupListAuthorizationScopeTests
         var authorizationProvider = new AuthorizationProvider(
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>(),
+            new FixedSecurityPolicyProvider(SecurityPolicy.Default),
             _serviceFactory.GetRequiredService<ILogger<AuthorizationProvider>>(),
             Options.Create(new SecurityOptions()),
             TimeProvider.System

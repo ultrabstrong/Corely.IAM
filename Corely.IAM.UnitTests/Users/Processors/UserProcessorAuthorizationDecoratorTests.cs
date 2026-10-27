@@ -2,6 +2,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
@@ -194,7 +195,8 @@ public class UserProcessorAuthorizationDecoratorTests
     {
         var request = new AssignRolesToUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new AssignRolesToUserResult(
             AssignRolesToUserResultCode.Success,
@@ -239,7 +241,8 @@ public class UserProcessorAuthorizationDecoratorTests
     {
         var request = new AssignRolesToUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, User.RESOURCE_TYPE, request.UserId))
@@ -259,7 +262,8 @@ public class UserProcessorAuthorizationDecoratorTests
     {
         var request = new AssignRolesToUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, User.RESOURCE_TYPE, request.UserId))
@@ -294,7 +298,11 @@ public class UserProcessorAuthorizationDecoratorTests
             .Setup(x => x.AssignOwnerRolesToUserAsync(roleId, userId, It.IsAny<Guid>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.AssignOwnerRolesToUserAsync(roleId, userId);
+        var result = await _decorator.AssignOwnerRolesToUserAsync(
+            roleId,
+            userId,
+            Guid.CreateVersion7()
+        );
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
@@ -313,7 +321,8 @@ public class UserProcessorAuthorizationDecoratorTests
     {
         var request = new RemoveRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new RemoveRolesFromUserResult(
             RemoveRolesFromUserResultCode.Success,
@@ -358,7 +367,8 @@ public class UserProcessorAuthorizationDecoratorTests
     {
         var request = new RemoveRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, User.RESOURCE_TYPE, request.UserId))
@@ -378,7 +388,8 @@ public class UserProcessorAuthorizationDecoratorTests
     {
         var request = new RemoveRolesFromUserRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, User.RESOURCE_TYPE, request.UserId))
@@ -411,14 +422,14 @@ public class UserProcessorAuthorizationDecoratorTests
             .Setup(x => x.IsAuthorizedForOwnUser(userId, It.IsAny<bool>()))
             .Returns(true);
         _mockInnerProcessor
-            .Setup(x => x.GetUserByIdAsync(userId, false, It.IsAny<Guid>()))
+            .Setup(x => x.GetUserByIdAsync(userId, false, It.IsAny<AccountScope>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.GetUserByIdAsync(userId, false);
+        var result = await _decorator.GetUserByIdAsync(userId, false, AccountScope.Any);
 
         Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(
-            x => x.GetUserByIdAsync(userId, false, It.IsAny<Guid>()),
+            x => x.GetUserByIdAsync(userId, false, It.IsAny<AccountScope>()),
             Times.Once
         );
     }
@@ -439,14 +450,14 @@ public class UserProcessorAuthorizationDecoratorTests
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE, userId))
             .ReturnsAsync(true);
         _mockInnerProcessor
-            .Setup(x => x.GetUserByIdAsync(userId, false, It.IsAny<Guid>()))
+            .Setup(x => x.GetUserByIdAsync(userId, false, It.IsAny<AccountScope>()))
             .ReturnsAsync(expectedResult);
 
         var result = await _decorator.GetUserByIdAsync(userId, false, Guid.CreateVersion7());
 
         Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(
-            x => x.GetUserByIdAsync(userId, false, It.IsAny<Guid>()),
+            x => x.GetUserByIdAsync(userId, false, It.IsAny<AccountScope>()),
             Times.Once
         );
     }
@@ -462,11 +473,11 @@ public class UserProcessorAuthorizationDecoratorTests
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Read, User.RESOURCE_TYPE, userId))
             .ReturnsAsync(false);
 
-        var result = await _decorator.GetUserByIdAsync(userId, false);
+        var result = await _decorator.GetUserByIdAsync(userId, false, AccountScope.Any);
 
         Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerProcessor.Verify(
-            x => x.GetUserByIdAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<Guid>()),
+            x => x.GetUserByIdAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<AccountScope>()),
             Times.Never
         );
     }
@@ -524,7 +535,11 @@ public class UserProcessorAuthorizationDecoratorTests
     [Fact]
     public async Task AssignRolesToUser_RefusesWithoutCallingInner_ForUncoveredGrant()
     {
-        var request = new AssignRolesToUserRequest([Guid.CreateVersion7()], Guid.CreateVersion7());
+        var request = new AssignRolesToUserRequest(
+            [Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
+            AccountScope.Any
+        );
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>())

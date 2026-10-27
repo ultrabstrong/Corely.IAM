@@ -461,7 +461,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterAccountAsync(new DeregisterAccountRequest(UserContext!.CurrentAccount!.Id));
+            var result = await DeregistrationService.DeregisterAccountAsync(new DeregisterAccountRequest(CurrentAccountId));
             if (result.ResultCode == DeregisterAccountResultCode.Success)
             {
                 NavigationManager.NavigateTo(Links.Dashboard(), forceLoad: true);
@@ -547,7 +547,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await InvitationService.RevokeInvitationAsync(new RevokeInvitationRequest(UserContext!.CurrentAccount!.Id, _confirmItemId));
+            var result = await InvitationService.RevokeInvitationAsync(new RevokeInvitationRequest(CurrentAccountId, _confirmItemId));
             SetResultMessage(result.ResultCode == RevokeInvitationResultCode.Success, "Invitation revoked.", result.Message);
             await ReloadAsync();
         });

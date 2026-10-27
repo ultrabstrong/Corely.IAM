@@ -20,7 +20,7 @@ public class NullablePredicateTests : IAsyncLifetime
         await SignInWithoutAccountAsync();
 
         var nullAccountTokens = await _scenario.Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking()
+            db.AuthTokens.AsNoTracking()
                 .CountAsync(t => t.UserId == _scenario.OutsiderUserId && t.AccountId == null)
         );
 
@@ -34,7 +34,7 @@ public class NullablePredicateTests : IAsyncLifetime
         await SignInAndSelectAccountAsync();
 
         var matching = await _scenario.Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking()
+            db.AuthTokens.AsNoTracking()
                 .Where(t => t.AccountId == _scenario.AccountId)
                 .ToListAsync()
         );
@@ -51,7 +51,7 @@ public class NullablePredicateTests : IAsyncLifetime
 
         var otherAccountId = _scenario.OtherAccountId;
         var matching = await _scenario.Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking().Where(t => t.AccountId != otherAccountId).ToListAsync()
+            db.AuthTokens.AsNoTracking().Where(t => t.AccountId != otherAccountId).ToListAsync()
         );
 
         Assert.Contains(matching, t => t.AccountId == null);
@@ -63,7 +63,7 @@ public class NullablePredicateTests : IAsyncLifetime
         await SignInWithoutAccountAsync();
 
         var nullRows = await _scenario.Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking().Where(t => t.AccountId == null).ToListAsync()
+            db.AuthTokens.AsNoTracking().Where(t => t.AccountId == null).ToListAsync()
         );
 
         Assert.NotEmpty(nullRows);
@@ -76,13 +76,13 @@ public class NullablePredicateTests : IAsyncLifetime
         await SignInAndSelectAccountAsync();
 
         var unrevoked = await _scenario.Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking().CountAsync(t => t.RevokedUtc == null)
+            db.AuthTokens.AsNoTracking().CountAsync(t => t.RevokedUtc == null)
         );
         var revoked = await _scenario.Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking().CountAsync(t => t.RevokedUtc != null)
+            db.AuthTokens.AsNoTracking().CountAsync(t => t.RevokedUtc != null)
         );
         var total = await _scenario.Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking().CountAsync()
+            db.AuthTokens.AsNoTracking().CountAsync()
         );
 
         Assert.Equal(total, unrevoked + revoked);
@@ -96,7 +96,7 @@ public class NullablePredicateTests : IAsyncLifetime
 
         var exception = await Record.ExceptionAsync(() =>
             _scenario.Host.QueryAsync(db =>
-                db.UserAuthTokens.AsNoTracking()
+                db.AuthTokens.AsNoTracking()
                     .Where(t =>
                         t.AccountId == _scenario.AccountId
                         && t.RevokedUtc == null

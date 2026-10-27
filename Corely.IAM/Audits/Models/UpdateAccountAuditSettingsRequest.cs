@@ -1,3 +1,5 @@
+using Corely.IAM.Audits.Enums;
+
 namespace Corely.IAM.Audits.Models;
 
 public record UpdateAccountAuditSettingsRequest(

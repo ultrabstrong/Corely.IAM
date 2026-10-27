@@ -1,7 +1,8 @@
-﻿using AutoFixture;
+using AutoFixture;
 using Corely.DataAccess.Interfaces.UnitOfWork;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.ApiKeys.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.GoogleAuths.Processors;
@@ -102,6 +103,7 @@ public class RegistrationServiceTests
             _groupProcessorMock.Object,
             _roleProcessorMock.Object,
             _permissionProcessorMock.Object,
+            new Mock<IApiKeyProcessor>().Object,
             _userContextProviderMock.Object,
             new Mock<IUserContextSetter>().Object,
             _reauthenticationProviderMock.Object,

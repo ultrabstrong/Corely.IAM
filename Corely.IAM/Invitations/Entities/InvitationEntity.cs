@@ -1,9 +1,10 @@
 using Corely.DataAccess.Interfaces.Entities;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Entities;
 
 namespace Corely.IAM.Invitations.Entities;
 
-internal class InvitationEntity : IHasCreatedUtc, IHasModifiedUtc
+internal class InvitationEntity : IHasCreatedUtc, IHasModifiedUtc, IAccountOwnedEntity
 {
     public const int TOKEN_LENGTH = 32;
     public const int TOKEN_MAX_LENGTH = 64;

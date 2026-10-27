@@ -20,6 +20,10 @@ internal sealed record ConfiguredSecurityPolicy(
         nameof(SecurityOptions.RefreshReuseGraceSeconds),
         nameof(SecurityOptions.MfaChallengeTimeoutSeconds),
         nameof(SecurityOptions.TotpRecoveryCodeCount),
+        nameof(SecurityOptions.ApiKeysEnabled),
+        nameof(SecurityOptions.PlatformAccountApiKeysEnabled),
+        nameof(SecurityOptions.ApiKeyMaxLifetimeDays),
+        nameof(SecurityOptions.ApiKeyResourceTypes),
     ];
 
     public static ConfiguredSecurityPolicy From(IConfiguration configuration)

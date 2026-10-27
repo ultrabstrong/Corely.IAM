@@ -55,7 +55,7 @@ public sealed partial class TestClient(HttpClient client) : IDisposable
         return match.Success ? match.Groups[1].Value : null;
     }
 
-    private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
+    public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
     {
         var cookieHeader = Cookies.ToHeaderValue();
         if (cookieHeader is not null)

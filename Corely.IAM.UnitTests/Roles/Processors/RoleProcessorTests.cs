@@ -1,4 +1,4 @@
-﻿using AutoFixture;
+using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Groups.Models;
@@ -7,6 +7,7 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
+using Corely.IAM.Security.Models;
 using Corely.IAM.UnitTests.ClassData;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
@@ -216,7 +217,11 @@ public class RoleProcessorTests
     [Fact]
     public async Task AssignPermissionsToRole_Fails_WhenRoleDoesNotExist()
     {
-        var request = new AssignPermissionsToRoleRequest([], Guid.CreateVersion7());
+        var request = new AssignPermissionsToRoleRequest(
+            [],
+            Guid.CreateVersion7(),
+            AccountScope.Any
+        );
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
         Assert.Equal(AssignPermissionsToRoleResultCode.RoleNotFoundError, result.ResultCode);
     }
@@ -225,7 +230,7 @@ public class RoleProcessorTests
     public async Task AssignPermissionsToRole_Fails_WhenPermissionsNotProvided()
     {
         var (role, _) = await CreateRoleAsync();
-        var request = new AssignPermissionsToRoleRequest([], role.Id);
+        var request = new AssignPermissionsToRoleRequest([], role.Id, AccountScope.Any);
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
@@ -244,7 +249,11 @@ public class RoleProcessorTests
     {
         var (role, account) = await CreateRoleAsync();
         var permission = await CreatePermissionAsync(account.Id);
-        var request = new AssignPermissionsToRoleRequest([permission.Id], role.Id);
+        var request = new AssignPermissionsToRoleRequest(
+            [permission.Id],
+            role.Id,
+            AccountScope.Any
+        );
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
@@ -277,7 +286,8 @@ public class RoleProcessorTests
         );
         var request = new AssignPermissionsToRoleRequest(
             [existingPermission.Id, newPermission.Id],
-            role.Id
+            role.Id,
+            AccountScope.Any
         );
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
@@ -297,7 +307,11 @@ public class RoleProcessorTests
     {
         var (role, _) = await CreateRoleAsync();
         var permission = await CreatePermissionAsync(role.AccountId);
-        var request = new AssignPermissionsToRoleRequest([Guid.Empty, permission.Id], role.Id);
+        var request = new AssignPermissionsToRoleRequest(
+            [Guid.Empty, permission.Id],
+            role.Id,
+            AccountScope.Any
+        );
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
@@ -319,7 +333,8 @@ public class RoleProcessorTests
         var permissionDifferentAccount = await CreatePermissionAsync(Guid.CreateVersion7());
         var request = new AssignPermissionsToRoleRequest(
             [permissionSameAccount.Id, permissionDifferentAccount.Id],
-            role.Id
+            role.Id,
+            AccountScope.Any
         );
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
@@ -343,7 +358,7 @@ public class RoleProcessorTests
             (await CreatePermissionAsync(account.Id, isSystemDefined: false, role.Id)).Id,
             (await CreatePermissionAsync(account.Id, isSystemDefined: false, role.Id)).Id,
         };
-        var request = new AssignPermissionsToRoleRequest(permissionIds, role.Id);
+        var request = new AssignPermissionsToRoleRequest(permissionIds, role.Id, AccountScope.Any);
         await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
@@ -364,7 +379,7 @@ public class RoleProcessorTests
     {
         var (role, _) = await CreateRoleAsync();
         var permissionIds = _fixture.CreateMany<Guid>().ToList();
-        var request = new AssignPermissionsToRoleRequest(permissionIds, role.Id);
+        var request = new AssignPermissionsToRoleRequest(permissionIds, role.Id, AccountScope.Any);
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
@@ -389,7 +404,7 @@ public class RoleProcessorTests
             (await CreatePermissionAsync(Guid.CreateVersion7())).Id,
             (await CreatePermissionAsync(Guid.CreateVersion7())).Id,
         };
-        var request = new AssignPermissionsToRoleRequest(permissionIds, role.Id);
+        var request = new AssignPermissionsToRoleRequest(permissionIds, role.Id, AccountScope.Any);
 
         var result = await _roleProcessor.AssignPermissionsToRoleAsync(request);
 
@@ -410,7 +425,7 @@ public class RoleProcessorTests
     {
         var (role, _) = await CreateRoleAsync();
 
-        var result = await _roleProcessor.DeleteRoleAsync(role.Id);
+        var result = await _roleProcessor.DeleteRoleAsync(role.Id, AccountScope.Any);
 
         Assert.Equal(DeleteRoleResultCode.Success, result.ResultCode);
 
@@ -422,7 +437,7 @@ public class RoleProcessorTests
     [Fact]
     public async Task DeleteRole_ReturnsNotFound_WhenRoleDoesNotExist()
     {
-        var result = await _roleProcessor.DeleteRoleAsync(Guid.CreateVersion7());
+        var result = await _roleProcessor.DeleteRoleAsync(Guid.CreateVersion7(), AccountScope.Any);
 
         Assert.Equal(DeleteRoleResultCode.RoleNotFoundError, result.ResultCode);
     }
@@ -438,7 +453,7 @@ public class RoleProcessorTests
             r.AccountId == account.Id && r.Name == Role.OWNER_ROLE_NAME
         );
 
-        var result = await _roleProcessor.DeleteRoleAsync(ownerRole!.Id);
+        var result = await _roleProcessor.DeleteRoleAsync(ownerRole!.Id, AccountScope.Any);
 
         Assert.Equal(DeleteRoleResultCode.SystemDefinedRoleError, result.ResultCode);
         Assert.Contains("system-defined", result.Message);
@@ -462,7 +477,7 @@ public class RoleProcessorTests
 
         foreach (var role in systemRoles)
         {
-            var result = await _roleProcessor.DeleteRoleAsync(role.Id);
+            var result = await _roleProcessor.DeleteRoleAsync(role.Id, AccountScope.Any);
             Assert.Equal(DeleteRoleResultCode.SystemDefinedRoleError, result.ResultCode);
         }
     }
@@ -472,7 +487,8 @@ public class RoleProcessorTests
     {
         var request = new RemovePermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
 
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
@@ -484,7 +500,11 @@ public class RoleProcessorTests
     public async Task RemovePermissionsFromRole_Fails_WhenPermissionsNotAssignedToRole()
     {
         var (role, _) = await CreateRoleAsync();
-        var request = new RemovePermissionsFromRoleRequest([Guid.CreateVersion7()], role.Id);
+        var request = new RemovePermissionsFromRoleRequest(
+            [Guid.CreateVersion7()],
+            role.Id,
+            AccountScope.Any
+        );
 
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
 
@@ -504,7 +524,11 @@ public class RoleProcessorTests
         role!.Permissions = [permission];
         await roleRepo.UpdateAsync(role);
 
-        var request = new RemovePermissionsFromRoleRequest([permission.Id], role.Id);
+        var request = new RemovePermissionsFromRoleRequest(
+            [permission.Id],
+            role.Id,
+            AccountScope.Any
+        );
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
 
         Assert.Equal(RemovePermissionsFromRoleResultCode.Success, result.ResultCode);
@@ -521,7 +545,11 @@ public class RoleProcessorTests
         role!.Permissions = [permission!];
         await roleRepo.UpdateAsync(role);
 
-        var request = new RemovePermissionsFromRoleRequest([permission.Id], role.Id);
+        var request = new RemovePermissionsFromRoleRequest(
+            [permission.Id],
+            role.Id,
+            AccountScope.Any
+        );
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
 
         Assert.Equal(RemovePermissionsFromRoleResultCode.Success, result.ResultCode);
@@ -544,7 +572,11 @@ public class RoleProcessorTests
         systemRole!.Permissions = [permission];
         await roleRepo.UpdateAsync(systemRole);
 
-        var request = new RemovePermissionsFromRoleRequest([permission.Id], systemRole.Id);
+        var request = new RemovePermissionsFromRoleRequest(
+            [permission.Id],
+            systemRole.Id,
+            AccountScope.Any
+        );
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
 
         Assert.Equal(RemovePermissionsFromRoleResultCode.Success, result.ResultCode);
@@ -570,7 +602,8 @@ public class RoleProcessorTests
 
         var request = new RemovePermissionsFromRoleRequest(
             [nonSystemPermission.Id, systemPermission.Id],
-            ownerRole.Id
+            ownerRole.Id,
+            AccountScope.Any
         );
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
 
@@ -608,7 +641,11 @@ public class RoleProcessorTests
         ownerRole!.Permissions = [ownerPermission];
         await roleRepo.UpdateAsync(ownerRole);
 
-        var request = new RemovePermissionsFromRoleRequest([ownerPermission.Id], ownerRole.Id);
+        var request = new RemovePermissionsFromRoleRequest(
+            [ownerPermission.Id],
+            ownerRole.Id,
+            AccountScope.Any
+        );
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
 
         Assert.Equal(
@@ -652,7 +689,8 @@ public class RoleProcessorTests
 
         var request = new RemovePermissionsFromRoleRequest(
             [ownerFormatPermission.Id],
-            nonOwnerRole.Id
+            nonOwnerRole.Id,
+            AccountScope.Any
         );
         var result = await _roleProcessor.RemovePermissionsFromRoleAsync(request);
 

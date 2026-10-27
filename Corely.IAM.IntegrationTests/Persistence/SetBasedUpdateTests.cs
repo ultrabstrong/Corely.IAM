@@ -135,7 +135,7 @@ public class SetBasedUpdateTests : IAsyncLifetime
     {
         var now = _scenario.Host.TimeProvider.GetUtcNow().UtcDateTime;
         return _scenario.Host.QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking()
+            db.AuthTokens.AsNoTracking()
                 .CountAsync(t => t.UserId == userId && t.RevokedUtc == null && t.ExpiresUtc > now)
         );
     }

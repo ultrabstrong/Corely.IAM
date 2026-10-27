@@ -1,9 +1,11 @@
 using Corely.Common.Extensions;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 
@@ -31,7 +33,7 @@ internal class GroupProcessorAuthorizationDecorator(
     public async Task<AddUsersToGroupResult> AddUsersToGroupAsync(AddUsersToGroupRequest request)
     {
         if (
-            !_authorizationProvider.HasAccountContext(request.AccountId)
+            !_authorizationProvider.HasAccountContext(request.AccountId.Id)
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Update,
                 Group.RESOURCE_TYPE,
@@ -68,7 +70,7 @@ internal class GroupProcessorAuthorizationDecorator(
     public async Task<RemoveUsersFromGroupResult> RemoveUsersFromGroupAsync(
         RemoveUsersFromGroupRequest request
     ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
+        _authorizationProvider.HasAccountContext(request.AccountId.Id)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             Group.RESOURCE_TYPE,
@@ -87,12 +89,73 @@ internal class GroupProcessorAuthorizationDecorator(
                 []
             );
 
+    public async Task<AddApiKeysToGroupResult> AddApiKeysToGroupAsync(
+        AddApiKeysToGroupRequest request
+    )
+    {
+        if (
+            !_authorizationProvider.HasAccountContext(request.AccountId.Id)
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Update,
+                Group.RESOURCE_TYPE,
+                request.GroupId
+            )
+            || !await _authorizationProvider.IsAuthorizedAsync(
+                AuthAction.Read,
+                ApiKey.RESOURCE_TYPE,
+                [.. request.ApiKeyIds]
+            )
+        )
+        {
+            return new AddApiKeysToGroupResult(
+                AddApiKeysToGroupResultCode.UnauthorizedError,
+                $"Unauthorized to update group {request.GroupId} or read API keys",
+                0,
+                []
+            );
+        }
+
+        if (!await _authorizationProvider.CanGrantGroupAsync(request.GroupId))
+        {
+            return new AddApiKeysToGroupResult(
+                AddApiKeysToGroupResultCode.UnauthorizedError,
+                "Cannot grant permissions you do not hold",
+                0,
+                []
+            );
+        }
+
+        return await _inner.AddApiKeysToGroupAsync(request);
+    }
+
+    public async Task<RemoveApiKeysFromGroupResult> RemoveApiKeysFromGroupAsync(
+        RemoveApiKeysFromGroupRequest request
+    ) =>
+        _authorizationProvider.HasAccountContext(request.AccountId.Id)
+        && await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
+            Group.RESOURCE_TYPE,
+            request.GroupId
+        )
+        && await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Read,
+            ApiKey.RESOURCE_TYPE,
+            [.. request.ApiKeyIds]
+        )
+            ? await _inner.RemoveApiKeysFromGroupAsync(request)
+            : new RemoveApiKeysFromGroupResult(
+                RemoveApiKeysFromGroupResultCode.UnauthorizedError,
+                $"Unauthorized to update group {request.GroupId} or read API keys",
+                0,
+                []
+            );
+
     public async Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(
         AssignRolesToGroupRequest request
     )
     {
         if (
-            !_authorizationProvider.HasAccountContext(request.AccountId)
+            !_authorizationProvider.HasAccountContext(request.AccountId.Id)
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Update,
                 Group.RESOURCE_TYPE,
@@ -129,7 +192,7 @@ internal class GroupProcessorAuthorizationDecorator(
     public async Task<RemoveRolesFromGroupResult> RemoveRolesFromGroupAsync(
         RemoveRolesFromGroupRequest request
     ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
+        _authorizationProvider.HasAccountContext(request.AccountId.Id)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             Group.RESOURCE_TYPE,
@@ -161,8 +224,8 @@ internal class GroupProcessorAuthorizationDecorator(
                 $"Unauthorized to update group {request.GroupId}"
             );
 
-    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId, Guid accountId = default) =>
-        _authorizationProvider.HasAccountContext(accountId)
+    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId, AccountScope accountId) =>
+        _authorizationProvider.HasAccountContext(accountId.Id)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
             Group.RESOURCE_TYPE,
@@ -204,9 +267,9 @@ internal class GroupProcessorAuthorizationDecorator(
     public async Task<GetResult<Group>> GetGroupByIdAsync(
         Guid groupId,
         bool hydrate,
-        Guid accountId = default
+        AccountScope accountId
     ) =>
-        _authorizationProvider.HasAccountContext(accountId)
+        _authorizationProvider.HasAccountContext(accountId.Id)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             Group.RESOURCE_TYPE,

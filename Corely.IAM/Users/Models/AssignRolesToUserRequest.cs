@@ -1,3 +1,5 @@
+using Corely.IAM.Security.Models;
+
 namespace Corely.IAM.Users.Models;
 
-internal record AssignRolesToUserRequest(List<Guid> RoleIds, Guid UserId, Guid AccountId = default);
+internal record AssignRolesToUserRequest(List<Guid> RoleIds, Guid UserId, AccountScope AccountId);

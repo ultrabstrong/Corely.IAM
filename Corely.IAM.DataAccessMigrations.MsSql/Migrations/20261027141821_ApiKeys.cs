@@ -183,31 +183,85 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                 }
             );
 
-            migrationBuilder.DropForeignKey(name: "FK_UserAuthTokens_Users_UserId", table: "UserAuthTokens");
+            migrationBuilder.DropForeignKey(
+                name: "FK_UserAuthTokens_Users_UserId",
+                table: "UserAuthTokens"
+            );
 
             migrationBuilder.DropPrimaryKey(name: "PK_UserAuthTokens", table: "UserAuthTokens");
 
             migrationBuilder.RenameTable(name: "UserAuthTokens", newName: "AuthTokens");
 
-            migrationBuilder.RenameIndex(name: "IX_UserAuthTokens_ExpiresUtc", table: "AuthTokens", newName: "IX_AuthTokens_ExpiresUtc");
+            migrationBuilder.RenameIndex(
+                name: "IX_UserAuthTokens_ExpiresUtc",
+                table: "AuthTokens",
+                newName: "IX_AuthTokens_ExpiresUtc"
+            );
 
-            migrationBuilder.RenameIndex(name: "IX_UserAuthTokens_RefreshExpiresUtc", table: "AuthTokens", newName: "IX_AuthTokens_RefreshExpiresUtc");
+            migrationBuilder.RenameIndex(
+                name: "IX_UserAuthTokens_RefreshExpiresUtc",
+                table: "AuthTokens",
+                newName: "IX_AuthTokens_RefreshExpiresUtc"
+            );
 
-            migrationBuilder.RenameIndex(name: "IX_UserAuthTokens_SessionId", table: "AuthTokens", newName: "IX_AuthTokens_SessionId");
+            migrationBuilder.RenameIndex(
+                name: "IX_UserAuthTokens_SessionId",
+                table: "AuthTokens",
+                newName: "IX_AuthTokens_SessionId"
+            );
 
-            migrationBuilder.RenameIndex(name: "IX_UserAuthTokens_UserId", table: "AuthTokens", newName: "IX_AuthTokens_UserId");
+            migrationBuilder.RenameIndex(
+                name: "IX_UserAuthTokens_UserId",
+                table: "AuthTokens",
+                newName: "IX_AuthTokens_UserId"
+            );
 
-            migrationBuilder.AlterColumn<Guid>(name: "UserId", table: "AuthTokens", type: "uniqueidentifier", nullable: true, oldClrType: typeof(Guid), oldType: "uniqueidentifier");
+            migrationBuilder.AlterColumn<Guid>(
+                name: "UserId",
+                table: "AuthTokens",
+                type: "uniqueidentifier",
+                nullable: true,
+                oldClrType: typeof(Guid),
+                oldType: "uniqueidentifier"
+            );
 
-            migrationBuilder.AddColumn<Guid>(name: "ApiKeyId", table: "AuthTokens", type: "uniqueidentifier", nullable: true);
+            migrationBuilder.AddColumn<Guid>(
+                name: "ApiKeyId",
+                table: "AuthTokens",
+                type: "uniqueidentifier",
+                nullable: true
+            );
 
-            migrationBuilder.AddColumn<int>(name: "Slot", table: "AuthTokens", type: "int", nullable: true);
+            migrationBuilder.AddColumn<int>(
+                name: "Slot",
+                table: "AuthTokens",
+                type: "int",
+                nullable: true
+            );
 
-            migrationBuilder.AddPrimaryKey(name: "PK_AuthTokens", table: "AuthTokens", column: "Id");
+            migrationBuilder.AddPrimaryKey(
+                name: "PK_AuthTokens",
+                table: "AuthTokens",
+                column: "Id"
+            );
 
-            migrationBuilder.AddForeignKey(name: "FK_AuthTokens_Users_UserId", table: "AuthTokens", column: "UserId", principalTable: "Users", principalColumn: "Id", onDelete: ReferentialAction.Cascade);
+            migrationBuilder.AddForeignKey(
+                name: "FK_AuthTokens_Users_UserId",
+                table: "AuthTokens",
+                column: "UserId",
+                principalTable: "Users",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade
+            );
 
-            migrationBuilder.AddForeignKey(name: "FK_AuthTokens_ApiKeys_ApiKeyId", table: "AuthTokens", column: "ApiKeyId", principalTable: "ApiKeys", principalColumn: "Id", onDelete: ReferentialAction.Cascade);
+            migrationBuilder.AddForeignKey(
+                name: "FK_AuthTokens_ApiKeys_ApiKeyId",
+                table: "AuthTokens",
+                column: "ApiKeyId",
+                principalTable: "ApiKeys",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_ApiKeyGroups_GroupsId",
@@ -258,9 +312,15 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
 
             migrationBuilder.DropTable(name: "ApiKeySecrets");
 
-            migrationBuilder.DropForeignKey(name: "FK_AuthTokens_ApiKeys_ApiKeyId", table: "AuthTokens");
+            migrationBuilder.DropForeignKey(
+                name: "FK_AuthTokens_ApiKeys_ApiKeyId",
+                table: "AuthTokens"
+            );
 
-            migrationBuilder.DropForeignKey(name: "FK_AuthTokens_Users_UserId", table: "AuthTokens");
+            migrationBuilder.DropForeignKey(
+                name: "FK_AuthTokens_Users_UserId",
+                table: "AuthTokens"
+            );
 
             migrationBuilder.DropIndex(name: "IX_AuthTokens_ApiKeyId", table: "AuthTokens");
 
@@ -272,23 +332,58 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
 
             migrationBuilder.DropIndex(name: "IX_AuthTokens_UserId", table: "AuthTokens");
 
-            migrationBuilder.AlterColumn<Guid>(name: "UserId", table: "AuthTokens", type: "uniqueidentifier", nullable: false, oldClrType: typeof(Guid), oldType: "uniqueidentifier", oldNullable: true);
+            migrationBuilder.AlterColumn<Guid>(
+                name: "UserId",
+                table: "AuthTokens",
+                type: "uniqueidentifier",
+                nullable: false,
+                oldClrType: typeof(Guid),
+                oldType: "uniqueidentifier",
+                oldNullable: true
+            );
 
             migrationBuilder.DropPrimaryKey(name: "PK_AuthTokens", table: "AuthTokens");
 
             migrationBuilder.RenameTable(name: "AuthTokens", newName: "UserAuthTokens");
 
-            migrationBuilder.RenameIndex(name: "IX_AuthTokens_ExpiresUtc", table: "UserAuthTokens", newName: "IX_UserAuthTokens_ExpiresUtc");
+            migrationBuilder.RenameIndex(
+                name: "IX_AuthTokens_ExpiresUtc",
+                table: "UserAuthTokens",
+                newName: "IX_UserAuthTokens_ExpiresUtc"
+            );
 
-            migrationBuilder.RenameIndex(name: "IX_AuthTokens_RefreshExpiresUtc", table: "UserAuthTokens", newName: "IX_UserAuthTokens_RefreshExpiresUtc");
+            migrationBuilder.RenameIndex(
+                name: "IX_AuthTokens_RefreshExpiresUtc",
+                table: "UserAuthTokens",
+                newName: "IX_UserAuthTokens_RefreshExpiresUtc"
+            );
 
-            migrationBuilder.RenameIndex(name: "IX_AuthTokens_SessionId", table: "UserAuthTokens", newName: "IX_UserAuthTokens_SessionId");
+            migrationBuilder.RenameIndex(
+                name: "IX_AuthTokens_SessionId",
+                table: "UserAuthTokens",
+                newName: "IX_UserAuthTokens_SessionId"
+            );
 
-            migrationBuilder.CreateIndex(name: "IX_UserAuthTokens_UserId", table: "UserAuthTokens", column: "UserId");
+            migrationBuilder.CreateIndex(
+                name: "IX_UserAuthTokens_UserId",
+                table: "UserAuthTokens",
+                column: "UserId"
+            );
 
-            migrationBuilder.AddPrimaryKey(name: "PK_UserAuthTokens", table: "UserAuthTokens", column: "Id");
+            migrationBuilder.AddPrimaryKey(
+                name: "PK_UserAuthTokens",
+                table: "UserAuthTokens",
+                column: "Id"
+            );
 
-            migrationBuilder.AddForeignKey(name: "FK_UserAuthTokens_Users_UserId", table: "UserAuthTokens", column: "UserId", principalTable: "Users", principalColumn: "Id", onDelete: ReferentialAction.Cascade);
+            migrationBuilder.AddForeignKey(
+                name: "FK_UserAuthTokens_Users_UserId",
+                table: "UserAuthTokens",
+                column: "UserId",
+                principalTable: "Users",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade
+            );
 
             migrationBuilder.DropTable(name: "ApiKeys");
 
@@ -309,6 +404,7 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                 table: "PlatformSecuritySettings"
             );
 
-            migrationBuilder.DropColumn(name: "ActorApiKeyId", table: "AuditEntries");        }
+            migrationBuilder.DropColumn(name: "ActorApiKeyId", table: "AuditEntries");
+        }
     }
 }

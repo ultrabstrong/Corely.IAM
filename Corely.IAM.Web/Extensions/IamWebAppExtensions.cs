@@ -10,6 +10,7 @@ public static class IamWebAppExtensions
         public IApplicationBuilder UseIAMWebAuthentication()
         {
             app.UseMiddleware<CorrelationIdMiddleware>();
+            app.UseMiddleware<BearerTokenMiddleware>();
             app.UseMiddleware<AuthenticationTokenMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();

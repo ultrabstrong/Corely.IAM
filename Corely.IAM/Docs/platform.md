@@ -171,6 +171,13 @@ stricter password rule applies the next time a password is set, never to a store
 | Refresh reuse grace | 30 seconds | 0 to 120 | `SecurityOptions:RefreshReuseGraceSeconds` |
 | Two factor prompt timeout | 300 seconds | 60 to 900 | `SecurityOptions:MfaChallengeTimeoutSeconds` |
 | Recovery codes per user | 10 | 5 to 20 | `SecurityOptions:TotpRecoveryCodeCount` |
+| API keys | off | | `SecurityOptions:ApiKeysEnabled` |
+| API keys in the platform account | off | | `SecurityOptions:PlatformAccountApiKeysEnabled` |
+| Longest API key secret lifetime | 365 days | 1 to 3650 | `SecurityOptions:ApiKeyMaxLifetimeDays` |
+| Resource types API keys act on | none | registered types | `SecurityOptions:ApiKeyResourceTypes` |
+
+A key's permissions on any type outside the last setting are ignored, so removing a type takes it
+from every key at once. See [API keys](authentication.md#api-keys).
 
 The limits are constants on `SecurityPolicy`, such as `SecurityPolicy.MAX_LOGIN_ATTEMPTS_MIN`.
 Configuration is checked against them in `AddIAMServices`, so an out of range value stops any host

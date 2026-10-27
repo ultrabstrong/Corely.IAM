@@ -1,12 +1,14 @@
-﻿using Corely.DataAccess.Interfaces.Entities;
+using Corely.DataAccess.Interfaces.Entities;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.ApiKeys.Entities;
+using Corely.IAM.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Users.Entities;
 
 namespace Corely.IAM.Roles.Entities;
 
-internal class RoleEntity : IHasCreatedUtc, IHasModifiedUtc
+internal class RoleEntity : IHasCreatedUtc, IHasModifiedUtc, IAccountOwnedEntity
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = null!;
@@ -16,6 +18,7 @@ internal class RoleEntity : IHasCreatedUtc, IHasModifiedUtc
     public virtual AccountEntity? Account { get; set; } = null!;
     public virtual ICollection<UserEntity>? Users { get; set; }
     public virtual ICollection<GroupEntity>? Groups { get; set; }
+    public virtual ICollection<ApiKeyEntity>? ApiKeys { get; set; }
     public virtual ICollection<PermissionEntity>? Permissions { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime? ModifiedUtc { get; set; }

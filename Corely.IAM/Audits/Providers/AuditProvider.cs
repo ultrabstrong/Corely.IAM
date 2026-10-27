@@ -3,6 +3,7 @@ using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Audits.Entities;
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Mappers;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Extensions;
@@ -144,12 +145,14 @@ internal class AuditProvider(
                     ?? await FindUserIdAsync(services, call.ActorUsername)
                     ?? await FindChallengeUserIdAsync(services, call.ActorMfaChallengeToken);
 
+            var actorApiKeyId = isSystem ? null : pending.Before?.ApiKey?.Id ?? after?.ApiKey?.Id;
+
             var alwaysRecorded = policy.IsAlwaysRecorded(call.Service, pending.Operation);
 
             AuditCohort cohort;
             if (isSystem)
                 cohort = AuditCohort.SystemContext;
-            else if (accountId is null || actorUserId is null)
+            else if (accountId is null || (actorUserId is null && actorApiKeyId is null))
                 cohort = AuditCohort.Accountless;
             else
             {
@@ -165,7 +168,8 @@ internal class AuditProvider(
                     return;
 
                 cohort =
-                    pending.MemberBefore
+                    actorUserId is null
+                    || pending.MemberBefore
                     || await IsMemberAsync(services, actorUserId.Value, accountId.Value)
                         ? AuditCohort.AccountMember
                         : AuditCohort.PlatformMember;
@@ -183,6 +187,7 @@ internal class AuditProvider(
                 Id = Guid.CreateVersion7(),
                 OccurredUtc = pending.StartedUtc,
                 ActorUserId = actorUserId,
+                ActorApiKeyId = actorApiKeyId,
                 Cohort = cohort,
                 AccountId = accountId,
                 Source = _source,

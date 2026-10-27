@@ -2,10 +2,13 @@ using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Web.Configuration;
+using Corely.IAM.Web.Extensions;
 using Corely.IAM.Web.Security;
 using Corely.IAM.Web.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.Web.Middleware;
 
@@ -13,7 +16,8 @@ internal class AuthenticationTokenMiddleware(
     RequestDelegate next,
     ILogger<AuthenticationTokenMiddleware> logger,
     IAuthCookieManager authCookieManager,
-    IUserContextClaimsBuilder userContextClaimsBuilder
+    IUserContextClaimsBuilder userContextClaimsBuilder,
+    IOptions<IAMWebOptions> options
 )
 {
     public async Task InvokeAsync(
@@ -22,6 +26,12 @@ internal class AuthenticationTokenMiddleware(
         IUserContextProvider userContextProvider
     )
     {
+        if (options.Value.AcceptBearerTokens && context.Request.HasBearerToken())
+        {
+            await next(context);
+            return;
+        }
+
         var token = context.Request.Cookies[AuthCookieManager.AUTH_TOKEN_COOKIE];
         var refreshToken = context.Request.Cookies[AuthCookieManager.REFRESH_TOKEN_COOKIE];
 

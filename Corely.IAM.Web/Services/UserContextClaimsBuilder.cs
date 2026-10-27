@@ -7,23 +7,36 @@ internal class UserContextClaimsBuilder : IUserContextClaimsBuilder
 {
     public const string ACCOUNT_ID_CLAIM = "AccountId";
     public const string ACCOUNT_NAME_CLAIM = "AccountName";
+    public const string API_KEY_ID_CLAIM = "ApiKeyId";
 
     public ClaimsPrincipal BuildPrincipal(UserContext? userContext)
     {
-        if (userContext?.User == null)
+        List<Claim> claims;
+        if (userContext?.User != null)
+        {
+            claims =
+            [
+                new(ClaimTypes.NameIdentifier, userContext.User.Id.ToString()),
+                new(ClaimTypes.Name, userContext.User.Username),
+            ];
+
+            if (!string.IsNullOrWhiteSpace(userContext.User.Email))
+            {
+                claims.Add(new Claim(ClaimTypes.Email, userContext.User.Email));
+            }
+        }
+        else if (userContext?.ApiKey != null)
+        {
+            claims =
+            [
+                new(ClaimTypes.NameIdentifier, userContext.ApiKey.Id.ToString()),
+                new(ClaimTypes.Name, userContext.ApiKey.Name),
+                new(API_KEY_ID_CLAIM, userContext.ApiKey.Id.ToString()),
+            ];
+        }
+        else
         {
             return new ClaimsPrincipal(new ClaimsIdentity());
-        }
-
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, userContext.User.Id.ToString()),
-            new(ClaimTypes.Name, userContext.User.Username),
-        };
-
-        if (!string.IsNullOrWhiteSpace(userContext.User.Email))
-        {
-            claims.Add(new Claim(ClaimTypes.Email, userContext.User.Email));
         }
 
         if (userContext.CurrentAccount != null)

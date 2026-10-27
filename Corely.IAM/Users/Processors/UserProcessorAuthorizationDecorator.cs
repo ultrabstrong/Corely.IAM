@@ -3,6 +3,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
@@ -63,7 +64,7 @@ internal class UserProcessorAuthorizationDecorator(
     )
     {
         if (
-            !_authorizationProvider.HasAccountContext(request.AccountId)
+            !_authorizationProvider.HasAccountContext(request.AccountId.Id)
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Update,
                 User.RESOURCE_TYPE,
@@ -100,13 +101,13 @@ internal class UserProcessorAuthorizationDecorator(
     public Task<AssignRolesToUserResult> AssignOwnerRolesToUserAsync(
         Guid roleId,
         Guid userId,
-        Guid accountId = default
+        Guid accountId
     ) => _inner.AssignOwnerRolesToUserAsync(roleId, userId, accountId);
 
     public async Task<RemoveRolesFromUserResult> RemoveRolesFromUserAsync(
         RemoveRolesFromUserRequest request
     ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
+        _authorizationProvider.HasAccountContext(request.AccountId.Id)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             User.RESOURCE_TYPE,
@@ -163,11 +164,11 @@ internal class UserProcessorAuthorizationDecorator(
     public async Task<GetResult<User>> GetUserByIdAsync(
         Guid userId,
         bool hydrate,
-        Guid accountId = default
+        AccountScope accountId
     ) =>
         _authorizationProvider.IsAuthorizedForOwnUser(userId)
         || (
-            _authorizationProvider.HasAccountContext(accountId)
+            _authorizationProvider.HasAccountContext(accountId.Id)
             && await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Read,
                 User.RESOURCE_TYPE,

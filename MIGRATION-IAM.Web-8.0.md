@@ -45,3 +45,16 @@ page. Give the element `class="components-reconnect-modal"` and the card markup 
 ## Security settings page
 
 The Sign in section gains the idle timeout and the refresh reuse grace.
+It also gains an API keys section.
+
+## API keys pages
+
+`IIamWebLinks` gains `ApiKeys(accountId)` and `ApiKey(accountId, apiKeyId)`, so a host's
+implementation must add both. Host the `ApiKeyList` and `ApiKeyDetail` components at those paths,
+wrapped in `AccountScope`, as `Corely.IAM.WebApp` does.
+
+## Bearer tokens
+
+New and off by default: `IAMWebOptions.AcceptBearerTokens`, `MapIAMTokenEndpoints` and `AsIAMApi`.
+See [Bearer API](Corely.IAM.Web/Docs/bearer-api.md). A host that leaves them off sees one change:
+`UseIAMWebAuthentication` adds `BearerTokenMiddleware`, which does nothing until the option is set.

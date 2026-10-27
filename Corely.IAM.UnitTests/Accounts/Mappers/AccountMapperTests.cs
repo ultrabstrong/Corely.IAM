@@ -1,6 +1,7 @@
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Models;
 
 namespace Corely.IAM.UnitTests.Accounts.Mappers;
 
@@ -52,5 +53,13 @@ public class AccountMapperTests
         Assert.NotNull(result);
         Assert.Equal(entity.Id, result.Id);
         Assert.Equal("TestAccount", result.AccountName);
+    }
+
+    [Fact]
+    public void AccountEntity_ToChildRef_CarriesIdAndAccountName()
+    {
+        var entity = new AccountEntity { Id = Guid.CreateVersion7(), AccountName = "Acme" };
+
+        Assert.Equal(new ChildRef(entity.Id, "Acme"), entity.ToChildRef());
     }
 }

@@ -14,6 +14,15 @@ namespace Corely.IAM.IntegrationTests.Infrastructure;
 
 public sealed class IamScenario : IAsyncLifetime
 {
+    private readonly IReadOnlyDictionary<string, string?>? _configuration;
+
+    public IamScenario() { }
+
+    internal IamScenario(IReadOnlyDictionary<string, string?> configuration)
+    {
+        _configuration = configuration;
+    }
+
     public const string Password = "Test1234";
     public const string INVOICE_RESOURCE_TYPE = "invoice";
     public const string REPORT_RESOURCE_TYPE = "report";
@@ -45,10 +54,12 @@ public sealed class IamScenario : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        Host = new IamTestHost(options =>
-            options
-                .RegisterResourceType(INVOICE_RESOURCE_TYPE, "Invoices", AuthAction.Read)
-                .RegisterResourceType(REPORT_RESOURCE_TYPE, "Reports")
+        Host = new IamTestHost(
+            options =>
+                options
+                    .RegisterResourceType(INVOICE_RESOURCE_TYPE, "Invoices", AuthAction.Read)
+                    .RegisterResourceType(REPORT_RESOURCE_TYPE, "Reports"),
+            _configuration
         );
 
         OwnerUserId = await RegisterUserAsync(OwnerUsername);
@@ -200,10 +211,10 @@ public sealed class IamScenario : IAsyncLifetime
     {
         foreach (var userId in new[] { DirectMemberUserId, GroupMemberUserId })
         {
-            var result = await AsOwnerInAccountAsync(
-                AccountId,
-                registration =>
-                    registration.RegisterUserWithAccountAsync(
+            var result = await AsSystemAsync(services =>
+                services
+                    .GetRequiredService<IRegistrationService>()
+                    .RegisterUserWithAccountAsync(
                         new RegisterUserWithAccountRequest(userId, AccountId)
                     )
             );

@@ -8,6 +8,7 @@ public interface IDeregistrationService
     Task<DeregisterAccountResult> DeregisterAccountAsync(DeregisterAccountRequest request);
     Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request);
     Task<DeregisterRoleResult> DeregisterRoleAsync(DeregisterRoleRequest request);
+    Task<DeregisterApiKeyResult> DeregisterApiKeyAsync(DeregisterApiKeyRequest request);
     Task<DeregisterPermissionResult> DeregisterPermissionAsync(DeregisterPermissionRequest request);
     Task<DeregisterUserFromAccountResult> DeregisterUserFromAccountAsync(
         DeregisterUserFromAccountRequest request
@@ -20,6 +21,12 @@ public interface IDeregistrationService
     );
     Task<DeregisterRolesFromUserResult> DeregisterRolesFromUserAsync(
         DeregisterRolesFromUserRequest request
+    );
+    Task<DeregisterRolesFromApiKeyResult> DeregisterRolesFromApiKeyAsync(
+        DeregisterRolesFromApiKeyRequest request
+    );
+    Task<DeregisterApiKeysFromGroupResult> DeregisterApiKeysFromGroupAsync(
+        DeregisterApiKeysFromGroupRequest request
     );
     Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(
         DeregisterPermissionsFromRoleRequest request

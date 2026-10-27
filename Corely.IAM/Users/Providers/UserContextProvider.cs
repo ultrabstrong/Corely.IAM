@@ -14,5 +14,6 @@ internal class UserContextProvider : IUserContextProvider, IUserContextSetter
         _userContext = new UserContext(isSystemContext: true, deviceId);
 
     public void ClearUserContext(Guid userId) =>
-        _userContext = _userContext?.User?.Id == userId ? null : _userContext;
+        _userContext =
+            (_userContext?.User?.Id ?? _userContext?.ApiKey?.Id) == userId ? null : _userContext;
 }

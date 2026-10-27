@@ -1,3 +1,4 @@
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Extensions;
 using Corely.IAM.Security.Enums;
 
@@ -35,6 +36,7 @@ public record AuditEntry(
     public const string CSV_HEADER =
         "Id,OccurredUtc,ActorUserId,ActorName,Cohort,AccountId,AccountName,Source,Service,Operation,Action,ResourceType,ResourceIds,ResultCode,Details";
 
+    public Guid? ActorApiKeyId { get; init; }
     public string? ActorName { get; init; }
     public string? AccountName { get; init; }
 

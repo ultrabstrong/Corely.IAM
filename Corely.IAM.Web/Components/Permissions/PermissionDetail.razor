@@ -2,7 +2,7 @@
 @inject IIamWebLinks Links
 
 <div class="management-header">
-    <h1><i class="bi bi-key me-2"></i>Permission <span class="resource-label">Detail</span></h1>
+    <h1><i class="bi bi-patch-check me-2"></i>Permission <span class="resource-label">Detail</span></h1>
     <a href="@Links.Permissions(CurrentAccountId)" class="btn btn-outline-secondary">Back to Permissions</a>
 </div>
 
@@ -120,7 +120,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await ModificationService.ModifyPermissionAsync(new UpdatePermissionRequest(Id, UserContext!.CurrentAccount!.Id, _editDescription));
+            var result = await ModificationService.ModifyPermissionAsync(new UpdatePermissionRequest(Id, CurrentAccountId, _editDescription));
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Permission updated.", result.Message);
             if (result.ResultCode == ModifyResultCode.Success)
             {
@@ -140,7 +140,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterPermissionAsync(new DeregisterPermissionRequest(Id, UserContext!.CurrentAccount!.Id));
+            var result = await DeregistrationService.DeregisterPermissionAsync(new DeregisterPermissionRequest(Id, CurrentAccountId));
             if (result.ResultCode == DeregisterPermissionResultCode.Success)
             {
                 NavigationManager.NavigateTo(Links.Permissions(CurrentAccountId));

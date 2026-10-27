@@ -14,6 +14,8 @@ public interface IIamWebLinks
     string Role(Guid accountId, Guid roleId);
     string Permissions(Guid accountId);
     string Permission(Guid accountId, Guid permissionId);
+    string ApiKeys(Guid accountId);
+    string ApiKey(Guid accountId, Guid apiKeyId);
     string Audit(Guid accountId);
     string AuditEntry(Guid accountId, Guid entryId);
 }

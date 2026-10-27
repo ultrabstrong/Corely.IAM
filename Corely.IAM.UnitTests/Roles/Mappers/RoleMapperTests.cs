@@ -1,3 +1,4 @@
+using Corely.IAM.Models;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Mappers;
 using Corely.IAM.Roles.Models;
@@ -84,5 +85,18 @@ public class RoleMapperTests
         Assert.Equal(entity.Description, result.Description);
         Assert.True(result.IsSystemDefined);
         Assert.Equal(entity.AccountId, result.AccountId);
+    }
+
+    [Fact]
+    public void RoleEntity_ToChildRef_CarriesIdNameAndSystemFlag()
+    {
+        var entity = new RoleEntity
+        {
+            Id = Guid.CreateVersion7(),
+            Name = "Owner",
+            IsSystemDefined = true,
+        };
+
+        Assert.Equal(new ChildRef(entity.Id, "Owner", true), entity.ToChildRef());
     }
 }

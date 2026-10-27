@@ -3,12 +3,14 @@ using Corely.IAM.Audits.Providers;
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.Services;
 
 internal class PlatformServiceAuthorizationDecorator(
     IPlatformService inner,
-    IAuditAccessProvider auditAccessProvider
+    IAuditAccessProvider auditAccessProvider,
+    IUserContextProvider userContextProvider
 ) : IPlatformService
 {
     private const string UNAUTHORIZED = "Unauthorized";
@@ -17,9 +19,20 @@ internal class PlatformServiceAuthorizationDecorator(
     private readonly IAuditAccessProvider _auditAccessProvider = auditAccessProvider.ThrowIfNull(
         nameof(auditAccessProvider)
     );
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
+    );
 
     public Task<BootstrapPlatformResult> BootstrapPlatformAsync(BootstrapPlatformRequest request) =>
-        _inner.BootstrapPlatformAsync(request);
+        _userContextProvider.GetUserContext() is null or { IsSystemContext: true }
+            ? _inner.BootstrapPlatformAsync(request)
+            : Task.FromResult(
+                new BootstrapPlatformResult(
+                    BootstrapPlatformResultCode.UnauthorizedError,
+                    "The platform is bootstrapped from the migration CLI or system context, never by a signed in caller",
+                    null
+                )
+            );
 
     public Task<int> CompletePlatformOwnerPermissionsAsync() =>
         _inner.CompletePlatformOwnerPermissionsAsync();

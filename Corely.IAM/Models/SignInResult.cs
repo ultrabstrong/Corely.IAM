@@ -15,6 +15,7 @@ public enum SignInResultCode
     InvalidMfaCodeError,
     MfaChallengeExpiredError,
     TwoFactorRequiredError,
+    InvalidApiKeyError,
 }
 
 public record SignInResult(

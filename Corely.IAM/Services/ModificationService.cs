@@ -1,6 +1,8 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.ApiKeys.Models;
+using Corely.IAM.ApiKeys.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Models.Extensions;
 using Corely.IAM.BasicAuths.Processors;
@@ -30,6 +32,7 @@ internal class ModificationService(
     IGroupProcessor groupProcessor,
     IRoleProcessor roleProcessor,
     IPermissionProcessor permissionProcessor,
+    IApiKeyProcessor apiKeyProcessor,
     IKeyRotationProcessor keyRotationProcessor,
     IBasicAuthProcessor basicAuthProcessor,
     IReauthenticationProvider reauthenticationProvider,
@@ -51,6 +54,9 @@ internal class ModificationService(
     );
     private readonly IRoleProcessor _roleProcessor = roleProcessor.ThrowIfNull(
         nameof(roleProcessor)
+    );
+    private readonly IApiKeyProcessor _apiKeyProcessor = apiKeyProcessor.ThrowIfNull(
+        nameof(apiKeyProcessor)
     );
     private readonly IPermissionProcessor _permissionProcessor = permissionProcessor.ThrowIfNull(
         nameof(permissionProcessor)
@@ -93,6 +99,26 @@ internal class ModificationService(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Modifying role {RoleId}", request.RoleId);
         return await _roleProcessor.UpdateRoleAsync(request);
+    }
+
+    public async Task<ModifyResult> ModifyApiKeyAsync(UpdateApiKeyRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation("Modifying API key {ApiKeyId}", request.ApiKeyId);
+        return await _apiKeyProcessor.UpdateApiKeyAsync(request);
+    }
+
+    public async Task<RotateApiKeySecretResult> RotateApiKeySecretAsync(
+        RotateApiKeySecretRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Rotating the {Slot} secret of API key {ApiKeyId}",
+            request.Slot,
+            request.ApiKeyId
+        );
+        return await _apiKeyProcessor.RotateApiKeySecretAsync(request);
     }
 
     public async Task<ModifyResult> ModifyPermissionAsync(UpdatePermissionRequest request)

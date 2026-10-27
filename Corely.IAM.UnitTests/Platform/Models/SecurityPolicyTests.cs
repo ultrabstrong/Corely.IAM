@@ -92,4 +92,27 @@ public class SecurityPolicyTests
 
         Assert.True(relaxed.ValidatePassword("abc").IsSuccess);
     }
+
+    [Theory]
+    [InlineData(false, false, false, false)]
+    [InlineData(false, true, true, false)]
+    [InlineData(true, false, false, true)]
+    [InlineData(true, false, true, false)]
+    [InlineData(true, true, true, true)]
+    public void AllowsApiKeysIn_NeedsKeysOn_AndThePlatformSwitchInThePlatformAccount(
+        bool apiKeysEnabled,
+        bool platformAccountApiKeysEnabled,
+        bool isPlatformAccount,
+        bool expected
+    ) =>
+        Assert.Equal(
+            expected,
+            (
+                SecurityPolicy.Default with
+                {
+                    ApiKeysEnabled = apiKeysEnabled,
+                    PlatformAccountApiKeysEnabled = platformAccountApiKeysEnabled,
+                }
+            ).AllowsApiKeysIn(isPlatformAccount)
+        );
 }

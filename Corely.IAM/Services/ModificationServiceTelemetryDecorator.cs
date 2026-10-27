@@ -1,5 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Extensions;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
@@ -60,6 +61,23 @@ internal class ModificationServiceTelemetryDecorator(
             request,
             () => _inner.ModifyPermissionAsync(request),
             logResult: true
+        );
+
+    public async Task<ModifyResult> ModifyApiKeyAsync(UpdateApiKeyRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(ModificationService),
+            request,
+            () => _inner.ModifyApiKeyAsync(request),
+            logResult: true
+        );
+
+    public async Task<RotateApiKeySecretResult> RotateApiKeySecretAsync(
+        RotateApiKeySecretRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(ModificationService),
+            request,
+            () => _inner.RotateApiKeySecretAsync(request)
         );
 
     public async Task<ModifyResult> RotateAccountKeyAsync(RotateAccountKeyRequest request) =>

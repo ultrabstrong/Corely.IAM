@@ -60,6 +60,17 @@ internal class DeregistrationServiceAuthorizationDecorator(
         DeregisterRolesFromUserRequest request
     ) => _inner.DeregisterRolesFromUserAsync(request);
 
+    public Task<DeregisterApiKeyResult> DeregisterApiKeyAsync(DeregisterApiKeyRequest request) =>
+        _inner.DeregisterApiKeyAsync(request);
+
+    public Task<DeregisterRolesFromApiKeyResult> DeregisterRolesFromApiKeyAsync(
+        DeregisterRolesFromApiKeyRequest request
+    ) => _inner.DeregisterRolesFromApiKeyAsync(request);
+
+    public Task<DeregisterApiKeysFromGroupResult> DeregisterApiKeysFromGroupAsync(
+        DeregisterApiKeysFromGroupRequest request
+    ) => _inner.DeregisterApiKeysFromGroupAsync(request);
+
     public Task<DeregisterPermissionsFromRoleResult> DeregisterPermissionsFromRoleAsync(
         DeregisterPermissionsFromRoleRequest request
     ) => _inner.DeregisterPermissionsFromRoleAsync(request);

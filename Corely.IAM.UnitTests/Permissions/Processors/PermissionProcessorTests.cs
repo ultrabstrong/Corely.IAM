@@ -2,6 +2,7 @@ using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
@@ -12,6 +13,7 @@ using Corely.IAM.Permissions.Providers;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
@@ -198,6 +200,7 @@ public class PermissionProcessorTests
         Assert.Equal(
             [
                 Account.RESOURCE_TYPE,
+                ApiKey.RESOURCE_TYPE,
                 AuditEntry.RESOURCE_TYPE,
                 AccountAuditSettings.RESOURCE_TYPE,
                 Group.RESOURCE_TYPE,
@@ -237,7 +240,7 @@ public class PermissionProcessorTests
             include: q => q.Include(p => p.Roles)
         );
 
-        Assert.Equal(5, permissions.Count);
+        Assert.Equal(6, permissions.Count);
         Assert.All(
             permissions,
             p =>
@@ -428,7 +431,10 @@ public class PermissionProcessorTests
         );
         var createResult = await _permissionProcessor.CreatePermissionAsync(createRequest);
 
-        var result = await _permissionProcessor.DeletePermissionAsync(createResult.CreatedId);
+        var result = await _permissionProcessor.DeletePermissionAsync(
+            createResult.CreatedId,
+            AccountScope.Any
+        );
 
         Assert.Equal(DeletePermissionResultCode.Success, result.ResultCode);
 
@@ -440,7 +446,10 @@ public class PermissionProcessorTests
     [Fact]
     public async Task DeletePermission_ReturnsNotFound_WhenPermissionDoesNotExist()
     {
-        var result = await _permissionProcessor.DeletePermissionAsync(Guid.CreateVersion7());
+        var result = await _permissionProcessor.DeletePermissionAsync(
+            Guid.CreateVersion7(),
+            AccountScope.Any
+        );
 
         Assert.Equal(DeletePermissionResultCode.PermissionNotFoundError, result.ResultCode);
     }
@@ -457,7 +466,10 @@ public class PermissionProcessorTests
             p.AccountId == account.Id && p.IsSystemDefined
         );
 
-        var result = await _permissionProcessor.DeletePermissionAsync(systemPermission!.Id);
+        var result = await _permissionProcessor.DeletePermissionAsync(
+            systemPermission!.Id,
+            AccountScope.Any
+        );
 
         Assert.Equal(DeletePermissionResultCode.SystemDefinedPermissionError, result.ResultCode);
         Assert.Contains("system-defined", result.Message);
@@ -478,11 +490,14 @@ public class PermissionProcessorTests
             p.AccountId == account.Id && p.IsSystemDefined
         );
 
-        Assert.Equal(8, systemPermissions.Count);
+        Assert.Equal(9, systemPermissions.Count);
 
         foreach (var permission in systemPermissions)
         {
-            var result = await _permissionProcessor.DeletePermissionAsync(permission.Id);
+            var result = await _permissionProcessor.DeletePermissionAsync(
+                permission.Id,
+                AccountScope.Any
+            );
             Assert.Equal(
                 DeletePermissionResultCode.SystemDefinedPermissionError,
                 result.ResultCode

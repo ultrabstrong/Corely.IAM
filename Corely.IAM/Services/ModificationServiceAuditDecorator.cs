@@ -1,5 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Groups.Models;
@@ -56,6 +57,22 @@ internal class ModificationServiceAuditDecorator(
         _auditProvider.RecordAsync(
             Update(Permission.RESOURCE_TYPE, request.AccountId, request.PermissionId),
             () => _inner.ModifyPermissionAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<ModifyResult> ModifyApiKeyAsync(UpdateApiKeyRequest request) =>
+        _auditProvider.RecordAsync(
+            Update(ApiKey.RESOURCE_TYPE, request.AccountId, request.ApiKeyId),
+            () => _inner.ModifyApiKeyAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<RotateApiKeySecretResult> RotateApiKeySecretAsync(
+        RotateApiKeySecretRequest request
+    ) =>
+        _auditProvider.RecordAsync(
+            Update(ApiKey.RESOURCE_TYPE, request.AccountId, request.ApiKeyId),
+            () => _inner.RotateApiKeySecretAsync(request),
             r => AuditOutcome.Of(r.ResultCode)
         );
 

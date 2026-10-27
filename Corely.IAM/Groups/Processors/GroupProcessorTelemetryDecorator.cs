@@ -2,6 +2,7 @@ using Corely.Common.Extensions;
 using Corely.IAM.Extensions;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
+using Corely.IAM.Security.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Groups.Processors;
@@ -42,6 +43,26 @@ internal class GroupProcessorTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<AddApiKeysToGroupResult> AddApiKeysToGroupAsync(
+        AddApiKeysToGroupRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(GroupProcessor),
+            request,
+            () => _inner.AddApiKeysToGroupAsync(request),
+            logResult: true
+        );
+
+    public async Task<RemoveApiKeysFromGroupResult> RemoveApiKeysFromGroupAsync(
+        RemoveApiKeysFromGroupRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(GroupProcessor),
+            request,
+            () => _inner.RemoveApiKeysFromGroupAsync(request),
+            logResult: true
+        );
+
     public async Task<AssignRolesToGroupResult> AssignRolesToGroupAsync(
         AssignRolesToGroupRequest request
     ) =>
@@ -70,7 +91,7 @@ internal class GroupProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId, Guid accountId = default) =>
+    public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId, AccountScope accountId) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),
             new { groupId, accountId },
@@ -92,7 +113,7 @@ internal class GroupProcessorTelemetryDecorator(
     public async Task<GetResult<Group>> GetGroupByIdAsync(
         Guid groupId,
         bool hydrate,
-        Guid accountId = default
+        AccountScope accountId
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(GroupProcessor),

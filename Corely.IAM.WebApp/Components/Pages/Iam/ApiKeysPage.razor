@@ -1,0 +1,12 @@
+@page "/accounts/{AccountId:guid}/api-keys"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>API keys - Corely IAM</PageTitle>
+
+<AccountScope AccountId="AccountId">
+    <ApiKeyList />
+</AccountScope>
+
+@code {
+    [Parameter] public Guid AccountId { get; set; }
+}

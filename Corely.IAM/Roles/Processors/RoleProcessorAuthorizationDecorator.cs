@@ -3,6 +3,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.Roles.Processors;
@@ -78,9 +79,9 @@ internal class RoleProcessorAuthorizationDecorator(
     public async Task<GetResult<Role>> GetRoleByIdAsync(
         Guid roleId,
         bool hydrate,
-        Guid accountId = default
+        AccountScope accountId
     ) =>
-        _authorizationProvider.HasAccountContext(accountId)
+        _authorizationProvider.HasAccountContext(accountId.Id)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Read,
             Role.RESOURCE_TYPE,
@@ -98,7 +99,7 @@ internal class RoleProcessorAuthorizationDecorator(
     )
     {
         if (
-            !_authorizationProvider.HasAccountContext(request.AccountId)
+            !_authorizationProvider.HasAccountContext(request.AccountId.Id)
             || !await _authorizationProvider.IsAuthorizedAsync(
                 AuthAction.Update,
                 Role.RESOURCE_TYPE,
@@ -135,7 +136,7 @@ internal class RoleProcessorAuthorizationDecorator(
     public async Task<RemovePermissionsFromRoleResult> RemovePermissionsFromRoleAsync(
         RemovePermissionsFromRoleRequest request
     ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
+        _authorizationProvider.HasAccountContext(request.AccountId.Id)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             Role.RESOURCE_TYPE,
@@ -167,8 +168,8 @@ internal class RoleProcessorAuthorizationDecorator(
                 $"Unauthorized to update role {request.RoleId}"
             );
 
-    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, Guid accountId = default) =>
-        _authorizationProvider.HasAccountContext(accountId)
+    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, AccountScope accountId) =>
+        _authorizationProvider.HasAccountContext(accountId.Id)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Delete,
             Role.RESOURCE_TYPE,

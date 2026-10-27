@@ -58,6 +58,12 @@ internal class SecurityPolicyValidator : AbstractValidator<SecurityPolicy>
                 SecurityPolicy.MFA_CHALLENGE_TIMEOUT_SECONDS_MIN,
                 SecurityPolicy.MFA_CHALLENGE_TIMEOUT_SECONDS_MAX
             );
+        RuleFor(m => m.ApiKeyMaxLifetimeDays)
+            .InclusiveBetween(
+                SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_MIN,
+                SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_MAX
+            );
+        RuleFor(m => m.ApiKeyResourceTypes).NotNull();
         RuleFor(m => m.TotpRecoveryCodeCount)
             .InclusiveBetween(
                 SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MIN,

@@ -1,5 +1,6 @@
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
+using Corely.IAM.Security.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.UnitTests.Groups.Processors;
@@ -43,7 +44,8 @@ public class GroupProcessorTelemetryDecoratorTests
     {
         var request = new AddUsersToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new AddUsersToGroupResult(
             AddUsersToGroupResultCode.Success,
@@ -63,11 +65,60 @@ public class GroupProcessorTelemetryDecoratorTests
     }
 
     [Fact]
+    public async Task AddApiKeysToGroup_DelegatesToInnerAndLogsResult()
+    {
+        var request = new AddApiKeysToGroupRequest(
+            [Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
+            AccountScope.Any
+        );
+        var expectedResult = new AddApiKeysToGroupResult(
+            AddApiKeysToGroupResultCode.Success,
+            string.Empty,
+            1,
+            []
+        );
+        _mockInnerProcessor
+            .Setup(x => x.AddApiKeysToGroupAsync(request))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.AddApiKeysToGroupAsync(request);
+
+        Assert.Equal(expectedResult, result);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
+    public async Task RemoveApiKeysFromGroup_DelegatesToInnerAndLogsResult()
+    {
+        var request = new RemoveApiKeysFromGroupRequest(
+            [Guid.CreateVersion7()],
+            Guid.CreateVersion7(),
+            AccountScope.Any
+        );
+        var expectedResult = new RemoveApiKeysFromGroupResult(
+            RemoveApiKeysFromGroupResultCode.Success,
+            string.Empty,
+            1,
+            []
+        );
+        _mockInnerProcessor
+            .Setup(x => x.RemoveApiKeysFromGroupAsync(request))
+            .ReturnsAsync(expectedResult);
+
+        var result = await _decorator.RemoveApiKeysFromGroupAsync(request);
+
+        Assert.Equal(expectedResult, result);
+        VerifyLoggedWithResult();
+    }
+
+    [Fact]
     public async Task RemoveUsersFromGroup_DelegatesToInnerAndLogsResult()
     {
         var request = new RemoveUsersFromGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new RemoveUsersFromGroupResult(
             RemoveUsersFromGroupResultCode.Success,
@@ -91,7 +142,8 @@ public class GroupProcessorTelemetryDecoratorTests
     {
         var request = new AssignRolesToGroupRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new AssignRolesToGroupResult(
             AssignRolesToGroupResultCode.Success,

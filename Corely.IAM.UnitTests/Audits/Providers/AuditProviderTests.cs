@@ -1,7 +1,9 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Audits.Entities;
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Groups.Models;
@@ -538,6 +540,26 @@ public class AuditProviderTests
         );
 
         Assert.Equal(AuditEntry.SUCCESS_RESULT_CODE, Assert.Single(_written).ResultCode);
+    }
+
+    [Fact]
+    public async Task Record_NamesTheApiKey_AsTheActorInItsAccount()
+    {
+        await SeedAccountAsync();
+        var apiKeyId = Guid.CreateVersion7();
+        _userContextProvider.Context = new UserContext(
+            new ApiKey { Id = apiKeyId, Name = "ci" },
+            new Account { Id = _accountId, AccountName = "Acme" },
+            "device"
+        );
+
+        await RecordInAccountAsync();
+
+        var entry = Assert.Single(_written);
+        Assert.Equal(apiKeyId, entry.ActorApiKeyId);
+        Assert.Null(entry.ActorUserId);
+        Assert.Equal(AuditCohort.AccountMember, entry.Cohort);
+        Assert.Equal(_accountId, entry.AccountId);
     }
 
     private Task<ModifyResult> RecordAccountlessAsync() =>

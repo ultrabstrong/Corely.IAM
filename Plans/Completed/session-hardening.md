@@ -1,7 +1,7 @@
 # Session hardening
 
 **Status: done, not yet released.** Merged to master in Corely.IAM 6.0.0, Corely.IAM.Web 8.0.0 and
-`corely-iam-db` 6.0.0, which ship together with [api-keys.md](../api-keys.md).
+`corely-iam-db` 6.0.0, which ship together with [api-keys.md](api-keys.md).
 
 ## As built
 
@@ -70,7 +70,7 @@ settings.
 ## Refresh tokens
 
 Every sign in path returns an access token and a refresh token: password, MFA verification, Google,
-account switching, and the API key exchange from [api-keys.md](../api-keys.md).
+account switching, and the API key exchange from [api-keys.md](api-keys.md).
 
 - The refresh token is 32 random bytes, base64url encoded. Only its SHA-256 hash is stored; it is high
   entropy, so a salted slow hash adds nothing.
@@ -166,7 +166,7 @@ Breaking: `RenewAuthTokenRequest` changes shape, sign in results gain a refresh 
 - `Corely.IAM` 6.0.0, `Corely.IAM.Web` 8.0.0, `Corely.IAM.DataAccessMigrations.Cli` 6.0.0 (its major
   follows IAM's).
 - Migration through `.\AddMigration.ps1 "SessionHardening"`.
-- Ships in the same release as [api-keys.md](../api-keys.md), since nothing is released while a plan is
+- Ships in the same release as [api-keys.md](api-keys.md), since nothing is released while a plan is
   outstanding.
 
 ## Unknowns

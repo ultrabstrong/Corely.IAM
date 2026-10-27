@@ -1,5 +1,6 @@
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Security.Models;
 
 namespace Corely.IAM.Permissions.Processors;
 
@@ -15,10 +16,10 @@ internal interface IPermissionProcessor
     Task<GetResult<Permission>> GetPermissionByIdAsync(
         Guid permissionId,
         bool hydrate,
-        Guid accountId = default
+        AccountScope accountId
     );
     Task<ModifyResult> UpdatePermissionAsync(UpdatePermissionRequest request);
-    Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId, Guid accountId = default);
+    Task<DeletePermissionResult> DeletePermissionAsync(Guid permissionId, AccountScope accountId);
     Task<List<EffectivePermission>> GetEffectivePermissionsForUserAsync(
         string resourceType,
         Guid resourceId,

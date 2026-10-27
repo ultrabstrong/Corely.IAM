@@ -77,6 +77,12 @@ internal class AuthenticationServiceTelemetryDecorator(
             () => _inner.VerifyMfaAsync(request)
         );
 
+    public async Task<SignInResult> SignInWithApiKeyAsync(SignInWithApiKeyRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(AuthenticationService),
+            () => _inner.SignInWithApiKeyAsync(request)
+        );
+
     public async Task<RenewAuthTokenResult> RenewAuthTokenAsync(RenewAuthTokenRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),

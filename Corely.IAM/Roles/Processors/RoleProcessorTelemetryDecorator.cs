@@ -2,6 +2,7 @@ using Corely.Common.Extensions;
 using Corely.IAM.Extensions;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Roles.Processors;
@@ -64,7 +65,7 @@ internal class RoleProcessorTelemetryDecorator(
     public async Task<GetResult<Role>> GetRoleByIdAsync(
         Guid roleId,
         bool hydrate,
-        Guid accountId = default
+        AccountScope accountId
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
@@ -106,7 +107,7 @@ internal class RoleProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, Guid accountId = default) =>
+    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, AccountScope accountId) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(RoleProcessor),
             new { roleId, accountId },

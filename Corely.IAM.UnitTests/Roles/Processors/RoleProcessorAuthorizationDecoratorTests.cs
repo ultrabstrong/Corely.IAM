@@ -2,6 +2,7 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.UnitTests.Roles.Processors;
@@ -168,7 +169,8 @@ public class RoleProcessorAuthorizationDecoratorTests
     {
         var request = new AssignPermissionsToRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new AssignPermissionsToRoleResult(
             AssignPermissionsToRoleResultCode.Success,
@@ -217,7 +219,8 @@ public class RoleProcessorAuthorizationDecoratorTests
     {
         var request = new AssignPermissionsToRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, Role.RESOURCE_TYPE, request.RoleId))
@@ -237,7 +240,8 @@ public class RoleProcessorAuthorizationDecoratorTests
     {
         var request = new AssignPermissionsToRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, Role.RESOURCE_TYPE, request.RoleId))
@@ -267,7 +271,8 @@ public class RoleProcessorAuthorizationDecoratorTests
     {
         var request = new RemovePermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         var expectedResult = new RemovePermissionsFromRoleResult(
             RemovePermissionsFromRoleResultCode.Success,
@@ -317,7 +322,8 @@ public class RoleProcessorAuthorizationDecoratorTests
     {
         var request = new RemovePermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, Role.RESOURCE_TYPE, request.RoleId))
@@ -337,7 +343,8 @@ public class RoleProcessorAuthorizationDecoratorTests
     {
         var request = new RemovePermissionsFromRoleRequest(
             [Guid.CreateVersion7(), Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, Role.RESOURCE_TYPE, request.RoleId))
@@ -371,17 +378,20 @@ public class RoleProcessorAuthorizationDecoratorTests
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Delete, Role.RESOURCE_TYPE, roleId))
             .ReturnsAsync(true);
         _mockInnerProcessor
-            .Setup(x => x.DeleteRoleAsync(roleId, It.IsAny<Guid>()))
+            .Setup(x => x.DeleteRoleAsync(roleId, It.IsAny<AccountScope>()))
             .ReturnsAsync(expectedResult);
 
-        var result = await _decorator.DeleteRoleAsync(roleId);
+        var result = await _decorator.DeleteRoleAsync(roleId, AccountScope.Any);
 
         Assert.Equal(expectedResult, result);
         _mockAuthorizationProvider.Verify(
             x => x.IsAuthorizedAsync(AuthAction.Delete, Role.RESOURCE_TYPE, roleId),
             Times.Once
         );
-        _mockInnerProcessor.Verify(x => x.DeleteRoleAsync(roleId, It.IsAny<Guid>()), Times.Once);
+        _mockInnerProcessor.Verify(
+            x => x.DeleteRoleAsync(roleId, It.IsAny<AccountScope>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -392,11 +402,11 @@ public class RoleProcessorAuthorizationDecoratorTests
             .Setup(x => x.IsAuthorizedAsync(AuthAction.Delete, Role.RESOURCE_TYPE, roleId))
             .ReturnsAsync(false);
 
-        var result = await _decorator.DeleteRoleAsync(roleId);
+        var result = await _decorator.DeleteRoleAsync(roleId, AccountScope.Any);
 
         Assert.Equal(DeleteRoleResultCode.UnauthorizedError, result.ResultCode);
         _mockInnerProcessor.Verify(
-            x => x.DeleteRoleAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
+            x => x.DeleteRoleAsync(It.IsAny<Guid>(), It.IsAny<AccountScope>()),
             Times.Never
         );
     }
@@ -418,7 +428,8 @@ public class RoleProcessorAuthorizationDecoratorTests
     {
         var request = new AssignPermissionsToRoleRequest(
             [Guid.CreateVersion7()],
-            Guid.CreateVersion7()
+            Guid.CreateVersion7(),
+            AccountScope.Any
         );
         _mockAuthorizationProvider
             .Setup(x =>

@@ -1,6 +1,8 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.ApiKeys.Models;
+using Corely.IAM.ApiKeys.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
@@ -25,6 +27,7 @@ internal class RetrievalService(
     IRoleProcessor roleProcessor,
     IUserProcessor userProcessor,
     IAccountProcessor accountProcessor,
+    IApiKeyProcessor apiKeyProcessor,
     ISecurityProvider securityProvider,
     ISymmetricEncryptionProviderFactory symmetricEncryptionProviderFactory,
     IUserContextProvider userContextProvider
@@ -44,6 +47,9 @@ internal class RetrievalService(
     );
     private readonly IAccountProcessor _accountProcessor = accountProcessor.ThrowIfNull(
         nameof(accountProcessor)
+    );
+    private readonly IApiKeyProcessor _apiKeyProcessor = apiKeyProcessor.ThrowIfNull(
+        nameof(apiKeyProcessor)
     );
     private readonly ISecurityProvider _securityProvider = securityProvider.ThrowIfNull(
         nameof(securityProvider)
@@ -66,7 +72,7 @@ internal class RetrievalService(
         var result = await _permissionProcessor.GetPermissionByIdAsync(
             permissionId,
             hydrate,
-            GetCurrentAccountId()
+            GetCurrentAccountScope()
         );
         var effectivePermissions = await GetEffectivePermissionsAsync(
             Permission.RESOURCE_TYPE,
@@ -88,7 +94,7 @@ internal class RetrievalService(
         var result = await _groupProcessor.GetGroupByIdAsync(
             groupId,
             hydrate,
-            GetCurrentAccountId()
+            GetCurrentAccountScope()
         );
         var effectivePermissions = await GetEffectivePermissionsAsync(Group.RESOURCE_TYPE, groupId);
         return new RetrieveSingleResult<Group>(
@@ -104,9 +110,38 @@ internal class RetrievalService(
 
     public async Task<RetrieveSingleResult<Role>> GetRoleAsync(Guid roleId, bool hydrate = false)
     {
-        var result = await _roleProcessor.GetRoleByIdAsync(roleId, hydrate, GetCurrentAccountId());
+        var result = await _roleProcessor.GetRoleByIdAsync(
+            roleId,
+            hydrate,
+            GetCurrentAccountScope()
+        );
         var effectivePermissions = await GetEffectivePermissionsAsync(Role.RESOURCE_TYPE, roleId);
         return new RetrieveSingleResult<Role>(
+            result.ResultCode,
+            result.Message,
+            result.Data,
+            effectivePermissions
+        );
+    }
+
+    public async Task<RetrieveListResult<ApiKey>> ListApiKeysAsync(ListApiKeysRequest request) =>
+        (await _apiKeyProcessor.ListApiKeysAsync(request)).ToRetrieveListResult();
+
+    public async Task<RetrieveSingleResult<ApiKey>> GetApiKeyAsync(
+        Guid apiKeyId,
+        bool hydrate = false
+    )
+    {
+        var result = await _apiKeyProcessor.GetApiKeyByIdAsync(
+            apiKeyId,
+            hydrate,
+            GetCurrentAccountScope()
+        );
+        var effectivePermissions = await GetEffectivePermissionsAsync(
+            ApiKey.RESOURCE_TYPE,
+            apiKeyId
+        );
+        return new RetrieveSingleResult<ApiKey>(
             result.ResultCode,
             result.Message,
             result.Data,
@@ -119,7 +154,11 @@ internal class RetrievalService(
 
     public async Task<RetrieveSingleResult<User>> GetUserAsync(Guid userId, bool hydrate = false)
     {
-        var result = await _userProcessor.GetUserByIdAsync(userId, hydrate, GetCurrentAccountId());
+        var result = await _userProcessor.GetUserByIdAsync(
+            userId,
+            hydrate,
+            GetCurrentAccountScope()
+        );
         var effectivePermissions = await GetEffectivePermissionsAsync(User.RESOURCE_TYPE, userId);
         return new RetrieveSingleResult<User>(
             result.ResultCode,
@@ -157,7 +196,7 @@ internal class RetrievalService(
     {
         var userContext = _userContextProvider.GetUserContext();
         if (
-            userContext == null
+            userContext?.User == null
             || userContext.IsSystemContext
             || userContext.CurrentAccount == null
         )
@@ -166,13 +205,13 @@ internal class RetrievalService(
         return await _permissionProcessor.GetEffectivePermissionsForUserAsync(
             resourceType,
             resourceId,
-            userContext.User!.Id,
+            userContext.User.Id,
             userContext.CurrentAccount.Id
         );
     }
 
-    private Guid GetCurrentAccountId() =>
-        _userContextProvider.GetUserContext()?.CurrentAccount?.Id ?? Guid.Empty;
+    private AccountScope GetCurrentAccountScope() =>
+        _userContextProvider.GetUserContext()?.CurrentAccountScope ?? default;
 
     public async Task<
         RetrieveSingleResult<IIamSymmetricEncryptionProvider>

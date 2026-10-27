@@ -2,6 +2,7 @@ using System.Text;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.ApiKeys.Entities;
 using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Mappers;
 using Corely.IAM.Audits.Models;
@@ -24,6 +25,7 @@ internal class AuditService(
     IRepo<PlatformSettingsEntity> platformSettingsRepo,
     IReadonlyRepo<AccountEntity> accountRepo,
     IReadonlyRepo<UserEntity> userRepo,
+    IReadonlyRepo<ApiKeyEntity> apiKeyRepo,
     IAuditAccessProvider auditAccessProvider,
     IAuditPolicy auditPolicy,
     AuditSettingsCache auditSettingsCache,
@@ -43,6 +45,9 @@ internal class AuditService(
         nameof(accountRepo)
     );
     private readonly IReadonlyRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
+    private readonly IReadonlyRepo<ApiKeyEntity> _apiKeyRepo = apiKeyRepo.ThrowIfNull(
+        nameof(apiKeyRepo)
+    );
     private readonly IAuditAccessProvider _auditAccessProvider = auditAccessProvider.ThrowIfNull(
         nameof(auditAccessProvider)
     );
@@ -390,6 +395,15 @@ internal class AuditService(
         var userNames = await UserNamesAsync([
             .. entries.Select(e => e.ActorUserId).OfType<Guid>().Distinct(),
         ]);
+        var apiKeyIds = entries.Select(e => e.ActorApiKeyId).OfType<Guid>().Distinct().ToList();
+        var apiKeyNames =
+            apiKeyIds.Count == 0
+                ? []
+                : (
+                    await _apiKeyRepo.QueryAsync(q =>
+                        q.Where(k => apiKeyIds.Contains(k.Id)).Select(k => new { k.Id, k.Name })
+                    )
+                ).ToDictionary(k => k.Id, k => k.Name);
         var accountNames = await AccountNamesAsync([
             .. entries.Select(e => e.AccountId).OfType<Guid>().Distinct(),
         ]);
@@ -399,7 +413,10 @@ internal class AuditService(
             .. entries.Select(e =>
                 e with
                 {
-                    ActorName = e.ActorUserId is { } u ? userNames.GetValueOrDefault(u) : null,
+                    ActorName =
+                        e.ActorUserId is { } u ? userNames.GetValueOrDefault(u)
+                        : e.ActorApiKeyId is { } k ? apiKeyNames.GetValueOrDefault(k)
+                        : null,
                     AccountName = e.AccountId is { } a ? accountNames.GetValueOrDefault(a) : null,
                 }
             ),

@@ -21,4 +21,8 @@ public enum PlatformSetting
     RefreshReuseGraceSeconds,
     MfaChallengeTimeoutSeconds,
     TotpRecoveryCodeCount,
+    ApiKeysEnabled,
+    PlatformAccountApiKeysEnabled,
+    ApiKeyMaxLifetimeDays,
+    ApiKeyResourceTypes,
 }

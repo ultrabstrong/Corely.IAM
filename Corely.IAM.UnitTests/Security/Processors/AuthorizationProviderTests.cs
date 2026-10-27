@@ -5,6 +5,7 @@ using Corely.IAM.Groups.Entities;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Platform.Models;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Enums;
@@ -486,6 +487,7 @@ public class AuthorizationProviderTests
         return new AuthorizationProvider(
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>(),
+            new FixedSecurityPolicyProvider(SecurityPolicy.Default),
             _serviceFactory.GetRequiredService<ILogger<AuthorizationProvider>>(),
             Options.Create(new SecurityOptions { PermissionCacheTtlSeconds = CACHE_TTL_SECONDS }),
             _timeProvider

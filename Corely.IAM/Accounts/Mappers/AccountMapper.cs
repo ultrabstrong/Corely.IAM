@@ -1,5 +1,6 @@
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Models;
 using Corely.IAM.Security.Mappers;
 
 namespace Corely.IAM.Accounts.Mappers;
@@ -34,6 +35,8 @@ internal static class AccountMapper
 
     extension(AccountEntity entity)
     {
+        public ChildRef ToChildRef() => new(entity.Id, entity.AccountName);
+
         public Account ToModel()
         {
             return new Account

@@ -1,5 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Models;
@@ -49,6 +50,16 @@ internal class AuthenticationServiceAuditDecorator(
                 ActorMfaChallengeToken = request.MfaChallengeToken,
             },
             () => _inner.VerifyMfaAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<SignInResult> SignInWithApiKeyAsync(SignInWithApiKeyRequest request) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Execute, ApiKey.RESOURCE_TYPE)
+            {
+                AccountId = Guid.Empty,
+            },
+            () => _inner.SignInWithApiKeyAsync(request),
             r => AuditOutcome.Of(r.ResultCode)
         );
 

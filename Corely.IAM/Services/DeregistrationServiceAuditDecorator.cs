@@ -1,5 +1,7 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Groups.Models;
@@ -117,6 +119,43 @@ internal class DeregistrationServiceAuditDecorator(
                 ResourceIds = [request.GroupId, .. request.RoleIds ?? []],
             },
             () => _inner.DeregisterRolesFromGroupAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<DeregisterApiKeyResult> DeregisterApiKeyAsync(DeregisterApiKeyRequest request) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Delete, ApiKey.RESOURCE_TYPE)
+            {
+                AccountId = request.AccountId,
+                ResourceIds = [request.ApiKeyId],
+            },
+            () => _inner.DeregisterApiKeyAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<DeregisterRolesFromApiKeyResult> DeregisterRolesFromApiKeyAsync(
+        DeregisterRolesFromApiKeyRequest request
+    ) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Update, ApiKey.RESOURCE_TYPE)
+            {
+                AccountId = request.AccountId,
+                ResourceIds = [request.ApiKeyId, .. request.RoleIds ?? []],
+            },
+            () => _inner.DeregisterRolesFromApiKeyAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<DeregisterApiKeysFromGroupResult> DeregisterApiKeysFromGroupAsync(
+        DeregisterApiKeysFromGroupRequest request
+    ) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Update, Group.RESOURCE_TYPE)
+            {
+                AccountId = request.AccountId,
+                ResourceIds = [request.GroupId, .. request.ApiKeyIds ?? []],
+            },
+            () => _inner.DeregisterApiKeysFromGroupAsync(request),
             r => AuditOutcome.Of(r.ResultCode)
         );
 

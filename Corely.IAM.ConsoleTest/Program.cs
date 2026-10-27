@@ -109,6 +109,7 @@ internal class Program
                 new RegisterUserRequest("user2", "email2@x.y", "Test1234")
             );
 
+            authenticationService.AuthenticateAsSystem(TEST_DEVICE_ID);
             var registerUserWithAccountResult =
                 await registrationService.RegisterUserWithAccountAsync(
                     new RegisterUserWithAccountRequest(
@@ -116,6 +117,7 @@ internal class Program
                         registerAccountResult.CreatedAccountId
                     )
                 );
+            await authenticationService.AuthenticateWithTokenAsync(switchAccountResult.AuthToken!);
 
             var registerGroupResult = await registrationService.RegisterGroupAsync(
                 new RegisterGroupRequest("grp1", registerAccountResult.CreatedAccountId)

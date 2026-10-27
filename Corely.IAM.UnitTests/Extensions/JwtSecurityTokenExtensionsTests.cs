@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Corely.IAM.Extensions;
-using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.UnitTests.Extensions;
 
@@ -27,7 +27,9 @@ public class JwtSecurityTokenExtensionsTests
     public void SignedInAccountId_ParsesTheClaim()
     {
         var id = Guid.CreateVersion7();
-        var token = Token(new Claim(TokenIssueContext.SIGNED_IN_ACCOUNT_ID_CLAIM, id.ToString()));
+        var token = Token(
+            new Claim(SessionTokenProvider.SIGNED_IN_ACCOUNT_ID_CLAIM, id.ToString())
+        );
 
         Assert.Equal(id, token.SignedInAccountId());
     }
@@ -41,7 +43,7 @@ public class JwtSecurityTokenExtensionsTests
         var token =
             value == null
                 ? Token()
-                : Token(new Claim(TokenIssueContext.SIGNED_IN_ACCOUNT_ID_CLAIM, value));
+                : Token(new Claim(SessionTokenProvider.SIGNED_IN_ACCOUNT_ID_CLAIM, value));
 
         Assert.Null(token.SignedInAccountId());
     }

@@ -33,6 +33,7 @@ Role properties with permission assignment. A system-defined role's name and des
 **Features:**
 - **Edit properties**: name, description (disabled for system roles)
 - **Permissions section**: paginated (10 per page), add/remove via `EntityPickerModal`. The picker lists permissions by name with their type, and offers only permissions the caller could grant (`GetGrantablePermissionIdsAsync`)
+- **Holders**: the users, groups and API keys that hold the role, each linking to its page. API keys are hidden while the platform leaves keys off for the account
 - **Effective permissions panel**: all permissions assigned to this role
 - **System role badge**: displayed for system-defined roles
 

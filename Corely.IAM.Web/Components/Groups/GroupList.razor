@@ -125,7 +125,7 @@ else
                 _ => null
             };
         }
-        var result = await RetrievalService.ListGroupsAsync(new ListGroupsRequest(UserContext!.CurrentAccount!.Id, filter, order, _skip, _take));
+        var result = await RetrievalService.ListGroupsAsync(new ListGroupsRequest(CurrentAccountId, filter, order, _skip, _take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             _items = result.Data.Items;
@@ -142,7 +142,7 @@ else
         if (string.IsNullOrWhiteSpace(_newGroupName)) return;
         await ExecuteSafeAsync(async () =>
         {
-            var result = await RegistrationService.RegisterGroupAsync(new RegisterGroupRequest(_newGroupName, UserContext!.CurrentAccount!.Id));
+            var result = await RegistrationService.RegisterGroupAsync(new RegisterGroupRequest(_newGroupName, CurrentAccountId));
             SetResultMessage(result.ResultCode == CreateGroupResultCode.Success, "Group created.", result.Message);
             _newGroupName = string.Empty;
             await ReloadAsync();
@@ -155,7 +155,7 @@ else
     {
         await ExecuteSafeAsync(async () =>
         {
-            var result = await DeregistrationService.DeregisterGroupAsync(new DeregisterGroupRequest(_confirmItemId, UserContext!.CurrentAccount!.Id));
+            var result = await DeregistrationService.DeregisterGroupAsync(new DeregisterGroupRequest(_confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterGroupResultCode.Success, "Group deleted.", result.Message);
             await ReloadAsync();
         });

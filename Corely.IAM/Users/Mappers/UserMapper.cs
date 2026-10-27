@@ -1,5 +1,6 @@
 using Corely.IAM.Accounts.Mappers;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Users.Entities;
@@ -42,6 +43,8 @@ internal static class UserMapper
 
     extension(UserEntity entity)
     {
+        public ChildRef ToChildRef() => new(entity.Id, entity.Username);
+
         public User ToModel()
         {
             return new User

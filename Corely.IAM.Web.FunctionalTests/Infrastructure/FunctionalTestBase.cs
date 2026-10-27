@@ -1,6 +1,7 @@
 using Corely.IAM.DataAccess;
 using Corely.IAM.Models;
 using Corely.IAM.PasswordRecoveries.Models;
+using Corely.IAM.Security.Entities;
 using Corely.IAM.Services;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Providers;
@@ -183,7 +184,7 @@ public abstract class FunctionalTestBase : IAsyncLifetime
         return client;
     }
 
-    internal async Task<UserAuthTokenEntity> CurrentAuthTokenRowAsync() =>
+    internal async Task<AuthTokenEntity> CurrentAuthTokenRowAsync() =>
         (await GetAuthTokenRowAsync(Guid.Parse(CurrentAuthTokenId!)))!;
 
     protected bool HasAuthCookies => Client.Cookies.Contains(AuthCookieManager.AUTH_TOKEN_COOKIE);
@@ -191,12 +192,12 @@ public abstract class FunctionalTestBase : IAsyncLifetime
     internal Task<T> QueryAsync<T>(Func<IamDbContext, Task<T>> query) =>
         Factory.WithScopeAsync(services => query(services.GetRequiredService<IamDbContext>()));
 
-    internal Task<UserAuthTokenEntity?> GetAuthTokenRowAsync(Guid id) =>
-        QueryAsync(db => db.UserAuthTokens.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id));
+    internal Task<AuthTokenEntity?> GetAuthTokenRowAsync(Guid id) =>
+        QueryAsync(db => db.AuthTokens.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id));
 
-    internal Task<List<UserAuthTokenEntity>> GetActiveAuthTokensAsync() =>
+    internal Task<List<AuthTokenEntity>> GetActiveAuthTokensAsync() =>
         QueryAsync(db =>
-            db.UserAuthTokens.AsNoTracking()
+            db.AuthTokens.AsNoTracking()
                 .Where(t => t.UserId == OwnerUserId && t.RevokedUtc == null)
                 .ToListAsync()
         );
@@ -208,7 +209,7 @@ public abstract class FunctionalTestBase : IAsyncLifetime
         await Factory.WithScopeAsync(async services =>
         {
             var db = services.GetRequiredService<IamDbContext>();
-            var row = await db.UserAuthTokens.FirstAsync(t => t.Id == tokenId);
+            var row = await db.AuthTokens.FirstAsync(t => t.Id == tokenId);
             row.RevokedUtc = revokedAt;
             await db.SaveChangesAsync();
         });

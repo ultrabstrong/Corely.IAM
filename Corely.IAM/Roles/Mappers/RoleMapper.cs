@@ -1,3 +1,4 @@
+using Corely.IAM.Models;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
 
@@ -30,6 +31,8 @@ internal static class RoleMapper
 
     extension(RoleEntity entity)
     {
+        public ChildRef ToChildRef() => new(entity.Id, entity.Name, entity.IsSystemDefined);
+
         public Role ToModel()
         {
             return new Role

@@ -3,6 +3,8 @@ using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.ApiKeys.Mappers;
+using Corely.IAM.Groups.Mappers;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions;
 using Corely.IAM.Permissions.Entities;
@@ -10,6 +12,8 @@ using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Mappers;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Models;
+using Corely.IAM.Users.Mappers;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
 using Microsoft.EntityFrameworkCore;
@@ -162,18 +166,19 @@ internal class RoleProcessor(
     public async Task<GetResult<Role>> GetRoleByIdAsync(
         Guid roleId,
         bool hydrate,
-        Guid accountId = default
+        AccountScope accountId
     )
     {
         var roleEntity = hydrate
             ? await _roleRepo.GetAsync(
-                r => r.Id == roleId && (accountId == default || r.AccountId == accountId),
+                accountId.ByIdPredicate<RoleEntity>(roleId),
                 include: q =>
-                    q.Include(r => r.Users).Include(r => r.Groups).Include(r => r.Permissions)
+                    q.Include(r => r.Users)
+                        .Include(r => r.Groups)
+                        .Include(r => r.Permissions)
+                        .Include(r => r.ApiKeys)
             )
-            : await _roleRepo.GetAsync(r =>
-                r.Id == roleId && (accountId == default || r.AccountId == accountId)
-            );
+            : await _roleRepo.GetAsync(accountId.ByIdPredicate<RoleEntity>(roleId));
 
         if (roleEntity == null)
         {
@@ -195,27 +200,10 @@ internal class RoleProcessor(
 
         if (hydrate)
         {
-            role.Users =
-                roleEntity.Users?.Select(u => new ChildRef(u.Id, u.Username)).ToList() ?? [];
-            role.Groups = roleEntity.Groups?.Select(g => new ChildRef(g.Id, g.Name)).ToList() ?? [];
-            role.Permissions =
-                roleEntity
-                    .Permissions?.Select(p => new ChildRef(
-                        p.Id,
-                        p.Description
-                            ?? PermissionLabelProvider.GetName(
-                                p.ResourceType,
-                                p.ResourceId,
-                                p.Create,
-                                p.Read,
-                                p.Update,
-                                p.Delete,
-                                p.Execute
-                            ),
-                        p.IsSystemDefined
-                    ))
-                    .ToList()
-                ?? [];
+            role.Users = roleEntity.Users?.Select(u => u.ToChildRef()).ToList() ?? [];
+            role.Groups = roleEntity.Groups?.Select(g => g.ToChildRef()).ToList() ?? [];
+            role.ApiKeys = roleEntity.ApiKeys?.Select(k => k.ToChildRef()).ToList() ?? [];
+            role.Permissions = roleEntity.Permissions?.Select(p => p.ToChildRef()).ToList() ?? [];
         }
 
         return new GetResult<Role>(RetrieveResultCode.Success, string.Empty, role);
@@ -227,7 +215,9 @@ internal class RoleProcessor(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var roleEntity = await _roleRepo.GetAsync(r => r.Id == request.RoleId);
+        var roleEntity = await _roleRepo.GetAsync(
+            request.AccountId.ByIdPredicate<RoleEntity>(request.RoleId)
+        );
         if (roleEntity == null)
         {
             _logger.LogWarning("Role with Id {RoleId} not found", request.RoleId);
@@ -299,7 +289,7 @@ internal class RoleProcessor(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
         var roleEntity = await _roleRepo.GetAsync(
-            r => r.Id == request.RoleId,
+            request.AccountId.ByIdPredicate<RoleEntity>(request.RoleId),
             include: q => q.Include(r => r.Permissions)
         );
         if (roleEntity == null)
@@ -409,8 +399,8 @@ internal class RoleProcessor(
             return new ModifyResult(ModifyResultCode.ValidationError, validation.Message);
         }
 
-        var entity = await _roleRepo.GetAsync(e =>
-            e.Id == request.RoleId && e.AccountId == request.AccountId
+        var entity = await _roleRepo.GetAsync(
+            AccountScope.Of(request.AccountId).ByIdPredicate<RoleEntity>(request.RoleId)
         );
         if (entity == null)
         {
@@ -440,11 +430,15 @@ internal class RoleProcessor(
         return new ModifyResult(ModifyResultCode.Success, string.Empty);
     }
 
-    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, Guid accountId = default)
+    public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, AccountScope accountId)
     {
         var roleEntity = await _roleRepo.GetAsync(
-            r => r.Id == roleId,
-            include: q => q.Include(r => r.Users).Include(r => r.Groups).Include(r => r.Permissions)
+            accountId.ByIdPredicate<RoleEntity>(roleId),
+            include: q =>
+                q.Include(r => r.Users)
+                    .Include(r => r.Groups)
+                    .Include(r => r.Permissions)
+                    .Include(r => r.ApiKeys)
         );
         if (roleEntity == null)
         {
@@ -471,6 +465,7 @@ internal class RoleProcessor(
         roleEntity.Users?.Clear();
         roleEntity.Groups?.Clear();
         roleEntity.Permissions?.Clear();
+        roleEntity.ApiKeys?.Clear();
 
         await _roleRepo.DeleteAsync(roleEntity);
 

@@ -1,6 +1,7 @@
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.ApiKeys.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
@@ -30,6 +31,7 @@ public class RetrievalServiceTests
     private readonly Mock<IRoleProcessor> _mockRoleProcessor = new();
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
     private readonly Mock<IAccountProcessor> _mockAccountProcessor = new();
+    private readonly Mock<IApiKeyProcessor> _mockApiKeyProcessor = new();
     private readonly Mock<ISecurityProvider> _mockSecurityProvider = new();
     private readonly Mock<ISymmetricEncryptionProviderFactory> _mockSymmetricEncryptionProviderFactory =
         new();
@@ -71,6 +73,7 @@ public class RetrievalServiceTests
             _mockRoleProcessor.Object,
             _mockUserProcessor.Object,
             _mockAccountProcessor.Object,
+            _mockApiKeyProcessor.Object,
             _mockSecurityProvider.Object,
             _mockSymmetricEncryptionProviderFactory.Object,
             _mockUserContextProvider.Object
@@ -788,6 +791,7 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
+                _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
@@ -807,6 +811,7 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
+                _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
@@ -826,6 +831,7 @@ public class RetrievalServiceTests
                 null!,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
+                _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
@@ -845,6 +851,7 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 null!,
                 _mockAccountProcessor.Object,
+                _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
@@ -864,6 +871,7 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 null!,
+                _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
@@ -883,6 +891,7 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
+                _mockApiKeyProcessor.Object,
                 null!,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 _mockUserContextProvider.Object
@@ -902,6 +911,7 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
+                _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 null!,
                 _mockUserContextProvider.Object
@@ -921,6 +931,7 @@ public class RetrievalServiceTests
                 _mockRoleProcessor.Object,
                 _mockUserProcessor.Object,
                 _mockAccountProcessor.Object,
+                _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
                 null!

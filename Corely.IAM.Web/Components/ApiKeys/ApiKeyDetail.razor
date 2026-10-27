@@ -1,0 +1,338 @@
+@inherits EntityDetailPageBase
+@inject IIamWebLinks Links
+
+<div class="management-header">
+    <h1><i class="bi bi-key me-2"></i>@(_key?.Name ?? "API key") <span class="resource-label">API key</span></h1>
+    <a href="@Links.ApiKeys(CurrentAccountId)" class="btn btn-outline-secondary">Back to API keys</a>
+</div>
+
+<Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+@if (_loading && _key == null)
+{
+    <LoadingSpinner />
+}
+else if (_key == null)
+{
+    <div class="alert alert-warning">API key not found.</div>
+}
+else
+{
+    <div class="detail-section">
+
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
+                Details
+                @if (!_isEditing)
+                {
+                    <div class="d-flex gap-2">
+                        <PermissionView Action="AuthAction.Update" Resource="@ApiKey.RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                            <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
+                        </PermissionView>
+                        <PermissionView Action="AuthAction.Delete" Resource="@ApiKey.RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => _deleteModal.Show()" disabled="@_loading">Delete</button>
+                        </PermissionView>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveAsync" disabled="@_loading">Save</button>
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => _isEditing = false">Cancel</button>
+                    </div>
+                }
+            </div>
+            @if (_isEditing)
+            {
+                <div class="props-grid mb-3">
+                    <span class="prop-label">Name</span>
+                    <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editName" /></div>
+                    <span class="prop-label">Description</span>
+                    <div class="prop-value"><input type="text" class="form-control form-control-sm" @bind="_editDescription" placeholder="Optional" /></div>
+                </div>
+            }
+            else
+            {
+                <div class="props-grid">
+                    <span class="prop-label cell-hide">Name</span>
+                    <span class="prop-value cell-title">@_key.Name</span>
+                    <span class="prop-label cell-hide">Description</span>
+                    <span class="prop-value cell-sub @(_key.Description is null ? "cell-hide" : null)">@(_key.Description ?? "—")</span>
+                    <span class="prop-label">Last sign in</span>
+                    <span class="prop-value">@(_key.LastSuccessfulLoginUtc?.ToLocalTime().ToString("g") ?? "Never")</span>
+                    @if (_key.LockedUtc is not null)
+                    {
+                        <span class="prop-label">Locked</span>
+                        <span class="prop-value">@_key.LockedUtc.Value.ToLocalTime().ToString("g") after repeated wrong secrets</span>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">Secrets</div>
+            <table class="table table-striped table-hover table-cards mb-0">
+                <thead class="list-head"><tr><th>Slot</th><th>Prefix</th><th>Expires</th><th>Last used</th><th class="table-actions">Actions</th></tr></thead>
+                <tbody>
+                    @foreach (var slot in Enum.GetValues<ApiKeySlot>())
+                    {
+                        var secret = _key.Secrets.FirstOrDefault(s => s.Slot == slot);
+                        <tr>
+                            <td class="cell-title">@slot</td>
+                            <td class="font-monospace">@(secret is null ? "Not issued" : $"ciam_{secret.Prefix}_...")</td>
+                            <td class="cell-sub">@(secret?.ExpiresUtc?.ToLocalTime().ToString("d") ?? "—")</td>
+                            <td class="cell-sub">@(secret?.LastUsedUtc?.ToLocalTime().ToString("g") ?? "Never")</td>
+                            <td class="table-actions cell-actions">
+                                <div class="row-actions">
+                                    <PermissionView Action="AuthAction.Update" Resource="@ApiKey.RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ConfirmRotate(slot, secret is null)" title="@(secret is null ? "Issue" : "Rotate")">
+                                            <i class="bi @(secret is null ? "bi-plus-lg" : "bi-arrow-repeat")"></i>
+                                        </button>
+                                    </PermissionView>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <ul class="settings-notes mt-2">
+                <li>Both secrets are valid at once. Move callers to one slot, then rotate the other, so nothing breaks.</li>
+                <li>Rotating a slot ends every session signed in with its old secret.</li>
+            </ul>
+        </div>
+
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
+                Roles
+                <PermissionView Action="AuthAction.Update" Resource="@ApiKey.RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-primary btn-sm" @onclick="() => _rolePicker.ShowAsync()" disabled="@_loading">Add Roles</button>
+                </PermissionView>
+            </div>
+            @ChildTable(_key.Roles, "No roles assigned", id => Links.Role(CurrentAccountId, id), RemoveRoleAsync)
+        </div>
+
+        <div class="section-divider mb-4">
+            <div class="section-divider-label">
+                Groups
+                <PermissionView Action="AuthAction.Update" Resource="@ApiKey.RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                    <button class="btn btn-primary btn-sm" @onclick="() => _groupPicker.ShowAsync()" disabled="@_loading">Add to Groups</button>
+                </PermissionView>
+            </div>
+            @ChildTable(_key.Groups, "Not in any group", id => Links.Group(CurrentAccountId, id), RemoveGroupAsync)
+        </div>
+
+        <div class="text-muted small">
+            @if (_allowedTypes.Types.Count == 0)
+            {
+                <span>The platform lets API keys use no resource types yet, so this key's permissions have no effect.</span>
+            }
+            else
+            {
+                <span>API keys use only their permissions on: @_allowedTypes.</span>
+            }
+        </div>
+    </div>
+}
+
+<EntityPickerModal @ref="_rolePicker" Title="Add Roles to API key" SearchPlaceholder="Search roles..."
+                   FetchItemsAsync="FetchRolesAsync" ExcludeIds="_hiddenRoleIds" OnConfirm="AddRolesAsync" />
+<EntityPickerModal @ref="_groupPicker" Title="Add API key to Groups" SearchPlaceholder="Search groups..."
+                   FetchItemsAsync="FetchGroupsAsync" ExcludeIds="_hiddenGroupIds" OnConfirm="AddGroupsAsync" />
+
+<ConfirmModal @ref="_rotateModal" Title="@_rotateTitle" Message="@_rotateMessage" ConfirmText="@_rotateTitle" OnConfirm="RotateAsync" />
+<ConfirmModal @ref="_deleteModal" Title="Delete API key" Message="@($"Delete API key '{_key?.Name}'? Anything using it stops working at once.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
+<ApiKeySecretModal @ref="_newKeyModal" />
+
+@code {
+    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
+    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
+    private IModificationService ModificationService => ScopedServices.GetRequiredService<IModificationService>();
+    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
+    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
+    private ISecurityPolicyProvider SecurityPolicyProvider => ScopedServices.GetRequiredService<ISecurityPolicyProvider>();
+
+    private ApiKey? _key;
+    private ResourceTypeSet _allowedTypes = ResourceTypeSet.Empty;
+    private bool _isEditing;
+    private string _editName = string.Empty;
+    private string? _editDescription;
+    private ApiKeySlot _rotateSlot;
+    private string _rotateTitle = "Rotate";
+    private string _rotateMessage = string.Empty;
+    private HashSet<Guid> _hiddenRoleIds = [];
+    private HashSet<Guid> _hiddenGroupIds = [];
+    private EntityPickerModal _rolePicker = null!;
+    private EntityPickerModal _groupPicker = null!;
+    private ConfirmModal _rotateModal = null!;
+    private ConfirmModal _deleteModal = null!;
+    private ApiKeySecretModal _newKeyModal = null!;
+
+    protected override async Task LoadCoreAsync()
+    {
+        _allowedTypes = (await SecurityPolicyProvider.GetPolicyAsync()).ApiKeyResourceTypes;
+        var result = await RetrievalService.GetApiKeyAsync(Id, hydrate: true);
+        if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
+        {
+            _key = result.Item;
+            _editName = _key.Name;
+            _editDescription = _key.Description;
+            _hiddenRoleIds = (_key.Roles ?? []).Select(r => r.Id).ToHashSet();
+            _hiddenGroupIds = (_key.Groups ?? []).Select(g => g.Id).ToHashSet();
+        }
+    }
+
+    private RenderFragment ChildTable(List<ChildRef>? items, string empty, Func<Guid, string> link, Func<Guid, Task> remove) =>
+        @<table class="table table-striped table-hover table-cards mb-0">
+            <thead class="list-head"><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
+            <tbody>
+                @if (items == null || items.Count == 0)
+                {
+                    <tr><td colspan="2" class="text-muted text-center">@empty</td></tr>
+                }
+                else
+                {
+                    @foreach (var item in items)
+                    {
+                        <tr>
+                            <td class="cell-title">@item.Name<br /><CopyableId Value="item.Id" /></td>
+                            <td class="table-actions cell-actions">
+                                <div class="row-actions">
+                                    <a href="@link(item.Id)" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    <PermissionView Action="AuthAction.Update" Resource="@ApiKey.RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => remove(item.Id)" title="Remove"><i class="bi bi-trash"></i></button>
+                                    </PermissionView>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>;
+
+    private void StartEdit()
+    {
+        _editName = _key!.Name;
+        _editDescription = _key.Description;
+        _isEditing = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await ModificationService.ModifyApiKeyAsync(new UpdateApiKeyRequest(Id, CurrentAccountId, _editName, _editDescription));
+            SetResultMessage(result.ResultCode == ModifyResultCode.Success, "API key updated.", result.Message);
+            if (result.ResultCode == ModifyResultCode.Success)
+            {
+                _isEditing = false;
+                await ReloadAsync();
+            }
+        });
+    }
+
+    private void ConfirmRotate(ApiKeySlot slot, bool issuing)
+    {
+        _rotateSlot = slot;
+        _rotateTitle = issuing ? $"Issue {slot} secret" : $"Rotate {slot} secret";
+        _rotateMessage = issuing
+            ? $"Issue a {slot.ToString().ToLower()} secret for '{_key!.Name}'? The other secret keeps working."
+            : $"Replace the {slot.ToString().ToLower()} secret of '{_key!.Name}'? Callers using it stop working and its sessions end. The other secret keeps working.";
+        _rotateModal.Show();
+    }
+
+    private async Task RotateAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await ModificationService.RotateApiKeySecretAsync(new RotateApiKeySecretRequest(Id, CurrentAccountId, _rotateSlot));
+            SetResultMessage(result.ResultCode == RotateApiKeySecretResultCode.Success, $"{_rotateSlot} secret issued.", result.Message);
+            if (result.Key is not null)
+                _newKeyModal.Show(result.Key);
+            await ReloadAsync();
+        });
+    }
+
+    private async Task DeleteAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterApiKeyAsync(new DeregisterApiKeyRequest(Id, CurrentAccountId));
+            if (result.ResultCode == DeregisterApiKeyResultCode.Success)
+            {
+                NavigationManager.NavigateTo(Links.ApiKeys(CurrentAccountId));
+                return;
+            }
+            SetResultMessage(false, string.Empty, result.Message);
+        });
+    }
+
+    private async Task<(List<PickerItem>, int)> FetchRolesAsync(int skip, int take)
+    {
+        var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(CurrentAccountId, Skip: skip, Take: take));
+        if (result.ResultCode != RetrieveResultCode.Success || result.Data == null)
+            return ([], 0);
+
+        var grantable = await AuthorizationProvider.GetGrantableRoleIdsAsync(result.Data.Items.Select(r => r.Id));
+        _hiddenRoleIds.UnionWith(result.Data.Items.Select(r => r.Id).Where(id => !grantable.Contains(id)));
+        return ([.. result.Data.Items.Select(r => new PickerItem(r.Id, r.Name, r.Description))], result.Data.TotalCount);
+    }
+
+    private async Task<(List<PickerItem>, int)> FetchGroupsAsync(int skip, int take)
+    {
+        var result = await RetrievalService.ListGroupsAsync(new ListGroupsRequest(CurrentAccountId, Skip: skip, Take: take));
+        if (result.ResultCode != RetrieveResultCode.Success || result.Data == null)
+            return ([], 0);
+
+        var grantable = await AuthorizationProvider.GetGrantableGroupIdsAsync(result.Data.Items.Select(g => g.Id));
+        _hiddenGroupIds.UnionWith(result.Data.Items.Select(g => g.Id).Where(id => !grantable.Contains(id)));
+        return ([.. result.Data.Items.Select(g => new PickerItem(g.Id, g.Name, g.Description))], result.Data.TotalCount);
+    }
+
+    private async Task AddRolesAsync(List<Guid> roleIds)
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await RegistrationService.RegisterRolesWithApiKeyAsync(new RegisterRolesWithApiKeyRequest(roleIds, Id, CurrentAccountId));
+            SetResultMessage(result.ResultCode == AssignRolesToApiKeyResultCode.Success, $"{roleIds.Count} role(s) assigned.", result.Message);
+            await ReloadAsync();
+        });
+    }
+
+    private async Task RemoveRoleAsync(Guid roleId)
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterRolesFromApiKeyAsync(new DeregisterRolesFromApiKeyRequest([roleId], Id, CurrentAccountId));
+            SetResultMessage(result.ResultCode == DeregisterRolesFromApiKeyResultCode.Success, "Role removed.", result.Message);
+            await ReloadAsync();
+        });
+    }
+
+    private async Task AddGroupsAsync(List<Guid> groupIds)
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            foreach (var groupId in groupIds)
+            {
+                var result = await RegistrationService.RegisterApiKeysWithGroupAsync(new RegisterApiKeysWithGroupRequest([Id], groupId, CurrentAccountId));
+                if (result.ResultCode != AddApiKeysToGroupResultCode.Success)
+                {
+                    SetResultMessage(false, string.Empty, result.Message);
+                    return;
+                }
+            }
+            SetResultMessage(true, $"{groupIds.Count} group(s) assigned.", null);
+            await ReloadAsync();
+        });
+    }
+
+    private async Task RemoveGroupAsync(Guid groupId)
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterApiKeysFromGroupAsync(new DeregisterApiKeysFromGroupRequest([Id], groupId, CurrentAccountId));
+            SetResultMessage(result.ResultCode == DeregisterApiKeysFromGroupResultCode.Success, "Removed from group.", result.Message);
+            await ReloadAsync();
+        });
+    }
+}

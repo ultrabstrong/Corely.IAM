@@ -100,6 +100,33 @@ internal class RegistrationServiceTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<RegisterApiKeyResult> RegisterApiKeyAsync(RegisterApiKeyRequest request) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            request,
+            () => _inner.RegisterApiKeyAsync(request)
+        );
+
+    public async Task<RegisterRolesWithApiKeyResult> RegisterRolesWithApiKeyAsync(
+        RegisterRolesWithApiKeyRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            request,
+            () => _inner.RegisterRolesWithApiKeyAsync(request),
+            logResult: true
+        );
+
+    public async Task<RegisterApiKeysWithGroupResult> RegisterApiKeysWithGroupAsync(
+        RegisterApiKeysWithGroupRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RegistrationService),
+            request,
+            () => _inner.RegisterApiKeysWithGroupAsync(request),
+            logResult: true
+        );
+
     public async Task<RegisterRolesWithUserResult> RegisterRolesWithUserAsync(
         RegisterRolesWithUserRequest request
     ) =>

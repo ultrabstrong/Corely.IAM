@@ -1,10 +1,11 @@
-﻿using Corely.DataAccess.Interfaces.Entities;
+using Corely.DataAccess.Interfaces.Entities;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Entities;
 using Corely.IAM.Roles.Entities;
 
 namespace Corely.IAM.Permissions.Entities;
 
-internal class PermissionEntity : IHasCreatedUtc, IHasModifiedUtc
+internal class PermissionEntity : IHasCreatedUtc, IHasModifiedUtc, IAccountOwnedEntity
 {
     public Guid Id { get; set; }
     public string? Description { get; set; }

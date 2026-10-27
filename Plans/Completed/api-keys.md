@@ -1,10 +1,12 @@
 # API keys
 
+Status: released in `Corely.IAM` 6.0.0, `Corely.IAM.Web` 8.0.0 and `Corely.IAM.DataAccessMigrations.Cli` 6.0.0.
+
 ## What
 
 An API key is a principal of its own, alongside users, that belongs to one account. It signs in by
 exchanging its secret for the same access and refresh token pair a user gets (see
-[session-hardening.md](Completed/session-hardening.md)). From then on roles, groups, permissions, the grant
+[session-hardening.md](session-hardening.md)). From then on roles, groups, permissions, the grant
 bounds, list scoping and auditing work as they do for a user, and the authorization decorators never
 learn that the caller is a key.
 
@@ -105,7 +107,7 @@ five actions on it. A key holding `api_key` permissions can manage keys, includi
 ## Platform settings
 
 New fields on `SecurityPolicy` and its entity, with validator rules, `ChangesTo` entries and
-`SecurityOptions` configuration keys, as in [session-hardening.md](Completed/session-hardening.md#settings).
+`SecurityOptions` configuration keys, as in [session-hardening.md](session-hardening.md#settings).
 
 | Setting | Default | Weakens when | Effect |
 |---------|---------|--------------|--------|
@@ -150,5 +152,22 @@ with no new UI.
 
 ## Release
 
-Ships with [session-hardening.md](Completed/session-hardening.md) in `Corely.IAM` 6.0.0, `Corely.IAM.Web` 8.0.0
+Ships with [session-hardening.md](session-hardening.md) in `Corely.IAM` 6.0.0, `Corely.IAM.Web` 8.0.0
 and `Corely.IAM.DataAccessMigrations.Cli` 6.0.0. Migration through `.\AddMigration.ps1 "ApiKeys"`.
+
+## As built
+
+| Planned | Built |
+|---------|-------|
+| A signing key per API key | Key tokens are signed with the account's key and carry `principal_type` = `api_key` |
+| Allowed resource types as one switch per type | One `ResourceTypeSet` setting, stored as a comma separated column; a type not registered is refused on save |
+| `ApiKeyAuthTokenEntity`, a token table per principal | One `AuthTokens` table (`UserAuthTokens` renamed) holds user and key sessions: `UserId` or `ApiKeyId`, plus `Slot`. `SessionTokenProvider` is the only code that builds, signs, validates, renews, revokes and cleans tokens; `AuthenticationProvider` and `ApiKeyAuthenticationProvider` keep only their own credential checks |
+| Functional: a key exchanges, calls an endpoint and renews | `BearerApiTests`, 9 cases, against the WebApp's sample API |
+| The host writes its own API transport | `Corely.IAM.Web` ships it, opt in: `AcceptBearerTokens`, `MapIAMTokenEndpoints` (key exchange, renew, sign out) and `AsIAMApi`. Users sign in through the pages only. The WebApp serves `/api/me`, `/api/roles` and an OpenAPI document at `/openapi/v1.json` |
+| Functional: an audit entry names the key | Unit (`AuditProviderTests.Record_NamesTheApiKey_AsTheActorInItsAccount`) |
+| | Keys cannot accept invitations, read the audit log, switch account or see effective permissions |
+| | `corely-iam-devtool auth apikey <key>` exchanges a key for local testing |
+| Group membership on the key | `RegisterApiKeysWithGroupAsync` and `DeregisterApiKeysFromGroupAsync` are group centric like their user counterparts and live on `GroupProcessor`; the key page calls them once per group |
+| Management on new service methods | Keys follow the verb services like every other resource type, with no service of their own |
+| | Every processor lookup by id is scoped to the caller's account (`AccountScope`), covered by `CrossAccountCoverageTests` |
+| | Rotating a key's secret requires the caller to hold everything the key holds |

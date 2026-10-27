@@ -1,5 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.GoogleAuths.Models;
@@ -136,6 +137,42 @@ internal class RegistrationServiceAuditDecorator(
                 ResourceIds = [request.GroupId, .. request.RoleIds ?? []],
             },
             () => _inner.RegisterRolesWithGroupAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<RegisterApiKeyResult> RegisterApiKeyAsync(RegisterApiKeyRequest request) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Create, ApiKey.RESOURCE_TYPE)
+            {
+                AccountId = request.AccountId,
+            },
+            () => _inner.RegisterApiKeyAsync(request),
+            r => AuditOutcome.Of(r.ResultCode, r.CreatedApiKeyId)
+        );
+
+    public Task<RegisterRolesWithApiKeyResult> RegisterRolesWithApiKeyAsync(
+        RegisterRolesWithApiKeyRequest request
+    ) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Update, ApiKey.RESOURCE_TYPE)
+            {
+                AccountId = request.AccountId,
+                ResourceIds = [request.ApiKeyId, .. request.RoleIds ?? []],
+            },
+            () => _inner.RegisterRolesWithApiKeyAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<RegisterApiKeysWithGroupResult> RegisterApiKeysWithGroupAsync(
+        RegisterApiKeysWithGroupRequest request
+    ) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Update, Group.RESOURCE_TYPE)
+            {
+                AccountId = request.AccountId,
+                ResourceIds = [request.GroupId, .. request.ApiKeyIds ?? []],
+            },
+            () => _inner.RegisterApiKeysWithGroupAsync(request),
             r => AuditOutcome.Of(r.ResultCode)
         );
 

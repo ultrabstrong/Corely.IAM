@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Corely.IAM.Audits.Entities;
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Models;
 
 namespace Corely.IAM.Audits.Mappers;

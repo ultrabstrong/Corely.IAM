@@ -32,5 +32,9 @@ internal sealed class PlatformSecuritySettingsEntityConfiguration
         builder.Property(e => e.RefreshReuseGraceSeconds).IsRequired();
         builder.Property(e => e.MfaChallengeTimeoutSeconds).IsRequired();
         builder.Property(e => e.TotpRecoveryCodeCount).IsRequired();
+        builder.Property(e => e.ApiKeysEnabled).IsRequired();
+        builder.Property(e => e.PlatformAccountApiKeysEnabled).IsRequired();
+        builder.Property(e => e.ApiKeyMaxLifetimeDays).IsRequired();
+        builder.Property(e => e.ApiKeyResourceTypes).IsRequired();
     }
 }

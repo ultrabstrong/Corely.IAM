@@ -9,6 +9,8 @@ Updates entity properties for accounts, users, groups, roles and permissions, an
 | `ModifyAccountAsync` | `UpdateAccountRequest` | `ModifyResult` |
 | `ModifyUserAsync` | `UpdateUserRequest` | `ModifyResult` |
 | `ModifyGroupAsync` | `UpdateGroupRequest` | `ModifyResult` |
+| `ModifyApiKeyAsync` | `UpdateApiKeyRequest` | `ModifyResult` |
+| `RotateApiKeySecretAsync` | `RotateApiKeySecretRequest` | `RotateApiKeySecretResult` |
 | `ModifyRoleAsync` | `UpdateRoleRequest` | `ModifyResult` |
 | `ModifyPermissionAsync` | `UpdatePermissionRequest` | `ModifyResult` |
 | `RotateAccountKeyAsync` | `RotateAccountKeyRequest` | `ModifyResult` |

@@ -1,5 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Groups.Models;
@@ -84,6 +85,26 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
                 ResourceIds = [roleId],
             },
             () => _inner.GetRoleAsync(roleId, hydrate),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<RetrieveListResult<ApiKey>> ListApiKeysAsync(ListApiKeysRequest request) =>
+        _auditProvider.RecordAsync(
+            Read(ApiKey.RESOURCE_TYPE) with
+            {
+                AccountId = request.AccountId,
+            },
+            () => _inner.ListApiKeysAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<RetrieveSingleResult<ApiKey>> GetApiKeyAsync(Guid apiKeyId, bool hydrate = false) =>
+        _auditProvider.RecordAsync(
+            Read(ApiKey.RESOURCE_TYPE) with
+            {
+                ResourceIds = [apiKeyId],
+            },
+            () => _inner.GetApiKeyAsync(apiKeyId, hydrate),
             r => AuditOutcome.Of(r.ResultCode)
         );
 

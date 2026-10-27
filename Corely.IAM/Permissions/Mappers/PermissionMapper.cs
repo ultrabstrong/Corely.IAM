@@ -1,3 +1,4 @@
+using Corely.IAM.Models;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Security.Enums;
@@ -66,6 +67,22 @@ internal static class PermissionMapper
 
     extension(PermissionEntity entity)
     {
+        public ChildRef ToChildRef() =>
+            new(
+                entity.Id,
+                entity.Description
+                    ?? PermissionLabelProvider.GetName(
+                        entity.ResourceType,
+                        entity.ResourceId,
+                        entity.Create,
+                        entity.Read,
+                        entity.Update,
+                        entity.Delete,
+                        entity.Execute
+                    ),
+                entity.IsSystemDefined
+            );
+
         public Permission ToModel()
         {
             return new Permission

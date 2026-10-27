@@ -9,12 +9,15 @@ Deletes entities and removes relationships between entities.
 | `DeregisterUserAsync` | *(none; uses current user context)* | `DeregisterUserResult` |
 | `DeregisterAccountAsync` | `DeregisterAccountRequest` | `DeregisterAccountResult` |
 | `DeregisterGroupAsync` | `DeregisterGroupRequest` | `DeregisterGroupResult` |
+| `DeregisterApiKeyAsync` | `DeregisterApiKeyRequest` | `DeregisterApiKeyResult` |
 | `DeregisterRoleAsync` | `DeregisterRoleRequest` | `DeregisterRoleResult` |
 | `DeregisterPermissionAsync` | `DeregisterPermissionRequest` | `DeregisterPermissionResult` |
 | `DeregisterUserFromAccountAsync` | `DeregisterUserFromAccountRequest` | `DeregisterUserFromAccountResult` |
 | `DeregisterUsersFromGroupAsync` | `DeregisterUsersFromGroupRequest` | `DeregisterUsersFromGroupResult` |
 | `DeregisterRolesFromGroupAsync` | `DeregisterRolesFromGroupRequest` | `DeregisterRolesFromGroupResult` |
 | `DeregisterRolesFromUserAsync` | `DeregisterRolesFromUserRequest` | `DeregisterRolesFromUserResult` |
+| `DeregisterRolesFromApiKeyAsync` | `DeregisterRolesFromApiKeyRequest` | `DeregisterRolesFromApiKeyResult` |
+| `DeregisterApiKeysFromGroupAsync` | `DeregisterApiKeysFromGroupRequest` | `DeregisterApiKeysFromGroupResult` |
 | `DeregisterPermissionsFromRoleAsync` | `DeregisterPermissionsFromRoleRequest` | `DeregisterPermissionsFromRoleResult` |
 | `DeregisterBasicAuthAsync` | `DeregisterBasicAuthRequest` | `DeregisterBasicAuthResult` |
 

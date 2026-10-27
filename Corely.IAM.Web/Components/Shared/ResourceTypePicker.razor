@@ -1,0 +1,119 @@
+@using Corely.IAM.Permissions.Models
+@using Corely.IAM.Web.Extensions
+
+<div class="type-picker @(Cards ? "type-picker-card-layout" : null)" id="@IdPrefix">
+    @if (ReadOnly)
+    {
+        var chosen = Types.Where(t => Selected.Contains(t.Name)).Grouped();
+        @if (chosen.Count == 0)
+        {
+            <span class="text-body-secondary">None</span>
+        }
+        @foreach (var group in chosen)
+        {
+            <div class="type-picker-group">@group.Name</div>
+            <div class="@ItemsClass">
+                @foreach (var type in group.Types)
+                {
+                    <div class="type-picker-item">
+                        @TypeText(type)
+                    </div>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        @if (Types.Count() > SEARCH_THRESHOLD)
+        {
+            <input type="search" class="form-control form-control-sm mb-2 type-picker-search" placeholder="Search types..." aria-label="Search types"
+                   @bind="_search" @bind:event="oninput" />
+        }
+        <div class="@(Cards ? null : "type-picker-scroll")">
+            @foreach (var group in Types.Grouped(_search))
+            {
+                <div class="type-picker-group">@group.Name</div>
+                <div class="@ItemsClass">
+                    @foreach (var type in group.Types)
+                    {
+                        var id = $"{IdPrefix}-{type.Name}";
+                        var chosen = IsChosen(type.Name);
+                        <div class="form-check type-picker-item @(chosen ? "type-picker-chosen" : null)">
+                            @if (Multiple)
+                            {
+                                <input class="form-check-input" type="checkbox" id="@id" checked="@chosen"
+                                       @onchange="e => ToggleAsync(type.Name, e.Value is true)" />
+                            }
+                            else
+                            {
+                                <input class="form-check-input" type="radio" name="@IdPrefix" id="@id" checked="@chosen"
+                                       @onchange="() => ValueChanged.InvokeAsync(type.Name)" />
+                            }
+                            <label class="form-check-label" for="@id">@TypeText(type)</label>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private const int SEARCH_THRESHOLD = 8;
+
+    private string? _search;
+
+    [Parameter, EditorRequired]
+    public IEnumerable<ResourceTypeInfo> Types { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public string IdPrefix { get; set; } = null!;
+
+    [Parameter]
+    public bool Multiple { get; set; }
+
+    [Parameter]
+    public bool ReadOnly { get; set; }
+
+    [Parameter]
+    public bool Cards { get; set; }
+
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter]
+    public IReadOnlySet<string> Selected { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public EventCallback<IReadOnlySet<string>> SelectedChanged { get; set; }
+
+    private string ItemsClass => Cards ? "type-picker-cards" : "type-picker-list";
+
+    private bool IsChosen(string name) =>
+        Multiple
+            ? Selected.Contains(name)
+            : string.Equals(Value, name, StringComparison.OrdinalIgnoreCase);
+
+    private static RenderFragment TypeText(ResourceTypeInfo type) =>
+        @<text>
+            <span class="type-picker-title">@type.Title</span>
+            <span class="type-picker-description">@type.Description</span>
+            @if (type.Title != type.Name)
+            {
+                <span class="type-picker-name">@type.Name</span>
+            }
+        </text>;
+
+    private Task ToggleAsync(string name, bool on)
+    {
+        var next = new HashSet<string>(Selected, StringComparer.OrdinalIgnoreCase);
+        if (on)
+            next.Add(name);
+        else
+            next.Remove(name);
+        return SelectedChanged.InvokeAsync(next);
+    }
+}

@@ -1160,3 +1160,94 @@ span.cell-icon {
     --bs-btn-color: var(--iam-caution);
     --bs-btn-border-color: var(--iam-caution);
 }
+
+.type-picker-scroll {
+    max-height: 24rem;
+    overflow-y: auto;
+}
+
+.type-picker-group {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bs-secondary-color);
+    margin: 0.75rem 0 0.25rem;
+}
+
+.type-picker-group:first-child {
+    margin-top: 0;
+}
+
+.type-picker-item {
+    margin-bottom: 0.4rem;
+    overflow-wrap: anywhere;
+}
+
+.type-picker-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 0.6rem;
+}
+
+.type-picker-cards .type-picker-item {
+    margin: 0;
+    padding: 0.6rem 0.75rem 0.6rem 2.1rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--bs-body-bg);
+}
+
+.type-picker-read .type-picker-cards .type-picker-item,
+.type-picker-card-layout:not(:has(input)) .type-picker-item {
+    padding-left: 0.75rem;
+}
+
+.type-picker-cards .type-picker-chosen {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary-bg-subtle);
+}
+
+.type-picker-cards .form-check-label {
+    display: block;
+    cursor: pointer;
+}
+
+.type-picker-card-layout .type-picker-search {
+    max-width: 20rem;
+}
+
+.settings-grid .setting-full {
+    grid-column: 1 / -1;
+}
+
+.type-picker-title {
+    font-weight: 600;
+}
+
+.type-picker-name {
+    display: block;
+    margin-top: 0.15rem;
+    font-family: var(--bs-font-monospace);
+    font-size: 0.75rem;
+    color: var(--bs-tertiary-color);
+}
+
+.type-picker-description {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--bs-secondary-color);
+}
+
+.picker-group-heading {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bs-secondary-color);
+    background: var(--bs-tertiary-bg);
+}
+
+.picker-item-text {
+    overflow-wrap: anywhere;
+}

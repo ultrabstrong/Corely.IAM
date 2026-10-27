@@ -1,17 +1,21 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)][string]$Package,
+    [Parameter(Mandatory)][string[]]$Package,
     [Parameter(Mandatory)][string]$Consumer,
     [switch]$Revert
 )
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression
+$Package = @($Package | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $feed = Join-Path ([System.IO.Path]::GetTempPath()) 'corely-local-feed'
-$marker = Join-Path $feed "$Package.$((Split-Path $Consumer -Leaf)).original"
 New-Item -ItemType Directory -Force $feed | Out-Null
+
+function Get-Marker([string]$PackageId) {
+    Join-Path $feed "$PackageId.$((Split-Path $Consumer -Leaf)).original"
+}
 
 function Get-CsprojVersion([string]$PackageId) {
     $csproj = Get-ChildItem $repoRoot -Recurse -Filter "$PackageId.csproj" |
@@ -23,19 +27,25 @@ function Get-CsprojVersion([string]$PackageId) {
     }
 }
 
-function Get-ConsumerFiles {
+function Get-ConsumerFiles([string]$PackageId) {
     Get-ChildItem $Consumer -Recurse -Include Directory.Packages.props, *.csproj |
         Where-Object { $_.FullName -notmatch '\\(bin|obj|node_modules)\\' } |
-        Where-Object { (Get-Content $_.FullName -Raw) -match "Include=`"$([regex]::Escape($Package))`" Version=`"" }
+        Where-Object { (Get-Content $_.FullName -Raw) -match "Include=`"$([regex]::Escape($PackageId))`" Version=`"" }
 }
 
-function Set-ConsumerVersion([string]$Version) {
-    foreach ($file in Get-ConsumerFiles) {
+function Get-ConsumerVersion([string]$PackageId) {
+    Get-ConsumerFiles $PackageId | ForEach-Object {
+        [regex]::Match((Get-Content $_.FullName -Raw), "Include=`"$([regex]::Escape($PackageId))`" Version=`"([^`"]+)`"").Groups[1].Value
+    } | Select-Object -First 1
+}
+
+function Set-ConsumerVersion([string]$PackageId, [string]$Version) {
+    foreach ($file in Get-ConsumerFiles $PackageId) {
         $text = Get-Content $file.FullName -Raw
-        $updated = $text -replace "(Include=`"$([regex]::Escape($Package))`" Version=`")[^`"]+", "`${1}$Version"
+        $updated = $text -replace "(Include=`"$([regex]::Escape($PackageId))`" Version=`")[^`"]+", "`${1}$Version"
         if ($updated -ne $text) {
             Set-Content $file.FullName $updated -NoNewline
-            "  $($file.FullName.Substring($Consumer.Length + 1)): $Package $Version"
+            "  $($file.FullName.Substring($Consumer.Length + 1)): $PackageId $Version"
         }
     }
 }
@@ -45,49 +55,59 @@ function Get-ConsumerSolution {
 }
 
 if ($Revert) {
-    if (-not (Test-Path $marker)) { throw "No local build of $Package is recorded for $Consumer" }
-    $original = (Get-Content $marker -Raw).Trim()
-    Set-ConsumerVersion $original
-    Remove-Item $marker
+    foreach ($id in $Package) {
+        $marker = Get-Marker $id
+        if (-not (Test-Path $marker)) { throw "No local build of $id is recorded for $Consumer" }
+        $original = (Get-Content $marker -Raw).Trim()
+        Set-ConsumerVersion $id $original
+        Remove-Item $marker
+        "Reverted $id to $original"
+    }
     dotnet restore (Get-ConsumerSolution).FullName --no-http-cache | Out-Null
-    "Reverted $Package to $original in $Consumer"
     return
 }
 
-$project = Get-CsprojVersion $Package
-$local = "$($project.Version)-local.$(Get-Date -Format 'yyyyMMddHHmmss')"
+$local = "$((Get-CsprojVersion $Package[0]).Version)-local.$(Get-Date -Format 'yyyyMMddHHmmss')"
 
-dotnet pack $project.Path -c Release -o $feed "-p:PackageVersion=$local" --force -v q -nologo
-if ($LASTEXITCODE -ne 0) { throw "Packing $Package failed" }
+foreach ($id in $Package) {
+    $project = Get-CsprojVersion $id
+    $version = "$($project.Version)-local.$($local.Split('-local.')[1])"
 
-$nupkg = Join-Path $feed "$Package.$local.nupkg"
-$zip = [System.IO.Compression.ZipFile]::Open($nupkg, 'Update')
-try {
-    $entry = $zip.Entries | Where-Object { $_.FullName -like '*.nuspec' } | Select-Object -First 1
-    $reader = [System.IO.StreamReader]::new($entry.Open())
-    $nuspec = $reader.ReadToEnd()
-    $reader.Dispose()
-    $fixed = [regex]::Replace($nuspec, "<dependency id=`"([^`"]+)`" version=`"$([regex]::Escape($local))`"", {
-            param($m)
-            "<dependency id=`"$($m.Groups[1].Value)`" version=`"$((Get-CsprojVersion $m.Groups[1].Value).Version)`""
-        })
-    $entry.Delete()
-    $writer = [System.IO.StreamWriter]::new($zip.CreateEntry($entry.FullName).Open())
-    $writer.Write($fixed)
-    $writer.Dispose()
+    dotnet pack $project.Path -c Release -o $feed "-p:PackageVersion=$version" --force -v q -nologo
+    if ($LASTEXITCODE -ne 0) { throw "Packing $id failed" }
+
+    $zip = [System.IO.Compression.ZipFile]::Open((Join-Path $feed "$id.$version.nupkg"), 'Update')
+    try {
+        $entry = $zip.Entries | Where-Object { $_.FullName -like '*.nuspec' } | Select-Object -First 1
+        $reader = [System.IO.StreamReader]::new($entry.Open())
+        $nuspec = $reader.ReadToEnd()
+        $reader.Dispose()
+        $fixed = [regex]::Replace($nuspec, "<dependency id=`"([^`"]+)`" version=`"$([regex]::Escape($version))`"", {
+                param($m)
+                $dependency = $m.Groups[1].Value
+                $dependencyVersion = if ($Package -contains $dependency) {
+                    "$((Get-CsprojVersion $dependency).Version)-local.$($local.Split('-local.')[1])"
+                } else {
+                    (Get-CsprojVersion $dependency).Version
+                }
+                "<dependency id=`"$dependency`" version=`"$dependencyVersion`""
+            })
+        $entry.Delete()
+        $writer = [System.IO.StreamWriter]::new($zip.CreateEntry($entry.FullName).Open())
+        $writer.Write($fixed)
+        $writer.Dispose()
+    }
+    finally {
+        $zip.Dispose()
+    }
+
+    $marker = Get-Marker $id
+    if (-not (Test-Path $marker)) {
+        Set-Content $marker (Get-ConsumerVersion $id)
+    }
+    Set-ConsumerVersion $id $version
 }
-finally {
-    $zip.Dispose()
-}
 
-if (-not (Test-Path $marker)) {
-    $current = Get-ConsumerFiles | ForEach-Object {
-        [regex]::Match((Get-Content $_.FullName -Raw), "Include=`"$([regex]::Escape($Package))`" Version=`"([^`"]+)`"").Groups[1].Value
-    } | Select-Object -First 1
-    Set-Content $marker $current
-}
-
-Set-ConsumerVersion $local
 dotnet restore (Get-ConsumerSolution).FullName "-p:RestoreAdditionalProjectSources=$feed"
 if ($LASTEXITCODE -ne 0) { throw "Restoring $Consumer failed" }
-"$Consumer now uses $Package $local. Revert with -Revert before committing there."
+"$Consumer now uses local builds of $($Package -join ', '). Revert with -Revert before committing there."

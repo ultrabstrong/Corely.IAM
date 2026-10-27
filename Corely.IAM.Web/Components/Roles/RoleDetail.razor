@@ -1,5 +1,6 @@
 @inherits EntityDetailPageBase
 @inject IIamWebLinks Links
+@inject Corely.IAM.Permissions.Providers.IResourceTypeRegistry ResourceTypeRegistry
 
 <div class="management-header">
     <h1><i class="bi bi-shield me-2"></i>@(_role?.Name ?? "Role") <span class="resource-label">Role</span></h1>
@@ -231,7 +232,13 @@ else
             var grantable = await AuthorizationProvider.GetGrantablePermissionIdsAsync(result.Data.Items.Select(x => x.Id));
             _hiddenPermissionIds.UnionWith(result.Data.Items.Select(x => x.Id).Where(id => !grantable.Contains(id)));
             var items = result.Data.Items
-                .Select(p => new PickerItem(p.Id, p.Description ?? p.DisplayName, p.ResourceType))
+                .Select(p => new PickerItem(
+                    p.Id,
+                    p.Description ?? p.DisplayName,
+                    $"{p.ActionsText()} on {p.ScopeText()}",
+                    ResourceTypeRegistry.Get(p.ResourceType)?.GroupedTitle ?? p.ResourceType,
+                    TypeOrder.GetValueOrDefault(p.ResourceType, int.MaxValue)
+                ))
                 .ToList();
             return (items, result.Data.TotalCount);
         }
@@ -299,4 +306,14 @@ else
                 }
             </tbody>
         </table>;
+
+    private Dictionary<string, int> TypeOrder =>
+        _typeOrder ??= ResourceTypeRegistry
+            .GetAll()
+            .Grouped()
+            .SelectMany(g => g.Types)
+            .Select((t, i) => (t.Name, i))
+            .ToDictionary(x => x.Name, x => x.i, StringComparer.OrdinalIgnoreCase);
+
+    private Dictionary<string, int>? _typeOrder;
 }

@@ -12,6 +12,8 @@ using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Providers;
@@ -134,6 +136,30 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
         );
 
         Assert.Equal(settings, stored.ToModel());
+    }
+
+    [RequiresDockerFact]
+    public async Task Migrate_GivesTheDefaultApiKeyLifetime_ForAPlatformRowUpgradedWithZero()
+    {
+        await Host.QueryAsync(async db =>
+        {
+            await db.GetService<IMigrator>().MigrateAsync("ApiKeys");
+            db.PlatformSecuritySettings.Add(
+                (SecurityPolicy.Default with { ApiKeyMaxLifetimeDays = 0 }).ToEntity()
+            );
+            return await db.SaveChangesAsync();
+        });
+
+        await Host.MigrateAsync();
+
+        Assert.Equal(
+            SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_DEFAULT,
+            await Host.QueryAsync(db =>
+                db.PlatformSecuritySettings.AsNoTracking()
+                    .Select(s => s.ApiKeyMaxLifetimeDays)
+                    .SingleAsync()
+            )
+        );
     }
 
     [RequiresDockerFact]

@@ -28,6 +28,7 @@ Reusable Blazor components in the `Corely.IAM.Web.Components.Shared` namespace.
 |-----------|---------|----------------|
 | `PermissionView` | Authorization gate: show/hide UI by CRUDX | `Action`, `Resource`, `ResourceIds`, `Undetermined` |
 | `EntityPickerModal` | Multi-select modal with search and pagination | `FetchItemsAsync`, `ExcludeIds`, `OnConfirm` |
+| `ResourceTypePicker` | Grouped, searchable resource types as a list or cards | `Types`, `Multiple`, `Cards`, `ReadOnly` |
 | `FormModal` | Generic form modal with confirm/cancel | `Title`, `ChildContent`, `OnConfirm` |
 | `ConfirmModal` | Destructive action confirmation | `Title`, `Message`, `Type`, `OnConfirm` |
 | `EffectivePermissionsPanel` | Permission tree with role/group derivation | `AccountId`, `Permissions` |
@@ -69,6 +70,7 @@ resolves from the tab's scope even inside `OwningComponentBase`.
 - [Audit and platform settings](audit.md)
 - [PermissionView](permission-view.md)
 - [EntityPickerModal](entity-picker-modal.md)
+- [ResourceTypePicker](resource-type-picker.md)
 - [FormModal](form-modal.md)
 - [ConfirmModal](confirm-modal.md)
 - [EffectivePermissionsPanel](effective-permissions.md)

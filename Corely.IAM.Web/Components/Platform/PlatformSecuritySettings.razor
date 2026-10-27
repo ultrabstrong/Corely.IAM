@@ -93,14 +93,10 @@ else
                 </div>
                 <NumberSetting Label="Longest secret lifetime (days)" @bind-Value="_apiKeyMaxLifetimeDays" Editing="IsEditing(API_KEYS)"
                                Min="SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_MIN" Max="SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_MAX" />
-                <span class="prop-label">Resource types</span>
-                <div class="setting-wide toggle-list">
-                    @foreach (var type in _resourceTypes)
-                    {
-                        var allowed = _apiKeyResourceTypes.Contains(type.Name);
-                        <ToggleSetting Id="@($"apiKeyType-{type.Name}")" Label="@($"{type.Description} ({type.Name})")" Value="allowed"
-                                       ValueChanged="on => ToggleResourceType(type.Name, on)" Editing="IsEditing(API_KEYS)" />
-                    }
+                <span class="prop-label setting-full">Resource types</span>
+                <div class="setting-full">
+                    <ResourceTypePicker Types="_resourceTypes" IdPrefix="apiKeyType" Multiple="true" Cards="true" ReadOnly="!IsEditing(API_KEYS)"
+                                        Selected="_apiKeyResourceTypes" SelectedChanged="types => _apiKeyResourceTypes = new(types, StringComparer.OrdinalIgnoreCase)" />
                 </div>
             }
         </div>
@@ -168,7 +164,7 @@ else
             AuthAction.Update,
             SecurityPolicy.RESOURCE_TYPE
         );
-        _resourceTypes = [.. ScopedServices.GetRequiredService<IResourceTypeRegistry>().GetAll().OrderBy(t => t.Name)];
+        _resourceTypes = [.. ScopedServices.GetRequiredService<IResourceTypeRegistry>().GetAll()];
         Reset(PASSWORDS);
         Reset(SIGN_IN);
         Reset(TWO_FACTOR);
@@ -244,14 +240,6 @@ else
         };
 
     private bool IsEditing(string section) => _editingSections.Contains(section);
-
-    private void ToggleResourceType(string resourceType, bool allowed)
-    {
-        if (allowed)
-            _apiKeyResourceTypes.Add(resourceType);
-        else
-            _apiKeyResourceTypes.Remove(resourceType);
-    }
 
     private RenderFragment EditButton(string section) =>
         @<text>

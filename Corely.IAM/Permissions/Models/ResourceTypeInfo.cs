@@ -8,6 +8,12 @@ public record ResourceTypeInfo(
     IReadOnlyList<AuthAction> OwnerActions
 )
 {
+    public const string IDENTITY_AND_ACCESS_GROUP = "Identity and access";
+    public const string PLATFORM_SETTINGS_GROUP = "Platform settings";
+
+    public string Title { get; init; } = Name;
+    public string? Group { get; init; }
+
     public string OwnerDefaultDescription() =>
         PermissionLabelProvider.GetName(
             Name,

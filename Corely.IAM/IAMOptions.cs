@@ -80,6 +80,27 @@ public class IAMOptions
         return this;
     }
 
+    public IAMOptions RegisterResourceType(
+        string name,
+        string title,
+        string description,
+        string group,
+        params AuthAction[] ownerActions
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(title);
+        ArgumentException.ThrowIfNullOrWhiteSpace(description);
+        ArgumentException.ThrowIfNullOrWhiteSpace(group);
+        ArgumentNullException.ThrowIfNull(ownerActions);
+        CustomResourceTypes[name] = new ResourceTypeInfo(name, description, ownerActions)
+        {
+            Title = title,
+            Group = group,
+        };
+        return this;
+    }
+
     public IAMOptions UseSymmetricEncryption(string code)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);

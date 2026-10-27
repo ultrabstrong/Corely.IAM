@@ -15,8 +15,18 @@ Multi-select modal for picking entities from a paginated, searchable list. Used 
 ## PickerItem
 
 ```csharp
-public record PickerItem(Guid Id, string DisplayText, string? Description = null);
+public record PickerItem(
+    Guid Id,
+    string DisplayText,
+    string? Description = null,
+    string? Group = null,
+    int GroupOrder = 0
+);
 ```
+
+Items with a `Group` are listed under a heading per group, groups by `GroupOrder` then name, items by
+`DisplayText`. Adding permissions to a role groups them by their type's title, in the order the
+[ResourceTypePicker](resource-type-picker.md) uses.
 
 ## Usage
 

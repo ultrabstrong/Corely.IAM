@@ -20,13 +20,15 @@ public class ResourceTypeRegistryTests
     [InlineData(Group.RESOURCE_TYPE, "Groups")]
     [InlineData(Role.RESOURCE_TYPE, "Roles")]
     [InlineData(Permission.RESOURCE_TYPE, "Permissions")]
-    public void Constructor_PreRegistersIAMType(string name, string expectedDescription)
+    public void Constructor_PreRegistersIAMType(string name, string expectedTitle)
     {
         var info = _registry.Get(name);
 
         Assert.NotNull(info);
         Assert.Equal(name, info.Name);
-        Assert.Equal(expectedDescription, info.Description);
+        Assert.Equal(expectedTitle, info.Title);
+        Assert.Equal(ResourceTypeInfo.IDENTITY_AND_ACCESS_GROUP, info.Group);
+        Assert.False(string.IsNullOrWhiteSpace(info.Description));
     }
 
     [Theory]
@@ -54,19 +56,51 @@ public class ResourceTypeRegistryTests
         "Audit settings",
         new[] { AuthAction.Read, AuthAction.Update }
     )]
-    [InlineData(PlatformSettings.RESOURCE_TYPE, "Platform audit settings", new AuthAction[0])]
-    [InlineData(SecurityPolicy.RESOURCE_TYPE, "Platform security settings", new AuthAction[0])]
+    [InlineData(PlatformSettings.RESOURCE_TYPE, "Audit", new AuthAction[0])]
+    [InlineData(SecurityPolicy.RESOURCE_TYPE, "Security", new AuthAction[0])]
     public void Constructor_PreRegistersAuditTypes_WithTheirOwnerActions(
         string name,
-        string expectedDescription,
+        string expectedTitle,
         AuthAction[] expectedOwnerActions
     )
     {
         var info = _registry.Get(name);
 
         Assert.NotNull(info);
-        Assert.Equal(expectedDescription, info.Description);
+        Assert.Equal(expectedTitle, info.Title);
         Assert.Equal(expectedOwnerActions, info.OwnerActions);
+    }
+
+    [Theory]
+    [InlineData(PlatformSettings.RESOURCE_TYPE)]
+    [InlineData(SecurityPolicy.RESOURCE_TYPE)]
+    public void Constructor_GroupsPlatformSettingsTypes_ForThePlatformSettingsTypes(string name) =>
+        Assert.Equal(ResourceTypeInfo.PLATFORM_SETTINGS_GROUP, _registry.Get(name)!.Group);
+
+    [Fact]
+    public void Register_KeepsTheTitleAndGroup_ForATitledType()
+    {
+        _registry.Register(
+            new ResourceTypeInfo("invoice", "Bills sent to customers", [AuthAction.Read])
+            {
+                Title = "Invoices",
+                Group = "Billing",
+            }
+        );
+
+        var info = _registry.Get("invoice")!;
+        Assert.Equal("Invoices", info.Title);
+        Assert.Equal("Billing", info.Group);
+    }
+
+    [Fact]
+    public void Register_TitlesTheTypeByItsNameAndLeavesItUngrouped_ForAnUntitledType()
+    {
+        _registry.Register("invoice", "Bills sent to customers", [AuthAction.Read]);
+
+        var info = _registry.Get("invoice")!;
+        Assert.Equal("invoice", info.Title);
+        Assert.Null(info.Group);
     }
 
     [Fact]
@@ -90,7 +124,7 @@ public class ResourceTypeRegistryTests
 
         Assert.NotNull(info);
         Assert.Equal(Account.RESOURCE_TYPE, info.Name);
-        Assert.Equal("Accounts", info.Description);
+        Assert.Equal("Accounts", info.Title);
     }
 
     [Fact]

@@ -21,21 +21,44 @@ internal class ResourceTypeRegistry : IResourceTypeRegistry
 
     public ResourceTypeRegistry()
     {
-        AddIamType(Account.RESOURCE_TYPE, "Accounts");
-        AddIamType(User.RESOURCE_TYPE, "Users");
-        AddIamType(Group.RESOURCE_TYPE, "Groups");
-        AddIamType(Role.RESOURCE_TYPE, "Roles");
-        AddIamType(Permission.RESOURCE_TYPE, "Permissions");
-        AddIamType(ApiKey.RESOURCE_TYPE, "API keys");
-        AddIamType(AuditEntry.RESOURCE_TYPE, "Audit log", AuthAction.Read, AuthAction.Delete);
+        AddIamType(Account.RESOURCE_TYPE, "Accounts", "An account and its settings");
+        AddIamType(User.RESOURCE_TYPE, "Users", "The account's users and what they belong to");
+        AddIamType(Group.RESOURCE_TYPE, "Groups", "Groups of users and the roles they carry");
+        AddIamType(Role.RESOURCE_TYPE, "Roles", "Roles and the permissions they hold");
+        AddIamType(
+            Permission.RESOURCE_TYPE,
+            "Permissions",
+            "What a permission allows, on which resources"
+        );
+        AddIamType(
+            ApiKey.RESOURCE_TYPE,
+            "API keys",
+            "Keys a program signs in with, their secrets and roles"
+        );
+        AddIamType(
+            AuditEntry.RESOURCE_TYPE,
+            "Audit log",
+            "The account's audit entries",
+            AuthAction.Read,
+            AuthAction.Delete
+        );
         AddIamType(
             AccountAuditSettings.RESOURCE_TYPE,
             "Audit settings",
+            "What the account audits and for how long",
             AuthAction.Read,
             AuthAction.Update
         );
-        AddIamType(PlatformSettings.RESOURCE_TYPE, "Platform audit settings", []);
-        AddIamType(SecurityPolicy.RESOURCE_TYPE, "Platform security settings", []);
+        AddPlatformSettingsType(
+            PlatformSettings.RESOURCE_TYPE,
+            "Audit",
+            "Platform wide audit defaults"
+        );
+        AddPlatformSettingsType(
+            SecurityPolicy.RESOURCE_TYPE,
+            "Security",
+            "Passwords, sign in, two factor and API keys for every account"
+        );
     }
 
     public IReadOnlyCollection<ResourceTypeInfo> GetAll() =>
@@ -45,30 +68,57 @@ internal class ResourceTypeRegistry : IResourceTypeRegistry
 
     public bool Exists(string name) => _resourceTypes.ContainsKey(name);
 
-    internal void Register(string name, string description, IEnumerable<AuthAction> ownerActions)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ArgumentException.ThrowIfNullOrWhiteSpace(description);
-        ArgumentNullException.ThrowIfNull(ownerActions);
+    internal void Register(string name, string description, IEnumerable<AuthAction> ownerActions) =>
+        Register(
+            new ResourceTypeInfo(
+                name,
+                description,
+                [.. ownerActions ?? throw new ArgumentNullException(nameof(ownerActions))]
+            )
+        );
 
-        if (name == "*")
+    internal void Register(ResourceTypeInfo type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        ArgumentException.ThrowIfNullOrWhiteSpace(type.Name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(type.Description);
+
+        if (type.Name == "*")
         {
             throw new ArgumentException(
                 "'*' is not a resource type. Permissions name the exact type they grant.",
-                nameof(name)
+                nameof(type)
             );
         }
 
-        var info = new ResourceTypeInfo(name, description, [.. ownerActions.Distinct()]);
-        if (!_resourceTypes.TryAdd(name, info))
+        var info = type with { OwnerActions = [.. type.OwnerActions.Distinct()] };
+        if (!_resourceTypes.TryAdd(type.Name, info))
         {
-            throw new InvalidOperationException($"Resource type '{name}' is already registered.");
+            throw new InvalidOperationException(
+                $"Resource type '{type.Name}' is already registered."
+            );
         }
     }
 
-    private void AddIamType(string name, string description) =>
-        AddIamType(name, description, _allActions);
+    private void AddIamType(string name, string title, string description) =>
+        AddIamType(name, title, description, _allActions);
 
-    private void AddIamType(string name, string description, params AuthAction[] ownerActions) =>
-        _resourceTypes[name] = new ResourceTypeInfo(name, description, ownerActions);
+    private void AddIamType(
+        string name,
+        string title,
+        string description,
+        params AuthAction[] ownerActions
+    ) =>
+        _resourceTypes[name] = new ResourceTypeInfo(name, description, ownerActions)
+        {
+            Title = title,
+            Group = ResourceTypeInfo.IDENTITY_AND_ACCESS_GROUP,
+        };
+
+    private void AddPlatformSettingsType(string name, string title, string description) =>
+        _resourceTypes[name] = new ResourceTypeInfo(name, description, [])
+        {
+            Title = title,
+            Group = ResourceTypeInfo.PLATFORM_SETTINGS_GROUP,
+        };
 }

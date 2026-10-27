@@ -108,6 +108,38 @@ public class IAMOptionsTests
     }
 
     [Fact]
+    public void RegisterResourceType_StoresTheTitleAndGroup_ForATitledType()
+    {
+        var options = IAMOptions.Create(_configuration, Mock.Of<ISecurityConfigurationProvider>());
+
+        options.RegisterResourceType(
+            "invoice",
+            "Invoices",
+            "Bills sent to customers",
+            "Billing",
+            AuthAction.Read
+        );
+
+        var type = options.CustomResourceTypes["invoice"];
+        Assert.Equal("Invoices", type.Title);
+        Assert.Equal("Billing", type.Group);
+        Assert.Equal("Bills sent to customers", type.Description);
+        Assert.Equal([AuthAction.Read], type.OwnerActions);
+    }
+
+    [Theory]
+    [InlineData("", "Billing")]
+    [InlineData("Invoices", " ")]
+    public void RegisterResourceType_Throws_ForABlankTitleOrGroup(string title, string group)
+    {
+        var options = IAMOptions.Create(_configuration, Mock.Of<ISecurityConfigurationProvider>());
+
+        Assert.ThrowsAny<ArgumentException>(() =>
+            options.RegisterResourceType("invoice", title, "Bills sent to customers", group)
+        );
+    }
+
+    [Fact]
     public void RegisterResourceType_StoresOwnerActions_ForActionsGiven()
     {
         var options = IAMOptions.Create(_configuration, Mock.Of<ISecurityConfigurationProvider>());

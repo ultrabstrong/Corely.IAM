@@ -2,6 +2,8 @@
 @inject IIamWebLinks Links
 @inject Corely.IAM.Permissions.Providers.IResourceTypeRegistry ResourceTypeRegistry
 @inject IJSRuntime JSRuntime
+@using Corely.IAM.Web.Extensions
+@using Corely.IAM.Permissions.Models
 
 <div class="management-header">
     <h1><i class="bi bi-journal-text me-2"></i>Audit</h1>
@@ -58,9 +60,14 @@
         <label class="form-label small mb-1">Resource type</label>
         <select class="form-select form-select-sm" @bind="_resourceTypeFilter" @bind:after="OnFilterChangedAsync">
             <option value="">Any</option>
-            @foreach (var type in _resourceTypes)
+            @foreach (var group in _resourceTypes.Grouped())
             {
-                <option value="@type">@type</option>
+                <optgroup label="@group.Name">
+                    @foreach (var type in group.Types)
+                    {
+                        <option value="@type.Name">@type.Title</option>
+                    }
+                </optgroup>
             }
         </select>
     </div>
@@ -188,7 +195,7 @@ else
 
     private List<AuditAccountOption> _accounts = [];
     private List<AuditAccountOption> _deletedAccounts = [];
-    private List<string> _resourceTypes = [];
+    private IReadOnlyCollection<ResourceTypeInfo> _resourceTypes = [];
     private bool _canPurge;
     private Guid? _accountFilter;
     private string _userFilter = string.Empty;
@@ -228,7 +235,7 @@ else
         _deletedAccounts = [.. readable.DeletedAccounts];
         var purgeable = await AuditService.ListAuditAccountsAsync(AuthAction.Delete);
         _canPurge = purgeable.IncludesEverything || purgeable.Accounts.Count > 0;
-        _resourceTypes = [.. ResourceTypeRegistry.GetAll().Select(t => t.Name).Order()];
+        _resourceTypes = ResourceTypeRegistry.GetAll();
         _optionsLoaded = true;
     }
 

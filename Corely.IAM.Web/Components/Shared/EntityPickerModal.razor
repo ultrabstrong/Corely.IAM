@@ -43,8 +43,13 @@
                         else
                         {
                             <div class="list-group" style="max-height: 400px; overflow-y: auto;">
-                                @foreach (var item in filtered)
+                                @foreach (var item in Ordered(filtered))
                                 {
+                                    @if (item.Group is { } group && group != _lastGroup)
+                                    {
+                                        _lastGroup = group;
+                                        <div class="list-group-item picker-group-heading">@group</div>
+                                    }
                                     var isChecked = _selectedIds.Contains(item.Id);
                                     <label class="list-group-item list-group-item-action d-flex align-items-center gap-2 @(isChecked ? "active" : "")" style="cursor: pointer;">
                                         <input type="checkbox"
@@ -53,7 +58,7 @@
                                                @onchange="() => ToggleSelection(item.Id)"
                                                disabled="@_saving" />
                                         <div class="flex-grow-1">
-                                            <span class="@(isChecked ? "text-white" : "")">@item.DisplayText</span>
+                                            <span class="picker-item-text @(isChecked ? "text-white" : "")">@item.DisplayText</span>
                                             <br /><CopyableId Value="item.Id" />
                                             @if (!string.IsNullOrWhiteSpace(item.Description))
                                             {
@@ -234,5 +239,18 @@
         {
             Close();
         }
+    }
+
+    private string? _lastGroup;
+
+    private IEnumerable<PickerItem> Ordered(IEnumerable<PickerItem> items)
+    {
+        _lastGroup = null;
+        var list = items.ToList();
+        return list.Any(i => i.Group != null)
+            ? list.OrderBy(i => i.GroupOrder)
+                .ThenBy(i => i.Group, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(i => i.DisplayText, StringComparer.OrdinalIgnoreCase)
+            : list;
     }
 }

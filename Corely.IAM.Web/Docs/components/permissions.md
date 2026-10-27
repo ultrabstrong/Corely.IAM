@@ -17,7 +17,7 @@ Permission table with search, sort, pagination, and create. CRUDX flags displaye
 - **Search**: permission name (debounced 300ms)
 - **Sort**: ascending/descending on permission name
 - **Pagination**: 25 items per page
-- **Create**: modal form with resource type dropdown, resource ID, name, CRUDX checkboxes
+- **Create**: modal form with a resource type picker, resource ID, name, CRUDX checkboxes
 - **Delete**: confirmation modal per row
 - **CRUDX badges**: individual Create, Read, Update, Delete, Execute columns with active/inactive indicators
 
@@ -27,8 +27,9 @@ Permission table with search, sort, pagination, and create. CRUDX flags displaye
 - System-defined permissions (the Owner role's defaults) have no Delete button
 
 **Create form:**
-- **Resource Type**: `<select>` listing each registered type by its description, limited to the
-  types the caller can grant at least one action on (`IAuthorizationProvider.GetGrantableActionsAsync`)
+- **Resource Type**: a [ResourceTypePicker](resource-type-picker.md) of the types the caller can
+  grant at least one action on (`IAuthorizationProvider.GetGrantableActionsAsync`), grouped and
+  searchable
 - **Resource ID**: text input for GUID; empty defaults to `Guid.Empty` (all resources of the type)
 - **Name**: optional; left empty, the permission shows its generated name
 - **CRUDX checkboxes**: an action the caller does not hold on that type and resource ID is disabled

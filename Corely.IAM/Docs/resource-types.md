@@ -13,17 +13,21 @@ Resource types are compile-time concepts that categorize what a permission grant
 
 ## Built-in Resource Types
 
-| Constant | Value | Description | Owner actions |
-|----------|-------|-------------|---------------|
-| `Account.RESOURCE_TYPE` | `"account"` | Accounts | All five |
-| `User.RESOURCE_TYPE` | `"user"` | Users | All five |
-| `Group.RESOURCE_TYPE` | `"group"` | Groups | All five |
-| `Role.RESOURCE_TYPE` | `"role"` | Roles | All five |
-| `Permission.RESOURCE_TYPE` | `"permission"` | Permissions | All five |
-| `AuditEntry.RESOURCE_TYPE` | `"audit"` | Audit log | Read (view and export), Delete (purge) |
-| `AccountAuditSettings.RESOURCE_TYPE` | `"audit_settings"` | Audit settings | Read, Update |
-| `PlatformSettings.RESOURCE_TYPE` | `"platform_audit_settings"` | Platform audit settings | None |
-| `SecurityPolicy.RESOURCE_TYPE` | `"platform_security_settings"` | Platform security settings | None |
+| Constant | Value | Title | Group | Owner actions |
+|----------|-------|-------|-------|---------------|
+| `Account.RESOURCE_TYPE` | `"account"` | Accounts | Identity and access | All five |
+| `User.RESOURCE_TYPE` | `"user"` | Users | Identity and access | All five |
+| `Group.RESOURCE_TYPE` | `"group"` | Groups | Identity and access | All five |
+| `Role.RESOURCE_TYPE` | `"role"` | Roles | Identity and access | All five |
+| `Permission.RESOURCE_TYPE` | `"permission"` | Permissions | Identity and access | All five |
+| `ApiKey.RESOURCE_TYPE` | `"api_key"` | API keys | Identity and access | All five |
+| `AuditEntry.RESOURCE_TYPE` | `"audit"` | Audit log | Identity and access | Read (view and export), Delete (purge) |
+| `AccountAuditSettings.RESOURCE_TYPE` | `"audit_settings"` | Audit settings | Identity and access | Read, Update |
+| `PlatformSettings.RESOURCE_TYPE` | `"platform_audit_settings"` | Audit | Platform settings | None |
+| `SecurityPolicy.RESOURCE_TYPE` | `"platform_security_settings"` | Security | Platform settings | None |
+
+Each also has a one line description. The groups are `ResourceTypeInfo.IDENTITY_AND_ACCESS_GROUP` and
+`ResourceTypeInfo.PLATFORM_SETTINGS_GROUP`.
 
 The two platform settings types are meaningful only in the [platform account](platform.md), whose
 owner holds full access on every type; an account owner elsewhere gets nothing on them. See [Auditing](auditing.md) for
@@ -34,14 +38,21 @@ rejected as a type name, and a permission grants access only to the type it name
 
 ## Registering Custom Types
 
-Register custom resource types via `IAMOptions` during startup, naming the actions an account
-owner gets on each:
+Register custom resource types via `IAMOptions` during startup with a code name, a short title, a
+one line description, the group the screens list it under, and the actions an account owner gets on
+it:
 
 ```csharp
 var options = IAMOptions.Create(configuration, securityConfigProvider, efConfig)
-    .RegisterResourceType("invoice", "Customer invoices", AuthAction.Read, AuthAction.Update)
-    .RegisterResourceType("report", "Financial reports");
+    .RegisterResourceType("invoice", "Invoices", "Bills sent to customers", "Billing",
+        AuthAction.Read, AuthAction.Update)
+    .RegisterResourceType("report_settings", "Reports", "What the monthly reports include",
+        ResourceTypeInfo.PLATFORM_SETTINGS_GROUP);
 ```
+
+A type for a platform settings page belongs in `ResourceTypeInfo.PLATFORM_SETTINGS_GROUP`. The
+shorter overload, `RegisterResourceType(name, description, params ownerActions)`, still works: its
+type takes its name as its title and is listed under Other.
 
 A type registered without owner actions gives the owner nothing on it; access to it comes only from
 permissions created explicitly. Duplicate names (including case variants) are overwritten with the
@@ -84,7 +95,11 @@ public record ResourceTypeInfo(
     string Name,
     string Description,
     IReadOnlyList<AuthAction> OwnerActions
-);
+)
+{
+    public string Title { get; init; }
+    public string? Group { get; init; }
+}
 ```
 
 Resolve `IResourceTypeRegistry` from DI to query registered types:
@@ -102,7 +117,11 @@ var exists = registry.Exists("account");
 
 ## UI Integration
 
-In `Corely.IAM.Web`, the permission creation form uses a `<select>` dropdown populated from `IResourceTypeRegistry.GetAll()`. Selecting a resource type auto-populates the description field with the registry's description.
+In `Corely.IAM.Web`, every list of resource types (Create Permission, the API key types in the
+security settings, the audit log's filter) groups them: Identity and access first, other groups by
+name, Platform settings last, ungrouped types under Other, and types by title within a group. Each
+shows its title, its description and its code name. Adding permissions to a role heads them by their
+type the same way.
 
 ## Notes
 

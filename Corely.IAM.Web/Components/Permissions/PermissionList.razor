@@ -104,13 +104,8 @@ else
 <FormModal @ref="_createModal" Title="Create Permission" OnConfirm="CreateAsync">
     <div class="mb-3">
         <label class="form-label">Resource Type</label>
-        <select class="form-select" value="@_newResourceType" @onchange="OnResourceTypeChangedAsync">
-            <option value="">-- Select --</option>
-            @foreach (var rt in _grantableResourceTypes)
-            {
-                <option value="@rt.Name">@rt.Description</option>
-            }
-        </select>
+        <ResourceTypePicker Types="_grantableResourceTypes" IdPrefix="newPermissionType" Value="@_newResourceType"
+                            ValueChanged="OnResourceTypeChangedAsync" />
     </div>
     <div class="mb-3">
         <label class="form-label">Resource ID</label>
@@ -205,9 +200,9 @@ else
         }
     }
 
-    private async Task OnResourceTypeChangedAsync(ChangeEventArgs e)
+    private async Task OnResourceTypeChangedAsync(string? resourceType)
     {
-        _newResourceType = e.Value?.ToString();
+        _newResourceType = resourceType;
         await RefreshGrantableActionsAsync();
     }
 

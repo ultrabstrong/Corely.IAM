@@ -348,7 +348,7 @@ internal class PermissionProcessor(
     )
     {
         var permissionEntity = await _permissionRepo.GetAsync(
-            p => p.Id == permissionId,
+            p => p.Id == permissionId && (accountId == default || p.AccountId == accountId),
             include: q => q.Include(p => p.Roles)
         );
         if (permissionEntity == null)

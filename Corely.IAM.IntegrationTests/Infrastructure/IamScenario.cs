@@ -200,10 +200,10 @@ public sealed class IamScenario : IAsyncLifetime
     {
         foreach (var userId in new[] { DirectMemberUserId, GroupMemberUserId })
         {
-            var result = await AsOwnerInAccountAsync(
-                AccountId,
-                registration =>
-                    registration.RegisterUserWithAccountAsync(
+            var result = await AsSystemAsync(services =>
+                services
+                    .GetRequiredService<IRegistrationService>()
+                    .RegisterUserWithAccountAsync(
                         new RegisterUserWithAccountRequest(userId, AccountId)
                     )
             );

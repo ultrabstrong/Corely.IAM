@@ -3,6 +3,8 @@ using Corely.IAM.Models;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.UnitTests.Services;
 
@@ -10,11 +12,16 @@ public class PlatformServiceAuthorizationDecoratorTests
 {
     private readonly Mock<IPlatformService> _inner = new();
     private readonly Mock<IAuditAccessProvider> _access = new();
+    private readonly Mock<IUserContextProvider> _userContext = new();
     private readonly PlatformServiceAuthorizationDecorator _decorator;
 
     public PlatformServiceAuthorizationDecoratorTests()
     {
-        _decorator = new PlatformServiceAuthorizationDecorator(_inner.Object, _access.Object);
+        _decorator = new PlatformServiceAuthorizationDecorator(
+            _inner.Object,
+            _access.Object,
+            _userContext.Object
+        );
     }
 
     private void Holds(AuthAction action, bool holds) =>
@@ -91,7 +98,7 @@ public class PlatformServiceAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task Bootstrap_PassesThrough()
+    public async Task Bootstrap_PassesThrough_WithNoCallerSignedIn()
     {
         var request = new BootstrapPlatformRequest("Platform", "owner", "owner@example.com");
 
@@ -99,5 +106,40 @@ public class PlatformServiceAuthorizationDecoratorTests
 
         _inner.Verify(s => s.BootstrapPlatformAsync(request), Times.Once);
         _access.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task Bootstrap_PassesThrough_InSystemContext()
+    {
+        var request = new BootstrapPlatformRequest("Platform", "owner", "owner@example.com");
+        _userContext.Setup(u => u.GetUserContext()).Returns(new UserContext(true, "system"));
+
+        await _decorator.BootstrapPlatformAsync(request);
+
+        _inner.Verify(s => s.BootstrapPlatformAsync(request), Times.Once);
+    }
+
+    [Fact]
+    public async Task Bootstrap_IsRefused_ForASignedInUser()
+    {
+        var request = new BootstrapPlatformRequest("Platform", "owner", "owner@example.com");
+        _userContext
+            .Setup(u => u.GetUserContext())
+            .Returns(
+                new UserContext(
+                    new User { Id = Guid.CreateVersion7(), Username = "someone" },
+                    null,
+                    "device",
+                    []
+                )
+            );
+
+        var result = await _decorator.BootstrapPlatformAsync(request);
+
+        Assert.Equal(BootstrapPlatformResultCode.UnauthorizedError, result.ResultCode);
+        _inner.Verify(
+            s => s.BootstrapPlatformAsync(It.IsAny<BootstrapPlatformRequest>()),
+            Times.Never
+        );
     }
 }

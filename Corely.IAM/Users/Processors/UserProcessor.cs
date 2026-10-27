@@ -259,6 +259,7 @@ internal class UserProcessor(
             request.RoleIds.Contains(r.Id)
             && !r.Users!.Any(u => u.Id == request.UserId)
             && accountIds.Contains(r.AccountId)
+            && (request.AccountId == default || r.AccountId == request.AccountId)
         );
 
         if (roleEntities.Count == 0)
@@ -335,7 +336,13 @@ internal class UserProcessor(
         }
 
         var rolesToRemove =
-            userEntity.Roles?.Where(r => request.RoleIds.Contains(r.Id)).ToList() ?? [];
+            userEntity
+                .Roles?.Where(r =>
+                    request.RoleIds.Contains(r.Id)
+                    && (request.AccountId == default || r.AccountId == request.AccountId)
+                )
+                .ToList()
+            ?? [];
 
         if (rolesToRemove.Count == 0)
         {

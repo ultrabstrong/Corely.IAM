@@ -95,7 +95,10 @@ internal class GroupProcessor(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var groupEntity = await _groupRepo.GetAsync(g => g.Id == request.GroupId);
+        var groupEntity = await _groupRepo.GetAsync(g =>
+            g.Id == request.GroupId
+            && (request.AccountId == default || g.AccountId == request.AccountId)
+        );
         if (groupEntity == null)
         {
             _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
@@ -165,7 +168,9 @@ internal class GroupProcessor(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
         var groupEntity = await _groupRepo.GetAsync(
-            g => g.Id == request.GroupId,
+            g =>
+                g.Id == request.GroupId
+                && (request.AccountId == default || g.AccountId == request.AccountId),
             include: q => q.Include(g => g.Users).Include(g => g.Roles)
         );
         if (groupEntity == null)
@@ -253,7 +258,10 @@ internal class GroupProcessor(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var groupEntity = await _groupRepo.GetAsync(g => g.Id == request.GroupId);
+        var groupEntity = await _groupRepo.GetAsync(g =>
+            g.Id == request.GroupId
+            && (request.AccountId == default || g.AccountId == request.AccountId)
+        );
         if (groupEntity == null)
         {
             _logger.LogWarning("Group with Id {GroupId} not found", request.GroupId);
@@ -323,7 +331,9 @@ internal class GroupProcessor(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
         var groupEntity = await _groupRepo.GetAsync(
-            g => g.Id == request.GroupId,
+            g =>
+                g.Id == request.GroupId
+                && (request.AccountId == default || g.AccountId == request.AccountId),
             include: q => q.Include(g => g.Roles).Include(g => g.Users)
         );
 
@@ -466,7 +476,7 @@ internal class GroupProcessor(
     public async Task<DeleteGroupResult> DeleteGroupAsync(Guid groupId, Guid accountId = default)
     {
         var groupEntity = await _groupRepo.GetAsync(
-            g => g.Id == groupId,
+            g => g.Id == groupId && (accountId == default || g.AccountId == accountId),
             include: q => q.Include(g => g.Users).Include(g => g.Roles)
         );
         if (groupEntity == null)

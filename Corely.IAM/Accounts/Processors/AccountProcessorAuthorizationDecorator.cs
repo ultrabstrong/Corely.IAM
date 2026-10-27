@@ -5,17 +5,22 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
+using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.Accounts.Processors;
 
 internal class AccountProcessorAuthorizationDecorator(
     IAccountProcessor inner,
-    IAuthorizationProvider authorizationProvider
+    IAuthorizationProvider authorizationProvider,
+    IUserContextProvider userContextProvider
 ) : IAccountProcessor
 {
     private readonly IAccountProcessor _inner = inner.ThrowIfNull(nameof(inner));
     private readonly IAuthorizationProvider _authorizationProvider =
         authorizationProvider.ThrowIfNull(nameof(authorizationProvider));
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
+    );
 
     public Task<CreateAccountResult> CreateAccountAsync(CreateAccountRequest request) =>
         _authorizationProvider.HasUserContext()
@@ -71,16 +76,11 @@ internal class AccountProcessorAuthorizationDecorator(
     public async Task<AddUserToAccountResult> AddUserToAccountAsync(
         AddUserToAccountRequest request
     ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
-        && await _authorizationProvider.IsAuthorizedAsync(
-            AuthAction.Update,
-            Account.RESOURCE_TYPE,
-            request.AccountId
-        )
+        _userContextProvider.GetUserContext()?.IsSystemContext == true
             ? await _inner.AddUserToAccountAsync(request)
             : new AddUserToAccountResult(
                 AddUserToAccountResultCode.UnauthorizedError,
-                $"Unauthorized to update account {request.AccountId}"
+                "Only system context adds a user to an account directly; anyone else joins by invitation"
             );
 
     public Task<AddUserToAccountResult> AddUserToAccountForInvitationAsync(

@@ -6,6 +6,8 @@ using Corely.IAM.Permissions.Models;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
+using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.UnitTests.Accounts.Processors;
 
@@ -13,6 +15,7 @@ public class AccountProcessorAuthorizationDecoratorTests
 {
     private readonly Mock<IAccountProcessor> _mockInnerProcessor = new();
     private readonly Mock<IAuthorizationProvider> _mockAuthorizationProvider = new();
+    private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly AccountProcessorAuthorizationDecorator _decorator;
 
     public AccountProcessorAuthorizationDecoratorTests()
@@ -24,7 +27,8 @@ public class AccountProcessorAuthorizationDecoratorTests
             .Returns(true);
         _decorator = new AccountProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
-            _mockAuthorizationProvider.Object
+            _mockAuthorizationProvider.Object,
+            _mockUserContextProvider.Object
         );
     }
 
@@ -130,15 +134,13 @@ public class AccountProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task AddUserToAccount_CallsAuthorizationProvider()
+    public async Task AddUserToAccount_RunsInSystemContext()
     {
         var request = new AddUserToAccountRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
         var expectedResult = new AddUserToAccountResult(AddUserToAccountResultCode.Success, "");
-        _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(AuthAction.Update, Account.RESOURCE_TYPE, request.AccountId)
-            )
-            .ReturnsAsync(true);
+        _mockUserContextProvider
+            .Setup(x => x.GetUserContext())
+            .Returns(new UserContext(true, "system"));
         _mockInnerProcessor
             .Setup(x => x.AddUserToAccountAsync(request))
             .ReturnsAsync(expectedResult);
@@ -146,22 +148,28 @@ public class AccountProcessorAuthorizationDecoratorTests
         var result = await _decorator.AddUserToAccountAsync(request);
 
         Assert.Equal(expectedResult, result);
-        _mockAuthorizationProvider.Verify(
-            x => x.IsAuthorizedAsync(AuthAction.Update, Account.RESOURCE_TYPE, request.AccountId),
-            Times.Once
-        );
         _mockInnerProcessor.Verify(x => x.AddUserToAccountAsync(request), Times.Once);
     }
 
     [Fact]
-    public async Task AddUserToAccount_ReturnsUnauthorized_WhenNotAuthorized()
+    public async Task AddUserToAccount_IsRefused_ForAnAccountOwner()
     {
         var request = new AddUserToAccountRequest(Guid.CreateVersion7(), Guid.CreateVersion7());
+        _mockUserContextProvider
+            .Setup(x => x.GetUserContext())
+            .Returns(
+                new UserContext(
+                    new User { Id = Guid.CreateVersion7(), Username = "owner" },
+                    new Account { Id = request.AccountId, AccountName = "Acme" },
+                    "device",
+                    []
+                )
+            );
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(AuthAction.Update, Account.RESOURCE_TYPE, request.AccountId)
             )
-            .ReturnsAsync(false);
+            .ReturnsAsync(true);
 
         var result = await _decorator.AddUserToAccountAsync(request);
 
@@ -303,12 +311,20 @@ public class AccountProcessorAuthorizationDecoratorTests
     [Fact]
     public void Constructor_ThrowsOnNullInnerProcessor() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new AccountProcessorAuthorizationDecorator(null!, _mockAuthorizationProvider.Object)
+            new AccountProcessorAuthorizationDecorator(
+                null!,
+                _mockAuthorizationProvider.Object,
+                _mockUserContextProvider.Object
+            )
         );
 
     [Fact]
     public void Constructor_ThrowsOnNullAuthorizationProvider() =>
         Assert.Throws<ArgumentNullException>(() =>
-            new AccountProcessorAuthorizationDecorator(_mockInnerProcessor.Object, null!)
+            new AccountProcessorAuthorizationDecorator(
+                _mockInnerProcessor.Object,
+                null!,
+                _mockUserContextProvider.Object
+            )
         );
 }

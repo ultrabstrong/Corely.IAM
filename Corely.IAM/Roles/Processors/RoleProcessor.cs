@@ -227,7 +227,10 @@ internal class RoleProcessor(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var roleEntity = await _roleRepo.GetAsync(r => r.Id == request.RoleId);
+        var roleEntity = await _roleRepo.GetAsync(r =>
+            r.Id == request.RoleId
+            && (request.AccountId == default || r.AccountId == request.AccountId)
+        );
         if (roleEntity == null)
         {
             _logger.LogWarning("Role with Id {RoleId} not found", request.RoleId);
@@ -299,7 +302,9 @@ internal class RoleProcessor(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
         var roleEntity = await _roleRepo.GetAsync(
-            r => r.Id == request.RoleId,
+            r =>
+                r.Id == request.RoleId
+                && (request.AccountId == default || r.AccountId == request.AccountId),
             include: q => q.Include(r => r.Permissions)
         );
         if (roleEntity == null)
@@ -443,7 +448,7 @@ internal class RoleProcessor(
     public async Task<DeleteRoleResult> DeleteRoleAsync(Guid roleId, Guid accountId = default)
     {
         var roleEntity = await _roleRepo.GetAsync(
-            r => r.Id == roleId,
+            r => r.Id == roleId && (accountId == default || r.AccountId == accountId),
             include: q => q.Include(r => r.Users).Include(r => r.Groups).Include(r => r.Permissions)
         );
         if (roleEntity == null)

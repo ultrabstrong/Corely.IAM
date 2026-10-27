@@ -27,6 +27,8 @@ else
         if (_leaving)
             return;
         var userContext = await BlazorUserContextAccessor.GetUserContextAsync();
+        if (_leaving)
+            return;
         _matches = userContext?.CurrentAccount?.Id == AccountId;
         if (_matches)
             return;

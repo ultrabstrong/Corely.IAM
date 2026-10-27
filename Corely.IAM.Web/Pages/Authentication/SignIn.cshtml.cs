@@ -41,7 +41,7 @@ public class SignInModel(
     {
         ReturnUrl = ReturnUrl.AsLocalUrl();
 
-        if (HttpContext.Request.Cookies.ContainsKey(AuthCookieManager.AUTH_TOKEN_COOKIE))
+        if (User.Identity?.IsAuthenticated == true)
         {
             return Redirect(ReturnUrl ?? iamWebOptions.Value.HomePath);
         }

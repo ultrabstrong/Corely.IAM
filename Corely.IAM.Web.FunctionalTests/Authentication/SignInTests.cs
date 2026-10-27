@@ -112,6 +112,23 @@ public class SignInTests : FunctionalTestBase
         Assert.False(HasAuthCookies);
     }
 
+    [Theory]
+    [InlineData(AppRoutes.SignIn)]
+    [InlineData(AppRoutes.Register)]
+    public async Task Page_ShowsTheForm_ForCookiesWhoseSessionWasJustRenewedElsewhere(string path)
+    {
+        await SignInSuccessfullyAsync();
+        var spent = new Dictionary<string, string>(Client.Cookies.Cookies);
+        Clock.AdvanceSeconds(Factory.AuthTokenTtlSeconds + 1);
+        using (await Client.GetAsync("/")) { }
+        Assert.NotEqual(spent[AuthCookieManager.REFRESH_TOKEN_COOKIE], CurrentRefreshToken);
+        Client.Cookies.Restore(spent);
+
+        using var response = await Client.GetAsync(path);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     private static string ExtractErrorMessage(string html) =>
         html.Contains("Invalid username or password", StringComparison.OrdinalIgnoreCase)
             ? "invalid-credentials"

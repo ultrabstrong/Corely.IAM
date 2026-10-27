@@ -40,7 +40,7 @@ public class RegisterModel(
 
     public IActionResult OnGet()
     {
-        if (HttpContext.Request.Cookies.ContainsKey(AuthCookieManager.AUTH_TOKEN_COOKIE))
+        if (User.Identity?.IsAuthenticated == true)
         {
             return Redirect(iamWebOptions.Value.HomePath);
         }

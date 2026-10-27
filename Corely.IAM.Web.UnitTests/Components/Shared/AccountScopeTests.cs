@@ -108,4 +108,28 @@ public class AccountScopeTests : BunitContext
             h => h.Uri.Contains("switch-account", StringComparison.Ordinal)
         );
     }
+
+    [Fact]
+    public async Task Render_SwitchesOnce_ForAParentThatRendersAgainWhileTheContextLoads()
+    {
+        var context = new TaskCompletionSource<UserContext?>();
+        _userContextAccessor.Setup(x => x.GetUserContextAsync()).Returns(() => context.Task);
+
+        var cut = RenderScope();
+        cut.Render(p => p.Add(x => x.AccountId, _routeAccountId).AddChildContent("<p>again</p>"));
+        await cut.InvokeAsync(() =>
+            context.SetResult(
+                PageTestHelpers.CreateUserContext(
+                    currentAccount: new Account { Id = Guid.CreateVersion7(), AccountName = "Acme" }
+                )
+            )
+        );
+
+        cut.WaitForAssertion(() =>
+            Assert.Single(
+                Services.GetRequiredService<BunitNavigationManager>().History,
+                h => h.Uri.Contains("switch-account", StringComparison.Ordinal)
+            )
+        );
+    }
 }

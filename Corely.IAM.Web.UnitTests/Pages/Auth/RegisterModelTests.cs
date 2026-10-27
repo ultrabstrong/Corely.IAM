@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
@@ -95,7 +96,24 @@ public class RegisterModelTests
     }
 
     [Fact]
-    public void OnGet_WithAuthCookie_RedirectsToDashboard()
+    public void OnGet_RedirectsToDashboard_ForASignedInRequest()
+    {
+        var httpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(
+                new ClaimsIdentity([new Claim(ClaimTypes.Name, "u")], "test")
+            ),
+        };
+        _model.PageContext = PageTestHelpers.CreatePageContext(httpContext);
+
+        var result = _model.OnGet();
+
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.Equal("/", redirect.Url);
+    }
+
+    [Fact]
+    public void OnGet_ReturnsPage_ForAnAuthCookieThatDidNotSignTheRequestIn()
     {
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Headers["Cookie"] = "authentication_token=some-token";
@@ -103,8 +121,7 @@ public class RegisterModelTests
 
         var result = _model.OnGet();
 
-        var redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Equal("/", redirect.Url);
+        Assert.IsType<PageResult>(result);
     }
 
     [Fact]

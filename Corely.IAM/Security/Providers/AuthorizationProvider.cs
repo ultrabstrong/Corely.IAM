@@ -64,7 +64,7 @@ internal class AuthorizationProvider(
             !TryGetPrincipalId(
                 userContext,
                 $"{action} on {resourceType}{resourceIdDisplay}",
-                out var userId
+                out var principalId
             )
         )
             return false;
@@ -85,8 +85,9 @@ internal class AuthorizationProvider(
         if (!hasPermission)
         {
             _logger.LogInformation(
-                "Authorization denied: User {UserId} lacks {Action} permission for {ResourceType}{ResourceIds}",
-                userId,
+                "Authorization denied: {PrincipalType} {PrincipalId} lacks {Action} permission for {ResourceType}{ResourceIds}",
+                userContext.PrincipalType,
+                principalId,
                 action,
                 resourceType,
                 resourceIdDisplay
@@ -145,14 +146,15 @@ internal class AuthorizationProvider(
                 !TryGetPrincipalId(
                     userContext,
                     $"check account context for {accountId}",
-                    out var userId
+                    out var principalId
                 )
             )
                 return false;
 
             _logger.LogInformation(
-                "Authorization denied: User {UserId} is not signed in to account {AccountId}",
-                userId,
+                "Authorization denied: {PrincipalType} {PrincipalId} is not signed in to account {AccountId}",
+                userContext.PrincipalType,
+                principalId,
                 accountId
             );
             return false;
@@ -166,14 +168,15 @@ internal class AuthorizationProvider(
                 !TryGetPrincipalId(
                     userContext,
                     $"check account access for {accountId}",
-                    out var userId
+                    out var principalId
                 )
             )
                 return false;
 
             _logger.LogInformation(
-                "Authorization denied: User {UserId} does not have access to account {AccountId}",
-                userId,
+                "Authorization denied: {PrincipalType} {PrincipalId} does not have access to account {AccountId}",
+                userContext.PrincipalType,
+                principalId,
                 accountId
             );
         }
@@ -414,14 +417,15 @@ internal class AuthorizationProvider(
         if (userContext.IsSystemContext)
             return true;
 
-        if (!TryGetPrincipalId(userContext, operation, out var userId))
+        if (!TryGetPrincipalId(userContext, operation, out var principalId))
             return false;
 
         if (userContext.CurrentAccount is not { } account)
         {
             _logger.LogInformation(
-                "Authorization denied: User {UserId} has no current account to {Operation}",
-                userId,
+                "Authorization denied: {PrincipalType} {PrincipalId} has no current account to {Operation}",
+                userContext.PrincipalType,
+                principalId,
                 operation
             );
             return false;
@@ -434,8 +438,9 @@ internal class AuthorizationProvider(
         if (uncovered.Count > 0)
         {
             _logger.LogInformation(
-                "Authorization denied: User {UserId} cannot {Operation}; it hands out permissions they do not hold {@UncoveredPermissionIds}",
-                userId,
+                "Authorization denied: {PrincipalType} {PrincipalId} cannot {Operation}; it hands out permissions they do not hold {@UncoveredPermissionIds}",
+                userContext.PrincipalType,
+                principalId,
                 operation,
                 uncovered
             );

@@ -1,5 +1,6 @@
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.ApiKeys.Models;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 
 namespace Corely.IAM.Users.Models;
@@ -19,6 +20,9 @@ public record UserContext
         IsSystemContext && CurrentAccount == null
             ? AccountScope.Any
             : AccountScope.Of(CurrentAccount?.Id ?? Guid.Empty);
+
+    internal TokenPrincipalType PrincipalType =>
+        ApiKey != null ? TokenPrincipalType.ApiKey : TokenPrincipalType.User;
 
     public List<Account> MemberAccounts =>
         EnteredAsPlatformMember

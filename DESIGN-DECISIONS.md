@@ -69,3 +69,24 @@ A file that imports both namespaces uses an alias, e.g.
 
 **Revisit if** the collision spreads well beyond a few host files, or a third library makes aliasing
 routine.
+
+## User sign in through the API
+
+Add `POST /api/auth/signin` taking a username and password, and `POST /api/auth/mfa` for the second
+step, beside the API key exchange in `MapIAMTokenEndpoints`. The services already split sign in
+this way (`SignInAsync`, then `VerifyMfaAsync` with the challenge token), so it would be little code.
+
+**Why not.** It is OAuth's password grant, which OAuth 2.1 removes:
+
+- It is a second front door that skips the pages' protections. The bot check on the sign in pages,
+  and anything a host adds there, does not apply to a JSON endpoint, which makes it the target for
+  credential stuffing. Lockout and rate limiting soften that but do not close it.
+- Every script or app that uses it stores the user's real password.
+- API keys already serve programmatic access, and better: scoped to the roles given, rotatable, and
+  revoked without touching the user's own sign in.
+
+A user's token sent as a bearer header is still accepted; the tokens just come from the sign in
+pages.
+
+**Revisit if** a first party native client needs users to sign in. The answer then is the browser
+hand off in `Plans/Feature-Ideas.md` (authorization code with PKCE), not a password endpoint.

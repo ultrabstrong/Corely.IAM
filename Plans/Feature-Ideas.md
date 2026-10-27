@@ -58,3 +58,18 @@ against one IP trying many usernames.
 - [ ] Count recent sign in failures by IP (and by username), with a window and a threshold
 - [ ] Render `_HumanCheck` and ask the verifier on `SignIn` only past the threshold
 - [ ] Decide where the count lives so it holds across instances
+
+### Remember me
+How long a browser session lasts is fixed today: the refresh cookie lives until `RefreshExpiresUtc`, bounded by the session lifetime and idle timeout settings. A checkbox on sign in would vary it per session.
+- [ ] A remember flag on the sign in request, carried by the session
+- [ ] Unchecked: the refresh cookie is a session cookie, gone when the browser closes
+- [ ] Checked: the session may use a longer lifetime, a second setting on `SecurityPolicy` with its range
+- Useful on shared computers; unrelated to API keys and native clients
+
+### Native app sign in through the browser
+A first party native or desktop app with no browser of its own signs a user in by opening IAM's sign in page in the system browser, so the pages, their bot check and MFA all apply. Authorization code with PKCE.
+- [ ] Session delegation: issue a separate token pair for an already signed in user and another device, with its own device id, so it lists and revokes on its own. IAM has no public way to do this today
+- [ ] After sign in, mint a short lived single use code bound to the app's PKCE challenge and redirect to a registered app URI (custom scheme or loopback), never an arbitrary one
+- [ ] An opt in endpoint, beside `MapIAMTokenEndpoints`, that trades the code and verifier for the pair exactly once
+- The app's half (open the browser, receive the redirect, exchange the code) is the app's own, with its platform's libraries
+- Only worth building once a native client exists. Why the API takes no passwords instead: [`DESIGN-DECISIONS.md`](../DESIGN-DECISIONS.md#user-sign-in-through-the-api)

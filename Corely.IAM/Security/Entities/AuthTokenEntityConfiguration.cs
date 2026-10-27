@@ -3,20 +3,23 @@ using Corely.DataAccess.EntityFramework.Configurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Corely.IAM.Users.Entities;
+namespace Corely.IAM.Security.Entities;
 
-internal sealed class UserAuthTokenEntityConfiguration
-    : EntityConfigurationBase<UserAuthTokenEntity>
+internal sealed class AuthTokenEntityConfiguration : EntityConfigurationBase<AuthTokenEntity>
 {
-    public UserAuthTokenEntityConfiguration(IDbTypes dbTypes)
+    public AuthTokenEntityConfiguration(IDbTypes dbTypes)
         : base(dbTypes) { }
 
-    protected override void ConfigureInternal(EntityTypeBuilder<UserAuthTokenEntity> builder)
+    protected override void ConfigureInternal(EntityTypeBuilder<AuthTokenEntity> builder)
     {
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).ValueGeneratedNever();
 
-        builder.Property(e => e.UserId).IsRequired();
+        builder.Property(e => e.UserId).IsRequired(false);
+        builder.Property(e => e.ApiKeyId).IsRequired(false);
+        builder.Property(e => e.Slot).IsRequired(false);
+
+        builder.Property(e => e.DeviceId).IsRequired();
 
         builder.Property(e => e.IssuedUtc).IsRequired();
 
@@ -32,7 +35,7 @@ internal sealed class UserAuthTokenEntityConfiguration
         builder
             .Property(e => e.RefreshSecretHash)
             .IsRequired()
-            .HasMaxLength(UserAuthTokenEntity.REFRESH_SECRET_HASH_MAX_LENGTH);
+            .HasMaxLength(AuthTokenEntity.REFRESH_SECRET_HASH_MAX_LENGTH);
 
         builder.Property(e => e.RefreshExpiresUtc).IsRequired();
         builder.HasIndex(e => e.RefreshExpiresUtc);
@@ -43,6 +46,12 @@ internal sealed class UserAuthTokenEntityConfiguration
             .HasOne(e => e.User)
             .WithMany(u => u.AuthTokens)
             .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder
+            .HasOne(e => e.ApiKey)
+            .WithMany(k => k.AuthTokens)
+            .HasForeignKey(e => e.ApiKeyId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

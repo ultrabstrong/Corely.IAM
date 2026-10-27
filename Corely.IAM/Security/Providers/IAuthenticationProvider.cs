@@ -1,3 +1,4 @@
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
 
 namespace Corely.IAM.Security.Providers;
@@ -5,12 +6,11 @@ namespace Corely.IAM.Security.Providers;
 internal interface IAuthenticationProvider
 {
     Task<UserAuthTokenResult> GetUserAuthTokenAsync(GetUserAuthTokenRequest request);
-    Task<RenewUserAuthTokenResult> RenewUserAuthTokenAsync(string refreshToken);
+    Task<RenewUserAuthTokenResult> RenewUserAuthTokenAsync(SessionTokenRenewal renewal);
     Task<UserAuthTokenValidationResult> ValidateUserAuthTokenAsync(string authToken);
     Task<bool> RevokeUserAuthTokenAsync(RevokeUserAuthTokenRequest request);
     Task<List<UserSession>> ListUserSessionsAsync(Guid userId, Guid? currentSessionId);
     Task<bool> RevokeUserAuthTokenByIdAsync(Guid userId, Guid tokenId);
     Task<bool> RevokeOtherUserAuthTokensAsync(Guid userId, Guid currentTokenId);
     Task RevokeAllUserAuthTokensAsync(Guid userId, Guid? exceptTokenId = null);
-    Task<int> DeleteExpiredAuthTokensAsync();
 }

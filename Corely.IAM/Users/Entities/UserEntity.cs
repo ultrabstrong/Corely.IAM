@@ -1,9 +1,10 @@
-﻿using Corely.DataAccess.Interfaces.Entities;
+using Corely.DataAccess.Interfaces.Entities;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.GoogleAuths.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Roles.Entities;
+using Corely.IAM.Security.Entities;
 using Corely.IAM.TotpAuths.Entities;
 
 namespace Corely.IAM.Users.Entities;
@@ -29,5 +30,5 @@ internal class UserEntity : IHasCreatedUtc, IHasModifiedUtc
     public virtual ICollection<RoleEntity>? Roles { get; set; }
     public virtual ICollection<UserSymmetricKeyEntity>? SymmetricKeys { get; init; }
     public virtual ICollection<UserAsymmetricKeyEntity>? AsymmetricKeys { get; init; }
-    public virtual ICollection<UserAuthTokenEntity>? AuthTokens { get; init; }
+    public virtual ICollection<AuthTokenEntity>? AuthTokens { get; init; }
 }

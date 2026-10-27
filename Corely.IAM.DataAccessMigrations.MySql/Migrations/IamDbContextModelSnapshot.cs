@@ -131,6 +131,100 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.ToTable("AccountSymmetricKeys", (string)null);
                 });
 
+            modelBuilder.Entity("Corely.IAM.ApiKeys.Entities.ApiKeyEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TIMESTAMP")
+                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("FailedLoginsSinceLastSuccess")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LastFailedLoginUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("LastSuccessfulLoginUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("LockedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("TIMESTAMP");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("TotalFailedLogins")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalSuccessfulLogins")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("ApiKeys", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.ApiKeys.Entities.ApiKeySecretEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ApiKeyId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TIMESTAMP")
+                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+
+                    b.Property<DateTime?>("ExpiresUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("LastUsedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Prefix")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("varchar(8)");
+
+                    b.Property<string>("SecretHash")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<int>("Slot")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Prefix")
+                        .IsUnique();
+
+                    b.HasIndex("ApiKeyId", "Slot")
+                        .IsUnique();
+
+                    b.ToTable("ApiKeySecrets", (string)null);
+                });
+
             modelBuilder.Entity("Corely.IAM.Audits.Entities.AccountAuditSettingsEntity", b =>
                 {
                     b.Property<Guid>("AccountId")
@@ -168,6 +262,9 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
 
                     b.Property<int>("Action")
                         .HasColumnType("int");
+
+                    b.Property<Guid?>("ActorApiKeyId")
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid?>("ActorUserId")
                         .HasColumnType("char(36)");
@@ -246,6 +343,36 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .IsUnique();
 
                     b.ToTable("BasicAuths", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.ApiKeyGroup", b =>
+                {
+                    b.Property<Guid>("ApiKeysId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("GroupsId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("ApiKeysId", "GroupsId");
+
+                    b.HasIndex("GroupsId");
+
+                    b.ToTable("ApiKeyGroups", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.ApiKeyRole", b =>
+                {
+                    b.Property<Guid>("ApiKeysId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("RolesId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("ApiKeysId", "RolesId");
+
+                    b.HasIndex("RolesId");
+
+                    b.ToTable("ApiKeyRoles", (string)null);
                 });
 
             modelBuilder.Entity("Corely.IAM.Entities.GroupRole", b =>
@@ -589,6 +716,16 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("int");
 
+                    b.Property<int>("ApiKeyMaxLifetimeDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ApiKeyResourceTypes")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("ApiKeysEnabled")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<int>("AuthSessionIdleTimeoutSeconds")
                         .HasColumnType("int");
 
@@ -620,6 +757,9 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
 
                     b.Property<int>("PasswordMinimumLength")
                         .HasColumnType("int");
+
+                    b.Property<bool>("PlatformAccountApiKeysEnabled")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<int>("RefreshReuseGraceSeconds")
                         .HasColumnType("int");
@@ -710,6 +850,73 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .IsUnique();
 
                     b.ToTable("Roles", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.Security.Entities.AuthTokenEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("ApiKeyId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TIMESTAMP")
+                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("IssuedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("RefreshExpiresUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("RefreshSecretHash")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<Guid?>("ReplacedByTokenId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("RevokedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("SessionStartedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("Slot")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApiKeyId");
+
+                    b.HasIndex("ExpiresUtc");
+
+                    b.HasIndex("RefreshExpiresUtc");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AuthTokens", (string)null);
                 });
 
             modelBuilder.Entity("Corely.IAM.TotpAuths.Entities.TotpAuthEntity", b =>
@@ -815,65 +1022,6 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .IsUnique();
 
                     b.ToTable("UserAsymmetricKeys", (string)null);
-                });
-
-            modelBuilder.Entity("Corely.IAM.Users.Entities.UserAuthTokenEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid?>("AccountId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("CreatedUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TIMESTAMP")
-                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
-
-                    b.Property<string>("DeviceId")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("ExpiresUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("IssuedUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("RefreshExpiresUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("RefreshSecretHash")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("varchar(250)");
-
-                    b.Property<Guid?>("ReplacedByTokenId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime?>("RevokedUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("SessionStartedUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExpiresUtc");
-
-                    b.HasIndex("RefreshExpiresUtc");
-
-                    b.HasIndex("SessionId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserAuthTokens", (string)null);
                 });
 
             modelBuilder.Entity("Corely.IAM.Users.Entities.UserEntity", b =>
@@ -986,6 +1134,28 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Corely.IAM.ApiKeys.Entities.ApiKeyEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.Accounts.Entities.AccountEntity", "Account")
+                        .WithMany("ApiKeys")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("Corely.IAM.ApiKeys.Entities.ApiKeySecretEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.ApiKeys.Entities.ApiKeyEntity", "ApiKey")
+                        .WithMany("Secrets")
+                        .HasForeignKey("ApiKeyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApiKey");
+                });
+
             modelBuilder.Entity("Corely.IAM.Audits.Entities.AccountAuditSettingsEntity", b =>
                 {
                     b.HasOne("Corely.IAM.Accounts.Entities.AccountEntity", null)
@@ -1004,6 +1174,36 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.ApiKeyGroup", b =>
+                {
+                    b.HasOne("Corely.IAM.ApiKeys.Entities.ApiKeyEntity", null)
+                        .WithMany()
+                        .HasForeignKey("ApiKeysId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Corely.IAM.Groups.Entities.GroupEntity", null)
+                        .WithMany()
+                        .HasForeignKey("GroupsId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Corely.IAM.Entities.ApiKeyRole", b =>
+                {
+                    b.HasOne("Corely.IAM.ApiKeys.Entities.ApiKeyEntity", null)
+                        .WithMany()
+                        .HasForeignKey("ApiKeysId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Corely.IAM.Roles.Entities.RoleEntity", null)
+                        .WithMany()
+                        .HasForeignKey("RolesId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Corely.IAM.Entities.GroupRole", b =>
@@ -1158,6 +1358,23 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("Corely.IAM.Security.Entities.AuthTokenEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.ApiKeys.Entities.ApiKeyEntity", "ApiKey")
+                        .WithMany("AuthTokens")
+                        .HasForeignKey("ApiKeyId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
+                        .WithMany("AuthTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("ApiKey");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Corely.IAM.TotpAuths.Entities.TotpAuthEntity", b =>
                 {
                     b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
@@ -1189,17 +1406,6 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Corely.IAM.Users.Entities.UserAuthTokenEntity", b =>
-                {
-                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
-                        .WithMany("AuthTokens")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Corely.IAM.Users.Entities.UserSymmetricKeyEntity", b =>
                 {
                     b.HasOne("Corely.IAM.Users.Entities.UserEntity", null)
@@ -1211,6 +1417,8 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
 
             modelBuilder.Entity("Corely.IAM.Accounts.Entities.AccountEntity", b =>
                 {
+                    b.Navigation("ApiKeys");
+
                     b.Navigation("AsymmetricKeys");
 
                     b.Navigation("Groups");
@@ -1222,6 +1430,13 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Navigation("Roles");
 
                     b.Navigation("SymmetricKeys");
+                });
+
+            modelBuilder.Entity("Corely.IAM.ApiKeys.Entities.ApiKeyEntity", b =>
+                {
+                    b.Navigation("AuthTokens");
+
+                    b.Navigation("Secrets");
                 });
 
             modelBuilder.Entity("Corely.IAM.TotpAuths.Entities.TotpAuthEntity", b =>

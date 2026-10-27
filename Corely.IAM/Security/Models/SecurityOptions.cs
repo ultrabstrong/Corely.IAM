@@ -20,6 +20,12 @@ public class SecurityOptions
         SecurityPolicy.MFA_CHALLENGE_TIMEOUT_SECONDS_DEFAULT;
     public int TotpRecoveryCodeCount { get; set; } =
         SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_DEFAULT;
+    public bool ApiKeysEnabled { get; set; } = SecurityPolicy.API_KEYS_ENABLED_DEFAULT;
+    public bool PlatformAccountApiKeysEnabled { get; set; } =
+        SecurityPolicy.PLATFORM_ACCOUNT_API_KEYS_ENABLED_DEFAULT;
+    public int ApiKeyMaxLifetimeDays { get; set; } =
+        SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_DEFAULT;
+    public string[] ApiKeyResourceTypes { get; set; } = [];
 
     public int PermissionCacheTtlSeconds { get; set; } = 30;
     public string? GoogleClientId { get; set; }
@@ -39,6 +45,10 @@ public class SecurityOptions
             AuthSessionIdleTimeoutSeconds,
             RefreshReuseGraceSeconds,
             MfaChallengeTimeoutSeconds,
-            TotpRecoveryCodeCount
+            TotpRecoveryCodeCount,
+            ApiKeysEnabled,
+            PlatformAccountApiKeysEnabled,
+            ApiKeyMaxLifetimeDays,
+            new ResourceTypeSet(ApiKeyResourceTypes)
         );
 }

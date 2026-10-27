@@ -1,5 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
-using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Providers;
 
 namespace Corely.IAM.Extensions;
 
@@ -12,7 +12,7 @@ internal static class JwtSecurityTokenExtensions
 
         public Guid? SignedInAccountId() =>
             Guid.TryParse(
-                token.ClaimValue(TokenIssueContext.SIGNED_IN_ACCOUNT_ID_CLAIM),
+                token.ClaimValue(SessionTokenProvider.SIGNED_IN_ACCOUNT_ID_CLAIM),
                 out var accountId
             )
                 ? accountId

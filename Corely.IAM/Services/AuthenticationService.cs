@@ -1,6 +1,9 @@
 using System.Security.Cryptography;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.IAM.ApiKeys.Models;
+using Corely.IAM.ApiKeys.Models.Extensions;
+using Corely.IAM.ApiKeys.Providers;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.GoogleAuths.Processors;
@@ -8,6 +11,7 @@ using Corely.IAM.GoogleAuths.Providers;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Providers;
+using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.TotpAuths.Models;
@@ -33,9 +37,16 @@ internal class AuthenticationService(
     IGoogleIdTokenValidator googleIdTokenValidator,
     IRepo<MfaChallengeEntity> mfaChallengeRepo,
     ISecurityPolicyProvider securityPolicyProvider,
+    IApiKeyAuthenticationProvider apiKeyAuthenticationProvider,
+    ISessionTokenProvider sessionTokenProvider,
     TimeProvider timeProvider
 ) : IAuthenticationService
 {
+    private readonly ISessionTokenProvider _sessionTokenProvider = sessionTokenProvider.ThrowIfNull(
+        nameof(sessionTokenProvider)
+    );
+    private readonly IApiKeyAuthenticationProvider _apiKeyAuthenticationProvider =
+        apiKeyAuthenticationProvider.ThrowIfNull(nameof(apiKeyAuthenticationProvider));
     private readonly ILogger<AuthenticationService> _logger = logger.ThrowIfNull(nameof(logger));
     private readonly IRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
     private readonly IAuthenticationProvider _authenticationProvider =
@@ -331,13 +342,50 @@ internal class AuthenticationService(
         return result;
     }
 
+    public async Task<SignInResult> SignInWithApiKeyAsync(SignInWithApiKeyRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var result = await _apiKeyAuthenticationProvider.GetApiKeyAuthTokenAsync(
+            new(request.ApiKey, request.DeviceId)
+        );
+        if (result.ResultCode != ApiKeyAuthTokenResultCode.Success)
+            return SignInResult.Failed(SignInResultCode.InvalidApiKeyError, "Invalid API key");
+
+        SetApiKeyContext(result);
+        return new SignInResult(
+            SignInResultCode.Success,
+            null,
+            result.Token,
+            result.TokenId,
+            RefreshToken: result.RefreshToken,
+            RefreshExpiresUtc: result.RefreshExpiresUtc
+        );
+    }
+
     public async Task<RenewAuthTokenResult> RenewAuthTokenAsync(RenewAuthTokenRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        var renewResult = await _authenticationProvider.RenewUserAuthTokenAsync(
-            request.RefreshToken
-        );
+        var renewal = await _sessionTokenProvider.BeginRenewalAsync(request.RefreshToken);
+        if (renewal.Token?.ApiKeyId != null)
+        {
+            var keyResult = await _apiKeyAuthenticationProvider.RenewApiKeyAuthTokenAsync(renewal);
+            if (keyResult.ResultCode != ApiKeyAuthTokenResultCode.Success)
+                return keyResult.ResultCode.ToFailedRenewAuthTokenResult();
+
+            SetApiKeyContext(keyResult);
+            return new RenewAuthTokenResult(
+                RenewAuthTokenResultCode.Success,
+                null,
+                keyResult.Token,
+                keyResult.TokenId,
+                keyResult.RefreshToken,
+                keyResult.RefreshExpiresUtc
+            );
+        }
+
+        var renewResult = await _authenticationProvider.RenewUserAuthTokenAsync(renewal);
 
         if (
             renewResult.ResultCode != RenewUserAuthTokenResultCode.Success
@@ -382,11 +430,11 @@ internal class AuthenticationService(
             );
         }
 
-        if (context.IsSystemContext)
+        if (context.IsSystemContext || context.User == null)
         {
             return SignInResult.Failed(
                 SignInResultCode.InvalidAuthTokenError,
-                "System context cannot switch accounts"
+                "Only a user can switch accounts"
             );
         }
 
@@ -506,6 +554,19 @@ internal class AuthenticationService(
             return false;
         }
 
+        if (context.ApiKey is { } apiKey)
+        {
+            var revoked =
+                Guid.TryParse(request.TokenId, out var keyTokenId)
+                && await _apiKeyAuthenticationProvider.RevokeApiKeyAuthTokenByIdAsync(
+                    apiKey.Id,
+                    keyTokenId
+                );
+            _userContextSetter.ClearUserContext(apiKey.Id);
+            _authorizationCacheClearer.ClearCache();
+            return revoked;
+        }
+
         _logger.LogDebug(
             "Signing out user {UserId} with token {TokenId}, account {AccountId}, device {DeviceId}",
             context.User!.Id,
@@ -549,6 +610,14 @@ internal class AuthenticationService(
             return;
         }
 
+        if (context.ApiKey is { } apiKey)
+        {
+            await _apiKeyAuthenticationProvider.RevokeAllApiKeyAuthTokensAsync(apiKey.Id);
+            _userContextSetter.ClearUserContext(apiKey.Id);
+            _authorizationCacheClearer.ClearCache();
+            return;
+        }
+
         var userId = context.User!.Id;
         _logger.LogDebug("Signing out all sessions for user {UserId}", userId);
 
@@ -568,7 +637,7 @@ internal class AuthenticationService(
                 0
             );
 
-        var deletedCount = await _authenticationProvider.DeleteExpiredAuthTokensAsync();
+        var deletedCount = await _sessionTokenProvider.DeleteExpiredAsync();
         return new DeleteExpiredAuthTokensResult(
             DeleteExpiredAuthTokensResultCode.Success,
             string.Empty,
@@ -658,6 +727,21 @@ internal class AuthenticationService(
     {
         ArgumentNullException.ThrowIfNull(authToken, nameof(authToken));
 
+        if (
+            _sessionTokenProvider.ReadClaims(authToken, out _)?.PrincipalType
+            == TokenPrincipalType.ApiKey
+        )
+        {
+            var keyResult = await _apiKeyAuthenticationProvider.ValidateApiKeyAuthTokenAsync(
+                authToken
+            );
+            if (keyResult.ResultCode != ApiKeyAuthTokenResultCode.Success)
+                return UserAuthTokenValidationResultCode.TokenValidationFailed;
+
+            SetApiKeyContext(keyResult);
+            return UserAuthTokenValidationResultCode.Success;
+        }
+
         var validationResult = await _authenticationProvider.ValidateUserAuthTokenAsync(authToken);
 
         if (
@@ -690,6 +774,11 @@ internal class AuthenticationService(
     {
         _userContextSetter.SetSystemContext(deviceId);
     }
+
+    private void SetApiKeyContext(ApiKeyAuthTokenResult result) =>
+        _userContextSetter.SetUserContext(
+            new UserContext(result.ApiKey!, result.Account!, result.DeviceId!, result.TokenId)
+        );
 
     private UserContext? GetUserSessionContext()
     {

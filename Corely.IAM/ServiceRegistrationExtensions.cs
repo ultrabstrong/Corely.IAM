@@ -1,5 +1,7 @@
 using Corely.DataAccess.Extensions;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.ApiKeys.Processors;
+using Corely.IAM.ApiKeys.Providers;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.BasicAuths.Processors;
@@ -118,7 +120,12 @@ public static class ServiceRegistrationExtensions
             serviceCollection.AddScoped<IAuditAccessProvider, AuditAccessProvider>();
 
             serviceCollection.AddScoped<IPlatformAccessProvider, PlatformAccessProvider>();
+            serviceCollection.AddScoped<ISessionTokenProvider, SessionTokenProvider>();
             serviceCollection.AddScoped<IAuthenticationProvider, AuthenticationProvider>();
+            serviceCollection.AddScoped<
+                IApiKeyAuthenticationProvider,
+                ApiKeyAuthenticationProvider
+            >();
             serviceCollection.AddScoped<IReauthenticationProvider, ReauthenticationProvider>();
             serviceCollection.AddScoped<UserContextProvider>();
             serviceCollection.AddScoped<IUserContextProvider>(sp =>
@@ -252,6 +259,10 @@ public static class ServiceRegistrationExtensions
             serviceCollection.AddScoped<IGroupProcessor, GroupProcessor>();
             serviceCollection.Decorate<IGroupProcessor, GroupProcessorAuthorizationDecorator>();
             serviceCollection.Decorate<IGroupProcessor, GroupProcessorTelemetryDecorator>();
+
+            serviceCollection.AddScoped<IApiKeyProcessor, ApiKeyProcessor>();
+            serviceCollection.Decorate<IApiKeyProcessor, ApiKeyProcessorAuthorizationDecorator>();
+            serviceCollection.Decorate<IApiKeyProcessor, ApiKeyProcessorTelemetryDecorator>();
 
             serviceCollection.AddScoped<IRoleProcessor, RoleProcessor>();
             serviceCollection.Decorate<IRoleProcessor, RoleProcessorAuthorizationDecorator>();

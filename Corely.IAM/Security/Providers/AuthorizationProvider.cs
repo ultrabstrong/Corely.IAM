@@ -2,6 +2,7 @@ using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Models;
@@ -15,6 +16,7 @@ namespace Corely.IAM.Security.Providers;
 internal class AuthorizationProvider(
     IUserContextProvider userContextProvider,
     IReadonlyRepo<PermissionEntity> permissionRepo,
+    ISecurityPolicyProvider securityPolicyProvider,
     ILogger<AuthorizationProvider> logger,
     IOptions<SecurityOptions> securityOptions,
     TimeProvider timeProvider
@@ -26,6 +28,8 @@ internal class AuthorizationProvider(
     private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo.ThrowIfNull(
         nameof(permissionRepo)
     );
+    private readonly ISecurityPolicyProvider _securityPolicyProvider =
+        securityPolicyProvider.ThrowIfNull(nameof(securityPolicyProvider));
     private readonly ILogger<AuthorizationProvider> _logger = logger.ThrowIfNull(nameof(logger));
     private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
     private readonly int _cacheTtlSeconds = securityOptions
@@ -57,7 +61,7 @@ internal class AuthorizationProvider(
             return true;
 
         if (
-            !TryGetUserId(
+            !TryGetPrincipalId(
                 userContext,
                 $"{action} on {resourceType}{resourceIdDisplay}",
                 out var userId
@@ -97,7 +101,7 @@ internal class AuthorizationProvider(
         if (!TryGetUserContext(out var userContext, "perform self-operation"))
             return false;
 
-        return !userContext.IsSystemContext;
+        return !userContext.IsSystemContext && userContext.User != null;
     }
 
     public bool IsAuthorizedForOwnUser(Guid requestUserId, bool suppressLog = true)
@@ -138,7 +142,11 @@ internal class AuthorizationProvider(
         if (userContext.CurrentAccount == null || userContext.CurrentAccount.Id != accountId)
         {
             if (
-                !TryGetUserId(userContext, $"check account context for {accountId}", out var userId)
+                !TryGetPrincipalId(
+                    userContext,
+                    $"check account context for {accountId}",
+                    out var userId
+                )
             )
                 return false;
 
@@ -154,7 +162,13 @@ internal class AuthorizationProvider(
 
         if (!hasAccountAccess)
         {
-            if (!TryGetUserId(userContext, $"check account access for {accountId}", out var userId))
+            if (
+                !TryGetPrincipalId(
+                    userContext,
+                    $"check account access for {accountId}",
+                    out var userId
+                )
+            )
                 return false;
 
             _logger.LogInformation(
@@ -383,7 +397,7 @@ internal class AuthorizationProvider(
         if (userContext.IsSystemContext)
             return null;
 
-        if (!TryGetUserId(userContext, operation, out _) || userContext.CurrentAccount is null)
+        if (!TryGetPrincipalId(userContext, operation, out _) || userContext.CurrentAccount is null)
             return [];
 
         return await GetPermissionsAsync();
@@ -400,7 +414,7 @@ internal class AuthorizationProvider(
         if (userContext.IsSystemContext)
             return true;
 
-        if (!TryGetUserId(userContext, operation, out var userId))
+        if (!TryGetPrincipalId(userContext, operation, out var userId))
             return false;
 
         if (userContext.CurrentAccount is not { } account)
@@ -457,21 +471,14 @@ internal class AuthorizationProvider(
             if (userContext == null)
                 return [];
 
-            if (!TryGetUserId(userContext, "load permissions", out var contextUserId))
-                return [];
-
             var contextAccountId = userContext.CurrentAccount?.Id;
 
-            _cachedPermissions = await _permissionRepo.ListAsync(p =>
-                p.Roles!.Any(r =>
-                    r.Users!.Any(u => u.Id == contextUserId)
-                    || r.Groups!.Any(g => g.Users!.Any(u => u.Id == contextUserId))
-                )
-                && (
-                    p.AccountId == contextAccountId
-                    || (p.Account != null && p.Account.IsPlatformAccount)
-                )
-            );
+            if (userContext.ApiKey is { } apiKey)
+                _cachedPermissions = await GetApiKeyPermissionsAsync(apiKey.Id, contextAccountId);
+            else if (TryGetUserId(userContext, "load permissions", out var contextUserId))
+                _cachedPermissions = await GetUserPermissionsAsync(contextUserId, contextAccountId);
+            else
+                return [];
 
             _cachedAccountId = contextAccountId;
             _cachedAtUtc = _timeProvider.GetUtcNow();
@@ -482,6 +489,44 @@ internal class AuthorizationProvider(
         {
             _cacheLock.Release();
         }
+    }
+
+    private async Task<IReadOnlyList<PermissionEntity>> GetUserPermissionsAsync(
+        Guid userId,
+        Guid? accountId
+    ) =>
+        await _permissionRepo.ListAsync(p =>
+            p.Roles!.Any(r =>
+                r.Users!.Any(u => u.Id == userId)
+                || r.Groups!.Any(g => g.Users!.Any(u => u.Id == userId))
+            ) && (p.AccountId == accountId || (p.Account != null && p.Account.IsPlatformAccount))
+        );
+
+    private async Task<IReadOnlyList<PermissionEntity>> GetApiKeyPermissionsAsync(
+        Guid apiKeyId,
+        Guid? accountId
+    )
+    {
+        var allowedTypes = (await _securityPolicyProvider.GetPolicyAsync()).ApiKeyResourceTypes;
+        var permissions = await _permissionRepo.ListAsync(p =>
+            p.AccountId == accountId
+            && p.Roles!.Any(r =>
+                r.ApiKeys!.Any(k => k.Id == apiKeyId)
+                || r.Groups!.Any(g => g.ApiKeys!.Any(k => k.Id == apiKeyId))
+            )
+        );
+        return [.. permissions.Where(p => allowedTypes.Contains(p.ResourceType))];
+    }
+
+    private bool TryGetPrincipalId(UserContext userContext, string operation, out Guid principalId)
+    {
+        if (userContext.ApiKey != null)
+        {
+            principalId = userContext.ApiKey.Id;
+            return true;
+        }
+
+        return TryGetUserId(userContext, operation, out principalId);
     }
 
     private bool TryGetUserId(UserContext userContext, string operation, out Guid userId)

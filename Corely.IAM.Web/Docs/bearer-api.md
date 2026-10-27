@@ -55,6 +55,36 @@ header reads `Bearer error="invalid_token"`.
 The principal of an API key carries `ClaimTypes.NameIdentifier` and the `ApiKeyId` claim set to the
 key's id, `ClaimTypes.Name` set to its name, and the account claims.
 
+## Rate limiting
+
+IAM ships no limits; the host sets its own with ASP.NET Core's rate limiter. Put `UseRateLimiter`
+after `UseIAMWebAuthentication`, so a policy can partition by the caller the token named. A key's
+principal carries its id in `ClaimTypes.NameIdentifier`, as a user's does, and a request with no token
+falls back to its address, which covers the key exchange.
+
+```csharp
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("per-caller", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "anonymous",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 1, Window = TimeSpan.FromSeconds(1) }));
+});
+
+app.UseIAMWebAuthentication();
+app.UseRateLimiter();
+
+app.MapIAMTokenEndpoints().RequireRateLimiting("per-caller");
+app.MapGroup("/api").RequireAuthorization().AsIAMApi().RequireRateLimiting("per-caller");
+```
+
+The built in limiters count in memory, per instance. Several instances that share one limit use a
+distributed limiter, such as one backed by Redis, through the same `AddPolicy` and
+`RequireRateLimiting`. A limit per tier or per key is chosen in the policy, from the claims.
+
 ## OpenAPI
 
 The token endpoints carry names, summaries and typed results, so a host's OpenAPI document describes

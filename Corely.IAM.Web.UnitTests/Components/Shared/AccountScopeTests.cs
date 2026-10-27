@@ -1,3 +1,4 @@
+using Bunit.TestDoubles;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Web.Components.Shared;
@@ -92,5 +93,19 @@ public class AccountScopeTests : BunitContext
             NavigatedTo()
         );
         Assert.DoesNotContain(CHILD, cut.Markup);
+    }
+
+    [Fact]
+    public void Render_SwitchesOnce_ForAParentThatRendersAgainBeforeTheBrowserLeaves()
+    {
+        SignedInTo(Guid.CreateVersion7());
+
+        var cut = RenderScope();
+        cut.Render(p => p.Add(x => x.AccountId, _routeAccountId).AddChildContent("<p>again</p>"));
+
+        Assert.Single(
+            Services.GetRequiredService<BunitNavigationManager>().History,
+            h => h.Uri.Contains("switch-account", StringComparison.Ordinal)
+        );
     }
 }

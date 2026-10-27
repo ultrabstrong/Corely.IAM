@@ -387,7 +387,7 @@ $accounts = @(
         ExpectedMembers = 30
         ExpectedRoles = 10
         ExpectedGroups = 8
-        ExpectedPermissions = 32
+        ExpectedPermissions = 33
     }
     [ordered]@{
         Key = 'eu'
@@ -429,7 +429,7 @@ $accounts = @(
         ExpectedMembers = 9
         ExpectedRoles = 5
         ExpectedGroups = 3
-        ExpectedPermissions = 15
+        ExpectedPermissions = 16
     }
     [ordered]@{
         Key = 'contoso'
@@ -469,7 +469,7 @@ $accounts = @(
         ExpectedMembers = 8
         ExpectedRoles = 5
         ExpectedGroups = 3
-        ExpectedPermissions = 13
+        ExpectedPermissions = 14
     }
     [ordered]@{
         Key = 'fabrikam'
@@ -505,7 +505,7 @@ $accounts = @(
         ExpectedMembers = 6
         ExpectedRoles = 4
         ExpectedGroups = 2
-        ExpectedPermissions = 13
+        ExpectedPermissions = 14
     }
     [ordered]@{
         Key = 'northwind'
@@ -541,7 +541,7 @@ $accounts = @(
         ExpectedMembers = 5
         ExpectedRoles = 4
         ExpectedGroups = 2
-        ExpectedPermissions = 13
+        ExpectedPermissions = 14
     }
 )
 
@@ -881,9 +881,9 @@ Assert-True -Condition ($naUsersPage1.Data.HasMore -eq $true) -Message 'North Am
 Assert-True -Condition ($naUsersPage2.Data.Items.Count -eq 5) -Message 'North America users page 2 should contain 5 users'
 Assert-True -Condition ($naRoles.Data.TotalCount -eq 10) -Message 'North America should have 10 roles'
 Assert-True -Condition ($naGroups.Data.TotalCount -eq 8) -Message 'North America should have 8 groups'
-Assert-True -Condition ($naPermissionsPage1.Data.TotalCount -eq 32) -Message 'North America should have 32 permissions'
+Assert-True -Condition ($naPermissionsPage1.Data.TotalCount -eq 33) -Message 'North America should have 33 permissions'
 Assert-True -Condition ($naPermissionsPage1.Data.HasMore -eq $true) -Message 'North America permissions page 1 should indicate paging'
-Assert-True -Condition ($naPermissionsPage2.Data.Items.Count -eq 7) -Message 'North America permissions page 2 should contain 7 permissions'
+Assert-True -Condition ($naPermissionsPage2.Data.Items.Count -eq 8) -Message 'North America permissions page 2 should contain 8 permissions'
 
 $state.Validation['alice-accounts'] = [ordered]@{
     Accounts = $aliceAccounts.Data.TotalCount

@@ -20,13 +20,17 @@ else
     public RenderFragment? ChildContent { get; set; }
 
     private bool _matches;
+    private bool _leaving;
 
     protected override async Task OnParametersSetAsync()
     {
+        if (_leaving)
+            return;
         var userContext = await BlazorUserContextAccessor.GetUserContextAsync();
         _matches = userContext?.CurrentAccount?.Id == AccountId;
         if (_matches)
             return;
+        _leaving = true;
         NavigationManager.NavigateTo(
             userContext?.User == null ? NavigationManager.SignInUri() : NavigationManager.SwitchAccountUri(AccountId),
             forceLoad: true

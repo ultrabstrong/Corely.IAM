@@ -105,14 +105,14 @@ else
             }
         </div>
         <ul class="settings-notes">
-            <li>A host needs its own API to use API keys: IAM issues and checks them but serves no endpoint for them.</li>
+            <li>A host takes API keys through Corely.IAM.Web's token endpoints (<code>MapIAMTokenEndpoints</code>) or through its own API.</li>
             <li>An API key uses only its permissions on the resource types switched on here, whatever its roles grant.</li>
         </ul>
     </div>
 }
 </PlatformSettingsFrame>
 
-<ConfirmModal @ref="_confirmModal" Title="@($"Save {_pendingSection.ToLower()} settings")" ConfirmText="Save"
+<ConfirmModal @ref="_confirmModal" Title="@($"{_pendingSection} settings")" ConfirmText="Save"
               Type="@(_changes.Any(c => c.Weakens) ? ConfirmModalType.Warning : ConfirmModalType.Primary)" OnConfirm="() => SaveAsync(_pendingSection)">
     <SettingChangeList Changes="_changes" />
 </ConfirmModal>

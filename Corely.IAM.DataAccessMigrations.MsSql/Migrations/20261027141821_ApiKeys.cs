@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -324,7 +324,7 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
 
             migrationBuilder.DropIndex(name: "IX_AuthTokens_ApiKeyId", table: "AuthTokens");
 
-            migrationBuilder.Sql("DELETE FROM AuthTokens WHERE UserId IS NULL");
+            migrationBuilder.Sql("EXEC(N'DELETE FROM AuthTokens WHERE UserId IS NULL')");
 
             migrationBuilder.DropColumn(name: "ApiKeyId", table: "AuthTokens");
 

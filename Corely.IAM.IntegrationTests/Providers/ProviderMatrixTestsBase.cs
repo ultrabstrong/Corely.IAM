@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.DataAccess;
 using Corely.IAM.Models;
@@ -9,6 +10,7 @@ using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -364,7 +366,60 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
 }
 
 public class MsSqlProviderMatrixTests()
-    : ProviderMatrixTestsBase(new ProviderTestHost(DatabaseProvider.MsSql)) { }
+    : ProviderMatrixTestsBase(new ProviderTestHost(DatabaseProvider.MsSql))
+{
+    private const string SCRIPT_DATABASE = "corely_iam_script";
+
+    [RequiresDockerFact]
+    public async Task IdempotentScript_AppliesAndReapplies_ForAnEmptyDatabase()
+    {
+        var script = await Host.GenerateIdempotentScriptAsync();
+        await ExecuteAsync(
+            Host.ConnectionStringFor("master"),
+            $"CREATE DATABASE [{SCRIPT_DATABASE}]"
+        );
+        var connectionString = Host.ConnectionStringFor(SCRIPT_DATABASE);
+
+        await ApplyScriptAsync(connectionString, script);
+        await ApplyScriptAsync(connectionString, script);
+
+        Assert.Equal(
+            1,
+            await ScalarAsync(
+                connectionString,
+                "SELECT CASE WHEN OBJECT_ID('AuthTokens') IS NOT NULL "
+                    + "AND OBJECT_ID('ApiKeys') IS NOT NULL "
+                    + "AND OBJECT_ID('UserAuthTokens') IS NULL THEN 1 ELSE 0 END"
+            )
+        );
+    }
+
+    private static async Task ApplyScriptAsync(string connectionString, string script)
+    {
+        foreach (
+            var batch in Regex
+                .Split(script, @"^\s*GO\s*$", RegexOptions.Multiline)
+                .Where(b => !string.IsNullOrWhiteSpace(b))
+        )
+            await ExecuteAsync(connectionString, batch);
+    }
+
+    private static async Task ExecuteAsync(string connectionString, string sql)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new SqlCommand(sql, connection);
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private static async Task<int> ScalarAsync(string connectionString, string sql)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new SqlCommand(sql, connection);
+        return (int)(await command.ExecuteScalarAsync())!;
+    }
+}
 
 public class MySqlProviderMatrixTests()
     : ProviderMatrixTestsBase(new ProviderTestHost(DatabaseProvider.MySql)) { }

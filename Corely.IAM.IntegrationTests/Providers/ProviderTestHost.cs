@@ -2,7 +2,10 @@ using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM.DataAccess;
 using Corely.IAM.IntegrationTests.Infrastructure;
 using DotNet.Testcontainers.Containers;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -16,6 +19,7 @@ namespace Corely.IAM.IntegrationTests.Providers;
 public sealed class ProviderTestHost(DatabaseProvider provider) : IAsyncLifetime
 {
     private IContainer? _container;
+    private string _connectionString = string.Empty;
     private ServiceProvider? _serviceProvider;
 
     public TestTimeProvider TimeProvider { get; } =
@@ -26,6 +30,7 @@ public sealed class ProviderTestHost(DatabaseProvider provider) : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var connectionString = await StartContainerAsync();
+        _connectionString = connectionString;
 
         var services = new ServiceCollection();
         services.AddLogging(builder =>
@@ -97,6 +102,22 @@ public sealed class ProviderTestHost(DatabaseProvider provider) : IAsyncLifetime
         WithScopeAsync(services =>
             services.GetRequiredService<IamDbContext>().Database.MigrateAsync()
         );
+
+    public Task<string> GenerateIdempotentScriptAsync() =>
+        WithScopeAsync(services =>
+            Task.FromResult(
+                services
+                    .GetRequiredService<IamDbContext>()
+                    .GetService<IMigrator>()
+                    .GenerateScript(options: MigrationsSqlGenerationOptions.Idempotent)
+            )
+        );
+
+    public string ConnectionStringFor(string database) =>
+        new SqlConnectionStringBuilder(_connectionString)
+        {
+            InitialCatalog = database,
+        }.ConnectionString;
 
     public async Task<T> WithScopeAsync<T>(Func<IServiceProvider, Task<T>> work)
     {

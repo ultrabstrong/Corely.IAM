@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -68,7 +68,7 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
             );
 
             migrationBuilder.Sql(
-                "UPDATE UserAuthTokens SET RefreshExpiresUtc = ExpiresUtc, SessionStartedUtc = IssuedUtc, SessionId = Id"
+                "EXEC(N'UPDATE UserAuthTokens SET RefreshExpiresUtc = ExpiresUtc, SessionStartedUtc = IssuedUtc, SessionId = Id')"
             );
 
             migrationBuilder.CreateIndex(

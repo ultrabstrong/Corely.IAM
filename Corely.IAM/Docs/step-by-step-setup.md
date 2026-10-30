@@ -129,6 +129,10 @@ var accountResult = await registration.RegisterAccountAsync(
     new RegisterAccountRequest("Acme Corp"));
 ```
 
+When your app stores its own rows per account, scope every lookup to
+`UserContext.CurrentAccount.Id`. A permission check alone does not keep accounts apart in your tables:
+see [Gotchas](gotchas.md#permissions-do-not-keep-accounts-apart-in-your-own-tables).
+
 ## 9) (Optional) Configure Google Sign-In
 
 To enable Google Sign-In, set the `GoogleClientId` in `appsettings.json`:
@@ -149,6 +153,7 @@ See [Google Sign-In](google-signin.md) for full setup details.
 
 ## 10) Where to Next?
 
+- [Gotchas](gotchas.md): what the library leaves to you
 - [IAMOptions Configuration](iam-options.md): full builder API reference
 - [Authentication](authentication.md): sign-in, tokens, account switching
 - [Authorization](authorization.md): CRUDX model, effective permissions

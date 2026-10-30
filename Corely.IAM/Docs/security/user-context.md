@@ -73,6 +73,7 @@ var users = await retrievalService.ListUsersAsync(request);
 - System context passes `HasUserContext()`, `HasAccountContext()`, and `IsAuthorizedAsync()` checks
 - System context is blocked by `IsNonSystemUserContext()`, because "self" operations (MFA, password, Google auth) require a real user
 - System context has no `User`, `CurrentAccount`, or `AvailableAccounts`. Services that extract user identity from context will fail if called from system context
+- System code that acts on ids from outside must check their ownership itself: see [Gotchas](../gotchas.md#system-context-passes-every-check)
 
 ## IUserContextSetter (Internal)
 

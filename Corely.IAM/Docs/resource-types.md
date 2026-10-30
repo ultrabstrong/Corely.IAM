@@ -58,6 +58,9 @@ A type registered without owner actions gives the owner nothing on it; access to
 permissions created explicitly. Duplicate names (including case variants) are overwritten with the
 latest value. A name already taken by a built-in type, or `"*"`, throws when services are added.
 
+Registering a type lets IAM check permissions on it. It does not scope your rows of that type to an
+account: see [Gotchas](gotchas.md#permissions-do-not-keep-accounts-apart-in-your-own-tables).
+
 ## Owner Defaults
 
 When an account is created, its Owner role receives one system-defined permission per registered

@@ -45,6 +45,7 @@ graph LR
 ## Topics
 
 - [Step-by-Step Setup](step-by-step-setup.md)
+- [Gotchas](gotchas.md): what the library leaves to you, and what goes wrong if you miss it
 - [Usage Shapes](usage-shapes.md): users only, one shared account, or full RBAC
 - [IAMOptions Configuration](iam-options.md)
 - [Authentication](authentication.md)

@@ -8,7 +8,7 @@ does not use cost nothing, and an app can grow into them later without a migrati
 |-------|------|-------------------|
 | Users only | Users, passwords, MFA, Google sign-in | `UserContext.User.Id` |
 | One shared account | The above, plus accounts and invitations | `UserContext.CurrentAccount.Id` |
-| Full RBAC | Everything, including groups, roles, and permissions | Resource ids checked with permissions |
+| Full RBAC | Everything, including groups, roles, and permissions | `UserContext.CurrentAccount.Id`, with resource ids checked by permissions on top. See [Gotchas](gotchas.md#permissions-do-not-keep-accounts-apart-in-your-own-tables) |
 
 Runnable examples of the first two are `Corely.IAM.Demos.UsersOnly` and
 `Corely.IAM.Demos.SharedAccount` in the repository.

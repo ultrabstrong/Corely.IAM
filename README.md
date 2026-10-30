@@ -85,6 +85,7 @@ var accountResult = await registrationService.RegisterAccountAsync(
 | Docs | Description |
 |------|-------------|
 | **[Corely.IAM](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM/Docs/index.md)** | Core library: setup, services, domains, security, architecture |
+| **[Gotchas](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM/Docs/gotchas.md)** | What the library leaves to you, and what goes wrong if you miss it. Read this before storing your own rows per account |
 | **[Corely.IAM.Web](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM.Web/Docs/index.md)** | Pre-built Blazor UI: auth pages, account management, RBAC visualization |
 | [DevTools CLI](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM.DevTools/Docs/index.md) | Crypto operations and IAM service interaction from the command line |
 | [Migration CLI](https://github.com/ultrabstrong/Corely.IAM/blob/master/Corely.IAM.DataAccessMigrations.Cli/Docs/index.md) | Database creation, migrations, and scripting |

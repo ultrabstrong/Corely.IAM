@@ -122,6 +122,11 @@ await registrationService.RegisterPermissionAsync(
         Read: true));
 ```
 
+`Guid.Empty` matches any id, whichever account a row of your own belongs to, because IAM cannot see
+your tables. A permission check says the caller may act on the type; it does not say the row is in
+their account. Scope your own lookups to `CurrentAccount`: see
+[Gotchas](gotchas.md#permissions-do-not-keep-accounts-apart-in-your-own-tables).
+
 ## Permission Resolution
 
 When `IsAuthorizedAsync` is called:

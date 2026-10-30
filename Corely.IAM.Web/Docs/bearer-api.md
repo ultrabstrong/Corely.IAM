@@ -22,6 +22,10 @@ app.MapGroup("/api")
 `AcceptBearerTokens` alone is enough for a host that issues tokens its own way. `MapIAMTokenEndpoints`
 refuses to map without it.
 
+An endpoint over the host's own rows still scopes them to the token's account. IAM's check does not
+do that for tables it cannot see: see
+[Gotchas](../../Corely.IAM/Docs/gotchas.md#permissions-do-not-keep-accounts-apart-in-your-own-tables).
+
 ## The token endpoints
 
 | Endpoint | Body | Returns |

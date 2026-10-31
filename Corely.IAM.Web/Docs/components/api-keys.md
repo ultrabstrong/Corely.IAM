@@ -49,4 +49,5 @@ Key properties, its two secrets, and its roles and groups.
 - Delete navigates to the host's `IIamWebLinks.ApiKeys`
 
 Group pages list a group's keys beside its users, and role pages list the users, groups and keys that
-hold the role. Both hide keys while the platform leaves them off for the account.
+hold the role, and both can add and remove keys. Both hide keys while the platform leaves them off for
+the account.

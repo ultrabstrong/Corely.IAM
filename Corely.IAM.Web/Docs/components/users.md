@@ -34,17 +34,18 @@ Read-only user properties with group and role assignment. When viewing your own 
 
 **Features:**
 - **Properties**: username, email (read-only)
-- **Groups section**: paginated (10 per page), add via `EntityPickerModal`, offering only groups whose roles the caller could grant (`GetGrantableGroupIdsAsync`)
+- **Groups section**: paginated (10 per page), add/remove via `EntityPickerModal`, offering only groups whose roles the caller could grant (`GetGrantableGroupIdsAsync`)
 - **Roles section**: paginated (10 per page), add/remove via `EntityPickerModal`, offering only roles the caller could grant (`GetGrantableRoleIdsAsync`)
 - **Encryption & Signing**: only shown when `Id == UserContext.User.Id`; uses the current user's symmetric, asymmetric encryption, and signature providers
 - **Effective permissions panel**: inherited permissions through roles and groups
 
 **Authorization gates:**
 - `AuthAction.Update` + `User.RESOURCE_TYPE` + `ResourceIds: [Id]`: Add Groups, Add Roles, Remove Role buttons
+- `AuthAction.Update` + `Group.RESOURCE_TYPE` + `ResourceIds: [groupId]`: Remove on that group's row
 
 **Behavior:**
 - Loads with `hydrate: true` to include group and role relations
 - Eager-loads user key providers only when viewing your own user detail
 - Role assignment uses bulk `RegisterRolesWithUserAsync()`
 - Group assignment loops over selected groups individually
-- Groups are add-only (cannot remove from this page)
+- Group removal uses `DeregisterUsersFromGroupAsync()`

@@ -54,6 +54,9 @@ Permission table with search, sort, pagination, and create. CRUDX flags displaye
 - **Edit**: changes the name only, `IModificationService.ModifyPermissionAsync`. The resource type,
   resource ID and CRUDX of a permission never change; delete and recreate for that
 - **CRUDX badges**: color-coded active/inactive
+- **Roles section**: the roles that hold the permission, paginated (10 per page), add via
+  `EntityPickerModal` and remove per row. Add to Roles shows only when the caller could grant the
+  permission (`CanGrantPermissionsAsync`), and the picker offers only roles the caller can update
 - **Effective permissions panel**: shows the permission tree
 - **Delete**: confirmation modal
 
@@ -62,8 +65,15 @@ Permission table with search, sort, pagination, and create. CRUDX flags displaye
   permissions too
 - `AuthAction.Delete` + `Permission.RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete button, hidden for a
   system-defined permission
+- `AuthAction.Read` + `Role.RESOURCE_TYPE`: Roles section
+- `AuthAction.Update` + `Role.RESOURCE_TYPE`: Add to Roles
+- `AuthAction.Update` + `Role.RESOURCE_TYPE` + `ResourceIds: [roleId]`: Remove on that row
 
 **Behavior:**
 - `Guid.Empty` resource ID displays as `"all"`
 - Saving an empty name clears it, and the generated name shows instead
+- Loads with `hydrate: true` for roles
+- Adds to roles through `RegisterPermissionsWithRoleAsync()`, one role at a time. If one is refused the
+  page stops there and says how many were added
+- A system-defined permission on the Owner role shows a System badge instead of Remove
 - Delete navigates to the host's `IIamWebLinks.Permissions`

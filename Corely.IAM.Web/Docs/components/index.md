@@ -18,6 +18,20 @@ and the shared components they are built from.
 | `Profile` | `Corely.IAM.Web.Components` | [Profile](profile.md) |
 | `PlatformSettingsRedirect`, `PlatformAuditSettings`, `PlatformSecuritySettings`, `PlatformSettingsFrame` | `Corely.IAM.Web.Components.Platform` | [Audit](audit.md#platform-settings) |
 
+Every association between these pages can be added and removed from both sides. Each side takes the
+permission the service checks, which belongs to the item being changed, so a role page's Add Users
+needs Update on users and the bound on what the caller can grant.
+
+| Association | Pages |
+|-------------|-------|
+| User and group | `UserDetail`, `GroupDetail` |
+| User and role | `UserDetail`, `RoleDetail` |
+| Group and role | `GroupDetail`, `RoleDetail` |
+| API key and role | `ApiKeyDetail`, `RoleDetail` |
+| API key and group | `ApiKeyDetail`, `GroupDetail` |
+| Role and permission | `RoleDetail`, `PermissionDetail` |
+| User and account | `AccountDetail` invites and removes; `AcceptInvitation` joins, `Profile` leaves |
+
 ## Shared Components
 
 Reusable Blazor components in the `Corely.IAM.Web.Components.Shared` namespace.

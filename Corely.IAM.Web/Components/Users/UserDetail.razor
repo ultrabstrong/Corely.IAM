@@ -50,6 +50,9 @@ else
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     <a href="@Links.Group(CurrentAccountId, group.Id)" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    <PermissionView Action="AuthAction.Update" Resource="@Group.RESOURCE_TYPE" ResourceIds="new[] { group.Id }">
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmRemoveGroup(group.Id, group.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                                    </PermissionView>
                                 </div>
                             </td>
                         </tr>
@@ -122,6 +125,7 @@ else
                    OnConfirm="AddRolesAsync" />
 
 <ConfirmModal @ref="_confirmModal" Title="Remove Role" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveRoleAsync" />
+<ConfirmModal @ref="_removeGroupModal" Title="Remove from Group" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveGroupAsync" />
 
 @code {
     private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
@@ -141,6 +145,7 @@ else
     private EntityPickerModal _groupPickerModal = null!;
     private EntityPickerModal _rolePickerModal = null!;
     private ConfirmModal _confirmModal = null!;
+    private ConfirmModal _removeGroupModal = null!;
 
     private int _groupsSkip;
     private int _rolesSkip;
@@ -223,6 +228,18 @@ else
                 }
             }
             SetResultMessage(true, $"{groupIds.Count} group(s) assigned.", null);
+            await ReloadAsync();
+        });
+    }
+
+    private void ConfirmRemoveGroup(Guid groupId, string name) => ShowConfirmation(_removeGroupModal, groupId, $"Remove this user from group '{name}'?");
+
+    private async Task RemoveGroupAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterUsersFromGroupAsync(new DeregisterUsersFromGroupRequest([Id], _confirmItemId, CurrentAccountId));
+            SetResultMessage(result.ResultCode == DeregisterUsersFromGroupResultCode.Success, "Removed from group.", result.Message ?? "Failed.");
             await ReloadAsync();
         });
     }

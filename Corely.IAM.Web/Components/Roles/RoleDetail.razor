@@ -118,20 +118,44 @@ else
         </div>
 
         <div class="section-divider mb-4">
-            <div class="section-divider-label">Users</div>
-            @HolderTable(_role.Users, "No users hold this role", id => Links.User(CurrentAccountId, id))
+            <div class="section-divider-label">
+                Users
+                <PermissionView Action="AuthAction.Update" Resource="@User.RESOURCE_TYPE">
+                    @if (_canGrantRole)
+                    {
+                        <button class="btn btn-primary btn-sm" @onclick="() => _userPickerModal.ShowAsync()" disabled="@_loading">Add Users</button>
+                    }
+                </PermissionView>
+            </div>
+            @HolderTable(_role.Users, "No users hold this role", User.RESOURCE_TYPE, id => Links.User(CurrentAccountId, id), ConfirmRemoveUser)
         </div>
 
         <div class="section-divider mb-4">
-            <div class="section-divider-label">Groups</div>
-            @HolderTable(_role.Groups, "No groups hold this role", id => Links.Group(CurrentAccountId, id))
+            <div class="section-divider-label">
+                Groups
+                <PermissionView Action="AuthAction.Update" Resource="@Group.RESOURCE_TYPE">
+                    @if (_canGrantRole)
+                    {
+                        <button class="btn btn-primary btn-sm" @onclick="() => _groupPickerModal.ShowAsync()" disabled="@_loading">Add Groups</button>
+                    }
+                </PermissionView>
+            </div>
+            @HolderTable(_role.Groups, "No groups hold this role", Group.RESOURCE_TYPE, id => Links.Group(CurrentAccountId, id), ConfirmRemoveGroup)
         </div>
 
         @if (_showApiKeys)
         {
             <div class="section-divider mb-4">
-                <div class="section-divider-label">API keys</div>
-                @HolderTable(_role.ApiKeys, "No API keys hold this role", id => Links.ApiKey(CurrentAccountId, id))
+                <div class="section-divider-label">
+                    API keys
+                    <PermissionView Action="AuthAction.Update" Resource="@ApiKey.RESOURCE_TYPE">
+                        @if (_canGrantRole)
+                        {
+                            <button class="btn btn-primary btn-sm" @onclick="() => _apiKeyPickerModal.ShowAsync()" disabled="@_loading">Add API keys</button>
+                        }
+                    </PermissionView>
+                </div>
+                @HolderTable(_role.ApiKeys, "No API keys hold this role", ApiKey.RESOURCE_TYPE, id => Links.ApiKey(CurrentAccountId, id), ConfirmRemoveApiKey)
             </div>
         }
 
@@ -147,7 +171,31 @@ else
                    ExcludeIds="_hiddenPermissionIds"
                    OnConfirm="AddPermissionsAsync" />
 
+<EntityPickerModal @ref="_userPickerModal"
+                   Title="Add Users to Role"
+                   SearchPlaceholder="Search users..."
+                   FetchItemsAsync="FetchAvailableUsersAsync"
+                   ExcludeIds="_hiddenUserIds"
+                   OnConfirm="AddUsersAsync" />
+
+<EntityPickerModal @ref="_groupPickerModal"
+                   Title="Add Groups to Role"
+                   SearchPlaceholder="Search groups..."
+                   FetchItemsAsync="FetchAvailableGroupsAsync"
+                   ExcludeIds="_hiddenGroupIds"
+                   OnConfirm="AddGroupsAsync" />
+
+<EntityPickerModal @ref="_apiKeyPickerModal"
+                   Title="Add API keys to Role"
+                   SearchPlaceholder="Search API keys..."
+                   FetchItemsAsync="FetchAvailableApiKeysAsync"
+                   ExcludeIds="_hiddenApiKeyIds"
+                   OnConfirm="AddApiKeysAsync" />
+
 <ConfirmModal @ref="_removePermissionModal" Title="Remove Permission" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemovePermissionAsync" />
+<ConfirmModal @ref="_removeUserModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />
+<ConfirmModal @ref="_removeGroupModal" Title="Remove Group" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveGroupAsync" />
+<ConfirmModal @ref="_removeApiKeyModal" Title="Remove API key" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveApiKeyAsync" />
 <ConfirmModal @ref="_deleteModal" Title="Delete Role" Message="@($"Permanently delete role '{_role?.Name}'? This cannot be undone.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
@@ -161,6 +209,7 @@ else
 
     private Role? _role;
     private bool _showApiKeys;
+    private bool _canGrantRole;
     private string _editName = string.Empty;
     private string? _editDescription;
     private string _originalName = string.Empty;
@@ -168,9 +217,18 @@ else
     private bool _isEditing;
     private HashSet<Guid> _assignedPermissionIds = [];
     private HashSet<Guid> _hiddenPermissionIds = [];
+    private HashSet<Guid> _hiddenUserIds = [];
+    private HashSet<Guid> _hiddenGroupIds = [];
+    private HashSet<Guid> _hiddenApiKeyIds = [];
     private List<EffectivePermission>? _effectivePermissions;
     private EntityPickerModal _permissionPickerModal = null!;
+    private EntityPickerModal _userPickerModal = null!;
+    private EntityPickerModal _groupPickerModal = null!;
+    private EntityPickerModal _apiKeyPickerModal = null!;
     private ConfirmModal _removePermissionModal = null!;
+    private ConfirmModal _removeUserModal = null!;
+    private ConfirmModal _removeGroupModal = null!;
+    private ConfirmModal _removeApiKeyModal = null!;
     private ConfirmModal _deleteModal = null!;
 
     private int _permissionsSkip;
@@ -188,6 +246,10 @@ else
             _editDescription = _role.Description;
             _assignedPermissionIds = (_role.Permissions ?? []).Select(p => p.Id).ToHashSet();
             _hiddenPermissionIds = [.. _assignedPermissionIds];
+            _hiddenUserIds = (_role.Users ?? []).Select(u => u.Id).ToHashSet();
+            _hiddenGroupIds = (_role.Groups ?? []).Select(g => g.Id).ToHashSet();
+            _hiddenApiKeyIds = (_role.ApiKeys ?? []).Select(k => k.Id).ToHashSet();
+            _canGrantRole = await AuthorizationProvider.CanGrantRolesAsync([Id]);
             _effectivePermissions = result.EffectivePermissions;
             _showApiKeys = (await SecurityPolicyProvider.GetPolicyAsync()).AllowsApiKeysIn(UserContext?.CurrentAccount?.IsPlatformAccount == true)
                 && await AuthorizationProvider.IsAuthorizedAsync(AuthAction.Read, ApiKey.RESOURCE_TYPE);
@@ -282,7 +344,119 @@ else
         });
     }
 
-    private static RenderFragment HolderTable(List<ChildRef>? holders, string empty, Func<Guid, string> link) =>
+    private async Task<(List<PickerItem>, int)> FetchAvailableUsersAsync(int skip, int take)
+    {
+        var result = await RetrievalService.ListUsersAsync(new ListUsersRequest(CurrentAccountId, Skip: skip, Take: take));
+        if (result.ResultCode != RetrieveResultCode.Success || result.Data == null)
+            return ([], 0);
+
+        await HideUnchangeableAsync(_hiddenUserIds, User.RESOURCE_TYPE, result.Data.Items.Select(u => u.Id));
+        return ([.. result.Data.Items.Select(u => new PickerItem(u.Id, u.Username, u.Email))], result.Data.TotalCount);
+    }
+
+    private async Task<(List<PickerItem>, int)> FetchAvailableGroupsAsync(int skip, int take)
+    {
+        var result = await RetrievalService.ListGroupsAsync(new ListGroupsRequest(CurrentAccountId, Skip: skip, Take: take));
+        if (result.ResultCode != RetrieveResultCode.Success || result.Data == null)
+            return ([], 0);
+
+        await HideUnchangeableAsync(_hiddenGroupIds, Group.RESOURCE_TYPE, result.Data.Items.Select(g => g.Id));
+        return ([.. result.Data.Items.Select(g => new PickerItem(g.Id, g.Name, g.Description))], result.Data.TotalCount);
+    }
+
+    private async Task<(List<PickerItem>, int)> FetchAvailableApiKeysAsync(int skip, int take)
+    {
+        var result = await RetrievalService.ListApiKeysAsync(new ListApiKeysRequest(CurrentAccountId, Skip: skip, Take: take));
+        if (result.ResultCode != RetrieveResultCode.Success || result.Data == null)
+            return ([], 0);
+
+        await HideUnchangeableAsync(_hiddenApiKeyIds, ApiKey.RESOURCE_TYPE, result.Data.Items.Select(k => k.Id));
+        return ([.. result.Data.Items.Select(k => new PickerItem(k.Id, k.Name, k.Description))], result.Data.TotalCount);
+    }
+
+    private async Task HideUnchangeableAsync(HashSet<Guid> hidden, string resourceType, IEnumerable<Guid> ids)
+    {
+        var changeable = await AuthorizationProvider.GetAuthorizedResourceIdsAsync(AuthAction.Update, resourceType);
+        if (changeable != null)
+            hidden.UnionWith(ids.Where(id => !changeable.Contains(id)));
+    }
+
+    private Task AddUsersAsync(List<Guid> userIds) =>
+        AddHoldersAsync(userIds, "user(s)", async userId =>
+        {
+            var result = await RegistrationService.RegisterRolesWithUserAsync(new RegisterRolesWithUserRequest([Id], userId, CurrentAccountId));
+            return result.ResultCode == AssignRolesToUserResultCode.Success ? null : result.Message;
+        });
+
+    private Task AddGroupsAsync(List<Guid> groupIds) =>
+        AddHoldersAsync(groupIds, "group(s)", async groupId =>
+        {
+            var result = await RegistrationService.RegisterRolesWithGroupAsync(new RegisterRolesWithGroupRequest([Id], groupId, CurrentAccountId));
+            return result.ResultCode == AssignRolesToGroupResultCode.Success ? null : result.Message;
+        });
+
+    private Task AddApiKeysAsync(List<Guid> apiKeyIds) =>
+        AddHoldersAsync(apiKeyIds, "API key(s)", async apiKeyId =>
+        {
+            var result = await RegistrationService.RegisterRolesWithApiKeyAsync(new RegisterRolesWithApiKeyRequest([Id], apiKeyId, CurrentAccountId));
+            return result.ResultCode == AssignRolesToApiKeyResultCode.Success ? null : result.Message;
+        });
+
+    private async Task AddHoldersAsync(List<Guid> holderIds, string noun, Func<Guid, Task<string?>> add)
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var added = 0;
+            string? failure = null;
+            foreach (var holderId in holderIds)
+            {
+                failure = await add(holderId);
+                if (failure != null)
+                    break;
+                added++;
+            }
+            SetResultMessage(failure == null, $"{added} {noun} added.", $"{added} of {holderIds.Count} {noun} added. {failure}");
+            await ReloadAsync();
+        });
+    }
+
+    private void ConfirmRemoveUser(Guid userId, string name) => ShowConfirmation(_removeUserModal, userId, $"Remove user '{name}' from this role?");
+
+    private async Task RemoveUserAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterRolesFromUserAsync(new DeregisterRolesFromUserRequest([Id], _confirmItemId, CurrentAccountId));
+            SetResultMessage(result.ResultCode == DeregisterRolesFromUserResultCode.Success, "User removed.", result.Message);
+            await ReloadAsync();
+        });
+    }
+
+    private void ConfirmRemoveGroup(Guid groupId, string name) => ShowConfirmation(_removeGroupModal, groupId, $"Remove group '{name}' from this role?");
+
+    private async Task RemoveGroupAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterRolesFromGroupAsync(new DeregisterRolesFromGroupRequest([Id], _confirmItemId, CurrentAccountId));
+            SetResultMessage(result.ResultCode == DeregisterRolesFromGroupResultCode.Success, "Group removed.", result.Message);
+            await ReloadAsync();
+        });
+    }
+
+    private void ConfirmRemoveApiKey(Guid apiKeyId, string name) => ShowConfirmation(_removeApiKeyModal, apiKeyId, $"Remove API key '{name}' from this role?");
+
+    private async Task RemoveApiKeyAsync()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await DeregistrationService.DeregisterRolesFromApiKeyAsync(new DeregisterRolesFromApiKeyRequest([Id], _confirmItemId, CurrentAccountId));
+            SetResultMessage(result.ResultCode == DeregisterRolesFromApiKeyResultCode.Success, "API key removed.", result.Message);
+            await ReloadAsync();
+        });
+    }
+
+    private RenderFragment HolderTable(List<ChildRef>? holders, string empty, string resourceType, Func<Guid, string> link, Action<Guid, string> confirmRemove) =>
         @<table class="table table-striped table-hover table-cards mb-0">
             <thead class="list-head"><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
             <tbody>
@@ -299,6 +473,9 @@ else
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     <a href="@link(holder.Id)" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+                                    <PermissionView Action="AuthAction.Update" Resource="@resourceType" ResourceIds="new[] { holder.Id }">
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => confirmRemove(holder.Id, holder.Name)" title="Remove"><i class="bi bi-trash"></i></button>
+                                    </PermissionView>
                                 </div>
                             </td>
                         </tr>

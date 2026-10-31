@@ -33,13 +33,14 @@ public class BearerApiTests : FunctionalTestBase
         using var roles = await SendAsync(HttpMethod.Get, "/api/roles", pair.AuthToken);
 
         Assert.Equal(HttpStatusCode.OK, me.StatusCode);
-        var caller = await ReadJsonAsync(me);
+        var caller = (await ReadJsonAsync(me)).GetProperty("data");
         Assert.Equal("api_key", caller.GetProperty("principalType").GetString());
         Assert.Equal(apiKeyId, caller.GetProperty("principalId").GetGuid());
         Assert.Equal(AccountId, caller.GetProperty("accountId").GetGuid());
 
         Assert.Equal(HttpStatusCode.OK, roles.StatusCode);
         var names = (await ReadJsonAsync(roles))
+            .GetProperty("data")
             .EnumerateArray()
             .Select(r => r.GetProperty("name").GetString());
         Assert.Contains(Role.OWNER_ROLE_NAME, names);
@@ -56,6 +57,7 @@ public class BearerApiTests : FunctionalTestBase
         );
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        await AssertFailureAsync(response, "Unauthorized");
     }
 
     [Fact]
@@ -65,6 +67,37 @@ public class BearerApiTests : FunctionalTestBase
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.Equal("Bearer", response.Headers.WwwAuthenticate.Single().Scheme);
+        await AssertFailureAsync(response, "Unauthorized");
+    }
+
+    [Fact]
+    public async Task AnUnknownApiRoute_GetsTheFailureShape()
+    {
+        using var response = await SendAsync(HttpMethod.Get, "/api/nothing-here", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await AssertFailureAsync(response, "NotFound");
+    }
+
+    [Fact]
+    public async Task AMalformedBody_GetsTheFailureShape()
+    {
+        using var client = Factory.CreateTestClient();
+        using var response = await client.PostAsync(
+            $"{AUTH}/apikey",
+            new StringContent("{not json", System.Text.Encoding.UTF8, "application/json")
+        );
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertFailureAsync(response, "BadRequest");
+    }
+
+    [Fact]
+    public async Task APageOutsideTheApi_IsNotGivenTheFailureShape()
+    {
+        using var response = await SendAsync(HttpMethod.Get, "/not-an-api-page", null);
+
+        Assert.NotEqual("application/json", response.Content.Headers.ContentType?.MediaType);
     }
 
     [Fact]
@@ -90,7 +123,7 @@ public class BearerApiTests : FunctionalTestBase
             new { refreshToken = first.RefreshToken }
         );
         Assert.Equal(HttpStatusCode.OK, renewed.StatusCode);
-        var second = (await renewed.Content.ReadFromJsonAsync<TokenPair>(Json))!;
+        var second = (await renewed.Content.ReadFromJsonAsync<Envelope<TokenPair>>(Json))!.Data;
 
         using (var me = await SendAsync(HttpMethod.Get, "/api/me", second.AuthToken))
             Assert.Equal(HttpStatusCode.OK, me.StatusCode);
@@ -101,7 +134,10 @@ public class BearerApiTests : FunctionalTestBase
                 new { refreshToken = first.RefreshToken }
             )
         )
+        {
             Assert.Equal(HttpStatusCode.Conflict, replay.StatusCode);
+            await AssertFailureAsync(replay, "AlreadyRenewed");
+        }
 
         Clock.Advance(TimeSpan.FromSeconds(31));
         using (
@@ -129,7 +165,11 @@ public class BearerApiTests : FunctionalTestBase
             new { refreshToken = pair.RefreshToken }
         );
 
-        Assert.Equal(HttpStatusCode.NoContent, signOut.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, signOut.StatusCode);
+        Assert.Equal(
+            "Success",
+            (await ReadJsonAsync(signOut)).GetProperty("resultCode").GetString()
+        );
         Assert.Equal(HttpStatusCode.Unauthorized, me.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, renew.StatusCode);
     }
@@ -182,6 +222,8 @@ public class BearerApiTests : FunctionalTestBase
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
+    private sealed record Envelope<T>(string ResultCode, string? Message, T Data);
+
     private sealed record TokenPair(
         string AuthToken,
         string RefreshToken,
@@ -230,7 +272,7 @@ public class BearerApiTests : FunctionalTestBase
     {
         using var response = await PostJsonAsync($"{AUTH}/apikey", new { apiKey = key });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        return (await response.Content.ReadFromJsonAsync<TokenPair>(Json))!;
+        return (await response.Content.ReadFromJsonAsync<Envelope<TokenPair>>(Json))!.Data;
     }
 
     private async Task<HttpResponseMessage> PostJsonAsync(string path, object body)
@@ -250,6 +292,15 @@ public class BearerApiTests : FunctionalTestBase
         if (bearerToken is not null)
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
         return await client.SendAsync(request);
+    }
+
+    private static async Task AssertFailureAsync(HttpResponseMessage response, string resultCode)
+    {
+        var body = await ReadJsonAsync(response);
+
+        Assert.Equal(resultCode, body.GetProperty("resultCode").GetString());
+        Assert.False(string.IsNullOrEmpty(body.GetProperty("message").GetString()));
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("data").ValueKind);
     }
 
     private static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response) =>

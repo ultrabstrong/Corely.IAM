@@ -24,4 +24,5 @@ public class ApiKey
     public List<ApiKeySecretInfo> Secrets { get; set; } = [];
     public List<ChildRef>? Groups { get; set; }
     public List<ChildRef>? Roles { get; set; }
+    public List<EffectivePermission>? EffectivePermissions { get; set; }
 }

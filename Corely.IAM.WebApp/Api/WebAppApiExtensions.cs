@@ -2,6 +2,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
+using Corely.IAM.Web.Endpoints;
 using Corely.IAM.Web.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -93,15 +94,15 @@ internal static class WebAppApiExtensions
         }
     }
 
-    private static Results<Ok<CallerSummary>, UnauthorizedHttpResult> GetCaller(
+    private static Results<Ok<ApiResponse<CallerSummary>>, UnauthorizedHttpResult> GetCaller(
         IUserContextProvider userContextProvider
     ) =>
         CallerSummary.From(userContextProvider.GetUserContext()) is { } caller
-            ? TypedResults.Ok(caller)
+            ? TypedResults.Ok(ApiResponse.Success(caller))
             : TypedResults.Unauthorized();
 
     private static async Task<
-        Results<Ok<List<RoleSummary>>, UnauthorizedHttpResult, ForbidHttpResult>
+        Results<Ok<ApiResponse<List<RoleSummary>>>, UnauthorizedHttpResult, ForbidHttpResult>
     > ListRolesAsync(
         IUserContextProvider userContextProvider,
         IRetrievalService retrievalService,
@@ -117,7 +118,9 @@ internal static class WebAppApiExtensions
         );
 
         return result.ResultCode == RetrieveResultCode.Success
-            ? TypedResults.Ok(result.Data?.Items.Select(RoleSummary.From).ToList() ?? [])
+            ? TypedResults.Ok(
+                ApiResponse.Success(result.Data?.Items.Select(RoleSummary.From).ToList() ?? [])
+            )
             : TypedResults.Forbid();
     }
 }

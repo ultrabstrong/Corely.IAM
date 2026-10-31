@@ -6,6 +6,7 @@ TAG="${1:?usage: release-package.sh <PackageId>-v<Version>}"
 PACKAGES=(
   "Corely.IAM:Corely.IAM/Corely.IAM.csproj"
   "Corely.IAM.Web:Corely.IAM.Web/Corely.IAM.Web.csproj"
+  "Corely.IAM.Testing:Corely.IAM.Testing/Corely.IAM.Testing.csproj"
   "Corely.IAM.DataAccessMigrations.Cli:Corely.IAM.DataAccessMigrations.Cli/Corely.IAM.DataAccessMigrations.Cli.csproj"
 )
 CORE="Corely.IAM"

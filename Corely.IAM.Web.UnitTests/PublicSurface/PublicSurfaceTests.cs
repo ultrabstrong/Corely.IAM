@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Corely.IAM.UnitTests.PublicSurface;
 using Corely.IAM.Web.Components.Shared;
+using Corely.IAM.Web.Endpoints;
 using Corely.IAM.Web.Extensions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -16,7 +17,12 @@ public class PublicSurfaceTests
 
     private static readonly System.Reflection.Assembly _assembly = typeof(AppRoutes).Assembly;
 
-    private static readonly Type[] _allowed = [typeof(AppRoutes)];
+    private static readonly Type[] _allowed =
+    [
+        typeof(AppRoutes),
+        typeof(ApiResponse),
+        typeof(ApiResponse<>),
+    ];
 
     [Fact]
     public void NoEntityProcessorMapperOrRepo_IsPublic()

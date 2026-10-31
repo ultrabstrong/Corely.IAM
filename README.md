@@ -102,6 +102,7 @@ var accountResult = await registrationService.RegisterAccountAsync(
 | `Corely.IAM.UnitTests` | Test suite (xUnit, Moq, AutoFixture, FluentAssertions) |
 | `Corely.IAM.DevTools` | Developer CLI for crypto and IAM operations |
 | `Corely.IAM.DataAccessMigrations.Cli` | Migration CLI that creates and migrates the IAM schema (published as a .NET tool) |
+| `Corely.IAM.Testing` | Test only package: proves every service method of an app has a cross account attack or a reasoned exemption |
 | `Corely.IAM.DataAccessMigrations.MsSql` / `.MySql` | EF Core migrations per database provider, bundled into the CLI |
 
 ## License

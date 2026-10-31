@@ -8,6 +8,7 @@ the caller's permissions. The host writes no token handling.
 builder.Services.AddIAMWeb(options => options.AcceptBearerTokens = true);
 
 var app = builder.Build();
+app.UseIAMApiResponses("/api");
 app.UseIAMWebAuthentication();
 
 app.MapIAMTokenEndpoints("/api/auth");
@@ -26,13 +27,31 @@ An endpoint over the host's own rows still scopes them to the token's account. I
 do that for tables it cannot see: see
 [Gotchas](../../Corely.IAM/Docs/gotchas.md#permissions-do-not-keep-accounts-apart-in-your-own-tables).
 
+## Responses
+
+Every response under the prefix given to `UseIAMApiResponses` has one shape, success or failure:
+
+```json
+{ "resultCode": "Success", "message": null, "data": { } }
+```
+
+```json
+{ "resultCode": "NotFound", "message": "Not Found", "data": null }
+```
+
+`resultCode` is what code switches on, and the HTTP status is still set. An endpoint answers with
+`ApiResponse.Success(data)` or `ApiResponse.Failure(code, message)`. Whatever no endpoint wrote gets
+the shape too: an empty 400, 401, 403, 404, 413 or 429, and an unhandled exception, which reports 500
+and none of its detail. `HttpResponse.WriteApiFailureAsync` writes it from middleware, such as a rate
+limiter's `OnRejected`. A file download is the file, and uses the shape only when it fails.
+
 ## The token endpoints
 
 | Endpoint | Body | Returns |
 |----------|------|---------|
-| `POST {prefix}/apikey` | `{ "apiKey": "ciam_...", "deviceId": "billing-sync" }`, device optional | 200 with the pair, or 401 for any refusal |
-| `POST {prefix}/renew` | `{ "refreshToken": "..." }` | 200 with a new pair, 409 when another call of the same client renewed first, 401 when the session has ended |
-| `POST {prefix}/signout` | none, with the `Authorization` header | 204, or 401 |
+| `POST {prefix}/apikey` | `{ "apiKey": "ciam_...", "deviceId": "billing-sync" }`, device optional | 200 with the pair in `data`, or 401 for any refusal |
+| `POST {prefix}/renew` | `{ "refreshToken": "..." }` | 200 with a new pair in `data`, 409 `AlreadyRenewed` when another call of the same client renewed first, 401 when the session has ended |
+| `POST {prefix}/signout` | none, with the `Authorization` header | 200, or 401 |
 
 The pair is `{ "authToken", "refreshToken", "refreshExpiresUtc" }`. A client sends
 `Authorization: Bearer <authToken>`, renews on a 401, keeps the pair the other call received on a 409,

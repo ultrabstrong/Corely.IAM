@@ -413,7 +413,13 @@ internal class ApiKeyProcessor(
         var entity = hydrate
             ? await _apiKeyRepo.GetAsync(
                 accountId.ByIdPredicate<ApiKeyEntity>(apiKeyId),
-                include: q => q.Include(k => k.Secrets).Include(k => k.Roles).Include(k => k.Groups)
+                include: q =>
+                    q.Include(k => k.Secrets)
+                        .Include(k => k.Roles!)
+                            .ThenInclude(r => r.Permissions)
+                        .Include(k => k.Groups!)
+                            .ThenInclude(g => g.Roles!)
+                                .ThenInclude(r => r.Permissions)
             )
             : await _apiKeyRepo.GetAsync(
                 accountId.ByIdPredicate<ApiKeyEntity>(apiKeyId),

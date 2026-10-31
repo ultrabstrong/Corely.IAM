@@ -177,7 +177,8 @@ stricter password rule applies the next time a password is set, never to a store
 | Resource types API keys act on | none | registered types | `SecurityOptions:ApiKeyResourceTypes` |
 
 A key's permissions on any type outside the last setting are ignored, so removing a type takes it
-from every key at once. See [API keys](authentication.md#api-keys).
+from every key at once. A role can still grant such a type, because a role also applies to people, so
+nothing refuses it: the key's page lists it as ignored, with the role or group it came from. See [API keys](authentication.md#api-keys).
 
 The limits are constants on `SecurityPolicy`, such as `SecurityPolicy.MAX_LOGIN_ATTEMPTS_MIN`.
 Configuration is checked against them in `AddIAMServices`, so an out of range value stops any host

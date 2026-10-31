@@ -33,7 +33,24 @@ through the parent that has one. It costs no extra query: the filter goes in the
 
 **Prove it.** Write a test that names another account's ids on every method that takes an id, with
 every permission granted, and checks that nothing comes back or changes. Make it fail when a new
-method has no such case, so the next method cannot be forgotten.
+method has no such case, so the next method cannot be forgotten. The test only package
+`Corely.IAM.Testing` holds that second half:
+
+```csharp
+var coverage = CrossAccountCoverage.Check(
+    [typeof(IInvoiceService)],
+    attacks.Keys,
+    new Dictionary<string, string> { ["IInvoiceService.CreateAsync"] = "Takes no id" }
+);
+Assert.True(coverage.IsComplete, coverage.ToString());
+
+var reached = await CrossAccountCoverage.FindReachedAsync(attacks);
+Assert.Empty(reached);
+```
+
+Each attack calls one method as a caller in another account, with every permission granted, and
+returns whether it was refused. Your test supplies the attacks because your results are your own.
+Reference the package from your test project, never from your app.
 
 **Why IAM does not do it for you.** Your rows are yours. IAM knows a resource type and an id, not your
 schema, and covering this for you would mean owning your data layer: a required base class, marker

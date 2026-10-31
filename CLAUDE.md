@@ -160,7 +160,7 @@ git tag Corely.IAM-v2.3.2
 git push origin Corely.IAM-v2.3.2
 ```
 
-- The packages are `Corely.IAM`, `Corely.IAM.Web` and `Corely.IAM.DataAccessMigrations.Cli`, each
+- The packages are `Corely.IAM`, `Corely.IAM.Web`, `Corely.IAM.Testing` and `Corely.IAM.DataAccessMigrations.Cli`, each
   versioned independently in its own csproj. Releasing two is two tags on the same commit.
 - `release.yml` fails unless the tag names one of them and its version equals the csproj's. A
   version already on nuget.org fails the push rather than being skipped.

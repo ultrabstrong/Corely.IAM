@@ -109,6 +109,7 @@ app.Use(
         await next();
     }
 );
+app.UseIAMApiResponses(WebAppApiExtensions.API_PREFIX);
 app.UseIAMWebAuthentication();
 app.UseHttpsRedirection();
 app.UseAntiforgery();

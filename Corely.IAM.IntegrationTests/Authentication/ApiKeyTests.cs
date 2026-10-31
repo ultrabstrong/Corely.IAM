@@ -74,6 +74,28 @@ public class ApiKeyTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AHydratedKey_ListsWhatItsRolesAndGroupsGrant_WithTheirSources()
+    {
+        var created = await CreateKeyAsync("sources");
+        await AssignRolesAsync(created.CreatedApiKeyId, [_scenario.ReaderRoleId]);
+
+        var key = await _scenario.ActAsAsync(
+            _scenario.OwnerUsername,
+            _scenario.AccountId,
+            services =>
+                services
+                    .GetRequiredService<IRetrievalService>()
+                    .GetApiKeyAsync(created.CreatedApiKeyId, hydrate: true)
+        );
+
+        var role = Assert.Single(
+            key.Item!.EffectivePermissions!.SelectMany(p => p.Roles).DistinctBy(r => r.RoleId)
+        );
+        Assert.Equal(_scenario.ReaderRoleId, role.RoleId);
+        Assert.True(role.IsDirect);
+    }
+
+    [Fact]
     public async Task AKey_LosesPermissionsOnResourceTypesThePlatformHasNotSwitchedOn()
     {
         var created = await CreateKeyAsync("editor");

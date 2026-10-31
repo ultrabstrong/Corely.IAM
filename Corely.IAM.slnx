@@ -36,6 +36,7 @@
   <Project Path="Corely.IAM.DevTools.UnitTests/Corely.IAM.DevTools.UnitTests.csproj" />
   <Project Path="Corely.IAM.IntegrationTests/Corely.IAM.IntegrationTests.csproj" />
   <Project Path="Corely.IAM.UnitTests/Corely.IAM.UnitTests.csproj" />
+  <Project Path="Corely.IAM.Testing/Corely.IAM.Testing.csproj" />
   <Project Path="Corely.IAM.Web.FunctionalTests/Corely.IAM.Web.FunctionalTests.csproj" />
   <Project Path="Corely.IAM.Web.UnitTests/Corely.IAM.Web.UnitTests.csproj" />
   <Project Path="Corely.IAM.Web/Corely.IAM.Web.csproj" />

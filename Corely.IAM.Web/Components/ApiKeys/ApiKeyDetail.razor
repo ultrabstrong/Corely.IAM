@@ -20,6 +20,8 @@ else
 {
     <div class="detail-section">
 
+        <ApiKeyAccessPanel AccountId="CurrentAccountId" Access="ApiKeyAccess.Of(_key, _allowedTypes)" />
+
         <div class="section-divider mb-4">
             <div class="section-divider-label">
                 Details
@@ -121,16 +123,6 @@ else
             @ChildTable(_key.Groups, "Not in any group", id => Links.Group(CurrentAccountId, id), RemoveGroupAsync)
         </div>
 
-        <div class="text-muted small">
-            @if (_allowedTypes.Types.Count == 0)
-            {
-                <span>The platform lets API keys use no resource types yet, so this key's permissions have no effect.</span>
-            }
-            else
-            {
-                <span>API keys use only their permissions on: @_allowedTypes.</span>
-            }
-        </div>
     </div>
 }
 

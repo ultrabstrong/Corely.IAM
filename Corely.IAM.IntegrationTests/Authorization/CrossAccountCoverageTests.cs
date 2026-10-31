@@ -1,6 +1,6 @@
-using System.Reflection;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Authorization;
@@ -62,38 +62,18 @@ public class CrossAccountCoverageTests : IAsyncLifetime
     [Fact]
     public void EveryPublicServiceMethod_HasACrossAccountCase_OrAnExemption()
     {
-        var methods = ServiceMethods().ToList();
+        var coverage = CrossAccountCoverage.Check(
+            typeof(IRegistrationService)
+                .Assembly.GetExportedTypes()
+                .Where(t =>
+                    t.IsInterface
+                    && t.Namespace == typeof(IRegistrationService).Namespace
+                    && t.Name.EndsWith("Service", StringComparison.Ordinal)
+                ),
+            CrossAccountCases.Cases.Keys,
+            CrossAccountCases.Exemptions
+        );
 
-        var uncovered = methods
-            .Where(m =>
-                !CrossAccountCases.Cases.ContainsKey(m)
-                && !CrossAccountCases.Exemptions.ContainsKey(m)
-            )
-            .ToList();
-        var stale = CrossAccountCases
-            .Cases.Keys.Concat(CrossAccountCases.Exemptions.Keys)
-            .Where(m => !methods.Contains(m))
-            .ToList();
-        var both = CrossAccountCases
-            .Cases.Keys.Intersect(CrossAccountCases.Exemptions.Keys)
-            .ToList();
-
-        Assert.Empty(uncovered);
-        Assert.Empty(stale);
-        Assert.Empty(both);
+        Assert.True(coverage.IsComplete, coverage.ToString());
     }
-
-    private static IEnumerable<string> ServiceMethods() =>
-        typeof(IRegistrationService)
-            .Assembly.GetExportedTypes()
-            .Where(t =>
-                t.IsInterface
-                && t.Namespace == typeof(IRegistrationService).Namespace
-                && t.Name.EndsWith("Service", StringComparison.Ordinal)
-            )
-            .SelectMany(t =>
-                t.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                    .Select(m => $"{t.Name}.{m.Name}")
-            )
-            .Distinct();
 }

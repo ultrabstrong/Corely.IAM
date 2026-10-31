@@ -1,0 +1,70 @@
+@inject IResourceTypeRegistry ResourceTypes
+
+<div class="section-divider mb-4">
+    <div class="section-divider-label">Access</div>
+
+    @if (!Access.HasUsableAccess)
+    {
+        <div class="alert alert-warning" role="alert">
+            <div><strong>This key can't do anything yet.</strong></div>
+            <div>@NothingUsableReason</div>
+        </div>
+    }
+
+    <div class="mb-3">
+        @if (Access.AllowedTypes.Count > 0)
+        {
+            <div><strong>API keys can be given access to:</strong> @Titles(Access.AllowedTypes)</div>
+        }
+        <div class="text-muted">A key uses only what its roles and groups grant within that list.</div>
+    </div>
+
+    @foreach (var type in Access.Types.Where(t => t.Allowed))
+    {
+        @TypeRow(type)
+    }
+
+    @if (_ignored.Count > 0)
+    {
+        <details class="mb-3">
+            <summary>
+                <span class="badge text-bg-warning">Ignored</span>
+                Its roles or groups grant these, but API keys aren't allowed to use them: @Titles(_ignored.Select(t => t.ResourceType))
+            </summary>
+            <div class="mt-3">
+                @foreach (var type in _ignored)
+                {
+                    @TypeRow(type)
+                }
+            </div>
+        </details>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid AccountId { get; set; }
+
+    [Parameter, EditorRequired]
+    public ApiKeyAccess Access { get; set; } = null!;
+
+    private List<ApiKeyTypeAccess> _ignored = [];
+
+    protected override void OnParametersSet() =>
+        _ignored = [.. Access.Types.Where(t => !t.Allowed)];
+
+    private string NothingUsableReason =>
+        Access.AllowedTypes.Count == 0 ? "The platform doesn't let API keys use any resource types."
+        : Access.Types.Count == 0 ? "Give it a role or add it to a group that grants permissions."
+        : "Everything its roles and groups grant is outside what the platform allows for API keys.";
+
+    private RenderFragment TypeRow(ApiKeyTypeAccess type) =>
+        @<div class="mb-3">
+            <div class="mb-1"><strong>@Title(type.ResourceType)</strong></div>
+            <EffectivePermissionGrants AccountId="AccountId" Permissions="type.Permissions" />
+        </div>;
+
+    private string Title(string type) => ResourceTypes.Get(type)?.Title ?? type;
+
+    private string Titles(IEnumerable<string> types) => string.Join(", ", types.Select(Title));
+}

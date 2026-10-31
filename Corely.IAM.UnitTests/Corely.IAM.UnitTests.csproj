@@ -38,5 +38,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Corely.IAM\Corely.IAM.csproj" />
+    <ProjectReference Include="..\Corely.IAM.Testing\Corely.IAM.Testing.csproj" />
   </ItemGroup>
 </Project>

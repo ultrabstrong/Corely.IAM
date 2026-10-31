@@ -194,11 +194,11 @@ else
             <PermissionView Action="AuthAction.Update" Resource="@Account.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                 <Authorized>
                     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
-                                            DescriptionText="@KEYS_DESCRIPTION" RotateKeyAsync="RotateKeyAsync" />
+                                            DescriptionText="@KEYS_DESCRIPTION" RotateKeyAsync="RotateKeyAsync" RevealKeyAsync="RevealKeyHandler" />
                 </Authorized>
                 <NotAuthorized>
                     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
-                                            DescriptionText="@KEYS_DESCRIPTION" />
+                                            DescriptionText="@KEYS_DESCRIPTION" RevealKeyAsync="RevealKeyHandler" />
                 </NotAuthorized>
             </PermissionView>
         </PermissionView>
@@ -271,6 +271,7 @@ else
     private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
     private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
     private IInvitationService InvitationService => ScopedServices.GetRequiredService<IInvitationService>();
+    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
 
     private string? _accountName;
     private string? _originalAccountName;
@@ -306,6 +307,10 @@ else
     private IIamSymmetricEncryptionProvider? _symProvider;
     private IIamAsymmetricEncryptionProvider? _asymProvider;
     private IIamAsymmetricSignatureProvider? _sigProvider;
+    private bool _canRevealKeys;
+
+    private Func<KeyType, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyHandler =>
+        _canRevealKeys ? RevealKeyAsync : null;
 
     protected override async Task LoadCoreAsync()
     {
@@ -315,6 +320,8 @@ else
             _accountName = result.Item.AccountName;
             _users = result.Item.Users ?? [];
             _effectivePermissions = result.EffectivePermissions;
+            _canRevealKeys = UserContext?.EnteredAsPlatformMember == false
+                && await AuthorizationProvider.IsAuthorizedAsync(AuthAction.Execute, Account.SECRET_KEYS_RESOURCE_TYPE, Id);
         }
         else
         {
@@ -555,6 +562,9 @@ else
 
     private const string KEYS_DESCRIPTION =
         "This account has its own symmetric and asymmetric encryption keys plus a signing key.";
+
+    private Task<RevealAccountKeyResult> RevealKeyAsync(KeyType keyType, string? currentPassword, string? totpCode) =>
+        RetrievalService.RevealAccountKeyAsync(new RevealAccountKeyRequest(CurrentAccountId, keyType, currentPassword, totpCode));
 
     private async Task<ModifyResult> RotateKeyAsync(KeyType keyType)
     {

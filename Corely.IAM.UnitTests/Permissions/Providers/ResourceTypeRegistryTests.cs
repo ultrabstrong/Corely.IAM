@@ -108,7 +108,7 @@ public class ResourceTypeRegistryTests
     {
         var all = _registry.GetAll();
 
-        Assert.Equal(10, all.Count);
+        Assert.Equal(11, all.Count);
     }
 
     [Fact]

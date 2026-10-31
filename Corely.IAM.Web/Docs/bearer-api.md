@@ -108,6 +108,29 @@ The built in limiters count in memory, per instance. Several instances that shar
 distributed limiter, such as one backed by Redis, through the same `AddPolicy` and
 `RequireRateLimiting`. A limit per tier or per key is chosen in the policy, from the claims.
 
+## Account public keys
+
+Opt in to serve each account's public keys as a JSON Web Key Set. Nothing is mapped unless the host
+calls it, and it does not need bearer tokens turned on.
+
+```csharp
+app.MapIAMJwksEndpoints("/api/accounts").RequireRateLimiting("per-address");
+```
+
+| Route | Answers |
+|-------|---------|
+| `GET {prefix}/{accountId}/.well-known/jwks.json` | `200` with the raw key set as `application/jwk-set+json`, `Cache-Control: public, max-age=300` |
+| The same, for an account that does not exist | `404` with an empty body, also under `UseIAMApiResponses` |
+
+It needs no sign in and is not wrapped in `ApiResponse`, because standard clients read the raw set. The
+route ends in the path those clients look for by default, so a client configured with
+`{prefix}/{accountId}` as its issuer finds it. A rotated key shows within the five minute cache, so a
+verifier that meets an unknown `kid` fetches again. What is listed after a rotation is in
+[Key Management](../../Corely.IAM/Docs/security/key-management.md#public-keys-as-a-json-web-key-set).
+
+It is open to anyone, so give it a rate limit. An account's existence can be learned from it by anyone
+holding the id.
+
 ## OpenAPI
 
 The token endpoints carry names, summaries and typed results, so a host's OpenAPI document describes

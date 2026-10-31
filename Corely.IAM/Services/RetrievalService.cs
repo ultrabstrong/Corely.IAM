@@ -13,6 +13,7 @@ using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Processors;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Processors;
@@ -30,7 +31,8 @@ internal class RetrievalService(
     IApiKeyProcessor apiKeyProcessor,
     ISecurityProvider securityProvider,
     ISymmetricEncryptionProviderFactory symmetricEncryptionProviderFactory,
-    IUserContextProvider userContextProvider
+    IUserContextProvider userContextProvider,
+    IAccountKeyProcessor accountKeyProcessor
 ) : IRetrievalService
 {
     private readonly IPermissionProcessor _permissionProcessor = permissionProcessor.ThrowIfNull(
@@ -58,6 +60,9 @@ internal class RetrievalService(
         symmetricEncryptionProviderFactory.ThrowIfNull(nameof(symmetricEncryptionProviderFactory));
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
+    );
+    private readonly IAccountKeyProcessor _accountKeyProcessor = accountKeyProcessor.ThrowIfNull(
+        nameof(accountKeyProcessor)
     );
 
     public async Task<RetrieveListResult<Permission>> ListPermissionsAsync(
@@ -323,6 +328,22 @@ internal class RetrievalService(
             null
         );
     }
+
+    public async Task<RetrieveSingleResult<AccountJsonWebKeySet>> GetAccountJsonWebKeySetAsync(
+        Guid accountId
+    )
+    {
+        var result = await _accountKeyProcessor.GetJsonWebKeySetAsync(accountId);
+        return new RetrieveSingleResult<AccountJsonWebKeySet>(
+            result.ResultCode,
+            result.Message,
+            result.Data,
+            null
+        );
+    }
+
+    public Task<RevealAccountKeyResult> RevealAccountKeyAsync(RevealAccountKeyRequest request) =>
+        _accountKeyProcessor.RevealKeyAsync(request);
 
     public async Task<
         RetrieveSingleResult<IIamSymmetricEncryptionProvider>

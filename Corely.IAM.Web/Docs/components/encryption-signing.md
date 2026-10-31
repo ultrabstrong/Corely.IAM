@@ -10,6 +10,7 @@ Tabbed interface for testing encryption and signing operations using account or 
 | `AsymProvider` | `IIamAsymmetricEncryptionProvider?` | none | Asymmetric encryption provider |
 | `SigProvider` | `IIamAsymmetricSignatureProvider?` | none | Digital signature provider |
 | `RotateKeyAsync` | `Func<KeyType, Task<ModifyResult>>?` | none | Rotates the key on the current tab. The Rotate button shows only when set |
+| `RevealKeyAsync` | `Func<KeyType, string?, string?, Task<RevealAccountKeyResult>>?` | none | Returns the key on the current tab, given the password and two factor code. The copy action shows only when set |
 
 ## Usage
 
@@ -58,3 +59,5 @@ Profile passes `RotateKeyAsync` for the signed in user's keys. Account Detail pa
 - Error messages displayed as inline alerts
 - Provider name, the current key version and the provider description shown at the top of each tab
 - **Rotate key** asks for confirmation first, explaining that earlier ciphertext still decrypts and earlier signatures still verify, then reports success or the failure message
+- **Copy key** and **Copy private key** sit immediately left of Rotate key on each tab, on the account panel only. They ask for the password and two factor code beside a warning that this is usually unnecessary, that anyone holding the key can read or sign as the account, and that the key is a secret to store securely and not share with anyone untrusted. The warning stays beside the key
+- A shown key clears after 60 seconds, on **Hide**, on changing tab, when rotating and when the page closes. The clipboard keeps what was copied

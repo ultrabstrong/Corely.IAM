@@ -200,6 +200,7 @@ public class PermissionProcessorTests
         Assert.Equal(
             [
                 Account.RESOURCE_TYPE,
+                Account.SECRET_KEYS_RESOURCE_TYPE,
                 ApiKey.RESOURCE_TYPE,
                 AuditEntry.RESOURCE_TYPE,
                 AccountAuditSettings.RESOURCE_TYPE,
@@ -235,6 +236,7 @@ public class PermissionProcessorTests
             p =>
                 p.AccountId == account.Id
                 && p.ResourceType != "invoice"
+                && p.ResourceType != Account.SECRET_KEYS_RESOURCE_TYPE
                 && p.ResourceType != AuditEntry.RESOURCE_TYPE
                 && p.ResourceType != AccountAuditSettings.RESOURCE_TYPE,
             include: q => q.Include(p => p.Roles)
@@ -490,7 +492,7 @@ public class PermissionProcessorTests
             p.AccountId == account.Id && p.IsSystemDefined
         );
 
-        Assert.Equal(9, systemPermissions.Count);
+        Assert.Equal(10, systemPermissions.Count);
 
         foreach (var permission in systemPermissions)
         {

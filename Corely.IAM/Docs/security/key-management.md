@@ -48,6 +48,10 @@ if (result.ResultCode == RetrieveResultCode.Success)
 }
 ```
 
+A signed in user reaches the keys of accounts in their `AvailableAccounts`. System context reaches any
+account's keys, so code running as the system proves the account id belongs to the work it is doing
+before it asks ([Gotchas](../gotchas.md)).
+
 User key providers use the current user context (no user ID parameter):
 
 ```csharp
@@ -79,6 +83,61 @@ Earlier versions are kept, never deleted:
 - **The algorithm may change between versions.** Each version records its provider, and a value is decrypted with the provider it names.
 
 Account keys need Update permission on the account. User keys are a self operation: only the signed in user rotates their own, and system context is refused.
+
+## Public Keys as a JSON Web Key Set
+
+`GetAccountJsonWebKeySetAsync(accountId)` returns an account's public keys in the RFC 7517 format. It
+needs no user context and asks for no permission, because the keys are public. It writes only public
+fields: `AccountJsonWebKey` has no property for a private one.
+
+| Key | `use` | `kty` | `alg` | Listed |
+|-----|-------|-------|-------|--------|
+| Signing, ECDSA P-256 with SHA-256 | `sig` | `EC` | `ES256` | Every version, newest first |
+| Signing, RSA PKCS#1 with SHA-256 | `sig` | `RSA` | `RS256` | Every version, newest first |
+| Encryption, RSA OAEP with SHA-256 | `enc` | `RSA` | `RSA-OAEP-256` | The current version |
+
+- **`kid`** is `{accountId:N}-{use}-{version}` (`AccountJsonWebKey.KeyIdFor`). `Sign` returns a bare
+  signature with no `kid`, so a host that wants verifiers to pick the key sends it alongside, built from
+  the provider's `Version`.
+- **Every signing version stays listed**, because signatures made with an earlier key still verify.
+- **Only the current encryption key is listed**, so nobody encrypts to a retired key. A value encrypted
+  to an earlier version still decrypts.
+- A key with no standard form, such as ECDSA on a curve JOSE gives no SHA-256 algorithm, is left out and
+  logged.
+- These are the account's keys. Sign in tokens are not signed with them, so this set does not validate
+  a token.
+
+`Corely.IAM.Web` serves the set from `MapIAMJwksEndpoints`; see its [Bearer API](../../../Corely.IAM.Web/Docs/bearer-api.md) page.
+
+## Revealing Account Keys
+
+`RevealAccountKeyAsync` returns the current version of an account key in the clear, for the rare case a
+customer needs it outside the app. Anyone holding one can read or sign as the account, and rotating does
+not cancel a copy, so it is guarded beyond an ordinary read:
+
+- **Permission**: Execute on `account_secret_keys` (`Account.SECRET_KEYS_RESOURCE_TYPE`), an owner default.
+- **Who**: a signed in user acting in that account. System context, API keys and a platform member who
+  entered the account are refused.
+- **Reauthentication**: the current password, and the two factor code when the user has two factor on. A
+  user with no password, such as one who only signs in with Google, is refused.
+- **Audit**: every call is recorded, whatever the audit settings say, refusals included.
+- **Never serialized**: the key is read with `ReadKey()` and is not a property, so a serializer or a
+  structured log cannot reach it, and the request's password and code are internal. No endpoint calls it.
+
+```csharp
+var result = await retrievalService.RevealAccountKeyAsync(
+    new RevealAccountKeyRequest(accountId, KeyType.AsymmetricSignature, currentPassword, totpCode));
+var key = result.ReadKey();
+```
+
+| `KeyType` | `ReadKey()` returns |
+|-----------|---------------------|
+| `SymmetricEncryption` | The key, Base64 |
+| `AsymmetricEncryption`, `AsymmetricSignature` | The private key, Base64 PKCS#8 |
+
+Only the current version is returned. Ciphertext names the version that made it, so a copy reads only
+values encrypted with that version: copy again after a rotation, and re-encrypt older values first if
+they are to be read outside the app.
 
 ## Provider Interfaces
 

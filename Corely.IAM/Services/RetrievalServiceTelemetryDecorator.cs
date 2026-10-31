@@ -162,6 +162,24 @@ internal class RetrievalServiceTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<RetrieveSingleResult<AccountJsonWebKeySet>> GetAccountJsonWebKeySetAsync(
+        Guid accountId
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            new { accountId },
+            () => _inner.GetAccountJsonWebKeySetAsync(accountId)
+        );
+
+    public async Task<RevealAccountKeyResult> RevealAccountKeyAsync(
+        RevealAccountKeyRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            new { request.AccountId, request.KeyType },
+            () => _inner.RevealAccountKeyAsync(request)
+        );
+
     public async Task<
         RetrieveSingleResult<IIamSymmetricEncryptionProvider>
     > GetUserSymmetricEncryptionProviderAsync() =>

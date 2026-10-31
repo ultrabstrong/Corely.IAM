@@ -116,6 +116,7 @@ app.UseAntiforgery();
 
 app.MapOpenApi(WebAppApiExtensions.OPENAPI_PATH);
 app.MapIAMTokenEndpoints(WebAppApiExtensions.AUTH_PREFIX);
+app.MapIAMJwksEndpoints();
 app.MapWebAppApi();
 app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();

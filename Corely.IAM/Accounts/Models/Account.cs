@@ -6,6 +6,7 @@ namespace Corely.IAM.Accounts.Models;
 public class Account
 {
     public const string RESOURCE_TYPE = "account";
+    public const string SECRET_KEYS_RESOURCE_TYPE = "account_secret_keys";
     public const int ACCOUNT_NAME_MIN_LENGTH = 3;
     public const int ACCOUNT_NAME_MAX_LENGTH = 100;
 

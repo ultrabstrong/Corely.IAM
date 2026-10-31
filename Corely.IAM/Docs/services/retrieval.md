@@ -30,6 +30,8 @@ Queries entities with filtering, ordering, and pagination. Also retrieves encryp
 | `GetAccountSymmetricEncryptionProviderAsync(Guid)` | `RetrieveSingleResult<IIamSymmetricEncryptionProvider>` |
 | `GetAccountAsymmetricEncryptionProviderAsync(Guid)` | `RetrieveSingleResult<IIamAsymmetricEncryptionProvider>` |
 | `GetAccountAsymmetricSignatureProviderAsync(Guid)` | `RetrieveSingleResult<IIamAsymmetricSignatureProvider>` |
+| `GetAccountJsonWebKeySetAsync(Guid)` | `RetrieveSingleResult<AccountJsonWebKeySet>`, the account's public keys, with no user context needed |
+| `RevealAccountKeyAsync(RevealAccountKeyRequest)` | `RevealAccountKeyResult`; see [Key Management](../security/key-management.md#revealing-account-keys) |
 | `GetUserSymmetricEncryptionProviderAsync()` | `RetrieveSingleResult<IIamSymmetricEncryptionProvider>` |
 | `GetUserAsymmetricEncryptionProviderAsync()` | `RetrieveSingleResult<IIamAsymmetricEncryptionProvider>` |
 | `GetUserAsymmetricSignatureProviderAsync()` | `RetrieveSingleResult<IIamAsymmetricSignatureProvider>` |

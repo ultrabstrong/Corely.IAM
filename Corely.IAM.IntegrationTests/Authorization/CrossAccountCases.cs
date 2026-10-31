@@ -4,6 +4,7 @@ using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Groups.Models;
+using Corely.IAM.IntegrationTests.Infrastructure;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
@@ -44,6 +45,8 @@ internal static class CrossAccountCases
         ] = "Rotates the caller's own key",
         [$"{nameof(IModificationService)}.{nameof(IModificationService.ModifyPasswordAsync)}"] =
             "Changes the caller's own password",
+        [$"{nameof(IRetrievalService)}.{nameof(IRetrievalService.GetAccountJsonWebKeySetAsync)}"] =
+            "Returns public keys, which anyone may read",
         [
             $"{nameof(IRetrievalService)}.{nameof(IRetrievalService.GetUserSymmetricEncryptionProviderAsync)}"
         ] = "Returns the caller's own key",
@@ -651,6 +654,21 @@ internal static class CrossAccountCases
                             .GetAccountAsymmetricSignatureProviderAsync(a.VictimAccountId),
                     r => r.Item != null
                 ),
+            [$"{nameof(IRetrievalService)}.{nameof(IRetrievalService.RevealAccountKeyAsync)}"] =
+                a =>
+                    a.RefusedAsync(
+                        s =>
+                            Get<IRetrievalService>(s)
+                                .RevealAccountKeyAsync(
+                                    new RevealAccountKeyRequest(
+                                        a.VictimAccountId,
+                                        KeyType.SymmetricEncryption,
+                                        IamScenario.Password,
+                                        null
+                                    )
+                                ),
+                        r => r.ReadKey() != null
+                    ),
             [$"{nameof(IInvitationService)}.{nameof(IInvitationService.CreateInvitationAsync)}"] =
                 a =>
                     a.WritesNothingAsync(s =>

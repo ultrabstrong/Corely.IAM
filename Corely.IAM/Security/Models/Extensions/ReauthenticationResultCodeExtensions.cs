@@ -50,6 +50,23 @@ internal static class ReauthenticationResultCodeExtensions
                     DeregisterBasicAuthResultCode.InvalidTotpCodeError,
                 _ => throw Unmapped(resultCode),
             };
+
+        public RevealAccountKeyResultCode ToRevealAccountKeyResultCode() =>
+            resultCode switch
+            {
+                ReauthenticationResultCode.Success => RevealAccountKeyResultCode.Success,
+                ReauthenticationResultCode.BasicAuthNotFoundError =>
+                    RevealAccountKeyResultCode.BasicAuthNotFoundError,
+                ReauthenticationResultCode.InvalidCurrentPasswordError =>
+                    RevealAccountKeyResultCode.InvalidCurrentPasswordError,
+                ReauthenticationResultCode.UserLockedError =>
+                    RevealAccountKeyResultCode.UserLockedError,
+                ReauthenticationResultCode.TotpRequiredError =>
+                    RevealAccountKeyResultCode.TotpRequiredError,
+                ReauthenticationResultCode.InvalidTotpCodeError =>
+                    RevealAccountKeyResultCode.InvalidTotpCodeError,
+                _ => throw Unmapped(resultCode),
+            };
     }
 
     private static ArgumentOutOfRangeException Unmapped(ReauthenticationResultCode resultCode) =>

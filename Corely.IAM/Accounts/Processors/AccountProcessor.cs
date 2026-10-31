@@ -500,12 +500,9 @@ internal class AccountProcessor(
 
     public async Task<GetResult<AccountEntity>> GetAccountKeysAsync(Guid accountId)
     {
-        var userAccountIds = _userContextProvider
-            .GetUserContext()!
-            .AvailableAccounts.Select(a => a.Id)
-            .ToHashSet();
+        var context = _userContextProvider.GetUserContext()!;
 
-        if (!userAccountIds.Contains(accountId))
+        if (!context.IsSystemContext && !context.AvailableAccounts.Any(a => a.Id == accountId))
         {
             _logger.LogInformation(
                 "Account with Id {AccountId} not found or not accessible",

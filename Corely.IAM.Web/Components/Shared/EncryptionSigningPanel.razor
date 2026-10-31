@@ -1,5 +1,7 @@
 @using Corely.IAM.Web.Extensions
+@implements IDisposable
 @inject IJSRuntime JSRuntime
+@inject TimeProvider TimeProvider
 
 <div class="section-divider mb-4">
     <div class="section-divider-label">Encryption &amp; Signing</div>
@@ -9,17 +11,17 @@
     </p>
     <ul class="nav nav-tabs flex-nowrap">
         <li class="nav-item">
-            <button class="nav-link @(_activeKeyTab == 0 ? "active" : "")" @onclick="() => _activeKeyTab = 0">
+            <button class="nav-link @(_activeKeyTab == 0 ? "active" : "")" @onclick="() => ShowTab(0)">
                 <i class="bi bi-key me-1"></i>Symmetric<span class="d-none d-md-inline"> Encryption</span>
             </button>
         </li>
         <li class="nav-item">
-            <button class="nav-link @(_activeKeyTab == 1 ? "active" : "")" @onclick="() => _activeKeyTab = 1">
+            <button class="nav-link @(_activeKeyTab == 1 ? "active" : "")" @onclick="() => ShowTab(1)">
                 <i class="bi bi-shield-lock me-1"></i>Asymmetric<span class="d-none d-md-inline"> Encryption</span>
             </button>
         </li>
         <li class="nav-item">
-            <button class="nav-link @(_activeKeyTab == 2 ? "active" : "")" @onclick="() => _activeKeyTab = 2">
+            <button class="nav-link @(_activeKeyTab == 2 ? "active" : "")" @onclick="() => ShowTab(2)">
                 <i class="bi bi-pen me-1"></i><span class="d-none d-md-inline">Digital </span>Signature
             </button>
         </li>
@@ -28,6 +30,10 @@
         @if (_rotateResult != null)
         {
             <div class="alert @(_rotateFailed ? "alert-danger" : "alert-success") py-2">@_rotateResult</div>
+        }
+        @if (_revealError != null)
+        {
+            <div class="alert alert-danger py-2">@_revealError</div>
         }
         @if (_activeKeyTab == 0)
         {
@@ -48,11 +54,13 @@
                 <button class="btn btn-primary btn-sm" @onclick="SymEncryptAsync" disabled="@_busy">Encrypt</button>
                 <button class="btn btn-outline-primary btn-sm" @onclick="SymDecryptAsync" disabled="@_busy">Decrypt</button>
                 <button class="btn btn-outline-secondary btn-sm" @onclick="SymReEncryptAsync" disabled="@_busy">Re-encrypt</button>
+                @CopyKeyButton(KeyType.SymmetricEncryption)
                 @if (RotateKeyAsync != null)
                 {
-                    <button class="btn btn-outline-warning btn-sm ms-auto enc-rotate" @onclick="() => ConfirmRotate(KeyType.SymmetricEncryption)" disabled="@_busy">Rotate key</button>
+                    <button class="btn btn-outline-warning btn-sm @RotateMargin enc-rotate" @onclick="() => ConfirmRotate(KeyType.SymmetricEncryption)" disabled="@_busy">Rotate key</button>
                 }
             </div>
+            @RevealedKey(KeyType.SymmetricEncryption)
             @if (_symOutput != null)
             {
                 <div class="mb-3">
@@ -98,11 +106,13 @@
                 <button class="btn btn-primary btn-sm" @onclick="AsymEncryptAsync" disabled="@_busy">Encrypt</button>
                 <button class="btn btn-outline-primary btn-sm" @onclick="AsymDecryptAsync" disabled="@_busy">Decrypt</button>
                 <button class="btn btn-outline-secondary btn-sm" @onclick="AsymReEncryptAsync" disabled="@_busy">Re-encrypt</button>
+                @CopyKeyButton(KeyType.AsymmetricEncryption)
                 @if (RotateKeyAsync != null)
                 {
-                    <button class="btn btn-outline-warning btn-sm ms-auto enc-rotate" @onclick="() => ConfirmRotate(KeyType.AsymmetricEncryption)" disabled="@_busy">Rotate key</button>
+                    <button class="btn btn-outline-warning btn-sm @RotateMargin enc-rotate" @onclick="() => ConfirmRotate(KeyType.AsymmetricEncryption)" disabled="@_busy">Rotate key</button>
                 }
             </div>
+            @RevealedKey(KeyType.AsymmetricEncryption)
             @if (_asymOutput != null)
             {
                 <div class="mb-3">
@@ -152,11 +162,13 @@
             <div class="d-flex gap-2 mb-3 enc-actions">
                 <button class="btn btn-primary btn-sm" @onclick="SignAsync" disabled="@_busy">Sign</button>
                 <button class="btn btn-outline-primary btn-sm" @onclick="VerifyAsync" disabled="@_busy">Verify</button>
+                @CopyKeyButton(KeyType.AsymmetricSignature)
                 @if (RotateKeyAsync != null)
                 {
-                    <button class="btn btn-outline-warning btn-sm ms-auto enc-rotate" @onclick="() => ConfirmRotate(KeyType.AsymmetricSignature)" disabled="@_busy">Rotate key</button>
+                    <button class="btn btn-outline-warning btn-sm @RotateMargin enc-rotate" @onclick="() => ConfirmRotate(KeyType.AsymmetricSignature)" disabled="@_busy">Rotate key</button>
                 }
             </div>
+            @RevealedKey(KeyType.AsymmetricSignature)
             @if (_sigResult != null)
             {
                 <div class="alert @(_sigResultIsValid == true ? "alert-success" : _sigResultIsValid == false ? "alert-danger" : "alert-info") py-2">@_sigResult</div>
@@ -170,6 +182,18 @@
 </div>
 
 <ConfirmModal @ref="_rotateModal" Title="Rotate Key" Message="@_rotateConfirmMessage" ConfirmText="Rotate" Type="ConfirmModalType.Warning" OnConfirm="RotateAsync" />
+
+<FormModal @ref="_revealModal" Title="@_revealKeyType.CopyKeyLabel()" ConfirmText="Show key" OnConfirm="RevealAsync">
+    @KeyWarning(_revealKeyType)
+    <div class="mb-3">
+        <label class="form-label">Your password</label>
+        <PasswordInput @bind-Value="_revealPassword" />
+    </div>
+    <div class="mb-1">
+        <label class="form-label">Authenticator or recovery code, if you use two factor</label>
+        <input type="text" class="form-control form-control-sm" autocomplete="one-time-code" @bind="_revealTotpCode" />
+    </div>
+</FormModal>
 
 @code {
     [Parameter]
@@ -188,6 +212,134 @@
     [Parameter]
     public Func<KeyType, Task<ModifyResult>>? RotateKeyAsync { get; set; }
 
+    [Parameter]
+    public Func<KeyType, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyAsync { get; set; }
+
+    private const int KEY_VISIBLE_SECONDS = 60;
+
+    private FormModal _revealModal = null!;
+    private KeyType _revealKeyType;
+    private string _revealPassword = string.Empty;
+    private string? _revealTotpCode;
+    private string? _revealError;
+    private KeyType _revealedKeyType;
+    private string? _revealedKey;
+    private string? _revealedProviderName;
+    private int _revealedVersion;
+    private bool _revealedKeyCopied;
+    private CancellationTokenSource? _revealedKeyTimer;
+
+    private string? RotateMargin => RevealKeyAsync == null ? "ms-auto" : null;
+
+    private RenderFragment CopyKeyButton(KeyType keyType) =>
+        @<text>
+            @if (RevealKeyAsync != null)
+            {
+                <button class="btn btn-outline-secondary btn-sm ms-auto enc-rotate" @onclick="() => ConfirmReveal(keyType)" disabled="@_busy">@keyType.CopyKeyLabel()</button>
+            }
+        </text>;
+
+    private RenderFragment KeyWarning(KeyType keyType) =>
+        @<div class="alert alert-warning py-2">
+            <ul class="mb-0 ps-3">
+                @foreach (var warning in keyType.CopyKeyWarnings())
+                {
+                    <li>@warning</li>
+                }
+            </ul>
+        </div>;
+
+    private RenderFragment RevealedKey(KeyType keyType) =>
+        @<text>
+            @if (_revealedKey != null && _revealedKeyType == keyType)
+            {
+                <div class="mb-3">
+                    @KeyWarning(keyType)
+                    <label class="form-label fw-semibold">
+                        @keyType.CopyKeyLabel(), version @_revealedVersion, @_revealedProviderName, @keyType.KeyFormat()
+                    </label>
+                    <div class="d-flex align-items-start gap-1">
+                        <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@_revealedKey</textarea>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopyRevealedKeyAsync" title="Copy">
+                            <i class="bi @(_revealedKeyCopied ? "bi-check text-success" : "bi-copy")"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="ClearRevealedKey" title="Hide">
+                            <i class="bi bi-eye-slash"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">Hidden after @KEY_VISIBLE_SECONDS seconds. The clipboard keeps what you copy, so clear it when you are done.</small>
+                </div>
+            }
+        </text>;
+
+    private void ShowTab(int tab)
+    {
+        _activeKeyTab = tab;
+        _revealError = null;
+        ClearRevealedKey();
+    }
+
+    private void ConfirmReveal(KeyType keyType)
+    {
+        _revealKeyType = keyType;
+        _revealPassword = string.Empty;
+        _revealTotpCode = null;
+        _revealError = null;
+        ClearRevealedKey();
+        _revealModal.Show();
+    }
+
+    private async Task RevealAsync()
+    {
+        if (RevealKeyAsync == null) return;
+        var password = _revealPassword;
+        var totpCode = _revealTotpCode;
+        _revealPassword = string.Empty;
+        _revealTotpCode = null;
+
+        var result = await RevealKeyAsync(_revealKeyType, password, totpCode);
+        if (result.ResultCode != RevealAccountKeyResultCode.Success)
+        {
+            _revealError = result.Message;
+            return;
+        }
+
+        _revealedKeyType = _revealKeyType;
+        _revealedKey = result.ReadKey();
+        _revealedProviderName = result.ProviderName;
+        _revealedVersion = result.Version;
+        _ = HideRevealedKeyLaterAsync();
+    }
+
+    private async Task HideRevealedKeyLaterAsync()
+    {
+        _revealedKeyTimer = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(KEY_VISIBLE_SECONDS), TimeProvider, _revealedKeyTimer.Token);
+            await InvokeAsync(() =>
+            {
+                ClearRevealedKey();
+                StateHasChanged();
+            });
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private void ClearRevealedKey()
+    {
+        _revealedKeyTimer?.Cancel();
+        _revealedKeyTimer?.Dispose();
+        _revealedKeyTimer = null;
+        _revealedKey = null;
+        _revealedProviderName = null;
+        _revealedKeyCopied = false;
+    }
+
+    private async Task CopyRevealedKeyAsync() => await CopyWithFeedbackAsync(_revealedKey, v => _revealedKeyCopied = v);
+
+    public void Dispose() => ClearRevealedKey();
+
     private ConfirmModal _rotateModal = null!;
     private KeyType _rotateKeyType;
     private string _rotateConfirmMessage = string.Empty;
@@ -199,6 +351,7 @@
         _rotateKeyType = keyType;
         _rotateConfirmMessage = keyType.RotationWarning();
         _rotateResult = null;
+        ClearRevealedKey();
         _rotateModal.Show();
     }
 

@@ -2,6 +2,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Web.Components.Shared;
+using Microsoft.Extensions.DependencyInjection;
 using TestContext = Bunit.TestContext;
 
 namespace Corely.IAM.Web.UnitTests.Components.Shared;
@@ -15,6 +16,7 @@ public class EncryptionSigningPanelTests : TestContext
         _symProvider.Setup(x => x.ProviderName).Returns("AES");
         _symProvider.Setup(x => x.ProviderDescription).Returns("AES test");
         JSInterop.Mode = JSRuntimeMode.Loose;
+        Services.AddSingleton(TimeProvider.System);
     }
 
     [Fact]

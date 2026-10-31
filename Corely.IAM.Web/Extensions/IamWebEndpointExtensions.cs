@@ -1,10 +1,12 @@
 using System.Net;
 using Corely.IAM.Models;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Endpoints;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +17,9 @@ namespace Corely.IAM.Web.Extensions;
 public static class IamWebEndpointExtensions
 {
     public const string TOKEN_ENDPOINTS_TAG = "IAM tokens";
+    public const string JWKS_ENDPOINTS_TAG = "IAM keys";
+    private const string JWK_SET_CONTENT_TYPE = "application/jwk-set+json";
+    private const string JWKS_CACHE_CONTROL = "public, max-age=300";
     private const string REFUSED_KEY = "The key was refused.";
     private const string SESSION_ENDED = "The session has ended. Sign in again.";
 
@@ -70,12 +75,48 @@ public static class IamWebEndpointExtensions
 
             return group;
         }
+
+        public RouteGroupBuilder MapIAMJwksEndpoints(string prefix = "/api/accounts")
+        {
+            var group = endpoints.MapGroup(prefix).WithTags(JWKS_ENDPOINTS_TAG).AllowAnonymous();
+
+            group
+                .MapGet("/{accountId:guid}/.well-known/jwks.json", GetAccountJwksAsync)
+                .WithName("IamAccountJwks")
+                .Produces<AccountJsonWebKeySet>(StatusCodes.Status200OK, JWK_SET_CONTENT_TYPE)
+                .Produces(StatusCodes.Status404NotFound)
+                .WithSummary("The account's public keys as a JSON Web Key Set")
+                .WithDescription(
+                    "Needs no sign in. Lists every signing key version, newest first, so signatures made with "
+                        + "an earlier key still verify, and the current encryption key. Fetch again when a kid is unknown."
+                );
+
+            return group;
+        }
     }
 
     extension<TBuilder>(TBuilder builder)
         where TBuilder : IEndpointConventionBuilder
     {
         public TBuilder AsIAMApi() => builder.WithMetadata(IamApiEndpointMetadata.Instance);
+    }
+
+    private static async Task<IResult> GetAccountJwksAsync(
+        Guid accountId,
+        HttpContext context,
+        IRetrievalService retrievalService
+    )
+    {
+        var result = await retrievalService.GetAccountJsonWebKeySetAsync(accountId);
+        if (result.ResultCode != RetrieveResultCode.Success || result.Item is null)
+        {
+            if (context.Features.Get<IStatusCodePagesFeature>() is { } statusCodePages)
+                statusCodePages.Enabled = false;
+            return TypedResults.NotFound();
+        }
+
+        context.Response.Headers.CacheControl = JWKS_CACHE_CONTROL;
+        return TypedResults.Json(result.Item, contentType: JWK_SET_CONTENT_TYPE);
     }
 
     private static async Task<IResult> SignInWithApiKeyAsync(

@@ -31,6 +31,7 @@ public class UserDetailTests : TestContext
         Services.AddSingleton(_mockRegistrationService.Object);
         Services.AddSingleton(_mockDeregistrationService.Object);
         Services.AddSingleton(new Mock<IAuthorizationProvider>().Object);
+        Services.AddSingleton(TimeProvider.System);
         Services.AddSingleton<ILogger<EntityPageBase>>(NullLogger<EntityPageBase>.Instance);
 
         ComponentFactories.AddStub<PermissionView>();

@@ -175,6 +175,26 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
             r => AuditOutcome.Of(r.ResultCode)
         );
 
+    public Task<RetrieveSingleResult<AccountJsonWebKeySet>> GetAccountJsonWebKeySetAsync(
+        Guid accountId
+    ) =>
+        _auditProvider.RecordAsync(
+            InAccount(accountId),
+            () => _inner.GetAccountJsonWebKeySetAsync(accountId),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<RevealAccountKeyResult> RevealAccountKeyAsync(RevealAccountKeyRequest request) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Execute, Account.SECRET_KEYS_RESOURCE_TYPE)
+            {
+                AccountId = request.AccountId,
+                ResourceIds = [request.AccountId],
+            },
+            () => _inner.RevealAccountKeyAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
     public Task<
         RetrieveSingleResult<IIamSymmetricEncryptionProvider>
     > GetUserSymmetricEncryptionProviderAsync() =>

@@ -50,6 +50,10 @@ public interface IRetrievalService
         RetrieveSingleResult<IIamAsymmetricSignatureProvider>
     > GetAccountAsymmetricSignatureProviderAsync(Guid accountId);
 
+    Task<RetrieveSingleResult<AccountJsonWebKeySet>> GetAccountJsonWebKeySetAsync(Guid accountId);
+
+    Task<RevealAccountKeyResult> RevealAccountKeyAsync(RevealAccountKeyRequest request);
+
     Task<
         RetrieveSingleResult<IIamSymmetricEncryptionProvider>
     > GetUserSymmetricEncryptionProviderAsync();

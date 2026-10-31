@@ -16,6 +16,7 @@ Resource types are compile-time concepts that categorize what a permission grant
 | Constant | Value | Title | Group | Owner actions |
 |----------|-------|-------|-------|---------------|
 | `Account.RESOURCE_TYPE` | `"account"` | Accounts | Identity and access | All five |
+| `Account.SECRET_KEYS_RESOURCE_TYPE` | `"account_secret_keys"` | Secret keys | Identity and access | Execute (reveal an account key) |
 | `User.RESOURCE_TYPE` | `"user"` | Users | Identity and access | All five |
 | `Group.RESOURCE_TYPE` | `"group"` | Groups | Identity and access | All five |
 | `Role.RESOURCE_TYPE` | `"role"` | Roles | Identity and access | All five |

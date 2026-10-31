@@ -22,6 +22,12 @@ internal class ResourceTypeRegistry : IResourceTypeRegistry
     public ResourceTypeRegistry()
     {
         AddIamType(Account.RESOURCE_TYPE, "Accounts", "An account and its settings");
+        AddIamType(
+            Account.SECRET_KEYS_RESOURCE_TYPE,
+            "Secret keys",
+            "Copying the account's secret keys out of the app",
+            AuthAction.Execute
+        );
         AddIamType(User.RESOURCE_TYPE, "Users", "The account's users and what they belong to");
         AddIamType(Group.RESOURCE_TYPE, "Groups", "Groups of users and the roles they carry");
         AddIamType(Role.RESOURCE_TYPE, "Roles", "Roles and the permissions they hold");

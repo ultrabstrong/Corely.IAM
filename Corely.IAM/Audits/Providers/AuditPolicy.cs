@@ -25,6 +25,7 @@ internal class AuditPolicy(
     [
         (nameof(IDeregistrationService), nameof(IDeregistrationService.DeregisterUserAsync)),
         (nameof(IDeregistrationService), nameof(IDeregistrationService.DeregisterAccountAsync)),
+        (nameof(IRetrievalService), nameof(IRetrievalService.RevealAccountKeyAsync)),
     ];
 
     private readonly IReadonlyRepo<PlatformSettingsEntity> _platformSettingsRepo =

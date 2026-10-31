@@ -35,11 +35,13 @@ Account detail page with invitation management, user listing, and encryption key
 ### Encryption/Signing Panel
 - Symmetric encryption, asymmetric encryption, and asymmetric signature provider information
 - **Rotate key** on each tab calls `RotateAccountKeyAsync` and reloads the providers
+- **Copy key** on each tab calls `RevealAccountKeyAsync`; see [EncryptionSigningPanel](encryption-signing.md)
 
 **Authorization gates:**
 - `AuthAction.Update` + `Account.RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit, Create Invitation, Revoke, Remove User, Rotate key
 - `AuthAction.Delete` + `Account.RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete
 - `AuthAction.Read` + `Account.RESOURCE_TYPE` + `ResourceIds: [Id]`: Encryption/Signing panel
+- `AuthAction.Execute` + `Account.SECRET_KEYS_RESOURCE_TYPE` + `ResourceIds: [Id]`: Copy key, hidden from a platform member who entered the account
 - `AuthAction.Read` + `AccountAuditSettings.RESOURCE_TYPE`: Audit section
 - `AuthAction.Update` + `AccountAuditSettings.RESOURCE_TYPE`: Audit section Edit
 

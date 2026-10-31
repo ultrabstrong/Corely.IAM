@@ -242,6 +242,16 @@ public static class ServiceRegistrationExtensions
                 KeyRotationProcessorTelemetryDecorator
             >();
 
+            serviceCollection.AddScoped<IAccountKeyProcessor, AccountKeyProcessor>();
+            serviceCollection.Decorate<
+                IAccountKeyProcessor,
+                AccountKeyProcessorAuthorizationDecorator
+            >();
+            serviceCollection.Decorate<
+                IAccountKeyProcessor,
+                AccountKeyProcessorTelemetryDecorator
+            >();
+
             serviceCollection.AddScoped<IUserProcessor, UserProcessor>();
             serviceCollection.Decorate<IUserProcessor, UserProcessorAuthorizationDecorator>();
             serviceCollection.Decorate<IUserProcessor, UserProcessorTelemetryDecorator>();

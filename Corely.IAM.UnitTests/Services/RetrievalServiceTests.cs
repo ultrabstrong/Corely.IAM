@@ -11,6 +11,7 @@ using Corely.IAM.Roles.Models;
 using Corely.IAM.Roles.Processors;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Processors;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Entities;
@@ -36,6 +37,7 @@ public class RetrievalServiceTests
     private readonly Mock<ISymmetricEncryptionProviderFactory> _mockSymmetricEncryptionProviderFactory =
         new();
     private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
+    private readonly Mock<IAccountKeyProcessor> _mockAccountKeyProcessor = new();
     private readonly RetrievalService _service;
     private readonly UserContext _userContext;
 
@@ -76,7 +78,8 @@ public class RetrievalServiceTests
             _mockApiKeyProcessor.Object,
             _mockSecurityProvider.Object,
             _mockSymmetricEncryptionProviderFactory.Object,
-            _mockUserContextProvider.Object
+            _mockUserContextProvider.Object,
+            _mockAccountKeyProcessor.Object
         );
     }
 
@@ -794,7 +797,8 @@ public class RetrievalServiceTests
                 _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
-                _mockUserContextProvider.Object
+                _mockUserContextProvider.Object,
+                _mockAccountKeyProcessor.Object
             )
         );
 
@@ -814,7 +818,8 @@ public class RetrievalServiceTests
                 _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
-                _mockUserContextProvider.Object
+                _mockUserContextProvider.Object,
+                _mockAccountKeyProcessor.Object
             )
         );
 
@@ -834,7 +839,8 @@ public class RetrievalServiceTests
                 _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
-                _mockUserContextProvider.Object
+                _mockUserContextProvider.Object,
+                _mockAccountKeyProcessor.Object
             )
         );
 
@@ -854,7 +860,8 @@ public class RetrievalServiceTests
                 _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
-                _mockUserContextProvider.Object
+                _mockUserContextProvider.Object,
+                _mockAccountKeyProcessor.Object
             )
         );
 
@@ -874,7 +881,8 @@ public class RetrievalServiceTests
                 _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
-                _mockUserContextProvider.Object
+                _mockUserContextProvider.Object,
+                _mockAccountKeyProcessor.Object
             )
         );
 
@@ -894,7 +902,8 @@ public class RetrievalServiceTests
                 _mockApiKeyProcessor.Object,
                 null!,
                 _mockSymmetricEncryptionProviderFactory.Object,
-                _mockUserContextProvider.Object
+                _mockUserContextProvider.Object,
+                _mockAccountKeyProcessor.Object
             )
         );
 
@@ -914,7 +923,8 @@ public class RetrievalServiceTests
                 _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 null!,
-                _mockUserContextProvider.Object
+                _mockUserContextProvider.Object,
+                _mockAccountKeyProcessor.Object
             )
         );
 
@@ -934,7 +944,8 @@ public class RetrievalServiceTests
                 _mockApiKeyProcessor.Object,
                 _mockSecurityProvider.Object,
                 _mockSymmetricEncryptionProviderFactory.Object,
-                null!
+                null!,
+                _mockAccountKeyProcessor.Object
             )
         );
 

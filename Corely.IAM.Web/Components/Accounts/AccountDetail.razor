@@ -195,7 +195,7 @@ else
             <PermissionView Action="AuthAction.Update" Resource="@Account.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                 <Authorized>
                     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
-                                            DescriptionText="@KEYS_DESCRIPTION" RotateKeyAsync="RotateKeyAsync" RotateCompromisedKeyAsync="RotateCompromisedKeyAsync"
+                                            DescriptionText="@KEYS_DESCRIPTION" RotateKeyAsync="RotateKeyAsync" RotateCompromisedKeyAsync="RotateCompromisedKeyAsync" MarkKeyCompromisedAsync="MarkKeyCompromisedAsync"
                                             RevealKeyAsync="RevealKeyHandler" RevealGoogleClientId="@_revealGoogleClientId" CanProveIdentity="_canProveIdentity" />
                 </Authorized>
                 <NotAuthorized>
@@ -328,8 +328,7 @@ else
             _effectivePermissions = result.EffectivePermissions;
             _canRevealKeys = UserContext?.User != null
                 && await AuthorizationProvider.IsAuthorizedAsync(AuthAction.Execute, Account.SECRET_KEYS_RESOURCE_TYPE, Id);
-            if (_canRevealKeys)
-                await LoadRevealProofAsync();
+            await LoadRevealProofAsync();
         }
         else
         {
@@ -587,8 +586,32 @@ else
     private Task<ModifyResult> RotateKeyAsync(KeyType keyType) =>
         ReloadKeysAfterAsync(ModificationService.RotateAccountKeyAsync(new RotateAccountKeyRequest(Id, keyType)));
 
-    private Task<ModifyResult> RotateCompromisedKeyAsync(KeyType keyType) =>
-        ReloadKeysAfterAsync(ModificationService.RotateCompromisedAccountKeyAsync(new RotateAccountKeyRequest(Id, keyType)));
+    private async Task<CompromiseAccountKeyResult> RotateCompromisedKeyAsync(KeyType keyType, string? currentPassword, string? totpCode, string? googleIdToken, string? googleNonce)
+    {
+        var result = await ModificationService.RotateCompromisedAccountKeyAsync(
+            new RotateCompromisedAccountKeyRequest(Id, keyType, new AccountKeyProof(currentPassword, totpCode, googleIdToken, googleNonce))
+        );
+        await ReloadKeysAfterCompromiseAsync(result);
+        return result;
+    }
+
+    private async Task<CompromiseAccountKeyResult> MarkKeyCompromisedAsync(KeyType keyType, int version, string? currentPassword, string? totpCode, string? googleIdToken, string? googleNonce)
+    {
+        var result = await ModificationService.MarkAccountKeyCompromisedAsync(
+            new MarkAccountKeyCompromisedRequest(Id, keyType, version, new AccountKeyProof(currentPassword, totpCode, googleIdToken, googleNonce))
+        );
+        await ReloadKeysAfterCompromiseAsync(result);
+        return result;
+    }
+
+    private async Task ReloadKeysAfterCompromiseAsync(CompromiseAccountKeyResult result)
+    {
+        if (result.ResultCode == CompromiseAccountKeyResultCode.Success)
+        {
+            await LoadKeyProvidersAsync();
+            StateHasChanged();
+        }
+    }
 
     private async Task<ModifyResult> ReloadKeysAfterAsync(Task<ModifyResult> rotation)
     {

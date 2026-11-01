@@ -20,7 +20,12 @@ public interface IModificationService
     Task<ModifyResult> ModifyApiKeyAsync(UpdateApiKeyRequest request);
     Task<RotateApiKeySecretResult> RotateApiKeySecretAsync(RotateApiKeySecretRequest request);
     Task<ModifyResult> RotateAccountKeyAsync(RotateAccountKeyRequest request);
-    Task<ModifyResult> RotateCompromisedAccountKeyAsync(RotateAccountKeyRequest request);
+    Task<CompromiseAccountKeyResult> RotateCompromisedAccountKeyAsync(
+        RotateCompromisedAccountKeyRequest request
+    );
+    Task<CompromiseAccountKeyResult> MarkAccountKeyCompromisedAsync(
+        MarkAccountKeyCompromisedRequest request
+    );
     Task<ModifyResult> RotateCurrentUserKeyAsync(KeyType keyType);
     Task<ModifyPasswordResult> ModifyPasswordAsync(ModifyPasswordRequest request);
 }

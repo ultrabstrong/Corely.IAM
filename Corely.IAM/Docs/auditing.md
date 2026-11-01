@@ -174,7 +174,7 @@ outside any account. The operation name comes from the calling method.
 - `AuthenticateWithTokenAsync` and `AuthenticateAsSystem` are not recorded. They set the context that every recorded call after them carries.
 - `CompletePlatformOwnerPermissionsAsync` is not recorded. It runs at every startup with no user, and adds rows only to the platform Owner role.
 - Entering an account is an Execute in that account, so it is recorded only when the account records Execute for that cohort. Platform members' entries follow the account's own choice; the platform never overrides it.
-- `RevealAccountKeyAsync` and `RotateCompromisedAccountKeyAsync` are always recorded, refusals included, whatever the settings say, as deleting a user or an account is.
+- `RevealAccountKeyAsync`, `RotateCompromisedAccountKeyAsync` and `MarkAccountKeyCompromisedAsync` are always recorded, refusals included, whatever the settings say, as deleting a user or an account is.
 - Reads are off by default, so the busiest calls cost a cache lookup and no write.
 - Reading the audit log is itself a Read on `audit`, recorded only where Reads are recorded.
 - The Owner role gets Read and Delete on `audit` and Read and Update on `audit_settings` as

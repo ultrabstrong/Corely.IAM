@@ -91,26 +91,15 @@ internal class AccountKeyProcessor(
                 "A non-system user context is required to reveal an account key."
             );
 
-        var identity = await _reauthenticationProvider.VerifyIdentityAsync(
+        var proof = await _reauthenticationProvider.VerifyAccountKeyProofAsync(
             userId,
-            request.CurrentPassword,
-            request.GoogleIdToken,
-            request.GoogleNonce
+            request.Proof
         );
-        if (identity.ResultCode != ReauthenticationResultCode.Success)
+        if (proof.ResultCode != ReauthenticationResultCode.Success)
         {
             return new RevealAccountKeyResult(
-                identity.ResultCode.ToRevealAccountKeyResultCode(),
-                identity.Message
-            );
-        }
-
-        var totp = await _reauthenticationProvider.VerifyTotpCodeAsync(userId, request.TotpCode);
-        if (totp.ResultCode != ReauthenticationResultCode.Success)
-        {
-            return new RevealAccountKeyResult(
-                totp.ResultCode.ToRevealAccountKeyResultCode(),
-                totp.Message
+                proof.ResultCode.ToRevealAccountKeyResultCode(),
+                proof.Message
             );
         }
 

@@ -86,10 +86,22 @@ Account keys need Update permission on the account. User keys are a self operati
 
 ## Compromised Keys
 
-`RotateCompromisedAccountKeyAsync` rotates an account key and marks the version it replaces compromised,
-in one transaction. It takes the same request and permission as `RotateAccountKeyAsync`, and is always
-recorded in the audit log. It cannot be undone, and only the version being replaced is marked. Rotating
-with `RotateAccountKeyAsync` marks nothing.
+Two calls mark a version compromised. `RotateCompromisedAccountKeyAsync` rotates a key and marks the
+version it replaces, in one transaction. `MarkAccountKeyCompromisedAsync` marks any older version, for a
+leak found after that version was rotated out normally. It refuses the current version with
+`CurrentVersionError`, because the account would have no usable key: rotate instead. Marking cannot be
+undone. `RotateAccountKeyAsync` marks nothing.
+
+```csharp
+var proof = new AccountKeyProof(currentPassword, totpCode);
+await modificationService.MarkAccountKeyCompromisedAsync(
+    new MarkAccountKeyCompromisedRequest(accountId, KeyType.AsymmetricSignature, version: 2, proof));
+```
+
+Both need Update on the account and the same proof as [revealing a key](#revealing-account-keys), so a
+stolen session cannot do it: the password when the user has one, otherwise a fresh Google sign in, then
+two factor when enabled. A wrong password counts toward lockout. System context and API keys are refused,
+because they have nothing to prove. Both are always recorded in the audit log, refusals included.
 
 | Key | A compromised version |
 |-----|-----------------------|

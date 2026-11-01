@@ -22,7 +22,12 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         string? GoogleNonce
     )> _calls = [];
     private readonly List<KeyType> _plainRotations = [];
-    private readonly List<KeyType> _compromisedRotations = [];
+    private readonly List<(KeyType KeyType, string? Password)> _compromisedRotations = [];
+    private readonly List<(KeyType KeyType, int Version, string? Password)> _markedVersions = [];
+    private CompromiseAccountKeyResult _compromiseResult = new(
+        CompromiseAccountKeyResultCode.Success,
+        string.Empty
+    );
     private RevealAccountKeyResult _result = new(
         RevealAccountKeyResultCode.Success,
         string.Empty,
@@ -62,12 +67,18 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
             {
                 p.Add(
                     x => x.RotateCompromisedKeyAsync,
-                    keyType =>
+                    (keyType, password, _, _, _) =>
                     {
-                        _compromisedRotations.Add(keyType);
-                        return Task.FromResult(
-                            new ModifyResult(ModifyResultCode.Success, string.Empty)
-                        );
+                        _compromisedRotations.Add((keyType, password));
+                        return Task.FromResult(_compromiseResult);
+                    }
+                );
+                p.Add(
+                    x => x.MarkKeyCompromisedAsync,
+                    (keyType, version, password, _, _, _) =>
+                    {
+                        _markedVersions.Add((keyType, version, password));
+                        return Task.FromResult(_compromiseResult);
                     }
                 );
                 p.Add(
@@ -307,23 +318,119 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
     [InlineData(0, KeyType.SymmetricEncryption)]
     [InlineData(1, KeyType.AsymmetricEncryption)]
     [InlineData(2, KeyType.AsymmetricSignature)]
-    public void Rotate_MarksTheOldKeyCompromised_AfterWarningItCannotBeUndone(
-        int tab,
-        KeyType keyType
-    )
+    public void Rotate_MarksTheOldKeyCompromised_OnlyAfterWarningAndProof(int tab, KeyType keyType)
     {
         var cut = RenderPanel();
         ShowTab(cut, tab);
 
         Button(cut, "Rotate key").Click();
         cut.Find("#mark-key-compromised").Change(true);
-
         Assert.Contains("cannot be undone", cut.Find(".modal-body .alert-danger").TextContent);
         cut.Find(".modal-footer .btn-warning").Click();
 
-        Assert.Equal([keyType], _compromisedRotations);
+        Assert.Empty(_compromisedRotations);
+        Assert.Empty(_plainRotations);
+        Assert.Contains("cannot be undone", cut.Find(".modal-body .alert-danger").TextContent);
+        cut.Find(".modal-body input[type=password]").Change("pw");
+        Button(cut, "Rotate and mark compromised").Click();
+
+        Assert.Equal([(keyType, "pw")], _compromisedRotations);
         Assert.Empty(_plainRotations);
         Assert.Contains("old key marked compromised", cut.Markup);
+    }
+
+    [Fact]
+    public void Rotate_ShowsTheRefusal_ForAWrongPassword()
+    {
+        _compromiseResult = new CompromiseAccountKeyResult(
+            CompromiseAccountKeyResultCode.InvalidCurrentPasswordError,
+            "Current password is incorrect"
+        );
+        var cut = RenderPanel();
+
+        Button(cut, "Rotate key").Click();
+        cut.Find("#mark-key-compromised").Change(true);
+        cut.Find(".modal-footer .btn-warning").Click();
+        cut.Find(".modal-body input[type=password]").Change("wrong");
+        Button(cut, "Rotate and mark compromised").Click();
+
+        Assert.Contains("Current password is incorrect", cut.Find(".alert-danger").TextContent);
+        Assert.DoesNotContain("old key marked compromised", cut.Markup);
+    }
+
+    [Fact]
+    public void Rotate_ExplainsWhatToDo_ForAUserWithNoWayToProveThemselves()
+    {
+        var cut = RenderPanel(canProveIdentity: false);
+
+        Button(cut, "Rotate key").Click();
+        cut.Find("#mark-key-compromised").Change(true);
+        cut.Find(".modal-footer .btn-warning").Click();
+
+        Assert.Empty(cut.FindAll(".modal-body"));
+        Assert.Contains("Set a password on your profile", cut.Find(".alert-danger").TextContent);
+        Assert.Empty(_compromisedRotations);
+    }
+
+    [Fact]
+    public void OlderVersions_ListsEachUnmarkedOlderVersion_AndNeverTheCurrentOne()
+    {
+        var signing = new Mock<IIamAsymmetricSignatureProvider>();
+        signing.Setup(x => x.CompromisedVersions).Returns([2]);
+        signing.Setup(x => x.Version).Returns(4);
+        var cut = RenderPanel(signing: signing.Object);
+
+        ShowTab(cut, 2);
+
+        Assert.Equal(
+            ["Mark version 1 compromised", "Mark version 3 compromised"],
+            cut.FindAll("button")
+                .Select(b => b.TextContent.Trim())
+                .Where(t => t.StartsWith("Mark version"))
+        );
+    }
+
+    [Fact]
+    public void OlderVersions_AreAbsent_ForAKeyOnItsFirstVersion()
+    {
+        var signing = new Mock<IIamAsymmetricSignatureProvider>();
+        signing.Setup(x => x.Version).Returns(1);
+        var cut = RenderPanel(signing: signing.Object);
+
+        ShowTab(cut, 2);
+
+        Assert.DoesNotContain("Mark version", cut.Markup);
+    }
+
+    [Fact]
+    public void OlderVersions_AreAbsent_WithoutTheCallback()
+    {
+        var signing = new Mock<IIamAsymmetricSignatureProvider>();
+        signing.Setup(x => x.Version).Returns(3);
+        var cut = RenderPanel(reveal: false, signing: signing.Object);
+
+        ShowTab(cut, 2);
+
+        Assert.DoesNotContain("Mark version", cut.Markup);
+    }
+
+    [Fact]
+    public void MarkVersion_MarksThatVersion_OnlyAfterWarningAndProof()
+    {
+        var signing = new Mock<IIamAsymmetricSignatureProvider>();
+        signing.Setup(x => x.Version).Returns(3);
+        var cut = RenderPanel(signing: signing.Object);
+        ShowTab(cut, 2);
+
+        Button(cut, "Mark version 2 compromised").Click();
+
+        Assert.Empty(_markedVersions);
+        Assert.Contains("cannot be undone", cut.Find(".modal-body .alert-danger").TextContent);
+        cut.Find(".modal-body input[type=password]").Change("pw");
+        Button(cut, "Mark compromised").Click();
+
+        Assert.Equal([(KeyType.AsymmetricSignature, 2, "pw")], _markedVersions);
+        Assert.Contains("Version 2 marked compromised.", cut.Markup);
     }
 
     [Fact]

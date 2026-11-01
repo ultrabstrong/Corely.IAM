@@ -205,13 +205,64 @@ public class BearerApiTests : FunctionalTestBase
             Assert.Equal(SignInResultCode.Success, signIn.ResultCode);
 
             var modification = services.GetRequiredService<IModificationService>();
-            var request = new RotateAccountKeyRequest(AccountId, KeyType.AsymmetricSignature);
-            var rotated = markCompromised
-                ? await modification.RotateCompromisedAccountKeyAsync(request)
-                : await modification.RotateAccountKeyAsync(request);
+            if (markCompromised)
+            {
+                var compromised = await modification.RotateCompromisedAccountKeyAsync(
+                    new RotateCompromisedAccountKeyRequest(
+                        AccountId,
+                        KeyType.AsymmetricSignature,
+                        new AccountKeyProof(SeedData.OwnerPassword, null)
+                    )
+                );
+                Assert.Equal(CompromiseAccountKeyResultCode.Success, compromised.ResultCode);
+                return true;
+            }
+
+            var rotated = await modification.RotateAccountKeyAsync(
+                new RotateAccountKeyRequest(AccountId, KeyType.AsymmetricSignature)
+            );
             Assert.Equal(ModifyResultCode.Success, rotated.ResultCode);
             return true;
         });
+
+    [Fact]
+    public async Task AccessToken_StopsWorking_WhenAnOlderSigningVersionIsMarkedCompromised()
+    {
+        var (_, key) = await CreateKeyWithOwnerRoleAsync();
+        var pair = await ExchangeAsync(key);
+        await RotateSigningKeyAsync(markCompromised: false);
+
+        await Factory.WithScopeAsync(async services =>
+        {
+            var signIn = await services
+                .GetRequiredService<IAuthenticationService>()
+                .SignInAsync(
+                    new SignInRequest(
+                        SeedData.OwnerUsername,
+                        SeedData.OwnerPassword,
+                        "seed-device",
+                        AccountId
+                    )
+                );
+            Assert.Equal(SignInResultCode.Success, signIn.ResultCode);
+
+            var marked = await services
+                .GetRequiredService<IModificationService>()
+                .MarkAccountKeyCompromisedAsync(
+                    new MarkAccountKeyCompromisedRequest(
+                        AccountId,
+                        KeyType.AsymmetricSignature,
+                        1,
+                        new AccountKeyProof(SeedData.OwnerPassword, null)
+                    )
+                );
+            Assert.Equal(CompromiseAccountKeyResultCode.Success, marked.ResultCode);
+            return true;
+        });
+
+        using var after = await SendAsync(HttpMethod.Get, "/api/me", pair.AuthToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, after.StatusCode);
+    }
 
     [Fact]
     public async Task SignOut_EndsTheBearerSession()

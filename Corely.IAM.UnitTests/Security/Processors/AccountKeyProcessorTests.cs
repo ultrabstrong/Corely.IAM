@@ -30,17 +30,7 @@ public class AccountKeyProcessorTests
     {
         _securityProvider = _serviceFactory.GetRequiredService<ISecurityProvider>();
         _mockReauthentication
-            .Setup(x =>
-                x.VerifyIdentityAsync(
-                    It.IsAny<Guid>(),
-                    It.IsAny<string?>(),
-                    It.IsAny<string?>(),
-                    It.IsAny<string?>()
-                )
-            )
-            .ReturnsAsync(ReauthenticationResult.Succeeded);
-        _mockReauthentication
-            .Setup(x => x.VerifyTotpCodeAsync(It.IsAny<Guid>(), It.IsAny<string?>()))
+            .Setup(x => x.VerifyAccountKeyProofAsync(It.IsAny<Guid>(), It.IsAny<AccountKeyProof>()))
             .ReturnsAsync(ReauthenticationResult.Succeeded);
         _processor = new AccountKeyProcessor(
             _serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>(),
@@ -227,10 +217,13 @@ public class AccountKeyProcessorTests
         Assert.False(string.IsNullOrWhiteSpace(result.ProviderName));
         Assert.NotEmpty(Convert.FromBase64String(result.ReadKey()!));
         _mockReauthentication.Verify(
-            x => x.VerifyIdentityAsync(_userId, PASSWORD, null, null),
+            x =>
+                x.VerifyAccountKeyProofAsync(
+                    _userId,
+                    It.Is<AccountKeyProof>(p => p.CurrentPassword == PASSWORD && p.TotpCode == TOTP)
+                ),
             Times.Once
         );
-        _mockReauthentication.Verify(x => x.VerifyTotpCodeAsync(_userId, TOTP), Times.Once);
     }
 
     [Theory]
@@ -253,14 +246,7 @@ public class AccountKeyProcessorTests
     {
         var accountId = await CreateAccountAsync();
         _mockReauthentication
-            .Setup(x =>
-                x.VerifyIdentityAsync(
-                    It.IsAny<Guid>(),
-                    It.IsAny<string?>(),
-                    It.IsAny<string?>(),
-                    It.IsAny<string?>()
-                )
-            )
+            .Setup(x => x.VerifyAccountKeyProofAsync(It.IsAny<Guid>(), It.IsAny<AccountKeyProof>()))
             .ReturnsAsync(
                 new ReauthenticationResult((ReauthenticationResultCode)reauthentication, "no")
             );
@@ -271,10 +257,6 @@ public class AccountKeyProcessorTests
 
         Assert.Equal(expected, result.ResultCode);
         Assert.Null(result.ReadKey());
-        _mockReauthentication.Verify(
-            x => x.VerifyTotpCodeAsync(It.IsAny<Guid>(), It.IsAny<string?>()),
-            Times.Never
-        );
     }
 
     [Theory]
@@ -293,7 +275,7 @@ public class AccountKeyProcessorTests
     {
         var accountId = await CreateAccountAsync();
         _mockReauthentication
-            .Setup(x => x.VerifyTotpCodeAsync(It.IsAny<Guid>(), It.IsAny<string?>()))
+            .Setup(x => x.VerifyAccountKeyProofAsync(It.IsAny<Guid>(), It.IsAny<AccountKeyProof>()))
             .ReturnsAsync(
                 new ReauthenticationResult((ReauthenticationResultCode)reauthentication, "no")
             );
@@ -334,7 +316,15 @@ public class AccountKeyProcessorTests
         );
 
         _mockReauthentication.Verify(
-            x => x.VerifyIdentityAsync(_userId, null, "id-token", "nonce"),
+            x =>
+                x.VerifyAccountKeyProofAsync(
+                    _userId,
+                    It.Is<AccountKeyProof>(p =>
+                        p.CurrentPassword == null
+                        && p.GoogleIdToken == "id-token"
+                        && p.GoogleNonce == "nonce"
+                    )
+                ),
             Times.Once
         );
     }
@@ -359,14 +349,7 @@ public class AccountKeyProcessorTests
     {
         var accountId = await CreateAccountAsync();
         _mockReauthentication
-            .Setup(x =>
-                x.VerifyIdentityAsync(
-                    It.IsAny<Guid>(),
-                    It.IsAny<string?>(),
-                    It.IsAny<string?>(),
-                    It.IsAny<string?>()
-                )
-            )
+            .Setup(x => x.VerifyAccountKeyProofAsync(It.IsAny<Guid>(), It.IsAny<AccountKeyProof>()))
             .ReturnsAsync(
                 new ReauthenticationResult((ReauthenticationResultCode)reauthentication, "no")
             );

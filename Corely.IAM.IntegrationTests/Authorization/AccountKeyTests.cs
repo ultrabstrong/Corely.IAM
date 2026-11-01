@@ -10,6 +10,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
+using Corely.IAM.Users.Entities;
 using Corely.Security.Encryption.Providers;
 using Corely.Security.KeyStore;
 using Microsoft.EntityFrameworkCore;
@@ -238,9 +239,13 @@ public class AccountKeyTests : IAsyncLifetime
                 var result = await services
                     .GetRequiredService<IModificationService>()
                     .RotateCompromisedAccountKeyAsync(
-                        new RotateAccountKeyRequest(_scenario.AccountId, keyType)
+                        new RotateCompromisedAccountKeyRequest(
+                            _scenario.AccountId,
+                            keyType,
+                            new AccountKeyProof(IamScenario.Password, null)
+                        )
                     );
-                Assert.Equal(ModifyResultCode.Success, result.ResultCode);
+                Assert.Equal(CompromiseAccountKeyResultCode.Success, result.ResultCode);
                 return true;
             }
         );
@@ -338,6 +343,213 @@ public class AccountKeyTests : IAsyncLifetime
         Assert.EndsWith("-enc-2", encryption.KeyId);
     }
 
+    private Task<CompromiseAccountKeyResult> MarkVersionAsync(
+        KeyType keyType,
+        int version,
+        string password = IamScenario.Password
+    ) =>
+        _scenario.ActAsAsync(
+            _scenario.OwnerUsername,
+            _scenario.AccountId,
+            services =>
+                services
+                    .GetRequiredService<IModificationService>()
+                    .MarkAccountKeyCompromisedAsync(
+                        new MarkAccountKeyCompromisedRequest(
+                            _scenario.AccountId,
+                            keyType,
+                            version,
+                            new AccountKeyProof(password, null)
+                        )
+                    )
+        );
+
+    [Fact]
+    public async Task MarkingAnOlderSigningVersion_StopsVerifying_AndLeavesTheKeySet()
+    {
+        var signature = (await SigningProviderAsync()).Sign("a payload");
+        await RotateAsync(KeyType.AsymmetricSignature);
+        await RotateAsync(KeyType.AsymmetricSignature);
+        Assert.True((await SigningProviderAsync()).Verify("a payload", signature));
+
+        var result = await MarkVersionAsync(KeyType.AsymmetricSignature, 1);
+
+        Assert.Equal(CompromiseAccountKeyResultCode.Success, result.ResultCode);
+        var provider = await SigningProviderAsync();
+        Assert.False(provider.Verify("a payload", signature));
+        Assert.Equal([1], provider.CompromisedVersions);
+        Assert.Equal(3, provider.Version);
+        Assert.Equal(
+            ["-sig-3", "-sig-2"],
+            (await GetKeySetAsync())
+                .Keys.Where(k => k.Use == "sig")
+                .Select(k => k.KeyId[k.KeyId.IndexOf("-sig-", StringComparison.Ordinal)..])
+        );
+    }
+
+    [Fact]
+    public async Task MarkingAnOlderSymmetricVersion_StillDecryptsExistingData()
+    {
+        var ciphertext = await _scenario.AsSystemAsync(async services =>
+            (
+                await services
+                    .GetRequiredService<IRetrievalService>()
+                    .GetAccountSymmetricEncryptionProviderAsync(_scenario.AccountId)
+            ).Item!.Encrypt("old data")
+        );
+        await RotateAsync(KeyType.SymmetricEncryption);
+
+        var result = await MarkVersionAsync(KeyType.SymmetricEncryption, 1);
+
+        Assert.Equal(CompromiseAccountKeyResultCode.Success, result.ResultCode);
+        var provider = await _scenario.AsSystemAsync(async services =>
+            (
+                await services
+                    .GetRequiredService<IRetrievalService>()
+                    .GetAccountSymmetricEncryptionProviderAsync(_scenario.AccountId)
+            ).Item!
+        );
+        Assert.Equal("old data", provider.Decrypt(ciphertext));
+        Assert.Equal([1], provider.CompromisedVersions);
+    }
+
+    [Fact]
+    public async Task MarkingTheCurrentVersion_IsRefused_AndTheKeyStaysUsable()
+    {
+        var result = await MarkVersionAsync(KeyType.AsymmetricSignature, 1);
+
+        Assert.Equal(CompromiseAccountKeyResultCode.CurrentVersionError, result.ResultCode);
+        var provider = await SigningProviderAsync();
+        Assert.Empty(provider.CompromisedVersions);
+        Assert.True(provider.Verify("a payload", provider.Sign("a payload")));
+    }
+
+    [Fact]
+    public async Task MarkingWithAWrongPassword_ChangesNothing_AndCountsTowardLockout()
+    {
+        var signature = (await SigningProviderAsync()).Sign("a payload");
+        await RotateAsync(KeyType.AsymmetricSignature);
+
+        var result = await MarkVersionAsync(KeyType.AsymmetricSignature, 1, "not-the-password");
+
+        Assert.Equal(CompromiseAccountKeyResultCode.InvalidCurrentPasswordError, result.ResultCode);
+        Assert.True((await SigningProviderAsync()).Verify("a payload", signature));
+        Assert.Equal(1, await FailedLoginsOfOwnerAsync());
+    }
+
+    [Fact]
+    public async Task RotatingCompromisedWithAWrongPassword_ChangesNothing_AndCountsTowardLockout()
+    {
+        var result = await _scenario.ActAsAsync(
+            _scenario.OwnerUsername,
+            _scenario.AccountId,
+            services =>
+                services
+                    .GetRequiredService<IModificationService>()
+                    .RotateCompromisedAccountKeyAsync(
+                        new RotateCompromisedAccountKeyRequest(
+                            _scenario.AccountId,
+                            KeyType.AsymmetricSignature,
+                            new AccountKeyProof("not-the-password", null)
+                        )
+                    )
+        );
+
+        Assert.Equal(CompromiseAccountKeyResultCode.InvalidCurrentPasswordError, result.ResultCode);
+        Assert.Equal(1, (await SigningProviderAsync()).Version);
+        Assert.Equal(1, await FailedLoginsOfOwnerAsync());
+    }
+
+    [Fact]
+    public async Task Marking_NeedsTheSecondFactor_ForAUserWhoHasIt()
+    {
+        await RotateAsync(KeyType.AsymmetricSignature);
+        await _scenario.EnrollTwoFactorAsync(_scenario.OwnerUsername);
+
+        var result = await MarkVersionAsync(KeyType.AsymmetricSignature, 1);
+
+        Assert.Equal(CompromiseAccountKeyResultCode.TotpRequiredError, result.ResultCode);
+        Assert.Empty((await SigningProviderAsync()).CompromisedVersions);
+    }
+
+    [Fact]
+    public async Task Marking_IsRefused_ForAMemberWhoCannotUpdateTheAccount()
+    {
+        await RotateAsync(KeyType.AsymmetricSignature);
+
+        var result = await _scenario.ActAsAsync(
+            _scenario.DirectMemberUsername,
+            _scenario.AccountId,
+            services =>
+                services
+                    .GetRequiredService<IModificationService>()
+                    .MarkAccountKeyCompromisedAsync(
+                        new MarkAccountKeyCompromisedRequest(
+                            _scenario.AccountId,
+                            KeyType.AsymmetricSignature,
+                            1,
+                            new AccountKeyProof(IamScenario.Password, null)
+                        )
+                    )
+        );
+
+        Assert.Equal(CompromiseAccountKeyResultCode.UnauthorizedError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task Marking_IsRefused_ForSystemContext()
+    {
+        await RotateAsync(KeyType.AsymmetricSignature);
+
+        var result = await _scenario.AsSystemAsync(services =>
+            services
+                .GetRequiredService<IModificationService>()
+                .MarkAccountKeyCompromisedAsync(
+                    new MarkAccountKeyCompromisedRequest(
+                        _scenario.AccountId,
+                        KeyType.AsymmetricSignature,
+                        1,
+                        new AccountKeyProof(IamScenario.Password, null)
+                    )
+                )
+        );
+
+        Assert.Equal(CompromiseAccountKeyResultCode.UnauthorizedError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task MarkingAnOlderVersion_IsAlwaysAudited_RefusalsIncluded()
+    {
+        await RotateAsync(KeyType.AsymmetricSignature);
+        await MarkVersionAsync(KeyType.AsymmetricSignature, 1, "not-the-password");
+        await MarkVersionAsync(KeyType.AsymmetricSignature, 1);
+
+        var codes = await _scenario.AsSystemAsync(services =>
+            services
+                .GetRequiredService<IamDbContext>()
+                .Set<AuditEntryEntity>()
+                .Where(e =>
+                    e.Operation == nameof(IModificationService.MarkAccountKeyCompromisedAsync)
+                    && e.AccountId == _scenario.AccountId
+                )
+                .Select(e => e.ResultCode)
+                .ToListAsync()
+        );
+
+        Assert.Contains(nameof(CompromiseAccountKeyResultCode.Success), codes);
+        Assert.Contains(nameof(CompromiseAccountKeyResultCode.InvalidCurrentPasswordError), codes);
+    }
+
+    private Task<int> FailedLoginsOfOwnerAsync() =>
+        _scenario.AsSystemAsync(services =>
+            services
+                .GetRequiredService<IamDbContext>()
+                .Set<UserEntity>()
+                .Where(u => u.Id == _scenario.OwnerUserId)
+                .Select(u => u.FailedLoginsSinceLastSuccess)
+                .SingleAsync()
+        );
+
     [Fact]
     public async Task MarkingCompromised_IsAlwaysAudited_EvenThoughTheAccountRecordsNoExecute()
     {
@@ -373,7 +585,7 @@ public class AccountKeyTests : IAsyncLifetime
                 .Select(e => e.ResultCode)
                 .ToListAsync()
         );
-        Assert.Equal([nameof(ModifyResultCode.Success)], codes);
+        Assert.Equal([nameof(CompromiseAccountKeyResultCode.Success)], codes);
     }
 
     [Fact]

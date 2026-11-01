@@ -46,6 +46,7 @@
                     <small class="text-muted ms-2">@SymProvider.ProviderDescription</small>
                 </div>
                 @CompromisedVersions(KeyType.SymmetricEncryption, SymProvider.CompromisedVersions)
+                @OlderVersions(KeyType.SymmetricEncryption, SymProvider.Version, SymProvider.CompromisedVersions)
             }
             <div class="mb-3">
                 <label class="form-label fw-semibold">Input</label>
@@ -90,6 +91,7 @@
                     <small class="text-muted ms-2">@AsymProvider.ProviderDescription</small>
                 </div>
                 @CompromisedVersions(KeyType.AsymmetricEncryption, AsymProvider.CompromisedVersions)
+                @OlderVersions(KeyType.AsymmetricEncryption, AsymProvider.Version, AsymProvider.CompromisedVersions)
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Public Key</label>
                     <div class="d-flex align-items-start gap-1">
@@ -143,6 +145,7 @@
                     <small class="text-muted ms-2">@SigProvider.ProviderDescription</small>
                 </div>
                 @CompromisedVersions(KeyType.AsymmetricSignature, SigProvider.CompromisedVersions)
+                @OlderVersions(KeyType.AsymmetricSignature, SigProvider.Version, SigProvider.CompromisedVersions)
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Public Key</label>
                     <div class="d-flex align-items-start gap-1">
@@ -187,8 +190,8 @@
 
 <ConfirmModal @ref="_rotateModal" Title="Rotate Key" Message="@_rotateConfirmMessage" ConfirmText="Rotate" Type="ConfirmModalType.Warning" OnConfirm="RotateAsync" ChildContent="RotateModalContent" />
 
-<FormModal @ref="_revealModal" Title="@_revealKeyType.CopyKeyLabel()" ConfirmText="Show key" OnConfirm="RevealAsync">
-    @KeyWarning(_revealKeyType)
+<FormModal @ref="_proofModal" Title="@_proofTitle" ConfirmText="@_proofConfirmText" OnConfirm="SubmitProofAsync">
+    @_proofWarning
     @if (RevealGoogleClientId == null)
     {
         <div class="mb-3">
@@ -231,7 +234,10 @@
     public Func<KeyType, Task<ModifyResult>>? RotateKeyAsync { get; set; }
 
     [Parameter]
-    public Func<KeyType, Task<ModifyResult>>? RotateCompromisedKeyAsync { get; set; }
+    public Func<KeyType, string?, string?, string?, string?, Task<CompromiseAccountKeyResult>>? RotateCompromisedKeyAsync { get; set; }
+
+    [Parameter]
+    public Func<KeyType, int, string?, string?, string?, string?, Task<CompromiseAccountKeyResult>>? MarkKeyCompromisedAsync { get; set; }
 
     [Parameter]
     public Func<KeyType, string?, string?, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyAsync { get; set; }
@@ -245,10 +251,13 @@
     private const int KEY_VISIBLE_SECONDS = 60;
     private const string GOOGLE_BUTTON_ID = "google-reauth-button";
     private const string NO_PROOF_MESSAGE =
-        "Copying a key needs proof that it is you, and you have no way to give it yet. Set a password on your profile, then try again.";
+        "This needs proof that it is you, and you have no way to give it yet. Set a password on your profile, then try again.";
 
-    private FormModal _revealModal = null!;
-    private KeyType _revealKeyType;
+    private FormModal _proofModal = null!;
+    private string _proofTitle = string.Empty;
+    private string _proofConfirmText = string.Empty;
+    private RenderFragment? _proofWarning;
+    private Func<string?, string?, string?, string?, Task>? _proofAction;
     private string _revealPassword = string.Empty;
     private string? _revealTotpCode;
     private string? _revealGoogleIdToken;
@@ -278,6 +287,23 @@
             @if (_markCompromised)
             {
                 <div class="alert alert-danger py-2 mt-2 mb-0">@_rotateKeyType.CompromiseWarning()</div>
+            }
+        </text>;
+
+    private static RenderFragment CompromiseWarning(KeyType keyType) =>
+        @<div class="alert alert-danger py-2">@keyType.CompromiseWarning()</div>;
+
+    private RenderFragment OlderVersions(KeyType keyType, int currentVersion, IReadOnlyList<int>? compromised) =>
+        @<text>
+            @if (MarkKeyCompromisedAsync != null && Enumerable.Range(1, Math.Max(currentVersion - 1, 0)).Except(compromised ?? []).ToList() is { Count: > 0 } older)
+            {
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <small class="text-muted">Older versions:</small>
+                    @foreach (var version in older)
+                    {
+                        <button class="btn btn-outline-danger btn-sm" @onclick="() => ConfirmMarkVersion(keyType, version)" disabled="@_busy">Mark version @version compromised</button>
+                    }
+                </div>
             }
         </text>;
 
@@ -337,9 +363,28 @@
         ClearRevealedKey();
     }
 
-    private void ConfirmReveal(KeyType keyType)
+    private void ConfirmReveal(KeyType keyType) =>
+        AskForProof(
+            keyType.CopyKeyLabel(),
+            "Show key",
+            KeyWarning(keyType),
+            (password, totpCode, googleIdToken, googleNonce) => RevealAsync(keyType, password, totpCode, googleIdToken, googleNonce)
+        );
+
+    private void ConfirmMarkVersion(KeyType keyType, int version) =>
+        AskForProof(
+            $"Mark version {version} compromised",
+            "Mark compromised",
+            CompromiseWarning(keyType),
+            (password, totpCode, googleIdToken, googleNonce) => MarkVersionAsync(keyType, version, password, totpCode, googleIdToken, googleNonce)
+        );
+
+    private void AskForProof(string title, string confirmText, RenderFragment warning, Func<string?, string?, string?, string?, Task> action)
     {
-        _revealKeyType = keyType;
+        _proofTitle = title;
+        _proofConfirmText = confirmText;
+        _proofWarning = warning;
+        _proofAction = action;
         _revealPassword = string.Empty;
         _revealTotpCode = null;
         _revealGoogleIdToken = null;
@@ -353,7 +398,7 @@
 
         _revealGoogleNonce = RevealGoogleClientId == null ? null : Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
         _renderGoogleButton = RevealGoogleClientId != null;
-        _revealModal.Show();
+        _proofModal.Show();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -391,9 +436,10 @@
         StateHasChanged();
     }
 
-    private async Task RevealAsync()
+    private async Task SubmitProofAsync()
     {
-        if (RevealKeyAsync == null) return;
+        if (_proofAction == null) return;
+        var action = _proofAction;
         var password = _revealPassword;
         var totpCode = _revealTotpCode;
         var googleIdToken = _revealGoogleIdToken;
@@ -402,15 +448,21 @@
         _revealTotpCode = null;
         _revealGoogleIdToken = null;
         _revealGoogleNonce = null;
+        _proofAction = null;
+        await action(password, totpCode, googleIdToken, googleNonce);
+    }
 
-        var result = await RevealKeyAsync(_revealKeyType, password, totpCode, googleIdToken, googleNonce);
+    private async Task RevealAsync(KeyType keyType, string? password, string? totpCode, string? googleIdToken, string? googleNonce)
+    {
+        if (RevealKeyAsync == null) return;
+        var result = await RevealKeyAsync(keyType, password, totpCode, googleIdToken, googleNonce);
         if (result.ResultCode != RevealAccountKeyResultCode.Success)
         {
             _revealError = result.Message;
             return;
         }
 
-        _revealedKeyType = _revealKeyType;
+        _revealedKeyType = keyType;
         _revealedKey = result.ReadKey();
         _revealedProviderName = result.ProviderName;
         _revealedVersion = result.Version;
@@ -469,17 +521,49 @@
 
     private async Task RotateAsync()
     {
-        var markCompromised = _markCompromised;
-        _markCompromised = false;
-        var rotate = markCompromised ? RotateCompromisedKeyAsync : RotateKeyAsync;
-        if (rotate == null) return;
-        var result = await rotate(_rotateKeyType);
+        if (_markCompromised)
+        {
+            _markCompromised = false;
+            var keyType = _rotateKeyType;
+            AskForProof(
+                "Rotate and mark compromised",
+                "Rotate and mark compromised",
+                CompromiseWarning(keyType),
+                (password, totpCode, googleIdToken, googleNonce) => RotateCompromisedAsync(keyType, password, totpCode, googleIdToken, googleNonce)
+            );
+            return;
+        }
+
+        if (RotateKeyAsync == null) return;
+        var result = await RotateKeyAsync(_rotateKeyType);
         _rotateFailed = result.ResultCode != ModifyResultCode.Success;
         _rotateResult = _rotateFailed
             ? $"Rotation failed: {result.Message}"
-            : markCompromised
-                ? "Key rotated and the old key marked compromised. Everything below now uses the new key."
-                : "Key rotated. Everything below now uses the new key.";
+            : "Key rotated. Everything below now uses the new key.";
+    }
+
+    private async Task RotateCompromisedAsync(KeyType keyType, string? password, string? totpCode, string? googleIdToken, string? googleNonce)
+    {
+        if (RotateCompromisedKeyAsync == null) return;
+        ReportCompromise(
+            await RotateCompromisedKeyAsync(keyType, password, totpCode, googleIdToken, googleNonce),
+            "Key rotated and the old key marked compromised. Everything below now uses the new key."
+        );
+    }
+
+    private async Task MarkVersionAsync(KeyType keyType, int version, string? password, string? totpCode, string? googleIdToken, string? googleNonce)
+    {
+        if (MarkKeyCompromisedAsync == null) return;
+        ReportCompromise(
+            await MarkKeyCompromisedAsync(keyType, version, password, totpCode, googleIdToken, googleNonce),
+            $"Version {version} marked compromised."
+        );
+    }
+
+    private void ReportCompromise(CompromiseAccountKeyResult result, string success)
+    {
+        _rotateFailed = result.ResultCode != CompromiseAccountKeyResultCode.Success;
+        _rotateResult = _rotateFailed ? result.Message : success;
     }
 
     private int _activeKeyTab;

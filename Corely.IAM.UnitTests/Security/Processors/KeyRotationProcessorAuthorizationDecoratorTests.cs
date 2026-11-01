@@ -105,4 +105,96 @@ public class KeyRotationProcessorAuthorizationDecoratorTests
             Times.Never
         );
     }
+
+    private void AllowCompromising(Guid accountId)
+    {
+        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(true);
+        _mockAuthorizationProvider.Setup(x => x.HasAccountContext(accountId)).Returns(true);
+        _mockAuthorizationProvider
+            .Setup(x => x.IsAuthorizedAsync(AuthAction.Update, Account.RESOURCE_TYPE, accountId))
+            .ReturnsAsync(true);
+    }
+
+    [Fact]
+    public async Task CompromiseCalls_DelegateToInner_ForAUserWhoCanUpdateTheAccount()
+    {
+        var accountId = Guid.CreateVersion7();
+        AllowCompromising(accountId);
+        var proof = new AccountKeyProof("password", null);
+        var success = new CompromiseAccountKeyResult(
+            CompromiseAccountKeyResultCode.Success,
+            string.Empty
+        );
+        _mockInnerProcessor
+            .Setup(x =>
+                x.MarkAccountKeyCompromisedAsync(It.IsAny<MarkAccountKeyCompromisedRequest>())
+            )
+            .ReturnsAsync(success);
+        _mockInnerProcessor
+            .Setup(x =>
+                x.RotateCompromisedAccountKeyAsync(It.IsAny<RotateCompromisedAccountKeyRequest>())
+            )
+            .ReturnsAsync(success);
+
+        Assert.Same(
+            success,
+            await _decorator.MarkAccountKeyCompromisedAsync(
+                new MarkAccountKeyCompromisedRequest(
+                    accountId,
+                    KeyType.SymmetricEncryption,
+                    1,
+                    proof
+                )
+            )
+        );
+        Assert.Same(
+            success,
+            await _decorator.RotateCompromisedAccountKeyAsync(
+                new RotateCompromisedAccountKeyRequest(
+                    accountId,
+                    KeyType.SymmetricEncryption,
+                    proof
+                )
+            )
+        );
+    }
+
+    public static TheoryData<string> Denials => ["system or api key", "other account", "no update"];
+
+    [Theory]
+    [MemberData(nameof(Denials))]
+    public async Task CompromiseCalls_Refuse_WithoutAUserWhoCanUpdateTheAccount(string denial)
+    {
+        var accountId = Guid.CreateVersion7();
+        AllowCompromising(accountId);
+        if (denial == "system or api key")
+            _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(false);
+        if (denial == "other account")
+            _mockAuthorizationProvider.Setup(x => x.HasAccountContext(accountId)).Returns(false);
+        if (denial == "no update")
+            _mockAuthorizationProvider
+                .Setup(x =>
+                    x.IsAuthorizedAsync(AuthAction.Update, Account.RESOURCE_TYPE, accountId)
+                )
+                .ReturnsAsync(false);
+        var proof = new AccountKeyProof("password", null);
+
+        var marked = await _decorator.MarkAccountKeyCompromisedAsync(
+            new MarkAccountKeyCompromisedRequest(accountId, KeyType.SymmetricEncryption, 1, proof)
+        );
+        var rotated = await _decorator.RotateCompromisedAccountKeyAsync(
+            new RotateCompromisedAccountKeyRequest(accountId, KeyType.SymmetricEncryption, proof)
+        );
+
+        Assert.Equal(CompromiseAccountKeyResultCode.UnauthorizedError, marked.ResultCode);
+        Assert.Equal(CompromiseAccountKeyResultCode.UnauthorizedError, rotated.ResultCode);
+        _mockInnerProcessor.Verify(
+            x => x.MarkAccountKeyCompromisedAsync(It.IsAny<MarkAccountKeyCompromisedRequest>()),
+            Times.Never
+        );
+        _mockInnerProcessor.Verify(
+            x => x.RotateCompromisedAccountKeyAsync(It.IsAny<RotateCompromisedAccountKeyRequest>()),
+            Times.Never
+        );
+    }
 }

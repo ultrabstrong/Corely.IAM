@@ -1,10 +1,12 @@
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.DataAccess.Interfaces.UnitOfWork;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Models.Extensions;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Providers;
@@ -23,7 +25,9 @@ internal class KeyRotationProcessor(
     ISecurityProvider securityProvider,
     IUserContextProvider userContextProvider,
     ILogger<KeyRotationProcessor> logger,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IReauthenticationProvider reauthenticationProvider,
+    IUnitOfWorkProvider uowProvider
 ) : IKeyRotationProcessor
 {
     private readonly IReadonlyRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
@@ -46,12 +50,179 @@ internal class KeyRotationProcessor(
     );
     private readonly ILogger<KeyRotationProcessor> _logger = logger.ThrowIfNull(nameof(logger));
     private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
+    private readonly IReauthenticationProvider _reauthenticationProvider =
+        reauthenticationProvider.ThrowIfNull(nameof(reauthenticationProvider));
+    private readonly IUnitOfWorkProvider _uowProvider = uowProvider.ThrowIfNull(
+        nameof(uowProvider)
+    );
 
     public Task<ModifyResult> RotateAccountKeyAsync(RotateAccountKeyRequest request) =>
         RotateAsync(request, markOldKeyCompromised: false);
 
-    public Task<ModifyResult> RotateCompromisedAccountKeyAsync(RotateAccountKeyRequest request) =>
-        RotateAsync(request, markOldKeyCompromised: true);
+    public async Task<CompromiseAccountKeyResult> RotateCompromisedAccountKeyAsync(
+        RotateCompromisedAccountKeyRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        if (await RefusedProofAsync(request.Proof) is { } refused)
+            return refused;
+
+        var uowSucceeded = false;
+        try
+        {
+            await _uowProvider.BeginAsync();
+            var result = await RotateAsync(
+                new RotateAccountKeyRequest(request.AccountId, request.KeyType),
+                markOldKeyCompromised: true
+            );
+            if (result.ResultCode != ModifyResultCode.Success)
+            {
+                return new CompromiseAccountKeyResult(
+                    result.ResultCode == ModifyResultCode.NotFoundError
+                        ? CompromiseAccountKeyResultCode.NotFoundError
+                        : CompromiseAccountKeyResultCode.ValidationError,
+                    result.Message
+                );
+            }
+
+            await _uowProvider.CommitAsync();
+            uowSucceeded = true;
+            return new CompromiseAccountKeyResult(
+                CompromiseAccountKeyResultCode.Success,
+                string.Empty
+            );
+        }
+        finally
+        {
+            if (!uowSucceeded)
+            {
+                await _uowProvider.RollbackAsync();
+            }
+        }
+    }
+
+    public async Task<CompromiseAccountKeyResult> MarkAccountKeyCompromisedAsync(
+        MarkAccountKeyCompromisedRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        if (await RefusedProofAsync(request.Proof) is { } refused)
+            return refused;
+
+        if (!Enum.IsDefined(request.KeyType))
+        {
+            return new CompromiseAccountKeyResult(
+                CompromiseAccountKeyResultCode.ValidationError,
+                $"Unknown key type {request.KeyType}"
+            );
+        }
+
+        var account = await _accountRepo.GetAsync(
+            a => a.Id == request.AccountId,
+            include: q => q.Include(a => a.SymmetricKeys).Include(a => a.AsymmetricKeys)
+        );
+
+        var result =
+            request.KeyType == KeyType.SymmetricEncryption
+                ? await MarkSymmetricVersionAsync(account, request.Version)
+                : await MarkAsymmetricVersionAsync(account, request.KeyType, request.Version);
+
+        _logger.LogInformation(
+            "Marking version {Version} of the {KeyType} key of account {AccountId} compromised: {ResultCode}",
+            request.Version,
+            request.KeyType,
+            request.AccountId,
+            result.ResultCode
+        );
+        return result;
+    }
+
+    private async Task<CompromiseAccountKeyResult?> RefusedProofAsync(AccountKeyProof proof)
+    {
+        var userId =
+            _userContextProvider.GetUserContext()?.User?.Id
+            ?? throw new InvalidOperationException(
+                "A non-system user context is required to mark a key compromised."
+            );
+
+        var result = await _reauthenticationProvider.VerifyAccountKeyProofAsync(userId, proof);
+        return result.ResultCode == ReauthenticationResultCode.Success
+            ? null
+            : new CompromiseAccountKeyResult(
+                result.ResultCode.ToCompromiseAccountKeyResultCode(),
+                result.Message
+            );
+    }
+
+    private async Task<CompromiseAccountKeyResult> MarkSymmetricVersionAsync(
+        AccountEntity? account,
+        int version
+    )
+    {
+        var current = account?.SymmetricKeys.CurrentVersion(KeyUsedFor.Encryption);
+        var target = account
+            ?.SymmetricKeys.Versions(KeyUsedFor.Encryption)
+            .FirstOrDefault(k => k.Version == version);
+        if (Unmarkable(version, current?.Version, target?.CompromisedUtc, target != null) is { } no)
+            return no;
+
+        var key = await _accountSymmetricKeyRepo.GetAsync(k => k.Id == target!.Id);
+        key!.CompromisedUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        await _accountSymmetricKeyRepo.UpdateAsync(key);
+        return new CompromiseAccountKeyResult(CompromiseAccountKeyResultCode.Success, string.Empty);
+    }
+
+    private async Task<CompromiseAccountKeyResult> MarkAsymmetricVersionAsync(
+        AccountEntity? account,
+        KeyType keyType,
+        int version
+    )
+    {
+        var keyUsedFor =
+            keyType == KeyType.AsymmetricSignature ? KeyUsedFor.Signature : KeyUsedFor.Encryption;
+        var current = account?.AsymmetricKeys.CurrentVersion(keyUsedFor);
+        var target = account
+            ?.AsymmetricKeys.Versions(keyUsedFor)
+            .FirstOrDefault(k => k.Version == version);
+        if (Unmarkable(version, current?.Version, target?.CompromisedUtc, target != null) is { } no)
+            return no;
+
+        var key = await _accountAsymmetricKeyRepo.GetAsync(k => k.Id == target!.Id);
+        key!.CompromisedUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        await _accountAsymmetricKeyRepo.UpdateAsync(key);
+        return new CompromiseAccountKeyResult(CompromiseAccountKeyResultCode.Success, string.Empty);
+    }
+
+    private static CompromiseAccountKeyResult? Unmarkable(
+        int version,
+        int? currentVersion,
+        DateTime? compromisedUtc,
+        bool exists
+    )
+    {
+        if (!exists)
+        {
+            return new CompromiseAccountKeyResult(
+                CompromiseAccountKeyResultCode.NotFoundError,
+                $"This account has no key version {version}"
+            );
+        }
+
+        if (version == currentVersion)
+        {
+            return new CompromiseAccountKeyResult(
+                CompromiseAccountKeyResultCode.CurrentVersionError,
+                $"Version {version} is the current key. Rotate it and mark the old key compromised instead, or the account would have no usable key"
+            );
+        }
+
+        return compromisedUtc is null
+            ? null
+            : new CompromiseAccountKeyResult(
+                CompromiseAccountKeyResultCode.AlreadyCompromisedError,
+                $"Version {version} is already marked compromised"
+            );
+    }
 
     private async Task<ModifyResult> RotateAsync(
         RotateAccountKeyRequest request,

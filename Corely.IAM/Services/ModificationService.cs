@@ -1,5 +1,4 @@
 using Corely.Common.Extensions;
-using Corely.DataAccess.Interfaces.UnitOfWork;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.ApiKeys.Models;
@@ -38,8 +37,7 @@ internal class ModificationService(
     IBasicAuthProcessor basicAuthProcessor,
     IReauthenticationProvider reauthenticationProvider,
     IUserContextProvider userContextProvider,
-    IAuthenticationProvider authenticationProvider,
-    IUnitOfWorkProvider uowProvider
+    IAuthenticationProvider authenticationProvider
 ) : IModificationService
 {
     private readonly IAuthenticationProvider _authenticationProvider =
@@ -73,9 +71,6 @@ internal class ModificationService(
         reauthenticationProvider.ThrowIfNull(nameof(reauthenticationProvider));
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
-    );
-    private readonly IUnitOfWorkProvider _uowProvider = uowProvider.ThrowIfNull(
-        nameof(uowProvider)
     );
 
     public async Task<ModifyResult> ModifyAccountAsync(UpdateAccountRequest request)
@@ -144,8 +139,8 @@ internal class ModificationService(
         return await _keyRotationProcessor.RotateAccountKeyAsync(request);
     }
 
-    public async Task<ModifyResult> RotateCompromisedAccountKeyAsync(
-        RotateAccountKeyRequest request
+    public async Task<CompromiseAccountKeyResult> RotateCompromisedAccountKeyAsync(
+        RotateCompromisedAccountKeyRequest request
     )
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
@@ -154,26 +149,21 @@ internal class ModificationService(
             request.KeyType,
             request.AccountId
         );
+        return await _keyRotationProcessor.RotateCompromisedAccountKeyAsync(request);
+    }
 
-        var uowSucceeded = false;
-        try
-        {
-            await _uowProvider.BeginAsync();
-            var result = await _keyRotationProcessor.RotateCompromisedAccountKeyAsync(request);
-            if (result.ResultCode == ModifyResultCode.Success)
-            {
-                await _uowProvider.CommitAsync();
-                uowSucceeded = true;
-            }
-            return result;
-        }
-        finally
-        {
-            if (!uowSucceeded)
-            {
-                await _uowProvider.RollbackAsync();
-            }
-        }
+    public async Task<CompromiseAccountKeyResult> MarkAccountKeyCompromisedAsync(
+        MarkAccountKeyCompromisedRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Marking version {Version} of the {KeyType} key for account {AccountId} compromised",
+            request.Version,
+            request.KeyType,
+            request.AccountId
+        );
+        return await _keyRotationProcessor.MarkAccountKeyCompromisedAsync(request);
     }
 
     public async Task<ModifyResult> RotateCurrentUserKeyAsync(KeyType keyType)

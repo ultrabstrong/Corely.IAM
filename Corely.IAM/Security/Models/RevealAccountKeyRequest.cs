@@ -18,4 +18,5 @@ public sealed class RevealAccountKeyRequest(
     internal string? TotpCode { get; } = totpCode;
     internal string? GoogleIdToken { get; } = googleIdToken;
     internal string? GoogleNonce { get; } = googleNonce;
+    internal AccountKeyProof Proof => new(CurrentPassword, TotpCode, GoogleIdToken, GoogleNonce);
 }

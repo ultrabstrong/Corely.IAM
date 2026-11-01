@@ -14,6 +14,15 @@ public class ReauthenticationResultCodeExtensionsTests
     ];
 
     [Fact]
+    public void ToCompromiseAccountKeyResultCode_MapsEveryValue_ToTheCodeOfTheSameName()
+    {
+        foreach (var value in Enum.GetValues<ReauthenticationResultCode>())
+        {
+            Assert.Equal(value.ToString(), value.ToCompromiseAccountKeyResultCode().ToString());
+        }
+    }
+
+    [Fact]
     public void ToRevealAccountKeyResultCode_MapsEveryValue_ToTheCodeOfTheSameName()
     {
         foreach (var value in Enum.GetValues<ReauthenticationResultCode>())

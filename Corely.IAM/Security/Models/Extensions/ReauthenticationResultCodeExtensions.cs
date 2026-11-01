@@ -51,6 +51,29 @@ internal static class ReauthenticationResultCodeExtensions
                 _ => throw Unmapped(resultCode),
             };
 
+        public CompromiseAccountKeyResultCode ToCompromiseAccountKeyResultCode() =>
+            resultCode switch
+            {
+                ReauthenticationResultCode.Success => CompromiseAccountKeyResultCode.Success,
+                ReauthenticationResultCode.BasicAuthNotFoundError =>
+                    CompromiseAccountKeyResultCode.BasicAuthNotFoundError,
+                ReauthenticationResultCode.InvalidCurrentPasswordError =>
+                    CompromiseAccountKeyResultCode.InvalidCurrentPasswordError,
+                ReauthenticationResultCode.UserLockedError =>
+                    CompromiseAccountKeyResultCode.UserLockedError,
+                ReauthenticationResultCode.TotpRequiredError =>
+                    CompromiseAccountKeyResultCode.TotpRequiredError,
+                ReauthenticationResultCode.InvalidTotpCodeError =>
+                    CompromiseAccountKeyResultCode.InvalidTotpCodeError,
+                ReauthenticationResultCode.GoogleSignInRequiredError =>
+                    CompromiseAccountKeyResultCode.GoogleSignInRequiredError,
+                ReauthenticationResultCode.InvalidGoogleSignInError =>
+                    CompromiseAccountKeyResultCode.InvalidGoogleSignInError,
+                ReauthenticationResultCode.NoReauthenticationMethodError =>
+                    CompromiseAccountKeyResultCode.NoReauthenticationMethodError,
+                _ => throw Unmapped(resultCode),
+            };
+
         public RevealAccountKeyResultCode ToRevealAccountKeyResultCode() =>
             resultCode switch
             {

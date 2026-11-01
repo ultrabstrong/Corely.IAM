@@ -1,4 +1,5 @@
 using Corely.DataAccess.Interfaces.Repos;
+using Corely.DataAccess.Interfaces.UnitOfWork;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Models;
@@ -33,7 +34,9 @@ public class KeyRotationProcessorTests
             _securityProvider,
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<ILogger<KeyRotationProcessor>>(),
-            _serviceFactory.GetRequiredService<TimeProvider>()
+            _serviceFactory.GetRequiredService<TimeProvider>(),
+            new Mock<IReauthenticationProvider>().Object,
+            new Mock<IUnitOfWorkProvider>().Object
         );
     }
 

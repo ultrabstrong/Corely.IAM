@@ -48,6 +48,22 @@ internal class ReauthenticationProvider(
         .ThrowIfNull(nameof(securityOptions))
         .Value;
 
+    public async Task<ReauthenticationResult> VerifyAccountKeyProofAsync(
+        Guid userId,
+        AccountKeyProof proof
+    )
+    {
+        var identity = await VerifyIdentityAsync(
+            userId,
+            proof.CurrentPassword,
+            proof.GoogleIdToken,
+            proof.GoogleNonce
+        );
+        return identity.ResultCode == ReauthenticationResultCode.Success
+            ? await VerifyTotpCodeAsync(userId, proof.TotpCode)
+            : identity;
+    }
+
     public async Task<ReauthenticationResult> VerifyIdentityAsync(
         Guid userId,
         string? currentPassword,

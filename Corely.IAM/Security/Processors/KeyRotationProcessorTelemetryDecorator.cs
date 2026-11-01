@@ -25,13 +25,28 @@ internal class KeyRotationProcessorTelemetryDecorator(
             logResult: true
         );
 
-    public async Task<ModifyResult> RotateCompromisedAccountKeyAsync(
-        RotateAccountKeyRequest request
+    public async Task<CompromiseAccountKeyResult> RotateCompromisedAccountKeyAsync(
+        RotateCompromisedAccountKeyRequest request
     ) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(KeyRotationProcessor),
-            request,
+            new { request.AccountId, request.KeyType },
             () => _inner.RotateCompromisedAccountKeyAsync(request),
+            logResult: true
+        );
+
+    public async Task<CompromiseAccountKeyResult> MarkAccountKeyCompromisedAsync(
+        MarkAccountKeyCompromisedRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(KeyRotationProcessor),
+            new
+            {
+                request.AccountId,
+                request.KeyType,
+                request.Version,
+            },
+            () => _inner.MarkAccountKeyCompromisedAsync(request),
             logResult: true
         );
 

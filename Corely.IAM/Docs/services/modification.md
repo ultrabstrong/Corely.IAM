@@ -14,7 +14,8 @@ Updates entity properties for accounts, users, groups, roles and permissions, an
 | `ModifyRoleAsync` | `UpdateRoleRequest` | `ModifyResult` |
 | `ModifyPermissionAsync` | `UpdatePermissionRequest` | `ModifyResult` |
 | `RotateAccountKeyAsync` | `RotateAccountKeyRequest` | `ModifyResult` |
-| `RotateCompromisedAccountKeyAsync` | `RotateAccountKeyRequest` | `ModifyResult`; rotates and marks the old key compromised, see [Key Management](../security/key-management.md#compromised-keys) |
+| `RotateCompromisedAccountKeyAsync` | `RotateCompromisedAccountKeyRequest` | `CompromiseAccountKeyResult`; rotates and marks the old key compromised, see [Key Management](../security/key-management.md#compromised-keys) |
+| `MarkAccountKeyCompromisedAsync` | `MarkAccountKeyCompromisedRequest` | `CompromiseAccountKeyResult`; marks an older version compromised |
 | `RotateCurrentUserKeyAsync` | `KeyType` | `ModifyResult` |
 | `ModifyPasswordAsync` | `ModifyPasswordRequest` | `ModifyPasswordResult` |
 

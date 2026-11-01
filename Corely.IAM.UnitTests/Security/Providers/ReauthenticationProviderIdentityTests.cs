@@ -22,6 +22,7 @@ public class ReauthenticationProviderIdentityTests
     private readonly ServiceFactory _serviceFactory = new();
     private readonly Mock<IBasicAuthProcessor> _basicAuthProcessorMock = new();
     private readonly Mock<IGoogleIdTokenValidator> _validatorMock = new();
+    private readonly Mock<ITotpAuthProcessor> _totpAuthProcessorMock = new();
     private readonly Mock<TimeProvider> _timeProviderMock = new();
     private readonly SecurityOptions _securityOptions = new()
     {
@@ -48,7 +49,7 @@ public class ReauthenticationProviderIdentityTests
         _provider = new ReauthenticationProvider(
             _serviceFactory.GetRequiredService<IRepo<UserEntity>>(),
             _basicAuthProcessorMock.Object,
-            new Mock<ITotpAuthProcessor>().Object,
+            _totpAuthProcessorMock.Object,
             FixedSecurityPolicyProvider.From(_securityOptions),
             _timeProviderMock.Object,
             _serviceFactory.GetRequiredService<IReadonlyRepo<BasicAuthEntity>>(),
@@ -119,6 +120,62 @@ public class ReauthenticationProviderIdentityTests
 
     private Task<ReauthenticationResult> VerifyAsync(string? idToken = ID_TOKEN) =>
         _provider.VerifyIdentityAsync(_userId, null, idToken, NONCE);
+
+    [Fact]
+    public async Task VerifyAccountKeyProof_NeedsTheSecondFactor_AfterAGoodPassword()
+    {
+        await GiveUserAsync(password: true);
+        _totpAuthProcessorMock.Setup(x => x.IsTotpEnabledAsync(_userId)).ReturnsAsync(true);
+
+        var result = await _provider.VerifyAccountKeyProofAsync(
+            _userId,
+            new AccountKeyProof("correct", null)
+        );
+
+        Assert.Equal(ReauthenticationResultCode.TotpRequiredError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task VerifyAccountKeyProof_NeedsTheSecondFactor_AfterAGoodGoogleSignIn()
+    {
+        await GiveUserAsync();
+        GoogleAnswers();
+        _totpAuthProcessorMock.Setup(x => x.IsTotpEnabledAsync(_userId)).ReturnsAsync(true);
+
+        var result = await _provider.VerifyAccountKeyProofAsync(
+            _userId,
+            new AccountKeyProof(null, null, ID_TOKEN, NONCE)
+        );
+
+        Assert.Equal(ReauthenticationResultCode.TotpRequiredError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task VerifyAccountKeyProof_SpendsNoSecondFactor_AfterAWrongPassword()
+    {
+        await GiveUserAsync(password: true);
+
+        var result = await _provider.VerifyAccountKeyProofAsync(
+            _userId,
+            new AccountKeyProof("wrong", "123456")
+        );
+
+        Assert.Equal(ReauthenticationResultCode.InvalidCurrentPasswordError, result.ResultCode);
+        _totpAuthProcessorMock.Verify(x => x.IsTotpEnabledAsync(It.IsAny<Guid>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task VerifyAccountKeyProof_Passes_ForAGoodPasswordWithNoSecondFactor()
+    {
+        await GiveUserAsync(password: true);
+
+        var result = await _provider.VerifyAccountKeyProofAsync(
+            _userId,
+            new AccountKeyProof("correct", null)
+        );
+
+        Assert.Equal(ReauthenticationResultCode.Success, result.ResultCode);
+    }
 
     [Fact]
     public async Task VerifyIdentity_Succeeds_ForAFreshGoogleSignInOfTheLinkedAccount()

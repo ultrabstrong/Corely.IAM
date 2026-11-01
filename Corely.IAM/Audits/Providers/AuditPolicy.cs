@@ -30,6 +30,7 @@ internal class AuditPolicy(
             nameof(IModificationService),
             nameof(IModificationService.RotateCompromisedAccountKeyAsync)
         ),
+        (nameof(IModificationService), nameof(IModificationService.MarkAccountKeyCompromisedAsync)),
     ];
 
     private readonly IReadonlyRepo<PlatformSettingsEntity> _platformSettingsRepo =

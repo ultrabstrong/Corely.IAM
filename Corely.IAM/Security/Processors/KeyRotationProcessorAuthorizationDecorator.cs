@@ -30,20 +30,34 @@ internal class KeyRotationProcessorAuthorizationDecorator(
                 $"Unauthorized to rotate keys for account {request.AccountId}"
             );
 
-    public async Task<ModifyResult> RotateCompromisedAccountKeyAsync(
-        RotateAccountKeyRequest request
+    public async Task<CompromiseAccountKeyResult> RotateCompromisedAccountKeyAsync(
+        RotateCompromisedAccountKeyRequest request
     ) =>
-        _authorizationProvider.HasAccountContext(request.AccountId)
+        await MayCompromiseKeysOfAsync(request.AccountId)
+            ? await _inner.RotateCompromisedAccountKeyAsync(request)
+            : Refused(request.AccountId);
+
+    public async Task<CompromiseAccountKeyResult> MarkAccountKeyCompromisedAsync(
+        MarkAccountKeyCompromisedRequest request
+    ) =>
+        await MayCompromiseKeysOfAsync(request.AccountId)
+            ? await _inner.MarkAccountKeyCompromisedAsync(request)
+            : Refused(request.AccountId);
+
+    private async Task<bool> MayCompromiseKeysOfAsync(Guid accountId) =>
+        _authorizationProvider.IsNonSystemUserContext()
+        && _authorizationProvider.HasAccountContext(accountId)
         && await _authorizationProvider.IsAuthorizedAsync(
             AuthAction.Update,
             Account.RESOURCE_TYPE,
-            request.AccountId
-        )
-            ? await _inner.RotateCompromisedAccountKeyAsync(request)
-            : new ModifyResult(
-                ModifyResultCode.UnauthorizedError,
-                $"Unauthorized to rotate keys for account {request.AccountId}"
-            );
+            accountId
+        );
+
+    private static CompromiseAccountKeyResult Refused(Guid accountId) =>
+        new(
+            CompromiseAccountKeyResultCode.UnauthorizedError,
+            $"Unauthorized to mark keys of account {accountId} compromised"
+        );
 
     public async Task<ModifyResult> RotateCurrentUserKeyAsync(KeyType keyType) =>
         _authorizationProvider.IsNonSystemUserContext()

@@ -579,9 +579,24 @@ internal static class CrossAccountCases
                 a.WritesNothingAsync(s =>
                     Get<IModificationService>(s)
                         .RotateCompromisedAccountKeyAsync(
-                            new RotateAccountKeyRequest(
+                            new RotateCompromisedAccountKeyRequest(
                                 a.VictimAccountId,
-                                KeyType.AsymmetricSignature
+                                KeyType.AsymmetricSignature,
+                                new AccountKeyProof(IamScenario.Password, null)
+                            )
+                        )
+                ),
+            [
+                $"{nameof(IModificationService)}.{nameof(IModificationService.MarkAccountKeyCompromisedAsync)}"
+            ] = a =>
+                a.WritesNothingAsync(s =>
+                    Get<IModificationService>(s)
+                        .MarkAccountKeyCompromisedAsync(
+                            new MarkAccountKeyCompromisedRequest(
+                                a.VictimAccountId,
+                                KeyType.AsymmetricSignature,
+                                1,
+                                new AccountKeyProof(IamScenario.Password, null)
                             )
                         )
                 ),

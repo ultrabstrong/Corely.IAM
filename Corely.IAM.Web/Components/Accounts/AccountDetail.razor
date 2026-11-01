@@ -195,12 +195,12 @@ else
             <PermissionView Action="AuthAction.Update" Resource="@Account.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                 <Authorized>
                     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
-                                            DescriptionText="@KEYS_DESCRIPTION" RotateKeyAsync="RotateKeyAsync" RotateCompromisedKeyAsync="RotateCompromisedKeyAsync" MarkKeyCompromisedAsync="MarkKeyCompromisedAsync"
+                                            DescriptionText="@KEYS_DESCRIPTION" ShowKeyVersions="true" RotateKeyAsync="RotateKeyAsync" RotateCompromisedKeyAsync="RotateCompromisedKeyAsync" MarkKeyCompromisedAsync="MarkKeyCompromisedAsync"
                                             RevealKeyAsync="RevealKeyHandler" RevealGoogleClientId="@_revealGoogleClientId" CanProveIdentity="_canProveIdentity" />
                 </Authorized>
                 <NotAuthorized>
                     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
-                                            DescriptionText="@KEYS_DESCRIPTION" RevealKeyAsync="RevealKeyHandler"
+                                            DescriptionText="@KEYS_DESCRIPTION" ShowKeyVersions="true" RevealKeyAsync="RevealKeyHandler"
                                             RevealGoogleClientId="@_revealGoogleClientId" CanProveIdentity="_canProveIdentity" />
                 </NotAuthorized>
             </PermissionView>

@@ -40,149 +40,158 @@
         {
             @if (SymProvider != null)
             {
-                <div class="mb-3">
-                    <span class="badge bg-secondary">@SymProvider.ProviderName</span>
-                    <span class="badge text-bg-light border ms-1">Version @SymProvider.Version</span>
-                    <small class="text-muted ms-2">@SymProvider.ProviderDescription</small>
-                </div>
-                @CompromisedVersions(KeyType.SymmetricEncryption, SymProvider.CompromisedVersions)
-                @OlderVersions(KeyType.SymmetricEncryption, SymProvider.Version, SymProvider.CompromisedVersions)
+                @KeyHeader(KeyType.SymmetricEncryption, SymProvider.ProviderName, SymProvider.Version, SymProvider.ProviderDescription, SymProvider.CompromisedVersions, SymProvider.Versions)
             }
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Input</label>
-                <textarea class="form-control form-control-sm" rows="2" @bind="_symInput"
-                          placeholder="Plaintext to encrypt, or ciphertext to decrypt"></textarea>
-            </div>
-            <div class="d-flex gap-2 mb-3 enc-actions">
-                <button class="btn btn-primary btn-sm" @onclick="SymEncryptAsync" disabled="@_busy">Encrypt</button>
-                <button class="btn btn-outline-primary btn-sm" @onclick="SymDecryptAsync" disabled="@_busy">Decrypt</button>
-                <button class="btn btn-outline-secondary btn-sm" @onclick="SymReEncryptAsync" disabled="@_busy">Re-encrypt</button>
-                @CopyKeyButton(KeyType.SymmetricEncryption)
-                @if (RotateKeyAsync != null)
+            @if (OlderVersion(KeyType.SymmetricEncryption, SymProvider?.Version ?? 0, SymProvider?.Versions) is { } olderSymmetric)
+            {
+                @OlderVersionView(KeyType.SymmetricEncryption, olderSymmetric)
+            }
+            else
+            {
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Input</label>
+                    <textarea class="form-control form-control-sm" rows="2" @bind="_symInput"
+                              placeholder="Plaintext to encrypt, or ciphertext to decrypt"></textarea>
+                </div>
+                <div class="d-flex gap-2 mb-3 enc-actions">
+                    <button class="btn btn-primary btn-sm" @onclick="SymEncryptAsync" disabled="@_busy">Encrypt</button>
+                    <button class="btn btn-outline-primary btn-sm" @onclick="SymDecryptAsync" disabled="@_busy">Decrypt</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="SymReEncryptAsync" disabled="@_busy">Re-encrypt</button>
+                    @CopyKeyButton(KeyType.SymmetricEncryption)
+                    @if (RotateKeyAsync != null)
+                    {
+                        <button class="btn btn-outline-warning btn-sm @RotateMargin enc-rotate" @onclick="() => ConfirmRotate(KeyType.SymmetricEncryption)" disabled="@_busy">Rotate key</button>
+                    }
+                </div>
+                @RevealedKey(KeyType.SymmetricEncryption)
+                @if (_symOutput != null)
                 {
-                    <button class="btn btn-outline-warning btn-sm @RotateMargin enc-rotate" @onclick="() => ConfirmRotate(KeyType.SymmetricEncryption)" disabled="@_busy">Rotate key</button>
-                }
-            </div>
-            @RevealedKey(KeyType.SymmetricEncryption)
-            @if (_symOutput != null)
-            {
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Output</label>
-                    <div class="d-flex align-items-start gap-1">
-                        <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@_symOutput</textarea>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopySymOutputAsync" title="Copy">
-                            <i class="bi @(_symOutputCopied ? "bi-check text-success" : "bi-copy")"></i>
-                        </button>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Output</label>
+                        <div class="d-flex align-items-start gap-1">
+                            <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@_symOutput</textarea>
+                            <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopySymOutputAsync" title="Copy">
+                                <i class="bi @(_symOutputCopied ? "bi-check text-success" : "bi-copy")"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            }
-            @if (_symError != null)
-            {
-                <div class="alert alert-danger py-2">@_symError</div>
+                }
+                @if (_symError != null)
+                {
+                    <div class="alert alert-danger py-2">@_symError</div>
+                }
             }
         }
         else if (_activeKeyTab == 1)
         {
             @if (AsymProvider != null)
             {
-                <div class="mb-3">
-                    <span class="badge bg-secondary">@AsymProvider.ProviderName</span>
-                    <span class="badge text-bg-light border ms-1">Version @AsymProvider.Version</span>
-                    <small class="text-muted ms-2">@AsymProvider.ProviderDescription</small>
-                </div>
-                @CompromisedVersions(KeyType.AsymmetricEncryption, AsymProvider.CompromisedVersions)
-                @OlderVersions(KeyType.AsymmetricEncryption, AsymProvider.Version, AsymProvider.CompromisedVersions)
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Public Key</label>
-                    <div class="d-flex align-items-start gap-1">
-                        <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@AsymProvider.PublicKey</textarea>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopyAsymPublicKeyAsync" title="Copy">
-                            <i class="bi @(_asymPublicKeyCopied ? "bi-check text-success" : "bi-copy")"></i>
-                        </button>
-                    </div>
-                </div>
+                @KeyHeader(KeyType.AsymmetricEncryption, AsymProvider.ProviderName, AsymProvider.Version, AsymProvider.ProviderDescription, AsymProvider.CompromisedVersions, AsymProvider.Versions)
             }
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Input</label>
-                <textarea class="form-control form-control-sm" rows="2" @bind="_asymInput"
-                          placeholder="Plaintext to encrypt, or ciphertext to decrypt"></textarea>
-            </div>
-            <div class="d-flex gap-2 mb-3 enc-actions">
-                <button class="btn btn-primary btn-sm" @onclick="AsymEncryptAsync" disabled="@_busy">Encrypt</button>
-                <button class="btn btn-outline-primary btn-sm" @onclick="AsymDecryptAsync" disabled="@_busy">Decrypt</button>
-                <button class="btn btn-outline-secondary btn-sm" @onclick="AsymReEncryptAsync" disabled="@_busy">Re-encrypt</button>
-                @CopyKeyButton(KeyType.AsymmetricEncryption)
-                @if (RotateKeyAsync != null)
+            @if (OlderVersion(KeyType.AsymmetricEncryption, AsymProvider?.Version ?? 0, AsymProvider?.Versions) is { } olderEncryption)
+            {
+                @OlderVersionView(KeyType.AsymmetricEncryption, olderEncryption)
+            }
+            else
+            {
+                @if (AsymProvider != null)
                 {
-                    <button class="btn btn-outline-warning btn-sm @RotateMargin enc-rotate" @onclick="() => ConfirmRotate(KeyType.AsymmetricEncryption)" disabled="@_busy">Rotate key</button>
-                }
-            </div>
-            @RevealedKey(KeyType.AsymmetricEncryption)
-            @if (_asymOutput != null)
-            {
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Output</label>
-                    <div class="d-flex align-items-start gap-1">
-                        <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@_asymOutput</textarea>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopyAsymOutputAsync" title="Copy">
-                            <i class="bi @(_asymOutputCopied ? "bi-check text-success" : "bi-copy")"></i>
-                        </button>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Public Key</label>
+                        <div class="d-flex align-items-start gap-1">
+                            <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@AsymProvider.PublicKey</textarea>
+                            <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopyAsymPublicKeyAsync" title="Copy">
+                                <i class="bi @(_asymPublicKeyCopied ? "bi-check text-success" : "bi-copy")"></i>
+                            </button>
+                        </div>
                     </div>
+                }
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Input</label>
+                    <textarea class="form-control form-control-sm" rows="2" @bind="_asymInput"
+                              placeholder="Plaintext to encrypt, or ciphertext to decrypt"></textarea>
                 </div>
-            }
-            @if (_asymError != null)
-            {
-                <div class="alert alert-danger py-2">@_asymError</div>
+                <div class="d-flex gap-2 mb-3 enc-actions">
+                    <button class="btn btn-primary btn-sm" @onclick="AsymEncryptAsync" disabled="@_busy">Encrypt</button>
+                    <button class="btn btn-outline-primary btn-sm" @onclick="AsymDecryptAsync" disabled="@_busy">Decrypt</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="AsymReEncryptAsync" disabled="@_busy">Re-encrypt</button>
+                    @CopyKeyButton(KeyType.AsymmetricEncryption)
+                    @if (RotateKeyAsync != null)
+                    {
+                        <button class="btn btn-outline-warning btn-sm @RotateMargin enc-rotate" @onclick="() => ConfirmRotate(KeyType.AsymmetricEncryption)" disabled="@_busy">Rotate key</button>
+                    }
+                </div>
+                @RevealedKey(KeyType.AsymmetricEncryption)
+                @if (_asymOutput != null)
+                {
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Output</label>
+                        <div class="d-flex align-items-start gap-1">
+                            <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@_asymOutput</textarea>
+                            <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopyAsymOutputAsync" title="Copy">
+                                <i class="bi @(_asymOutputCopied ? "bi-check text-success" : "bi-copy")"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+                @if (_asymError != null)
+                {
+                    <div class="alert alert-danger py-2">@_asymError</div>
+                }
             }
         }
         else
         {
             @if (SigProvider != null)
             {
-                <div class="mb-3">
-                    <span class="badge bg-secondary">@SigProvider.ProviderName</span>
-                    <span class="badge text-bg-light border ms-1">Version @SigProvider.Version</span>
-                    <small class="text-muted ms-2">@SigProvider.ProviderDescription</small>
-                </div>
-                @CompromisedVersions(KeyType.AsymmetricSignature, SigProvider.CompromisedVersions)
-                @OlderVersions(KeyType.AsymmetricSignature, SigProvider.Version, SigProvider.CompromisedVersions)
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Public Key</label>
-                    <div class="d-flex align-items-start gap-1">
-                        <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@SigProvider.PublicKey</textarea>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopySigPublicKeyAsync" title="Copy">
-                            <i class="bi @(_sigPublicKeyCopied ? "bi-check text-success" : "bi-copy")"></i>
-                        </button>
-                    </div>
-                </div>
+                @KeyHeader(KeyType.AsymmetricSignature, SigProvider.ProviderName, SigProvider.Version, SigProvider.ProviderDescription, SigProvider.CompromisedVersions, SigProvider.Versions)
             }
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Payload</label>
-                <textarea class="form-control form-control-sm" rows="2" @bind="_sigPayload"
-                          placeholder="Text to sign or verify"></textarea>
-            </div>
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Signature</label>
-                <textarea class="form-control form-control-sm font-monospace" rows="2" @bind="_sigSignature"
-                          placeholder="Signature value (populated by Sign, required for Verify)"></textarea>
-            </div>
-            <div class="d-flex gap-2 mb-3 enc-actions">
-                <button class="btn btn-primary btn-sm" @onclick="SignAsync" disabled="@_busy">Sign</button>
-                <button class="btn btn-outline-primary btn-sm" @onclick="VerifyAsync" disabled="@_busy">Verify</button>
-                @CopyKeyButton(KeyType.AsymmetricSignature)
-                @if (RotateKeyAsync != null)
+            @if (OlderVersion(KeyType.AsymmetricSignature, SigProvider?.Version ?? 0, SigProvider?.Versions) is { } olderSigning)
+            {
+                @OlderVersionView(KeyType.AsymmetricSignature, olderSigning)
+            }
+            else
+            {
+                @if (SigProvider != null)
                 {
-                    <button class="btn btn-outline-warning btn-sm @RotateMargin enc-rotate" @onclick="() => ConfirmRotate(KeyType.AsymmetricSignature)" disabled="@_busy">Rotate key</button>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Public Key</label>
+                        <div class="d-flex align-items-start gap-1">
+                            <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@SigProvider.PublicKey</textarea>
+                            <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopySigPublicKeyAsync" title="Copy">
+                                <i class="bi @(_sigPublicKeyCopied ? "bi-check text-success" : "bi-copy")"></i>
+                            </button>
+                        </div>
+                    </div>
                 }
-            </div>
-            @RevealedKey(KeyType.AsymmetricSignature)
-            @if (_sigResult != null)
-            {
-                <div class="alert @(_sigResultIsValid == true ? "alert-success" : _sigResultIsValid == false ? "alert-danger" : "alert-info") py-2">@_sigResult</div>
-            }
-            @if (_sigError != null)
-            {
-                <div class="alert alert-danger py-2">@_sigError</div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Payload</label>
+                    <textarea class="form-control form-control-sm" rows="2" @bind="_sigPayload"
+                              placeholder="Text to sign or verify"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Signature</label>
+                    <textarea class="form-control form-control-sm font-monospace" rows="2" @bind="_sigSignature"
+                              placeholder="Signature value (populated by Sign, required for Verify)"></textarea>
+                </div>
+                <div class="d-flex gap-2 mb-3 enc-actions">
+                    <button class="btn btn-primary btn-sm" @onclick="SignAsync" disabled="@_busy">Sign</button>
+                    <button class="btn btn-outline-primary btn-sm" @onclick="VerifyAsync" disabled="@_busy">Verify</button>
+                    @CopyKeyButton(KeyType.AsymmetricSignature)
+                    @if (RotateKeyAsync != null)
+                    {
+                        <button class="btn btn-outline-warning btn-sm @RotateMargin enc-rotate" @onclick="() => ConfirmRotate(KeyType.AsymmetricSignature)" disabled="@_busy">Rotate key</button>
+                    }
+                </div>
+                @RevealedKey(KeyType.AsymmetricSignature)
+                @if (_sigResult != null)
+                {
+                    <div class="alert @(_sigResultIsValid == true ? "alert-success" : _sigResultIsValid == false ? "alert-danger" : "alert-info") py-2">@_sigResult</div>
+                }
+                @if (_sigError != null)
+                {
+                    <div class="alert alert-danger py-2">@_sigError</div>
+                }
             }
         }
     </div>
@@ -243,6 +252,9 @@
     public Func<KeyType, string?, string?, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyAsync { get; set; }
 
     [Parameter]
+    public bool ShowKeyVersions { get; set; }
+
+    [Parameter]
     public string? RevealGoogleClientId { get; set; }
 
     [Parameter]
@@ -253,6 +265,8 @@
     private const string NO_PROOF_MESSAGE =
         "This needs proof that it is you, and you have no way to give it yet. Set a password on your profile, then try again.";
 
+    private readonly Dictionary<KeyType, int> _selectedVersions = [];
+    private bool _olderPublicKeyCopied;
     private FormModal _proofModal = null!;
     private string _proofTitle = string.Empty;
     private string _proofConfirmText = string.Empty;
@@ -293,16 +307,82 @@
     private static RenderFragment CompromiseWarning(KeyType keyType) =>
         @<div class="alert alert-danger py-2">@keyType.CompromiseWarning()</div>;
 
-    private RenderFragment OlderVersions(KeyType keyType, int currentVersion, IReadOnlyList<int>? compromised) =>
+    private KeyVersionInfo? OlderVersion(KeyType keyType, int currentVersion, IReadOnlyList<KeyVersionInfo>? versions) =>
+        ShowKeyVersions && _selectedVersions.TryGetValue(keyType, out var selected) && selected != currentVersion
+            ? versions?.FirstOrDefault(v => v.Version == selected)
+            : null;
+
+    private void SelectVersion(KeyType keyType, int currentVersion, ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var version))
+            return;
+
+        if (version == currentVersion)
+            _selectedVersions.Remove(keyType);
+        else
+            _selectedVersions[keyType] = version;
+
+        _rotateResult = null;
+        _revealError = null;
+        _olderPublicKeyCopied = false;
+        ClearRevealedKey();
+    }
+
+    private RenderFragment KeyHeader(KeyType keyType, string providerName, int currentVersion, string providerDescription, IReadOnlyList<int>? compromised, IReadOnlyList<KeyVersionInfo>? versions) =>
         @<text>
-            @if (MarkKeyCompromisedAsync != null && Enumerable.Range(1, Math.Max(currentVersion - 1, 0)).Except(compromised ?? []).ToList() is { Count: > 0 } older)
+            @{ var older = OlderVersion(keyType, currentVersion, versions); }
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <span class="badge bg-secondary">@(older?.ProviderName ?? providerName)</span>
+                @if (ShowKeyVersions && versions is { Count: > 0 })
+                {
+                    <select class="form-select form-select-sm w-auto" aria-label="Key version" @onchange="e => SelectVersion(keyType, currentVersion, e)">
+                        @foreach (var version in versions.OrderByDescending(v => v.Version))
+                        {
+                            <option value="@version.Version" selected="@(version.Version == (older?.Version ?? currentVersion))">@version.OptionLabel(currentVersion)</option>
+                        }
+                    </select>
+                }
+                else
+                {
+                    <span class="badge text-bg-light border">Version @currentVersion</span>
+                }
+                @if (older == null)
+                {
+                    <small class="text-muted">@providerDescription</small>
+                }
+            </div>
+            @if (older == null)
             {
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                    <small class="text-muted">Older versions:</small>
-                    @foreach (var version in older)
-                    {
-                        <button class="btn btn-outline-danger btn-sm" @onclick="() => ConfirmMarkVersion(keyType, version)" disabled="@_busy">Mark version @version compromised</button>
-                    }
+                @CompromisedVersions(keyType, compromised)
+            }
+        </text>;
+
+    private RenderFragment OlderVersionView(KeyType keyType, KeyVersionInfo older) =>
+        @<text>
+            @if (older.IsCompromised)
+            {
+                <div class="alert alert-danger py-2">Version @older.Version is compromised. @keyType.CompromisedNotice()</div>
+            }
+            else
+            {
+                <div class="alert alert-secondary py-2">@keyType.OlderVersionNotice()</div>
+            }
+            @if (older.PublicKey != null)
+            {
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Public Key</label>
+                    <div class="d-flex align-items-start gap-1">
+                        <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@older.PublicKey</textarea>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="() => CopyOlderPublicKeyAsync(older.PublicKey)" title="Copy">
+                            <i class="bi @(_olderPublicKeyCopied ? "bi-check text-success" : "bi-copy")"></i>
+                        </button>
+                    </div>
+                </div>
+            }
+            @if (!older.IsCompromised && MarkKeyCompromisedAsync != null)
+            {
+                <div class="d-flex gap-2 mb-3 enc-actions">
+                    <button class="btn btn-outline-warning btn-sm ms-auto enc-rotate" @onclick="() => ConfirmMarkVersion(keyType, older.Version)" disabled="@_busy">Mark as compromised</button>
                 </div>
             }
         </text>;
@@ -719,6 +799,7 @@
     private async Task CopySymOutputAsync() => await CopyWithFeedbackAsync(_symOutput, v => _symOutputCopied = v);
     private async Task CopyAsymPublicKeyAsync() => await CopyWithFeedbackAsync(AsymProvider?.PublicKey, v => _asymPublicKeyCopied = v);
     private async Task CopyAsymOutputAsync() => await CopyWithFeedbackAsync(_asymOutput, v => _asymOutputCopied = v);
+    private async Task CopyOlderPublicKeyAsync(string publicKey) => await CopyWithFeedbackAsync(publicKey, v => _olderPublicKeyCopied = v);
     private async Task CopySigPublicKeyAsync() => await CopyWithFeedbackAsync(SigProvider?.PublicKey, v => _sigPublicKeyCopied = v);
 
     private async Task CopyWithFeedbackAsync(string? text, Action<bool> setFlag)

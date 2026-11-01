@@ -12,6 +12,8 @@ namespace Corely.IAM.Web.UnitTests.Components.Shared;
 public class EncryptionSigningPanelKeyCopyTests : BunitContext
 {
     private const string SECRET = "dGhlLXNlY3JldC1rZXk=";
+    private const string CURRENT_PUBLIC_KEY = "current-public-key";
+    private const string OLDER_PUBLIC_KEY = "older-public-key";
 
     private readonly ManualTimeProvider _time = new();
     private readonly List<(
@@ -46,7 +48,9 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         bool reveal = true,
         string? googleClientId = null,
         bool canProveIdentity = true,
-        IIamAsymmetricSignatureProvider? signing = null
+        IIamAsymmetricSignatureProvider? signing = null,
+        IIamSymmetricEncryptionProvider? symmetric = null,
+        bool showVersions = false
     ) =>
         Render<EncryptionSigningPanel>(p =>
         {
@@ -61,6 +65,8 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
                 }
             );
             p.Add(x => x.SigProvider, signing);
+            p.Add(x => x.SymProvider, symmetric);
+            p.Add(x => x.ShowKeyVersions, showVersions);
             p.Add(x => x.RevealGoogleClientId, googleClientId);
             p.Add(x => x.CanProveIdentity, canProveIdentity);
             if (reveal)
@@ -373,67 +379,6 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
     }
 
     [Fact]
-    public void OlderVersions_ListsEachUnmarkedOlderVersion_AndNeverTheCurrentOne()
-    {
-        var signing = new Mock<IIamAsymmetricSignatureProvider>();
-        signing.Setup(x => x.CompromisedVersions).Returns([2]);
-        signing.Setup(x => x.Version).Returns(4);
-        var cut = RenderPanel(signing: signing.Object);
-
-        ShowTab(cut, 2);
-
-        Assert.Equal(
-            ["Mark version 1 compromised", "Mark version 3 compromised"],
-            cut.FindAll("button")
-                .Select(b => b.TextContent.Trim())
-                .Where(t => t.StartsWith("Mark version"))
-        );
-    }
-
-    [Fact]
-    public void OlderVersions_AreAbsent_ForAKeyOnItsFirstVersion()
-    {
-        var signing = new Mock<IIamAsymmetricSignatureProvider>();
-        signing.Setup(x => x.Version).Returns(1);
-        var cut = RenderPanel(signing: signing.Object);
-
-        ShowTab(cut, 2);
-
-        Assert.DoesNotContain("Mark version", cut.Markup);
-    }
-
-    [Fact]
-    public void OlderVersions_AreAbsent_WithoutTheCallback()
-    {
-        var signing = new Mock<IIamAsymmetricSignatureProvider>();
-        signing.Setup(x => x.Version).Returns(3);
-        var cut = RenderPanel(reveal: false, signing: signing.Object);
-
-        ShowTab(cut, 2);
-
-        Assert.DoesNotContain("Mark version", cut.Markup);
-    }
-
-    [Fact]
-    public void MarkVersion_MarksThatVersion_OnlyAfterWarningAndProof()
-    {
-        var signing = new Mock<IIamAsymmetricSignatureProvider>();
-        signing.Setup(x => x.Version).Returns(3);
-        var cut = RenderPanel(signing: signing.Object);
-        ShowTab(cut, 2);
-
-        Button(cut, "Mark version 2 compromised").Click();
-
-        Assert.Empty(_markedVersions);
-        Assert.Contains("cannot be undone", cut.Find(".modal-body .alert-danger").TextContent);
-        cut.Find(".modal-body input[type=password]").Change("pw");
-        Button(cut, "Mark compromised").Click();
-
-        Assert.Equal([(KeyType.AsymmetricSignature, 2, "pw")], _markedVersions);
-        Assert.Contains("Version 2 marked compromised.", cut.Markup);
-    }
-
-    [Fact]
     public void Panel_WithoutTheOption_ShowsThePlainRotateConfirmation()
     {
         var cut = RenderPanel(reveal: false);
@@ -457,5 +402,227 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         var notice = cut.Find(".tab-content .alert-warning").TextContent;
         Assert.Contains("Compromised: version 1, 2.", notice);
         Assert.Contains("do not verify", notice);
+    }
+
+    private static Mock<IIamAsymmetricSignatureProvider> SigningWithVersions(
+        params KeyVersionInfo[] versions
+    )
+    {
+        var signing = new Mock<IIamAsymmetricSignatureProvider>();
+        signing.Setup(x => x.ProviderName).Returns("RSA-3072");
+        signing.Setup(x => x.Version).Returns(versions.Max(v => v.Version));
+        signing.Setup(x => x.PublicKey).Returns(CURRENT_PUBLIC_KEY);
+        signing.Setup(x => x.Versions).Returns(versions);
+        return signing;
+    }
+
+    private static readonly KeyVersionInfo[] _signingVersions =
+    [
+        new(1, "ED25519", OLDER_PUBLIC_KEY, true),
+        new(2, "RSA-2048", OLDER_PUBLIC_KEY, false),
+        new(3, "RSA-3072", CURRENT_PUBLIC_KEY, false),
+    ];
+
+    private static void SelectVersion(
+        IRenderedComponent<EncryptionSigningPanel> cut,
+        int version
+    ) => cut.Find("select[aria-label='Key version']").Change(version.ToString());
+
+    private static IReadOnlyList<string> ButtonTexts(
+        IRenderedComponent<EncryptionSigningPanel> cut
+    ) => [.. cut.FindAll(".tab-content button").Select(b => b.TextContent.Trim())];
+
+    [Fact]
+    public void VersionDropdown_ListsEveryVersionNewestFirst_AndDefaultsToTheCurrentOne()
+    {
+        var cut = RenderPanel(
+            signing: SigningWithVersions(_signingVersions).Object,
+            showVersions: true
+        );
+
+        ShowTab(cut, 2);
+
+        var options = cut.FindAll("select[aria-label='Key version'] option");
+        Assert.Equal(
+            ["Version 3 (current)", "Version 2", "Version 1 (compromised)"],
+            options.Select(o => o.TextContent.Trim())
+        );
+        Assert.Equal(
+            ["3"],
+            options.Where(o => o.HasAttribute("selected")).Select(o => o.GetAttribute("value"))
+        );
+    }
+
+    [Fact]
+    public void VersionDropdown_IsAbsent_WithoutTheOption()
+    {
+        var cut = RenderPanel(signing: SigningWithVersions(_signingVersions).Object);
+
+        ShowTab(cut, 2);
+
+        Assert.Empty(cut.FindAll("select"));
+        Assert.Contains("Version 3", cut.Markup);
+    }
+
+    [Fact]
+    public void CurrentVersion_KeepsItsToolsAndRotate_WithTheDropdown()
+    {
+        var cut = RenderPanel(
+            signing: SigningWithVersions(_signingVersions).Object,
+            showVersions: true
+        );
+
+        ShowTab(cut, 2);
+
+        var buttons = ButtonTexts(cut);
+        Assert.Contains("Sign", buttons);
+        Assert.Contains("Verify", buttons);
+        Assert.Contains("Copy private key", buttons);
+        Assert.Contains("Rotate key", buttons);
+        Assert.DoesNotContain("Mark as compromised", buttons);
+        Assert.Contains(CURRENT_PUBLIC_KEY, cut.Find(".tab-content textarea").TextContent);
+    }
+
+    [Fact]
+    public void OlderVersion_ShowsThatVersion_AndOffersOnlyMarkAsCompromised()
+    {
+        var cut = RenderPanel(
+            signing: SigningWithVersions(_signingVersions).Object,
+            showVersions: true
+        );
+        ShowTab(cut, 2);
+
+        SelectVersion(cut, 2);
+
+        Assert.Equal("RSA-2048", cut.Find(".tab-content .badge").TextContent);
+        Assert.Contains(OLDER_PUBLIC_KEY, cut.Find(".tab-content textarea").TextContent);
+        Assert.DoesNotContain(CURRENT_PUBLIC_KEY, cut.Markup);
+        Assert.Contains("New signatures only use the current version", cut.Markup);
+        Assert.Equal(["Mark as compromised"], ButtonTexts(cut).Where(t => t.Length > 0));
+    }
+
+    [Fact]
+    public void OlderSymmetricVersion_HasNoPublicKey_AndNoEncryptionTools()
+    {
+        var symmetric = new Mock<IIamSymmetricEncryptionProvider>();
+        symmetric.Setup(x => x.ProviderName).Returns("AES-256-GCM");
+        symmetric.Setup(x => x.Version).Returns(2);
+        symmetric
+            .Setup(x => x.Versions)
+            .Returns([new(1, "AES-128-GCM", null, false), new(2, "AES-256-GCM", null, false)]);
+        var cut = RenderPanel(symmetric: symmetric.Object, showVersions: true);
+
+        SelectVersion(cut, 1);
+
+        Assert.Equal("AES-128-GCM", cut.Find(".tab-content .badge").TextContent);
+        Assert.Empty(cut.FindAll(".tab-content textarea"));
+        Assert.Equal(["Mark as compromised"], ButtonTexts(cut));
+    }
+
+    [Fact]
+    public void MarkAsCompromised_MarksThatVersion_OnlyAfterWarningAndProof_AndStaysOnIt()
+    {
+        var signing = SigningWithVersions(_signingVersions);
+        var cut = RenderPanel(signing: signing.Object, showVersions: true);
+        ShowTab(cut, 2);
+        SelectVersion(cut, 2);
+
+        Button(cut, "Mark as compromised").Click();
+
+        Assert.Empty(_markedVersions);
+        Assert.Contains("cannot be undone", cut.Find(".modal-body .alert-danger").TextContent);
+        cut.Find(".modal-body input[type=password]").Change("pw");
+        signing
+            .Setup(x => x.Versions)
+            .Returns([
+                _signingVersions[0],
+                _signingVersions[1] with
+                {
+                    IsCompromised = true,
+                },
+                _signingVersions[2],
+            ]);
+        Button(cut, "Mark compromised").Click();
+
+        Assert.Equal([(KeyType.AsymmetricSignature, 2, "pw")], _markedVersions);
+        Assert.Contains("Version 2 marked compromised.", cut.Markup);
+        Assert.Contains(
+            "Version 2 is compromised.",
+            cut.Find(".tab-content .alert-danger").TextContent
+        );
+        Assert.DoesNotContain("Mark as compromised", ButtonTexts(cut));
+        Assert.Contains(
+            "Version 2 (compromised)",
+            cut.FindAll("option")
+                .Where(o => o.HasAttribute("selected"))
+                .Select(o => o.TextContent.Trim())
+        );
+    }
+
+    [Fact]
+    public void CompromisedVersion_SaysSo_AndOffersNoAction()
+    {
+        var cut = RenderPanel(
+            signing: SigningWithVersions(_signingVersions).Object,
+            showVersions: true
+        );
+        ShowTab(cut, 2);
+
+        SelectVersion(cut, 1);
+
+        Assert.Contains(
+            "Version 1 is compromised.",
+            cut.Find(".tab-content .alert-danger").TextContent
+        );
+        Assert.Empty(ButtonTexts(cut).Where(t => t.Length > 0));
+    }
+
+    [Fact]
+    public void OlderVersion_OffersNoAction_WithoutTheCallback()
+    {
+        var cut = RenderPanel(
+            reveal: false,
+            signing: SigningWithVersions(_signingVersions).Object,
+            showVersions: true
+        );
+        ShowTab(cut, 2);
+
+        SelectVersion(cut, 2);
+
+        Assert.DoesNotContain("Mark as compromised", ButtonTexts(cut));
+    }
+
+    [Fact]
+    public void SelectingTheCurrentVersionAgain_FollowsTheKey_WhenItLaterRotates()
+    {
+        var signing = SigningWithVersions(_signingVersions);
+        var cut = RenderPanel(signing: signing.Object, showVersions: true);
+        ShowTab(cut, 2);
+        SelectVersion(cut, 2);
+        SelectVersion(cut, 3);
+
+        signing.Setup(x => x.Version).Returns(4);
+        signing
+            .Setup(x => x.Versions)
+            .Returns([.. _signingVersions, new(4, "RSA-3072", CURRENT_PUBLIC_KEY, false)]);
+        cut.Render();
+
+        Assert.Contains("Rotate key", ButtonTexts(cut));
+    }
+
+    [Fact]
+    public void SelectingAVersion_ClearsARevealedKey()
+    {
+        var cut = RenderPanel(
+            signing: SigningWithVersions(_signingVersions).Object,
+            showVersions: true
+        );
+        ShowTab(cut, 2);
+        Reveal(cut, "Copy private key");
+        Assert.Contains(SECRET, cut.Markup);
+
+        SelectVersion(cut, 2);
+
+        Assert.DoesNotContain(SECRET, cut.Markup);
     }
 }

@@ -6,6 +6,7 @@ public interface IIamAsymmetricSignatureProvider
     string ProviderDescription { get; }
     int Version { get; }
     IReadOnlyList<int> CompromisedVersions { get; }
+    IReadOnlyList<KeyVersionInfo> Versions { get; }
     string PublicKey { get; }
     string Sign(string payload);
     bool Verify(string payload, string signature);

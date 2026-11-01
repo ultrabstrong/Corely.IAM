@@ -11,7 +11,8 @@ Tabbed interface for testing encryption and signing operations using account or 
 | `SigProvider` | `IIamAsymmetricSignatureProvider?` | none | Digital signature provider |
 | `RotateKeyAsync` | `Func<KeyType, Task<ModifyResult>>?` | none | Rotates the key on the current tab. The Rotate button shows only when set |
 | `RotateCompromisedKeyAsync` | `Func<KeyType, string?, string?, string?, string?, Task<CompromiseAccountKeyResult>>?` | none | Rotates and marks the old key compromised, given the password, two factor code, Google ID token and Google nonce. The option shows in the Rotate confirmation only when set |
-| `MarkKeyCompromisedAsync` | `Func<KeyType, int, string?, string?, string?, string?, Task<CompromiseAccountKeyResult>>?` | none | Marks an older version compromised, given the version and the same proof. Each tab lists its older versions only when set |
+| `MarkKeyCompromisedAsync` | `Func<KeyType, int, string?, string?, string?, string?, Task<CompromiseAccountKeyResult>>?` | none | Marks an older version compromised, given the version and the same proof. **Mark as compromised** shows only when set |
+| `ShowKeyVersions` | `bool` | `false` | Shows the version dropdown on each tab. Account Detail sets it |
 | `RevealKeyAsync` | `Func<KeyType, string?, string?, string?, string?, Task<RevealAccountKeyResult>>?` | none | Returns the key on the current tab, given the password, two factor code, Google ID token and Google nonce. The copy action shows only when set |
 | `RevealGoogleClientId` | `string?` | none | Set for a user with no password: the dialog asks for a Google sign in instead of a password |
 | `CanProveIdentity` | `bool` | `true` | False when the user has no way to prove who they are: the copy action explains what to do |
@@ -63,6 +64,9 @@ Profile passes `RotateKeyAsync` for the signed in user's keys. Account Detail pa
 - Error messages displayed as inline alerts
 - Provider name, the current key version and the provider description shown at the top of each tab
 - **Rotate key** asks for confirmation first, explaining that earlier ciphertext still decrypts and earlier signatures still verify, then reports success or the failure message
-- On the account panel the confirmation offers **Mark the old key compromised**, with a warning that it cannot be undone and what it does for that key type, then asks for the same proof as copying a key. Each tab also offers **Mark version N compromised** for older versions not yet marked, with the same warning and proof. Compromised versions are listed on their tab
+- On the account panel the confirmation offers **Mark the old key compromised**, with a warning that it cannot be undone and what it does for that key type, then asks for the same proof as copying a key. Compromised versions are listed on their tab
+- With `ShowKeyVersions`, each tab has a version dropdown that defaults to the current version and names which is current and which are compromised. It holds version numbers, never key material
+- Choosing an older version shows its algorithm, version and, on the asymmetric tabs, its public key. Encrypt, Decrypt, Re-encrypt, Sign, Verify, Copy key and Rotate key are hidden: new encryption and signing only use the current version, and Decrypt and Verify on the current version already handle older ones
+- An older version offers **Mark as compromised**, with the same warning and proof. Afterwards the tab stays on that version, shows it as compromised and offers no action
 - **Copy key** and **Copy private key** sit immediately left of Rotate key on each tab, on the account panel only. They ask for the password and two factor code beside a warning that this is usually unnecessary, that anyone holding the key can read or sign as the account, and that the key is a secret to store securely and not share with anyone untrusted. The warning stays beside the key
 - A shown key clears after 60 seconds, on **Hide**, on changing tab, when rotating and when the page closes. The clipboard keeps what was copied

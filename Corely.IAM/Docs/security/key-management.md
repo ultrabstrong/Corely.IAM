@@ -181,6 +181,8 @@ they are to be read outside the app.
 
 All three provider interfaces follow a consistent pattern, and each has `Version`, the version of the key it encrypts or signs with:
 
+Each also has `Versions`, one `KeyVersionInfo` per version with its number, provider name, public key (empty for a symmetric key) and whether it is compromised. It never holds a private or symmetric key.
+
 - **`IIamSymmetricEncryptionProvider`**: `Encrypt(string)`, `Decrypt(string)`, `ReEncrypt(string)`
 - **`IIamAsymmetricEncryptionProvider`**: `Encrypt(string)`, `Decrypt(string)`, `GetPublicKey()`
 - **`IIamAsymmetricSignatureProvider`**: `Sign(string)`, `Verify(string, string)`, `GetPublicKey()`

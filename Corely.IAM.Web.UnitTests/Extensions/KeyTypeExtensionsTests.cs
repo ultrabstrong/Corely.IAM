@@ -73,6 +73,15 @@ public class KeyTypeExtensionsTests
     public void CompromiseWarning_SaysSignaturesStopVerifying_ForTheSigningKey() =>
         Assert.Contains("stop verifying", KeyType.AsymmetricSignature.CompromiseWarning());
 
+    [Theory]
+    [InlineData(KeyType.SymmetricEncryption, "New encryption only uses the current version")]
+    [InlineData(KeyType.AsymmetricEncryption, "New encryption only uses the current version")]
+    [InlineData(KeyType.AsymmetricSignature, "New signatures only use the current version")]
+    public void OlderVersionNotice_SaysOnlyTheCurrentVersionIsUsed_ForEveryKey(
+        KeyType keyType,
+        string expected
+    ) => Assert.Contains(expected, keyType.OlderVersionNotice());
+
     [Fact]
     public void RotationWarning_Throws_ForUnknownKeyType() =>
         Assert.Throws<ArgumentOutOfRangeException>(() => ((KeyType)99).RotationWarning());

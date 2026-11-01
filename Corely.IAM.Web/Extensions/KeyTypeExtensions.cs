@@ -36,6 +36,16 @@ internal static class KeyTypeExtensions
                 _ => throw new ArgumentOutOfRangeException(nameof(keyType), keyType, null),
             };
 
+        public string OlderVersionNotice() =>
+            keyType switch
+            {
+                KeyType.SymmetricEncryption or KeyType.AsymmetricEncryption =>
+                    "This is an older version. New encryption only uses the current version. Values encrypted with this version still decrypt with Decrypt on the current version.",
+                KeyType.AsymmetricSignature =>
+                    "This is an older version. New signatures only use the current version. Signatures made with this version still verify with Verify on the current version.",
+                _ => throw new ArgumentOutOfRangeException(nameof(keyType), keyType, null),
+            };
+
         public string CopyKeyLabel() =>
             keyType switch
             {

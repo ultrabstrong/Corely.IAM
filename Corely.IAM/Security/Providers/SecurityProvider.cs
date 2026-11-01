@@ -184,7 +184,14 @@ internal class SecurityProvider(
             current.ProviderName,
             _symmetricEncryptionProviderFactory,
             current.Version,
-            [.. versions.Where(k => k.CompromisedUtc is not null).Select(k => k.Version)]
+            [
+                .. versions.Select(k => new KeyVersionInfo(
+                    k.Version,
+                    k.ProviderName,
+                    null,
+                    k.CompromisedUtc is not null
+                )),
+            ]
         );
     }
 
@@ -212,7 +219,14 @@ internal class SecurityProvider(
             current.PublicKey,
             _asymmetricEncryptionProviderFactory,
             current.Version,
-            [.. versions.Where(k => k.CompromisedUtc is not null).Select(k => k.Version)]
+            [
+                .. versions.Select(k => new KeyVersionInfo(
+                    k.Version,
+                    k.ProviderName,
+                    k.PublicKey,
+                    k.CompromisedUtc is not null
+                )),
+            ]
         );
     }
 
@@ -246,7 +260,14 @@ internal class SecurityProvider(
             current.PublicKey,
             previousVersions,
             current.Version,
-            [.. versions.Where(k => k.CompromisedUtc is not null).Select(k => k.Version)]
+            [
+                .. versions.Select(k => new KeyVersionInfo(
+                    k.Version,
+                    k.ProviderName,
+                    k.PublicKey,
+                    k.CompromisedUtc is not null
+                )),
+            ]
         );
     }
 

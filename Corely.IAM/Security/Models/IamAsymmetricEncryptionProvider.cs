@@ -11,13 +11,15 @@ internal class IamAsymmetricEncryptionProvider(
     string publicKey,
     IAsymmetricEncryptionProviderFactory? decryptingProviders = null,
     int version = 1,
-    IReadOnlyList<int>? compromisedVersions = null
+    IReadOnlyList<KeyVersionInfo>? versions = null
 ) : IIamAsymmetricEncryptionProvider
 {
     public string ProviderName => providerName;
     public string ProviderDescription => provider.ProviderDescription;
     public int Version => version;
-    public IReadOnlyList<int> CompromisedVersions => compromisedVersions ?? [];
+    public IReadOnlyList<KeyVersionInfo> Versions => versions ?? [];
+    public IReadOnlyList<int> CompromisedVersions =>
+        [.. Versions.Where(v => v.IsCompromised).Select(v => v.Version)];
 
     public string PublicKey => publicKey;
 

@@ -2,6 +2,7 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Models;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Roles.Models;
@@ -27,6 +28,40 @@ public class ApiKeyDetailGroupsTests : BunitContext
     private readonly Mock<IBlazorUserContextAccessor> _mockUserContextAccessor = new();
     private readonly Mock<IRetrievalService> _mockRetrievalService = new();
     private readonly Mock<IAuthorizationProvider> _mockAuthorizationProvider = new();
+
+    [Fact]
+    public void YourAccess_ShowsTheViewersAccess_NotTheKeys()
+    {
+        static EffectivePermission Through(string roleName) =>
+            new()
+            {
+                Read = true,
+                Roles = [new EffectiveRole { RoleId = Guid.CreateVersion7(), RoleName = roleName }],
+            };
+        _mockRetrievalService
+            .Setup(x => x.GetApiKeyAsync(_apiKeyId, true))
+            .ReturnsAsync(
+                new RetrieveSingleResult<ApiKey>(
+                    RetrieveResultCode.Success,
+                    string.Empty,
+                    new ApiKey
+                    {
+                        Id = _apiKeyId,
+                        Name = "importer",
+                        Secrets = [],
+                        EffectivePermissions = [Through("Role of the key")],
+                    },
+                    [Through("Role of the viewer")]
+                )
+            );
+
+        var cut = Render<ApiKeyDetail>(p => p.Add(x => x.Id, _apiKeyId));
+
+        var labels = cut.FindAll(".section-divider-label").Select(l => l.TextContent.Trim());
+        Assert.Equal("Your Access", labels.Last());
+        Assert.Contains("Role of the viewer", cut.Markup);
+        Assert.DoesNotContain("Role of the key", cut.Markup);
+    }
 
     public ApiKeyDetailGroupsTests()
     {

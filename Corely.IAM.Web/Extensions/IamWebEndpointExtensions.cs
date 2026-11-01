@@ -18,6 +18,7 @@ public static class IamWebEndpointExtensions
 {
     public const string TOKEN_ENDPOINTS_TAG = "IAM tokens";
     public const string JWKS_ENDPOINTS_TAG = "IAM keys";
+    internal const string JWKS_ENDPOINT_NAME = "IamAccountJwks";
     private const string JWK_SET_CONTENT_TYPE = "application/jwk-set+json";
     private const string JWKS_CACHE_CONTROL = "public, max-age=300";
     private const string REFUSED_KEY = "The key was refused.";
@@ -82,7 +83,7 @@ public static class IamWebEndpointExtensions
 
             group
                 .MapGet("/{accountId:guid}/.well-known/jwks.json", GetAccountJwksAsync)
-                .WithName("IamAccountJwks")
+                .WithName(JWKS_ENDPOINT_NAME)
                 .Produces<AccountJsonWebKeySet>(StatusCodes.Status200OK, JWK_SET_CONTENT_TYPE)
                 .Produces(StatusCodes.Status404NotFound)
                 .WithSummary("The account's public keys as a JSON Web Key Set")

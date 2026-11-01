@@ -20,6 +20,9 @@ Queries entities with filtering, ordering, and pagination. Also retrieves encryp
 | `GetUserAsync` | `Guid userId, bool hydrate` | `RetrieveSingleResult<User>` |
 | `ListAccountsAsync` | `ListAccountsRequest` | `RetrieveListResult<Account>` |
 | `GetAccountAsync` | `Guid accountId, bool hydrate` | `RetrieveSingleResult<Account>` |
+| `GetCurrentUserEffectivePermissionsAsync` | `string resourceType, Guid? resourceId` | `RetrieveSingleResult<List<EffectivePermission>>`; see below |
+
+`GetCurrentUserEffectivePermissionsAsync` tells the signed in user their own access in the current account, for any registered resource type, including a host's own. With a `resourceId` it covers that resource and the whole type; without one, only permissions on the whole type. It reads the caller's own roles and groups, in the current account and the platform account, so it never says anything about another user or another account's rows: another account's id answers the same as an id that does not exist. It does not check that the resource exists. An API key or the system context has no user, and gets `UnauthorizedError`.
 
 > **Note:** `GetTotpStatusAsync` and `GetAuthMethodsAsync` have been moved to dedicated services. See [MFA](../mfa.md) (`IMfaService`) and [Google Sign-In](../google-signin.md) (`IGoogleAuthService`).
 

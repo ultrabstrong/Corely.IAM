@@ -123,6 +123,8 @@ else
             @ChildTable(_key.Groups, "Not in any group", id => Links.Group(CurrentAccountId, id), RemoveGroupAsync, Group.RESOURCE_TYPE, id => id)
         </div>
 
+        <EffectivePermissionsPanel AccountId="CurrentAccountId" Permissions="_effectivePermissions" UseCard="false" />
+
     </div>
 }
 
@@ -144,6 +146,7 @@ else
     private ISecurityPolicyProvider SecurityPolicyProvider => ScopedServices.GetRequiredService<ISecurityPolicyProvider>();
 
     private ApiKey? _key;
+    private List<EffectivePermission>? _effectivePermissions;
     private ResourceTypeSet _allowedTypes = ResourceTypeSet.Empty;
     private bool _isEditing;
     private string _editName = string.Empty;
@@ -166,6 +169,7 @@ else
         if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
         {
             _key = result.Item;
+            _effectivePermissions = result.EffectivePermissions;
             _editName = _key.Name;
             _editDescription = _key.Description;
             _hiddenRoleIds = (_key.Roles ?? []).Select(r => r.Id).ToHashSet();

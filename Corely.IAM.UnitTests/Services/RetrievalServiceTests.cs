@@ -1,6 +1,7 @@
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.ApiKeys.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
@@ -40,6 +41,80 @@ public class RetrievalServiceTests
     private readonly Mock<IAccountKeyProcessor> _mockAccountKeyProcessor = new();
     private readonly RetrievalService _service;
     private readonly UserContext _userContext;
+
+    [Fact]
+    public async Task GetCurrentUserEffectivePermissions_AsksForTheCallerInTheCurrentAccount()
+    {
+        var resourceId = Guid.CreateVersion7();
+        List<EffectivePermission> granted = [new EffectivePermission { Read = true }];
+        _mockPermissionProcessor
+            .Setup(x =>
+                x.GetEffectivePermissionsForUserAsync(
+                    "invoice",
+                    resourceId,
+                    _userContext.User!.Id,
+                    _userContext.CurrentAccount!.Id
+                )
+            )
+            .ReturnsAsync(granted);
+
+        var result = await _service.GetCurrentUserEffectivePermissionsAsync("invoice", resourceId);
+
+        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
+        Assert.Same(granted, result.Item);
+    }
+
+    [Fact]
+    public async Task GetCurrentUserEffectivePermissions_AsksForTheWholeType_WithoutAResourceId()
+    {
+        await _service.GetCurrentUserEffectivePermissionsAsync("invoice");
+
+        _mockPermissionProcessor.Verify(x =>
+            x.GetEffectivePermissionsForUserAsync(
+                "invoice",
+                Guid.Empty,
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>()
+            )
+        );
+    }
+
+    public static TheoryData<string> CallersWithNoUserInAnAccount =>
+        ["system", "api key", "user with no current account"];
+
+    [Theory]
+    [MemberData(nameof(CallersWithNoUserInAnAccount))]
+    public async Task GetCurrentUserEffectivePermissions_IsRefused_ForACallerWithNoUserInAnAccount(
+        string caller
+    )
+    {
+        UserContext context = caller switch
+        {
+            "system" => new UserContext(true, TEST_DEVICE_ID),
+            "api key" => new UserContext(
+                new ApiKey { Id = Guid.CreateVersion7() },
+                _userContext.CurrentAccount!,
+                TEST_DEVICE_ID
+            ),
+            _ => new UserContext(_userContext.User!, null, TEST_DEVICE_ID, []),
+        };
+        _mockUserContextProvider.Setup(x => x.GetUserContext()).Returns(context);
+
+        var result = await _service.GetCurrentUserEffectivePermissionsAsync("invoice");
+
+        Assert.Equal(RetrieveResultCode.UnauthorizedError, result.ResultCode);
+        Assert.Null(result.Item);
+        _mockPermissionProcessor.Verify(
+            x =>
+                x.GetEffectivePermissionsForUserAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<Guid>(),
+                    It.IsAny<Guid>()
+                ),
+            Times.Never
+        );
+    }
 
     public RetrievalServiceTests()
     {

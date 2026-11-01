@@ -133,6 +133,16 @@ internal class RetrievalServiceTelemetryDecorator(
         );
 
     public async Task<
+        RetrieveSingleResult<List<EffectivePermission>>
+    > GetCurrentUserEffectivePermissionsAsync(string resourceType, Guid? resourceId = null) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(RetrievalService),
+            new { resourceType, resourceId },
+            () => _inner.GetCurrentUserEffectivePermissionsAsync(resourceType, resourceId),
+            logResult: true
+        );
+
+    public async Task<
         RetrieveSingleResult<IIamSymmetricEncryptionProvider>
     > GetAccountSymmetricEncryptionProviderAsync(Guid accountId) =>
         await _logger.ExecuteWithLoggingAsync(

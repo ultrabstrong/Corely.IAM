@@ -304,4 +304,30 @@ public class AuditDecoratorMappingTests
         Assert.Null(captured.Call.AccountId);
         Assert.Equal([userId], captured.Call.ResourceIds);
     }
+
+    [Fact]
+    public async Task GetCurrentUserEffectivePermissions_RecordsAReadOfTheAskedResource()
+    {
+        var resourceId = Guid.CreateVersion7();
+        var inner = new Mock<IRetrievalService>();
+        inner
+            .Setup(s => s.GetCurrentUserEffectivePermissionsAsync("invoice", resourceId))
+            .ReturnsAsync(
+                new RetrieveSingleResult<List<EffectivePermission>>(
+                    RetrieveResultCode.Success,
+                    "",
+                    [],
+                    null
+                )
+            );
+
+        await new RetrievalServiceAuditDecorator(
+            inner.Object,
+            _auditProvider
+        ).GetCurrentUserEffectivePermissionsAsync("invoice", resourceId);
+
+        var captured = Assert.Single(_auditProvider.Calls);
+        Assert.Equal("invoice", captured.Call.ResourceType);
+        Assert.Equal([resourceId], captured.Call.ResourceIds);
+    }
 }

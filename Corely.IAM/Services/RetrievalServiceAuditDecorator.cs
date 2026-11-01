@@ -149,6 +149,18 @@ internal class RetrievalServiceAuditDecorator(IRetrievalService inner, IAuditPro
         );
 
     public Task<
+        RetrieveSingleResult<List<EffectivePermission>>
+    > GetCurrentUserEffectivePermissionsAsync(string resourceType, Guid? resourceId = null) =>
+        _auditProvider.RecordAsync(
+            Read(resourceType) with
+            {
+                ResourceIds = resourceId is { } id ? [id] : [],
+            },
+            () => _inner.GetCurrentUserEffectivePermissionsAsync(resourceType, resourceId),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<
         RetrieveSingleResult<IIamSymmetricEncryptionProvider>
     > GetAccountSymmetricEncryptionProviderAsync(Guid accountId) =>
         _auditProvider.RecordAsync(

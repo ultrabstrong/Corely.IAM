@@ -655,6 +655,13 @@ internal static class CrossAccountCases
                     Get<IRetrievalService>(s).GetAccountAsync(a.VictimAccountId, true)
                 ),
             [
+                $"{nameof(IRetrievalService)}.{nameof(IRetrievalService.GetCurrentUserEffectivePermissionsAsync)}"
+            ] = a =>
+                a.LeaksNothingAsync(s =>
+                    Get<IRetrievalService>(s)
+                        .GetCurrentUserEffectivePermissionsAsync(Role.RESOURCE_TYPE, a.ReaderRoleId)
+                ),
+            [
                 $"{nameof(IRetrievalService)}.{nameof(IRetrievalService.GetAccountSymmetricEncryptionProviderAsync)}"
             ] = a =>
                 a.RefusedAsync(

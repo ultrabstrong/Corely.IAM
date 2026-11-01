@@ -194,26 +194,49 @@ internal class RetrievalService(
         );
     }
 
+    public async Task<
+        RetrieveSingleResult<List<EffectivePermission>>
+    > GetCurrentUserEffectivePermissionsAsync(string resourceType, Guid? resourceId = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(resourceType);
+
+        if (!HasUserInAnAccount(_userContextProvider.GetUserContext()))
+        {
+            return new RetrieveSingleResult<List<EffectivePermission>>(
+                RetrieveResultCode.UnauthorizedError,
+                "Only a signed in user in an account has effective permissions",
+                null,
+                null
+            );
+        }
+
+        return new RetrieveSingleResult<List<EffectivePermission>>(
+            RetrieveResultCode.Success,
+            string.Empty,
+            await GetEffectivePermissionsAsync(resourceType, resourceId ?? Guid.Empty),
+            null
+        );
+    }
+
     private async Task<List<EffectivePermission>> GetEffectivePermissionsAsync(
         string resourceType,
         Guid resourceId
     )
     {
         var userContext = _userContextProvider.GetUserContext();
-        if (
-            userContext?.User == null
-            || userContext.IsSystemContext
-            || userContext.CurrentAccount == null
-        )
+        if (!HasUserInAnAccount(userContext))
             return [];
 
         return await _permissionProcessor.GetEffectivePermissionsForUserAsync(
             resourceType,
             resourceId,
-            userContext.User.Id,
-            userContext.CurrentAccount.Id
+            userContext!.User!.Id,
+            userContext.CurrentAccount!.Id
         );
     }
+
+    private static bool HasUserInAnAccount(UserContext? userContext) =>
+        userContext is { User: not null, IsSystemContext: false, CurrentAccount: not null };
 
     private AccountScope GetCurrentAccountScope() =>
         _userContextProvider.GetUserContext()?.CurrentAccountScope ?? default;

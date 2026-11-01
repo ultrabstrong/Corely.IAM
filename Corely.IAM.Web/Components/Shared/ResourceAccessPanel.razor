@@ -1,0 +1,47 @@
+@using Microsoft.Extensions.Logging
+@inherits OwningComponentBase
+@inject ILogger<ResourceAccessPanel> Logger
+
+<EffectivePermissionsPanel AccountId="_accountId" Permissions="_permissions" UseCard="UseCard" />
+
+@code {
+    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
+    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
+
+    [Parameter, EditorRequired]
+    public string ResourceType { get; set; } = string.Empty;
+
+    [Parameter]
+    public Guid? ResourceId { get; set; }
+
+    [Parameter]
+    public bool UseCard { get; set; }
+
+    private (string ResourceType, Guid? ResourceId)? _loaded;
+    private Guid _accountId;
+    private List<EffectivePermission>? _permissions;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var requested = (ResourceType, ResourceId);
+        if (_loaded == requested)
+            return;
+
+        _loaded = requested;
+        _permissions = null;
+        try
+        {
+            var userContext = await BlazorUserContextAccessor.GetUserContextAsync();
+            var result = await RetrievalService.GetCurrentUserEffectivePermissionsAsync(ResourceType, ResourceId);
+            if (_loaded != requested || result.ResultCode != RetrieveResultCode.Success)
+                return;
+
+            _accountId = userContext?.CurrentAccount?.Id ?? Guid.Empty;
+            _permissions = result.Item;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Could not load access to {ResourceType}", ResourceType);
+        }
+    }
+}

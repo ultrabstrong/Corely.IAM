@@ -79,6 +79,8 @@ else
     </div>
 }
 
+<ResourceAccessPanel ResourceType="@User.RESOURCE_TYPE" />
+
 <ConfirmModal @ref="_confirmModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveAsync" />
 
 @code {

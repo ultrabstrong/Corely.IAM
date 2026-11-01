@@ -404,6 +404,31 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         Assert.Contains("do not verify", notice);
     }
 
+    [Fact]
+    public void PublicKeysAddress_ShowsAboveTheTabs_WithAPlainLineAndACopyButton()
+    {
+        const string address = "https://host/keys/1/.well-known/jwks.json";
+
+        var cut = Render<EncryptionSigningPanel>(p => p.Add(x => x.PublicKeysAddress, address));
+
+        var field = cut.Find(".section-divider > div.mb-3");
+        Assert.Contains(address, field.TextContent);
+        Assert.Contains("nothing here is secret", field.TextContent);
+        field.QuerySelector("button")!.Click();
+        Assert.Contains(
+            JSInterop.Invocations,
+            i => i.Identifier == "navigator.clipboard.writeText" && Equals(i.Arguments[0], address)
+        );
+    }
+
+    [Fact]
+    public void PublicKeysAddress_IsHidden_WhenTheHostHasNotMappedIt()
+    {
+        var cut = Render<EncryptionSigningPanel>();
+
+        Assert.DoesNotContain("Public keys address", cut.Markup);
+    }
+
     private static Mock<IIamAsymmetricSignatureProvider> SigningWithVersions(
         params KeyVersionInfo[] versions
     )

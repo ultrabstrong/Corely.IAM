@@ -38,6 +38,11 @@ public interface IRetrievalService
 
     Task<RetrieveSingleResult<Account>> GetAccountAsync(Guid accountId, bool hydrate = false);
 
+    Task<RetrieveSingleResult<List<EffectivePermission>>> GetCurrentUserEffectivePermissionsAsync(
+        string resourceType,
+        Guid? resourceId = null
+    );
+
     Task<
         RetrieveSingleResult<IIamSymmetricEncryptionProvider>
     > GetAccountSymmetricEncryptionProviderAsync(Guid accountId);

@@ -1,3 +1,4 @@
+@using Microsoft.AspNetCore.Routing
 @inherits EntityPageBase
 @inject IIamWebLinks Links
 @inject IAccountDisplayState AccountDisplayState
@@ -195,12 +196,12 @@ else
             <PermissionView Action="AuthAction.Update" Resource="@Account.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                 <Authorized>
                     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
-                                            DescriptionText="@KEYS_DESCRIPTION" ShowKeyVersions="true" RotateKeyAsync="RotateKeyAsync" RotateCompromisedKeyAsync="RotateCompromisedKeyAsync" MarkKeyCompromisedAsync="MarkKeyCompromisedAsync"
+                                            DescriptionText="@KEYS_DESCRIPTION" ShowKeyVersions="true" PublicKeysAddress="@PublicKeysAddress" RotateKeyAsync="RotateKeyAsync" RotateCompromisedKeyAsync="RotateCompromisedKeyAsync" MarkKeyCompromisedAsync="MarkKeyCompromisedAsync"
                                             RevealKeyAsync="RevealKeyHandler" RevealGoogleClientId="@_revealGoogleClientId" CanProveIdentity="_canProveIdentity" />
                 </Authorized>
                 <NotAuthorized>
                     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
-                                            DescriptionText="@KEYS_DESCRIPTION" ShowKeyVersions="true" RevealKeyAsync="RevealKeyHandler"
+                                            DescriptionText="@KEYS_DESCRIPTION" ShowKeyVersions="true" PublicKeysAddress="@PublicKeysAddress" RevealKeyAsync="RevealKeyHandler"
                                             RevealGoogleClientId="@_revealGoogleClientId" CanProveIdentity="_canProveIdentity" />
                 </NotAuthorized>
             </PermissionView>
@@ -566,6 +567,11 @@ else
             await ReloadAsync();
         });
     }
+
+    private string? PublicKeysAddress =>
+        ScopedServices.GetService<LinkGenerator>()?.AccountJwksPath(CurrentAccountId) is { } path
+            ? NavigationManager.ToAbsoluteUri(path.TrimStart('/')).ToString()
+            : null;
 
     private const string KEYS_DESCRIPTION =
         "This account has its own symmetric and asymmetric encryption keys plus a signing key.";

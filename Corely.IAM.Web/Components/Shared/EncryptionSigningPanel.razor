@@ -10,6 +10,19 @@
         @DescriptionText Keys are provisioned automatically and stored encrypted - use the tools
         below to encrypt, decrypt and sign messages with them.
     </p>
+    @if (PublicKeysAddress != null)
+    {
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Public keys address</label>
+            <div class="d-flex align-items-start gap-1">
+                <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@PublicKeysAddress</textarea>
+                <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopyPublicKeysAddressAsync" title="Copy">
+                    <i class="bi @(_publicKeysAddressCopied ? "bi-check text-success" : "bi-copy")"></i>
+                </button>
+            </div>
+            <div class="form-text">Public keys others can use to verify this account's signatures or encrypt to this account. No sign in needed, and nothing here is secret.</div>
+        </div>
+    }
     <ul class="nav nav-tabs flex-nowrap">
         <li class="nav-item">
             <button class="nav-link @(_activeKeyTab == 0 ? "active" : "")" @onclick="() => ShowTab(0)">
@@ -255,6 +268,9 @@
     public bool ShowKeyVersions { get; set; }
 
     [Parameter]
+    public string? PublicKeysAddress { get; set; }
+
+    [Parameter]
     public string? RevealGoogleClientId { get; set; }
 
     [Parameter]
@@ -267,6 +283,7 @@
 
     private readonly Dictionary<KeyType, int> _selectedVersions = [];
     private bool _olderPublicKeyCopied;
+    private bool _publicKeysAddressCopied;
     private FormModal _proofModal = null!;
     private string _proofTitle = string.Empty;
     private string _proofConfirmText = string.Empty;
@@ -799,6 +816,7 @@
     private async Task CopySymOutputAsync() => await CopyWithFeedbackAsync(_symOutput, v => _symOutputCopied = v);
     private async Task CopyAsymPublicKeyAsync() => await CopyWithFeedbackAsync(AsymProvider?.PublicKey, v => _asymPublicKeyCopied = v);
     private async Task CopyAsymOutputAsync() => await CopyWithFeedbackAsync(_asymOutput, v => _asymOutputCopied = v);
+    private async Task CopyPublicKeysAddressAsync() => await CopyWithFeedbackAsync(PublicKeysAddress, v => _publicKeysAddressCopied = v);
     private async Task CopyOlderPublicKeyAsync(string publicKey) => await CopyWithFeedbackAsync(publicKey, v => _olderPublicKeyCopied = v);
     private async Task CopySigPublicKeyAsync() => await CopyWithFeedbackAsync(SigProvider?.PublicKey, v => _sigPublicKeyCopied = v);
 

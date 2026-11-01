@@ -16,6 +16,24 @@ Displays effective permissions aggregated by role, showing how permissions are d
 <EffectivePermissionsPanel AccountId="CurrentAccountId" Permissions="@_effectivePermissions" />
 ```
 
+## ResourceAccessPanel
+
+Loads the current user's access by itself, so a page needs one line. Use it on a host's own pages; it works for any registered resource type.
+
+```razor
+<ResourceAccessPanel ResourceType="@Invoice.RESOURCE_TYPE" ResourceId="Id" />
+```
+
+Leave out `ResourceId` on a list page, to show access to the type as a whole.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `ResourceType` | `string` | required | The registered resource type |
+| `ResourceId` | `Guid?` | none | One resource, or none for the whole type |
+| `UseCard` | `bool` | `false` | Wrap in card layout (vs. section divider) |
+
+It has its own service scope, so it loads beside the page without sharing its database context. It shows nothing when the user has no access, or when the load fails, which it logs as a warning. It reloads when `ResourceType` or `ResourceId` changes.
+
 ## Display
 
 - **Aggregated CRUDX badges**: green for granted, gray for not granted (across all permissions)

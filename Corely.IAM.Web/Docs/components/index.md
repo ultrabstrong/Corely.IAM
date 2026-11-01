@@ -46,6 +46,7 @@ Reusable Blazor components in the `Corely.IAM.Web.Components.Shared` namespace.
 | `FormModal` | Generic form modal with confirm/cancel | `Title`, `ChildContent`, `OnConfirm` |
 | `ConfirmModal` | Destructive action confirmation | `Title`, `Message`, `Type`, `OnConfirm` |
 | `EffectivePermissionsPanel` | Permission tree with role/group derivation | `AccountId`, `Permissions` |
+| `ResourceAccessPanel` | Loads and shows the current user's access to a resource or type | `ResourceType`, `ResourceId` |
 | `AccountScope` | Renders its content only in the account its route names, switching first | `AccountId`, `ChildContent` |
 | `EncryptionSigningPanel` | Tabbed crypto provider UI for testing | `SymProvider`, `AsymProvider`, `SigProvider` |
 | `Alert` | Dismissible Bootstrap alert | `Message`, `Type`, `Dismissible` |

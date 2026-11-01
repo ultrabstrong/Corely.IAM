@@ -622,7 +622,9 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         Assert.Contains(SECRET, cut.Markup);
 
         SelectVersion(cut, 2);
+        Assert.DoesNotContain(SECRET, cut.Markup);
 
+        SelectVersion(cut, 3);
         Assert.DoesNotContain(SECRET, cut.Markup);
     }
 }

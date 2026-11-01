@@ -87,7 +87,7 @@ Server:
 
 ### Google sign-in
 
-With `SecurityOptions:GoogleClientId` set, the sign-in, register, and profile pages load Google
+With `SecurityOptions:GoogleClientId` set, the sign-in, register, profile, and (for a user with no password) account pages load Google
 Identity Services, which renders its button in an iframe. Add Google's sources to the directives
 above:
 

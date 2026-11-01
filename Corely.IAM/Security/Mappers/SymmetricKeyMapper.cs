@@ -69,6 +69,7 @@ internal static class SymmetricKeyMapper
                 Version = entity.Version,
                 Key = entity.EncryptedKey.ToEncryptedValue(encryptionProviderFactory),
                 CreatedUtc = entity.CreatedUtc,
+                CompromisedUtc = entity.CompromisedUtc,
                 ModifiedUtc = entity.ModifiedUtc,
             };
         }

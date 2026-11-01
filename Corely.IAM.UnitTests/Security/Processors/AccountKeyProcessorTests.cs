@@ -30,7 +30,14 @@ public class AccountKeyProcessorTests
     {
         _securityProvider = _serviceFactory.GetRequiredService<ISecurityProvider>();
         _mockReauthentication
-            .Setup(x => x.VerifyCurrentPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>()))
+            .Setup(x =>
+                x.VerifyIdentityAsync(
+                    It.IsAny<Guid>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>()
+                )
+            )
             .ReturnsAsync(ReauthenticationResult.Succeeded);
         _mockReauthentication
             .Setup(x => x.VerifyTotpCodeAsync(It.IsAny<Guid>(), It.IsAny<string?>()))
@@ -220,7 +227,7 @@ public class AccountKeyProcessorTests
         Assert.False(string.IsNullOrWhiteSpace(result.ProviderName));
         Assert.NotEmpty(Convert.FromBase64String(result.ReadKey()!));
         _mockReauthentication.Verify(
-            x => x.VerifyCurrentPasswordAsync(_userId, PASSWORD),
+            x => x.VerifyIdentityAsync(_userId, PASSWORD, null, null),
             Times.Once
         );
         _mockReauthentication.Verify(x => x.VerifyTotpCodeAsync(_userId, TOTP), Times.Once);
@@ -246,7 +253,14 @@ public class AccountKeyProcessorTests
     {
         var accountId = await CreateAccountAsync();
         _mockReauthentication
-            .Setup(x => x.VerifyCurrentPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>()))
+            .Setup(x =>
+                x.VerifyIdentityAsync(
+                    It.IsAny<Guid>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>()
+                )
+            )
             .ReturnsAsync(
                 new ReauthenticationResult((ReauthenticationResultCode)reauthentication, "no")
             );
@@ -304,6 +318,68 @@ public class AccountKeyProcessorTests
     }
 
     [Fact]
+    public async Task RevealKey_PassesTheGoogleProofOn_ForAUserWithNoPassword()
+    {
+        var accountId = await CreateAccountAsync();
+
+        await _processor.RevealKeyAsync(
+            new RevealAccountKeyRequest(
+                accountId,
+                KeyType.SymmetricEncryption,
+                null,
+                TOTP,
+                "id-token",
+                "nonce"
+            )
+        );
+
+        _mockReauthentication.Verify(
+            x => x.VerifyIdentityAsync(_userId, null, "id-token", "nonce"),
+            Times.Once
+        );
+    }
+
+    [Theory]
+    [InlineData(
+        ReauthenticationResultCode.GoogleSignInRequiredError,
+        RevealAccountKeyResultCode.GoogleSignInRequiredError
+    )]
+    [InlineData(
+        ReauthenticationResultCode.InvalidGoogleSignInError,
+        RevealAccountKeyResultCode.InvalidGoogleSignInError
+    )]
+    [InlineData(
+        ReauthenticationResultCode.NoReauthenticationMethodError,
+        RevealAccountKeyResultCode.NoReauthenticationMethodError
+    )]
+    public async Task RevealKey_RevealsNothing_ForAFailedGoogleProof(
+        Enum reauthentication,
+        RevealAccountKeyResultCode expected
+    )
+    {
+        var accountId = await CreateAccountAsync();
+        _mockReauthentication
+            .Setup(x =>
+                x.VerifyIdentityAsync(
+                    It.IsAny<Guid>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>()
+                )
+            )
+            .ReturnsAsync(
+                new ReauthenticationResult((ReauthenticationResultCode)reauthentication, "no")
+            );
+
+        var result = await _processor.RevealKeyAsync(
+            Request(accountId, KeyType.SymmetricEncryption)
+        );
+
+        Assert.Equal(expected, result.ResultCode);
+        Assert.Null(result.ReadKey());
+    }
+
+    [Fact]
     public void RevealAccountKeyResult_KeepsTheKeyOutOfSerializationAndToString()
     {
         var result = new RevealAccountKeyResult(
@@ -326,12 +402,16 @@ public class AccountKeyProcessorTests
             Guid.CreateVersion7(),
             KeyType.SymmetricEncryption,
             "the-password",
-            "the-code"
+            "the-code",
+            "the-google-token",
+            "the-nonce"
         );
 
         var written = JsonSerializer.Serialize(request) + request;
 
         Assert.DoesNotContain("the-password", written);
         Assert.DoesNotContain("the-code", written);
+        Assert.DoesNotContain("the-google-token", written);
+        Assert.DoesNotContain("the-nonce", written);
     }
 }

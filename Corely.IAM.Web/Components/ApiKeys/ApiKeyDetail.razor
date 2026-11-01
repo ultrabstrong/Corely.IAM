@@ -110,17 +110,17 @@ else
                     <button class="btn btn-primary btn-sm" @onclick="() => _rolePicker.ShowAsync()" disabled="@_loading">Add Roles</button>
                 </PermissionView>
             </div>
-            @ChildTable(_key.Roles, "No roles assigned", id => Links.Role(CurrentAccountId, id), RemoveRoleAsync)
+            @ChildTable(_key.Roles, "No roles assigned", id => Links.Role(CurrentAccountId, id), RemoveRoleAsync, ApiKey.RESOURCE_TYPE, _ => Id)
         </div>
 
         <div class="section-divider mb-4">
             <div class="section-divider-label">
                 Groups
-                <PermissionView Action="AuthAction.Update" Resource="@ApiKey.RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <PermissionView Action="AuthAction.Update" Resource="@Group.RESOURCE_TYPE">
                     <button class="btn btn-primary btn-sm" @onclick="() => _groupPicker.ShowAsync()" disabled="@_loading">Add to Groups</button>
                 </PermissionView>
             </div>
-            @ChildTable(_key.Groups, "Not in any group", id => Links.Group(CurrentAccountId, id), RemoveGroupAsync)
+            @ChildTable(_key.Groups, "Not in any group", id => Links.Group(CurrentAccountId, id), RemoveGroupAsync, Group.RESOURCE_TYPE, id => id)
         </div>
 
     </div>
@@ -173,7 +173,7 @@ else
         }
     }
 
-    private RenderFragment ChildTable(List<ChildRef>? items, string empty, Func<Guid, string> link, Func<Guid, Task> remove) =>
+    private RenderFragment ChildTable(List<ChildRef>? items, string empty, Func<Guid, string> link, Func<Guid, Task> remove, string gateResourceType, Func<Guid, Guid> gateResourceId) =>
         @<table class="table table-striped table-hover table-cards mb-0">
             <thead class="list-head"><tr><th>Name</th><th class="table-actions">Actions</th></tr></thead>
             <tbody>
@@ -190,7 +190,7 @@ else
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     <a href="@link(item.Id)" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
-                                    <PermissionView Action="AuthAction.Update" Resource="@ApiKey.RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                                    <PermissionView Action="AuthAction.Update" Resource="@gateResourceType" ResourceIds="new[] { gateResourceId(item.Id) }">
                                         <button class="btn btn-sm btn-outline-danger" @onclick="() => remove(item.Id)" title="Remove"><i class="bi bi-trash"></i></button>
                                     </PermissionView>
                                 </div>
@@ -276,7 +276,8 @@ else
             return ([], 0);
 
         var grantable = await AuthorizationProvider.GetGrantableGroupIdsAsync(result.Data.Items.Select(g => g.Id));
-        _hiddenGroupIds.UnionWith(result.Data.Items.Select(g => g.Id).Where(id => !grantable.Contains(id)));
+        var changeable = await AuthorizationProvider.GetAuthorizedResourceIdsAsync(AuthAction.Update, Group.RESOURCE_TYPE);
+        _hiddenGroupIds.UnionWith(result.Data.Items.Select(g => g.Id).Where(id => !grantable.Contains(id) || changeable?.Contains(id) == false));
         return ([.. result.Data.Items.Select(g => new PickerItem(g.Id, g.Name, g.Description))], result.Data.TotalCount);
     }
 

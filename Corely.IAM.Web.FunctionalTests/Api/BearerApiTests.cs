@@ -5,6 +5,8 @@ using System.Text.Json;
 using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Models;
+using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Web.FunctionalTests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -151,6 +153,65 @@ public class BearerApiTests : FunctionalTestBase
         using var afterReuse = await SendAsync(HttpMethod.Get, "/api/me", second.AuthToken);
         Assert.Equal(HttpStatusCode.Unauthorized, afterReuse.StatusCode);
     }
+
+    [Fact]
+    public async Task AccessToken_StopsWorking_WhenItsSigningKeyIsMarkedCompromised_AndRenewalRecovers()
+    {
+        var (_, key) = await CreateKeyWithOwnerRoleAsync();
+        var pair = await ExchangeAsync(key);
+        using (var before = await SendAsync(HttpMethod.Get, "/api/me", pair.AuthToken))
+            Assert.Equal(HttpStatusCode.OK, before.StatusCode);
+
+        await RotateSigningKeyAsync(markCompromised: true);
+
+        using (var after = await SendAsync(HttpMethod.Get, "/api/me", pair.AuthToken))
+            Assert.Equal(HttpStatusCode.Unauthorized, after.StatusCode);
+
+        using var renewed = await PostJsonAsync(
+            $"{AUTH}/renew",
+            new { refreshToken = pair.RefreshToken }
+        );
+        Assert.Equal(HttpStatusCode.OK, renewed.StatusCode);
+        var next = (await renewed.Content.ReadFromJsonAsync<Envelope<TokenPair>>(Json))!.Data;
+        using var recovered = await SendAsync(HttpMethod.Get, "/api/me", next.AuthToken);
+        Assert.Equal(HttpStatusCode.OK, recovered.StatusCode);
+    }
+
+    [Fact]
+    public async Task AccessToken_KeepsWorking_AfterAPlainRotation()
+    {
+        var (_, key) = await CreateKeyWithOwnerRoleAsync();
+        var pair = await ExchangeAsync(key);
+
+        await RotateSigningKeyAsync(markCompromised: false);
+
+        using var after = await SendAsync(HttpMethod.Get, "/api/me", pair.AuthToken);
+        Assert.Equal(HttpStatusCode.OK, after.StatusCode);
+    }
+
+    private Task RotateSigningKeyAsync(bool markCompromised) =>
+        Factory.WithScopeAsync(async services =>
+        {
+            var signIn = await services
+                .GetRequiredService<IAuthenticationService>()
+                .SignInAsync(
+                    new SignInRequest(
+                        SeedData.OwnerUsername,
+                        SeedData.OwnerPassword,
+                        "seed-device",
+                        AccountId
+                    )
+                );
+            Assert.Equal(SignInResultCode.Success, signIn.ResultCode);
+
+            var modification = services.GetRequiredService<IModificationService>();
+            var request = new RotateAccountKeyRequest(AccountId, KeyType.AsymmetricSignature);
+            var rotated = markCompromised
+                ? await modification.RotateCompromisedAccountKeyAsync(request)
+                : await modification.RotateAccountKeyAsync(request);
+            Assert.Equal(ModifyResultCode.Success, rotated.ResultCode);
+            return true;
+        });
 
     [Fact]
     public async Task SignOut_EndsTheBearerSession()

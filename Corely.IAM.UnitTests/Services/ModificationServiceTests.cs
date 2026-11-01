@@ -1,3 +1,4 @@
+using Corely.DataAccess.Interfaces.UnitOfWork;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.ApiKeys.Processors;
@@ -35,6 +36,7 @@ public class ModificationServiceTests
     private readonly Mock<IReauthenticationProvider> _mockReauthenticationProvider = new();
     private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly Mock<ILogger<ModificationService>> _mockLogger = new();
+    private readonly Mock<IUnitOfWorkProvider> _mockUowProvider = new();
     private readonly Guid _userId = Guid.CreateVersion7();
     private readonly ModificationService _service;
 
@@ -62,8 +64,45 @@ public class ModificationServiceTests
             _mockBasicAuthProcessor.Object,
             _mockReauthenticationProvider.Object,
             _mockUserContextProvider.Object,
-            _mockAuthenticationProvider.Object
+            _mockAuthenticationProvider.Object,
+            _mockUowProvider.Object
         );
+    }
+
+    [Fact]
+    public async Task RotateCompromisedAccountKey_Commits_WhenTheRotationSucceeds()
+    {
+        var request = new RotateAccountKeyRequest(
+            Guid.CreateVersion7(),
+            KeyType.AsymmetricSignature
+        );
+        _mockKeyRotationProcessor
+            .Setup(x => x.RotateCompromisedAccountKeyAsync(request))
+            .ReturnsAsync(new ModifyResult(ModifyResultCode.Success, string.Empty));
+
+        var result = await _service.RotateCompromisedAccountKeyAsync(request);
+
+        Assert.Equal(ModifyResultCode.Success, result.ResultCode);
+        _mockUowProvider.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _mockUowProvider.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RotateCompromisedAccountKey_RollsBack_WhenTheRotationFails()
+    {
+        var request = new RotateAccountKeyRequest(
+            Guid.CreateVersion7(),
+            KeyType.AsymmetricSignature
+        );
+        _mockKeyRotationProcessor
+            .Setup(x => x.RotateCompromisedAccountKeyAsync(request))
+            .ReturnsAsync(new ModifyResult(ModifyResultCode.NotFoundError, "missing"));
+
+        var result = await _service.RotateCompromisedAccountKeyAsync(request);
+
+        Assert.Equal(ModifyResultCode.NotFoundError, result.ResultCode);
+        _mockUowProvider.Verify(x => x.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _mockUowProvider.Verify(x => x.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #region ModifyPasswordAsync Tests

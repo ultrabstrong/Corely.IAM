@@ -7,5 +7,6 @@ namespace Corely.IAM.Security.Processors;
 internal interface IKeyRotationProcessor
 {
     Task<ModifyResult> RotateAccountKeyAsync(RotateAccountKeyRequest request);
+    Task<ModifyResult> RotateCompromisedAccountKeyAsync(RotateAccountKeyRequest request);
     Task<ModifyResult> RotateCurrentUserKeyAsync(KeyType keyType);
 }

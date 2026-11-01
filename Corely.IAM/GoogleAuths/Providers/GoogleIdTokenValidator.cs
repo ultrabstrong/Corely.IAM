@@ -70,7 +70,13 @@ internal class GoogleIdTokenValidator(
                 return null;
             }
 
-            return new GoogleIdTokenPayload(subject, email, emailVerified);
+            return new GoogleIdTokenPayload(
+                subject,
+                email,
+                emailVerified,
+                jwt.Claims.FirstOrDefault(c => c.Type == "nonce")?.Value,
+                jwt.IssuedAt == default ? null : jwt.IssuedAt
+            );
         }
         catch (SecurityTokenException ex)
         {

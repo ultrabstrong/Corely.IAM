@@ -70,6 +70,12 @@ internal static class AsymmetricKeyMapper
         }
     }
 
+    extension(IEnumerable<AccountAsymmetricKeyEntity>? keys)
+    {
+        public List<AccountAsymmetricKeyEntity> TrustedVersions(KeyUsedFor keyUsedFor) =>
+            [.. keys.Versions(keyUsedFor).Where(k => k.CompromisedUtc is null)];
+    }
+
     extension(AccountAsymmetricKeyEntity entity)
     {
         public AsymmetricKey ToModel(ISymmetricEncryptionProviderFactory encryptionProviderFactory)
@@ -83,6 +89,7 @@ internal static class AsymmetricKeyMapper
                 PublicKey = entity.PublicKey,
                 PrivateKey = entity.EncryptedPrivateKey.ToEncryptedValue(encryptionProviderFactory),
                 CreatedUtc = entity.CreatedUtc,
+                CompromisedUtc = entity.CompromisedUtc,
                 ModifiedUtc = entity.ModifiedUtc,
             };
         }

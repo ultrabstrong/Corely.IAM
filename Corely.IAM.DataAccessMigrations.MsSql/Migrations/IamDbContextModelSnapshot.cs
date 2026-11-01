@@ -30,6 +30,9 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("CompromisedUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedUtc")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("DATETIME2")
@@ -101,6 +104,9 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
 
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompromisedUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedUtc")
                         .ValueGeneratedOnAdd()

@@ -88,6 +88,16 @@ internal class ModificationServiceTelemetryDecorator(
             logResult: true
         );
 
+    public async Task<ModifyResult> RotateCompromisedAccountKeyAsync(
+        RotateAccountKeyRequest request
+    ) =>
+        await _logger.ExecuteWithLoggingAsync(
+            nameof(ModificationService),
+            request,
+            () => _inner.RotateCompromisedAccountKeyAsync(request),
+            logResult: true
+        );
+
     public async Task<ModifyResult> RotateCurrentUserKeyAsync(KeyType keyType) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(ModificationService),

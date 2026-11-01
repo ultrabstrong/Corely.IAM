@@ -83,6 +83,13 @@ internal class ModificationServiceAuditDecorator(
             r => AuditOutcome.Of(r.ResultCode)
         );
 
+    public Task<ModifyResult> RotateCompromisedAccountKeyAsync(RotateAccountKeyRequest request) =>
+        _auditProvider.RecordAsync(
+            Update(Account.RESOURCE_TYPE, request.AccountId, request.AccountId),
+            () => _inner.RotateCompromisedAccountKeyAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
     public Task<ModifyResult> RotateCurrentUserKeyAsync(KeyType keyType) =>
         _auditProvider.RecordAsync(
             new AuditCall(SERVICE, AuthAction.Update, User.RESOURCE_TYPE)

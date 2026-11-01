@@ -10,6 +10,9 @@ public enum RevealAccountKeyResultCode
     UserLockedError,
     TotpRequiredError,
     InvalidTotpCodeError,
+    GoogleSignInRequiredError,
+    InvalidGoogleSignInError,
+    NoReauthenticationMethodError,
 }
 
 public sealed class RevealAccountKeyResult(

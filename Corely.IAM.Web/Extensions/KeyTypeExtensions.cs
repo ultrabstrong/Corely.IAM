@@ -16,6 +16,26 @@ internal static class KeyTypeExtensions
                 _ => throw new ArgumentOutOfRangeException(nameof(keyType), keyType, null),
             };
 
+        public string CompromiseWarning() =>
+            keyType switch
+            {
+                KeyType.SymmetricEncryption or KeyType.AsymmetricEncryption =>
+                    "This cannot be undone. The old key stops being used for anything new, but it still decrypts what it encrypted, so nothing is lost. Anyone holding a copy can still read that data, so re-encrypting moves it onto the new key here but does not take back what they already have.",
+                KeyType.AsymmetricSignature =>
+                    "This cannot be undone. Signatures made with the old key stop verifying here and it leaves the published key set, so anything signed with it must be signed again. API key sessions signed with it end at once and must renew.",
+                _ => throw new ArgumentOutOfRangeException(nameof(keyType), keyType, null),
+            };
+
+        public string CompromisedNotice() =>
+            keyType switch
+            {
+                KeyType.SymmetricEncryption or KeyType.AsymmetricEncryption =>
+                    "Marked versions only decrypt what they already encrypted. Re-encrypt moves that data onto the current key.",
+                KeyType.AsymmetricSignature =>
+                    "Marked versions are no longer trusted: their signatures do not verify and they are not published.",
+                _ => throw new ArgumentOutOfRangeException(nameof(keyType), keyType, null),
+            };
+
         public string CopyKeyLabel() =>
             keyType switch
             {

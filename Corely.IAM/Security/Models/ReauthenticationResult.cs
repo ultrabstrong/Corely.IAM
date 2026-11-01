@@ -8,6 +8,9 @@ internal enum ReauthenticationResultCode
     UserLockedError,
     TotpRequiredError,
     InvalidTotpCodeError,
+    GoogleSignInRequiredError,
+    InvalidGoogleSignInError,
+    NoReauthenticationMethodError,
 }
 
 internal record ReauthenticationResult(ReauthenticationResultCode ResultCode, string Message)

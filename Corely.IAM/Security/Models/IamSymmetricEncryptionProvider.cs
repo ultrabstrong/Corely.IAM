@@ -9,12 +9,14 @@ internal class IamSymmetricEncryptionProvider(
     ISymmetricKeyStoreProvider keyStore,
     string providerName,
     ISymmetricEncryptionProviderFactory? decryptingProviders = null,
-    int version = 1
+    int version = 1,
+    IReadOnlyList<int>? compromisedVersions = null
 ) : IIamSymmetricEncryptionProvider
 {
     public string ProviderName => providerName;
     public string ProviderDescription => provider.ProviderDescription;
     public int Version => version;
+    public IReadOnlyList<int> CompromisedVersions => compromisedVersions ?? [];
 
     public string Encrypt(string plaintext) => provider.Encrypt(plaintext, keyStore);
 

@@ -22,7 +22,8 @@ internal class KeyRotationProcessor(
     IRepo<AccountAsymmetricKeyEntity> accountAsymmetricKeyRepo,
     ISecurityProvider securityProvider,
     IUserContextProvider userContextProvider,
-    ILogger<KeyRotationProcessor> logger
+    ILogger<KeyRotationProcessor> logger,
+    TimeProvider timeProvider
 ) : IKeyRotationProcessor
 {
     private readonly IReadonlyRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
@@ -44,8 +45,18 @@ internal class KeyRotationProcessor(
         nameof(userContextProvider)
     );
     private readonly ILogger<KeyRotationProcessor> _logger = logger.ThrowIfNull(nameof(logger));
+    private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
 
-    public async Task<ModifyResult> RotateAccountKeyAsync(RotateAccountKeyRequest request)
+    public Task<ModifyResult> RotateAccountKeyAsync(RotateAccountKeyRequest request) =>
+        RotateAsync(request, markOldKeyCompromised: false);
+
+    public Task<ModifyResult> RotateCompromisedAccountKeyAsync(RotateAccountKeyRequest request) =>
+        RotateAsync(request, markOldKeyCompromised: true);
+
+    private async Task<ModifyResult> RotateAsync(
+        RotateAccountKeyRequest request,
+        bool markOldKeyCompromised
+    )
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         if (!Enum.IsDefined(request.KeyType))
@@ -74,6 +85,15 @@ internal class KeyRotationProcessor(
         {
             var key = _securityProvider.GetSymmetricEncryptionKeyEncryptedWithSystemKey();
             key.Version = account.SymmetricKeys.NextVersion(key.KeyUsedFor);
+            if (
+                markOldKeyCompromised
+                && account.SymmetricKeys.CurrentVersion(key.KeyUsedFor) is { } oldKey
+            )
+            {
+                var compromised = await _accountSymmetricKeyRepo.GetAsync(k => k.Id == oldKey.Id);
+                compromised!.CompromisedUtc = _timeProvider.GetUtcNow().UtcDateTime;
+                await _accountSymmetricKeyRepo.UpdateAsync(compromised);
+            }
             await _accountSymmetricKeyRepo.CreateAsync(key.ToAccountEntity(account.Id));
             version = key.Version;
         }
@@ -81,15 +101,25 @@ internal class KeyRotationProcessor(
         {
             var key = NewAsymmetricKey(request.KeyType);
             key.Version = account.AsymmetricKeys.NextVersion(key.KeyUsedFor);
+            if (
+                markOldKeyCompromised
+                && account.AsymmetricKeys.CurrentVersion(key.KeyUsedFor) is { } oldKey
+            )
+            {
+                var compromised = await _accountAsymmetricKeyRepo.GetAsync(k => k.Id == oldKey.Id);
+                compromised!.CompromisedUtc = _timeProvider.GetUtcNow().UtcDateTime;
+                await _accountAsymmetricKeyRepo.UpdateAsync(compromised);
+            }
             await _accountAsymmetricKeyRepo.CreateAsync(key.ToAccountEntity(account.Id));
             version = key.Version;
         }
 
         _logger.LogInformation(
-            "Rotated {KeyType} key for account {AccountId} to version {Version}",
+            "Rotated {KeyType} key for account {AccountId} to version {Version}, old key marked compromised: {Compromised}",
             request.KeyType,
             account.Id,
-            version
+            version,
+            markOldKeyCompromised
         );
         return new ModifyResult(ModifyResultCode.Success, string.Empty);
     }

@@ -105,6 +105,51 @@ public class UserDetailGroupsTests : BunitContext
     }
 
     [Fact]
+    public void AddGroups_Hides_ForACallerWhoCanUpdateTheUserButNotGroups()
+    {
+        _mockAuthorizationProvider
+            .Setup(x =>
+                x.IsAuthorizedAsync(AuthAction.Update, Group.RESOURCE_TYPE, It.IsAny<Guid[]>())
+            )
+            .ReturnsAsync(false);
+
+        var cut = Render<UserDetail>(p => p.Add(x => x.Id, _userId));
+
+        cut.WaitForAssertion(() => Assert.Contains("Add Roles", cut.Markup));
+        Assert.DoesNotContain("Add Groups", cut.Markup);
+    }
+
+    [Fact]
+    public void GroupPicker_OffersOnlyGroupsTheCallerCanUpdate()
+    {
+        var allowed = new Group { Id = Guid.CreateVersion7(), Name = "allowed" };
+        var forbidden = new Group { Id = Guid.CreateVersion7(), Name = "forbidden" };
+        _mockRetrievalService
+            .Setup(x => x.ListGroupsAsync(It.IsAny<ListGroupsRequest>()))
+            .ReturnsAsync(
+                new RetrieveListResult<Group>(
+                    RetrieveResultCode.Success,
+                    string.Empty,
+                    PagedResult<Group>.Create([allowed, forbidden], 2, 0, 25)
+                )
+            );
+        _mockAuthorizationProvider
+            .Setup(x => x.GetGrantableGroupIdsAsync(It.IsAny<IEnumerable<Guid>>()))
+            .ReturnsAsync(new HashSet<Guid> { allowed.Id, forbidden.Id });
+        _mockAuthorizationProvider
+            .Setup(x => x.GetAuthorizedResourceIdsAsync(AuthAction.Update, Group.RESOURCE_TYPE))
+            .ReturnsAsync(new HashSet<Guid> { allowed.Id });
+
+        var cut = Render<UserDetail>(p => p.Add(x => x.Id, _userId));
+        cut.WaitForAssertion(() => Assert.Contains("Add Groups", cut.Markup));
+        cut.FindAll("button").First(b => b.TextContent.Trim() == "Add Groups").Click();
+
+        cut.WaitForAssertion(() =>
+            Assert.Equal(["allowed"], cut.FindAll(".picker-item-text").Select(e => e.TextContent))
+        );
+    }
+
+    [Fact]
     public void RemoveGroup_Hides_ForAGroupTheCallerCannotUpdate()
     {
         _mockAuthorizationProvider

@@ -102,6 +102,62 @@ public class AssociationSidesTests
         Assert.Empty(FindMissingSides(_associations, ReadPage));
     }
 
+    private sealed record AddButton(string Page, string Text, string CheckedType);
+
+    private static readonly AddButton[] _addButtons =
+    [
+        new(USER, "Add Groups", "Group"),
+        new(USER, "Add Roles", "User"),
+        new(GROUP, "Add Users", "Group"),
+        new(GROUP, "Add API keys", "Group"),
+        new(GROUP, "Add Roles", "Group"),
+        new(ROLE, "Add Permissions", "Role"),
+        new(ROLE, "Add Users", "User"),
+        new(ROLE, "Add Groups", "Group"),
+        new(ROLE, "Add API keys", "ApiKey"),
+        new(API_KEY, "Add Roles", "ApiKey"),
+        new(API_KEY, "Add to Groups", "Group"),
+        new(PERMISSION, "Add to Roles", "Role"),
+    ];
+
+    private static IEnumerable<string> FindWrongGates(
+        IEnumerable<AddButton> buttons,
+        Func<string, string> readPage
+    ) =>
+        buttons
+            .Select(button =>
+            {
+                var markup = readPage(button.Page);
+                var position = markup.IndexOf($">{button.Text}</button>", StringComparison.Ordinal);
+                var gate = Regex
+                    .Matches(markup[..Math.Max(position, 0)], @"Resource=""@(\w+)\.RESOURCE_TYPE""")
+                    .LastOrDefault()
+                    ?.Groups[1]
+                    .Value;
+                return (button, gate);
+            })
+            .Where(x => x.gate != x.button.CheckedType)
+            .Select(x =>
+                $"{x.button.Page} gates {x.button.Text} on {x.gate}, but the service checks {x.button.CheckedType}"
+            );
+
+    [Fact]
+    public void EveryAddButton_IsGatedOnTheTypeTheServiceChecks()
+    {
+        Assert.Empty(FindWrongGates(_addButtons, ReadPage));
+    }
+
+    [Fact]
+    public void FindWrongGates_ReportsAButtonGatedOnAnotherType()
+    {
+        var wrong = FindWrongGates(
+            [new AddButton("page", "Add Groups", "Group")],
+            _ => """<PermissionView Resource="@User.RESOURCE_TYPE"><button>Add Groups</button>"""
+        );
+
+        Assert.Single(wrong);
+    }
+
     [Fact]
     public void FindMissingSides_ReportsAPageWithoutTheCall()
     {

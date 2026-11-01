@@ -2,6 +2,7 @@
 @inject IIamWebLinks Links
 @inject IAccountDisplayState AccountDisplayState
 @inject IJSRuntime JSRuntime
+@inject IOptions<SecurityOptions> SecurityOptions
 
 <div class="management-header">
     <h1><i class="bi bi-building me-2"></i>@_accountName <span class="resource-label">Account</span></h1>
@@ -194,11 +195,13 @@ else
             <PermissionView Action="AuthAction.Update" Resource="@Account.RESOURCE_TYPE" ResourceIds="new[] { Id }">
                 <Authorized>
                     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
-                                            DescriptionText="@KEYS_DESCRIPTION" RotateKeyAsync="RotateKeyAsync" RevealKeyAsync="RevealKeyHandler" />
+                                            DescriptionText="@KEYS_DESCRIPTION" RotateKeyAsync="RotateKeyAsync" RotateCompromisedKeyAsync="RotateCompromisedKeyAsync"
+                                            RevealKeyAsync="RevealKeyHandler" RevealGoogleClientId="@_revealGoogleClientId" CanProveIdentity="_canProveIdentity" />
                 </Authorized>
                 <NotAuthorized>
                     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
-                                            DescriptionText="@KEYS_DESCRIPTION" RevealKeyAsync="RevealKeyHandler" />
+                                            DescriptionText="@KEYS_DESCRIPTION" RevealKeyAsync="RevealKeyHandler"
+                                            RevealGoogleClientId="@_revealGoogleClientId" CanProveIdentity="_canProveIdentity" />
                 </NotAuthorized>
             </PermissionView>
         </PermissionView>
@@ -272,6 +275,7 @@ else
     private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
     private IInvitationService InvitationService => ScopedServices.GetRequiredService<IInvitationService>();
     private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
+    private IGoogleAuthService GoogleAuthService => ScopedServices.GetRequiredService<IGoogleAuthService>();
 
     private string? _accountName;
     private string? _originalAccountName;
@@ -308,8 +312,10 @@ else
     private IIamAsymmetricEncryptionProvider? _asymProvider;
     private IIamAsymmetricSignatureProvider? _sigProvider;
     private bool _canRevealKeys;
+    private bool _canProveIdentity = true;
+    private string? _revealGoogleClientId;
 
-    private Func<KeyType, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyHandler =>
+    private Func<KeyType, string?, string?, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyHandler =>
         _canRevealKeys ? RevealKeyAsync : null;
 
     protected override async Task LoadCoreAsync()
@@ -320,8 +326,10 @@ else
             _accountName = result.Item.AccountName;
             _users = result.Item.Users ?? [];
             _effectivePermissions = result.EffectivePermissions;
-            _canRevealKeys = UserContext?.EnteredAsPlatformMember == false
+            _canRevealKeys = UserContext?.User != null
                 && await AuthorizationProvider.IsAuthorizedAsync(AuthAction.Execute, Account.SECRET_KEYS_RESOURCE_TYPE, Id);
+            if (_canRevealKeys)
+                await LoadRevealProofAsync();
         }
         else
         {
@@ -563,14 +571,28 @@ else
     private const string KEYS_DESCRIPTION =
         "This account has its own symmetric and asymmetric encryption keys plus a signing key.";
 
-    private Task<RevealAccountKeyResult> RevealKeyAsync(KeyType keyType, string? currentPassword, string? totpCode) =>
-        RetrievalService.RevealAccountKeyAsync(new RevealAccountKeyRequest(CurrentAccountId, keyType, currentPassword, totpCode));
+    private Task<RevealAccountKeyResult> RevealKeyAsync(KeyType keyType, string? currentPassword, string? totpCode, string? googleIdToken, string? googleNonce) =>
+        RetrievalService.RevealAccountKeyAsync(new RevealAccountKeyRequest(CurrentAccountId, keyType, currentPassword, totpCode, googleIdToken, googleNonce));
 
-    private async Task<ModifyResult> RotateKeyAsync(KeyType keyType)
+    private async Task LoadRevealProofAsync()
     {
-        var result = await ModificationService.RotateAccountKeyAsync(
-            new RotateAccountKeyRequest(Id, keyType)
-        );
+        var methods = await GoogleAuthService.GetAuthMethodsAsync();
+        var googleClientId = SecurityOptions.Value.GoogleClientId;
+        _revealGoogleClientId = !methods.HasBasicAuth && methods.HasGoogleAuth && !string.IsNullOrWhiteSpace(googleClientId)
+            ? googleClientId
+            : null;
+        _canProveIdentity = methods.HasBasicAuth || _revealGoogleClientId != null;
+    }
+
+    private Task<ModifyResult> RotateKeyAsync(KeyType keyType) =>
+        ReloadKeysAfterAsync(ModificationService.RotateAccountKeyAsync(new RotateAccountKeyRequest(Id, keyType)));
+
+    private Task<ModifyResult> RotateCompromisedKeyAsync(KeyType keyType) =>
+        ReloadKeysAfterAsync(ModificationService.RotateCompromisedAccountKeyAsync(new RotateAccountKeyRequest(Id, keyType)));
+
+    private async Task<ModifyResult> ReloadKeysAfterAsync(Task<ModifyResult> rotation)
+    {
+        var result = await rotation;
         if (result.ResultCode == ModifyResultCode.Success)
         {
             await LoadKeyProvidersAsync();

@@ -2,6 +2,8 @@ using System.Security.Cryptography;
 using System.Text;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Audits.Entities;
+using Corely.IAM.Audits.Enums;
+using Corely.IAM.Audits.Models;
 using Corely.IAM.DataAccess;
 using Corely.IAM.IntegrationTests.Infrastructure;
 using Corely.IAM.Models;
@@ -225,6 +227,169 @@ public class AccountKeyTests : IAsyncLifetime
 
         Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
         Assert.Null(result.Item);
+    }
+
+    private Task RotateCompromisedAsync(KeyType keyType) =>
+        _scenario.ActAsAsync(
+            _scenario.OwnerUsername,
+            _scenario.AccountId,
+            async services =>
+            {
+                var result = await services
+                    .GetRequiredService<IModificationService>()
+                    .RotateCompromisedAccountKeyAsync(
+                        new RotateAccountKeyRequest(_scenario.AccountId, keyType)
+                    );
+                Assert.Equal(ModifyResultCode.Success, result.ResultCode);
+                return true;
+            }
+        );
+
+    private Task<IIamAsymmetricSignatureProvider> SigningProviderAsync() =>
+        _scenario.AsSystemAsync(async services =>
+            (
+                await services
+                    .GetRequiredService<IRetrievalService>()
+                    .GetAccountAsymmetricSignatureProviderAsync(_scenario.AccountId)
+            ).Item!
+        );
+
+    [Fact]
+    public async Task PlainRotation_KeepsVerifyingAndPublishingTheOldSigningKey()
+    {
+        var signature = (await SigningProviderAsync()).Sign("a payload");
+
+        await RotateAsync(KeyType.AsymmetricSignature);
+
+        var provider = await SigningProviderAsync();
+        Assert.True(provider.Verify("a payload", signature));
+        Assert.Empty(provider.CompromisedVersions);
+        Assert.Equal(2, (await GetKeySetAsync()).Keys.Count(k => k.Use == "sig"));
+    }
+
+    [Fact]
+    public async Task CompromisedSigningKey_StopsVerifying_AndLeavesTheKeySet()
+    {
+        var signature = (await SigningProviderAsync()).Sign("a payload");
+
+        await RotateCompromisedAsync(KeyType.AsymmetricSignature);
+
+        var provider = await SigningProviderAsync();
+        Assert.False(provider.Verify("a payload", signature));
+        Assert.True(provider.Verify("a payload", provider.Sign("a payload")));
+        Assert.Equal(2, provider.Version);
+        Assert.Equal([1], provider.CompromisedVersions);
+        var signing = (await GetKeySetAsync()).Keys.Single(k => k.Use == "sig");
+        Assert.EndsWith("-sig-2", signing.KeyId);
+    }
+
+    [Fact]
+    public async Task CompromisedSymmetricKey_StillDecryptsExistingData_AndIsNotUsedForNewData()
+    {
+        var provider = await _scenario.AsSystemAsync(async services =>
+            (
+                await services
+                    .GetRequiredService<IRetrievalService>()
+                    .GetAccountSymmetricEncryptionProviderAsync(_scenario.AccountId)
+            ).Item!
+        );
+        var ciphertext = provider.Encrypt("old data");
+
+        await RotateCompromisedAsync(KeyType.SymmetricEncryption);
+
+        var after = await _scenario.AsSystemAsync(async services =>
+            (
+                await services
+                    .GetRequiredService<IRetrievalService>()
+                    .GetAccountSymmetricEncryptionProviderAsync(_scenario.AccountId)
+            ).Item!
+        );
+        Assert.Equal("old data", after.Decrypt(ciphertext));
+        Assert.Equal([1], after.CompromisedVersions);
+        Assert.Equal(2, after.Version);
+        Assert.Contains(":2:", after.Encrypt("new data"));
+        Assert.Contains(":2:", after.ReEncrypt(ciphertext));
+    }
+
+    [Fact]
+    public async Task CompromisedEncryptionKey_StillDecryptsExistingData_AndLeavesTheKeySet()
+    {
+        var provider = await _scenario.AsSystemAsync(async services =>
+            (
+                await services
+                    .GetRequiredService<IRetrievalService>()
+                    .GetAccountAsymmetricEncryptionProviderAsync(_scenario.AccountId)
+            ).Item!
+        );
+        var ciphertext = provider.Encrypt("old data");
+
+        await RotateCompromisedAsync(KeyType.AsymmetricEncryption);
+
+        var after = await _scenario.AsSystemAsync(async services =>
+            (
+                await services
+                    .GetRequiredService<IRetrievalService>()
+                    .GetAccountAsymmetricEncryptionProviderAsync(_scenario.AccountId)
+            ).Item!
+        );
+        Assert.Equal("old data", after.Decrypt(ciphertext));
+        Assert.Equal([1], after.CompromisedVersions);
+        var encryption = (await GetKeySetAsync()).Keys.Single(k => k.Use == "enc");
+        Assert.EndsWith("-enc-2", encryption.KeyId);
+    }
+
+    [Fact]
+    public async Task MarkingCompromised_IsAlwaysAudited_EvenThoughTheAccountRecordsNoExecute()
+    {
+        await _scenario.ActAsAsync(
+            _scenario.OwnerUsername,
+            _scenario.AccountId,
+            async services =>
+            {
+                await services
+                    .GetRequiredService<IAuditService>()
+                    .UpdateAccountSettingsAsync(
+                        new UpdateAccountAuditSettingsRequest(
+                            _scenario.AccountId,
+                            AuditActions.None,
+                            AuditActions.None,
+                            30
+                        )
+                    );
+                return true;
+            }
+        );
+
+        await RotateCompromisedAsync(KeyType.AsymmetricSignature);
+
+        var codes = await _scenario.AsSystemAsync(services =>
+            services
+                .GetRequiredService<IamDbContext>()
+                .Set<AuditEntryEntity>()
+                .Where(e =>
+                    e.Operation == nameof(IModificationService.RotateCompromisedAccountKeyAsync)
+                    && e.AccountId == _scenario.AccountId
+                )
+                .Select(e => e.ResultCode)
+                .ToListAsync()
+        );
+        Assert.Equal([nameof(ModifyResultCode.Success)], codes);
+    }
+
+    [Fact]
+    public async Task CopiedSigningKey_CanStillSign_ButNothingHereTrustsIt()
+    {
+        var copied = await RevealAsync(_scenario.OwnerUsername, KeyType.AsymmetricSignature);
+        var payload = Encoding.UTF8.GetBytes("forged");
+        using var holder = ECDsa.Create();
+        holder.ImportPkcs8PrivateKey(Convert.FromBase64String(copied.ReadKey()!), out _);
+        var forged = Convert.ToBase64String(holder.SignData(payload, HashAlgorithmName.SHA256));
+
+        Assert.True((await SigningProviderAsync()).Verify("forged", forged));
+
+        await RotateCompromisedAsync(KeyType.AsymmetricSignature);
+
+        Assert.False((await SigningProviderAsync()).Verify("forged", forged));
     }
 
     [Fact]

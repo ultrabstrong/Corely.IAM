@@ -27,6 +27,9 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Property<Guid>("AccountId")
                         .HasColumnType("char(36)");
 
+                    b.Property<DateTime?>("CompromisedUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<DateTime>("CreatedUtc")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TIMESTAMP")
@@ -98,6 +101,9 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
 
                     b.Property<Guid>("AccountId")
                         .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CompromisedUtc")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("CreatedUtc")
                         .ValueGeneratedOnAdd()

@@ -65,6 +65,12 @@ internal static class ReauthenticationResultCodeExtensions
                     RevealAccountKeyResultCode.TotpRequiredError,
                 ReauthenticationResultCode.InvalidTotpCodeError =>
                     RevealAccountKeyResultCode.InvalidTotpCodeError,
+                ReauthenticationResultCode.GoogleSignInRequiredError =>
+                    RevealAccountKeyResultCode.GoogleSignInRequiredError,
+                ReauthenticationResultCode.InvalidGoogleSignInError =>
+                    RevealAccountKeyResultCode.InvalidGoogleSignInError,
+                ReauthenticationResultCode.NoReauthenticationMethodError =>
+                    RevealAccountKeyResultCode.NoReauthenticationMethodError,
                 _ => throw Unmapped(resultCode),
             };
     }

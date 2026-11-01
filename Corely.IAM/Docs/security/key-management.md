@@ -78,11 +78,27 @@ await modificationService.RotateCurrentUserKeyAsync(KeyType.AsymmetricSignature)
 Earlier versions are kept, never deleted:
 
 - **Ciphertext** carries the key version it was made with (`provider:version:data`), which is the `Version` of the key row that made it, so a provider decrypts values from any version. `ReEncrypt` moves a value onto the newest version; data encrypted outside IAM is re-encrypted by whoever holds it, when they choose.
-- **Signatures** made with an earlier signing key still pass `Verify`. `PublicKey` is the newest key, so anyone verifying outside IAM needs it for new signatures.
+- **Signatures** made with an earlier signing key still pass `Verify`, unless that version is marked compromised. `PublicKey` is the newest key, so anyone verifying outside IAM needs it for new signatures.
 - **Sign in tokens** are signed with the user's newest signing key and validated against every version, so rotating a user's signing key does not end their sessions.
 - **The algorithm may change between versions.** Each version records its provider, and a value is decrypted with the provider it names.
 
 Account keys need Update permission on the account. User keys are a self operation: only the signed in user rotates their own, and system context is refused.
+
+## Compromised Keys
+
+`RotateCompromisedAccountKeyAsync` rotates an account key and marks the version it replaces compromised,
+in one transaction. It takes the same request and permission as `RotateAccountKeyAsync`, and is always
+recorded in the audit log. It cannot be undone, and only the version being replaced is marked. Rotating
+with `RotateAccountKeyAsync` marks nothing.
+
+| Key | A compromised version |
+|-----|-----------------------|
+| Signing | Stops verifying in `Verify`, stops validating API key access tokens, and leaves the JSON Web Key Set. API key callers renew with their refresh token and carry on. Anything signed with it must be signed again |
+| Encryption, either kind | Still decrypts what it encrypted, or the data would be lost. Nothing new is encrypted with it, and it is not published. `CompromisedVersions` on the provider names it, and `ReEncrypt` moves values onto the current key |
+
+Marking stops this application trusting the version. It does nothing to a copy someone holds: they can
+still read whatever was encrypted with it, and anyone who stored the old public key can still verify with
+it, so tell whoever relies on your signatures.
 
 ## Public Keys as a JSON Web Key Set
 
@@ -92,20 +108,22 @@ fields: `AccountJsonWebKey` has no property for a private one.
 
 | Key | `use` | `kty` | `alg` | Listed |
 |-----|-------|-------|-------|--------|
-| Signing, ECDSA P-256 with SHA-256 | `sig` | `EC` | `ES256` | Every version, newest first |
-| Signing, RSA PKCS#1 with SHA-256 | `sig` | `RSA` | `RS256` | Every version, newest first |
+| Signing, ECDSA P-256 with SHA-256 | `sig` | `EC` | `ES256` | Every version not marked compromised, newest first |
+| Signing, RSA PKCS#1 with SHA-256 | `sig` | `RSA` | `RS256` | Every version not marked compromised, newest first |
 | Encryption, RSA OAEP with SHA-256 | `enc` | `RSA` | `RSA-OAEP-256` | The current version |
 
 - **`kid`** is `{accountId:N}-{use}-{version}` (`AccountJsonWebKey.KeyIdFor`). `Sign` returns a bare
   signature with no `kid`, so a host that wants verifiers to pick the key sends it alongside, built from
   the provider's `Version`.
-- **Every signing version stays listed**, because signatures made with an earlier key still verify.
+- **Every trusted signing version stays listed**, because signatures made with an earlier key still verify.
 - **Only the current encryption key is listed**, so nobody encrypts to a retired key. A value encrypted
   to an earlier version still decrypts.
 - A key with no standard form, such as ECDSA on a curve JOSE gives no SHA-256 algorithm, is left out and
   logged.
-- These are the account's keys. Sign in tokens are not signed with them, so this set does not validate
-  a token.
+- These are the account's keys. API key access tokens are signed with the account's signing key, so
+  this set verifies their signature, though IAM also needs the token's row to be active. User sign in
+  tokens are signed with the user's own key, so this set does not verify them.
+- A compromised version is left out. See [Compromised Keys](#compromised-keys).
 
 `Corely.IAM.Web` serves the set from `MapIAMJwksEndpoints`; see its [Bearer API](../../../Corely.IAM.Web/Docs/bearer-api.md) page.
 
@@ -116,11 +134,12 @@ customer needs it outside the app. Anyone holding one can read or sign as the ac
 not cancel a copy, so it is guarded beyond an ordinary read:
 
 - **Permission**: Execute on `account_secret_keys` (`Account.SECRET_KEYS_RESOURCE_TYPE`), an owner default.
-- **Who**: a signed in user acting in that account. System context, API keys and a platform member who
-  entered the account are refused.
-- **Reauthentication**: the current password, and the two factor code when the user has two factor on. A
-  user with no password, such as one who only signs in with Google, is refused.
-- **Audit**: every call is recorded, whatever the audit settings say, refusals included.
+- **Who**: a signed in user acting in that account who holds the permission, whether in the account or
+  through the platform account. System context and API keys are refused.
+- **Reauthentication**: see below.
+- **Audit**: every call is recorded, whatever the audit settings say, refusals included. A platform
+  member who does not belong to the account is recorded in the `PlatformMember` cohort, so the customer's
+  audit log shows it.
 - **Never serialized**: the key is read with `ReadKey()` and is not a property, so a serializer or a
   structured log cannot reach it, and the request's password and code are internal. No endpoint calls it.
 
@@ -134,6 +153,13 @@ var key = result.ReadKey();
 |-----------|---------------------|
 | `SymmetricEncryption` | The key, Base64 |
 | `AsymmetricEncryption`, `AsymmetricSignature` | The private key, Base64 PKCS#8 |
+
+**Proving it is you.** A user with a password proves it with that password, whatever else they have. A
+user with no password and a linked Google account proves it with a fresh Google sign in, passing the ID
+token and the nonce they sent Google in the request. It must be issued for the linked account, carry that
+nonce, and be no more than five minutes old, so an existing session never counts. Either way the two
+factor code follows when the user has two factor on. A user with neither gets
+`NoReauthenticationMethodError`, whose message tells them to set a password on their profile.
 
 Only the current version is returned. Ciphertext names the version that made it, so a copy reads only
 values encrypted with that version: copy again after a rotation, and re-encrypt older values first if

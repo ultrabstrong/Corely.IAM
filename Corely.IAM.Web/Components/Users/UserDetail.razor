@@ -29,7 +29,7 @@ else
         <div class="section-divider mb-4">
             <div class="section-divider-label">
                 Groups
-                <PermissionView Action="AuthAction.Update" Resource="@User.RESOURCE_TYPE" ResourceIds="new[] { Id }">
+                <PermissionView Action="AuthAction.Update" Resource="@Group.RESOURCE_TYPE">
                     <button class="btn btn-primary btn-sm" @onclick="() => _groupPickerModal.ShowAsync()" disabled="@_loading">Add Groups</button>
                 </PermissionView>
             </div>
@@ -205,7 +205,8 @@ else
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             var grantable = await AuthorizationProvider.GetGrantableGroupIdsAsync(result.Data.Items.Select(x => x.Id));
-            _hiddenGroupIds.UnionWith(result.Data.Items.Select(x => x.Id).Where(id => !grantable.Contains(id)));
+            var changeable = await AuthorizationProvider.GetAuthorizedResourceIdsAsync(AuthAction.Update, Group.RESOURCE_TYPE);
+            _hiddenGroupIds.UnionWith(result.Data.Items.Select(x => x.Id).Where(id => !grantable.Contains(id) || changeable?.Contains(id) == false));
             var items = result.Data.Items.Select(g => new PickerItem(g.Id, g.Name, g.Description)).ToList();
             return (items, result.Data.TotalCount);
         }

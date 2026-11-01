@@ -50,7 +50,7 @@ internal class AccountKeyProcessor(
         }
 
         var signingKeys = account
-            .AsymmetricKeys.Versions(KeyUsedFor.Signature)
+            .AsymmetricKeys.TrustedVersions(KeyUsedFor.Signature)
             .OrderByDescending(k => k.Version);
         var encryptionKey = account.AsymmetricKeys.CurrentVersion(KeyUsedFor.Encryption);
 
@@ -91,15 +91,17 @@ internal class AccountKeyProcessor(
                 "A non-system user context is required to reveal an account key."
             );
 
-        var password = await _reauthenticationProvider.VerifyCurrentPasswordAsync(
+        var identity = await _reauthenticationProvider.VerifyIdentityAsync(
             userId,
-            request.CurrentPassword
+            request.CurrentPassword,
+            request.GoogleIdToken,
+            request.GoogleNonce
         );
-        if (password.ResultCode != ReauthenticationResultCode.Success)
+        if (identity.ResultCode != ReauthenticationResultCode.Success)
         {
             return new RevealAccountKeyResult(
-                password.ResultCode.ToRevealAccountKeyResultCode(),
-                password.Message
+                identity.ResultCode.ToRevealAccountKeyResultCode(),
+                identity.Message
             );
         }
 

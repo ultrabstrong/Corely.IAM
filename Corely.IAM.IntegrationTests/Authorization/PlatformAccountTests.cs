@@ -1,5 +1,7 @@
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.Audits.Entities;
+using Corely.IAM.Audits.Enums;
 using Corely.IAM.IntegrationTests.Infrastructure;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
@@ -7,8 +9,10 @@ using Corely.IAM.Platform.Models;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.TotpAuths.Entities;
+using Corely.IAM.TotpAuths.Providers;
 using Corely.IAM.Users.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -226,6 +230,59 @@ public class PlatformAccountTests : IAsyncLifetime
         Assert.Equal(ModifyResultCode.Success, saved.ResultCode);
         Assert.Equal(RetrieveResultCode.UnauthorizedError, audit.ResultCode);
     }
+
+    [Fact]
+    public async Task PlatformMember_RevealsAKey_AndTheCustomersAuditShowsItWasThem()
+    {
+        await GivePlatformRoleAsync(
+            (Account.RESOURCE_TYPE, [AuthAction.Read]),
+            (Account.SECRET_KEYS_RESOURCE_TYPE, [AuthAction.Read, AuthAction.Execute])
+        );
+
+        var revealed = await RevealAsOutsiderAsync();
+
+        Assert.Equal(RevealAccountKeyResultCode.Success, revealed.ResultCode);
+        var cohort = await _scenario.Host.QueryAsync(db =>
+            db.Set<AuditEntryEntity>()
+                .Where(e =>
+                    e.AccountId == _scenario.AccountId
+                    && e.Operation == nameof(IRetrievalService.RevealAccountKeyAsync)
+                )
+                .Select(e => e.Cohort)
+                .SingleAsync()
+        );
+        Assert.Equal(AuditCohort.PlatformMember, cohort);
+    }
+
+    [Fact]
+    public async Task PlatformMember_CannotRevealAKey_WithoutThePermission()
+    {
+        await GivePlatformRoleAsync((Account.RESOURCE_TYPE, [AuthAction.Read]));
+
+        var revealed = await RevealAsOutsiderAsync();
+
+        Assert.Equal(RevealAccountKeyResultCode.UnauthorizedError, revealed.ResultCode);
+        Assert.Null(revealed.ReadKey());
+    }
+
+    private Task<RevealAccountKeyResult> RevealAsOutsiderAsync() =>
+        _scenario.ActAsAsync(
+            _scenario.OutsiderUsername,
+            _scenario.AccountId,
+            services =>
+                services
+                    .GetRequiredService<IRetrievalService>()
+                    .RevealAccountKeyAsync(
+                        new RevealAccountKeyRequest(
+                            _scenario.AccountId,
+                            KeyType.SymmetricEncryption,
+                            IamScenario.Password,
+                            services
+                                .GetRequiredService<ITotpProvider>()
+                                .GenerateCode(_scenario.TotpSecretOf(_scenario.OutsiderUsername))
+                        )
+                    )
+        );
 
     [Fact]
     public async Task PlatformMember_HoldsOnlyPlatformRolePermissions_InAnotherAccount()

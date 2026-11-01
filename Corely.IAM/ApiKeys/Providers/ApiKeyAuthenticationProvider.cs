@@ -129,7 +129,7 @@ internal class ApiKeyAuthenticationProvider(
             key?.Account is not { } account
             || !_sessionTokenProvider.IsSignedBy(
                 authToken,
-                account.AsymmetricKeys.Versions(KeyUsedFor.Signature)
+                account.AsymmetricKeys.TrustedVersions(KeyUsedFor.Signature)
             )
         )
             return ApiKeyAuthTokenResult.Failed(ApiKeyAuthTokenResultCode.TokenValidationFailed);

@@ -45,3 +45,28 @@ export async function renderLinkButton(elementId, clientId, dotNetRef) {
         shape: "rectangular",
     });
 }
+
+export async function renderReauthButton(elementId, clientId, nonce, dotNetRef) {
+    await loadLibrary();
+
+    const container = document.getElementById(elementId);
+    if (!container) {
+        return;
+    }
+
+    window.google.accounts.id.initialize({
+        client_id: clientId,
+        nonce,
+        auto_select: false,
+        callback: (response) => dotNetRef.invokeMethodAsync("OnGoogleReauthCredential", response.credential),
+    });
+
+    container.replaceChildren();
+    window.google.accounts.id.renderButton(container, {
+        type: "standard",
+        size: "medium",
+        theme: "outline",
+        text: "signin_with",
+        shape: "rectangular",
+    });
+}

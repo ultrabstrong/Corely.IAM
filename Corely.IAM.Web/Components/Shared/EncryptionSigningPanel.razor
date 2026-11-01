@@ -1,3 +1,4 @@
+@using System.Security.Cryptography
 @using Corely.IAM.Web.Extensions
 @implements IDisposable
 @inject IJSRuntime JSRuntime
@@ -44,6 +45,7 @@
                     <span class="badge text-bg-light border ms-1">Version @SymProvider.Version</span>
                     <small class="text-muted ms-2">@SymProvider.ProviderDescription</small>
                 </div>
+                @CompromisedVersions(KeyType.SymmetricEncryption, SymProvider.CompromisedVersions)
             }
             <div class="mb-3">
                 <label class="form-label fw-semibold">Input</label>
@@ -87,6 +89,7 @@
                     <span class="badge text-bg-light border ms-1">Version @AsymProvider.Version</span>
                     <small class="text-muted ms-2">@AsymProvider.ProviderDescription</small>
                 </div>
+                @CompromisedVersions(KeyType.AsymmetricEncryption, AsymProvider.CompromisedVersions)
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Public Key</label>
                     <div class="d-flex align-items-start gap-1">
@@ -139,6 +142,7 @@
                     <span class="badge text-bg-light border ms-1">Version @SigProvider.Version</span>
                     <small class="text-muted ms-2">@SigProvider.ProviderDescription</small>
                 </div>
+                @CompromisedVersions(KeyType.AsymmetricSignature, SigProvider.CompromisedVersions)
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Public Key</label>
                     <div class="d-flex align-items-start gap-1">
@@ -181,14 +185,28 @@
     </div>
 </div>
 
-<ConfirmModal @ref="_rotateModal" Title="Rotate Key" Message="@_rotateConfirmMessage" ConfirmText="Rotate" Type="ConfirmModalType.Warning" OnConfirm="RotateAsync" />
+<ConfirmModal @ref="_rotateModal" Title="Rotate Key" Message="@_rotateConfirmMessage" ConfirmText="Rotate" Type="ConfirmModalType.Warning" OnConfirm="RotateAsync" ChildContent="RotateModalContent" />
 
 <FormModal @ref="_revealModal" Title="@_revealKeyType.CopyKeyLabel()" ConfirmText="Show key" OnConfirm="RevealAsync">
     @KeyWarning(_revealKeyType)
-    <div class="mb-3">
-        <label class="form-label">Your password</label>
-        <PasswordInput @bind-Value="_revealPassword" />
-    </div>
+    @if (RevealGoogleClientId == null)
+    {
+        <div class="mb-3">
+            <label class="form-label">Your password</label>
+            <PasswordInput @bind-Value="_revealPassword" />
+        </div>
+    }
+    else
+    {
+        <div class="mb-3">
+            <label class="form-label">Sign in with Google again to prove it is you</label>
+            <div id="@GOOGLE_BUTTON_ID"></div>
+            @if (_revealGoogleIdToken != null)
+            {
+                <small class="text-success">Google sign in received.</small>
+            }
+        </div>
+    }
     <div class="mb-1">
         <label class="form-label">Authenticator or recovery code, if you use two factor</label>
         <input type="text" class="form-control form-control-sm" autocomplete="one-time-code" @bind="_revealTotpCode" />
@@ -213,14 +231,31 @@
     public Func<KeyType, Task<ModifyResult>>? RotateKeyAsync { get; set; }
 
     [Parameter]
-    public Func<KeyType, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyAsync { get; set; }
+    public Func<KeyType, Task<ModifyResult>>? RotateCompromisedKeyAsync { get; set; }
+
+    [Parameter]
+    public Func<KeyType, string?, string?, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyAsync { get; set; }
+
+    [Parameter]
+    public string? RevealGoogleClientId { get; set; }
+
+    [Parameter]
+    public bool CanProveIdentity { get; set; } = true;
 
     private const int KEY_VISIBLE_SECONDS = 60;
+    private const string GOOGLE_BUTTON_ID = "google-reauth-button";
+    private const string NO_PROOF_MESSAGE =
+        "Copying a key needs proof that it is you, and you have no way to give it yet. Set a password on your profile, then try again.";
 
     private FormModal _revealModal = null!;
     private KeyType _revealKeyType;
     private string _revealPassword = string.Empty;
     private string? _revealTotpCode;
+    private string? _revealGoogleIdToken;
+    private string? _revealGoogleNonce;
+    private bool _renderGoogleButton;
+    private IJSObjectReference? _googleModule;
+    private DotNetObjectReference<EncryptionSigningPanel>? _selfRef;
     private string? _revealError;
     private KeyType _revealedKeyType;
     private string? _revealedKey;
@@ -230,6 +265,29 @@
     private CancellationTokenSource? _revealedKeyTimer;
 
     private string? RotateMargin => RevealKeyAsync == null ? "ms-auto" : null;
+
+    private RenderFragment? RotateModalContent => RotateCompromisedKeyAsync == null ? null : RotateOptions;
+
+    private RenderFragment RotateOptions =>
+        @<text>
+            <p>@_rotateConfirmMessage</p>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="mark-key-compromised" @bind="_markCompromised" />
+                <label class="form-check-label" for="mark-key-compromised">Mark the old key compromised</label>
+            </div>
+            @if (_markCompromised)
+            {
+                <div class="alert alert-danger py-2 mt-2 mb-0">@_rotateKeyType.CompromiseWarning()</div>
+            }
+        </text>;
+
+    private static RenderFragment CompromisedVersions(KeyType keyType, IReadOnlyList<int>? versions) =>
+        @<text>
+            @if (versions is { Count: > 0 })
+            {
+                <div class="alert alert-warning py-2">Compromised: version @string.Join(", ", versions). @keyType.CompromisedNotice()</div>
+            }
+        </text>;
 
     private RenderFragment CopyKeyButton(KeyType keyType) =>
         @<text>
@@ -284,9 +342,53 @@
         _revealKeyType = keyType;
         _revealPassword = string.Empty;
         _revealTotpCode = null;
+        _revealGoogleIdToken = null;
         _revealError = null;
         ClearRevealedKey();
+        if (!CanProveIdentity)
+        {
+            _revealError = NO_PROOF_MESSAGE;
+            return;
+        }
+
+        _revealGoogleNonce = RevealGoogleClientId == null ? null : Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
+        _renderGoogleButton = RevealGoogleClientId != null;
         _revealModal.Show();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_renderGoogleButton)
+            return;
+
+        _renderGoogleButton = false;
+        try
+        {
+            _selfRef ??= DotNetObjectReference.Create(this);
+            _googleModule ??= await JSRuntime.InvokeAsync<IJSObjectReference>(
+                "import",
+                "./_content/Corely.IAM.Web/js/google-link.js"
+            );
+            await _googleModule.InvokeVoidAsync(
+                "renderReauthButton",
+                GOOGLE_BUTTON_ID,
+                RevealGoogleClientId,
+                _revealGoogleNonce,
+                _selfRef
+            );
+        }
+        catch (JSException)
+        {
+            _revealError = "Could not load Google sign-in. Check your connection and try again.";
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public void OnGoogleReauthCredential(string credential)
+    {
+        _revealGoogleIdToken = credential;
+        StateHasChanged();
     }
 
     private async Task RevealAsync()
@@ -294,10 +396,14 @@
         if (RevealKeyAsync == null) return;
         var password = _revealPassword;
         var totpCode = _revealTotpCode;
+        var googleIdToken = _revealGoogleIdToken;
+        var googleNonce = _revealGoogleNonce;
         _revealPassword = string.Empty;
         _revealTotpCode = null;
+        _revealGoogleIdToken = null;
+        _revealGoogleNonce = null;
 
-        var result = await RevealKeyAsync(_revealKeyType, password, totpCode);
+        var result = await RevealKeyAsync(_revealKeyType, password, totpCode, googleIdToken, googleNonce);
         if (result.ResultCode != RevealAccountKeyResultCode.Success)
         {
             _revealError = result.Message;
@@ -338,31 +444,42 @@
 
     private async Task CopyRevealedKeyAsync() => await CopyWithFeedbackAsync(_revealedKey, v => _revealedKeyCopied = v);
 
-    public void Dispose() => ClearRevealedKey();
+    public void Dispose()
+    {
+        ClearRevealedKey();
+        _selfRef?.Dispose();
+    }
 
     private ConfirmModal _rotateModal = null!;
     private KeyType _rotateKeyType;
     private string _rotateConfirmMessage = string.Empty;
     private string? _rotateResult;
     private bool _rotateFailed;
+    private bool _markCompromised;
 
     private void ConfirmRotate(KeyType keyType)
     {
         _rotateKeyType = keyType;
         _rotateConfirmMessage = keyType.RotationWarning();
         _rotateResult = null;
+        _markCompromised = false;
         ClearRevealedKey();
         _rotateModal.Show();
     }
 
     private async Task RotateAsync()
     {
-        if (RotateKeyAsync == null) return;
-        var result = await RotateKeyAsync(_rotateKeyType);
+        var markCompromised = _markCompromised;
+        _markCompromised = false;
+        var rotate = markCompromised ? RotateCompromisedKeyAsync : RotateKeyAsync;
+        if (rotate == null) return;
+        var result = await rotate(_rotateKeyType);
         _rotateFailed = result.ResultCode != ModifyResultCode.Success;
         _rotateResult = _rotateFailed
             ? $"Rotation failed: {result.Message}"
-            : "Key rotated. Everything below now uses the new key.";
+            : markCompromised
+                ? "Key rotated and the old key marked compromised. Everything below now uses the new key."
+                : "Key rotated. Everything below now uses the new key.";
     }
 
     private int _activeKeyTab;

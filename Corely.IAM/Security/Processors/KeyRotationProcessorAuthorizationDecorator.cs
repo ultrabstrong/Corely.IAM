@@ -30,6 +30,21 @@ internal class KeyRotationProcessorAuthorizationDecorator(
                 $"Unauthorized to rotate keys for account {request.AccountId}"
             );
 
+    public async Task<ModifyResult> RotateCompromisedAccountKeyAsync(
+        RotateAccountKeyRequest request
+    ) =>
+        _authorizationProvider.HasAccountContext(request.AccountId)
+        && await _authorizationProvider.IsAuthorizedAsync(
+            AuthAction.Update,
+            Account.RESOURCE_TYPE,
+            request.AccountId
+        )
+            ? await _inner.RotateCompromisedAccountKeyAsync(request)
+            : new ModifyResult(
+                ModifyResultCode.UnauthorizedError,
+                $"Unauthorized to rotate keys for account {request.AccountId}"
+            );
+
     public async Task<ModifyResult> RotateCurrentUserKeyAsync(KeyType keyType) =>
         _authorizationProvider.IsNonSystemUserContext()
             ? await _inner.RotateCurrentUserKeyAsync(keyType)

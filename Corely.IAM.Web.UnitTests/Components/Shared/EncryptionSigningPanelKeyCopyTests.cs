@@ -14,7 +14,15 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
     private const string SECRET = "dGhlLXNlY3JldC1rZXk=";
 
     private readonly ManualTimeProvider _time = new();
-    private readonly List<(KeyType KeyType, string? Password, string? TotpCode)> _calls = [];
+    private readonly List<(
+        KeyType KeyType,
+        string? Password,
+        string? TotpCode,
+        string? GoogleIdToken,
+        string? GoogleNonce
+    )> _calls = [];
+    private readonly List<KeyType> _plainRotations = [];
+    private readonly List<KeyType> _compromisedRotations = [];
     private RevealAccountKeyResult _result = new(
         RevealAccountKeyResultCode.Success,
         string.Empty,
@@ -29,22 +37,48 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         Services.AddSingleton<TimeProvider>(_time);
     }
 
-    private IRenderedComponent<EncryptionSigningPanel> RenderPanel(bool reveal = true) =>
+    private IRenderedComponent<EncryptionSigningPanel> RenderPanel(
+        bool reveal = true,
+        string? googleClientId = null,
+        bool canProveIdentity = true,
+        IIamAsymmetricSignatureProvider? signing = null
+    ) =>
         Render<EncryptionSigningPanel>(p =>
         {
             p.Add(
                 x => x.RotateKeyAsync,
-                _ => Task.FromResult(new ModifyResult(ModifyResultCode.Success, string.Empty))
+                keyType =>
+                {
+                    _plainRotations.Add(keyType);
+                    return Task.FromResult(
+                        new ModifyResult(ModifyResultCode.Success, string.Empty)
+                    );
+                }
             );
+            p.Add(x => x.SigProvider, signing);
+            p.Add(x => x.RevealGoogleClientId, googleClientId);
+            p.Add(x => x.CanProveIdentity, canProveIdentity);
             if (reveal)
+            {
+                p.Add(
+                    x => x.RotateCompromisedKeyAsync,
+                    keyType =>
+                    {
+                        _compromisedRotations.Add(keyType);
+                        return Task.FromResult(
+                            new ModifyResult(ModifyResultCode.Success, string.Empty)
+                        );
+                    }
+                );
                 p.Add(
                     x => x.RevealKeyAsync,
-                    (keyType, password, totpCode) =>
+                    (keyType, password, totpCode, googleIdToken, googleNonce) =>
                     {
-                        _calls.Add((keyType, password, totpCode));
+                        _calls.Add((keyType, password, totpCode, googleIdToken, googleNonce));
                         return Task.FromResult(_result);
                     }
                 );
+            }
         });
 
     private static IElement Button(IRenderedComponent<EncryptionSigningPanel> cut, string text) =>
@@ -116,7 +150,7 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         cut.Find(".modal-body input[type=text]").Change("123456");
         Button(cut, "Show key").Click();
 
-        Assert.Equal((keyType, "pw", "123456"), Assert.Single(_calls));
+        Assert.Equal((keyType, "pw", "123456", null, null), Assert.Single(_calls));
         Assert.Equal(SECRET, cut.Find(".tab-content textarea[readonly]").TextContent);
         foreach (var warning in warnings)
             Assert.Contains(warning, cut.Find(".tab-content .alert-warning").TextContent);
@@ -196,5 +230,125 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         _time.FireTimers();
 
         cut.WaitForAssertion(() => Assert.DoesNotContain(SECRET, cut.Markup));
+    }
+
+    [Fact]
+    public void GoogleOnlyUser_IsAskedForAGoogleSignIn_InsteadOfAPassword()
+    {
+        var module = JSInterop.SetupModule("./_content/Corely.IAM.Web/js/google-link.js");
+        module.SetupVoid("renderReauthButton", _ => true).SetVoidResult();
+        var cut = RenderPanel(googleClientId: "client-id");
+
+        Button(cut, "Copy key").Click();
+
+        Assert.Empty(cut.FindAll(".modal-body input[type=password]"));
+        Assert.Contains("Sign in with Google again", cut.Find(".modal-body").TextContent);
+        cut.WaitForAssertion(() => Assert.NotEmpty(module.Invocations["renderReauthButton"]));
+        var arguments = module.Invocations["renderReauthButton"][0].Arguments;
+        Assert.Equal("client-id", arguments[1]);
+        Assert.False(string.IsNullOrWhiteSpace((string?)arguments[2]));
+    }
+
+    [Fact]
+    public void GoogleProof_IsSentWithTheNonceItWasIssuedFor_AndOnlyOnce()
+    {
+        var module = JSInterop.SetupModule("./_content/Corely.IAM.Web/js/google-link.js");
+        module.SetupVoid("renderReauthButton", _ => true).SetVoidResult();
+        var cut = RenderPanel(googleClientId: "client-id");
+
+        Button(cut, "Copy key").Click();
+        cut.WaitForAssertion(() => Assert.NotEmpty(module.Invocations["renderReauthButton"]));
+        var nonce = (string?)module.Invocations["renderReauthButton"][0].Arguments[2];
+        cut.InvokeAsync(() => cut.Instance.OnGoogleReauthCredential("id-token"));
+        Button(cut, "Show key").Click();
+
+        var call = Assert.Single(_calls);
+        Assert.Empty(call.Password ?? string.Empty);
+        Assert.Equal("id-token", call.GoogleIdToken);
+        Assert.Equal(nonce, call.GoogleNonce);
+
+        cut.Find("button[title='Hide']").Click();
+        Button(cut, "Copy key").Click();
+        Button(cut, "Show key").Click();
+
+        Assert.Null(_calls[1].GoogleIdToken);
+        Assert.NotEqual(nonce, _calls[1].GoogleNonce);
+    }
+
+    [Fact]
+    public void UserWithNoWayToProveThemselves_IsToldWhatToDo_InsteadOfADeadEnd()
+    {
+        var cut = RenderPanel(canProveIdentity: false);
+
+        Button(cut, "Copy key").Click();
+
+        Assert.Empty(cut.FindAll(".modal-body"));
+        Assert.Contains(
+            "Set a password on your profile",
+            cut.Find(".tab-content .alert-danger").TextContent
+        );
+        Assert.Empty(_calls);
+    }
+
+    [Fact]
+    public void Rotate_OffersTheCompromisedOption_AndAPlainRotationStaysPlain()
+    {
+        var cut = RenderPanel();
+
+        Button(cut, "Rotate key").Click();
+        Assert.DoesNotContain("cannot be undone", cut.Find(".modal-body").TextContent);
+        cut.Find(".modal-footer .btn-warning").Click();
+
+        Assert.Equal([KeyType.SymmetricEncryption], _plainRotations);
+        Assert.Empty(_compromisedRotations);
+    }
+
+    [Theory]
+    [InlineData(0, KeyType.SymmetricEncryption)]
+    [InlineData(1, KeyType.AsymmetricEncryption)]
+    [InlineData(2, KeyType.AsymmetricSignature)]
+    public void Rotate_MarksTheOldKeyCompromised_AfterWarningItCannotBeUndone(
+        int tab,
+        KeyType keyType
+    )
+    {
+        var cut = RenderPanel();
+        ShowTab(cut, tab);
+
+        Button(cut, "Rotate key").Click();
+        cut.Find("#mark-key-compromised").Change(true);
+
+        Assert.Contains("cannot be undone", cut.Find(".modal-body .alert-danger").TextContent);
+        cut.Find(".modal-footer .btn-warning").Click();
+
+        Assert.Equal([keyType], _compromisedRotations);
+        Assert.Empty(_plainRotations);
+        Assert.Contains("old key marked compromised", cut.Markup);
+    }
+
+    [Fact]
+    public void Panel_WithoutTheOption_ShowsThePlainRotateConfirmation()
+    {
+        var cut = RenderPanel(reveal: false);
+
+        Button(cut, "Rotate key").Click();
+
+        Assert.Empty(cut.FindAll("#mark-key-compromised"));
+        Assert.Contains("Rotate this encryption key?", cut.Find(".modal-body").TextContent);
+    }
+
+    [Fact]
+    public void Panel_ListsCompromisedVersions_WithWhatTheyStillDo()
+    {
+        var signing = new Mock<IIamAsymmetricSignatureProvider>();
+        signing.Setup(x => x.CompromisedVersions).Returns([1, 2]);
+        signing.Setup(x => x.Version).Returns(3);
+        var cut = RenderPanel(signing: signing.Object);
+
+        ShowTab(cut, 2);
+
+        var notice = cut.Find(".tab-content .alert-warning").TextContent;
+        Assert.Contains("Compromised: version 1, 2.", notice);
+        Assert.Contains("do not verify", notice);
     }
 }

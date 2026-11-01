@@ -40,7 +40,9 @@ Key properties, its two secrets, and its roles and groups.
 - **Allowed types**: the resource types the platform lets keys act on
 
 **Authorization gates:**
-- `AuthAction.Update` + `ApiKey.RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit, rotate, add and remove roles and groups
+- `AuthAction.Update` + `ApiKey.RESOURCE_TYPE` + `ResourceIds: [Id]`: Edit, rotate, add and remove roles
+- `AuthAction.Update` + `Group.RESOURCE_TYPE`: Add to Groups, because adding changes the group. The picker offers only groups the caller can update
+- `AuthAction.Update` + `Group.RESOURCE_TYPE` + `ResourceIds: [groupId]`: Remove on that group's row
 - `AuthAction.Delete` + `ApiKey.RESOURCE_TYPE` + `ResourceIds: [Id]`: Delete button
 
 **Behavior:**

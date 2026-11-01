@@ -40,7 +40,8 @@ Read-only user properties with group and role assignment. When viewing your own 
 - **Effective permissions panel**: inherited permissions through roles and groups
 
 **Authorization gates:**
-- `AuthAction.Update` + `User.RESOURCE_TYPE` + `ResourceIds: [Id]`: Add Groups, Add Roles, Remove Role buttons
+- `AuthAction.Update` + `User.RESOURCE_TYPE` + `ResourceIds: [Id]`: Add Roles, Remove Role buttons
+- `AuthAction.Update` + `Group.RESOURCE_TYPE`: Add Groups, because adding changes the group. The picker offers only groups the caller can update
 - `AuthAction.Update` + `Group.RESOURCE_TYPE` + `ResourceIds: [groupId]`: Remove on that group's row
 
 **Behavior:**

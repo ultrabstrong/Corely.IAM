@@ -51,6 +51,28 @@ public class KeyTypeExtensionsTests
             string.Join(" ", KeyType.AsymmetricSignature.CopyKeyWarnings())
         );
 
+    [Theory]
+    [InlineData(KeyType.SymmetricEncryption)]
+    [InlineData(KeyType.AsymmetricEncryption)]
+    [InlineData(KeyType.AsymmetricSignature)]
+    public void CompromiseWarning_SaysItCannotBeUndone_ForEveryKey(KeyType keyType) =>
+        Assert.Contains("cannot be undone", keyType.CompromiseWarning());
+
+    [Theory]
+    [InlineData(KeyType.SymmetricEncryption)]
+    [InlineData(KeyType.AsymmetricEncryption)]
+    public void CompromiseWarning_SaysNothingIsLost_AndCopiesStillRead_ForEncryptionKeys(
+        KeyType keyType
+    )
+    {
+        Assert.Contains("nothing is lost", keyType.CompromiseWarning());
+        Assert.Contains("Anyone holding a copy can still read", keyType.CompromiseWarning());
+    }
+
+    [Fact]
+    public void CompromiseWarning_SaysSignaturesStopVerifying_ForTheSigningKey() =>
+        Assert.Contains("stop verifying", KeyType.AsymmetricSignature.CompromiseWarning());
+
     [Fact]
     public void RotationWarning_Throws_ForUnknownKeyType() =>
         Assert.Throws<ArgumentOutOfRangeException>(() => ((KeyType)99).RotationWarning());

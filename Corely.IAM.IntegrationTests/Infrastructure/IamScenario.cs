@@ -131,6 +131,8 @@ public sealed class IamScenario : IAsyncLifetime
             return await work(services);
         });
 
+    public string TotpSecretOf(string username) => _totpSecrets[username];
+
     public Task EnrollTwoFactorAsync(string username) =>
         ActAsAsync(
             username,

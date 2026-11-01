@@ -1,12 +1,9 @@
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Processors;
 using Corely.IAM.Security.Providers;
-using Corely.IAM.Users.Models;
-using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.UnitTests.Security.Processors;
 
@@ -14,7 +11,6 @@ public class AccountKeyProcessorAuthorizationDecoratorTests
 {
     private readonly Mock<IAccountKeyProcessor> _mockInnerProcessor = new();
     private readonly Mock<IAuthorizationProvider> _mockAuthorizationProvider = new();
-    private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
     private readonly AccountKeyProcessorAuthorizationDecorator _decorator;
     private readonly Guid _accountId = Guid.CreateVersion7();
     private readonly RevealAccountKeyRequest _request;
@@ -46,26 +42,11 @@ public class AccountKeyProcessorAuthorizationDecoratorTests
                 )
             )
             .ReturnsAsync(true);
-        SignInUser(enteredAsPlatformMember: false);
         _decorator = new AccountKeyProcessorAuthorizationDecorator(
             _mockInnerProcessor.Object,
-            _mockAuthorizationProvider.Object,
-            _mockUserContextProvider.Object
+            _mockAuthorizationProvider.Object
         );
     }
-
-    private void SignInUser(bool enteredAsPlatformMember) =>
-        _mockUserContextProvider
-            .Setup(x => x.GetUserContext())
-            .Returns(
-                new UserContext(
-                    new User { Id = Guid.CreateVersion7(), Username = "owner" },
-                    new Account { Id = _accountId, AccountName = "account" },
-                    "device",
-                    [],
-                    enteredAsPlatformMember: enteredAsPlatformMember
-                )
-            );
 
     private async Task AssertRefusedAsync()
     {
@@ -104,14 +85,6 @@ public class AccountKeyProcessorAuthorizationDecoratorTests
     }
 
     [Fact]
-    public async Task RevealKey_Refuses_ForAPlatformMemberWhoEnteredTheAccount()
-    {
-        SignInUser(enteredAsPlatformMember: true);
-
-        await AssertRefusedAsync();
-    }
-
-    [Fact]
     public async Task RevealKey_Refuses_WithoutThePermission()
     {
         _mockAuthorizationProvider
@@ -123,23 +96,6 @@ public class AccountKeyProcessorAuthorizationDecoratorTests
                 )
             )
             .ReturnsAsync(false);
-
-        await AssertRefusedAsync();
-    }
-
-    [Fact]
-    public async Task RevealKey_Refuses_ForAKeysContextHoldingThePermission()
-    {
-        _mockAuthorizationProvider.Setup(x => x.IsNonSystemUserContext()).Returns(false);
-        _mockUserContextProvider
-            .Setup(x => x.GetUserContext())
-            .Returns(
-                new UserContext(
-                    new ApiKey { Id = Guid.CreateVersion7() },
-                    new Account { Id = _accountId, AccountName = "account" },
-                    "device"
-                )
-            );
 
         await AssertRefusedAsync();
     }

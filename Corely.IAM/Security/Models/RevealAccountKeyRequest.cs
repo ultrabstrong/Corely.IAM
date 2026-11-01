@@ -6,7 +6,9 @@ public sealed class RevealAccountKeyRequest(
     Guid accountId,
     KeyType keyType,
     string? currentPassword,
-    string? totpCode
+    string? totpCode,
+    string? googleIdToken = null,
+    string? googleNonce = null
 )
 {
     public Guid AccountId { get; } = accountId;
@@ -14,4 +16,6 @@ public sealed class RevealAccountKeyRequest(
 
     internal string? CurrentPassword { get; } = currentPassword;
     internal string? TotpCode { get; } = totpCode;
+    internal string? GoogleIdToken { get; } = googleIdToken;
+    internal string? GoogleNonce { get; } = googleNonce;
 }

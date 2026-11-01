@@ -6,10 +6,28 @@ namespace Corely.IAM.UnitTests.Security.Models.Extensions;
 
 public class ReauthenticationResultCodeExtensionsTests
 {
+    private static readonly ReauthenticationResultCode[] _identityOnlyCodes =
+    [
+        ReauthenticationResultCode.GoogleSignInRequiredError,
+        ReauthenticationResultCode.InvalidGoogleSignInError,
+        ReauthenticationResultCode.NoReauthenticationMethodError,
+    ];
+
+    [Fact]
+    public void ToRevealAccountKeyResultCode_MapsEveryValue_ToTheCodeOfTheSameName()
+    {
+        foreach (var value in Enum.GetValues<ReauthenticationResultCode>())
+        {
+            Assert.Equal(value.ToString(), value.ToRevealAccountKeyResultCode().ToString());
+        }
+    }
+
     [Fact]
     public void ToModifyPasswordResultCode_MapsEveryValue_ToTheCodeOfTheSameName()
     {
-        foreach (var value in Enum.GetValues<ReauthenticationResultCode>())
+        foreach (
+            var value in Enum.GetValues<ReauthenticationResultCode>().Except(_identityOnlyCodes)
+        )
         {
             Assert.Equal(value.ToString(), value.ToModifyPasswordResultCode().ToString());
         }
@@ -24,6 +42,7 @@ public class ReauthenticationResultCodeExtensionsTests
         );
         foreach (
             var value in Enum.GetValues<ReauthenticationResultCode>()
+                .Except(_identityOnlyCodes)
                 .Where(v => v != ReauthenticationResultCode.BasicAuthNotFoundError)
         )
         {

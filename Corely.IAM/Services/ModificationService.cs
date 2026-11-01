@@ -1,4 +1,5 @@
 using Corely.Common.Extensions;
+using Corely.DataAccess.Interfaces.UnitOfWork;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.ApiKeys.Models;
@@ -37,7 +38,8 @@ internal class ModificationService(
     IBasicAuthProcessor basicAuthProcessor,
     IReauthenticationProvider reauthenticationProvider,
     IUserContextProvider userContextProvider,
-    IAuthenticationProvider authenticationProvider
+    IAuthenticationProvider authenticationProvider,
+    IUnitOfWorkProvider uowProvider
 ) : IModificationService
 {
     private readonly IAuthenticationProvider _authenticationProvider =
@@ -71,6 +73,9 @@ internal class ModificationService(
         reauthenticationProvider.ThrowIfNull(nameof(reauthenticationProvider));
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
         nameof(userContextProvider)
+    );
+    private readonly IUnitOfWorkProvider _uowProvider = uowProvider.ThrowIfNull(
+        nameof(uowProvider)
     );
 
     public async Task<ModifyResult> ModifyAccountAsync(UpdateAccountRequest request)
@@ -137,6 +142,38 @@ internal class ModificationService(
             request.AccountId
         );
         return await _keyRotationProcessor.RotateAccountKeyAsync(request);
+    }
+
+    public async Task<ModifyResult> RotateCompromisedAccountKeyAsync(
+        RotateAccountKeyRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        _logger.LogInformation(
+            "Rotating {KeyType} key for account {AccountId} and marking the old key compromised",
+            request.KeyType,
+            request.AccountId
+        );
+
+        var uowSucceeded = false;
+        try
+        {
+            await _uowProvider.BeginAsync();
+            var result = await _keyRotationProcessor.RotateCompromisedAccountKeyAsync(request);
+            if (result.ResultCode == ModifyResultCode.Success)
+            {
+                await _uowProvider.CommitAsync();
+                uowSucceeded = true;
+            }
+            return result;
+        }
+        finally
+        {
+            if (!uowSucceeded)
+            {
+                await _uowProvider.RollbackAsync();
+            }
+        }
     }
 
     public async Task<ModifyResult> RotateCurrentUserKeyAsync(KeyType keyType)

@@ -46,6 +46,9 @@ internal class ModificationServiceAuthorizationDecorator(
     public Task<ModifyResult> RotateAccountKeyAsync(RotateAccountKeyRequest request) =>
         _inner.RotateAccountKeyAsync(request);
 
+    public Task<ModifyResult> RotateCompromisedAccountKeyAsync(RotateAccountKeyRequest request) =>
+        _inner.RotateCompromisedAccountKeyAsync(request);
+
     public Task<ModifyResult> RotateCurrentUserKeyAsync(KeyType keyType) =>
         _inner.RotateCurrentUserKeyAsync(keyType);
 

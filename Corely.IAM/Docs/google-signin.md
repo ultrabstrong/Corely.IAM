@@ -81,6 +81,15 @@ else if (result.ResultCode == SignInResultCode.MfaRequiredChallenge)
 | `InvalidGoogleTokenError` | Google ID token validation failed |
 | `GoogleAuthNotLinkedError` | No user linked to this Google account |
 
+## Proving It Is You
+
+A user with no password proves their identity for a sensitive action, such as revealing an account key,
+with a fresh Google sign in. Render Google's button with a nonce made for that one attempt, and send the
+ID token and the nonce back. The token must be for the linked Google account, carry the nonce, and be at
+most five minutes old, and two factor still follows when enabled. A user who has a password uses it
+instead. Google decides whether the person signs in again or is carried by their Google session, so this
+proves they hold that Google account in this browser now.
+
 ## Unlinking
 
 ```csharp

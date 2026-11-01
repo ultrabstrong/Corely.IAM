@@ -32,7 +32,8 @@ public class KeyRotationProcessorTests
             _serviceFactory.GetRequiredService<IRepo<AccountAsymmetricKeyEntity>>(),
             _securityProvider,
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
-            _serviceFactory.GetRequiredService<ILogger<KeyRotationProcessor>>()
+            _serviceFactory.GetRequiredService<ILogger<KeyRotationProcessor>>(),
+            _serviceFactory.GetRequiredService<TimeProvider>()
         );
     }
 

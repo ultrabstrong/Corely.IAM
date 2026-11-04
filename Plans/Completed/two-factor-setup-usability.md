@@ -31,3 +31,14 @@ it calls; none is a security flaw, but each one makes a person stall or give up 
 
 Regenerating recovery codes goes through the same `GenerateRecoveryCodesAsync` and shares items 2
 and 5.
+
+## As built (Corely.IAM 6.7.0, Corely.IAM.Web 9.5.0)
+
+1. The secret is hidden behind an eye button, with a copy button beside it.
+2. Recovery codes, at setup and after regenerating, have "Copy all".
+3. The QR code is drawn at 200 pixels on a white, padded box. Scanning with 1Password is still to be
+   confirmed by the owner.
+4. Both code boxes carry `autocomplete="one-time-code"`, `inputmode="numeric"`, a name and a label.
+5. Enable shows a spinner and "Setting up…" while it works, and the recovery codes are saved in one
+   database call instead of one each. The hash is unchanged: whether recovery codes need a slow hash
+   is still the explicit decision this plan asks for.

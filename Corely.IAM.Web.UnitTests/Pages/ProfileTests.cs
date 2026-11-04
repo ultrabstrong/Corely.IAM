@@ -1,4 +1,5 @@
 using Bunit.TestDoubles;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Enums;
@@ -138,6 +139,49 @@ public class ProfileTests : TestContext
             Assert.Contains("version two", cut.Markup);
             Assert.Contains("Version 2", cut.Markup);
             Assert.DoesNotContain("version one", cut.Markup);
+        });
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void DeleteUser_IsOfferedOnlyOutsideThePlatform_ForItsMembers(
+        bool platformMember,
+        bool offered
+    )
+    {
+        var user = new User
+        {
+            Id = Guid.CreateVersion7(),
+            Username = "self",
+            Email = "self@test.com",
+        };
+        var account = new Account
+        {
+            Id = Guid.CreateVersion7(),
+            AccountName = "Account",
+            IsPlatformAccount = platformMember,
+        };
+        _mockUserContextAccessor
+            .Setup(x => x.GetUserContextAsync())
+            .ReturnsAsync(
+                PageTestHelpers.CreateUserContext(user: user, availableAccounts: [account])
+            );
+        _mockRetrievalService
+            .Setup(x => x.GetUserAsync(user.Id, false))
+            .ReturnsAsync(
+                new RetrieveSingleResult<User>(RetrieveResultCode.Success, string.Empty, user, null)
+            );
+
+        var cut = Render<Profile>();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("self@test.com", cut.Markup);
+            Assert.Equal(
+                offered,
+                cut.FindAll("button").Any(b => b.TextContent.Trim() == "Delete User")
+            );
         });
     }
 }

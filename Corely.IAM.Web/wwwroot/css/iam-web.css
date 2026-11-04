@@ -1016,12 +1016,142 @@ span.cell-icon {
 }
 
 .ep-via-badge {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
     font-size: 0.65rem;
     font-weight: 600;
-    padding: 0.1rem 0.35rem;
+    padding: 0.25rem 0.4rem;
     border-radius: 3px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
+}
+
+.key-access-summary {
+    cursor: pointer;
+    list-style: revert;
+}
+
+.key-access-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+    gap: 1rem;
+}
+
+.key-access-card {
+    margin-bottom: 0;
+}
+
+.settings-frame {
+    position: relative;
+}
+
+.settings-frame-picker {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
+    background: var(--bs-body-bg);
+}
+
+.settings-frame-nav {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .settings-frame {
+        display: grid;
+        grid-template-columns: 14rem minmax(0, 1fr);
+        gap: 1.5rem;
+    }
+
+    .settings-frame-picker {
+        display: none;
+    }
+
+    .settings-frame-nav {
+        display: block;
+    }
+}
+
+@media (min-width: 1600px) {
+    .settings-frame {
+        display: block;
+    }
+
+    .settings-frame-nav {
+        position: absolute;
+        top: 0;
+        right: calc(100% + 1.5rem);
+        width: 14rem;
+    }
+}
+
+.iam-qr-code {
+    display: inline-block;
+    padding: 1rem;
+    background: #ffffff;
+    border-radius: 0.5rem;
+    line-height: 0;
+}
+
+.iam-access-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.iam-access-summary {
+    display: inline-flex;
+    gap: 0.2rem;
+}
+
+.iam-access-summary .permission-badge {
+    width: 1.1rem;
+    height: 1.1rem;
+    line-height: 1.1rem;
+    font-size: 0.6rem;
+}
+
+.iam-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1040;
+}
+
+.iam-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: min(28rem, 100vw);
+    background: var(--bs-body-bg);
+    border-left: 1px solid var(--bs-border-color);
+    box-shadow: -0.5rem 0 1.5rem rgba(0, 0, 0, 0.25);
+    z-index: 1045;
+    display: flex;
+    flex-direction: column;
+    outline: none;
+}
+
+.iam-drawer[hidden],
+.iam-drawer-backdrop[hidden] {
+    display: none;
+}
+
+.iam-drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.iam-drawer-body {
+    padding: 1rem 1.25rem;
+    overflow-y: auto;
 }
 
 .ep-via-badge.direct {

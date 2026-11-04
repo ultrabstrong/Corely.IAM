@@ -61,11 +61,11 @@ else
                     <span class="prop-label cell-hide">Description</span>
                     <span class="prop-value cell-sub @(_key.Description is null ? "cell-hide" : null)">@(_key.Description ?? "—")</span>
                     <span class="prop-label">Last sign in</span>
-                    <span class="prop-value">@(_key.LastSuccessfulLoginUtc?.ToLocalTime().ToString("g") ?? "Never")</span>
+                    <span class="prop-value"><LocalTime Value="_key.LastSuccessfulLoginUtc" Empty="Never" /></span>
                     @if (_key.LockedUtc is not null)
                     {
                         <span class="prop-label">Locked</span>
-                        <span class="prop-value">@_key.LockedUtc.Value.ToLocalTime().ToString("g") after repeated wrong secrets</span>
+                        <span class="prop-value"><LocalTime Value="_key.LockedUtc" /> after repeated wrong secrets</span>
                     }
                 </div>
             }
@@ -82,8 +82,8 @@ else
                         <tr>
                             <td class="cell-title">@slot</td>
                             <td class="font-monospace">@(secret is null ? "Not issued" : $"ciam_{secret.Prefix}_...")</td>
-                            <td class="cell-sub">@(secret?.ExpiresUtc?.ToLocalTime().ToString("d") ?? "—")</td>
-                            <td class="cell-sub">@(secret?.LastUsedUtc?.ToLocalTime().ToString("g") ?? "Never")</td>
+                            <td class="cell-sub"><LocalTime Value="secret?.ExpiresUtc" DateOnly="true" /></td>
+                            <td class="cell-sub"><LocalTime Value="secret?.LastUsedUtc" Empty="Never" /></td>
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     <PermissionView Action="AuthAction.Update" Resource="@ApiKey.RESOURCE_TYPE" ResourceIds="new[] { Id }">

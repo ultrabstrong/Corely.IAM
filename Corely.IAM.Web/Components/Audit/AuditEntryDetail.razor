@@ -31,7 +31,7 @@ else
                     </span>
                 </div>
                 <span class="prop-label">When</span>
-                <div class="setting-wide">@_entry.OccurredUtc.ToString("yyyy-MM-dd HH:mm:ss") <span class="text-body-tertiary">UTC</span></div>
+                <div class="setting-wide"><LocalTime Value="_entry.OccurredUtc" Seconds="true" /></div>
                 <span class="prop-label">Actor</span>
                 <div class="setting-wide">
                     @_entry.ActorDisplayName()

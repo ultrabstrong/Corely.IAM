@@ -1,0 +1,79 @@
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+@if (Value is { } value)
+{
+    <time datetime="@Iso(value)" title="@($"{Iso(value)} UTC")">@(_text ?? Fallback(value))</time>
+}
+else
+{
+    @Empty
+}
+
+@code {
+    [Parameter]
+    public DateTime? Value { get; set; }
+
+    [Parameter]
+    public bool Seconds { get; set; }
+
+    [Parameter]
+    public bool DateOnly { get; set; }
+
+    [Parameter]
+    public string Empty { get; set; } = "—";
+
+    private DateTime? _formatted;
+    private string? _text;
+    private IJSObjectReference? _module;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Value is not { } value || _formatted == value)
+            return;
+
+        _formatted = value;
+        try
+        {
+            _module ??= await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Corely.IAM.Web/js/local-time.js");
+            if (_module is null)
+                return;
+            var text = await _module.InvokeAsync<string?>("format", Iso(value), Seconds, DateOnly);
+            if (text != null && text != _text)
+            {
+                _text = text;
+                StateHasChanged();
+            }
+        }
+        catch (JSException)
+        {
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    private static string Iso(DateTime value) =>
+        DateTime.SpecifyKind(value, DateTimeKind.Utc).ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+    private string Fallback(DateTime value) =>
+        DateOnly ? value.ToString("yyyy-MM-dd")
+        : Seconds ? $"{value:yyyy-MM-dd HH:mm:ss} UTC"
+        : $"{value:yyyy-MM-dd HH:mm} UTC";
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is null)
+            return;
+        try
+        {
+            await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+}

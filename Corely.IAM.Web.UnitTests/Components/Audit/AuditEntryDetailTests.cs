@@ -35,6 +35,7 @@ public class AuditEntryDetailTests : TestContext
 
     public AuditEntryDetailTests()
     {
+        JSInterop.Mode = JSRuntimeMode.Loose;
         var userContextAccessor = new Mock<IBlazorUserContextAccessor>();
         userContextAccessor
             .Setup(x => x.GetUserContextAsync())

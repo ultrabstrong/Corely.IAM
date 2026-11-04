@@ -137,9 +137,9 @@ else
                                     <span class="badge bg-success">Pending</span>
                                 }
                             </td>
-                            <td class="cell-hide"><small>@inv.CreatedUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
-                            <td class="cell-hide"><small>@inv.ExpiresUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
-                            <td class="cell-only text-muted"><small>Expires @inv.ExpiresUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
+                            <td class="cell-hide"><small><LocalTime Value="inv.CreatedUtc" /></small></td>
+                            <td class="cell-hide"><small><LocalTime Value="inv.ExpiresUtc" /></small></td>
+                            <td class="cell-only text-muted"><small>Expires <LocalTime Value="inv.ExpiresUtc" /></small></td>
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     @if (inv.IsPending(DateTime.UtcNow))

@@ -312,20 +312,21 @@ internal class TotpAuthProcessor(
             (await _securityPolicyProvider.GetPolicyAsync()).TotpRecoveryCodeCount
         ];
 
+        var entities = new TotpRecoveryCodeEntity[codes.Length];
         for (var i = 0; i < codes.Length; i++)
         {
             var rawCode = GenerateRecoveryCode();
             codes[i] = rawCode.ToDisplayRecoveryCode();
 
             var hashedValue = rawCode.ToHashedValueFromPlainText(_hashProviderFactory);
-            var entity = new TotpRecoveryCodeEntity
+            entities[i] = new TotpRecoveryCodeEntity
             {
                 Id = Guid.CreateVersion7(),
                 TotpAuthId = totpAuthId,
                 CodeHash = hashedValue.Hash!,
             };
-            await _recoveryCodeRepo.CreateAsync(entity);
         }
+        await _recoveryCodeRepo.CreateAsync(entities);
 
         return codes;
     }

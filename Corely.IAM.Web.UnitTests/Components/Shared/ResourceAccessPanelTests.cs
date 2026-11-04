@@ -73,7 +73,7 @@ public class ResourceAccessPanelTests : BunitContext
             p.Add(x => x.ResourceType, INVOICE).Add(x => x.ResourceId, invoiceId)
         );
 
-        Assert.Equal("Your Access", cut.Find(".section-divider-label").TextContent);
+        Assert.Equal("Your Access", cut.Find(".iam-drawer-header .card-section-title").TextContent);
         Assert.Contains("Invoice reader", cut.Markup);
         _retrieval.Verify(x => x.GetCurrentUserEffectivePermissionsAsync(INVOICE, invoiceId));
     }

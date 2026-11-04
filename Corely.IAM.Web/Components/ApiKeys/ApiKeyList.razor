@@ -63,7 +63,7 @@ else
                                 <br /><CopyableId Value="key.Id" />
                             </td>
                             <td class="@(key.Description is null ? "cell-hide" : "text-muted")">@(key.Description ?? "—")</td>
-                            <td class="cell-sub">@(key.LastSuccessfulLoginUtc?.ToLocalTime().ToString("g") ?? "Never")</td>
+                            <td class="cell-sub"><LocalTime Value="key.LastSuccessfulLoginUtc" Empty="Never" /></td>
                             <td class="table-actions cell-actions">
                                 <div class="row-actions">
                                     <a href="@Links.ApiKey(CurrentAccountId, key.Id)" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>

@@ -40,7 +40,10 @@ else
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
-            <button class="btn btn-outline-danger btn-sm" @onclick="() => _deleteModal.Show()" disabled="@_loading">Delete Account</button>
+            @if (!IsPlatformMember)
+            {
+                <button class="btn btn-outline-danger btn-sm" @onclick="() => _deleteModal.Show()" disabled="@_loading">Delete User</button>
+            }
         </div>
     }
 
@@ -81,8 +84,8 @@ else
 }
 
 <ConfirmModal @ref="_deleteModal"
-              Title="Delete Account"
-              Message="@($"Permanently delete your account '{_username}'? This cannot be undone.")"
+              Title="Delete User"
+              Message="@($"Permanently delete your user '{_username}'? This cannot be undone.")"
               ConfirmText="Delete"
               OnConfirm="DeleteAsync" />
 <ConfirmModal @ref="_leaveAccountModal"
@@ -110,6 +113,7 @@ else
     private const int AccountPageSize = 10;
     private List<Account> PagedAccounts => (UserContext?.MemberAccounts ?? []).Skip(_accountsSkip).Take(AccountPageSize).ToList();
     private int AccountsTotalCount => UserContext?.MemberAccounts.Count ?? 0;
+    private bool IsPlatformMember => UserContext?.MemberAccounts.Any(a => a.IsPlatformAccount) == true;
 
     private IIamSymmetricEncryptionProvider? _symProvider;
     private IIamAsymmetricEncryptionProvider? _asymProvider;

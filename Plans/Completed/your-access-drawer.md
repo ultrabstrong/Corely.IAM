@@ -37,3 +37,10 @@ products, with no page edits.
 The existing `ResourceAccessPanelTests` and the detail page tests that find "Your access" change to
 find the button and the drawer's contents. A browser test opens and closes the drawer on desktop and
 phone widths.
+
+## As built (Corely.IAM.Web 9.5.0)
+
+The panel stays where each page already places it, as a compact "Your access" button showing the lit
+C R U D X badges, rather than moving into each page's header: that kept every host page unchanged.
+The drawer is Blazor only (no Bootstrap JavaScript), focuses itself on open and closes on Escape or
+a click outside. The "Direct" and "Via group" pills are now centered on the role name.

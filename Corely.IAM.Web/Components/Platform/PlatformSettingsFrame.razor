@@ -1,5 +1,6 @@
 @inherits OwningComponentBase
 @inject IIamWebLinks Links
+@inject NavigationManager Navigation
 @using Corely.IAM.Web.Configuration
 @inject IOptions<IAMWebOptions> IamWebOptions
 
@@ -8,8 +9,17 @@
     <a href="@Links.Dashboard()" class="btn btn-outline-secondary" title="Back to dashboard"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
 </div>
 
-<div class="row g-4">
-    <nav class="col-md-3" aria-label="Platform settings">
+<div class="settings-frame">
+    <div class="settings-frame-picker">
+        <label for="settings-frame-select" class="visually-hidden">Platform settings page</label>
+        <select id="settings-frame-select" class="form-select" value="@CurrentPath" @onchange="OnPick">
+            @foreach (var settingsPage in _pages)
+            {
+                <option value="@settingsPage.Path">@settingsPage.Title</option>
+            }
+        </select>
+    </div>
+    <nav class="settings-frame-nav" aria-label="Platform settings">
         <div class="list-group">
             @foreach (var settingsPage in _pages)
             {
@@ -19,7 +29,7 @@
             }
         </div>
     </nav>
-    <div class="col-md-9">
+    <div class="settings-frame-content">
         @ChildContent
     </div>
 </div>
@@ -33,10 +43,20 @@
 
     private IReadOnlyList<PlatformSettingsPage> _pages = [];
 
+    private string CurrentPath =>
+        _pages.FirstOrDefault(p => Navigation.Uri.TrimEnd('/').EndsWith(p.Path.TrimEnd('/'), StringComparison.OrdinalIgnoreCase))?.Path
+        ?? string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
         if (await BlazorUserContextAccessor.GetUserContextAsync() == null)
             return;
         _pages = await IamWebOptions.Value.ReadablePlatformSettingsPagesAsync(AuthorizationProvider);
+    }
+
+    private void OnPick(ChangeEventArgs e)
+    {
+        if (e.Value is string path && !string.IsNullOrEmpty(path))
+            Navigation.NavigateTo(path);
     }
 }

@@ -1,23 +1,29 @@
 @if (Permissions != null && Permissions.Count > 0)
 {
-    @if (UseCard)
-    {
-        <div class="card iam-card mb-3">
-            <div class="card-header">
-                <span class="card-section-title">Your Access</span>
-            </div>
-            <div class="card-body">
-                <EffectivePermissionGrants AccountId="AccountId" Permissions="Permissions" />
-            </div>
+    <div class="iam-access mb-3">
+        <button type="button" class="btn btn-sm btn-outline-secondary iam-access-toggle" aria-haspopup="dialog"
+                aria-expanded="@(_open ? "true" : "false")" @onclick="Open">
+            <i class="bi bi-shield-lock" aria-hidden="true"></i>
+            <span>Your access</span>
+            <span class="iam-access-summary" aria-hidden="true">
+                @foreach (var (letter, granted) in Summary)
+                {
+                    <span class="permission-badge @(granted ? "active" : "inactive")">@letter</span>
+                }
+            </span>
+        </button>
+    </div>
+    <div class="iam-drawer-backdrop" hidden="@(!_open)" @onclick="Close"></div>
+    <div class="iam-drawer" role="dialog" aria-modal="true" aria-label="Your access" hidden="@(!_open)"
+         tabindex="-1" @ref="_drawer" @onkeydown="OnKeyDown">
+        <div class="iam-drawer-header">
+            <span class="card-section-title">Your Access</span>
+            <button type="button" class="btn-close" aria-label="Close" @onclick="Close"></button>
         </div>
-    }
-    else
-    {
-        <div class="section-divider mb-3">
-            <div class="section-divider-label">Your Access</div>
+        <div class="iam-drawer-body">
             <EffectivePermissionGrants AccountId="AccountId" Permissions="Permissions" />
         </div>
-    }
+    </div>
 }
 
 @code {
@@ -29,4 +35,40 @@
 
     [Parameter]
     public bool UseCard { get; set; } = true;
+
+    private bool _open;
+    private bool _focusDrawer;
+    private ElementReference _drawer;
+
+    private IEnumerable<(string Letter, bool Granted)> Summary =>
+        [
+            ("C", Permissions!.Any(p => p.Create)),
+            ("R", Permissions!.Any(p => p.Read)),
+            ("U", Permissions!.Any(p => p.Update)),
+            ("D", Permissions!.Any(p => p.Delete)),
+            ("X", Permissions!.Any(p => p.Execute)),
+        ];
+
+    private void Open()
+    {
+        _open = true;
+        _focusDrawer = true;
+    }
+
+    private void Close() => _open = false;
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+            Close();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusDrawer)
+        {
+            _focusDrawer = false;
+            await _drawer.FocusAsync();
+        }
+    }
 }

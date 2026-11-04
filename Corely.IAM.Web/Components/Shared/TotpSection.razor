@@ -13,10 +13,21 @@
     {
         <div class="d-flex gap-4 align-items-start flex-wrap mb-2">
             <div class="flex-shrink-0" style="min-width: 150px; max-width: 100%;">
-                <div><strong><i class="bi bi-qr-code me-1"></i>QR Code</strong> <span class="text-muted fw-normal" style="font-size: 0.85rem;">Secret: <code class="user-select-all text-danger" style="font-size: 0.85rem;">@_secret</code></span></div>
+                <div><strong><i class="bi bi-qr-code me-1"></i>QR Code</strong></div>
                 <div class="text-muted mt-1" style="font-size: 0.85rem; white-space: normal; word-break: break-word;">Scan the QR code with your authenticator app, or enter the secret manually.</div>
-                <div class="mt-4 mb-2 text-center">
-                    <div id="totp-qrcode" style="display: inline-block;"></div>
+                <div class="d-flex align-items-center gap-1 mt-2" style="font-size: 0.85rem;">
+                    <span class="text-muted">Secret:</span>
+                    <code class="user-select-all" style="font-size: 0.85rem;">@(_showSecret ? _secret : new string('•', 16))</code>
+                    <button type="button" class="btn btn-sm btn-link p-0 ms-1" title="@(_showSecret ? "Hide secret" : "Show secret")"
+                            aria-label="@(_showSecret ? "Hide secret" : "Show secret")" @onclick="() => _showSecret = !_showSecret">
+                        <i class="bi @(_showSecret ? "bi-eye-slash" : "bi-eye")"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-link p-0 ms-1" title="Copy secret" aria-label="Copy secret" @onclick='() => CopyAsync(_secret, "secret")'>
+                        <i class="bi @(_copied == "secret" ? "bi-check2" : "bi-clipboard")"></i>
+                    </button>
+                </div>
+                <div class="mt-3 mb-2 text-center">
+                    <div id="totp-qrcode" class="iam-qr-code"></div>
                     @if (_qrUnavailable)
                     {
                         <div class="text-muted" style="font-size: 0.85rem;">
@@ -26,7 +37,12 @@
                 </div>
             </div>
             <div class="flex-fill">
-                <div><strong><i class="bi bi-key me-1"></i>Recovery Codes</strong></div>
+                <div class="d-flex align-items-center gap-2">
+                    <strong><i class="bi bi-key me-1"></i>Recovery Codes</strong>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0" @onclick='() => CopyAsync(string.Join(Environment.NewLine, _recoveryCodes), "codes")'>
+                        <i class="bi @(_copied == "codes" ? "bi-check2" : "bi-clipboard") me-1"></i>@(_copied == "codes" ? "Copied" : "Copy all")
+                    </button>
+                </div>
                 <div class="text-muted mt-1 mb-2" style="font-size: 0.85rem;">Save these, each can only be used once</div>
                 <div class="d-flex justify-content-center justify-content-md-start mt-4">
                     <div class="d-inline-grid" style="grid-template-columns: repeat(2, auto); column-gap: 1.5rem; row-gap: 0; font-family: monospace; font-size: 0.85rem;">
@@ -39,7 +55,9 @@
             </div>
         </div>
         <div class="d-flex flex-wrap gap-2 align-items-center justify-content-center justify-content-md-start mt-4">
-            <input type="text" class="form-control form-control-sm" style="max-width: 200px;"
+            <label for="totp-confirm-code" class="visually-hidden">Authenticator code</label>
+            <input id="totp-confirm-code" name="totp-code" type="text" inputmode="numeric" autocomplete="one-time-code"
+                   maxlength="8" class="form-control form-control-sm" style="max-width: 200px;"
                    @bind="_confirmCode" placeholder="Enter code to confirm" />
             <button class="btn btn-primary btn-sm" @onclick="ConfirmAsync" disabled="@_busy">Confirm</button>
             <button class="btn btn-outline-secondary btn-sm" @onclick="CancelSetup">Cancel</button>
@@ -51,7 +69,12 @@
         @if (_regeneratedCodes != null)
         {
             <div class="mt-3 mb-3">
-                <div><strong><i class="bi bi-key me-1"></i>Recovery Codes</strong></div>
+                <div class="d-flex align-items-center gap-2">
+                    <strong><i class="bi bi-key me-1"></i>Recovery Codes</strong>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0" @onclick='() => CopyAsync(string.Join(Environment.NewLine, _regeneratedCodes ?? []), "codes")'>
+                        <i class="bi @(_copied == "codes" ? "bi-check2" : "bi-clipboard") me-1"></i>@(_copied == "codes" ? "Copied" : "Copy all")
+                    </button>
+                </div>
                 <div class="text-muted mt-1 mb-2" style="font-size: 0.85rem;">Save these, each can only be used once</div>
                 <div class="d-flex justify-content-center justify-content-md-start mt-3">
                     <div class="d-inline-grid" style="grid-template-columns: repeat(2, auto); column-gap: 1.5rem; row-gap: 0; font-family: monospace; font-size: 0.85rem;">
@@ -66,7 +89,9 @@
         @if (_showDisableInput)
         {
             <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-                <input type="text" class="form-control form-control-sm" style="max-width: 200px;"
+                <label for="totp-disable-code" class="visually-hidden">Authenticator code</label>
+                <input id="totp-disable-code" name="totp-code" type="text" inputmode="numeric" autocomplete="one-time-code"
+                       maxlength="8" class="form-control form-control-sm" style="max-width: 200px;"
                        @bind="_disableCode" placeholder="Enter current TOTP code" />
                 <button class="btn btn-danger btn-sm" @onclick="DisableAsync" disabled="@_busy">Confirm Disable</button>
                 <button class="btn btn-outline-secondary btn-sm" @onclick="() => _showDisableInput = false">Cancel</button>
@@ -88,7 +113,15 @@
     {
         <p class="text-muted mb-2">Protect your account with TOTP-based two-factor authentication.</p>
         <button class="btn btn-outline-primary btn-sm" @onclick="EnableAsync" disabled="@_busy">
-            Enable Two-Factor Authentication
+            @if (_busy)
+            {
+                <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                <span>Setting up…</span>
+            }
+            else
+            {
+                <span>Enable Two-Factor Authentication</span>
+            }
         </button>
     }
 
@@ -115,6 +148,8 @@
     private bool _qrUnavailable;
     private IJSObjectReference? _qrModule;
     private bool _busy;
+    private bool _showSecret;
+    private string? _copied;
     private string? _message;
     private AlertType _messageType;
 
@@ -143,7 +178,7 @@
                 "generate",
                 "totp-qrcode",
                 _setupUri,
-                150,
+                200,
                 "./_content/Corely.IAM.Web/lib/qrcodejs/qrcode.min.js"
             );
         }
@@ -222,9 +257,25 @@
         });
     }
 
+    private async Task CopyAsync(string? text, string what)
+    {
+        if (string.IsNullOrEmpty(text)) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            _copied = what;
+        }
+        catch (JSException)
+        {
+            SetMessage(false, "Could not copy. Select the text and copy it instead.");
+        }
+    }
+
     private void CancelSetup()
     {
         _setupPhase = false;
+        _showSecret = false;
+        _copied = null;
         _secret = null;
         _setupUri = null;
         _recoveryCodes = [];

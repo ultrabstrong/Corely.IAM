@@ -57,8 +57,7 @@ public class ApiKeyDetailGroupsTests : BunitContext
 
         var cut = Render<ApiKeyDetail>(p => p.Add(x => x.Id, _apiKeyId));
 
-        var labels = cut.FindAll(".section-divider-label").Select(l => l.TextContent.Trim());
-        Assert.Equal("Your Access", labels.Last());
+        Assert.Equal("Your Access", cut.Find(".iam-drawer-header .card-section-title").TextContent);
         Assert.Contains("Role of the viewer", cut.Markup);
         Assert.DoesNotContain("Role of the key", cut.Markup);
     }

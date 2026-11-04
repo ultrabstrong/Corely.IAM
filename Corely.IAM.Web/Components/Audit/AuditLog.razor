@@ -105,7 +105,7 @@ else
             <table class="table table-striped table-hover table-cards audit-cards">
                 <thead class="list-head">
                     <tr>
-                        <th><i class="bi bi-clock me-1" aria-hidden="true"></i>When (UTC)</th>
+                        <th><i class="bi bi-clock me-1" aria-hidden="true"></i>When</th>
                         <th><i class="bi bi-person me-1" aria-hidden="true"></i>Actor</th>
                         <th><i class="bi bi-building me-1" aria-hidden="true"></i>Account</th>
                         <th>Activity</th>
@@ -125,7 +125,7 @@ else
                         @foreach (var entry in _items)
                         {
                             <tr>
-                                <td class="text-nowrap"><i class="bi bi-clock cell-icon" aria-hidden="true"></i>@entry.OccurredUtc.ToString("yyyy-MM-dd HH:mm:ss")<span class="cell-icon text-body-tertiary ms-1">UTC</span></td>
+                                <td class="text-nowrap"><i class="bi bi-clock cell-icon" aria-hidden="true"></i><LocalTime Value="entry.OccurredUtc" Seconds="true" /></td>
                                 <td>
                                     <i class="bi bi-person cell-icon" aria-hidden="true"></i>@entry.ActorDisplayName()
                                     @if (entry.IsPlatformMember)

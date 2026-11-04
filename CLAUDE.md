@@ -166,9 +166,10 @@ git push origin Corely.IAM-v2.3.2
   version already on nuget.org fails the push rather than being skipped.
 - The migration CLI's major must equal `Corely.IAM`'s at that commit: CLI 2.x targets IAM 2.x.
 - Tags are pushed only with the owner's say-so. A published version cannot be deleted.
-- **Nothing is released while a plan is outstanding.** No package is tagged until every plan in
-  `Plans/` has moved to `Plans/Completed/`. `Plans/Feature-Ideas.md` is a list of ideas, not a plan,
-  and does not count. Work merges to master as it lands; the release waits.
+- **Nothing is released while a plan is in progress.** No package is tagged while a plan sits in
+  `Plans/InProgress/`: work that has started is finished, or deliberately moved back, before a release.
+  A plan in `Plans/New/` that nobody has started does not hold a release, and neither does
+  `Plans/Feature-Ideas.md`, which is a list of ideas, not a plan. Work merges to master as it lands.
 - **A session never ends with a package left in preview.** A preview version is fine while work is in
   progress, but before the session is closed out (for instance when the owner asks whether anything is
   left), every package carrying a `-preview` version is brought to completion and released at its

@@ -11,8 +11,8 @@
     }
     @if (_setupPhase)
     {
-        <div class="d-flex gap-4 align-items-start flex-wrap mb-2">
-            <div class="flex-shrink-0" style="min-width: 150px; max-width: 100%;">
+        <div class="row g-4 align-items-start mb-2">
+            <div class="col-12 col-lg-auto">
                 <div><strong><i class="bi bi-qr-code me-1"></i>QR Code</strong></div>
                 <div class="text-muted mt-1" style="font-size: 0.85rem; white-space: normal; word-break: break-word;">Scan the QR code with your authenticator app, or enter the secret manually.</div>
                 <div class="d-flex align-items-center gap-1 mt-2" style="font-size: 0.85rem;">
@@ -36,7 +36,7 @@
                     }
                 </div>
             </div>
-            <div class="flex-fill">
+            <div class="col-12 col-lg">
                 <div class="d-flex align-items-center gap-2">
                     <strong><i class="bi bi-key me-1"></i>Recovery Codes</strong>
                     <button type="button" class="btn btn-sm btn-outline-secondary py-0" @onclick='() => CopyAsync(string.Join(Environment.NewLine, _recoveryCodes), "codes")'>
@@ -44,7 +44,7 @@
                     </button>
                 </div>
                 <div class="text-muted mt-1 mb-2" style="font-size: 0.85rem;">Save these, each can only be used once</div>
-                <div class="d-flex justify-content-center justify-content-md-start mt-4">
+                <div class="d-flex justify-content-center justify-content-lg-start mt-4">
                     <div class="d-inline-grid" style="grid-template-columns: repeat(2, auto); column-gap: 1.5rem; row-gap: 0; font-family: monospace; font-size: 0.85rem;">
                         @foreach (var rc in _recoveryCodes)
                         {
@@ -54,7 +54,7 @@
                 </div>
             </div>
         </div>
-        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-center justify-content-md-start mt-4">
+        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-center justify-content-lg-start mt-4">
             <label for="totp-confirm-code" class="visually-hidden">Authenticator code</label>
             <input id="totp-confirm-code" name="totp-code" type="text" inputmode="numeric" autocomplete="one-time-code"
                    maxlength="8" class="form-control form-control-sm" style="max-width: 200px;"

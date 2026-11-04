@@ -1029,7 +1029,38 @@ span.cell-icon {
 
 .key-access-summary {
     cursor: pointer;
-    list-style: revert;
+    list-style: none;
+}
+
+.key-access-summary::-webkit-details-marker {
+    display: none;
+}
+
+.key-access-summary:hover {
+    color: var(--bs-emphasis-color);
+}
+
+.key-access-chevron {
+    transition: transform 0.15s ease;
+}
+
+.key-access[open] .key-access-chevron {
+    transform: rotate(180deg);
+}
+
+.key-access:not([open]) {
+    padding-bottom: 0;
+}
+
+.key-access:not([open]) > .key-access-summary {
+    margin-bottom: 0;
+    border-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .key-access-chevron {
+        transition: none;
+    }
 }
 
 .key-access-grid {
@@ -1094,6 +1125,10 @@ span.cell-icon {
     background: #ffffff;
     border-radius: 0.5rem;
     line-height: 0;
+}
+
+.iam-access {
+    margin-top: 1rem;
 }
 
 .iam-access-toggle {

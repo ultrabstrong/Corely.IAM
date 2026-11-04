@@ -2,8 +2,11 @@
 
 <details class="section-divider mb-4 key-access" open="@(!Access.HasUsableAccess)">
     <summary class="section-divider-label key-access-summary">
-        This key's access
-        <span class="text-muted fw-normal ms-2">@Access.Types.Count(t => t.Allowed) resource types</span>
+        <span>This key's access</span>
+        <span class="d-flex align-items-center gap-2">
+            <span class="text-muted fw-normal">@Access.Types.Count(t => t.Allowed) resource types</span>
+            <i class="bi bi-chevron-down key-access-chevron" aria-hidden="true"></i>
+        </span>
     </summary>
 
     @if (!Access.HasUsableAccess)

@@ -99,7 +99,7 @@ public class AuditPolicyTests
     [InlineData(AuthAction.Update, true)]
     [InlineData(AuthAction.Delete, true)]
     [InlineData(AuthAction.Read, false)]
-    [InlineData(AuthAction.Execute, false)]
+    [InlineData(AuthAction.Execute, true)]
     public async Task IsRecorded_FollowsTheDefaults_ForAccountMembers(
         AuthAction action,
         bool expected

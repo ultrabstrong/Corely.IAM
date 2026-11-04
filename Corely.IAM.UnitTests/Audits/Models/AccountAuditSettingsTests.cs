@@ -9,11 +9,12 @@ public class AccountAuditSettingsTests
     private static readonly Guid _accountId = Guid.CreateVersion7();
 
     [Fact]
-    public void Default_RecordsCreateUpdateDelete_ForBothCohorts()
+    public void Default_RecordsEverythingButReads_ForBothCohorts()
     {
         var settings = AccountAuditSettings.Default(_accountId);
 
-        var expected = AuditActions.Create | AuditActions.Update | AuditActions.Delete;
+        var expected =
+            AuditActions.Create | AuditActions.Update | AuditActions.Delete | AuditActions.Execute;
         Assert.Equal(expected, settings.AccountMemberActions);
         Assert.Equal(expected, settings.PlatformMemberActions);
         Assert.Equal(AccountAuditSettings.DEFAULT_RETENTION_DAYS, settings.RetentionDays);

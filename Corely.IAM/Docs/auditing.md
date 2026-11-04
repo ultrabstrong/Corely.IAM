@@ -57,7 +57,7 @@ platform account:
 | `AccountlessActions` | What is recorded outside any account |
 
 Account settings are one row per account, read and changed with `audit_settings`. An account with no
-row uses the defaults.
+row uses the defaults: create, update, delete and execute for both cohorts, never reads.
 
 ```csharp
 await auditService.UpdateAccountSettingsAsync(new UpdateAccountAuditSettingsRequest(

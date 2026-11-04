@@ -14,7 +14,7 @@ public record AccountAuditSettings(
     public const int DEFAULT_RETENTION_DAYS = 90;
 
     public static AuditActions DefaultMemberActions =>
-        AuditActions.Create | AuditActions.Update | AuditActions.Delete;
+        AuditActions.Create | AuditActions.Update | AuditActions.Delete | AuditActions.Execute;
 
     public static AccountAuditSettings Default(Guid accountId) =>
         new(accountId, DefaultMemberActions, DefaultMemberActions, DEFAULT_RETENTION_DAYS);

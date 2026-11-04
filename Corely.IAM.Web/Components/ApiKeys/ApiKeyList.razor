@@ -16,6 +16,8 @@
 
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
 
+@ChildContent
+
 @if (!_enabled && !_loading)
 {
     <div class="alert alert-info">API keys are switched off for this account in the platform security settings.</div>
@@ -104,6 +106,9 @@ else
 <ConfirmModal @ref="_confirmModal" Title="Delete API key" Message="@_confirmMessage" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
     private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
     private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
     private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();

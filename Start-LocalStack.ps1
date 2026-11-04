@@ -87,8 +87,9 @@ if (Test-PortListening $appPort) {
 
 Write-Step 'Building the migration tool, DevTools and the WebApp'
 foreach ($project in $cliProject, $devToolsProject, $webAppDir) {
-    Invoke-Checked "Building $(Split-Path $project -Leaf)" { dotnet build $project -v q -nologo } | Out-Null
+    Invoke-Checked "Building $(Split-Path $project -Leaf)" { dotnet build $project -m:1 -v q -nologo } | Out-Null
 }
+dotnet build-server shutdown *> $null
 
 function Invoke-Db([string[]]$Arguments) {
     $output = dotnet run --project $cliProject --no-build -- db @Arguments -p $provider -c $connection 2>&1

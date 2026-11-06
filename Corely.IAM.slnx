@@ -24,6 +24,8 @@
   <Folder Name="/Solution Items/Plans/">
     <File Path="Plans/Feature-Ideas.md" />
   </Folder>
+  <Project Path="Corely.IAM.CompiledModel.MsSql/Corely.IAM.CompiledModel.MsSql.csproj" />
+  <Project Path="Corely.IAM.CompiledModel.MySql/Corely.IAM.CompiledModel.MySql.csproj" />
   <Project Path="Corely.IAM.ConsoleTest/Corely.IAM.ConsoleApp.csproj" />
   <Project Path="Corely.IAM.DataAccessMigrations.Cli/Corely.IAM.DataAccessMigrations.Cli.csproj" />
   <Project Path="Corely.IAM.DataAccessMigrations.Cli.UnitTests/Corely.IAM.DataAccessMigrations.Cli.UnitTests.csproj" />

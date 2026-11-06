@@ -12,25 +12,36 @@ using Corely.IAM.Security.Entities;
 using Corely.IAM.TotpAuths.Entities;
 using Corely.IAM.Users.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.DataAccess;
 
-internal class IamDbContext(
-    [FromKeyedServices(EFConfigurationKeys.IAM)] IEFConfiguration efConfiguration
-) : DbContext
+internal class IamDbContext : DbContext
 {
     public const string DEFAULT_MIGRATIONS_HISTORY_TABLE = "__CorelyIamMigrationsHistory";
 
-    private readonly IEFConfiguration _efConfiguration = efConfiguration;
+    private readonly IEFConfiguration _efConfiguration;
+    private readonly IModel? _compiledModel;
+
+    public IamDbContext(
+        [FromKeyedServices(EFConfigurationKeys.IAM)] IEFConfiguration efConfiguration
+    )
+    {
+        _efConfiguration = efConfiguration;
+    }
 
 #pragma warning disable IDE0060
     public IamDbContext(
         DbContextOptions<IamDbContext> opts,
-        [FromKeyedServices(EFConfigurationKeys.IAM)] IEFConfiguration efConfiguration
+        [FromKeyedServices(EFConfigurationKeys.IAM)] IEFConfiguration efConfiguration,
+        [FromKeyedServices(EFConfigurationKeys.IAM)] IamCompiledModel compiledModel
     )
 #pragma warning restore IDE0060
-        : this(efConfiguration) { }
+    {
+        _efConfiguration = efConfiguration;
+        _compiledModel = compiledModel.Model;
+    }
 
     public DbSet<AccountEntity> Accounts { get; set; } = null!;
     public DbSet<UserEntity> Users { get; set; } = null!;
@@ -52,6 +63,10 @@ internal class IamDbContext(
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         _efConfiguration.Configure(optionsBuilder);
+        if (_compiledModel is not null)
+        {
+            optionsBuilder.UseModel(_compiledModel);
+        }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

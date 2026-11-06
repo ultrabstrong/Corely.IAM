@@ -47,3 +47,7 @@ if ($failed.Count -eq 0) {
 } else {
     Write-Host "Migration removal failed in: $($failed -join ', ')" -ForegroundColor Red
 }
+
+if ($failed.Count -eq 0) {
+    & (Join-Path $PSScriptRoot 'UpdateCompiledModels.ps1')
+}

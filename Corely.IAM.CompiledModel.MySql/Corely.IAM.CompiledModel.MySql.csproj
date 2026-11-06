@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Title>Corely IAM Compiled Model for MySQL and MariaDB</Title>
+    <Description>Corely.IAM's Entity Framework model built ahead of time for MySQL and MariaDB, so an app on MySQL or MariaDB skips building it on its first database call. Released with Corely.IAM at the same version.</Description>
+    <PackageTags>Corely IAM EntityFramework CompiledModel MySql MariaDB</PackageTags>
+    <RepositoryUrl>https://github.com/ultrabstrong/Corely.IAM/tree/master/Corely.IAM.CompiledModel.MySql</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/ultrabstrong/Corely.IAM</PackageProjectUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>6.8.0</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CSharpier.MsBuild" Version="1.3.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="MySql.EntityFrameworkCore" Version="10.0.9" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Corely.IAM\Corely.IAM.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+</Project>

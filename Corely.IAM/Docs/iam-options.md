@@ -72,6 +72,33 @@ var options = IAMOptions.Create(configuration, securityConfigProvider, efConfigF
 | `UseAsymmetricEncryption` | `code` | `RSA_CODE` | Asymmetric encryption algorithm |
 | `UseAsymmetricSignature` | `code` | `ECDSA_SHA256_CODE` | Asymmetric signature algorithm |
 | `UseHash` | `code` | `SALTED_SHA256_CODE` | Hashing algorithm |
+| `UseCompiledModel` | `model` | none | An EF Core model built ahead of time; normally set through a compiled model package, below |
+
+## Compiled Model
+
+Entity Framework builds IAM's model the first time an app touches the database, which on a small
+host can take tens of seconds and runs before IAM's startup jobs finish. A compiled model package
+holds that model built ahead of time for one database provider:
+
+| Package | Provider | Call |
+|---------|----------|------|
+| `Corely.IAM.CompiledModel.MsSql` | SQL Server | `.UseMsSqlCompiledModel()` |
+| `Corely.IAM.CompiledModel.MySql` | MySQL and MariaDB | `.UseMySqlCompiledModel()` |
+
+```csharp
+var options = IAMOptions.Create(configuration, securityConfigProvider, efConfigFactory)
+    .UseMsSqlCompiledModel();
+```
+
+Reference the package for the provider the app's `IEFConfiguration` uses; a model for another
+provider describes the wrong column types. Without a package nothing changes: the model is built at
+first use, as before.
+
+A compiled model package is released with `Corely.IAM` at the same version, and its call refuses to
+start against any other `Corely.IAM` version. Inside this repository, `AddMigration.ps1` and
+`RemoveMigration.ps1` regenerate both models through `UpdateCompiledModels.ps1`, and
+`CompiledModelTests` fails when either no longer describes the same tables, columns, keys and
+indexes as the model built at runtime.
 
 ## Default Crypto Algorithms
 

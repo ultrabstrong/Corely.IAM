@@ -10,7 +10,7 @@
     <PackageProjectUrl>https://github.com/ultrabstrong/Corely.IAM</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>6.7.0</Version>
+    <Version>6.8.0</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn></NoWarn>
@@ -26,6 +26,8 @@
     <InternalsVisibleTo Include="Corely.IAM.DataAccessMigrations.Cli" />
     <InternalsVisibleTo Include="Corely.IAM.DataAccessMigrations.MySql" />
     <InternalsVisibleTo Include="Corely.IAM.DevTools" />
+    <InternalsVisibleTo Include="Corely.IAM.CompiledModel.MsSql" />
+    <InternalsVisibleTo Include="Corely.IAM.CompiledModel.MySql" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Corely.Common" Version="2.0.4" />

@@ -39,5 +39,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Corely.IAM\Corely.IAM.csproj" />
     <ProjectReference Include="..\Corely.IAM.Testing\Corely.IAM.Testing.csproj" />
+    <ProjectReference Include="..\Corely.IAM.CompiledModel.MsSql\Corely.IAM.CompiledModel.MsSql.csproj" />
+    <ProjectReference Include="..\Corely.IAM.CompiledModel.MySql\Corely.IAM.CompiledModel.MySql.csproj" />
   </ItemGroup>
 </Project>

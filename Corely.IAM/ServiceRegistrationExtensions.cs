@@ -55,6 +55,10 @@ public static class ServiceRegistrationExtensions
                     EFConfigurationKeys.IAM,
                     (sp, _) => efConfigurationFactory(sp)
                 );
+                serviceCollection.AddKeyedSingleton(
+                    EFConfigurationKeys.IAM,
+                    new IamCompiledModel(options.CompiledModel)
+                );
                 serviceCollection.AddDbContext<IamDbContext>();
                 serviceCollection.RegisterEntityFrameworkReposAndUoW();
             }

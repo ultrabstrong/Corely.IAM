@@ -104,6 +104,7 @@ var accountResult = await registrationService.RegisterAccountAsync(
 | `Corely.IAM.DataAccessMigrations.Cli` | Migration CLI that creates and migrates the IAM schema (published as a .NET tool) |
 | `Corely.IAM.Testing` | Test only package: proves every service method of an app has a cross account attack or a reasoned exemption |
 | `Corely.IAM.DataAccessMigrations.MsSql` / `.MySql` | EF Core migrations per database provider, bundled into the CLI |
+| `Corely.IAM.CompiledModel.MsSql` / `.MySql` | Optional: IAM's EF Core model built ahead of time for one provider, so an app skips building it on its first database call. Released with `Corely.IAM` at the same version |
 
 ## License
 

@@ -8,6 +8,8 @@ PACKAGES=(
   "Corely.IAM.Web:Corely.IAM.Web/Corely.IAM.Web.csproj"
   "Corely.IAM.Testing:Corely.IAM.Testing/Corely.IAM.Testing.csproj"
   "Corely.IAM.DataAccessMigrations.Cli:Corely.IAM.DataAccessMigrations.Cli/Corely.IAM.DataAccessMigrations.Cli.csproj"
+  "Corely.IAM.CompiledModel.MsSql:Corely.IAM.CompiledModel.MsSql/Corely.IAM.CompiledModel.MsSql.csproj"
+  "Corely.IAM.CompiledModel.MySql:Corely.IAM.CompiledModel.MySql/Corely.IAM.CompiledModel.MySql.csproj"
 )
 CORE="Corely.IAM"
 CLI="Corely.IAM.DataAccessMigrations.Cli"
@@ -47,6 +49,10 @@ csproj_version="$(version_of "$csproj")"
 [ "$csproj_version" = "$version" ] || fail "$csproj is at $csproj_version, not $version"
 
 pack_args="-p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg"
+if [[ "$id" == Corely.IAM.CompiledModel.* ]]; then
+  core_version="$(version_of "$(csproj_of "$CORE")")"
+  [ "$version" = "$core_version" ] || fail "$id $version must equal $CORE $core_version"
+fi
 if [ "$id" = "$CLI" ]; then
   core_version="$(version_of "$(csproj_of "$CORE")")"
   [ "${version%%.*}" = "${core_version%%.*}" ] || fail "$CLI $version must share its major with $CORE $core_version"

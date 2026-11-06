@@ -5,6 +5,7 @@ using Corely.IAM.Security.Providers;
 using Corely.Security.Encryption;
 using Corely.Security.Hashing;
 using Corely.Security.Signature;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Configuration;
 
 namespace Corely.IAM;
@@ -17,6 +18,8 @@ public class IAMOptions
     internal IConfiguration Configuration { get; private set; } = null!;
 
     internal Func<IServiceProvider, IEFConfiguration>? EFConfigurationFactory { get; private set; }
+
+    internal IModel? CompiledModel { get; private set; }
 
     internal string SymmetricEncryptionCode { get; private set; } =
         SymmetricEncryptionConstants.AES_GCM_CODE;
@@ -126,6 +129,13 @@ public class IAMOptions
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
         HashCode = code;
+        return this;
+    }
+
+    public IAMOptions UseCompiledModel(IModel model)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        CompiledModel = model;
         return this;
     }
 

@@ -166,10 +166,18 @@ git push origin Corely.IAM-v2.3.2
   version already on nuget.org fails the push rather than being skipped.
 - The migration CLI's major must equal `Corely.IAM`'s at that commit: CLI 2.x targets IAM 2.x.
 - Tags are pushed only with the owner's say-so. A published version cannot be deleted.
-- **Nothing is released while a plan is in progress.** No package is tagged while a plan sits in
-  `Plans/InProgress/`: work that has started is finished, or deliberately moved back, before a release.
-  A plan in `Plans/New/` that nobody has started does not hold a release, and neither does
-  `Plans/Feature-Ideas.md`, which is a list of ideas, not a plan. Work merges to master as it lands.
+- **Work merges and releases as it lands, one plan at a time.** The usual cycle is: pick up one plan,
+  build it, merge it, bump the version, release. Plans waiting in `Plans/New/` never affect that.
+- **The one exception is a file in `Plans/InProgress/`.** Before tagging, list that folder. If it is
+  empty, nothing holds the release. If it has a plan, finish it or move it back to `Plans/New/` first.
+  That folder check is the whole rule. Nothing else holds a release:
+  - not a plan in `Plans/New/`, however related, however soon it will be picked up;
+  - not `Plans/Feature-Ideas.md`;
+  - not a plan being written or discussed in this session: writing a plan does not put it in progress,
+    only moving its file into `Plans/InProgress/` does.
+
+  Each plan ships on its own. Never tie two plans into one release or hold one plan's release for
+  another unless the owner asks for that, and never raise either as a reason to wait.
 - **A session never ends with a package left in preview.** A preview version is fine while work is in
   progress, but before the session is closed out (for instance when the owner asks whether anything is
   left), every package carrying a `-preview` version is brought to completion and released at its

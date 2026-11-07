@@ -10,8 +10,6 @@ public enum SignInResultCode
     SignatureKeyNotFoundError,
     AccountNotFoundError,
     InvalidAuthTokenError,
-    GoogleAuthNotLinkedError,
-    InvalidGoogleTokenError,
     InvalidMfaCodeError,
     MfaChallengeExpiredError,
     TwoFactorRequiredError,

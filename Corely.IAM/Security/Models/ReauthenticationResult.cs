@@ -8,8 +8,7 @@ internal enum ReauthenticationResultCode
     UserLockedError,
     TotpRequiredError,
     InvalidTotpCodeError,
-    GoogleSignInRequiredError,
-    InvalidGoogleSignInError,
+    FederatedSignInRequiredError,
     NoReauthenticationMethodError,
 }
 

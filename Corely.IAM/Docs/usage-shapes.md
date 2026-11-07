@@ -6,7 +6,7 @@ does not use cost nothing, and an app can grow into them later without a migrati
 
 | Shape | Uses | App data keyed by |
 |-------|------|-------------------|
-| Users only | Users, passwords, MFA, Google sign-in | `UserContext.User.Id` |
+| Users only | Users, passwords, MFA, federated sign-in | `UserContext.User.Id` |
 | One shared account | The above, plus accounts and invitations | `UserContext.CurrentAccount.Id` |
 | Full RBAC | Everything, including groups, roles, and permissions | `UserContext.CurrentAccount.Id`, with resource ids checked by permissions on top. See [Gotchas](gotchas.md#permissions-do-not-keep-accounts-apart-in-your-own-tables) |
 

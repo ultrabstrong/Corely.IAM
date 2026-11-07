@@ -2,7 +2,8 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.GoogleAuths.Entities;
+using Corely.IAM.FederatedIdentities.Entities;
+using Corely.IAM.IdentityProviders.Enums;
 using Corely.IAM.Models;
 using Corely.IAM.PasswordRecoveries.Entities;
 using Corely.IAM.PasswordRecoveries.Models;
@@ -124,9 +125,9 @@ public class PasswordRecoveryProcessorTests
     }
 
     [Fact]
-    public async Task ResetPasswordWithRecoveryAsync_CreatesPassword_ForGoogleOnlyUser()
+    public async Task ResetPasswordWithRecoveryAsync_CreatesPassword_ForFederatedOnlyUser()
     {
-        var user = await RegisterGoogleOnlyUserAsync();
+        var user = await RegisterFederatedOnlyUserAsync();
         var authProcessor = _serviceFactory.GetRequiredService<IBasicAuthProcessor>();
 
         var requestResult = await _processor.RequestPasswordRecoveryAsync(
@@ -194,18 +195,22 @@ public class PasswordRecoveryProcessorTests
         return user!;
     }
 
-    private async Task<UserEntity> RegisterGoogleOnlyUserAsync()
+    private async Task<UserEntity> RegisterFederatedOnlyUserAsync()
     {
         var user = await RegisterUserAsync();
-        var googleAuthRepo = _serviceFactory.GetRequiredService<IRepo<GoogleAuthEntity>>();
+        var federatedIdentityRepo = _serviceFactory.GetRequiredService<
+            IRepo<FederatedIdentityEntity>
+        >();
         var basicAuthRepo = _serviceFactory.GetRequiredService<IRepo<BasicAuthEntity>>();
 
-        await googleAuthRepo.CreateAsync(
-            new GoogleAuthEntity
+        await federatedIdentityRepo.CreateAsync(
+            new FederatedIdentityEntity
             {
                 Id = Guid.CreateVersion7(),
                 UserId = user.Id,
-                GoogleSubjectId = Guid.CreateVersion7().ToString("N"),
+                ProviderType = IdentityProviderType.Google,
+                Issuer = "https://accounts.google.com",
+                Subject = Guid.CreateVersion7().ToString("N"),
                 Email = user.Email,
             }
         );

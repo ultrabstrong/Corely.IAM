@@ -3,7 +3,6 @@
 @inject IIamWebLinks Links
 @inject IAccountDisplayState AccountDisplayState
 @inject IJSRuntime JSRuntime
-@inject IOptions<SecurityOptions> SecurityOptions
 
 <div class="management-header">
     <h1><i class="bi bi-building me-2"></i>@_accountName <span class="resource-label">Account</span></h1>
@@ -197,12 +196,12 @@ else
                 <Authorized>
                     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
                                             DescriptionText="@KEYS_DESCRIPTION" ShowKeyVersions="true" PublicKeysAddress="@PublicKeysAddress" RotateKeyAsync="RotateKeyAsync" RotateCompromisedKeyAsync="RotateCompromisedKeyAsync" MarkKeyCompromisedAsync="MarkKeyCompromisedAsync"
-                                            RevealKeyAsync="RevealKeyHandler" RevealGoogleClientId="@_revealGoogleClientId" CanProveIdentity="_canProveIdentity" />
+                                            RevealKeyAsync="RevealKeyHandler" ProofProviders="_proofProviders" CanProveIdentity="_canProveIdentity" />
                 </Authorized>
                 <NotAuthorized>
                     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider"
                                             DescriptionText="@KEYS_DESCRIPTION" ShowKeyVersions="true" PublicKeysAddress="@PublicKeysAddress" RevealKeyAsync="RevealKeyHandler"
-                                            RevealGoogleClientId="@_revealGoogleClientId" CanProveIdentity="_canProveIdentity" />
+                                            ProofProviders="_proofProviders" CanProveIdentity="_canProveIdentity" />
                 </NotAuthorized>
             </PermissionView>
         </PermissionView>
@@ -276,7 +275,8 @@ else
     private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
     private IInvitationService InvitationService => ScopedServices.GetRequiredService<IInvitationService>();
     private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
-    private IGoogleAuthService GoogleAuthService => ScopedServices.GetRequiredService<IGoogleAuthService>();
+    private IFederatedIdentityService FederatedIdentityService => ScopedServices.GetRequiredService<IFederatedIdentityService>();
+    private IFederatedSignInService FederatedSignInService => ScopedServices.GetRequiredService<IFederatedSignInService>();
 
     private string? _accountName;
     private string? _originalAccountName;
@@ -314,9 +314,9 @@ else
     private IIamAsymmetricSignatureProvider? _sigProvider;
     private bool _canRevealKeys;
     private bool _canProveIdentity = true;
-    private string? _revealGoogleClientId;
+    private IReadOnlyList<IdentityProviderOption>? _proofProviders;
 
-    private Func<KeyType, string?, string?, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyHandler =>
+    private Func<KeyType, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyHandler =>
         _canRevealKeys ? RevealKeyAsync : null;
 
     protected override async Task LoadCoreAsync()
@@ -576,35 +576,34 @@ else
     private const string KEYS_DESCRIPTION =
         "This account has its own symmetric and asymmetric encryption keys plus a signing key.";
 
-    private Task<RevealAccountKeyResult> RevealKeyAsync(KeyType keyType, string? currentPassword, string? totpCode, string? googleIdToken, string? googleNonce) =>
-        RetrievalService.RevealAccountKeyAsync(new RevealAccountKeyRequest(CurrentAccountId, keyType, currentPassword, totpCode, googleIdToken, googleNonce));
+    private Task<RevealAccountKeyResult> RevealKeyAsync(KeyType keyType, string? currentPassword, string? totpCode) =>
+        RetrievalService.RevealAccountKeyAsync(new RevealAccountKeyRequest(CurrentAccountId, keyType, currentPassword, totpCode));
 
     private async Task LoadRevealProofAsync()
     {
-        var methods = await GoogleAuthService.GetAuthMethodsAsync();
-        var googleClientId = SecurityOptions.Value.GoogleClientId;
-        _revealGoogleClientId = !methods.HasBasicAuth && methods.HasGoogleAuth && !string.IsNullOrWhiteSpace(googleClientId)
-            ? googleClientId
-            : null;
-        _canProveIdentity = methods.HasBasicAuth || _revealGoogleClientId != null;
+        var methods = await FederatedIdentityService.GetAuthMethodsAsync();
+        var enabled = await FederatedSignInService.ListIdentityProvidersAsync();
+        var linked = enabled.Where(p => methods.LinkedIdentities.Any(i => i.Type == p.Type)).ToList();
+        _proofProviders = !methods.HasBasicAuth && linked.Count > 0 ? linked : null;
+        _canProveIdentity = methods.HasBasicAuth || _proofProviders != null;
     }
 
     private Task<ModifyResult> RotateKeyAsync(KeyType keyType) =>
         ReloadKeysAfterAsync(ModificationService.RotateAccountKeyAsync(new RotateAccountKeyRequest(Id, keyType)));
 
-    private async Task<CompromiseAccountKeyResult> RotateCompromisedKeyAsync(KeyType keyType, string? currentPassword, string? totpCode, string? googleIdToken, string? googleNonce)
+    private async Task<CompromiseAccountKeyResult> RotateCompromisedKeyAsync(KeyType keyType, string? currentPassword, string? totpCode)
     {
         var result = await ModificationService.RotateCompromisedAccountKeyAsync(
-            new RotateCompromisedAccountKeyRequest(Id, keyType, new AccountKeyProof(currentPassword, totpCode, googleIdToken, googleNonce))
+            new RotateCompromisedAccountKeyRequest(Id, keyType, new AccountKeyProof(currentPassword, totpCode))
         );
         await ReloadKeysAfterCompromiseAsync(result);
         return result;
     }
 
-    private async Task<CompromiseAccountKeyResult> MarkKeyCompromisedAsync(KeyType keyType, int version, string? currentPassword, string? totpCode, string? googleIdToken, string? googleNonce)
+    private async Task<CompromiseAccountKeyResult> MarkKeyCompromisedAsync(KeyType keyType, int version, string? currentPassword, string? totpCode)
     {
         var result = await ModificationService.MarkAccountKeyCompromisedAsync(
-            new MarkAccountKeyCompromisedRequest(Id, keyType, version, new AccountKeyProof(currentPassword, totpCode, googleIdToken, googleNonce))
+            new MarkAccountKeyCompromisedRequest(Id, keyType, version, new AccountKeyProof(currentPassword, totpCode))
         );
         await ReloadKeysAfterCompromiseAsync(result);
         return result;

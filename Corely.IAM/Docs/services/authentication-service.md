@@ -13,7 +13,6 @@ Manages sign-in, sign-out, account switching, and user session management. See [
 | `RevokeOtherSessionsAsync` | *(none)* | `ModifyResult` |
 | `SignOutAsync` | `SignOutRequest` | `bool` |
 | `SignOutAllAsync` | *(none)* | `void` |
-| `SignInWithGoogleAsync` | `SignInWithGoogleRequest` | `SignInResult` |
 | `VerifyMfaAsync` | `VerifyMfaRequest` | `SignInResult` |
 | `RenewAuthTokenAsync` | `RenewAuthTokenRequest` | `RenewAuthTokenResult` |
 | `DeleteExpiredAuthTokensAsync` | *(none)* | `DeleteExpiredAuthTokensResult` |
@@ -79,14 +78,10 @@ var revokeOthersResult = await authenticationService.RevokeOtherSessionsAsync();
 
 `ListSessionsAsync()` returns active tracked sessions for the current user. `RevokeSessionAsync()` revokes a selected active session by tracked token ID. `RevokeOtherSessionsAsync()` revokes all other active sessions while preserving the current one.
 
-### Sign In with Google
+### Sign In with an Identity Provider
 
-```csharp
-var result = await authenticationService.SignInWithGoogleAsync(
-    new SignInWithGoogleRequest(googleIdToken, deviceId));
-```
-
-Returns `Success` or `MfaRequiredChallenge` (if TOTP is enabled). See [Google Sign-In](../google-signin.md) for full flow.
+Signing in with Google, Microsoft, GitHub, Facebook or Amazon is on `IFederatedSignInService`. See
+[Federated Sign-In](../federated-sign-in.md).
 
 ### Verify MFA
 
@@ -112,8 +107,6 @@ Accepts either a 6-digit TOTP code or a recovery code in `XXXX-XXXX` format. See
 | `MfaRequiredChallenge` | TOTP enabled; MFA challenge issued |
 | `InvalidMfaCodeError` | TOTP or recovery code invalid |
 | `MfaChallengeExpiredError` | Challenge expired or already used |
-| `InvalidGoogleTokenError` | Google ID token validation failed |
-| `GoogleAuthNotLinkedError` | No user linked to this Google account |
 | `TwoFactorRequiredError` | Platform member without TOTP entering the platform account or an account they do not belong to |
 
 ## Authorization

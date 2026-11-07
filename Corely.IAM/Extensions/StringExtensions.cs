@@ -1,7 +1,13 @@
+using System.Security.Cryptography;
+
 namespace Corely.IAM.Extensions;
 
 internal static class StringExtensions
 {
+    private const int USERNAME_SUFFIX_LENGTH = 5;
+    private const string USERNAME_SUFFIX_CHARACTERS =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
     extension(string value)
     {
         public byte[] FromBase32()
@@ -56,5 +62,10 @@ internal static class StringExtensions
             var atIndex = value.IndexOf('@');
             return atIndex > 0 ? value[..atIndex] : value;
         }
+
+        public string UsernameCandidate(int attempt) =>
+            attempt == 0
+                ? value.EmailLocalPart()
+                : $"{value.EmailLocalPart()}-{RandomNumberGenerator.GetString(USERNAME_SUFFIX_CHARACTERS, USERNAME_SUFFIX_LENGTH)}";
     }
 }

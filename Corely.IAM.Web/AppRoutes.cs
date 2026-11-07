@@ -9,8 +9,8 @@ public static class AppRoutes
     public const string SwitchAccount = "/switch-account";
     public const string CreateAccount = "/create-account";
     public const string VerifyMfa = "/verify-mfa";
-    public const string GoogleCallback = "/google-callback";
-    public const string RegisterWithGoogle = "/register-with-google";
+    public const string FederatedSignInStart = "/signin/start";
+    public const string FederatedSignInCallback = "/signin/callback";
 
     public const string Privacy = "/privacy";
     public const string Terms = "/terms";

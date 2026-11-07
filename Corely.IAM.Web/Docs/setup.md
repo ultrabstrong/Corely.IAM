@@ -132,11 +132,11 @@ renders no component that links to another IAM page.
 
 ```razor
 <TotpSection />
-<PasswordSection HasBasicAuth="_hasBasicAuth" HasGoogleAuth="_hasGoogleAuth" OnStatusChanged="ReloadAsync" />
-<LinkedAccountsSection HasGoogleAuth="_hasGoogleAuth" GoogleEmail="@_googleEmail" OnStatusChanged="ReloadAsync" />
+<PasswordSection HasBasicAuth="_hasBasicAuth" HasLinkedIdentity="_linkedIdentities.Count > 0" OnStatusChanged="ReloadAsync" />
+<LinkedIdentitiesSection LinkedIdentities="_linkedIdentities" OnStatusChanged="ReloadAsync" />
 ```
 
-`IGoogleAuthService.GetAuthMethodsAsync()` supplies the three values.
+`IFederatedIdentityService.GetAuthMethodsAsync()` supplies the values.
 
 **Replace the sign-in layout.** The pages render inside `Pages/Shared/_AuthLayout.cshtml`, which
 carries this package's name and a Create Account link. An app file at the same path takes

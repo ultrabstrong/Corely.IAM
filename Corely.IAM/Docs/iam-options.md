@@ -145,8 +145,9 @@ All five services are wrapped with authorization and telemetry decorators via Sc
 | `PasswordValidationOptions` | `PasswordValidationOptions` | Minimum length (8), maximum length (128), complexity requirements. App-wide rather than per account: a user sets a password before joining any account, and can belong to several |
 
 With a platform account, the password rules and every `SecurityOptions` setting except
-`PermissionCacheTtlSeconds` and `GoogleClientId` come from the platform's security settings
-instead, and these keys are ignored. Each has a range, checked at startup. See
+`PermissionCacheTtlSeconds` come from the platform's security settings instead, and these keys are
+ignored. The identity providers under `SecurityOptions:IdentityProviders` follow the same rule; see
+[Federated Sign-In](federated-sign-in.md). Each has a range, checked at startup. See
 [where security settings come from](platform.md#where-security-settings-come-from).
 
 Configure these in `appsettings.json`:

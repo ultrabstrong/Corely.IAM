@@ -10,12 +10,12 @@ Tabbed interface for testing encryption and signing operations using account or 
 | `AsymProvider` | `IIamAsymmetricEncryptionProvider?` | none | Asymmetric encryption provider |
 | `SigProvider` | `IIamAsymmetricSignatureProvider?` | none | Digital signature provider |
 | `RotateKeyAsync` | `Func<KeyType, Task<ModifyResult>>?` | none | Rotates the key on the current tab. The Rotate button shows only when set |
-| `RotateCompromisedKeyAsync` | `Func<KeyType, string?, string?, string?, string?, Task<CompromiseAccountKeyResult>>?` | none | Rotates and marks the old key compromised, given the password, two factor code, Google ID token and Google nonce. The option shows in the Rotate confirmation only when set |
-| `MarkKeyCompromisedAsync` | `Func<KeyType, int, string?, string?, string?, string?, Task<CompromiseAccountKeyResult>>?` | none | Marks an older version compromised, given the version and the same proof. **Mark as compromised** shows only when set |
+| `RotateCompromisedKeyAsync` | `Func<KeyType, string?, string?, Task<CompromiseAccountKeyResult>>?` | none | Rotates and marks the old key compromised, given the password and two factor code. The option shows in the Rotate confirmation only when set |
+| `MarkKeyCompromisedAsync` | `Func<KeyType, int, string?, string?, Task<CompromiseAccountKeyResult>>?` | none | Marks an older version compromised, given the version and the same proof. **Mark as compromised** shows only when set |
 | `ShowKeyVersions` | `bool` | `false` | Shows the version dropdown on each tab. Account Detail sets it |
 | `PublicKeysAddress` | `string?` | none | The account's JWKS address, shown with a copy button above the tabs. Hidden when empty. Account Detail sets it only when the host has called `MapIAMJwksEndpoints`, whatever its prefix |
-| `RevealKeyAsync` | `Func<KeyType, string?, string?, string?, string?, Task<RevealAccountKeyResult>>?` | none | Returns the key on the current tab, given the password, two factor code, Google ID token and Google nonce. The copy action shows only when set |
-| `RevealGoogleClientId` | `string?` | none | Set for a user with no password: the dialog asks for a Google sign in instead of a password |
+| `RevealKeyAsync` | `Func<KeyType, string?, string?, Task<RevealAccountKeyResult>>?` | none | Returns the key on the current tab, given the password and two factor code. The copy action shows only when set |
+| `ProofProviders` | `IReadOnlyList<IdentityProviderOption>?` | none | Set for a user with no password: the dialog offers a fresh sign in with each of these linked providers instead of a password, and reopens the same action when the user comes back |
 | `CanProveIdentity` | `bool` | `true` | False when the user has no way to prove who they are: the copy action explains what to do |
 
 ## Usage

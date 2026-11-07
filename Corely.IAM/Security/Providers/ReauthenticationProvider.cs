@@ -3,14 +3,14 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.GoogleAuths.Entities;
-using Corely.IAM.GoogleAuths.Providers;
+using Corely.IAM.FederatedIdentities.Processors;
 using Corely.IAM.Platform.Providers;
+using Corely.IAM.Security.Entities;
 using Corely.IAM.Security.Models;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Entities;
-using Microsoft.Extensions.Options;
+using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.Security.Providers;
 
@@ -21,9 +21,9 @@ internal class ReauthenticationProvider(
     ISecurityPolicyProvider securityPolicyProvider,
     TimeProvider timeProvider,
     IReadonlyRepo<BasicAuthEntity> basicAuthRepo,
-    IReadonlyRepo<GoogleAuthEntity> googleAuthRepo,
-    IGoogleIdTokenValidator googleIdTokenValidator,
-    IOptions<SecurityOptions> securityOptions
+    IReadonlyRepo<AuthTokenEntity> authTokenRepo,
+    IFederatedIdentityProcessor federatedIdentityProcessor,
+    IUserContextProvider userContextProvider
 ) : IReauthenticationProvider
 {
     private readonly IRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
@@ -39,26 +39,21 @@ internal class ReauthenticationProvider(
     private readonly IReadonlyRepo<BasicAuthEntity> _basicAuthRepo = basicAuthRepo.ThrowIfNull(
         nameof(basicAuthRepo)
     );
-    private readonly IReadonlyRepo<GoogleAuthEntity> _googleAuthRepo = googleAuthRepo.ThrowIfNull(
-        nameof(googleAuthRepo)
+    private readonly IReadonlyRepo<AuthTokenEntity> _authTokenRepo = authTokenRepo.ThrowIfNull(
+        nameof(authTokenRepo)
     );
-    private readonly IGoogleIdTokenValidator _googleIdTokenValidator =
-        googleIdTokenValidator.ThrowIfNull(nameof(googleIdTokenValidator));
-    private readonly SecurityOptions _securityOptions = securityOptions
-        .ThrowIfNull(nameof(securityOptions))
-        .Value;
+    private readonly IFederatedIdentityProcessor _federatedIdentityProcessor =
+        federatedIdentityProcessor.ThrowIfNull(nameof(federatedIdentityProcessor));
+    private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
+        nameof(userContextProvider)
+    );
 
     public async Task<ReauthenticationResult> VerifyAccountKeyProofAsync(
         Guid userId,
         AccountKeyProof proof
     )
     {
-        var identity = await VerifyIdentityAsync(
-            userId,
-            proof.CurrentPassword,
-            proof.GoogleIdToken,
-            proof.GoogleNonce
-        );
+        var identity = await VerifyIdentityAsync(userId, proof.CurrentPassword);
         return identity.ResultCode == ReauthenticationResultCode.Success
             ? await VerifyTotpCodeAsync(userId, proof.TotpCode)
             : identity;
@@ -66,9 +61,7 @@ internal class ReauthenticationProvider(
 
     public async Task<ReauthenticationResult> VerifyIdentityAsync(
         Guid userId,
-        string? currentPassword,
-        string? googleIdToken,
-        string? googleNonce
+        string? currentPassword
     )
     {
         if (await _basicAuthRepo.AnyAsync(b => b.UserId == userId))
@@ -76,8 +69,7 @@ internal class ReauthenticationProvider(
             return await VerifyCurrentPasswordAsync(userId, currentPassword);
         }
 
-        var googleAuth = await _googleAuthRepo.GetAsync(g => g.UserId == userId);
-        if (googleAuth == null || string.IsNullOrWhiteSpace(_securityOptions.GoogleClientId))
+        if (!await _federatedIdentityProcessor.HasAnyAsync(userId))
         {
             return new(
                 ReauthenticationResultCode.NoReauthenticationMethodError,
@@ -93,22 +85,17 @@ internal class ReauthenticationProvider(
             return new(ReauthenticationResultCode.UserLockedError, "User is locked out");
         }
 
-        if (string.IsNullOrWhiteSpace(googleIdToken))
-        {
-            return new(
-                ReauthenticationResultCode.GoogleSignInRequiredError,
-                "Sign in with Google again to continue"
-            );
-        }
-
-        var payload = await _googleIdTokenValidator.ValidateAsync(googleIdToken);
+        var tokenId = _userContextProvider.GetUserContext()?.AuthTokenId;
+        var sessionId = tokenId is null
+            ? null
+            : (await _authTokenRepo.GetAsync(t => t.Id == tokenId))?.SessionId;
         return
-            payload?.Subject == googleAuth.GoogleSubjectId
-            && payload.ProvesAFreshSignIn(googleNonce, now)
+            sessionId is { } id
+            && await _federatedIdentityProcessor.ConsumeReauthenticationAsync(userId, id)
             ? ReauthenticationResult.Succeeded
             : new(
-                ReauthenticationResultCode.InvalidGoogleSignInError,
-                "That Google sign in could not be used. Sign in with Google again, using the account linked to you."
+                ReauthenticationResultCode.FederatedSignInRequiredError,
+                "Sign in again with an account linked to you to continue"
             );
     }
 

@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.DataAccess;
+using Corely.IAM.IdentityProviders.Enums;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Platform.Mappers;
@@ -160,6 +161,32 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
                     .SingleAsync()
             )
         );
+    }
+
+    [RequiresDockerFact]
+    public async Task Migrate_CarriesEveryGoogleLink_IntoFederatedIdentities()
+    {
+        var linkId = Guid.CreateVersion7();
+        var createdUtc = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+        await Host.QueryAsync(async db =>
+        {
+            await db.GetService<IMigrator>().MigrateAsync("AddAccountKeyCompromised");
+            return await db.Database.ExecuteSqlInterpolatedAsync(
+                $"INSERT INTO GoogleAuths (Id, UserId, GoogleSubjectId, Email, CreatedUtc) VALUES ({linkId}, {_ownerUserId}, {"google-subject"}, {"owner@gmail.com"}, {createdUtc})"
+            );
+        });
+
+        await Host.MigrateAsync();
+
+        var migrated = await Host.QueryAsync(db =>
+            db.FederatedIdentities.AsNoTracking().SingleAsync(f => f.Id == linkId)
+        );
+        Assert.Equal(_ownerUserId, migrated.UserId);
+        Assert.Equal(IdentityProviderType.Google, migrated.ProviderType);
+        Assert.Equal("https://accounts.google.com", migrated.Issuer);
+        Assert.Equal("google-subject", migrated.Subject);
+        Assert.Equal("owner@gmail.com", migrated.Email);
+        Assert.True(migrated.EmailVerified);
     }
 
     [RequiresDockerFact]

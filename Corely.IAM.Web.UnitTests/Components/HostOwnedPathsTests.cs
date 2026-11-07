@@ -38,10 +38,10 @@ public class HostOwnedPathsTests : BunitContext
         Assert.Equal(
             [
                 "CreateAccount",
-                "GoogleCallback",
+                "FederatedSignInCallback",
+                "FederatedSignInStart",
                 "Privacy",
                 "Register",
-                "RegisterWithGoogle",
                 "SelectAccount",
                 "SignIn",
                 "SignOut",

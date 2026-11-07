@@ -5,9 +5,6 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.ApiKeys.Providers;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.GoogleAuths.Models;
-using Corely.IAM.GoogleAuths.Processors;
-using Corely.IAM.GoogleAuths.Providers;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Enums;
@@ -38,8 +35,6 @@ public class AuthenticationServiceTests
     private readonly Mock<IAuthorizationCacheClearer> _authorizationCacheClearerMock;
     private readonly Mock<IBasicAuthProcessor> _basicAuthProcessorMock;
     private readonly Mock<ITotpAuthProcessor> _totpAuthProcessorMock;
-    private readonly Mock<IGoogleAuthProcessor> _googleAuthProcessorMock;
-    private readonly Mock<IGoogleIdTokenValidator> _googleIdTokenValidatorMock;
     private readonly Mock<TimeProvider> _timeProviderMock;
     private readonly Mock<IApiKeyAuthenticationProvider> _apiKeyAuthenticationProviderMock = new();
     private readonly Mock<ISessionTokenProvider> _sessionTokenProviderMock = new();
@@ -60,8 +55,6 @@ public class AuthenticationServiceTests
         _authorizationCacheClearerMock = new Mock<IAuthorizationCacheClearer>();
         _basicAuthProcessorMock = GetMockBasicAuthProcessor();
         _totpAuthProcessorMock = new Mock<ITotpAuthProcessor>();
-        _googleAuthProcessorMock = new Mock<IGoogleAuthProcessor>();
-        _googleIdTokenValidatorMock = new Mock<IGoogleIdTokenValidator>();
         _timeProviderMock = new Mock<TimeProvider>();
         _timeProviderMock.Setup(t => t.GetUtcNow()).Returns(DateTimeOffset.UtcNow);
         _sessionTokenProviderMock
@@ -77,8 +70,6 @@ public class AuthenticationServiceTests
             _authorizationCacheClearerMock.Object,
             _basicAuthProcessorMock.Object,
             _totpAuthProcessorMock.Object,
-            _googleAuthProcessorMock.Object,
-            _googleIdTokenValidatorMock.Object,
             _serviceFactory.GetRequiredService<IRepo<MfaChallengeEntity>>(),
             FixedSecurityPolicyProvider.From(
                 new SecurityOptions()
@@ -788,44 +779,32 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignInWithGoogle_ReturnsSuccess_WhenValidTokenAndNoMfa()
+    public async Task SignInVerifiedUser_ReturnsSuccess_WhenNoMfa()
     {
         var userEntity = await CreateTestUserAsync();
-        var googleSubject = "google-subject-123";
-
-        _googleIdTokenValidatorMock
-            .Setup(v => v.ValidateAsync("valid-google-token"))
-            .ReturnsAsync(new GoogleIdTokenPayload(googleSubject, "user@gmail.com", true));
-        _googleAuthProcessorMock
-            .Setup(m => m.GetUserIdByGoogleSubjectAsync(googleSubject))
-            .ReturnsAsync(userEntity.Id);
         _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(false);
 
-        var request = new SignInWithGoogleRequest("valid-google-token", TEST_DEVICE_ID);
-
-        var result = await _authenticationService.SignInWithGoogleAsync(request);
+        var result = await _authenticationService.SignInVerifiedUserAsync(
+            userEntity.Id,
+            TEST_DEVICE_ID,
+            null
+        );
 
         Assert.Equal(SignInResultCode.Success, result.ResultCode);
         Assert.NotNull(result.AuthToken);
     }
 
     [Fact]
-    public async Task SignInWithGoogle_ReturnsMfaRequiredChallenge_WhenTotpIsEnabled()
+    public async Task SignInVerifiedUser_ReturnsMfaRequiredChallenge_WhenTotpIsEnabled()
     {
         var userEntity = await CreateTestUserAsync();
-        var googleSubject = "google-subject-456";
-
-        _googleIdTokenValidatorMock
-            .Setup(v => v.ValidateAsync("valid-google-token"))
-            .ReturnsAsync(new GoogleIdTokenPayload(googleSubject, "user@gmail.com", true));
-        _googleAuthProcessorMock
-            .Setup(m => m.GetUserIdByGoogleSubjectAsync(googleSubject))
-            .ReturnsAsync(userEntity.Id);
         _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(userEntity.Id)).ReturnsAsync(true);
 
-        var request = new SignInWithGoogleRequest("valid-google-token", TEST_DEVICE_ID);
-
-        var result = await _authenticationService.SignInWithGoogleAsync(request);
+        var result = await _authenticationService.SignInVerifiedUserAsync(
+            userEntity.Id,
+            TEST_DEVICE_ID,
+            null
+        );
 
         Assert.Equal(SignInResultCode.MfaRequiredChallenge, result.ResultCode);
         Assert.NotNull(result.MfaChallengeToken);
@@ -833,17 +812,15 @@ public class AuthenticationServiceTests
     }
 
     [Fact]
-    public async Task SignInWithGoogle_ReturnsInvalidGoogleTokenError_WhenTokenIsInvalid()
+    public async Task SignInVerifiedUser_ReturnsUserNotFoundError_WhenUserIsMissing()
     {
-        _googleIdTokenValidatorMock
-            .Setup(v => v.ValidateAsync("bad-token"))
-            .ReturnsAsync((GoogleIdTokenPayload?)null);
+        var result = await _authenticationService.SignInVerifiedUserAsync(
+            Guid.CreateVersion7(),
+            TEST_DEVICE_ID,
+            null
+        );
 
-        var request = new SignInWithGoogleRequest("bad-token", TEST_DEVICE_ID);
-
-        var result = await _authenticationService.SignInWithGoogleAsync(request);
-
-        Assert.Equal(SignInResultCode.InvalidGoogleTokenError, result.ResultCode);
+        Assert.Equal(SignInResultCode.UserNotFoundError, result.ResultCode);
         Assert.Null(result.AuthToken);
     }
 
@@ -1029,37 +1006,6 @@ public class AuthenticationServiceTests
 
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
-    }
-
-    [Fact]
-    public async Task SignInWithGoogle_Throws_WithNullRequest()
-    {
-        var ex = await Record.ExceptionAsync(() =>
-            _authenticationService.SignInWithGoogleAsync(null!)
-        );
-
-        Assert.NotNull(ex);
-        Assert.IsType<ArgumentNullException>(ex);
-    }
-
-    [Fact]
-    public async Task SignInWithGoogle_ReturnsGoogleAuthNotLinkedError_WhenNoLinkedUser()
-    {
-        var googleSubject = "unlinked-subject";
-
-        _googleIdTokenValidatorMock
-            .Setup(v => v.ValidateAsync("valid-token"))
-            .ReturnsAsync(new GoogleIdTokenPayload(googleSubject, "user@gmail.com", true));
-        _googleAuthProcessorMock
-            .Setup(m => m.GetUserIdByGoogleSubjectAsync(googleSubject))
-            .ReturnsAsync((Guid?)null);
-
-        var request = new SignInWithGoogleRequest("valid-token", TEST_DEVICE_ID);
-
-        var result = await _authenticationService.SignInWithGoogleAsync(request);
-
-        Assert.Equal(SignInResultCode.GoogleAuthNotLinkedError, result.ResultCode);
-        Assert.Null(result.AuthToken);
     }
 
     #endregion

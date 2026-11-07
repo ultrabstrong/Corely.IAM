@@ -33,16 +33,6 @@ internal class AuthenticationServiceAuditDecorator(
             r => AuditOutcome.Of(r.ResultCode)
         );
 
-    public Task<SignInResult> SignInWithGoogleAsync(SignInWithGoogleRequest request) =>
-        _auditProvider.RecordAsync(
-            OnUser(AuthAction.Execute) with
-            {
-                AccountId = request.AccountId ?? Guid.Empty,
-            },
-            () => _inner.SignInWithGoogleAsync(request),
-            r => AuditOutcome.Of(r.ResultCode)
-        );
-
     public Task<SignInResult> VerifyMfaAsync(VerifyMfaRequest request) =>
         _auditProvider.RecordAsync(
             new AuditCall(SERVICE, AuthAction.Execute, User.RESOURCE_TYPE)

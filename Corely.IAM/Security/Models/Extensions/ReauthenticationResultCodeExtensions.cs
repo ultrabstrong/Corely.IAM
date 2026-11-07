@@ -65,10 +65,8 @@ internal static class ReauthenticationResultCodeExtensions
                     CompromiseAccountKeyResultCode.TotpRequiredError,
                 ReauthenticationResultCode.InvalidTotpCodeError =>
                     CompromiseAccountKeyResultCode.InvalidTotpCodeError,
-                ReauthenticationResultCode.GoogleSignInRequiredError =>
-                    CompromiseAccountKeyResultCode.GoogleSignInRequiredError,
-                ReauthenticationResultCode.InvalidGoogleSignInError =>
-                    CompromiseAccountKeyResultCode.InvalidGoogleSignInError,
+                ReauthenticationResultCode.FederatedSignInRequiredError =>
+                    CompromiseAccountKeyResultCode.FederatedSignInRequiredError,
                 ReauthenticationResultCode.NoReauthenticationMethodError =>
                     CompromiseAccountKeyResultCode.NoReauthenticationMethodError,
                 _ => throw Unmapped(resultCode),
@@ -88,10 +86,8 @@ internal static class ReauthenticationResultCodeExtensions
                     RevealAccountKeyResultCode.TotpRequiredError,
                 ReauthenticationResultCode.InvalidTotpCodeError =>
                     RevealAccountKeyResultCode.InvalidTotpCodeError,
-                ReauthenticationResultCode.GoogleSignInRequiredError =>
-                    RevealAccountKeyResultCode.GoogleSignInRequiredError,
-                ReauthenticationResultCode.InvalidGoogleSignInError =>
-                    RevealAccountKeyResultCode.InvalidGoogleSignInError,
+                ReauthenticationResultCode.FederatedSignInRequiredError =>
+                    RevealAccountKeyResultCode.FederatedSignInRequiredError,
                 ReauthenticationResultCode.NoReauthenticationMethodError =>
                     RevealAccountKeyResultCode.NoReauthenticationMethodError,
                 _ => throw Unmapped(resultCode),

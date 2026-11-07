@@ -77,8 +77,8 @@ else
     }
 
     <TotpSection OnStatusChanged="ReloadAuthMethodsAsync" />
-    <PasswordSection HasBasicAuth="_hasBasicAuth" HasGoogleAuth="_hasGoogleAuth" OnStatusChanged="ReloadAuthMethodsAsync" />
-    <LinkedAccountsSection HasGoogleAuth="_hasGoogleAuth" GoogleEmail="@_googleEmail" OnStatusChanged="ReloadAuthMethodsAsync" />
+    <PasswordSection HasBasicAuth="_hasBasicAuth" HasLinkedIdentity="_linkedIdentities.Count > 0" OnStatusChanged="ReloadAuthMethodsAsync" />
+    <LinkedIdentitiesSection LinkedIdentities="_linkedIdentities" OnStatusChanged="ReloadAuthMethodsAsync" />
 
     <EncryptionSigningPanel SymProvider="_symProvider" AsymProvider="_asymProvider" SigProvider="_sigProvider" RotateKeyAsync="RotateKeyAsync" />
 }
@@ -98,7 +98,7 @@ else
     private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
     private IModificationService ModificationService => ScopedServices.GetRequiredService<IModificationService>();
     private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
-    private IGoogleAuthService GoogleAuthService => ScopedServices.GetRequiredService<IGoogleAuthService>();
+    private IFederatedIdentityService FederatedIdentityService => ScopedServices.GetRequiredService<IFederatedIdentityService>();
 
     private string? _username;
     private string? _email;
@@ -120,8 +120,7 @@ else
     private IIamAsymmetricSignatureProvider? _sigProvider;
 
     private bool _hasBasicAuth;
-    private bool _hasGoogleAuth;
-    private string? _googleEmail;
+    private IReadOnlyList<LinkedIdentity> _linkedIdentities = [];
 
     protected override async Task LoadCoreAsync()
     {
@@ -169,12 +168,11 @@ else
 
     private async Task LoadAuthMethodsAsync()
     {
-        var methods = await GoogleAuthService.GetAuthMethodsAsync();
+        var methods = await FederatedIdentityService.GetAuthMethodsAsync();
         if (methods.ResultCode == AuthMethodsResultCode.Success)
         {
             _hasBasicAuth = methods.HasBasicAuth;
-            _hasGoogleAuth = methods.HasGoogleAuth;
-            _googleEmail = methods.GoogleEmail;
+            _linkedIdentities = methods.LinkedIdentities;
         }
     }
 

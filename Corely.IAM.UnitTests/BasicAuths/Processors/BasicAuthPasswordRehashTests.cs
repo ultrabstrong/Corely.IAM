@@ -2,7 +2,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.GoogleAuths.Entities;
+using Corely.IAM.FederatedIdentities.Entities;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Validators;
 using Corely.Security.Hashing;
@@ -28,7 +28,7 @@ public class BasicAuthPasswordRehashTests
 
         _processor = new BasicAuthProcessor(
             _basicAuthRepo,
-            _serviceFactory.GetRequiredService<IReadonlyRepo<GoogleAuthEntity>>(),
+            _serviceFactory.GetRequiredService<IReadonlyRepo<FederatedIdentityEntity>>(),
             _serviceFactory.GetRequiredService<ISecurityPolicyProvider>(),
             _hashProviderFactory,
             _serviceFactory.GetRequiredService<IValidationProvider>(),

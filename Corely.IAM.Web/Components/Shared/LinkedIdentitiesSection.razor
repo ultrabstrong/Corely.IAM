@@ -1,0 +1,104 @@
+@inherits OwningComponentBase
+@inject NavigationManager Navigation
+
+@if (_providers.Count > 0)
+{
+    <div class="section-divider mb-4 mt-4">
+        <div class="section-divider-label">Linked Accounts</div>
+        @if (!string.IsNullOrWhiteSpace(_message))
+        {
+            <div class="mt-2">
+                <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+            </div>
+        }
+
+        @foreach (var provider in _providers)
+        {
+            var linked = LinkedIdentities.FirstOrDefault(i => i.Type == provider.Type);
+            <div class="props-grid mb-2" data-identity-provider="@provider.Type">
+                <span class="prop-label"><i class="bi @provider.Type.IconClass() me-2"></i>@provider.DisplayName</span>
+                <span class="prop-value d-flex flex-wrap align-items-center gap-2">
+                    @if (linked is not null)
+                    {
+                        <span>@(linked.Email ?? "Linked") <i class="bi bi-check-circle text-success ms-1"></i></span>
+                        <button class="btn btn-outline-danger btn-sm" @onclick="() => ConfirmUnlink(provider)" disabled="@_busy">Unlink</button>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Not linked</span>
+                        <button class="btn btn-outline-primary btn-sm" @onclick="() => Link(provider.Type)" disabled="@_busy">Link</button>
+                    }
+                </span>
+            </div>
+        }
+    </div>
+}
+
+<ConfirmModal @ref="_unlinkModal"
+              Title="@($"Unlink {_unlinkTarget?.DisplayName}")"
+              Message="@($"Remove your linked {_unlinkTarget?.DisplayName} account? You will no longer be able to sign in with it.")"
+              ConfirmText="Unlink"
+              OnConfirm="UnlinkAsync" />
+
+@code {
+    private IFederatedIdentityService FederatedIdentityService => ScopedServices.GetRequiredService<IFederatedIdentityService>();
+    private IFederatedSignInService FederatedSignInService => ScopedServices.GetRequiredService<IFederatedSignInService>();
+
+    [Parameter]
+    public IReadOnlyList<LinkedIdentity> LinkedIdentities { get; set; } = [];
+
+    [Parameter]
+    public EventCallback OnStatusChanged { get; set; }
+
+    private IReadOnlyList<IdentityProviderOption> _providers = [];
+    private IdentityProviderOption? _unlinkTarget;
+    private ConfirmModal _unlinkModal = null!;
+    private bool _busy;
+    private string? _message;
+    private AlertType _messageType;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ScopedServices.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
+        _providers = await FederatedSignInService.ListIdentityProvidersAsync();
+    }
+
+    private void Link(IdentityProviderType type) =>
+        Navigation.NavigateTo(
+            type.StartPath(FederatedSignInPurpose.Link, "/" + Navigation.ToBaseRelativePath(Navigation.Uri)),
+            forceLoad: true
+        );
+
+    private void ConfirmUnlink(IdentityProviderOption provider)
+    {
+        _unlinkTarget = provider;
+        _unlinkModal.Show();
+    }
+
+    private async Task UnlinkAsync()
+    {
+        if (_busy || _unlinkTarget is null) return;
+        _busy = true;
+        try
+        {
+            var result = await FederatedIdentityService.UnlinkFederatedIdentityAsync(_unlinkTarget.Type);
+            if (result.ResultCode == UnlinkFederatedIdentityResultCode.Success)
+            {
+                SetMessage(true, $"{_unlinkTarget.DisplayName} account unlinked.");
+                await OnStatusChanged.InvokeAsync();
+            }
+            else
+            {
+                SetMessage(false, result.Message);
+            }
+        }
+        catch { SetMessage(false, "An unexpected error occurred."); }
+        finally { _busy = false; }
+    }
+
+    private void SetMessage(bool success, string text)
+    {
+        _message = text;
+        _messageType = success ? AlertType.Success : AlertType.Danger;
+    }
+}

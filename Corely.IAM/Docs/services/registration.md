@@ -19,12 +19,11 @@ Creates entities, establishes relationships between entities, and manages invita
 | `RegisterPermissionsWithRoleAsync` | `RegisterPermissionsWithRoleRequest` | `RegisterPermissionsWithRoleResult` |
 | `RegisterRolesWithApiKeyAsync` | `RegisterRolesWithApiKeyRequest` | `RegisterRolesWithApiKeyResult` |
 | `RegisterApiKeysWithGroupAsync` | `RegisterApiKeysWithGroupRequest` | `RegisterApiKeysWithGroupResult` |
-| `RegisterUserWithGoogleAsync` | `RegisterUserWithGoogleRequest` | `RegisterUserWithGoogleResult` |
 | `RegisterPasswordAsync` | `RegisterPasswordRequest` | `RegisterPasswordResult` |
 
 `RegisterUserWithAccountAsync` runs only in system context, for hosts and tools that seed accounts. Anyone else joins an account by creating it or by accepting an invitation (`IInvitationService`).
 
-> **Note:** TOTP and Google Auth methods have been moved to dedicated services. See [MFA](../mfa.md) (`IMfaService`) and [Google Sign-In](../google-signin.md) (`IGoogleAuthService`).
+> **Note:** TOTP and identity provider methods are on dedicated services. See [MFA](../mfa.md) (`IMfaService`) and [Federated Sign-In](../federated-sign-in.md) (`IFederatedSignInService`, `IFederatedIdentityService`).
 
 ## Usage
 

@@ -14,7 +14,7 @@ JWT-based authentication with custom claims, device tracking, and multi-account 
 - **Bulk sign-out**: revoke all tokens for a user across all devices
 - **Password recovery**: email-based token flow for unauthenticated password reset
 - **MFA (TOTP)**: optional second factor via authenticator apps (see [mfa.md](mfa.md))
-- **Google Sign-In**: alternative auth method via Google ID tokens (see [google-signin.md](google-signin.md))
+- **Federated sign-in**: sign in with Google, Microsoft, GitHub, Facebook or Amazon (see [federated-sign-in.md](federated-sign-in.md))
 
 ## Sign-In Flow
 
@@ -105,7 +105,7 @@ await authenticationService.SignOutAllAsync();
 
 Changing a credential ends every other session of the user and keeps the current one: changing,
 setting or removing the password, turning TOTP on or off, regenerating recovery codes, and linking or
-unlinking Google. A password reset through recovery ends every session.
+unlinking an identity provider. A password reset through recovery ends every session.
 
 ## Session Management
 
@@ -324,4 +324,4 @@ authService.AuthenticateAsSystem("my-function-app");
 var result = await retrievalService.ListUsersAsync(request);
 ```
 
-System context is fully permissioned but blocks "self" operations (MFA, password management, Google auth) that only make sense for a logged-in user. See [User Context](security/user-context.md) and [Authorization](authorization.md) for details.
+System context is fully permissioned but blocks "self" operations (MFA, password management, linked identities) that only make sense for a logged-in user. See [User Context](security/user-context.md) and [Authorization](authorization.md) for details.

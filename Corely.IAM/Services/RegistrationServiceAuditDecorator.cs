@@ -3,7 +3,6 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
-using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
@@ -32,22 +31,6 @@ internal class RegistrationServiceAuditDecorator(
                 AccountId = Guid.Empty,
             },
             () => _inner.RegisterUserAsync(request),
-            r =>
-                AuditOutcome.Of(r.ResultCode, r.CreatedUserId) with
-                {
-                    ActorUserId = r.CreatedUserId,
-                }
-        );
-
-    public Task<RegisterUserWithGoogleResult> RegisterUserWithGoogleAsync(
-        RegisterUserWithGoogleRequest request
-    ) =>
-        _auditProvider.RecordAsync(
-            new AuditCall(SERVICE, AuthAction.Create, User.RESOURCE_TYPE)
-            {
-                AccountId = Guid.Empty,
-            },
-            () => _inner.RegisterUserWithGoogleAsync(request),
             r =>
                 AuditOutcome.Of(r.ResultCode, r.CreatedUserId) with
                 {

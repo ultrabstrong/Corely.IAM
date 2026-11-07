@@ -1,3 +1,4 @@
+using Corely.IAM.IdentityProviders.Enums;
 using Microsoft.AspNetCore.Http;
 
 namespace Corely.IAM.Web.Extensions;
@@ -19,6 +20,9 @@ internal static class HttpRequestExtensions
             request
                 .Headers.Authorization.ToString()
                 .StartsWith(BEARER_SCHEME, StringComparison.OrdinalIgnoreCase);
+
+        public string FederatedCallbackUri(IdentityProviderType type) =>
+            $"{request.Scheme}://{request.Host}{request.PathBase}{AppRoutes.FederatedSignInCallback}/{type.ToString().ToLowerInvariant()}";
 
         public string? BearerToken()
         {

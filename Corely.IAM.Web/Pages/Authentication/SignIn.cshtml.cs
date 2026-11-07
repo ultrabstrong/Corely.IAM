@@ -1,5 +1,4 @@
 using Corely.IAM.Models;
-using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Extensions;
@@ -15,16 +14,12 @@ public class SignInModel(
     IAuthenticationService authenticationService,
     IAuthCookieManager authCookieManager,
     IPostAuthenticationFlowService postAuthenticationFlowService,
-    IOptions<SecurityOptions> securityOptions,
     IOptions<IAMWebOptions> iamWebOptions
 ) : PageModel
 {
     public const string RETURN_URL_TEMP_DATA_KEY = "ReturnUrl";
 
-    public string? GoogleClientId { get; } = securityOptions.Value.GoogleClientId;
     public string? ForgotPasswordPath { get; } = iamWebOptions.Value.ForgotPasswordPath;
-
-    public string? GoogleCallbackUrl { get; set; }
 
     [BindProperty]
     public string Username { get; set; } = string.Empty;
@@ -44,16 +39,6 @@ public class SignInModel(
         if (User.Identity?.IsAuthenticated == true)
         {
             return Redirect(ReturnUrl ?? iamWebOptions.Value.HomePath);
-        }
-
-        if (!string.IsNullOrWhiteSpace(GoogleClientId))
-        {
-            var request = HttpContext.Request;
-            GoogleCallbackUrl = $"{request.Scheme}://{request.Host}{AppRoutes.GoogleCallback}";
-            if (ReturnUrl != null)
-            {
-                authCookieManager.SetReturnUrlCookie(HttpContext, ReturnUrl);
-            }
         }
 
         return Page();

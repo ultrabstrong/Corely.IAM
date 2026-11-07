@@ -2,6 +2,8 @@ using Corely.Common.Extensions;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
+using Corely.IAM.IdentityProviders.Enums;
+using Corely.IAM.IdentityProviders.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Enums;
@@ -46,6 +48,27 @@ internal class PlatformServiceAuditDecorator(IPlatformService inner, IAuditProvi
         _auditProvider.RecordAsync(
             new AuditCall(SERVICE, AuthAction.Update, SecurityPolicy.RESOURCE_TYPE),
             () => _inner.UpdateSecuritySettingsAsync(settings),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<GetIdentityProvidersResult> GetIdentityProvidersAsync() =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Read, SecurityPolicy.RESOURCE_TYPE),
+            _inner.GetIdentityProvidersAsync,
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<ModifyResult> UpdateIdentityProviderAsync(UpdateIdentityProviderRequest request) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Update, SecurityPolicy.RESOURCE_TYPE),
+            () => _inner.UpdateIdentityProviderAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
+    public Task<CountSoleSignInUsersResult> CountSoleSignInUsersAsync(IdentityProviderType type) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Read, SecurityPolicy.RESOURCE_TYPE),
+            () => _inner.CountSoleSignInUsersAsync(type),
             r => AuditOutcome.Of(r.ResultCode)
         );
 }

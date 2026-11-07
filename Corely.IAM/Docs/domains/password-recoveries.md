@@ -26,4 +26,4 @@ Short-lived, user-scoped recovery records used to reset a password without an au
 - Tokens expire after 10 minutes
 - Successful reset revokes all active auth tokens for the user
 - Successful reset clears login lockout state and failed-attempt counters
-- Recovery can create a first password for a Google-only user if the host trusts email-based recovery
+- Recovery can create a first password for a user who signs in only with an identity provider, if the host trusts email-based recovery

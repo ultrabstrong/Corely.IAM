@@ -28,16 +28,16 @@ Self-service user profile page. No permission gates: any authenticated user can 
 - Uses `IMfaService` for enable/confirm/disable/regenerate/status
 
 ### Password Section
-- **Has password**: "Password is set" with "Change Password", plus "Remove Password" when Google sign in is linked
-- **No password (Google only)**: "Set Password" form (new password + confirm)
+- **Has password**: "Password is set" with "Change Password", plus "Remove Password" when an identity provider is linked
+- **No password (identity providers only)**: "Set Password" form (new password + confirm)
 - Change and remove ask for the current password, and every form asks for an authenticator code when TOTP is enabled
 - Set calls `IRegistrationService.RegisterPasswordAsync()`, change calls `IModificationService.ModifyPasswordAsync()`, remove calls `IDeregistrationService.DeregisterBasicAuthAsync()`
 
-### Linked Accounts Section
-- Shows linked Google email when Google auth is active
-- **Unlink**: confirmation modal, calls `IDeregistrationService.UnlinkGoogleAuthAsync()`
-- Placeholder when no Google account linked
-- Uses `IRetrievalService.GetAuthMethodsAsync()` for status
+### Linked Identities Section
+- One row per enabled identity provider, with the linked email or "Not linked"; hidden when no provider is on
+- **Link**: a full page round trip through `/signin/start/{provider}?purpose=link`, back to this page
+- **Unlink**: confirmation modal, calls `IFederatedIdentityService.UnlinkFederatedIdentityAsync()`
+- Takes `LinkedIdentities` from `IFederatedIdentityService.GetAuthMethodsAsync()`
 
 ### Encryption/Signing Panel
 - User's symmetric encryption provider

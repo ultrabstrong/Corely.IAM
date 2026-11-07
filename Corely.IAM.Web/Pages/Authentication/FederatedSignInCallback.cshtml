@@ -1,0 +1,11 @@
+@page "/signin/callback/{provider}"
+@model Corely.IAM.Web.Pages.Authentication.FederatedSignInCallbackModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Sign In";
+}
+
+<div class="auth-card">
+    <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    <a href="@Model.BackUrl" class="btn btn-outline-primary w-100">Back</a>
+</div>

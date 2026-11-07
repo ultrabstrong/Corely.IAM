@@ -1,5 +1,7 @@
 using Corely.Common.Extensions;
 using Corely.IAM.Audits.Providers;
+using Corely.IAM.IdentityProviders.Enums;
+using Corely.IAM.IdentityProviders.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Enums;
@@ -56,4 +58,30 @@ internal class PlatformServiceAuthorizationDecorator(
         )
             ? await _inner.UpdateSecuritySettingsAsync(settings)
             : new ModifyResult(ModifyResultCode.UnauthorizedError, UNAUTHORIZED);
+
+    public async Task<GetIdentityProvidersResult> GetIdentityProvidersAsync() =>
+        await HoldsSecuritySettingsAsync(AuthAction.Read)
+            ? await _inner.GetIdentityProvidersAsync()
+            : new GetIdentityProvidersResult(
+                RetrieveResultCode.UnauthorizedError,
+                UNAUTHORIZED,
+                null
+            );
+
+    public async Task<ModifyResult> UpdateIdentityProviderAsync(
+        UpdateIdentityProviderRequest request
+    ) =>
+        await HoldsSecuritySettingsAsync(AuthAction.Update)
+            ? await _inner.UpdateIdentityProviderAsync(request)
+            : new ModifyResult(ModifyResultCode.UnauthorizedError, UNAUTHORIZED);
+
+    public async Task<CountSoleSignInUsersResult> CountSoleSignInUsersAsync(
+        IdentityProviderType type
+    ) =>
+        await HoldsSecuritySettingsAsync(AuthAction.Read)
+            ? await _inner.CountSoleSignInUsersAsync(type)
+            : new CountSoleSignInUsersResult(RetrieveResultCode.UnauthorizedError, UNAUTHORIZED, 0);
+
+    private Task<bool> HoldsSecuritySettingsAsync(AuthAction action) =>
+        _auditAccessProvider.HoldsInPlatformAccountAsync(action, SecurityPolicy.RESOURCE_TYPE);
 }

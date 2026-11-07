@@ -2,7 +2,7 @@
 
 Reusable Razor Class Library (RCL) that provides the Blazor Server UI for the Corely.IAM identity and access management library: authentication pages, and management components the host places at its own paths.
 
-> **Upgrading from 6.x?** See [MIGRATION-IAM.Web-7.0.md](https://github.com/ultrabstrong/Corely.IAM/blob/master/MIGRATION-IAM.Web-7.0.md).
+> **Upgrading from 9.x?** See [MIGRATION-IAM.Web-10.0.md](https://github.com/ultrabstrong/Corely.IAM/blob/master/MIGRATION-IAM.Web-10.0.md).
 > The package ships components only: the host writes a page per component and supplies every link.
 
 ---
@@ -219,7 +219,8 @@ dotnet run -- sym-encrypt --create
 
 The authentication endpoints are Razor Pages at fixed routes, named on `Corely.IAM.Web.AppRoutes`:
 `SignIn`, `Register`, `SignOut`, `SelectAccount`, `SwitchAccount`, `CreateAccount`, `VerifyMfa`,
-`GoogleCallback`, `RegisterWithGoogle`, `Privacy` and `Terms`. Every other path is the host's.
+`FederatedSignInStart`, `FederatedSignInCallback`, `Privacy` and `Terms`. Every other path is the
+host's.
 
 ---
 

@@ -4,7 +4,7 @@ Blazor Server UI for Corely.IAM: the authentication pages, and components for mu
 management, RBAC visualization and permission CRUD, all with authorization gating. The library ships
 components only; the host writes a short page per component and owns every path.
 
-- **Complete auth flow**: sign in, register, sign out, account switching, MFA verification, Google Sign-In (Razor Pages at fixed routes), returning to the page that sent you
+- **Complete auth flow**: sign in, register, sign out, account switching, MFA verification, federated sign-in (Razor Pages at fixed routes), returning to the page that sent you
 - **Management components**: account, user, group, role, permission and audit components (Blazor Server), placed by the host
 - **Account scoped paths**: `AccountScope` lets a host put the account in its URLs safely
 - **Authorization gates**: `PermissionView` component hides UI based on CRUDX permissions

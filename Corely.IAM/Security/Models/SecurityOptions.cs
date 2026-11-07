@@ -1,3 +1,4 @@
+using Corely.IAM.IdentityProviders.Models;
 using Corely.IAM.Platform.Models;
 using Corely.Security.PasswordValidation.Models;
 
@@ -28,7 +29,7 @@ public class SecurityOptions
     public string[] ApiKeyResourceTypes { get; set; } = [];
 
     public int PermissionCacheTtlSeconds { get; set; } = 30;
-    public string? GoogleClientId { get; set; }
+    public Dictionary<string, IdentityProviderOptions> IdentityProviders { get; set; } = [];
 
     internal SecurityPolicy ToSecurityPolicy(PasswordValidationOptions passwordOptions) =>
         new(

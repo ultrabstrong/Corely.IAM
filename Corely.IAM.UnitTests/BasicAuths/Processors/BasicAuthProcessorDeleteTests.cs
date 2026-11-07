@@ -2,7 +2,8 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.GoogleAuths.Entities;
+using Corely.IAM.FederatedIdentities.Entities;
+using Corely.IAM.IdentityProviders.Enums;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Validators;
 using Corely.Security.Hashing.Factories;
@@ -21,7 +22,7 @@ public class BasicAuthProcessorDeleteTests
     {
         _basicAuthProcessor = new BasicAuthProcessor(
             _serviceFactory.GetRequiredService<IRepo<BasicAuthEntity>>(),
-            _serviceFactory.GetRequiredService<IReadonlyRepo<GoogleAuthEntity>>(),
+            _serviceFactory.GetRequiredService<IReadonlyRepo<FederatedIdentityEntity>>(),
             _serviceFactory.GetRequiredService<ISecurityPolicyProvider>(),
             _serviceFactory.GetRequiredService<IHashProviderFactory>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
@@ -30,20 +31,24 @@ public class BasicAuthProcessorDeleteTests
     }
 
     [Fact]
-    public async Task DeleteBasicAuthAsync_ReturnsSuccess_WhenBasicAuthExistsAndGoogleAuthExists()
+    public async Task DeleteBasicAuthAsync_ReturnsSuccess_WhenBasicAuthExistsAndFederatedIdentityExists()
     {
         var userId = Guid.CreateVersion7();
         await _basicAuthProcessor.CreateBasicAuthAsync(
             new CreateBasicAuthRequest(userId, VALID_PASSWORD)
         );
 
-        var googleAuthRepo = _serviceFactory.GetRequiredService<IRepo<GoogleAuthEntity>>();
-        await googleAuthRepo.CreateAsync(
-            new GoogleAuthEntity
+        var federatedIdentityRepo = _serviceFactory.GetRequiredService<
+            IRepo<FederatedIdentityEntity>
+        >();
+        await federatedIdentityRepo.CreateAsync(
+            new FederatedIdentityEntity
             {
                 Id = Guid.CreateVersion7(),
                 UserId = userId,
-                GoogleSubjectId = "google-subject-123",
+                ProviderType = IdentityProviderType.Google,
+                Issuer = "https://accounts.google.com",
+                Subject = "google-subject-123",
                 Email = "test@gmail.com",
             }
         );
@@ -64,7 +69,7 @@ public class BasicAuthProcessorDeleteTests
     }
 
     [Fact]
-    public async Task DeleteBasicAuthAsync_ReturnsLastAuthMethodError_WhenNoGoogleAuth()
+    public async Task DeleteBasicAuthAsync_ReturnsLastAuthMethodError_WhenNoFederatedIdentity()
     {
         var userId = Guid.CreateVersion7();
         await _basicAuthProcessor.CreateBasicAuthAsync(

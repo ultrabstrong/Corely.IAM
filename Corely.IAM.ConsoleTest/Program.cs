@@ -76,7 +76,8 @@ internal class Program
             var retrievalService = host.Services.GetRequiredService<IRetrievalService>();
             var modificationService = host.Services.GetRequiredService<IModificationService>();
             var mfaService = host.Services.GetRequiredService<IMfaService>();
-            var googleAuthService = host.Services.GetRequiredService<IGoogleAuthService>();
+            var federatedIdentityService =
+                host.Services.GetRequiredService<IFederatedIdentityService>();
             var invitationService = host.Services.GetRequiredService<IInvitationService>();
 
             var registerUserResult = await registrationService.RegisterUserAsync(
@@ -488,9 +489,9 @@ internal class Program
             );
             Console.WriteLine($"Disable TOTP: {disableTotpResult.ResultCode}");
 
-            var authMethods = await googleAuthService.GetAuthMethodsAsync();
+            var authMethods = await federatedIdentityService.GetAuthMethodsAsync();
             Console.WriteLine(
-                $"Auth methods: HasBasicAuth={authMethods.HasBasicAuth}, HasGoogleAuth={authMethods.HasGoogleAuth}"
+                $"Auth methods: HasBasicAuth={authMethods.HasBasicAuth}, LinkedIdentities={authMethods.LinkedIdentities.Count}"
             );
 
             var deregisterBasicAuthResult = await deregistrationService.DeregisterBasicAuthAsync(

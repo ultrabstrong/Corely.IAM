@@ -1,4 +1,3 @@
-using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
@@ -40,25 +39,6 @@ public class RegistrationServiceAuthorizationDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerService.Verify(x => x.RegisterUserAsync(request), Times.Once);
-    }
-
-    [Fact]
-    public async Task RegisterUserWithGoogle_DelegatesToInner()
-    {
-        var request = new RegisterUserWithGoogleRequest("google-id-token");
-        var expectedResult = new RegisterUserWithGoogleResult(
-            RegisterUserWithGoogleResultCode.Success,
-            string.Empty,
-            Guid.CreateVersion7()
-        );
-        _mockInnerService
-            .Setup(x => x.RegisterUserWithGoogleAsync(request))
-            .ReturnsAsync(expectedResult);
-
-        var result = await _decorator.RegisterUserWithGoogleAsync(request);
-
-        Assert.Equal(expectedResult, result);
-        _mockInnerService.Verify(x => x.RegisterUserWithGoogleAsync(request), Times.Once);
     }
 
     #endregion

@@ -8,8 +8,7 @@ public class ReauthenticationResultCodeExtensionsTests
 {
     private static readonly ReauthenticationResultCode[] _identityOnlyCodes =
     [
-        ReauthenticationResultCode.GoogleSignInRequiredError,
-        ReauthenticationResultCode.InvalidGoogleSignInError,
+        ReauthenticationResultCode.FederatedSignInRequiredError,
         ReauthenticationResultCode.NoReauthenticationMethodError,
     ];
 

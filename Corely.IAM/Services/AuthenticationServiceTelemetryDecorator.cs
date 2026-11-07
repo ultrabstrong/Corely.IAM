@@ -65,12 +65,6 @@ internal class AuthenticationServiceTelemetryDecorator(
             _inner.SignOutAllAsync
         );
 
-    public async Task<SignInResult> SignInWithGoogleAsync(SignInWithGoogleRequest request) =>
-        await _logger.ExecuteWithLoggingAsync(
-            nameof(AuthenticationService),
-            () => _inner.SignInWithGoogleAsync(request)
-        );
-
     public async Task<SignInResult> VerifyMfaAsync(VerifyMfaRequest request) =>
         await _logger.ExecuteWithLoggingAsync(
             nameof(AuthenticationService),

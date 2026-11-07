@@ -1,0 +1,243 @@
+@inherits OwningComponentBase
+
+<div class="section-divider mb-4">
+    <div class="section-divider-label">Identity providers</div>
+    <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
+
+    @foreach (var provider in _providers)
+    {
+        var editing = _editing?.Type == provider.Type;
+        <div class="mb-3 pb-3 border-bottom" data-identity-provider="@provider.Type">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <i class="bi @provider.Type.IconClass()"></i>
+                <strong>@provider.Type</strong>
+                @if (!string.IsNullOrWhiteSpace(provider.ClientId))
+                {
+                    <EnabledBadge Enabled="provider.Enabled" />
+                }
+                else
+                {
+                    <span class="badge text-bg-light border">Not configured</span>
+                }
+                @if (CanUpdate && !editing)
+                {
+                    <button class="btn btn-outline-primary btn-sm ms-auto" @onclick="() => StartEdit(provider)" disabled="@(_busy || _editing != null)">Edit</button>
+                }
+            </div>
+
+            @if (!editing)
+            {
+                @if (!string.IsNullOrWhiteSpace(provider.ClientId))
+                {
+                    <div class="settings-grid">
+                        <span class="prop-label">Client ID</span>
+                        <span class="prop-value text-break">@provider.ClientId</span>
+                        <span class="prop-label">@CredentialLabel(provider.CredentialKind)</span>
+                        <span class="prop-value">@(provider.HasCredential ? "Set" : "Not set")@(provider.CertificateThumbprint is { } thumbprint ? $" ({thumbprint})" : "")</span>
+                        @if (provider.Type == IdentityProviderType.Microsoft)
+                        {
+                            <span class="prop-label">Tenant</span>
+                            <span class="prop-value">@(provider.Tenant ?? "common")</span>
+                        }
+                        <span class="prop-label">Sign up</span>
+                        <span class="prop-value"><EnabledBadge Enabled="provider.AllowSignUp" /></span>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="d-grid gap-2" style="max-width: 36rem;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="idp-enabled" @bind="_editing!.Enabled" />
+                        <label class="form-check-label" for="idp-enabled">On</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="idp-signup" @bind="_editing!.AllowSignUp" />
+                        <label class="form-check-label" for="idp-signup">Allow sign up</label>
+                    </div>
+                    <label class="form-label mb-0" for="idp-client-id">Client ID</label>
+                    <input class="form-control form-control-sm" id="idp-client-id" @bind="_editing!.ClientId" />
+                    @if (provider.Type == IdentityProviderType.Microsoft)
+                    {
+                        <label class="form-label mb-0" for="idp-tenant">Tenant</label>
+                        <input class="form-control form-control-sm" id="idp-tenant" placeholder="common" @bind="_editing!.Tenant" />
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="idp-credential" id="idp-certificate"
+                                       checked="@(_editing!.CredentialKind == IdentityProviderCredentialKind.Certificate)"
+                                       @onchange="() => _editing!.CredentialKind = IdentityProviderCredentialKind.Certificate" />
+                                <label class="form-check-label" for="idp-certificate">Certificate (preferred)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="idp-credential" id="idp-secret"
+                                       checked="@(_editing!.CredentialKind == IdentityProviderCredentialKind.ClientSecret)"
+                                       @onchange="() => _editing!.CredentialKind = IdentityProviderCredentialKind.ClientSecret" />
+                                <label class="form-check-label" for="idp-secret">Client secret</label>
+                            </div>
+                        </div>
+                    }
+                    @if (_editing!.CredentialKind == IdentityProviderCredentialKind.Certificate)
+                    {
+                        <label class="form-label mb-0" for="idp-certificate-file">Certificate (PFX with its private key)@(KeepsCredential(provider) ? ", set: choose a file to replace it" : "")</label>
+                        <InputFile id="idp-certificate-file" class="form-control form-control-sm" accept=".pfx,.p12" OnChange="ReadCertificateAsync" />
+                        <PasswordInput @bind-Value="_editing!.CertificatePassword" Placeholder="Certificate password" />
+                    }
+                    else
+                    {
+                        <label class="form-label mb-0">Client secret@(KeepsCredential(provider) ? ", set: enter a new one to replace it" : "")</label>
+                        <PasswordInput @bind-Value="_editing!.ClientSecret" Placeholder="Client secret" />
+                    }
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm" @onclick="() => RequestSaveAsync(provider)" disabled="@_busy">Save</button>
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => _editing = null" disabled="@_busy">Cancel</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    <ul class="settings-notes">
+        <li>Register <code>@CallbackPattern</code> as the redirect URI with each provider.</li>
+        <li>A secret or certificate is never shown again once saved.</li>
+        <li>A provider that is off disappears from sign in, sign up and profiles. Its settings and its users' linked accounts are kept.</li>
+    </ul>
+</div>
+
+<ConfirmModal @ref="_turnOffModal" Title="@($"Turn off {_editing?.Type}?")" ConfirmText="@($"Turn off {_editing?.Type}")"
+              Type="ConfirmModalType.Danger" Message="@_turnOffMessage" OnConfirm="SaveAsync" />
+
+@code {
+    public const int CERTIFICATE_MAX_BYTES = 65536;
+
+    private IPlatformService PlatformService => ScopedServices.GetRequiredService<IPlatformService>();
+
+    [Parameter]
+    public bool CanUpdate { get; set; }
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = null!;
+
+    private IReadOnlyList<IdentityProviderSettings> _providers = [];
+    private ProviderEdit? _editing;
+    private ConfirmModal _turnOffModal = null!;
+    private string _turnOffMessage = string.Empty;
+    private bool _busy;
+    private string? _message;
+    private AlertType _messageType;
+
+    private string CallbackPattern => $"{Navigation.BaseUri.TrimEnd('/')}{AppRoutes.FederatedSignInCallback}/<provider>";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ScopedServices.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await PlatformService.GetIdentityProvidersAsync();
+        _providers = result.Providers ?? [];
+    }
+
+    private static string CredentialLabel(IdentityProviderCredentialKind kind) =>
+        kind == IdentityProviderCredentialKind.Certificate ? "Certificate" : "Client secret";
+
+    private bool KeepsCredential(IdentityProviderSettings provider) =>
+        provider.HasCredential && provider.CredentialKind == _editing?.CredentialKind;
+
+    private void StartEdit(IdentityProviderSettings provider)
+    {
+        _message = null;
+        _editing = new ProviderEdit
+        {
+            Type = provider.Type,
+            Enabled = provider.Enabled || string.IsNullOrWhiteSpace(provider.ClientId),
+            AllowSignUp = provider.AllowSignUp,
+            ClientId = provider.ClientId,
+            Tenant = provider.Tenant,
+            CredentialKind = provider.CredentialKind,
+        };
+    }
+
+    private async Task ReadCertificateAsync(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var stream = e.File.OpenReadStream(CERTIFICATE_MAX_BYTES);
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+            _editing!.CertificatePfx = buffer.ToArray();
+        }
+        catch (IOException)
+        {
+            SetMessage(false, "The certificate file is too large.");
+        }
+    }
+
+    private async Task RequestSaveAsync(IdentityProviderSettings provider)
+    {
+        if (_editing is null) return;
+        if (provider.Enabled && !_editing.Enabled)
+        {
+            var count = await PlatformService.CountSoleSignInUsersAsync(provider.Type);
+            _turnOffMessage = count.Count == 0
+                ? $"No user signs in only with {provider.Type}. Its settings and linked accounts are kept."
+                : $"{count.Count} {(count.Count == 1 ? "user signs" : "users sign")} in only with {provider.Type}. They cannot sign in, or prove it is them, until it is turned back on. Its settings and linked accounts are kept.";
+            _turnOffModal.Show();
+            return;
+        }
+        await SaveAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_editing is null || _busy) return;
+        _busy = true;
+        try
+        {
+            var edit = _editing;
+            var result = await PlatformService.UpdateIdentityProviderAsync(
+                new UpdateIdentityProviderRequest(
+                    edit.Type,
+                    edit.Enabled,
+                    edit.AllowSignUp,
+                    edit.ClientId ?? string.Empty,
+                    edit.CredentialKind,
+                    edit.Tenant,
+                    edit.CredentialKind == IdentityProviderCredentialKind.ClientSecret ? edit.ClientSecret : null,
+                    edit.CredentialKind == IdentityProviderCredentialKind.Certificate ? edit.CertificatePfx : null,
+                    edit.CertificatePassword
+                )
+            );
+            if (result.ResultCode == ModifyResultCode.Success)
+            {
+                SetMessage(true, $"{edit.Type} saved.");
+                _editing = null;
+                await LoadAsync();
+            }
+            else
+            {
+                SetMessage(false, result.Message);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void SetMessage(bool success, string text)
+    {
+        _message = text;
+        _messageType = success ? AlertType.Success : AlertType.Danger;
+    }
+
+    private sealed class ProviderEdit
+    {
+        public IdentityProviderType Type { get; init; }
+        public bool Enabled { get; set; }
+        public bool AllowSignUp { get; set; }
+        public string? ClientId { get; set; }
+        public string? Tenant { get; set; }
+        public IdentityProviderCredentialKind CredentialKind { get; set; }
+        public string ClientSecret { get; set; } = string.Empty;
+        public byte[]? CertificatePfx { get; set; }
+        public string CertificatePassword { get; set; } = string.Empty;
+    }
+}

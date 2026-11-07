@@ -300,30 +300,19 @@ public class AccountKeyProcessorTests
     }
 
     [Fact]
-    public async Task RevealKey_PassesTheGoogleProofOn_ForAUserWithNoPassword()
+    public async Task RevealKey_AsksForProofWithoutAPassword_ForAUserWithNoPassword()
     {
         var accountId = await CreateAccountAsync();
 
         await _processor.RevealKeyAsync(
-            new RevealAccountKeyRequest(
-                accountId,
-                KeyType.SymmetricEncryption,
-                null,
-                TOTP,
-                "id-token",
-                "nonce"
-            )
+            new RevealAccountKeyRequest(accountId, KeyType.SymmetricEncryption, null, TOTP)
         );
 
         _mockReauthentication.Verify(
             x =>
                 x.VerifyAccountKeyProofAsync(
                     _userId,
-                    It.Is<AccountKeyProof>(p =>
-                        p.CurrentPassword == null
-                        && p.GoogleIdToken == "id-token"
-                        && p.GoogleNonce == "nonce"
-                    )
+                    It.Is<AccountKeyProof>(p => p.CurrentPassword == null && p.TotpCode == TOTP)
                 ),
             Times.Once
         );
@@ -331,18 +320,14 @@ public class AccountKeyProcessorTests
 
     [Theory]
     [InlineData(
-        ReauthenticationResultCode.GoogleSignInRequiredError,
-        RevealAccountKeyResultCode.GoogleSignInRequiredError
-    )]
-    [InlineData(
-        ReauthenticationResultCode.InvalidGoogleSignInError,
-        RevealAccountKeyResultCode.InvalidGoogleSignInError
+        ReauthenticationResultCode.FederatedSignInRequiredError,
+        RevealAccountKeyResultCode.FederatedSignInRequiredError
     )]
     [InlineData(
         ReauthenticationResultCode.NoReauthenticationMethodError,
         RevealAccountKeyResultCode.NoReauthenticationMethodError
     )]
-    public async Task RevealKey_RevealsNothing_ForAFailedGoogleProof(
+    public async Task RevealKey_RevealsNothing_ForAFailedFederatedProof(
         Enum reauthentication,
         RevealAccountKeyResultCode expected
     )
@@ -385,16 +370,12 @@ public class AccountKeyProcessorTests
             Guid.CreateVersion7(),
             KeyType.SymmetricEncryption,
             "the-password",
-            "the-code",
-            "the-google-token",
-            "the-nonce"
+            "the-code"
         );
 
         var written = JsonSerializer.Serialize(request) + request;
 
         Assert.DoesNotContain("the-password", written);
         Assert.DoesNotContain("the-code", written);
-        Assert.DoesNotContain("the-google-token", written);
-        Assert.DoesNotContain("the-nonce", written);
     }
 }

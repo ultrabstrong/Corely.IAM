@@ -12,7 +12,8 @@ Pre-authentication pages are Razor Pages (server-rendered, no Blazor dependency)
 | `/create-account` | CreateAccount | New account form |
 | `/signout` | SignOut | Sign out and clear cookies; asks first unless the request is same origin |
 | `/verify-mfa` | VerifyMfa | MFA code entry after sign-in |
-| `/google-callback` | GoogleCallback | Google Identity Services callback |
+| `/signin/start/{provider}` | FederatedSignInStart | Sends the browser to an identity provider |
+| `/signin/callback/{provider}` | FederatedSignInCallback | Completes the sign in the provider sends back |
 
 ## Sign-In Flow
 
@@ -33,7 +34,7 @@ Pre-authentication pages are Razor Pages (server-rendered, no Blazor dependency)
 
 ## MFA Verification Flow
 
-When TOTP is enabled for a user, sign-in (both password and Google) returns `MfaRequiredChallenge` instead of a JWT:
+When TOTP is enabled for a user, sign-in (password or identity provider) returns `MfaRequiredChallenge` instead of a JWT:
 
 1. Sign-in succeeds at credential level, but `SignInResult.ResultCode == MfaRequiredChallenge`
 2. The MFA challenge token is stored in `TempData` and the user is redirected to `/verify-mfa`
@@ -43,28 +44,31 @@ When TOTP is enabled for a user, sign-in (both password and Google) returns `Mfa
 6. On expired challenge: redirect back to `/signin`
 7. On invalid code: error message displayed, user can retry
 
-## Google Sign-In Flow
+## Identity Provider Flow
 
-When `GoogleClientId` is configured in `SecurityOptions`, a "Sign in with Google" button appears on the sign-in page:
+Each enabled provider gets a "Continue with" button on `/signin`, and on `/register` when it allows
+sign up. The button is a plain link, so the page never loads the provider's script. See
+[Federated Sign-In](../../Corely.IAM/Docs/federated-sign-in.md) for the rules.
 
-1. Google Identity Services library loaded on `/signin`
-2. User clicks the Google button and authenticates with Google
-3. Google POSTs the ID token to `/google-callback`
-4. `IAuthenticationService.SignInWithGoogleAsync()` validates the token and finds the linked user
-5. If TOTP is enabled: redirects to `/verify-mfa` (same as password flow)
-6. On success: cookies are set and the user proceeds as in the sign-in flow, return URL included
-7. If no user is linked: redirects to `/register-with-google` (see below)
+1. `/signin/start/{provider}` (GET) calls `IFederatedSignInService.StartFederatedSignInAsync()`,
+   seals the correlation (`state`, PKCE verifier, nonce, issuer, purpose, return URL) in the
+   `__Host-federated_sign_in` cookie with ASP.NET Core Data Protection, and redirects to the provider
+2. The provider redirects back to `/signin/callback/{provider}` with `code` and `state`
+3. The callback takes the cookie (deleting it), checks it names the same provider, and calls
+   `CompleteFederatedSignInAsync()`
+4. Signed in, or signed up and signed in: cookies are set and the user proceeds as in the sign-in
+   flow, return URL included. With TOTP on: `/verify-mfa`
+5. Anything refused: an error page with a way back, and no cookie changes
 
-## Google Sign-Up Flow
+The same pages link and prove it is you: the profile's Linked Accounts section starts
+`?purpose=link`, and the key panel starts `?purpose=reauthenticate`, each returning to its own page.
 
-When a user signs in with Google but has no linked account, they are redirected to the registration prompt:
+The callback is the one GET that changes state when another site started it, as OAuth requires of a
+redirection endpoint. It acts only on a response that matches the correlation cookie set by this
+browser's own start, and the cookie is `SameSite=Lax` so it rides the provider's redirect back.
 
-1. `/google-callback` receives `GoogleAuthNotLinkedError` from `SignInWithGoogleAsync`
-2. Stores the Google ID token in `TempData` and redirects to `/register-with-google`
-3. User sees "No account found. Create one?" confirmation page
-4. On confirm: `IRegistrationService.RegisterUserWithGoogleAsync()` creates the user (username auto-generated from email)
-5. Auto-signs in via `SignInWithGoogleAsync` → cookies set → the return URL or `HomePath`
-6. The same Google button on `/register` follows the same flow via `/google-callback`
+A host running several instances must share the Data Protection key ring between them, as
+antiforgery already requires.
 
 ## Account Switching
 
@@ -85,8 +89,7 @@ cookie middleware, and `RedirectToLogin`, `AuthenticatedPageBase` and `AccountSc
 |------|------------|
 | `/signin` | The query string (either spelling), then a hidden field in the form |
 | `/verify-mfa` | `TempData`, beside the MFA challenge, then a hidden field |
-| Google sign in | A `return_url` cookie (HttpOnly, 10 minutes), since Google posts to `/google-callback` |
-| `/register-with-google` | `TempData` |
+| Identity provider sign in | Sealed in the `__Host-federated_sign_in` cookie with the rest of the correlation |
 | `/select-account` | `?returnUrl=` and a hidden field, through to the switch |
 | `/switch-account` | `?returnUrl=`, kept on the confirm form when another site sent the request |
 
@@ -102,7 +105,7 @@ none. An open redirect here would be a phishing tool.
 | `auth_token_id` | Token ID for revocation | HttpOnly, Secure, SameSite=Lax, expires with the session |
 | `refresh_token` | Refresh token for renewal | HttpOnly, Secure, SameSite=Lax, expires with the session |
 | `device_id` | Device fingerprint | HttpOnly, Secure, SameSite=Strict, 90-day expiry |
-| `return_url` | Return URL across Google sign in | HttpOnly, Secure, SameSite=Lax, 10 minutes, deleted when read |
+| `__Host-federated_sign_in` | Correlation for one identity provider sign in, encrypted | HttpOnly, Secure, SameSite=Lax, 10 minutes, deleted when read |
 
 All auth cookies use `Path=/`. The `device_id` cookie is created on first visit (sign-in or register) and persists across sessions.
 

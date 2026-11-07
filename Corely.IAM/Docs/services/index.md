@@ -14,7 +14,8 @@ Eleven public services form the API surface of Corely.IAM. All are registered as
 | `IAuthenticationService` | Sign in, sign out, account switching, session management | 9 |
 | `IPasswordRecoveryService` | Request recovery, validate tokens, reset passwords | 3 |
 | `IMfaService` | TOTP setup, confirmation, status, recovery codes | 5 |
-| `IGoogleAuthService` | Link/unlink Google auth, check auth methods | 3 |
+| `IFederatedSignInService` | Sign in, sign up, link and prove it is you with an identity provider | 3 |
+| `IFederatedIdentityService` | List and unlink identity providers, check auth methods | 2 |
 | `IInvitationService` | Create, accept, revoke, and list invitations | 4 |
 | `IAuditService` | Read, export and purge [audit entries](../auditing.md), audit and platform settings, retention cleanup | 11 |
 
@@ -32,7 +33,7 @@ TelemetryDecorator → AuditDecorator → [AuthorizationDecorator] → Service I
 - **Telemetry decorators** log method entry/exit and timing
 - **`IAuthenticationService`**, `IPasswordRecoveryService`, `IRetrievalService`, `IModificationService`, and `IInvitationService` currently run without a service-layer authorization decorator because their permission/context enforcement now lives lower in the stack where the real domain work happens
 
-Authorization decorators use `IsNonSystemUserContext()` for "self" operations (MFA, password, Google auth) that require a real user, and `HasUserContext()` / `HasAccountContext()` for targeting operations that system context can perform.
+Authorization decorators use `IsNonSystemUserContext()` for "self" operations (MFA, password, linked identities) that require a real user, and `HasUserContext()` / `HasAccountContext()` for targeting operations that system context can perform.
 
 Registration order in `ServiceRegistrationExtensions.cs` determines nesting (last registered = outermost).
 

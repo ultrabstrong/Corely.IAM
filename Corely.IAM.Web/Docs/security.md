@@ -77,28 +77,31 @@ cached while `MapStaticAssets` keeps caching static files.
 
 ## Content Security Policy
 
-A policy has to list every source a page loads (analytics, a CDN, Google sign-in), and only the
-host knows those. The one above is a working starting point for this package's pages on Blazor
-Server:
+A policy has to list every source a page loads (analytics, a CDN), and only the host knows those.
+The one above is a working starting point for this package's pages on Blazor Server:
 
 - `'unsafe-inline'`: Blazor Server's startup and reconnection scripts are inline, and Bootstrap
   sets inline styles.
 - `wss:` and `ws:`: Blazor Server talks to the server over a SignalR WebSocket.
 
-### Google sign-in
+### Identity providers
 
-With `SecurityOptions:GoogleClientId` set, the sign-in, register, profile, and (for a user with no password) account pages load Google
-Identity Services, which renders its button in an iframe. Add Google's sources to the directives
-above:
+Signing in with an identity provider loads nothing from the provider into this package's pages. The
+browser follows a link to `/signin/start/{provider}`, which redirects the whole page to the provider,
+and the provider redirects back to `/signin/callback/{provider}`. Content Security Policy governs
+neither navigation, so no provider needs an entry:
 
-| Directive | Add |
-|-----------|-----|
-| `script-src` | `https://accounts.google.com/gsi/client` |
-| `frame-src` | `https://accounts.google.com/gsi/` |
-| `connect-src` | `https://accounts.google.com/gsi/` |
-| `style-src` | `https://accounts.google.com/gsi/style` |
+| Provider | Directives to add |
+|----------|-------------------|
+| Google | None |
+| Microsoft | None |
+| GitHub | None |
+| Facebook | None |
+| Amazon | None |
 
-Without them the browser blocks the script and the Google button never appears.
+This holds because the flow starts from a link. A form that posts and is redirected to the provider
+is checked against `form-action` in Chrome, so a host that starts the flow from its own form must add
+each provider's origin to `form-action`.
 
 ## Human check
 

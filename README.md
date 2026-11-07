@@ -41,7 +41,7 @@ graph LR
 - **Platform account**: an optional, bootstrapped account whose members' permissions apply in every account ([docs](Corely.IAM/Docs/platform.md))
 - **Password recovery**: email-based recovery tokens for unauthenticated password reset
 - **Multi-factor authentication**: TOTP (authenticator apps) with recovery codes
-- **Google Sign-In**: link Google accounts as an alternative auth method
+- **Federated sign-in**: sign in with Google, Microsoft, GitHub, Facebook or Amazon
 - **Invitation system**: token-based onboarding with expiry and revocation
 - **Per-entity encryption**: account and user-scoped key pairs, stored encrypted
 - **Pluggable crypto**: configure algorithms via the `IAMOptions` builder

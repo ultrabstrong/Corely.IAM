@@ -2,13 +2,14 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.GoogleAuths.Entities;
-using Corely.IAM.GoogleAuths.Providers;
+using Corely.IAM.FederatedIdentities.Processors;
+using Corely.IAM.Security.Entities;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Entities;
+using Corely.IAM.Users.Providers;
 using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.UnitTests.Security.Providers;
@@ -61,9 +62,9 @@ public class ReauthenticationProviderTests
             FixedSecurityPolicyProvider.From(_securityOptions),
             _timeProviderMock.Object,
             _serviceFactory.GetRequiredService<IReadonlyRepo<BasicAuthEntity>>(),
-            _serviceFactory.GetRequiredService<IReadonlyRepo<GoogleAuthEntity>>(),
-            new Mock<IGoogleIdTokenValidator>().Object,
-            Options.Create(_securityOptions)
+            _serviceFactory.GetRequiredService<IReadonlyRepo<AuthTokenEntity>>(),
+            new Mock<IFederatedIdentityProcessor>().Object,
+            new Mock<IUserContextProvider>().Object
         );
     }
 

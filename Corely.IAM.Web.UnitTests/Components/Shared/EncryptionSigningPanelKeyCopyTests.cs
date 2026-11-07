@@ -1,10 +1,13 @@
 using AngleSharp.Dom;
+using Corely.IAM.IdentityProviders.Enums;
+using Corely.IAM.IdentityProviders.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Web.Components.Shared;
 using Corely.IAM.Web.Extensions;
 using Corely.IAM.Web.UnitTests.Helpers;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.Web.UnitTests.Components.Shared;
@@ -16,13 +19,7 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
     private const string OLDER_PUBLIC_KEY = "older-public-key";
 
     private readonly ManualTimeProvider _time = new();
-    private readonly List<(
-        KeyType KeyType,
-        string? Password,
-        string? TotpCode,
-        string? GoogleIdToken,
-        string? GoogleNonce
-    )> _calls = [];
+    private readonly List<(KeyType KeyType, string? Password, string? TotpCode)> _calls = [];
     private readonly List<KeyType> _plainRotations = [];
     private readonly List<(KeyType KeyType, string? Password)> _compromisedRotations = [];
     private readonly List<(KeyType KeyType, int Version, string? Password)> _markedVersions = [];
@@ -46,7 +43,7 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
 
     private IRenderedComponent<EncryptionSigningPanel> RenderPanel(
         bool reveal = true,
-        string? googleClientId = null,
+        IReadOnlyList<IdentityProviderOption>? proofProviders = null,
         bool canProveIdentity = true,
         IIamAsymmetricSignatureProvider? signing = null,
         IIamSymmetricEncryptionProvider? symmetric = null,
@@ -67,13 +64,13 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
             p.Add(x => x.SigProvider, signing);
             p.Add(x => x.SymProvider, symmetric);
             p.Add(x => x.ShowKeyVersions, showVersions);
-            p.Add(x => x.RevealGoogleClientId, googleClientId);
+            p.Add(x => x.ProofProviders, proofProviders);
             p.Add(x => x.CanProveIdentity, canProveIdentity);
             if (reveal)
             {
                 p.Add(
                     x => x.RotateCompromisedKeyAsync,
-                    (keyType, password, _, _, _) =>
+                    (keyType, password, _) =>
                     {
                         _compromisedRotations.Add((keyType, password));
                         return Task.FromResult(_compromiseResult);
@@ -81,7 +78,7 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
                 );
                 p.Add(
                     x => x.MarkKeyCompromisedAsync,
-                    (keyType, version, password, _, _, _) =>
+                    (keyType, version, password, _) =>
                     {
                         _markedVersions.Add((keyType, version, password));
                         return Task.FromResult(_compromiseResult);
@@ -89,9 +86,9 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
                 );
                 p.Add(
                     x => x.RevealKeyAsync,
-                    (keyType, password, totpCode, googleIdToken, googleNonce) =>
+                    (keyType, password, totpCode) =>
                     {
-                        _calls.Add((keyType, password, totpCode, googleIdToken, googleNonce));
+                        _calls.Add((keyType, password, totpCode));
                         return Task.FromResult(_result);
                     }
                 );
@@ -167,7 +164,7 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         cut.Find(".modal-body input[type=text]").Change("123456");
         Button(cut, "Show key").Click();
 
-        Assert.Equal((keyType, "pw", "123456", null, null), Assert.Single(_calls));
+        Assert.Equal((keyType, "pw", "123456"), Assert.Single(_calls));
         Assert.Equal(SECRET, cut.Find(".tab-content textarea[readonly]").TextContent);
         foreach (var warning in warnings)
             Assert.Contains(warning, cut.Find(".tab-content .alert-warning").TextContent);
@@ -249,47 +246,56 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         cut.WaitForAssertion(() => Assert.DoesNotContain(SECRET, cut.Markup));
     }
 
+    private static readonly IReadOnlyList<IdentityProviderOption> _googleOnly =
+    [
+        new(IdentityProviderType.Google, "Google", true),
+    ];
+
     [Fact]
-    public void GoogleOnlyUser_IsAskedForAGoogleSignIn_InsteadOfAPassword()
+    public void FederatedOnlyUser_IsOfferedTheirLinkedProviders_InsteadOfAPassword()
     {
-        var module = JSInterop.SetupModule("./_content/Corely.IAM.Web/js/google-link.js");
-        module.SetupVoid("renderReauthButton", _ => true).SetVoidResult();
-        var cut = RenderPanel(googleClientId: "client-id");
+        var cut = RenderPanel(proofProviders: _googleOnly);
 
         Button(cut, "Copy key").Click();
 
         Assert.Empty(cut.FindAll(".modal-body input[type=password]"));
-        Assert.Contains("Sign in with Google again", cut.Find(".modal-body").TextContent);
-        cut.WaitForAssertion(() => Assert.NotEmpty(module.Invocations["renderReauthButton"]));
-        var arguments = module.Invocations["renderReauthButton"][0].Arguments;
-        Assert.Equal("client-id", arguments[1]);
-        Assert.False(string.IsNullOrWhiteSpace((string?)arguments[2]));
+        Assert.Contains("Continue with Google", cut.Find(".modal-body").TextContent);
     }
 
     [Fact]
-    public void GoogleProof_IsSentWithTheNonceItWasIssuedFor_AndOnlyOnce()
+    public void ContinueWith_StartsAReauthentication_ThatReturnsToTheSameAction()
     {
-        var module = JSInterop.SetupModule("./_content/Corely.IAM.Web/js/google-link.js");
-        module.SetupVoid("renderReauthButton", _ => true).SetVoidResult();
-        var cut = RenderPanel(googleClientId: "client-id");
+        var navigation = Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("/accounts/keys");
+        var cut = RenderPanel(proofProviders: _googleOnly);
 
         Button(cut, "Copy key").Click();
-        cut.WaitForAssertion(() => Assert.NotEmpty(module.Invocations["renderReauthButton"]));
-        var nonce = (string?)module.Invocations["renderReauthButton"][0].Arguments[2];
-        cut.InvokeAsync(() => cut.Instance.OnGoogleReauthCredential("id-token"));
+        Button(cut, "Continue with Google").Click();
+
+        var uri = Uri.UnescapeDataString(navigation.Uri);
+        Assert.Contains("/signin/start/google?purpose=reauthenticate", uri);
+        Assert.Contains(
+            $"returnUrl=/accounts/keys?proof=reveal&key={KeyType.SymmetricEncryption}&proved=1",
+            uri
+        );
+    }
+
+    [Fact]
+    public void ReturningFromAProof_ReopensTheAction_AndSendsNoPassword()
+    {
+        Services
+            .GetRequiredService<NavigationManager>()
+            .NavigateTo($"/accounts/keys?proof=reveal&key={KeyType.SymmetricEncryption}&proved=1");
+        var cut = RenderPanel(proofProviders: _googleOnly);
+
+        cut.WaitForAssertion(() =>
+            Assert.Contains("You signed in again", cut.Find(".modal-body").TextContent)
+        );
         Button(cut, "Show key").Click();
 
         var call = Assert.Single(_calls);
-        Assert.Empty(call.Password ?? string.Empty);
-        Assert.Equal("id-token", call.GoogleIdToken);
-        Assert.Equal(nonce, call.GoogleNonce);
-
-        cut.Find("button[title='Hide']").Click();
-        Button(cut, "Copy key").Click();
-        Button(cut, "Show key").Click();
-
-        Assert.Null(_calls[1].GoogleIdToken);
-        Assert.NotEqual(nonce, _calls[1].GoogleNonce);
+        Assert.Equal(KeyType.SymmetricEncryption, call.KeyType);
+        Assert.True(string.IsNullOrEmpty(call.Password));
     }
 
     [Fact]

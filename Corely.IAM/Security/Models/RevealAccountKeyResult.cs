@@ -10,8 +10,7 @@ public enum RevealAccountKeyResultCode
     UserLockedError,
     TotpRequiredError,
     InvalidTotpCodeError,
-    GoogleSignInRequiredError,
-    InvalidGoogleSignInError,
+    FederatedSignInRequiredError,
     NoReauthenticationMethodError,
 }
 

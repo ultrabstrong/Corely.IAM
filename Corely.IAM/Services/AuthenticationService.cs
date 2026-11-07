@@ -6,8 +6,6 @@ using Corely.IAM.ApiKeys.Models.Extensions;
 using Corely.IAM.ApiKeys.Providers;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.GoogleAuths.Processors;
-using Corely.IAM.GoogleAuths.Providers;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Providers;
@@ -33,8 +31,6 @@ internal class AuthenticationService(
     IAuthorizationCacheClearer authorizationCacheClearer,
     IBasicAuthProcessor basicAuthProcessor,
     ITotpAuthProcessor totpAuthProcessor,
-    IGoogleAuthProcessor googleAuthProcessor,
-    IGoogleIdTokenValidator googleIdTokenValidator,
     IRepo<MfaChallengeEntity> mfaChallengeRepo,
     ISecurityPolicyProvider securityPolicyProvider,
     IApiKeyAuthenticationProvider apiKeyAuthenticationProvider,
@@ -65,11 +61,6 @@ internal class AuthenticationService(
     private readonly ITotpAuthProcessor _totpAuthProcessor = totpAuthProcessor.ThrowIfNull(
         nameof(totpAuthProcessor)
     );
-    private readonly IGoogleAuthProcessor _googleAuthProcessor = googleAuthProcessor.ThrowIfNull(
-        nameof(googleAuthProcessor)
-    );
-    private readonly IGoogleIdTokenValidator _googleIdTokenValidator =
-        googleIdTokenValidator.ThrowIfNull(nameof(googleIdTokenValidator));
     private readonly IRepo<MfaChallengeEntity> _mfaChallengeRepo = mfaChallengeRepo.ThrowIfNull(
         nameof(mfaChallengeRepo)
     );
@@ -169,37 +160,16 @@ internal class AuthenticationService(
         return result;
     }
 
-    public async Task<SignInResult> SignInWithGoogleAsync(SignInWithGoogleRequest request)
+    internal async Task<SignInResult> SignInVerifiedUserAsync(
+        Guid userId,
+        string deviceId,
+        Guid? accountId
+    )
     {
-        ArgumentNullException.ThrowIfNull(request, nameof(request));
-
-        _logger.LogDebug("Signing in with Google ID token");
-
-        var payload = await _googleIdTokenValidator.ValidateAsync(request.GoogleIdToken);
-        if (payload == null)
-        {
-            _logger.LogDebug("Google ID token validation failed");
-            return SignInResult.Failed(
-                SignInResultCode.InvalidGoogleTokenError,
-                "Invalid Google ID token"
-            );
-        }
-
-        // No EmailVerified check, unlike register and link: it would lock out already-linked accounts.
-        var userId = await _googleAuthProcessor.GetUserIdByGoogleSubjectAsync(payload.Subject);
-        if (userId == null)
-        {
-            _logger.LogDebug("No user linked to Google subject {Subject}", payload.Subject);
-            return SignInResult.Failed(
-                SignInResultCode.GoogleAuthNotLinkedError,
-                "No account linked to this Google identity"
-            );
-        }
-
-        var userEntity = await _userRepo.GetAsync(u => u.Id == userId.Value);
+        var userEntity = await _userRepo.GetAsync(u => u.Id == userId);
         if (userEntity == null)
         {
-            _logger.LogDebug("User {UserId} not found for Google sign-in", userId.Value);
+            _logger.LogDebug("User {UserId} not found for federated sign in", userId);
             return SignInResult.Failed(SignInResultCode.UserNotFoundError, "User not found");
         }
 
@@ -212,7 +182,7 @@ internal class AuthenticationService(
 
             if (cooldownExpiry > now)
             {
-                _logger.LogDebug("User {UserId} is locked out", userId.Value);
+                _logger.LogDebug("User {UserId} is locked out", userId);
                 return SignInResult.Failed(SignInResultCode.UserLockedError, "User is locked out");
             }
 
@@ -229,26 +199,22 @@ internal class AuthenticationService(
         if (await _totpAuthProcessor.IsTotpEnabledAsync(userEntity.Id))
         {
             _logger.LogDebug(
-                "User {UserId} has TOTP enabled, creating MFA challenge for Google sign-in",
+                "User {UserId} has TOTP enabled, creating MFA challenge for federated sign in",
                 userEntity.Id
             );
-            return await CreateMfaChallengeAsync(
-                userEntity.Id,
-                request.DeviceId,
-                request.AccountId
-            );
+            return await CreateMfaChallengeAsync(userEntity.Id, deviceId, accountId);
         }
 
         var result = await GenerateAuthTokenAndSetContextAsync(
             userEntity.Id,
-            request.AccountId,
-            request.DeviceId,
-            "Google sign in"
+            accountId,
+            deviceId,
+            "federated sign in"
         );
 
         if (result.ResultCode == SignInResultCode.Success)
         {
-            _logger.LogDebug("User {UserId} signed in with Google", userEntity.Id);
+            _logger.LogDebug("User {UserId} signed in through an identity provider", userEntity.Id);
         }
 
         return result;

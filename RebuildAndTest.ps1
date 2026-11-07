@@ -1,8 +1,8 @@
 $env:MSBUILDDISABLENODEREUSE = '1'
 dotnet tool restore
 dotnet csharpier format .
-dotnet clean Corely.IAM.slnx --verbosity minimal
-dotnet build Corely.IAM.slnx --verbosity minimal
+dotnet clean Corely.IAM.slnx --verbosity minimal -m:1
+dotnet build Corely.IAM.slnx --verbosity minimal -m:1
 dotnet publish Corely.IAM.DataAccessMigrations.Cli\Corely.IAM.DataAccessMigrations.Cli.csproj -c Release -r win-x64 -p:DebugType=none
 dotnet publish Corely.IAM.DevTools\Corely.IAM.DevTools.csproj -c Release -r win-x64 -p:DebugType=none
 dotnet build-server shutdown | Out-Null

@@ -99,7 +99,7 @@ await modificationService.MarkAccountKeyCompromisedAsync(
 ```
 
 Both need Update on the account and the same proof as [revealing a key](#revealing-account-keys), so a
-stolen session cannot do it: the password when the user has one, otherwise a fresh Google sign in, then
+stolen session cannot do it: the password when the user has one, otherwise a fresh sign in with a linked identity provider, then
 two factor when enabled. A wrong password counts toward lockout. System context and API keys are refused,
 because they have nothing to prove. Both are always recorded in the audit log, refusals included.
 
@@ -167,9 +167,10 @@ var key = result.ReadKey();
 | `AsymmetricEncryption`, `AsymmetricSignature` | The private key, Base64 PKCS#8 |
 
 **Proving it is you.** A user with a password proves it with that password, whatever else they have. A
-user with no password and a linked Google account proves it with a fresh Google sign in, passing the ID
-token and the nonce they sent Google in the request. It must be issued for the linked account, carry that
-nonce, and be no more than five minutes old, so an existing session never counts. Either way the two
+user with no password proves it with a fresh `Reauthenticate` round trip to one of their linked identity
+providers (see [Federated Sign-In](../federated-sign-in.md#proving-it-is-you)). The proof counts for five
+minutes, once, and only in the session that made it; until then the call returns
+`FederatedSignInRequiredError`. Either way the two
 factor code follows when the user has two factor on. A user with neither gets
 `NoReauthenticationMethodError`, whose message tells them to set a password on their profile.
 

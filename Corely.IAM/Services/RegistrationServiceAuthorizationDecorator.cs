@@ -1,7 +1,6 @@
 using Corely.Common.Extensions;
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
-using Corely.IAM.GoogleAuths.Models;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
@@ -22,10 +21,6 @@ internal class RegistrationServiceAuthorizationDecorator(
 
     public Task<RegisterUserResult> RegisterUserAsync(RegisterUserRequest request) =>
         _inner.RegisterUserAsync(request);
-
-    public Task<RegisterUserWithGoogleResult> RegisterUserWithGoogleAsync(
-        RegisterUserWithGoogleRequest request
-    ) => _inner.RegisterUserWithGoogleAsync(request);
 
     public async Task<RegisterAccountResult> RegisterAccountAsync(RegisterAccountRequest request) =>
         await _inner.RegisterAccountAsync(request);

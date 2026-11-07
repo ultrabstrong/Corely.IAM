@@ -1,5 +1,4 @@
 using Corely.IAM.Models;
-using Corely.IAM.Security.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Configuration;
 using Corely.IAM.Web.Security;
@@ -13,16 +12,11 @@ public class RegisterModel(
     IRegistrationService registrationService,
     IAuthenticationService authenticationService,
     IAuthCookieManager authCookieManager,
-    IOptions<SecurityOptions> securityOptions,
     IHumanVerifier humanVerifier,
     IOptions<IAMWebOptions> iamWebOptions
 ) : PageModel
 {
     public const string HUMAN_CHECK_ACTION = "register";
-
-    public string? GoogleClientId { get; } = securityOptions.Value.GoogleClientId;
-
-    public string? GoogleCallbackUrl { get; set; }
 
     [BindProperty]
     public string Username { get; set; } = string.Empty;
@@ -43,12 +37,6 @@ public class RegisterModel(
         if (User.Identity?.IsAuthenticated == true)
         {
             return Redirect(iamWebOptions.Value.HomePath);
-        }
-
-        if (!string.IsNullOrWhiteSpace(GoogleClientId))
-        {
-            var request = HttpContext.Request;
-            GoogleCallbackUrl = $"{request.Scheme}://{request.Host}{AppRoutes.GoogleCallback}";
         }
 
         return Page();

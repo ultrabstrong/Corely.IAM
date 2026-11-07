@@ -1,6 +1,6 @@
 # Multi-Factor Authentication (TOTP)
 
-Time-based One-Time Password (TOTP) support per RFC 6238. Users can enable TOTP as a second factor. When enabled, all sign-in methods (password and Google) require a TOTP code after initial authentication.
+Time-based One-Time Password (TOTP) support per RFC 6238. Users can enable TOTP as a second factor. When enabled, all sign-in methods (password and identity providers) require a TOTP code after initial authentication.
 
 ## Features
 
@@ -8,7 +8,7 @@ Time-based One-Time Password (TOTP) support per RFC 6238. Users can enable TOTP 
 - **Recovery codes**: 10 single-use backup codes in `XXXX-XXXX` format
 - **Two-phase sign-in**: credential verification → MFA challenge → JWT
 - **MFA challenges**: short-lived (5 min), single-use tokens stored in the database
-- **Applies to all auth methods**: password sign-in and Google sign-in both trigger MFA when enabled
+- **Applies to all auth methods**: password sign-in and federated sign-in both trigger MFA when enabled
 
 ## Enabling TOTP
 
@@ -46,7 +46,7 @@ if (signInResult.ResultCode == SignInResultCode.MfaRequiredChallenge)
 }
 ```
 
-The same flow applies to `SignInWithGoogleAsync`: if TOTP is enabled, it returns `MfaRequiredChallenge`.
+The same flow applies to `CompleteFederatedSignInAsync`: if TOTP is enabled, it returns `MfaRequiredChallenge`.
 
 ## Managing TOTP
 

@@ -174,8 +174,6 @@ Complete reference of all result code enums across Corely.IAM.
 | `MfaRequiredChallenge` | TOTP is enabled; MFA challenge issued |
 | `InvalidMfaCodeError` | TOTP or recovery code is invalid |
 | `MfaChallengeExpiredError` | MFA challenge expired or already used |
-| `InvalidGoogleTokenError` | Google ID token validation failed |
-| `GoogleAuthNotLinkedError` | No user linked to this Google account |
 | `TwoFactorRequiredError` | A platform member without TOTP enabled tried to enter the platform account or an account they do not belong to |
 
 ### UserAuthTokenValidationResultCode
@@ -298,25 +296,18 @@ Complete reference of all result code enums across Corely.IAM.
 | `NotFoundError` | TOTP is not enabled |
 | `InvalidCodeError` | Neither TOTP nor recovery code matched |
 
-## Google Auth Result Codes
+## Federated Identity Result Codes
 
-### LinkGoogleAuthResultCode
+`CompleteFederatedSignInResultCode` and `StartFederatedSignInResultCode` are listed in
+[Federated Sign-In](federated-sign-in.md#result-codes).
 
-| Code | Meaning |
-|------|---------|
-| `Success` | Google account linked |
-| `InvalidGoogleTokenError` | Google ID token validation failed |
-| `AlreadyLinkedError` | User already has a linked Google account |
-| `GoogleAccountInUseError` | This Google account is linked to another user |
-| `UnauthorizedError` | No authenticated user context (system context not allowed) |
-
-### UnlinkGoogleAuthResultCode
+### UnlinkFederatedIdentityResultCode
 
 | Code | Meaning |
 |------|---------|
-| `Success` | Google account unlinked |
-| `NotLinkedError` | No Google account linked |
-| `LastAuthMethodError` | Cannot unlink the only authentication method |
+| `Success` | Identity unlinked |
+| `NotLinkedError` | No identity at that provider is linked |
+| `LastAuthMethodError` | Cannot unlink the only way to sign in |
 | `UnauthorizedError` | No authenticated user context (system context not allowed) |
 
 ### AuthMethodsResultCode
@@ -325,16 +316,6 @@ Complete reference of all result code enums across Corely.IAM.
 |------|---------|
 | `Success` | Auth methods retrieved |
 | `UnauthorizedError` | No authenticated user context (system context not allowed) |
-
-### RegisterUserWithGoogleResultCode
-
-| Code | Meaning |
-|------|---------|
-| `Success` | User created from Google account |
-| `InvalidGoogleTokenError` | Google ID token validation failed |
-| `GoogleAccountInUseError` | This Google account is linked to another user |
-| `UserExistsError` | Username derived from Google email already taken |
-| `ValidationError` | Input validation failed |
 
 ### RegisterPasswordResultCode
 

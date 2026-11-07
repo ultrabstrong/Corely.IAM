@@ -11,7 +11,7 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
     public partial class IamDbContextModel
     {
         private IamDbContextModel()
-            : base(skipDetectChanges: false, modelId: new Guid("04e419f4-1f9c-4099-9a08-c56b528a46f3"), entityTypeCount: 30)
+            : base(skipDetectChanges: false, modelId: new Guid("9653c4e7-7b51-40d7-99e1-a910dbb63754"), entityTypeCount: 31)
         {
         }
 
@@ -32,8 +32,9 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
             var userAccount = UserAccountEntityType.Create(this);
             var userGroup = UserGroupEntityType.Create(this);
             var userRole = UserRoleEntityType.Create(this);
-            var googleAuthEntity = GoogleAuthEntityEntityType.Create(this);
+            var federatedIdentityEntity = FederatedIdentityEntityEntityType.Create(this);
             var groupEntity = GroupEntityEntityType.Create(this);
+            var identityProviderEntity = IdentityProviderEntityEntityType.Create(this);
             var invitationEntity = InvitationEntityEntityType.Create(this);
             var mfaChallengeEntity = MfaChallengeEntityEntityType.Create(this);
             var passwordRecoveryEntity = PasswordRecoveryEntityEntityType.Create(this);
@@ -68,7 +69,7 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
             UserGroupEntityType.CreateForeignKey2(userGroup, userEntity);
             UserRoleEntityType.CreateForeignKey1(userRole, roleEntity);
             UserRoleEntityType.CreateForeignKey2(userRole, userEntity);
-            GoogleAuthEntityEntityType.CreateForeignKey1(googleAuthEntity, userEntity);
+            FederatedIdentityEntityEntityType.CreateForeignKey1(federatedIdentityEntity, userEntity);
             GroupEntityEntityType.CreateForeignKey1(groupEntity, accountEntity);
             InvitationEntityEntityType.CreateForeignKey1(invitationEntity, accountEntity);
             MfaChallengeEntityEntityType.CreateForeignKey1(mfaChallengeEntity, userEntity);
@@ -112,8 +113,9 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
             UserAccountEntityType.CreateAnnotations(userAccount);
             UserGroupEntityType.CreateAnnotations(userGroup);
             UserRoleEntityType.CreateAnnotations(userRole);
-            GoogleAuthEntityEntityType.CreateAnnotations(googleAuthEntity);
+            FederatedIdentityEntityEntityType.CreateAnnotations(federatedIdentityEntity);
             GroupEntityEntityType.CreateAnnotations(groupEntity);
+            IdentityProviderEntityEntityType.CreateAnnotations(identityProviderEntity);
             InvitationEntityEntityType.CreateAnnotations(invitationEntity);
             MfaChallengeEntityEntityType.CreateAnnotations(mfaChallengeEntity);
             PasswordRecoveryEntityEntityType.CreateAnnotations(passwordRecoveryEntity);

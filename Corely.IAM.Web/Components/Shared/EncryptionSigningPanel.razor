@@ -1,8 +1,8 @@
-@using System.Security.Cryptography
 @using Corely.IAM.Web.Extensions
 @implements IDisposable
 @inject IJSRuntime JSRuntime
 @inject TimeProvider TimeProvider
+@inject NavigationManager Navigation
 
 <div class="section-divider mb-4">
     <div class="section-divider-label">Encryption &amp; Signing</div>
@@ -214,22 +214,29 @@
 
 <FormModal @ref="_proofModal" Title="@_proofTitle" ConfirmText="@_proofConfirmText" OnConfirm="SubmitProofAsync">
     @_proofWarning
-    @if (RevealGoogleClientId == null)
+    @if (ProofProviders == null)
     {
         <div class="mb-3">
             <label class="form-label">Your password</label>
             <PasswordInput @bind-Value="_revealPassword" />
         </div>
     }
+    else if (ReturnedFromProof)
+    {
+        <div class="alert alert-success py-2">You signed in again. Confirm within five minutes.</div>
+    }
     else
     {
         <div class="mb-3">
-            <label class="form-label">Sign in with Google again to prove it is you</label>
-            <div id="@GOOGLE_BUTTON_ID"></div>
-            @if (_revealGoogleIdToken != null)
-            {
-                <small class="text-success">Google sign in received.</small>
-            }
+            <label class="form-label">Sign in again with an account linked to you to prove it is you</label>
+            <div class="d-grid gap-2">
+                @foreach (var provider in ProofProviders)
+                {
+                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => ProveWith(provider.Type)">
+                        <i class="bi @provider.Type.IconClass() me-2"></i>Continue with @provider.DisplayName
+                    </button>
+                }
+            </div>
         </div>
     }
     <div class="mb-1">
@@ -256,13 +263,13 @@
     public Func<KeyType, Task<ModifyResult>>? RotateKeyAsync { get; set; }
 
     [Parameter]
-    public Func<KeyType, string?, string?, string?, string?, Task<CompromiseAccountKeyResult>>? RotateCompromisedKeyAsync { get; set; }
+    public Func<KeyType, string?, string?, Task<CompromiseAccountKeyResult>>? RotateCompromisedKeyAsync { get; set; }
 
     [Parameter]
-    public Func<KeyType, int, string?, string?, string?, string?, Task<CompromiseAccountKeyResult>>? MarkKeyCompromisedAsync { get; set; }
+    public Func<KeyType, int, string?, string?, Task<CompromiseAccountKeyResult>>? MarkKeyCompromisedAsync { get; set; }
 
     [Parameter]
-    public Func<KeyType, string?, string?, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyAsync { get; set; }
+    public Func<KeyType, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyAsync { get; set; }
 
     [Parameter]
     public bool ShowKeyVersions { get; set; }
@@ -271,13 +278,17 @@
     public string? PublicKeysAddress { get; set; }
 
     [Parameter]
-    public string? RevealGoogleClientId { get; set; }
+    public IReadOnlyList<IdentityProviderOption>? ProofProviders { get; set; }
 
     [Parameter]
     public bool CanProveIdentity { get; set; } = true;
 
+    public const string PROVED_QUERY_KEY = "proved";
+    public const string PROOF_ACTION_QUERY_KEY = "proof";
+    public const string PROOF_KEY_QUERY_KEY = "key";
+    public const string PROOF_VERSION_QUERY_KEY = "version";
+
     private const int KEY_VISIBLE_SECONDS = 60;
-    private const string GOOGLE_BUTTON_ID = "google-reauth-button";
     private const string NO_PROOF_MESSAGE =
         "This needs proof that it is you, and you have no way to give it yet. Set a password on your profile, then try again.";
 
@@ -288,14 +299,11 @@
     private string _proofTitle = string.Empty;
     private string _proofConfirmText = string.Empty;
     private RenderFragment? _proofWarning;
-    private Func<string?, string?, string?, string?, Task>? _proofAction;
+    private Func<string?, string?, Task>? _proofAction;
     private string _revealPassword = string.Empty;
     private string? _revealTotpCode;
-    private string? _revealGoogleIdToken;
-    private string? _revealGoogleNonce;
-    private bool _renderGoogleButton;
-    private IJSObjectReference? _googleModule;
-    private DotNetObjectReference<EncryptionSigningPanel>? _selfRef;
+    private string? _proofReturnQuery;
+    private bool _resumeProof = true;
     private string? _revealError;
     private KeyType _revealedKeyType;
     private string? _revealedKey;
@@ -465,7 +473,8 @@
             keyType.CopyKeyLabel(),
             "Show key",
             KeyWarning(keyType),
-            (password, totpCode, googleIdToken, googleNonce) => RevealAsync(keyType, password, totpCode, googleIdToken, googleNonce)
+            (password, totpCode) => RevealAsync(keyType, password, totpCode),
+            $"{PROOF_ACTION_QUERY_KEY}=reveal&{PROOF_KEY_QUERY_KEY}={keyType}"
         );
 
     private void ConfirmMarkVersion(KeyType keyType, int version) =>
@@ -473,18 +482,22 @@
             $"Mark version {version} compromised",
             "Mark compromised",
             CompromiseWarning(keyType),
-            (password, totpCode, googleIdToken, googleNonce) => MarkVersionAsync(keyType, version, password, totpCode, googleIdToken, googleNonce)
+            (password, totpCode) => MarkVersionAsync(keyType, version, password, totpCode),
+            $"{PROOF_ACTION_QUERY_KEY}=mark&{PROOF_KEY_QUERY_KEY}={keyType}&{PROOF_VERSION_QUERY_KEY}={version}"
         );
 
-    private void AskForProof(string title, string confirmText, RenderFragment warning, Func<string?, string?, string?, string?, Task> action)
+    private bool ReturnedFromProof { get; set; }
+
+    private void AskForProof(string title, string confirmText, RenderFragment warning, Func<string?, string?, Task> action, string returnQuery, bool returnedFromProof = false)
     {
         _proofTitle = title;
         _proofConfirmText = confirmText;
         _proofWarning = warning;
         _proofAction = action;
+        _proofReturnQuery = returnQuery;
+        ReturnedFromProof = returnedFromProof;
         _revealPassword = string.Empty;
         _revealTotpCode = null;
-        _revealGoogleIdToken = null;
         _revealError = null;
         ClearRevealedKey();
         if (!CanProveIdentity)
@@ -493,43 +506,42 @@
             return;
         }
 
-        _revealGoogleNonce = RevealGoogleClientId == null ? null : Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
-        _renderGoogleButton = RevealGoogleClientId != null;
         _proofModal.Show();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private void ProveWith(IdentityProviderType type)
     {
-        if (!_renderGoogleButton)
-            return;
-
-        _renderGoogleButton = false;
-        try
-        {
-            _selfRef ??= DotNetObjectReference.Create(this);
-            _googleModule ??= await JSRuntime.InvokeAsync<IJSObjectReference>(
-                "import",
-                "./_content/Corely.IAM.Web/js/google-link.js"
-            );
-            await _googleModule.InvokeVoidAsync(
-                "renderReauthButton",
-                GOOGLE_BUTTON_ID,
-                RevealGoogleClientId,
-                _revealGoogleNonce,
-                _selfRef
-            );
-        }
-        catch (JSException)
-        {
-            _revealError = "Could not load Google sign-in. Check your connection and try again.";
-            StateHasChanged();
-        }
+        var path = new Uri(Navigation.Uri).AbsolutePath;
+        var returnUrl = $"{path}?{_proofReturnQuery}&{PROVED_QUERY_KEY}=1";
+        Navigation.NavigateTo(type.StartPath(FederatedSignInPurpose.Reauthenticate, returnUrl), forceLoad: true);
     }
 
-    [JSInvokable]
-    public void OnGoogleReauthCredential(string credential)
+    protected override void OnAfterRender(bool firstRender)
     {
-        _revealGoogleIdToken = credential;
+        if (!_resumeProof || ProofProviders == null)
+            return;
+
+        _resumeProof = false;
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query);
+        if (!query.ContainsKey(PROVED_QUERY_KEY)
+            || !Enum.TryParse<KeyType>(query[PROOF_KEY_QUERY_KEY], out var keyType))
+            return;
+
+        switch (query[PROOF_ACTION_QUERY_KEY].ToString())
+        {
+            case "reveal" when RevealKeyAsync != null:
+                AskForProof(keyType.CopyKeyLabel(), "Show key", KeyWarning(keyType), (password, totpCode) => RevealAsync(keyType, password, totpCode), $"{PROOF_ACTION_QUERY_KEY}=reveal&{PROOF_KEY_QUERY_KEY}={keyType}", true);
+                break;
+            case "mark" when MarkKeyCompromisedAsync != null && int.TryParse(query[PROOF_VERSION_QUERY_KEY], out var version):
+                AskForProof($"Mark version {version} compromised", "Mark compromised", CompromiseWarning(keyType), (password, totpCode) => MarkVersionAsync(keyType, version, password, totpCode), $"{PROOF_ACTION_QUERY_KEY}=mark&{PROOF_KEY_QUERY_KEY}={keyType}&{PROOF_VERSION_QUERY_KEY}={version}", true);
+                break;
+            case "rotate" when RotateCompromisedKeyAsync != null:
+                _rotateKeyType = keyType;
+                AskForProof("Rotate and mark compromised", "Rotate and mark compromised", CompromiseWarning(keyType), (password, totpCode) => RotateCompromisedAsync(keyType, password, totpCode), $"{PROOF_ACTION_QUERY_KEY}=rotate&{PROOF_KEY_QUERY_KEY}={keyType}", true);
+                break;
+            default:
+                return;
+        }
         StateHasChanged();
     }
 
@@ -539,20 +551,17 @@
         var action = _proofAction;
         var password = _revealPassword;
         var totpCode = _revealTotpCode;
-        var googleIdToken = _revealGoogleIdToken;
-        var googleNonce = _revealGoogleNonce;
         _revealPassword = string.Empty;
         _revealTotpCode = null;
-        _revealGoogleIdToken = null;
-        _revealGoogleNonce = null;
         _proofAction = null;
-        await action(password, totpCode, googleIdToken, googleNonce);
+        ReturnedFromProof = false;
+        await action(password, totpCode);
     }
 
-    private async Task RevealAsync(KeyType keyType, string? password, string? totpCode, string? googleIdToken, string? googleNonce)
+    private async Task RevealAsync(KeyType keyType, string? password, string? totpCode)
     {
         if (RevealKeyAsync == null) return;
-        var result = await RevealKeyAsync(keyType, password, totpCode, googleIdToken, googleNonce);
+        var result = await RevealKeyAsync(keyType, password, totpCode);
         if (result.ResultCode != RevealAccountKeyResultCode.Success)
         {
             _revealError = result.Message;
@@ -596,7 +605,6 @@
     public void Dispose()
     {
         ClearRevealedKey();
-        _selfRef?.Dispose();
     }
 
     private ConfirmModal _rotateModal = null!;
@@ -626,7 +634,8 @@
                 "Rotate and mark compromised",
                 "Rotate and mark compromised",
                 CompromiseWarning(keyType),
-                (password, totpCode, googleIdToken, googleNonce) => RotateCompromisedAsync(keyType, password, totpCode, googleIdToken, googleNonce)
+                (password, totpCode) => RotateCompromisedAsync(keyType, password, totpCode),
+                $"{PROOF_ACTION_QUERY_KEY}=rotate&{PROOF_KEY_QUERY_KEY}={keyType}"
             );
             return;
         }
@@ -639,20 +648,20 @@
             : "Key rotated. Everything below now uses the new key.";
     }
 
-    private async Task RotateCompromisedAsync(KeyType keyType, string? password, string? totpCode, string? googleIdToken, string? googleNonce)
+    private async Task RotateCompromisedAsync(KeyType keyType, string? password, string? totpCode)
     {
         if (RotateCompromisedKeyAsync == null) return;
         ReportCompromise(
-            await RotateCompromisedKeyAsync(keyType, password, totpCode, googleIdToken, googleNonce),
+            await RotateCompromisedKeyAsync(keyType, password, totpCode),
             "Key rotated and the old key marked compromised. Everything below now uses the new key."
         );
     }
 
-    private async Task MarkVersionAsync(KeyType keyType, int version, string? password, string? totpCode, string? googleIdToken, string? googleNonce)
+    private async Task MarkVersionAsync(KeyType keyType, int version, string? password, string? totpCode)
     {
         if (MarkKeyCompromisedAsync == null) return;
         ReportCompromise(
-            await MarkKeyCompromisedAsync(keyType, version, password, totpCode, googleIdToken, googleNonce),
+            await MarkKeyCompromisedAsync(keyType, version, password, totpCode),
             $"Version {version} marked compromised."
         );
     }

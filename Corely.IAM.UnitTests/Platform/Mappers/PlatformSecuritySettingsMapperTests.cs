@@ -18,7 +18,7 @@ public class PlatformSecuritySettingsMapperTests
     private static readonly string[] _configurationOnlyProperties =
     [
         nameof(SecurityOptions.PermissionCacheTtlSeconds),
-        nameof(SecurityOptions.GoogleClientId),
+        nameof(SecurityOptions.IdentityProviders),
     ];
 
     private static readonly SecurityPolicy _policy = new(

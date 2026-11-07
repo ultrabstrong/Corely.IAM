@@ -36,10 +36,11 @@ public class PasswordSectionTests : TestContext
 
     private IRenderedComponent<PasswordSection> RenderSection(
         bool hasBasicAuth,
-        bool hasGoogleAuth = false
+        bool hasLinkedIdentity = false
     ) =>
         Render<PasswordSection>(p =>
-            p.Add(x => x.HasBasicAuth, hasBasicAuth).Add(x => x.HasGoogleAuth, hasGoogleAuth)
+            p.Add(x => x.HasBasicAuth, hasBasicAuth)
+                .Add(x => x.HasLinkedIdentity, hasLinkedIdentity)
         );
 
     private static void Click(IRenderedComponent<PasswordSection> cut, string text) =>
@@ -126,7 +127,7 @@ public class PasswordSectionTests : TestContext
         _registrationService
             .Setup(x => x.RegisterPasswordAsync(It.IsAny<RegisterPasswordRequest>()))
             .ReturnsAsync(new RegisterPasswordResult(RegisterPasswordResultCode.Success, ""));
-        var cut = RenderSection(hasBasicAuth: false, hasGoogleAuth: true);
+        var cut = RenderSection(hasBasicAuth: false, hasLinkedIdentity: true);
 
         Assert.DoesNotContain(CURRENT_PLACEHOLDER, cut.Markup);
         FillPassword(cut, "New password", "NewPassword1!");
@@ -145,18 +146,18 @@ public class PasswordSectionTests : TestContext
     {
         SetTotpEnabled(true);
 
-        var cut = RenderSection(hasBasicAuth: false, hasGoogleAuth: true);
+        var cut = RenderSection(hasBasicAuth: false, hasLinkedIdentity: true);
 
         Assert.Contains(CODE_PLACEHOLDER, cut.Markup);
     }
 
     [Fact]
-    public void Remove_IsOfferedOnlyWithGoogleSignIn()
+    public void Remove_IsOfferedOnlyWithALinkedIdentity()
     {
         Assert.DoesNotContain("Remove Password", RenderSection(hasBasicAuth: true).Markup);
         Assert.Contains(
             "Remove Password",
-            RenderSection(hasBasicAuth: true, hasGoogleAuth: true).Markup
+            RenderSection(hasBasicAuth: true, hasLinkedIdentity: true).Markup
         );
     }
 
@@ -166,7 +167,7 @@ public class PasswordSectionTests : TestContext
         _deregistrationService
             .Setup(x => x.DeregisterBasicAuthAsync(It.IsAny<DeregisterBasicAuthRequest>()))
             .ReturnsAsync(new DeregisterBasicAuthResult(DeregisterBasicAuthResultCode.Success, ""));
-        var cut = RenderSection(hasBasicAuth: true, hasGoogleAuth: true);
+        var cut = RenderSection(hasBasicAuth: true, hasLinkedIdentity: true);
         Click(cut, "Remove Password");
 
         FillPassword(cut, "Current password", "old");

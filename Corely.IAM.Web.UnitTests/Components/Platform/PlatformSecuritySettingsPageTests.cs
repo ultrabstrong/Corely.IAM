@@ -37,6 +37,7 @@ public class PlatformSecuritySettingsTests : TestContext
         registry.Setup(x => x.GetAll()).Returns([]);
         Services.AddSingleton(registry.Object);
         Services.AddSingleton<ILogger<EntityPageBase>>(NullLogger<EntityPageBase>.Instance);
+        ComponentFactories.AddStub<IdentityProvidersSection>();
         _platformService
             .Setup(x => x.GetSecuritySettingsAsync())
             .ReturnsAsync(new GetSecuritySettingsResult(RetrieveResultCode.Success, "", _settings));

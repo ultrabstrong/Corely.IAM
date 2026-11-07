@@ -31,7 +31,7 @@ Registration order in `ServiceRegistrationExtensions.cs` matters: last registere
 
 Authorization decorators distinguish between two categories of operations:
 
-- **"Self" operations** (MFA, password, Google auth, deregister self): require a real user, blocked for system context via `IsNonSystemUserContext()`
+- **"Self" operations** (MFA, password, linked identities, deregister self): require a real user, blocked for system context via `IsNonSystemUserContext()`
 - **"Targeting" operations** (register group, list users, etc.): system context passes through via `HasUserContext()` or `HasAccountContext()`
 
 System context also bypasses CRUDX permission checks at the processor layer (`IsAuthorizedAsync()` returns `true`).

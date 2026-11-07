@@ -13,8 +13,7 @@ public enum CompromiseAccountKeyResultCode
     UserLockedError,
     TotpRequiredError,
     InvalidTotpCodeError,
-    GoogleSignInRequiredError,
-    InvalidGoogleSignInError,
+    FederatedSignInRequiredError,
     NoReauthenticationMethodError,
 }
 

@@ -21,6 +21,7 @@ public static class IamWebServiceExtensions
             services.Configure(configure ?? (_ => { }));
 
             services.AddSingleton<IAuthCookieManager, AuthCookieManager>();
+            services.AddSingleton<FederatedSignInCookie>();
             services.AddSingleton<IUserContextClaimsBuilder, UserContextClaimsBuilder>();
             services.AddScoped<IPostAuthenticationFlowService, PostAuthenticationFlowService>();
             services.TryAddScoped<IHumanVerifier, NoHumanVerifier>();

@@ -34,7 +34,7 @@ graph LR
 - **System context**: headless processes (Azure Functions, background services) can call APIs without user authentication
 - **Password recovery**: email-based recovery tokens for unauthenticated password reset
 - **Multi-factor authentication**: TOTP (authenticator apps) with recovery codes
-- **Google Sign-In**: link Google accounts as an alternative auth method
+- **Federated sign-in**: sign in with Google, Microsoft, GitHub, Facebook or Amazon
 - **Invitation system**: token-based onboarding with expiry and revocation
 - **Platform account**: an optional, bootstrapped account whose members administer every account
 - **Auditing**: every service call can be recorded, configured at the platform and per account
@@ -70,9 +70,13 @@ graph LR
     - [Password Recoveries](domains/password-recoveries.md)
     - [Invitations](domains/invitations.md)
     - [TOTP Auth](domains/totp-auths.md)
-    - [Google Auth](domains/google-auths.md)
 - [Multi-Factor Authentication](mfa.md)
-- [Google Sign-In](google-signin.md)
+- [Federated Sign-In](federated-sign-in.md)
+    - [Google](identity-providers/google.md)
+    - [Microsoft](identity-providers/microsoft.md)
+    - [GitHub](identity-providers/github.md)
+    - [Facebook](identity-providers/facebook.md)
+    - [Amazon](identity-providers/amazon.md)
 - [Security](security/index.md)
     - [Key Management](security/key-management.md)
     - [User Context](security/user-context.md)

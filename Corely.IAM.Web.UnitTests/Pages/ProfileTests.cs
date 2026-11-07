@@ -1,6 +1,6 @@
 using Bunit.TestDoubles;
 using Corely.IAM.Accounts.Models;
-using Corely.IAM.GoogleAuths.Models;
+using Corely.IAM.FederatedIdentities.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Models;
@@ -31,26 +31,20 @@ public class ProfileTests : TestContext
         Services.AddSingleton(_mockRetrievalService.Object);
         Services.AddSingleton(_mockModificationService.Object);
         Services.AddSingleton(new Mock<IDeregistrationService>().Object);
-        var googleAuth = new Mock<IGoogleAuthService>();
-        googleAuth
+        var federatedIdentityService = new Mock<IFederatedIdentityService>();
+        federatedIdentityService
             .Setup(x => x.GetAuthMethodsAsync())
             .ReturnsAsync(
-                new AuthMethodsResult(
-                    AuthMethodsResultCode.Success,
-                    string.Empty,
-                    true,
-                    false,
-                    null
-                )
+                new AuthMethodsResult(AuthMethodsResultCode.Success, string.Empty, true, [])
             );
-        Services.AddSingleton(googleAuth.Object);
+        Services.AddSingleton(federatedIdentityService.Object);
         Services.AddSingleton<ILogger<EntityPageBase>>(NullLogger<EntityPageBase>.Instance);
         JSInterop.Mode = JSRuntimeMode.Loose;
 
         ComponentFactories.AddStub<Pagination>();
         ComponentFactories.AddStub<TotpSection>();
         ComponentFactories.AddStub<PasswordSection>();
-        ComponentFactories.AddStub<LinkedAccountsSection>();
+        ComponentFactories.AddStub<LinkedIdentitiesSection>();
     }
 
     private static IIamSymmetricEncryptionProvider SymmetricProvider(

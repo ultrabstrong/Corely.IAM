@@ -330,7 +330,7 @@ Authorization is split into two layers:
 - **Service decorators** — validate context only (`HasUserContext()` / `HasAccountContext()` / `IsNonSystemUserContext()`). They do NOT check CRUDX permissions.
 - **Processor decorators** — enforce specific CRUDX permission checks on resources via `AuthorizationProvider.IsAuthorizedAsync()`.
 
-Service decorators use `IsNonSystemUserContext()` for "self" operations (MFA, password, Google auth, deregister self) that require a real user. Other operations use `HasUserContext()` / `HasAccountContext()` which allow system context to pass through.
+Service decorators use `IsNonSystemUserContext()` for "self" operations (MFA, password, linked identities, deregister self) that require a real user. Other operations use `HasUserContext()` / `HasAccountContext()` which allow system context to pass through.
 
 ### Domain Structure
 
@@ -410,7 +410,7 @@ New services go in `Services/` with an interface, registered in `ServiceRegistra
 - `AuthorizationProvider` caches permissions per scope, expiring `SecurityOptions.PermissionCacheTtlSeconds` (default 30) after the load — absolute, not sliding, so an active user still refreshes. A scope-per-request host never reaches it; a long-lived scope (a Blazor Server circuit lasts the whole browser session) depends on it, since the cache is per-scope and one scope cannot invalidate another's. Hosts needing immediate invalidation inject `IAuthorizationCacheClearer` and call `ClearCache()`.
 - JWT-based authentication via `AuthenticationProvider`
 - Host-agnostic auth context: `IUserContextProvider` (read-only) for reading context, `IAuthenticationService` for setting context (`AuthenticateWithTokenAsync`, `AuthenticateAsSystem`) — no HttpContext dependency
-- System context for headless processes: `IAuthenticationService.AuthenticateAsSystem()` creates a fully-permissioned context that bypasses permission checks but blocks "self" operations (MFA, password, Google auth). `IsNonSystemUserContext()` on `IAuthorizationProvider` gates these self operations.
+- System context for headless processes: `IAuthenticationService.AuthenticateAsSystem()` creates a fully-permissioned context that bypasses permission checks but blocks "self" operations (MFA, password, linked identities). `IsNonSystemUserContext()` on `IAuthorizationProvider` gates these self operations.
 - Multi-tenant user model: users exist independently of accounts (M:M relationship). There is no concept of "user A administrates user B" — account owners can register/deregister users with account entities but cannot read or modify other users directly.
 
 ## Development Patterns
@@ -624,6 +624,8 @@ Every `<table>` carries `table-cards`, with its cells given the `cell-*` roles, 
 on a phone. A table that cannot is a design question, raised before it is built.
 
 **No GET changes state when another site started it.** The auth cookies are `SameSite=Lax` so a link from elsewhere (an email) opens signed in, and Lax is only safe while that holds. An endpoint that changes state on GET acts only when `Sec-Fetch-Site` is `same-origin` (`HttpRequest.IsSameOrigin()`) and otherwise renders a confirm button that posts with an antiforgery token, as `/signout` and `/switch-account` do. `CrossSiteRequestTests` fails when one does not. Never answer a cross site link with a page that submits itself: another site can open it.
+
+The one exception is `/signin/callback/{provider}`, the OAuth redirection endpoint an identity provider sends the browser back to. OAuth defines it as a GET from another site and requires the client to protect it from CSRF (RFC 6749 §10.12), which it does by acting only on a response that matches the encrypted correlation cookie this browser's own `/signin/start/{provider}` set: `state` checked once, the PKCE verifier and the nonce. A request without that cookie changes nothing, and `CrossSiteRequestTests` proves it. No other endpoint takes this exception.
 
 **Corely.IAM.Web ships components, never routed Blazor pages.** The host writes a shell per page and supplies every link through `IIamWebLinks`; `HostOwnedPathsTests` fails on a `RouteAttribute` in the assembly or a page path added to `AppRoutes`, which names only the authentication endpoints. `Corely.IAM.WebApp` holds a shell for every component.
 

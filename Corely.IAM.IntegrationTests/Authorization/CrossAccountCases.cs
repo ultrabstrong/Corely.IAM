@@ -4,6 +4,8 @@ using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Groups.Models;
+using Corely.IAM.IdentityProviders.Enums;
+using Corely.IAM.IdentityProviders.Models;
 using Corely.IAM.IntegrationTests.Infrastructure;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Models;
@@ -30,9 +32,6 @@ internal static class CrossAccountCases
     {
         [$"{nameof(IRegistrationService)}.{nameof(IRegistrationService.RegisterUserAsync)}"] =
             "Creates a new user from its own credentials; names no account",
-        [
-            $"{nameof(IRegistrationService)}.{nameof(IRegistrationService.RegisterUserWithGoogleAsync)}"
-        ] = "Creates a new user from a Google token; names no account",
         [$"{nameof(IRegistrationService)}.{nameof(IRegistrationService.RegisterPasswordAsync)}"] =
             "Sets the caller's own password",
         [$"{nameof(IDeregistrationService)}.{nameof(IDeregistrationService.DeregisterUserAsync)}"] =
@@ -60,9 +59,6 @@ internal static class CrossAccountCases
             "The invitation token is the credential; whoever holds it may accept",
         [$"{nameof(IAuthenticationService)}.{nameof(IAuthenticationService.SignInAsync)}"] =
             "Authenticates with the credentials it is given",
-        [
-            $"{nameof(IAuthenticationService)}.{nameof(IAuthenticationService.SignInWithGoogleAsync)}"
-        ] = "Authenticates with the Google token it is given",
         [$"{nameof(IAuthenticationService)}.{nameof(IAuthenticationService.VerifyMfaAsync)}"] =
             "Completes a challenge with the challenge token it is given",
         [
@@ -81,12 +77,22 @@ internal static class CrossAccountCases
         [
             $"{nameof(IAuthenticationService)}.{nameof(IAuthenticationService.AuthenticateAsSystem)}"
         ] = "Sets system context in process; reachable only from host code",
-        [$"{nameof(IGoogleAuthService)}.{nameof(IGoogleAuthService.LinkGoogleAuthAsync)}"] =
-            "Links Google to the caller's own user",
-        [$"{nameof(IGoogleAuthService)}.{nameof(IGoogleAuthService.UnlinkGoogleAuthAsync)}"] =
-            "Unlinks Google from the caller's own user",
-        [$"{nameof(IGoogleAuthService)}.{nameof(IGoogleAuthService.GetAuthMethodsAsync)}"] =
-            "Reads the caller's own sign in methods",
+        [
+            $"{nameof(IFederatedIdentityService)}.{nameof(IFederatedIdentityService.UnlinkFederatedIdentityAsync)}"
+        ] = "Unlinks an identity from the caller's own user",
+        [
+            $"{nameof(IFederatedIdentityService)}.{nameof(IFederatedIdentityService.GetAuthMethodsAsync)}"
+        ] = "Reads the caller's own sign in methods",
+        [
+            $"{nameof(IFederatedSignInService)}.{nameof(IFederatedSignInService.ListIdentityProvidersAsync)}"
+        ] = "Lists the platform's enabled identity providers; names no account",
+        [
+            $"{nameof(IFederatedSignInService)}.{nameof(IFederatedSignInService.StartFederatedSignInAsync)}"
+        ] = "Starts a sign in with an identity provider; names no account",
+        [
+            $"{nameof(IFederatedSignInService)}.{nameof(IFederatedSignInService.CompleteFederatedSignInAsync)}"
+        ] =
+            "Authenticates with the identity provider's response; links and proofs act on the caller's own user",
         [$"{nameof(IMfaService)}.{nameof(IMfaService.EnableTotpAsync)}"] =
             "Acts on the caller's own two factor",
         [$"{nameof(IMfaService)}.{nameof(IMfaService.ConfirmTotpAsync)}"] =
@@ -825,6 +831,35 @@ internal static class CrossAccountCases
                                     MaxLoginAttempts = SecurityPolicy.MAX_LOGIN_ATTEMPTS_MAX,
                                 }
                             )
+                    ),
+            [$"{nameof(IPlatformService)}.{nameof(IPlatformService.GetIdentityProvidersAsync)}"] =
+                a =>
+                    a.RefusedAsync(
+                        s => Get<IPlatformService>(s).GetIdentityProvidersAsync(),
+                        r => r.ResultCode == RetrieveResultCode.Success
+                    ),
+            [$"{nameof(IPlatformService)}.{nameof(IPlatformService.UpdateIdentityProviderAsync)}"] =
+                a =>
+                    a.WritesNothingAsync(s =>
+                        Get<IPlatformService>(s)
+                            .UpdateIdentityProviderAsync(
+                                new UpdateIdentityProviderRequest(
+                                    IdentityProviderType.GitHub,
+                                    false,
+                                    true,
+                                    "seized-client",
+                                    IdentityProviderCredentialKind.ClientSecret,
+                                    clientSecret: "seized-secret"
+                                )
+                            )
+                    ),
+            [$"{nameof(IPlatformService)}.{nameof(IPlatformService.CountSoleSignInUsersAsync)}"] =
+                a =>
+                    a.RefusedAsync(
+                        s =>
+                            Get<IPlatformService>(s)
+                                .CountSoleSignInUsersAsync(IdentityProviderType.Google),
+                        r => r.ResultCode == RetrieveResultCode.Success
                     ),
             [
                 $"{nameof(IAuthenticationService)}.{nameof(IAuthenticationService.SwitchAccountAsync)}"

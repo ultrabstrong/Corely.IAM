@@ -133,23 +133,24 @@ When your app stores its own rows per account, scope every lookup to
 `UserContext.CurrentAccount.Id`. A permission check alone does not keep accounts apart in your tables:
 see [Gotchas](gotchas.md#permissions-do-not-keep-accounts-apart-in-your-own-tables).
 
-## 9) (Optional) Configure Google Sign-In
+## 9) (Optional) Configure Identity Providers
 
-To enable Google Sign-In, set the `GoogleClientId` in `appsettings.json`:
+To let users sign in with Google, Microsoft, GitHub, Facebook or Amazon, register the app with the
+provider and add it under `SecurityOptions:IdentityProviders`, keeping the credential in your secret
+store:
 
 ```json
 {
   "SecurityOptions": {
-    "GoogleClientId": "your-client-id.apps.googleusercontent.com"
+    "IdentityProviders": {
+      "Google": { "ClientId": "your-client-id.apps.googleusercontent.com", "ClientSecret": "..." }
+    }
   }
 }
 ```
 
-Obtain a client ID from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials). Add your app's domain to the authorized origins and redirect URIs.
-
-When `GoogleClientId` is not set, Google Sign-In is disabled and all Google-related service calls return an error.
-
-See [Google Sign-In](google-signin.md) for full setup details.
+With a platform account, providers are managed on the platform's Security page instead. A provider
+with no settings is off. See [Federated Sign-In](federated-sign-in.md) and each provider's setup page.
 
 ## 10) Where to Next?
 

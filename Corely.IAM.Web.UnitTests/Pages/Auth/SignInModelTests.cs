@@ -33,7 +33,6 @@ public class SignInModelTests
             _mockAuthService.Object,
             _mockCookieManager.Object,
             _mockPostAuthenticationFlowService.Object,
-            Options.Create(new SecurityOptions()),
             Options.Create(new IAMWebOptions())
         );
         _model.PageContext = PageTestHelpers.CreatePageContext();
@@ -47,7 +46,6 @@ public class SignInModelTests
             _mockAuthService.Object,
             _mockCookieManager.Object,
             _mockPostAuthenticationFlowService.Object,
-            Options.Create(new SecurityOptions()),
             Options.Create(new IAMWebOptions { ForgotPasswordPath = forgotPasswordPath })
         );
 

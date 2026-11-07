@@ -2,35 +2,30 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.GoogleAuths.Entities;
-using Corely.IAM.GoogleAuths.Models;
-using Corely.IAM.GoogleAuths.Providers;
+using Corely.IAM.FederatedIdentities.Processors;
+using Corely.IAM.Security.Entities;
 using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.TotpAuths.Processors;
 using Corely.IAM.Users.Entities;
-using Microsoft.Extensions.Options;
+using Corely.IAM.Users.Models;
+using Corely.IAM.Users.Providers;
 
 namespace Corely.IAM.UnitTests.Security.Providers;
 
 public class ReauthenticationProviderIdentityTests
 {
-    private const string SUBJECT = "google-subject";
-    private const string NONCE = "nonce-for-this-attempt";
-    private const string ID_TOKEN = "id-token";
-
     private readonly ServiceFactory _serviceFactory = new();
     private readonly Mock<IBasicAuthProcessor> _basicAuthProcessorMock = new();
-    private readonly Mock<IGoogleIdTokenValidator> _validatorMock = new();
     private readonly Mock<ITotpAuthProcessor> _totpAuthProcessorMock = new();
+    private readonly Mock<IFederatedIdentityProcessor> _federatedIdentityProcessorMock = new();
+    private readonly Mock<IUserContextProvider> _userContextProviderMock = new();
     private readonly Mock<TimeProvider> _timeProviderMock = new();
-    private readonly SecurityOptions _securityOptions = new()
-    {
-        GoogleClientId = "client-id",
-        LockoutCooldownSeconds = 60,
-    };
+    private readonly SecurityOptions _securityOptions = new() { LockoutCooldownSeconds = 60 };
     private readonly DateTime _now = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
     private readonly Guid _userId = Guid.CreateVersion7();
+    private readonly Guid _tokenId = Guid.CreateVersion7();
+    private readonly Guid _sessionId = Guid.CreateVersion7();
     private readonly ReauthenticationProvider _provider;
 
     public ReauthenticationProviderIdentityTests()
@@ -53,16 +48,17 @@ public class ReauthenticationProviderIdentityTests
             FixedSecurityPolicyProvider.From(_securityOptions),
             _timeProviderMock.Object,
             _serviceFactory.GetRequiredService<IReadonlyRepo<BasicAuthEntity>>(),
-            _serviceFactory.GetRequiredService<IReadonlyRepo<GoogleAuthEntity>>(),
-            _validatorMock.Object,
-            Options.Create(_securityOptions)
+            _serviceFactory.GetRequiredService<IReadonlyRepo<AuthTokenEntity>>(),
+            _federatedIdentityProcessorMock.Object,
+            _userContextProviderMock.Object
         );
     }
 
     private async Task GiveUserAsync(
         bool password = false,
-        bool google = true,
-        DateTime? lockedUtc = null
+        bool linked = true,
+        DateTime? lockedUtc = null,
+        bool session = true
     )
     {
         await _serviceFactory
@@ -77,6 +73,7 @@ public class ReauthenticationProviderIdentityTests
                 }
             );
         if (password)
+        {
             await _serviceFactory
                 .GetRequiredService<IRepo<BasicAuthEntity>>()
                 .CreateAsync(
@@ -87,239 +84,128 @@ public class ReauthenticationProviderIdentityTests
                         Password = "hash",
                     }
                 );
-        if (google)
-            await _serviceFactory
-                .GetRequiredService<IRepo<GoogleAuthEntity>>()
-                .CreateAsync(
-                    new GoogleAuthEntity
-                    {
-                        Id = Guid.CreateVersion7(),
-                        UserId = _userId,
-                        GoogleSubjectId = SUBJECT,
-                        Email = "someone@gmail.com",
-                    }
-                );
-    }
+        }
+        _federatedIdentityProcessorMock.Setup(m => m.HasAnyAsync(_userId)).ReturnsAsync(linked);
 
-    private void GoogleAnswers(
-        string subject = SUBJECT,
-        string? nonce = NONCE,
-        DateTime? issuedUtc = null
-    ) =>
-        _validatorMock
-            .Setup(x => x.ValidateAsync(ID_TOKEN))
-            .ReturnsAsync(
-                new GoogleIdTokenPayload(
-                    subject,
-                    "someone@gmail.com",
-                    true,
-                    nonce,
-                    issuedUtc ?? _now
+        if (!session)
+            return;
+        await _serviceFactory
+            .GetRequiredService<IRepo<AuthTokenEntity>>()
+            .CreateAsync(
+                new AuthTokenEntity
+                {
+                    Id = _tokenId,
+                    UserId = _userId,
+                    DeviceId = "device",
+                    SessionId = _sessionId,
+                    RefreshSecretHash = "hash",
+                }
+            );
+        _userContextProviderMock
+            .Setup(m => m.GetUserContext())
+            .Returns(
+                new UserContext(
+                    new User
+                    {
+                        Id = _userId,
+                        Username = "someone",
+                        Email = "someone@test.com",
+                    },
+                    null,
+                    "device",
+                    [],
+                    _tokenId
                 )
             );
-
-    private Task<ReauthenticationResult> VerifyAsync(string? idToken = ID_TOKEN) =>
-        _provider.VerifyIdentityAsync(_userId, null, idToken, NONCE);
-
-    [Fact]
-    public async Task VerifyAccountKeyProof_NeedsTheSecondFactor_AfterAGoodPassword()
-    {
-        await GiveUserAsync(password: true);
-        _totpAuthProcessorMock.Setup(x => x.IsTotpEnabledAsync(_userId)).ReturnsAsync(true);
-
-        var result = await _provider.VerifyAccountKeyProofAsync(
-            _userId,
-            new AccountKeyProof("correct", null)
-        );
-
-        Assert.Equal(ReauthenticationResultCode.TotpRequiredError, result.ResultCode);
     }
 
     [Fact]
-    public async Task VerifyAccountKeyProof_NeedsTheSecondFactor_AfterAGoodGoogleSignIn()
-    {
-        await GiveUserAsync();
-        GoogleAnswers();
-        _totpAuthProcessorMock.Setup(x => x.IsTotpEnabledAsync(_userId)).ReturnsAsync(true);
-
-        var result = await _provider.VerifyAccountKeyProofAsync(
-            _userId,
-            new AccountKeyProof(null, null, ID_TOKEN, NONCE)
-        );
-
-        Assert.Equal(ReauthenticationResultCode.TotpRequiredError, result.ResultCode);
-    }
-
-    [Fact]
-    public async Task VerifyAccountKeyProof_SpendsNoSecondFactor_AfterAWrongPassword()
+    public async Task VerifyIdentity_UsesThePassword_WhenTheUserHasOne()
     {
         await GiveUserAsync(password: true);
 
-        var result = await _provider.VerifyAccountKeyProofAsync(
-            _userId,
-            new AccountKeyProof("wrong", "123456")
+        var correct = await _provider.VerifyIdentityAsync(_userId, "correct");
+        var wrong = await _provider.VerifyIdentityAsync(_userId, "wrong");
+
+        Assert.Equal(ReauthenticationResultCode.Success, correct.ResultCode);
+        Assert.Equal(ReauthenticationResultCode.InvalidCurrentPasswordError, wrong.ResultCode);
+        _federatedIdentityProcessorMock.Verify(
+            m => m.ConsumeReauthenticationAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
+            Times.Never
         );
-
-        Assert.Equal(ReauthenticationResultCode.InvalidCurrentPasswordError, result.ResultCode);
-        _totpAuthProcessorMock.Verify(x => x.IsTotpEnabledAsync(It.IsAny<Guid>()), Times.Never);
     }
 
     [Fact]
-    public async Task VerifyAccountKeyProof_Passes_ForAGoodPasswordWithNoSecondFactor()
+    public async Task VerifyIdentity_ReportsNoMethod_WithNoPasswordAndNoLinkedIdentity()
     {
-        await GiveUserAsync(password: true);
+        await GiveUserAsync(linked: false);
 
-        var result = await _provider.VerifyAccountKeyProofAsync(
-            _userId,
-            new AccountKeyProof("correct", null)
-        );
+        var result = await _provider.VerifyIdentityAsync(_userId, null);
 
-        Assert.Equal(ReauthenticationResultCode.Success, result.ResultCode);
+        Assert.Equal(ReauthenticationResultCode.NoReauthenticationMethodError, result.ResultCode);
     }
 
     [Fact]
-    public async Task VerifyIdentity_Succeeds_ForAFreshGoogleSignInOfTheLinkedAccount()
-    {
-        await GiveUserAsync();
-        GoogleAnswers();
-
-        var result = await VerifyAsync();
-
-        Assert.Equal(ReauthenticationResultCode.Success, result.ResultCode);
-    }
-
-    [Fact]
-    public async Task VerifyIdentity_Refuses_AGoogleSignInOfAnotherAccount()
-    {
-        await GiveUserAsync();
-        GoogleAnswers(subject: "someone-else");
-
-        var result = await VerifyAsync();
-
-        Assert.Equal(ReauthenticationResultCode.InvalidGoogleSignInError, result.ResultCode);
-    }
-
-    [Fact]
-    public async Task VerifyIdentity_Refuses_AGoogleTokenWithAnotherNonce()
-    {
-        await GiveUserAsync();
-        GoogleAnswers(nonce: "from-an-earlier-attempt");
-
-        var result = await VerifyAsync();
-
-        Assert.Equal(ReauthenticationResultCode.InvalidGoogleSignInError, result.ResultCode);
-    }
-
-    [Fact]
-    public async Task VerifyIdentity_Refuses_AGoogleTokenWithNoNonce()
-    {
-        await GiveUserAsync();
-        GoogleAnswers(nonce: null);
-
-        var result = await _provider.VerifyIdentityAsync(_userId, null, ID_TOKEN, null);
-
-        Assert.Equal(ReauthenticationResultCode.InvalidGoogleSignInError, result.ResultCode);
-    }
-
-    [Fact]
-    public async Task VerifyIdentity_Refuses_AStaleGoogleToken_EvenThoughGoogleStillAcceptsIt()
-    {
-        await GiveUserAsync();
-        GoogleAnswers(
-            issuedUtc: _now.AddSeconds(-GoogleIdTokenPayload.REAUTHENTICATION_MAX_AGE_SECONDS - 1)
-        );
-
-        var result = await VerifyAsync();
-
-        Assert.Equal(ReauthenticationResultCode.InvalidGoogleSignInError, result.ResultCode);
-    }
-
-    [Fact]
-    public async Task VerifyIdentity_Refuses_AGoogleTokenWithNoIssuedTime()
-    {
-        await GiveUserAsync();
-        _validatorMock
-            .Setup(x => x.ValidateAsync(ID_TOKEN))
-            .ReturnsAsync(new GoogleIdTokenPayload(SUBJECT, "someone@gmail.com", true, NONCE));
-
-        var result = await VerifyAsync();
-
-        Assert.Equal(ReauthenticationResultCode.InvalidGoogleSignInError, result.ResultCode);
-    }
-
-    [Fact]
-    public async Task VerifyIdentity_Refuses_ATokenGoogleDoesNotVouchFor()
-    {
-        await GiveUserAsync();
-
-        var result = await VerifyAsync();
-
-        Assert.Equal(ReauthenticationResultCode.InvalidGoogleSignInError, result.ResultCode);
-    }
-
-    [Fact]
-    public async Task VerifyIdentity_AsksForAGoogleSignIn_WhenNoneIsGiven_SoASessionNeverCounts()
-    {
-        await GiveUserAsync();
-
-        var result = await VerifyAsync(idToken: null);
-
-        Assert.Equal(ReauthenticationResultCode.GoogleSignInRequiredError, result.ResultCode);
-    }
-
-    [Fact]
-    public async Task VerifyIdentity_Refuses_ALockedUser()
+    public async Task VerifyIdentity_RefusesALockedUser()
     {
         await GiveUserAsync(lockedUtc: _now);
-        GoogleAnswers();
 
-        var result = await VerifyAsync();
+        var result = await _provider.VerifyIdentityAsync(_userId, null);
 
         Assert.Equal(ReauthenticationResultCode.UserLockedError, result.ResultCode);
     }
 
     [Fact]
-    public async Task VerifyIdentity_IgnoresAGoogleProof_ForAUserWithAPassword()
+    public async Task VerifyIdentity_Succeeds_WhenThisSessionHasAFreshProof()
     {
-        await GiveUserAsync(password: true);
-        GoogleAnswers();
+        await GiveUserAsync();
+        _federatedIdentityProcessorMock
+            .Setup(m => m.ConsumeReauthenticationAsync(_userId, _sessionId))
+            .ReturnsAsync(true);
 
-        var result = await VerifyAsync();
-
-        Assert.Equal(ReauthenticationResultCode.InvalidCurrentPasswordError, result.ResultCode);
-        _validatorMock.Verify(x => x.ValidateAsync(It.IsAny<string>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task VerifyIdentity_ChecksThePassword_ForAUserWithAPassword()
-    {
-        await GiveUserAsync(password: true);
-
-        var result = await _provider.VerifyIdentityAsync(_userId, "correct", null, null);
+        var result = await _provider.VerifyIdentityAsync(_userId, null);
 
         Assert.Equal(ReauthenticationResultCode.Success, result.ResultCode);
     }
 
     [Fact]
-    public async Task VerifyIdentity_ExplainsWhatToDo_ForAUserWithNoMethod()
+    public async Task VerifyIdentity_AsksForAFederatedSignIn_WhenThereIsNoProof()
     {
-        await GiveUserAsync(google: false);
+        await GiveUserAsync();
+        _federatedIdentityProcessorMock
+            .Setup(m => m.ConsumeReauthenticationAsync(_userId, _sessionId))
+            .ReturnsAsync(false);
 
-        var result = await VerifyAsync();
+        var result = await _provider.VerifyIdentityAsync(_userId, null);
 
-        Assert.Equal(ReauthenticationResultCode.NoReauthenticationMethodError, result.ResultCode);
-        Assert.Contains("Set a password on your profile", result.Message);
+        Assert.Equal(ReauthenticationResultCode.FederatedSignInRequiredError, result.ResultCode);
     }
 
     [Fact]
-    public async Task VerifyIdentity_ExplainsWhatToDo_WhenGoogleIsNotConfigured()
+    public async Task VerifyIdentity_AsksForAFederatedSignIn_WithoutASession()
     {
-        _securityOptions.GoogleClientId = null;
-        await GiveUserAsync();
-        GoogleAnswers();
+        await GiveUserAsync(session: false);
 
-        var result = await VerifyAsync();
+        var result = await _provider.VerifyIdentityAsync(_userId, null);
 
-        Assert.Equal(ReauthenticationResultCode.NoReauthenticationMethodError, result.ResultCode);
+        Assert.Equal(ReauthenticationResultCode.FederatedSignInRequiredError, result.ResultCode);
+        _federatedIdentityProcessorMock.Verify(
+            m => m.ConsumeReauthenticationAsync(It.IsAny<Guid>(), It.IsAny<Guid>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task VerifyAccountKeyProof_ChecksTotpAfterTheProof()
+    {
+        await GiveUserAsync(password: true);
+        _totpAuthProcessorMock.Setup(m => m.IsTotpEnabledAsync(_userId)).ReturnsAsync(true);
+
+        var result = await _provider.VerifyAccountKeyProofAsync(
+            _userId,
+            new AccountKeyProof("correct", null)
+        );
+
+        Assert.Equal(ReauthenticationResultCode.TotpRequiredError, result.ResultCode);
     }
 }

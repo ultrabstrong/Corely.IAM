@@ -6,9 +6,11 @@ using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.DataAccess;
-using Corely.IAM.GoogleAuths.Processors;
-using Corely.IAM.GoogleAuths.Providers;
+using Corely.IAM.FederatedIdentities.Processors;
 using Corely.IAM.Groups.Processors;
+using Corely.IAM.IdentityProviders.Models;
+using Corely.IAM.IdentityProviders.Providers;
+using Corely.IAM.IdentityProviders.Types;
 using Corely.IAM.Invitations.Processors;
 using Corely.IAM.PasswordRecoveries.Entities;
 using Corely.IAM.PasswordRecoveries.Processors;
@@ -36,6 +38,7 @@ using Corely.Security.Signature.Factories;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Corely.IAM;
 
@@ -188,7 +191,10 @@ public static class ServiceRegistrationExtensions
                 IModificationService,
                 ModificationServiceTelemetryDecorator
             >();
-            serviceCollection.AddScoped<IAuthenticationService, AuthenticationService>();
+            serviceCollection.AddScoped<AuthenticationService>();
+            serviceCollection.AddScoped<IAuthenticationService>(sp =>
+                sp.GetRequiredService<AuthenticationService>()
+            );
             serviceCollection.Decorate<
                 IAuthenticationService,
                 AuthenticationServiceAuditDecorator
@@ -203,13 +209,29 @@ public static class ServiceRegistrationExtensions
             serviceCollection.Decorate<IMfaService, MfaServiceAuditDecorator>();
             serviceCollection.Decorate<IMfaService, MfaServiceTelemetryDecorator>();
 
-            serviceCollection.AddScoped<IGoogleAuthService, GoogleAuthService>();
+            serviceCollection.AddScoped<IFederatedIdentityService, FederatedIdentityService>();
             serviceCollection.Decorate<
-                IGoogleAuthService,
-                GoogleAuthServiceAuthorizationDecorator
+                IFederatedIdentityService,
+                FederatedIdentityServiceAuthorizationDecorator
             >();
-            serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceAuditDecorator>();
-            serviceCollection.Decorate<IGoogleAuthService, GoogleAuthServiceTelemetryDecorator>();
+            serviceCollection.Decorate<
+                IFederatedIdentityService,
+                FederatedIdentityServiceAuditDecorator
+            >();
+            serviceCollection.Decorate<
+                IFederatedIdentityService,
+                FederatedIdentityServiceTelemetryDecorator
+            >();
+
+            serviceCollection.AddScoped<IFederatedSignInService, FederatedSignInService>();
+            serviceCollection.Decorate<
+                IFederatedSignInService,
+                FederatedSignInServiceAuditDecorator
+            >();
+            serviceCollection.Decorate<
+                IFederatedSignInService,
+                FederatedSignInServiceTelemetryDecorator
+            >();
 
             serviceCollection.AddScoped<IInvitationService, InvitationService>();
             serviceCollection.Decorate<IInvitationService, InvitationServiceAuditDecorator>();
@@ -316,15 +338,24 @@ public static class ServiceRegistrationExtensions
             >();
             serviceCollection.Decorate<ITotpAuthProcessor, TotpAuthProcessorTelemetryDecorator>();
 
-            serviceCollection.AddScoped<IGoogleIdTokenValidator, GoogleIdTokenValidator>();
-            serviceCollection.AddScoped<IGoogleAuthProcessor, GoogleAuthProcessor>();
+            serviceCollection.TryAddSingleton(_ => FederationHttp.Create());
+            serviceCollection.AddSingleton<IFederationClient, FederationClient>();
+            serviceCollection.AddSingleton<IdentityProviderCatalog>();
+            serviceCollection.AddSingleton<IdentityProviderCredentialCipher>();
+            serviceCollection.AddSingleton<IdentityProviderSettingsCache>();
+            serviceCollection.AddSingleton(ConfiguredIdentityProviders.From(options.Configuration));
+            serviceCollection.AddScoped<
+                IIdentityProviderSettingsProvider,
+                IdentityProviderSettingsProvider
+            >();
+            serviceCollection.AddScoped<IFederatedIdentityProcessor, FederatedIdentityProcessor>();
             serviceCollection.Decorate<
-                IGoogleAuthProcessor,
-                GoogleAuthProcessorAuthorizationDecorator
+                IFederatedIdentityProcessor,
+                FederatedIdentityProcessorAuthorizationDecorator
             >();
             serviceCollection.Decorate<
-                IGoogleAuthProcessor,
-                GoogleAuthProcessorTelemetryDecorator
+                IFederatedIdentityProcessor,
+                FederatedIdentityProcessorTelemetryDecorator
             >();
 
             return serviceCollection;

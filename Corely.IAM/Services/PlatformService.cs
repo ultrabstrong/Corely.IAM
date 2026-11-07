@@ -2,6 +2,13 @@ using System.Security.Cryptography;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.FederatedIdentities.Processors;
+using Corely.IAM.IdentityProviders.Entities;
+using Corely.IAM.IdentityProviders.Enums;
+using Corely.IAM.IdentityProviders.Mappers;
+using Corely.IAM.IdentityProviders.Models;
+using Corely.IAM.IdentityProviders.Providers;
+using Corely.IAM.IdentityProviders.Types;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions;
 using Corely.IAM.Permissions.Entities;
@@ -35,9 +42,31 @@ internal class PlatformService(
     ConfiguredSecurityPolicy configuredSecurityPolicy,
     SecurityPolicyCache securityPolicyCache,
     IValidationProvider validationProvider,
+    IRepo<IdentityProviderEntity> identityProviderRepo,
+    IIdentityProviderSettingsProvider identityProviderSettingsProvider,
+    ConfiguredIdentityProviders configuredIdentityProviders,
+    IdentityProviderSettingsCache identityProviderSettingsCache,
+    IdentityProviderCredentialCipher identityProviderCredentialCipher,
+    IdentityProviderCatalog identityProviderCatalog,
+    IFederatedIdentityProcessor federatedIdentityProcessor,
     ILogger<PlatformService> logger
 ) : IPlatformService
 {
+    private readonly IRepo<IdentityProviderEntity> _identityProviderRepo =
+        identityProviderRepo.ThrowIfNull(nameof(identityProviderRepo));
+    private readonly IIdentityProviderSettingsProvider _identityProviderSettingsProvider =
+        identityProviderSettingsProvider.ThrowIfNull(nameof(identityProviderSettingsProvider));
+    private readonly ConfiguredIdentityProviders _configuredIdentityProviders =
+        configuredIdentityProviders.ThrowIfNull(nameof(configuredIdentityProviders));
+    private readonly IdentityProviderSettingsCache _identityProviderSettingsCache =
+        identityProviderSettingsCache.ThrowIfNull(nameof(identityProviderSettingsCache));
+    private readonly IdentityProviderCredentialCipher _identityProviderCredentialCipher =
+        identityProviderCredentialCipher.ThrowIfNull(nameof(identityProviderCredentialCipher));
+    private readonly IdentityProviderCatalog _identityProviderCatalog =
+        identityProviderCatalog.ThrowIfNull(nameof(identityProviderCatalog));
+    private readonly IFederatedIdentityProcessor _federatedIdentityProcessor =
+        federatedIdentityProcessor.ThrowIfNull(nameof(federatedIdentityProcessor));
+
     private const string BOOTSTRAP_DEVICE_ID = "platform-bootstrap";
 
     private readonly IRegistrationService _registrationService = registrationService.ThrowIfNull(
@@ -137,6 +166,7 @@ internal class PlatformService(
             accountEntity.IsPlatformAccount = true;
             await _accountRepo.UpdateAsync(accountEntity);
             await SaveSecuritySettingsAsync(_configuredSecurityPolicy.Policy);
+            await SaveConfiguredIdentityProvidersAsync();
             await CompletePlatformOwnerPermissionsAsync();
 
             _logger.LogInformation(
@@ -283,6 +313,154 @@ internal class PlatformService(
 
         await SaveSecuritySettingsAsync(settings);
         return new ModifyResult(ModifyResultCode.Success, string.Empty);
+    }
+
+    public async Task<GetIdentityProvidersResult> GetIdentityProvidersAsync()
+    {
+        var configured = (await _identityProviderSettingsProvider.GetAllAsync()).ToDictionary(s =>
+            s.Type
+        );
+        return new(
+            RetrieveResultCode.Success,
+            string.Empty,
+            [
+                .. _identityProviderCatalog
+                    .All.OrderBy(d => d.Type)
+                    .Select(d =>
+                        configured.TryGetValue(d.Type, out var settings)
+                            ? settings
+                            : new IdentityProviderSettings(
+                                d.Type,
+                                false,
+                                IdentityProviderSettings.ALLOW_SIGN_UP_DEFAULT,
+                                string.Empty,
+                                d.CredentialKinds[0],
+                                false,
+                                null,
+                                null
+                            )
+                    ),
+            ]
+        );
+    }
+
+    public async Task<ModifyResult> UpdateIdentityProviderAsync(
+        UpdateIdentityProviderRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var validation = _validationProvider.Validate(request);
+        if (!validation.IsValid)
+            return new ModifyResult(ModifyResultCode.ValidationError, validation.Message);
+
+        var definition = _identityProviderCatalog.Get(request.Type);
+        if (!definition.CredentialKinds.Contains(request.CredentialKind))
+        {
+            return new ModifyResult(
+                ModifyResultCode.ValidationError,
+                $"{definition.DisplayName} does not take a {request.CredentialKind}"
+            );
+        }
+        if (
+            !string.IsNullOrWhiteSpace(request.Tenant)
+            && request.Type != IdentityProviderType.Microsoft
+        )
+        {
+            return new ModifyResult(
+                ModifyResultCode.ValidationError,
+                $"{definition.DisplayName} has no tenant setting"
+            );
+        }
+
+        if (!await _accountRepo.AnyAsync(a => a.IsPlatformAccount))
+        {
+            return new ModifyResult(
+                ModifyResultCode.NotFoundError,
+                "Identity providers are saved in the platform account, and there is none; set them in configuration instead"
+            );
+        }
+
+        var entity = await _identityProviderRepo.GetAsync(e => e.Type == request.Type);
+        var isNew = entity is null;
+        entity ??= new IdentityProviderEntity { Type = request.Type };
+        entity.Apply(request);
+
+        if (request.ReplacesCredential)
+        {
+            var credential = ReadCredential(request);
+            if (credential.Error is not null)
+                return new ModifyResult(ModifyResultCode.ValidationError, credential.Error);
+            entity.EncryptedCredential = _identityProviderCredentialCipher.Encrypt(
+                credential.Value!
+            );
+            entity.CertificateThumbprint = credential.Thumbprint;
+        }
+
+        if (entity.Enabled && string.IsNullOrWhiteSpace(entity.EncryptedCredential))
+        {
+            return new ModifyResult(
+                ModifyResultCode.ValidationError,
+                $"{definition.DisplayName} needs its {request.CredentialKind} before it can be turned on"
+            );
+        }
+
+        if (isNew)
+            await _identityProviderRepo.CreateAsync(entity);
+        else
+            await _identityProviderRepo.UpdateAsync(entity);
+        _identityProviderSettingsCache.Invalidate();
+        return new ModifyResult(ModifyResultCode.Success, string.Empty);
+    }
+
+    public async Task<CountSoleSignInUsersResult> CountSoleSignInUsersAsync(
+        IdentityProviderType type
+    ) =>
+        new(
+            RetrieveResultCode.Success,
+            string.Empty,
+            await _federatedIdentityProcessor.CountSoleSignInUsersAsync(type)
+        );
+
+    private static (string? Value, string? Thumbprint, string? Error) ReadCredential(
+        UpdateIdentityProviderRequest request
+    )
+    {
+        if (request.CredentialKind == IdentityProviderCredentialKind.ClientSecret)
+        {
+            return string.IsNullOrWhiteSpace(request.ClientSecret)
+                ? (null, null, "A client secret is required")
+                : (request.ClientSecret.Trim(), null, null);
+        }
+
+        if (request.CertificatePfx is not { Length: > 0 } pfx)
+            return (null, null, "A certificate is required");
+        try
+        {
+            var certificate = IdentityProviderCertificate.FromPfx(pfx, request.CertificatePassword);
+            return (certificate.Pem, certificate.Thumbprint, null);
+        }
+        catch (Exception ex) when (ex is CryptographicException or InvalidOperationException)
+        {
+            return (
+                null,
+                null,
+                "The certificate could not be read. Upload a PFX that includes its private key, with its password."
+            );
+        }
+    }
+
+    private async Task SaveConfiguredIdentityProvidersAsync()
+    {
+        foreach (var provider in _configuredIdentityProviders.Providers)
+        {
+            if (await _identityProviderRepo.AnyAsync(e => e.Type == provider.Settings.Type))
+                continue;
+            await _identityProviderRepo.CreateAsync(
+                provider.ToEntity(_identityProviderCredentialCipher.Encrypt)
+            );
+        }
+        _identityProviderSettingsCache.Invalidate();
     }
 
     private async Task SaveSecuritySettingsAsync(SecurityPolicy settings)

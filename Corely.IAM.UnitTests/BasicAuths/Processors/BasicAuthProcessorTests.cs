@@ -2,7 +2,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
-using Corely.IAM.GoogleAuths.Entities;
+using Corely.IAM.FederatedIdentities.Entities;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Validators;
 using Corely.Security.Hashing.Factories;
@@ -21,7 +21,7 @@ public class BasicAuthProcessorTests
     {
         _basicAuthProcessor = new BasicAuthProcessor(
             _serviceFactory.GetRequiredService<IRepo<BasicAuthEntity>>(),
-            _serviceFactory.GetRequiredService<IReadonlyRepo<GoogleAuthEntity>>(),
+            _serviceFactory.GetRequiredService<IReadonlyRepo<FederatedIdentityEntity>>(),
             _serviceFactory.GetRequiredService<ISecurityPolicyProvider>(),
             _serviceFactory.GetRequiredService<IHashProviderFactory>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),

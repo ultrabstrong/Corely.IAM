@@ -1,3 +1,5 @@
+using Corely.IAM.IdentityProviders.Enums;
+using Corely.IAM.IdentityProviders.Models;
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Models;
 
@@ -9,4 +11,7 @@ public interface IPlatformService
     Task<int> CompletePlatformOwnerPermissionsAsync();
     Task<GetSecuritySettingsResult> GetSecuritySettingsAsync();
     Task<ModifyResult> UpdateSecuritySettingsAsync(SecurityPolicy settings);
+    Task<GetIdentityProvidersResult> GetIdentityProvidersAsync();
+    Task<ModifyResult> UpdateIdentityProviderAsync(UpdateIdentityProviderRequest request);
+    Task<CountSoleSignInUsersResult> CountSoleSignInUsersAsync(IdentityProviderType type);
 }

@@ -71,7 +71,7 @@ These are coarse-grained gates. They do not check specific CRUDX permissions.
 
 #### Category 1: "Self" Operations
 
-Operations that only make sense for a real logged-in user (e.g., set password, manage MFA, manage Google auth, accept invitation). These use `IsNonSystemUserContext()` and block system context.
+Operations that only make sense for a real logged-in user (e.g., set password, manage MFA, manage linked identities, accept invitation). These use `IsNonSystemUserContext()` and block system context.
 
 #### Category 2: "Targeting" Operations
 

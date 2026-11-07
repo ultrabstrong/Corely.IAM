@@ -6,7 +6,6 @@ namespace Corely.IAM.Services;
 public interface IAuthenticationService
 {
     Task<SignInResult> SignInAsync(SignInRequest request);
-    Task<SignInResult> SignInWithGoogleAsync(SignInWithGoogleRequest request);
     Task<SignInResult> VerifyMfaAsync(VerifyMfaRequest request);
     Task<SignInResult> SignInWithApiKeyAsync(SignInWithApiKeyRequest request);
     Task<RenewAuthTokenResult> RenewAuthTokenAsync(RenewAuthTokenRequest request);

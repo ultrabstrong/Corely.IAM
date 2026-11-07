@@ -1,7 +1,7 @@
 using Corely.DataAccess.Interfaces.Entities;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.BasicAuths.Entities;
-using Corely.IAM.GoogleAuths.Entities;
+using Corely.IAM.FederatedIdentities.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Entities;
@@ -24,7 +24,7 @@ internal class UserEntity : IHasCreatedUtc, IHasModifiedUtc
     public DateTime? ModifiedUtc { get; set; }
     public virtual BasicAuthEntity? BasicAuth { get; set; }
     public virtual TotpAuthEntity? TotpAuth { get; set; }
-    public virtual GoogleAuthEntity? GoogleAuth { get; set; }
+    public virtual ICollection<FederatedIdentityEntity>? FederatedIdentities { get; set; }
     public virtual ICollection<AccountEntity>? Accounts { get; set; }
     public virtual ICollection<GroupEntity>? Groups { get; set; }
     public virtual ICollection<RoleEntity>? Roles { get; set; }

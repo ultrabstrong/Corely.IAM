@@ -21,7 +21,7 @@ Deletes entities and removes relationships between entities.
 | `DeregisterPermissionsFromRoleAsync` | `DeregisterPermissionsFromRoleRequest` | `DeregisterPermissionsFromRoleResult` |
 | `DeregisterBasicAuthAsync` | `DeregisterBasicAuthRequest` | `DeregisterBasicAuthResult` |
 
-> **Note:** `UnlinkGoogleAuthAsync` has been moved to `IGoogleAuthService`. See [Google Sign-In](../google-signin.md).
+> **Note:** unlinking an identity provider is on `IFederatedIdentityService`. See [Federated Sign-In](../federated-sign-in.md).
 
 ## Usage
 

@@ -459,7 +459,7 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                     b.ToTable("UserRoles", (string)null);
                 });
 
-            modelBuilder.Entity("Corely.IAM.GoogleAuths.Entities.GoogleAuthEntity", b =>
+            modelBuilder.Entity("Corely.IAM.FederatedIdentities.Entities.FederatedIdentityEntity", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
@@ -470,11 +470,13 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .HasDefaultValueSql("(SYSUTCDATETIME())");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasMaxLength(254)
                         .HasColumnType("nvarchar(254)");
 
-                    b.Property<string>("GoogleSubjectId")
+                    b.Property<bool>("EmailVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Issuer")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -482,18 +484,32 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                     b.Property<DateTime?>("ModifiedUtc")
                         .HasColumnType("DATETIME2");
 
+                    b.Property<int>("ProviderType")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ReauthenticatedSessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ReauthenticatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GoogleSubjectId")
+                    b.HasIndex("Issuer", "Subject")
                         .IsUnique();
 
-                    b.HasIndex("UserId")
+                    b.HasIndex("UserId", "ProviderType")
                         .IsUnique();
 
-                    b.ToTable("GoogleAuths", (string)null);
+                    b.ToTable("FederatedIdentities", (string)null);
                 });
 
             modelBuilder.Entity("Corely.IAM.Groups.Entities.GroupEntity", b =>
@@ -526,6 +542,49 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .IsUnique();
 
                     b.ToTable("Groups", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.IdentityProviders.Entities.IdentityProviderEntity", b =>
+                {
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("AllowSignUp")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("CertificateThumbprint")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("DATETIME2")
+                        .HasDefaultValueSql("(SYSUTCDATETIME())");
+
+                    b.Property<int>("CredentialKind")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("EncryptedCredential")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("DATETIME2");
+
+                    b.Property<string>("Tenant")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Type");
+
+                    b.ToTable("IdentityProviders", (string)null);
                 });
 
             modelBuilder.Entity("Corely.IAM.Invitations.Entities.InvitationEntity", b =>
@@ -1290,11 +1349,11 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Corely.IAM.GoogleAuths.Entities.GoogleAuthEntity", b =>
+            modelBuilder.Entity("Corely.IAM.FederatedIdentities.Entities.FederatedIdentityEntity", b =>
                 {
                     b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
-                        .WithOne("GoogleAuth")
-                        .HasForeignKey("Corely.IAM.GoogleAuths.Entities.GoogleAuthEntity", "UserId")
+                        .WithMany("FederatedIdentities")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1461,7 +1520,7 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
 
                     b.Navigation("BasicAuth");
 
-                    b.Navigation("GoogleAuth");
+                    b.Navigation("FederatedIdentities");
 
                     b.Navigation("SymmetricKeys");
 

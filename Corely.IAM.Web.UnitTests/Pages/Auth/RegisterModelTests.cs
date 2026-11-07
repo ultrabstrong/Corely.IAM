@@ -33,7 +33,6 @@ public class RegisterModelTests
             _mockRegistrationService.Object,
             _mockAuthService.Object,
             _mockCookieManager.Object,
-            Options.Create(new SecurityOptions()),
             _mockHumanVerifier.Object,
             Options.Create(new IAMWebOptions())
         );

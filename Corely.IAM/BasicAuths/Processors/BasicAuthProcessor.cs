@@ -3,7 +3,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Mappers;
 using Corely.IAM.BasicAuths.Models;
-using Corely.IAM.GoogleAuths.Entities;
+using Corely.IAM.FederatedIdentities.Entities;
 using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Mappers;
 using Corely.IAM.Validators;
@@ -14,7 +14,7 @@ namespace Corely.IAM.BasicAuths.Processors;
 
 internal class BasicAuthProcessor(
     IRepo<BasicAuthEntity> basicAuthRepo,
-    IReadonlyRepo<GoogleAuthEntity> googleAuthRepo,
+    IReadonlyRepo<FederatedIdentityEntity> federatedIdentityRepo,
     ISecurityPolicyProvider securityPolicyProvider,
     IHashProviderFactory hashProviderFactory,
     IValidationProvider validationProvider,
@@ -24,9 +24,8 @@ internal class BasicAuthProcessor(
     private readonly IRepo<BasicAuthEntity> _basicAuthRepo = basicAuthRepo.ThrowIfNull(
         nameof(basicAuthRepo)
     );
-    private readonly IReadonlyRepo<GoogleAuthEntity> _googleAuthRepo = googleAuthRepo.ThrowIfNull(
-        nameof(googleAuthRepo)
-    );
+    private readonly IReadonlyRepo<FederatedIdentityEntity> _federatedIdentityRepo =
+        federatedIdentityRepo.ThrowIfNull(nameof(federatedIdentityRepo));
     private readonly ISecurityPolicyProvider _securityPolicyProvider =
         securityPolicyProvider.ThrowIfNull(nameof(securityPolicyProvider));
     private readonly IHashProviderFactory _hashProviderFactory = hashProviderFactory.ThrowIfNull(
@@ -196,8 +195,8 @@ internal class BasicAuthProcessor(
             );
         }
 
-        var hasGoogleAuth = await _googleAuthRepo.GetAsync(e => e.UserId == userId) != null;
-        if (!hasGoogleAuth)
+        var hasFederatedIdentity = await _federatedIdentityRepo.AnyAsync(e => e.UserId == userId);
+        if (!hasFederatedIdentity)
         {
             return new DeleteBasicAuthResult(
                 DeleteBasicAuthResultCode.LastAuthMethodError,

@@ -49,6 +49,30 @@ public class CrossSiteRequestTests : FunctionalTestBase
     }
 
     [Fact]
+    public async Task FederatedCallback_IsTheExemption_AndChangesNothingWithoutItsOwnCorrelationCookie()
+    {
+        await SignInSuccessfullyAsync();
+        var tokenId = CurrentAuthTokenId;
+
+        using (
+            var response = await Client.GetAsync(
+                $"{AppRoutes.FederatedSignInCallback}/google?code=forged&state=forged",
+                "cross-site"
+            )
+        )
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        Assert.Equal(tokenId, CurrentAuthTokenId);
+        Assert.DoesNotContain(
+            Client.LastSetCookies,
+            c =>
+                c.Name
+                    is AuthCookieManager.AUTH_TOKEN_COOKIE
+                        or AuthCookieManager.AUTH_TOKEN_ID_COOKIE
+        );
+    }
+
+    [Fact]
     public async Task SignOut_AsksFirst_ForALinkFromAnotherSite()
     {
         await SignInSuccessfullyAsync();

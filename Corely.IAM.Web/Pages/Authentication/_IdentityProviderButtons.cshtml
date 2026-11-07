@@ -1,0 +1,28 @@
+@using Corely.IAM.IdentityProviders.Enums
+@using Corely.IAM.Services
+@using Corely.IAM.Web.Extensions
+@model Corely.IAM.Web.Pages.Authentication.IdentityProviderButtonsModel
+@inject IFederatedSignInService FederatedSignInService
+@{
+    var providers = (await FederatedSignInService.ListIdentityProvidersAsync())
+        .Where(p => !Model.SignUp || p.AllowsSignUp)
+        .ToList();
+}
+
+@if (providers.Count > 0)
+{
+    <div class="d-flex align-items-center my-3 text-muted small">
+        <hr class="flex-grow-1" />
+        <span class="px-2">or</span>
+        <hr class="flex-grow-1" />
+    </div>
+    <div class="d-grid gap-2">
+        @foreach (var provider in providers)
+        {
+            <a class="btn btn-outline-secondary" data-identity-provider="@provider.Type"
+               href="@provider.Type.StartPath(FederatedSignInPurpose.SignIn, Model.ReturnUrl)">
+                <i class="bi @provider.Type.IconClass() me-2"></i>Continue with @provider.DisplayName
+            </a>
+        }
+    </div>
+}

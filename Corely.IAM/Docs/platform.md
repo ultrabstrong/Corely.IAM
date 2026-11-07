@@ -127,7 +127,7 @@ grant held in the platform account counts.
 | Area | Type | Holds |
 |------|------|-------|
 | Audit | `platform_audit_settings` (`PlatformSettings.RESOURCE_TYPE`) | Whether auditing is on, the longest retention, the actions accounts may record, what is recorded for system context and outside any account |
-| Security | `platform_security_settings` (`SecurityPolicy.RESOURCE_TYPE`) | Password rules, lockout, token lifetimes, two factor. See [below](#where-security-settings-come-from) |
+| Security | `platform_security_settings` (`SecurityPolicy.RESOURCE_TYPE`) | Password rules, lockout, token lifetimes, two factor, identity providers. See [below](#where-security-settings-come-from) and [Federated Sign-In](federated-sign-in.md) |
 
 A platform member holding Read on `audit` there reads every entry, and Delete on `audit` there
 purges any account's entries and those outside any account. See [Auditing](auditing.md).
@@ -200,6 +200,9 @@ whichever place they come from.
 | `IPlatformService.CompletePlatformOwnerPermissionsAsync()` | Gives the platform Owner role any missing full access rows; returns how many it added |
 | `IPlatformService.GetSecuritySettingsAsync()` | The security settings in force; needs Read on `platform_security_settings` in the platform account |
 | `IPlatformService.UpdateSecuritySettingsAsync(SecurityPolicy)` | Saves them; needs Update there. `NotFoundError` without a platform account |
+| `IPlatformService.GetIdentityProvidersAsync()` | Every identity provider's settings, credentials left out; needs Read on `platform_security_settings` |
+| `IPlatformService.UpdateIdentityProviderAsync(UpdateIdentityProviderRequest)` | Saves one provider, encrypting a new credential; needs Update there. `NotFoundError` without a platform account |
+| `IPlatformService.CountSoleSignInUsersAsync(IdentityProviderType)` | How many users can sign in only with that provider; needs Read there |
 | `ISecurityPolicyProvider.GetPolicyAsync()` | The security settings in force, with no permission check, for code that applies them |
 | `EffectiveRole.ViaPlatformAccount` | True when a role in effective permissions comes from the platform account |
 | `DeregisterAccountResultCode.PlatformAccountError` | Refusal to delete the platform account |

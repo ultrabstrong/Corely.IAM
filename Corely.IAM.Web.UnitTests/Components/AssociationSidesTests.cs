@@ -60,8 +60,6 @@ public class AssociationSidesTests
 
     private static readonly Dictionary<string, string> _exempt = new()
     {
-        [nameof(IRegistrationService.RegisterUserWithGoogleAsync)] =
-            "Creates a user from a Google sign in; it links nothing.",
         [nameof(IRegistrationService.RegisterUserWithAccountAsync)] =
             "A user joins an account by invitation: the account page creates it and the user accepts it, because no account may list users outside itself.",
         [nameof(IDeregistrationService.DeregisterUserFromAccountAsync)] =

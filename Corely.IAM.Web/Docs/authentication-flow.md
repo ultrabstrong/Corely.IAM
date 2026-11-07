@@ -46,8 +46,9 @@ When TOTP is enabled for a user, sign-in (password or identity provider) returns
 
 ## Identity Provider Flow
 
-Each enabled provider gets a "Continue with" button on `/signin`, and on `/register` when it allows
-sign up. The button is a plain link, so the page never loads the provider's script. See
+Each enabled provider gets a "Sign in with" button on `/signin`, and on `/register` when it allows
+sign up. The button is a plain link, so the page never loads the provider's script. Every logo is
+bundled in the package, so no button needs an outside image source. See
 [Federated Sign-In](../../Corely.IAM/Docs/federated-sign-in.md) for the rules.
 
 1. `/signin/start/{provider}` (GET) calls `IFederatedSignInService.StartFederatedSignInAsync()`,

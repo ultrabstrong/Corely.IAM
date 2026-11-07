@@ -229,12 +229,10 @@
     {
         <div class="mb-3">
             <label class="form-label">Sign in again with an account linked to you to prove it is you</label>
-            <div class="d-grid gap-2">
+            <div class="idp-buttons">
                 @foreach (var provider in ProofProviders)
                 {
-                    <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => ProveWith(provider.Type)">
-                        <i class="bi @provider.Type.IconClass() me-2"></i>Continue with @provider.DisplayName
-                    </button>
+                    <IdentityProviderButton Type="provider.Type" OnClick="() => ProveWith(provider.Type)" />
                 }
             </div>
         </div>

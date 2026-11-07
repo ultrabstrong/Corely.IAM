@@ -354,4 +354,46 @@ public class UserProcessorListGetTests
         Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
         Assert.Null(result.Data);
     }
+
+    [Fact]
+    public async Task GetUserById_ReturnsOwnUser_WhenUserHasNoAccount()
+    {
+        var user = await CreateUserEntityAsync("noaccountuser", accounts: []);
+        SignInWithoutAccount(user);
+
+        var result = await _userProcessor.GetUserByIdAsync(user.Id, hydrate: false, default);
+
+        Assert.Equal(RetrieveResultCode.Success, result.ResultCode);
+        Assert.Equal(user.Id, result.Data!.Id);
+    }
+
+    [Fact]
+    public async Task GetUserById_ReturnsNotFoundForAnotherUser_WhenCallerHasNoAccount()
+    {
+        var caller = await CreateUserEntityAsync("noaccountcaller", accounts: []);
+        var other = await CreateUserEntityAsync("noaccountother", accounts: []);
+        SignInWithoutAccount(caller);
+
+        var result = await _userProcessor.GetUserByIdAsync(other.Id, hydrate: false, default);
+
+        Assert.Equal(RetrieveResultCode.NotFoundError, result.ResultCode);
+        Assert.Null(result.Data);
+    }
+
+    private void SignInWithoutAccount(UserEntity user) =>
+        _serviceFactory
+            .GetRequiredService<IUserContextSetter>()
+            .SetUserContext(
+                new UserContext(
+                    new User
+                    {
+                        Id = user.Id,
+                        Username = user.Username,
+                        Email = user.Email,
+                    },
+                    null,
+                    "device1",
+                    []
+                )
+            );
 }

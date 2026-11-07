@@ -356,6 +356,16 @@ What turned out differently:
 5. The return URL cookie is gone: the return URL travels in the sealed correlation cookie.
 6. The table name is set with `FederatedIdentityEntity.TABLE_NAME`, since EF's pluralizing gave
    `FederatedIdentitys`.
+7. Every provider button is one `IdentityProviderButton` component: the same size and outline, the
+   provider's own logo from its official asset pack bundled in the package, and "Sign in with" each
+   provider, the only wording Microsoft allows. Google's G is cropped from Google's pre-approved
+   button, Google Sans (OFL) is bundled, and Facebook is blue in dark mode because Meta allows only
+   white or blue buttons. Amazon publishes no logo or custom button rules, so its gold button uses the
+   Bootstrap Icons glyph: the one button outside its provider's published rules, by the owner's choice.
+   Lists (linked identities, platform settings) show names only, since no provider's rules cover a
+   logo outside a sign in button.
+8. Sign up, and the provider buttons on sign in, show "By signing up (or continuing), you agree to our
+   Terms of Use and Privacy Policy" from an overridable `_SignUpTerms` partial.
 
 ## Sources
 

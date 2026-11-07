@@ -79,7 +79,8 @@ h1[tabindex="-1"]:focus {
 
 /* Auth pages */
 .auth-container {
-    margin-top: 15vh;
+    margin-block: auto;
+    padding-block: clamp(1rem, 4vh, 3rem);
 }
 
 .auth-card {
@@ -944,7 +945,8 @@ span.cell-icon {
 
     .iam-main .auth-container {
         width: 100%;
-        margin-top: 1rem;
+        margin-block: 0;
+        padding-block: 1rem;
     }
 }
 
@@ -1415,4 +1417,109 @@ span.cell-icon {
 
 .picker-item-text {
     overflow-wrap: anywhere;
+}
+
+@font-face {
+    font-family: "Google Sans";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("../fonts/google-sans-500-latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+.idp-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.idp-button {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    min-height: 48px;
+    padding: 0 16px;
+    border: 1px solid #747775;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #1f1f1f;
+    font-family: "Google Sans", Roboto, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.idp-button:hover {
+    background: #f6f7f8;
+    color: #1f1f1f;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.idp-button:focus-visible {
+    outline: 2px solid var(--bs-focus-ring-color);
+    outline-offset: 2px;
+}
+
+[data-bs-theme="dark"] .idp-button {
+    border-color: #8e918f;
+    background: #131314;
+    color: #e3e3e3;
+}
+
+[data-bs-theme="dark"] .idp-button:hover {
+    background: #1e1f20;
+    color: #e3e3e3;
+}
+
+.idp-logo {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.idp-amazon,
+[data-bs-theme="dark"] .idp-amazon {
+    border-color: #f5d47a;
+    background: #f5d47a;
+    color: #0f1111;
+}
+
+.idp-amazon:hover,
+[data-bs-theme="dark"] .idp-amazon:hover {
+    background: #f0c75e;
+    color: #0f1111;
+}
+
+[data-bs-theme="dark"] .idp-facebook {
+    border-color: #0866ff;
+    background: #0866ff;
+    color: #ffffff;
+}
+
+[data-bs-theme="dark"] .idp-facebook:hover {
+    background: #0757d9;
+    color: #ffffff;
+}
+
+.idp-dark {
+    display: none;
+}
+
+[data-bs-theme="dark"] .idp-light {
+    display: none;
+}
+
+[data-bs-theme="dark"] .idp-dark {
+    display: inline;
 }

@@ -259,7 +259,7 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         Button(cut, "Copy key").Click();
 
         Assert.Empty(cut.FindAll(".modal-body input[type=password]"));
-        Assert.Contains("Continue with Google", cut.Find(".modal-body").TextContent);
+        Assert.Contains("Sign in with Google", cut.Find(".modal-body").TextContent);
     }
 
     [Fact]
@@ -270,7 +270,7 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         var cut = RenderPanel(proofProviders: _googleOnly);
 
         Button(cut, "Copy key").Click();
-        Button(cut, "Continue with Google").Click();
+        Button(cut, "Sign in with Google").Click();
 
         var uri = Uri.UnescapeDataString(navigation.Uri);
         Assert.Contains("/signin/start/google?purpose=reauthenticate", uri);

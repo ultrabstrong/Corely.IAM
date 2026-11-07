@@ -16,7 +16,7 @@
         {
             var linked = LinkedIdentities.FirstOrDefault(i => i.Type == provider.Type);
             <div class="props-grid mb-2" data-identity-provider="@provider.Type">
-                <span class="prop-label"><i class="bi @provider.Type.IconClass() me-2"></i>@provider.DisplayName</span>
+                <span class="prop-label">@provider.DisplayName</span>
                 <span class="prop-value d-flex flex-wrap align-items-center gap-2">
                     @if (linked is not null)
                     {

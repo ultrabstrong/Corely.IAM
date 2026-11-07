@@ -1,0 +1,43 @@
+@using Corely.IAM.IdentityProviders.Enums
+
+@if (OnClick.HasDelegate)
+{
+    <button type="button" class="@CssClass" data-identity-provider="@Type" @onclick="OnClick">@Content</button>
+}
+else
+{
+    <a class="@CssClass" data-identity-provider="@Type" href="@Href">@Content</a>
+}
+
+@code {
+    private const string ASSET_PATH = "/_content/Corely.IAM.Web/img/identity-providers/";
+
+    [Parameter, EditorRequired]
+    public IdentityProviderType Type { get; set; }
+
+    [Parameter]
+    public string? Href { get; set; }
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    private string CssClass => $"idp-button idp-{Type.ToString().ToLowerInvariant()}";
+
+    private RenderFragment Content => @<text>@Logo<span>Sign in with @Type</span></text>;
+
+    private RenderFragment Logo =>
+        Type switch
+        {
+            IdentityProviderType.Google =>
+                @<span class="idp-logo"><img src="@(ASSET_PATH)google.svg" alt="" width="20" height="20" /></span>,
+            IdentityProviderType.Microsoft =>
+                @<span class="idp-logo"><img src="@(ASSET_PATH)microsoft.svg" alt="" width="20" height="20" /></span>,
+            IdentityProviderType.GitHub =>
+                @<span class="idp-logo"><img class="idp-light" src="@(ASSET_PATH)github-black.svg" alt="" width="20" height="20" /><img class="idp-dark" src="@(ASSET_PATH)github-white.svg" alt="" width="20" height="20" /></span>,
+            IdentityProviderType.Facebook =>
+                @<span class="idp-logo"><img class="idp-light" src="@(ASSET_PATH)facebook.png" alt="" width="20" height="20" /><img class="idp-dark" src="@(ASSET_PATH)facebook-white.png" alt="" width="20" height="20" /></span>,
+            IdentityProviderType.Amazon =>
+                @<span class="idp-logo"><i class="bi bi-amazon" aria-hidden="true"></i></span>,
+            _ => @<span class="idp-logo"></span>,
+        };
+}

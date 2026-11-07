@@ -6,17 +6,6 @@ internal static class IdentityProviderTypeExtensions
 {
     extension(IdentityProviderType type)
     {
-        public string IconClass() =>
-            type switch
-            {
-                IdentityProviderType.Google => "bi-google",
-                IdentityProviderType.Microsoft => "bi-microsoft",
-                IdentityProviderType.GitHub => "bi-github",
-                IdentityProviderType.Facebook => "bi-facebook",
-                IdentityProviderType.Amazon => "bi-amazon",
-                _ => "bi-box-arrow-in-right",
-            };
-
         public string StartPath(FederatedSignInPurpose purpose, string? returnUrl)
         {
             var query = new List<string>();

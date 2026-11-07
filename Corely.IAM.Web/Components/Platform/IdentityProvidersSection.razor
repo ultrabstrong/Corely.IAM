@@ -9,7 +9,6 @@
         var editing = _editing?.Type == provider.Type;
         <div class="mb-3 pb-3 border-bottom" data-identity-provider="@provider.Type">
             <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                <i class="bi @provider.Type.IconClass()"></i>
                 <strong>@provider.Type</strong>
                 @if (!string.IsNullOrWhiteSpace(provider.ClientId))
                 {

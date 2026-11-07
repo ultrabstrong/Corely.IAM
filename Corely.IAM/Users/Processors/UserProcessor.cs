@@ -524,6 +524,7 @@ internal class UserProcessor(
     )
     {
         UserEntity? userEntity;
+        var isOwnUser = _userContextProvider.GetUserContext()?.User?.Id == userId;
 
         Guid? currentAccountId =
             !accountId.IsAny ? accountId.Id
@@ -535,7 +536,7 @@ internal class UserProcessor(
             userEntity = await _userRepo.GetAsync(
                 u =>
                     u.Id == userId
-                    && (accountId.IsAny || u.Accounts!.Any(a => a.Id == accountId.Id)),
+                    && (isOwnUser || accountId.IsAny || u.Accounts!.Any(a => a.Id == accountId.Id)),
                 include: currentAccountId == null
                     ? q => q.Include(u => u.Accounts).Include(u => u.Groups).Include(u => u.Roles)
                     : q =>
@@ -547,7 +548,8 @@ internal class UserProcessor(
         else
         {
             userEntity = await _userRepo.GetAsync(u =>
-                u.Id == userId && (accountId.IsAny || u.Accounts!.Any(a => a.Id == accountId.Id))
+                u.Id == userId
+                && (isOwnUser || accountId.IsAny || u.Accounts!.Any(a => a.Id == accountId.Id))
             );
         }
 

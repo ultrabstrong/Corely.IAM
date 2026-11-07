@@ -58,7 +58,19 @@ public class FederatedSignInTests : FunctionalTestBase
         var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         Assert.Contains("href=\"/signin/start/google\"", html);
-        Assert.Contains("Continue with Google", html);
+        Assert.Contains("Sign in with Google", html);
+        Assert.Contains("By continuing, you agree to our", html);
+    }
+
+    [Fact]
+    public async Task RegisterPage_ShowsTheSignUpTerms()
+    {
+        using var response = await Client.GetAsync(AppRoutes.Register);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        Assert.Contains("By signing up, you agree to our", html);
+        Assert.Contains($"href=\"{AppRoutes.Terms}\"", html);
+        Assert.Contains($"href=\"{AppRoutes.Privacy}\"", html);
     }
 
     [Fact]

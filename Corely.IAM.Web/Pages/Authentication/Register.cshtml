@@ -45,6 +45,7 @@
     </form>
 
     @await Html.PartialAsync("_IdentityProviderButtons", new Corely.IAM.Web.Pages.Authentication.IdentityProviderButtonsModel(true, null))
+    @await Html.PartialAsync("_SignUpTerms", new Corely.IAM.Web.Pages.Authentication.SignUpTermsModel(false))
 </div>
 
 @section Scripts {

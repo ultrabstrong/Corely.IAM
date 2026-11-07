@@ -1,5 +1,6 @@
 @using Corely.IAM.IdentityProviders.Enums
 @using Corely.IAM.Services
+@using Corely.IAM.Web.Components.Shared
 @using Corely.IAM.Web.Extensions
 @model Corely.IAM.Web.Pages.Authentication.IdentityProviderButtonsModel
 @inject IFederatedSignInService FederatedSignInService
@@ -16,13 +17,16 @@
         <span class="px-2">or</span>
         <hr class="flex-grow-1" />
     </div>
-    <div class="d-grid gap-2">
+    <div class="idp-buttons">
         @foreach (var provider in providers)
         {
-            <a class="btn btn-outline-secondary" data-identity-provider="@provider.Type"
-               href="@provider.Type.StartPath(FederatedSignInPurpose.SignIn, Model.ReturnUrl)">
-                <i class="bi @provider.Type.IconClass() me-2"></i>Continue with @provider.DisplayName
-            </a>
+            @(await Html.RenderComponentAsync<IdentityProviderButton>(
+                RenderMode.Static,
+                new { Type = provider.Type, Href = provider.Type.StartPath(FederatedSignInPurpose.SignIn, Model.ReturnUrl) }))
         }
     </div>
+    @if (!Model.SignUp && providers.Any(p => p.AllowsSignUp))
+    {
+        @await Html.PartialAsync("_SignUpTerms", new Corely.IAM.Web.Pages.Authentication.SignUpTermsModel(true))
+    }
 }

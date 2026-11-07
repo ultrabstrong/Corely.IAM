@@ -147,6 +147,12 @@ flight:
 <script src="/_content/Corely.IAM.Web/js/form-busy.js"></script>
 ```
 
+**Point the sign up notice at your own terms.** Sign up, and the identity provider buttons on sign in
+(which sign a new person up), show "By signing up, you agree to our Terms of Use and Privacy Policy",
+linking to this package's `/terms` and `/privacy` pages. An app file at
+`Pages/Authentication/_SignUpTerms.cshtml` replaces it with your own wording and links; an empty one
+hides it.
+
 Your own layout's `[Authorize]` pages send an anonymous visitor to `/signin` through the
 `RedirectToLogin` component, with the page they asked for as the return URL:
 

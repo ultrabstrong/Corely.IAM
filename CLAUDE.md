@@ -171,10 +171,12 @@ git push origin Corely.IAM-v2.3.2
   version already on nuget.org fails the push rather than being skipped.
 - The migration CLI's major must equal `Corely.IAM`'s at that commit: CLI 2.x targets IAM 2.x.
 - Tags are pushed only with the owner's say-so. A published version cannot be deleted.
-- **Tag a commit whose message has no `[skip ci]`, and push each tag in its own `git push`.** GitHub
-  starts no workflow for a push whose commit says `[skip ci]`, tags included, and none at all when more
-  than three tags arrive in one push. Either leaves the tag on GitHub with nothing published, and
-  fixing it means deleting the remote tag, which branch protection and auto mode both resist.
+- **Tag a release commit made for the purpose, and push each tag in its own `git push`.** Just before
+  tagging, commit (empty if nothing changed) with a message that only names the release, such as
+  "Release Corely.IAM 7.1.0". GitHub starts no workflow for a push whose commit message contains its
+  skip marker anywhere, even quoted in an explanation, and none at all when more than three tags
+  arrive in one push. Either leaves the tag on GitHub with nothing published, and fixing it means
+  deleting the remote tag, which auto mode blocks. Check `git log -1 --format=%B` before tagging.
 - **Work merges and releases as it lands, one plan at a time.** The usual cycle is: pick up one plan,
   build it, merge it, bump the version, release. Plans waiting in `Plans/New/` never affect that.
 - **The one exception is a file in `Plans/InProgress/`.** Before tagging, list that folder. If it is

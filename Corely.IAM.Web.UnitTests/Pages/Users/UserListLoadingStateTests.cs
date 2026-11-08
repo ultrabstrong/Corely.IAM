@@ -24,6 +24,7 @@ public class UserListLoadingStateTests : TestContext
 
     public UserListLoadingStateTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         _mockUserContextAccessor
             .Setup(x => x.GetUserContextAsync())
             .ReturnsAsync(

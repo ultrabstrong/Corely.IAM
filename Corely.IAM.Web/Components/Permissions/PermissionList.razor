@@ -144,10 +144,6 @@ else
 <ConfirmModal @ref="_confirmModal" Title="Delete Permission" Message="@_confirmMessage" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
-    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
-    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
-    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
-    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
 
     private string? _newResourceType;
     private string? _newResourceId;
@@ -163,14 +159,14 @@ else
     private List<ResourceTypeInfo> _grantableResourceTypes = [];
     private IReadOnlySet<AuthAction> _grantableActions = new HashSet<AuthAction>();
 
-    protected override async Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync(IServiceProvider services)
     {
         if (_resourceTypes.Count == 0)
         {
             _resourceTypes = ResourceTypeRegistry.GetAll();
             foreach (var rt in _resourceTypes)
             {
-                if ((await AuthorizationProvider.GetGrantableActionsAsync(rt.Name, Guid.Empty)).Count > 0)
+                if ((await services.GetRequiredService<IAuthorizationProvider>().GetGrantableActionsAsync(rt.Name, Guid.Empty)).Count > 0)
                     _grantableResourceTypes.Add(rt);
             }
         }
@@ -190,7 +186,7 @@ else
                 _ => null
             };
         }
-        var result = await RetrievalService.ListPermissionsAsync(new ListPermissionsRequest(CurrentAccountId, filter, order, _skip, _take));
+        var result = await services.GetRequiredService<IRetrievalService>().ListPermissionsAsync(new ListPermissionsRequest(CurrentAccountId, filter, order, _skip, _take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             _items = result.Data.Items;
@@ -210,11 +206,13 @@ else
 
     private async Task RefreshGrantableActionsAsync()
     {
-        _grantableActions = string.IsNullOrWhiteSpace(_newResourceType)
+        var resourceType = _newResourceType;
+        var resourceId = Guid.TryParse(_newResourceId, out var parsed) ? parsed : Guid.Empty;
+        _grantableActions = string.IsNullOrWhiteSpace(resourceType)
             ? new HashSet<AuthAction>()
-            : await AuthorizationProvider.GetGrantableActionsAsync(
-                _newResourceType,
-                Guid.TryParse(_newResourceId, out var parsed) ? parsed : Guid.Empty);
+            : await InOperationAsync(services =>
+                services.GetRequiredService<IAuthorizationProvider>().GetGrantableActionsAsync(resourceType, resourceId)
+            ) ?? new HashSet<AuthAction>();
         _newCreate &= _grantableActions.Contains(AuthAction.Create);
         _newRead &= _grantableActions.Contains(AuthAction.Read);
         _newUpdate &= _grantableActions.Contains(AuthAction.Update);
@@ -226,13 +224,13 @@ else
     {
         if (string.IsNullOrWhiteSpace(_newResourceType)) return;
         var resourceId = Guid.TryParse(_newResourceId, out var parsed) ? parsed : Guid.Empty;
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await RegistrationService.RegisterPermissionAsync(
+            var result = await services.GetRequiredService<IRegistrationService>().RegisterPermissionAsync(
                 new RegisterPermissionRequest(CurrentAccountId, _newResourceType, resourceId, _newCreate, _newRead, _newUpdate, _newDelete, _newExecute, string.IsNullOrWhiteSpace(_newDescription) ? null : _newDescription.Trim()));
             SetResultMessage(result.ResultCode == CreatePermissionResultCode.Success, "Permission created.", result.Message);
             ResetCreateForm();
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
@@ -257,11 +255,11 @@ else
 
     private async Task DeleteAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterPermissionAsync(new DeregisterPermissionRequest(_confirmItemId, CurrentAccountId));
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterPermissionAsync(new DeregisterPermissionRequest(_confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterPermissionResultCode.Success, "Permission deleted.", result.Message);
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 }

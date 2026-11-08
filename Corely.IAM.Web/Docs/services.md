@@ -11,6 +11,7 @@ Services registered by `AddIAMWeb()` and `AddIAMWebBlazor()` for cookie manageme
 | `IBlazorUserContextAccessor` | `BlazorUserContextAccessor` | Scoped | `AddIAMWebBlazor()` |
 | `AuthenticationStateProvider` | `IamAuthenticationStateProvider` | Scoped | `AddIAMWebBlazor()` |
 | `IAccountDisplayState` | `AccountDisplayState` | Scoped | `AddIAMWebBlazor()` |
+| `IOperationScopes` | `OperationScopes` | Scoped | `AddIAMWebBlazor()` |
 
 ## IAuthCookieManager
 
@@ -75,3 +76,25 @@ public interface IAccountDisplayState
 
 - Set by `AccountDetail` page when account name changes
 - NavBar subscribes to `OnChanged` to update display
+
+## IOperationScopes
+
+Runs one user visible action of a Blazor component in a DI scope of its own, signed in with the tab's
+auth token and disposed when the action ends, so every read sees the database as it is now.
+`OperationComponentBase` and the page base classes wrap it as `InOperationAsync`.
+
+```csharp
+public interface IOperationScopes
+{
+    bool HasSession { get; }
+    Task<T?> RunAsync<T>(Func<IServiceProvider, Task<T>> work);
+    Task<bool> RunAsync(Func<IServiceProvider, Task> work);
+}
+```
+
+- The token is read once per tab, from the request that opened it: a circuit's `HttpContext` is fixed
+  when it connects.
+- Without a session (`HasSession` false) no work runs and nothing navigates; the caller decides
+  whether the visitor must sign in.
+- When the token no longer signs in (expired or revoked), no work runs and the current page reloads,
+  which renews the session from the refresh token or signs the user out.

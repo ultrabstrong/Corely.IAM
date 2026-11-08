@@ -117,8 +117,6 @@ else
 </ConfirmModal>
 
 @code {
-    private IPlatformService PlatformService => ScopedServices.GetRequiredService<IPlatformService>();
-    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
 
     private const string PASSWORDS = "Passwords";
     private const string SIGN_IN = "Sign in";
@@ -151,9 +149,9 @@ else
     private HashSet<string> _apiKeyResourceTypes = new(StringComparer.OrdinalIgnoreCase);
     private IReadOnlyList<ResourceTypeInfo> _resourceTypes = [];
 
-    protected override async Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync(IServiceProvider services)
     {
-        var result = await PlatformService.GetSecuritySettingsAsync();
+        var result = await services.GetRequiredService<IPlatformService>().GetSecuritySettingsAsync();
         if (result.ResultCode != RetrieveResultCode.Success || result.Settings is null)
         {
             _loadFailed = true;
@@ -163,11 +161,11 @@ else
         }
 
         _settings = result.Settings;
-        _canUpdate = await AuthorizationProvider.IsAuthorizedAsync(
+        _canUpdate = await services.GetRequiredService<IAuthorizationProvider>().IsAuthorizedAsync(
             AuthAction.Update,
             SecurityPolicy.RESOURCE_TYPE
         );
-        _resourceTypes = [.. ScopedServices.GetRequiredService<IResourceTypeRegistry>().GetAll()];
+        _resourceTypes = [.. services.GetRequiredService<IResourceTypeRegistry>().GetAll()];
         Reset(PASSWORDS);
         Reset(SIGN_IN);
         Reset(TWO_FACTOR);
@@ -280,10 +278,10 @@ else
 
     private async Task SaveAsync(string section)
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
             var settings = WithEdits(section);
-            var result = await PlatformService.UpdateSecuritySettingsAsync(settings);
+            var result = await services.GetRequiredService<IPlatformService>().UpdateSecuritySettingsAsync(settings);
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, $"{section} settings saved.", result.Message);
             if (result.ResultCode == ModifyResultCode.Success)
             {

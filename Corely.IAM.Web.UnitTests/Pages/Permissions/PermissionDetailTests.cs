@@ -30,6 +30,7 @@ public class PermissionDetailTests : BunitContext
 
     public PermissionDetailTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         _permission = new Permission
         {
             Id = _permissionId,

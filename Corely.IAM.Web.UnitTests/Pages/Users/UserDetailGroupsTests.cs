@@ -28,6 +28,7 @@ public class UserDetailGroupsTests : BunitContext
 
     public UserDetailGroupsTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddSingleton<IIamWebLinks>(new FakeIamWebLinks());
         Services.AddSingleton(_mockUserContextAccessor.Object);

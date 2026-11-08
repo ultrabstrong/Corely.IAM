@@ -100,24 +100,22 @@ CSS is auto-served from `_content/Corely.IAM.Web/`. Reference it in your layout:
 
 ## Your Own Blazor Pages
 
-Blazor Server keeps one DI scope per browser tab, so components that inject IAM services share one
-`DbContext`, and two loading at once fail with "A second operation was started on this context
-instance". Two rules avoid it:
+Blazor Server keeps one DI scope per browser tab, for as long as the tab is open. A component that
+injects IAM services keeps one `DbContext` for that long: it returns rows it already loaded instead of
+what the database holds now, and two components loading at once fail with "A second operation was
+started on this context instance". Two rules avoid both:
 
-1. A component that calls services inherits `OwningComponentBase` (or one of the
-   [base classes](base-classes.md), which do) and takes them from `ScopedServices`. Unless it inherits
-   `AuthenticatedPageBase`, it signs its scope in first:
-
-   ```csharp
-   await ScopedServices.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
-   ```
-
+1. A component that calls services inherits `OperationComponentBase` (or one of the
+   [base classes](base-classes.md), which do) and runs each action through `InOperationAsync`, taking
+   what it needs from the provider it is handed. Each action gets a scope of its own, signed in and
+   disposed when it ends. A component that cannot take a base class injects `IOperationScopes` and
+   calls `RunAsync` the same way.
 2. Such a component never uses `@inject` or `[Inject]` for a scoped service that reaches the database,
-   because property injection resolves from the tab's scope. Singletons, framework services and
+   and never keeps one in a field, because both outlive the action. Singletons, framework services and
    `IAccountDisplayState` stay injected.
 
-A component that only renders what it is given needs neither.
-
+A component that only renders what it is given needs neither. A layout that only shows who is signed
+in may keep `IBlazorUserContextAccessor` injected.
 ## Simple Apps
 
 An app that uses IAM for sign-in only (users without accounts, or one shared account) usually
@@ -181,6 +179,7 @@ Working examples: `Corely.IAM.Demos.UsersOnly` and `Corely.IAM.Demos.SharedAccou
 | Service | Lifetime | Purpose |
 |---------|----------|---------|
 | `IBlazorUserContextAccessor` | Scoped | Cached user context for Blazor components |
+| `IOperationScopes` | Scoped | A signed in DI scope per user action, for Blazor components |
 | `AuthenticationStateProvider` | Scoped | Blazor auth state derived from `UserContext` |
 | `IAccountDisplayState` | Scoped | Account name display + change notifications for the host's navigation |
 | `IIamWebLinks` | Singleton | The host's links, with `AddIAMWebBlazor<TLinks>()` only |

@@ -1,6 +1,6 @@
 @page "/"
 @attribute [Authorize]
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 @inject IDbContextFactory<NotesDbContext> DbFactory
 @inject TimeProvider TimeProvider
 
@@ -37,7 +37,6 @@ else
 }
 
 @code {
-    private IBlazorUserContextAccessor UserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
 
     private Guid _userId;
     private List<Note>? _notes;
@@ -45,8 +44,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var context = await UserContextAccessor.GetUserContextAsync();
-        _userId = context!.User!.Id;
+        var context = await InOperationAsync(services =>
+            services.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync()
+        );
+        if (context?.User == null)
+            return;
+        _userId = context.User.Id;
         await LoadAsync();
     }
 

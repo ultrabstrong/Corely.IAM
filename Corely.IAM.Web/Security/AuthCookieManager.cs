@@ -10,6 +10,10 @@ internal class AuthCookieManager(TimeProvider timeProvider) : IAuthCookieManager
     public const string REFRESH_TOKEN_COOKIE = "refresh_token";
     public const string DEVICE_ID_COOKIE = "device_id";
 
+    // The request still carries the old cookie after the middleware renews, so the new token
+    // travels with the request for whatever signs in later in it.
+    internal const string RENEWED_AUTH_TOKEN_ITEM = "Corely.IAM.Web.RenewedAuthToken";
+
     private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
 
     public void SetAuthCookies(

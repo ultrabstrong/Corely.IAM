@@ -19,6 +19,7 @@ public class PlatformSettingsRedirectTests : TestContext
 
     public PlatformSettingsRedirectTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         var userContextAccessor = new Mock<IBlazorUserContextAccessor>();
         userContextAccessor
             .Setup(x => x.GetUserContextAsync())

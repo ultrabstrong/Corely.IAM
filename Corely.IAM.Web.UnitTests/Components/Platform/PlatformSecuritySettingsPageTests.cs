@@ -25,6 +25,7 @@ public class PlatformSecuritySettingsTests : TestContext
 
     public PlatformSecuritySettingsTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         var userContextAccessor = new Mock<IBlazorUserContextAccessor>();
         userContextAccessor
             .Setup(x => x.GetUserContextAsync())

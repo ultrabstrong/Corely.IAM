@@ -12,11 +12,13 @@ using Microsoft.JSInterop;
 
 namespace Corely.IAM.Web.UnitTests.Components;
 
-public class OwningComponentInjectionTests
+public class ComponentInjectionTests
 {
+    // Shared across the tab on purpose, and never reaching the database themselves.
     private static readonly Type[] _sharedAcrossTheTab =
     [
         typeof(IAccountDisplayState),
+        typeof(IOperationScopes),
         typeof(NavigationManager),
         typeof(IJSRuntime),
     ];
@@ -40,9 +42,11 @@ public class OwningComponentInjectionTests
         return services;
     }
 
+    private static IEnumerable<Type> Components(IEnumerable<Type> types) =>
+        types.Where(t => typeof(IComponent).IsAssignableFrom(t));
+
     private static List<string> FindScopedInjections(IEnumerable<Type> types) =>
-        types
-            .Where(t => typeof(OwningComponentBase).IsAssignableFrom(t))
+        Components(types)
             .SelectMany(t =>
                 t.GetProperties(
                         BindingFlags.Instance
@@ -68,23 +72,35 @@ public class OwningComponentInjectionTests
             )
             ?.Lifetime;
 
-    private sealed class ComponentInjectingAScopedService : OwningComponentBase
+    private sealed class ComponentInjectingAScopedService : ComponentBase
     {
         [Inject]
         private IRetrievalService RetrievalService { get; set; } = null!;
     }
 
-    [Fact]
-    public void OwningComponents_InjectNoScopedServices_OutsideTheTabSharedAllowList()
-    {
-        var types = typeof(AuthenticatedPageBase).Assembly.GetTypes();
+    private static Type[] WebComponents() => typeof(AuthenticatedPageBase).Assembly.GetTypes();
 
-        Assert.Contains(types, t => typeof(OwningComponentBase).IsAssignableFrom(t));
+    [Fact]
+    public void Components_InjectNoScopedServices_OutsideTheTabSharedAllowList()
+    {
+        var types = WebComponents();
+
+        Assert.Contains(types, t => typeof(OperationComponentBase).IsAssignableFrom(t));
         Assert.Empty(FindScopedInjections(types));
     }
 
     [Fact]
-    public void FindScopedInjections_ReportsAScopedServiceInjectedIntoAnOwningComponent()
+    public void Components_OwnNoScopeForTheirLifetime_ForEveryComponent()
+    {
+        var owning = Components(WebComponents())
+            .Where(t => typeof(OwningComponentBase).IsAssignableFrom(t))
+            .Select(t => t.Name);
+
+        Assert.Empty(owning);
+    }
+
+    [Fact]
+    public void FindScopedInjections_ReportsAScopedService_ForAnyComponent()
     {
         var found = FindScopedInjections([typeof(ComponentInjectingAScopedService)]);
 

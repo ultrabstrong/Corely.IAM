@@ -84,6 +84,7 @@ builder.Services.AddIAMServicesWithEF(builder.Configuration, securityConfigProvi
 
 `AddIAMWebBlazor<TLinks>()` registers:
 - `IBlazorUserContextAccessor`: access the current user context from Blazor components
+- `IOperationScopes`: a signed in DI scope per user action, so a component never reads stale rows
 - `AuthenticationStateProvider`: Blazor auth state backed by the cookie
 - `IAccountDisplayState`: reactive state for displaying the current account name in the navbar
 - Cascading authentication state
@@ -252,3 +253,4 @@ Import the library's namespace in your `_Imports.razor` or reference components 
 - The library targets **net10.0** and uses **Blazor Interactive Server** render mode throughout. Pre-rendering is disabled in every shell (`prerender: false`).
 - All management components inherit from base classes in `Components/` (`EntityDetailPageBase`, `EntityListPageBase`, `AuthenticatedPageBase`) which handle loading state, error messages, confirmation dialogs, and navigation guards.
 - The `IBlazorUserContextAccessor` service is the correct way to access the current user context from Blazor components. Do not use `IHttpContextAccessor` directly in Blazor components.
+- A Blazor component that calls services runs each action through `InOperationAsync` (from `OperationComponentBase` or the page base classes) and never injects a scoped service; see [Your Own Blazor Pages](Docs/setup.md#your-own-blazor-pages).

@@ -35,6 +35,7 @@ public class RoleDetailTests : BunitContext
 
     public RoleDetailTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         _role = new Role
         {
             Id = _roleId,

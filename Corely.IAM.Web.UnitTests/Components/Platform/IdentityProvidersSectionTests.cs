@@ -4,6 +4,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Components.Platform;
 using Corely.IAM.Web.Services;
+using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using TestContext = Bunit.TestContext;
 
@@ -16,6 +17,7 @@ public class IdentityProvidersSectionTests : TestContext
 
     public IdentityProvidersSectionTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         Services.AddSingleton(_platform.Object);
         Services.AddSingleton(new Mock<IBlazorUserContextAccessor>().Object);
         _platform

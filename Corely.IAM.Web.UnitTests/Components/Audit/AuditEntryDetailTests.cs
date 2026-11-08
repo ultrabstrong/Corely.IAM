@@ -35,6 +35,7 @@ public class AuditEntryDetailTests : TestContext
 
     public AuditEntryDetailTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         JSInterop.Mode = JSRuntimeMode.Loose;
         var userContextAccessor = new Mock<IBlazorUserContextAccessor>();
         userContextAccessor

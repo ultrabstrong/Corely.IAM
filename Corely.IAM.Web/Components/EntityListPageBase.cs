@@ -71,6 +71,7 @@ public abstract class EntityListPageBase<TItem> : EntityPageBase
 
     protected override ValueTask DisposeAsyncCore()
     {
+        _debounceCts?.Cancel();
         _debounceCts?.Dispose();
         return base.DisposeAsyncCore();
     }

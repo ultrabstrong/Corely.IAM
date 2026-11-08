@@ -1,4 +1,4 @@
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 
 <div class="section-divider mb-4">
     <div class="section-divider-label">Identity providers</div>
@@ -107,7 +107,6 @@
 @code {
     public const int CERTIFICATE_MAX_BYTES = 65536;
 
-    private IPlatformService PlatformService => ScopedServices.GetRequiredService<IPlatformService>();
 
     [Parameter]
     public bool CanUpdate { get; set; }
@@ -125,15 +124,11 @@
 
     private string CallbackPattern => $"{Navigation.BaseUri.TrimEnd('/')}{AppRoutes.FederatedSignInCallback}/<provider>";
 
-    protected override async Task OnInitializedAsync()
-    {
-        await ScopedServices.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
-        await LoadAsync();
-    }
+    protected override Task OnInitializedAsync() => InOperationAsync(LoadAsync);
 
-    private async Task LoadAsync()
+    private async Task LoadAsync(IServiceProvider services)
     {
-        var result = await PlatformService.GetIdentityProvidersAsync();
+        var result = await services.GetRequiredService<IPlatformService>().GetIdentityProvidersAsync();
         _providers = result.Providers ?? [];
     }
 
@@ -177,7 +172,10 @@
         if (_editing is null) return;
         if (provider.Enabled && !_editing.Enabled)
         {
-            var count = await PlatformService.CountSoleSignInUsersAsync(provider.Type);
+            var count = await InOperationAsync(services =>
+                services.GetRequiredService<IPlatformService>().CountSoleSignInUsersAsync(provider.Type)
+            );
+            if (count is null) return;
             _turnOffMessage = count.Count == 0
                 ? $"No user signs in only with {provider.Type}. Its settings and linked accounts are kept."
                 : $"{count.Count} {(count.Count == 1 ? "user signs" : "users sign")} in only with {provider.Type}. They cannot sign in, or prove it is them, until it is turned back on. Its settings and linked accounts are kept.";
@@ -194,7 +192,9 @@
         try
         {
             var edit = _editing;
-            var result = await PlatformService.UpdateIdentityProviderAsync(
+            await InOperationAsync(async services =>
+            {
+            var result = await services.GetRequiredService<IPlatformService>().UpdateIdentityProviderAsync(
                 new UpdateIdentityProviderRequest(
                     edit.Type,
                     edit.Enabled,
@@ -211,12 +211,13 @@
             {
                 SetMessage(true, $"{edit.Type} saved.");
                 _editing = null;
-                await LoadAsync();
+                await LoadAsync(services);
             }
             else
             {
                 SetMessage(false, result.Message);
             }
+            });
         }
         finally { _busy = false; }
     }

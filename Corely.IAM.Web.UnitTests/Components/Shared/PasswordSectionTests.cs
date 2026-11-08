@@ -3,6 +3,7 @@ using Corely.IAM.Services;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.Web.Components.Shared;
 using Corely.IAM.Web.Services;
+using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using TestContext = Bunit.TestContext;
 
@@ -20,6 +21,7 @@ public class PasswordSectionTests : TestContext
 
     public PasswordSectionTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         Services.AddSingleton(_registrationService.Object);
         Services.AddSingleton(_modificationService.Object);
         Services.AddSingleton(_deregistrationService.Object);

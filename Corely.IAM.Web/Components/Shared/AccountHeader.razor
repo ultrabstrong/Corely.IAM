@@ -1,4 +1,4 @@
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 @inject IIamWebLinks Links
 
 @if (_currentAccount != null)
@@ -10,13 +10,13 @@
 }
 
 @code {
-    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
 
     private Account? _currentAccount;
 
-    protected override async Task OnInitializedAsync()
-    {
-        var userContext = await BlazorUserContextAccessor.GetUserContextAsync();
-        _currentAccount = userContext?.CurrentAccount;
-    }
+    protected override Task OnInitializedAsync() =>
+        InOperationAsync(async services =>
+        {
+            var userContext = await services.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
+            _currentAccount = userContext?.CurrentAccount;
+        });
 }

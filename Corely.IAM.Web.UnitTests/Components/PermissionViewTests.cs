@@ -1,11 +1,9 @@
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Security.Providers;
-using Corely.IAM.Users.Models;
 using Corely.IAM.Web.Components.Shared;
 using Corely.IAM.Web.Services;
 using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
 using TestContext = Bunit.TestContext;
 
@@ -18,102 +16,85 @@ public class PermissionViewTests : TestContext
     private const string UNDETERMINED_MARKER = "undetermined-content";
 
     private readonly Mock<IAuthorizationProvider> _mockAuthorizationProvider = new();
-    private readonly Mock<IBlazorUserContextAccessor> _mockUserContextAccessor = new();
-
-    private UserContext? _userContext;
+    private readonly InlineOperationScopes _operationScopes;
 
     public PermissionViewTests()
     {
-        _mockUserContextAccessor
-            .Setup(x => x.GetUserContextAsync())
-            .ReturnsAsync(() => _userContext);
+        _operationScopes = new InlineOperationScopes(Services);
+        Services.AddSingleton<IOperationScopes>(_operationScopes);
+        Services.AddSingleton(_mockAuthorizationProvider.Object);
+        AuthorizeWith(Task.FromResult(true));
+    }
 
+    private void AuthorizeWith(Task<bool> answer) =>
         _mockAuthorizationProvider
             .Setup(x =>
                 x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>())
             )
-            .ReturnsAsync(() => _userContext != null);
+            .Returns(answer);
 
-        Services.AddSingleton(_mockAuthorizationProvider.Object);
-        Services.AddSingleton(_mockUserContextAccessor.Object);
-    }
-
-    private sealed class DeferredContextPage : ComponentBase
-    {
-        [Parameter]
-        public TaskCompletionSource Gate { get; set; } = null!;
-
-        [Parameter]
-        public Action OnContextResolved { get; set; } = null!;
-
-        [Parameter]
-        public bool ShowUndetermined { get; set; }
-
-        protected override async Task OnInitializedAsync()
-        {
-            await Gate.Task;
-            OnContextResolved();
-        }
-
-        protected override void BuildRenderTree(RenderTreeBuilder builder)
-        {
-            builder.OpenComponent<PermissionView>(0);
-            builder.AddComponentParameter(1, nameof(PermissionView.Action), AuthAction.Create);
-            builder.AddComponentParameter(2, nameof(PermissionView.Resource), RESOURCE);
-            builder.AddComponentParameter(
-                3,
-                nameof(PermissionView.ChildContent),
-                (RenderFragment)(
-                    b => b.AddMarkupContent(0, $"<div id=\"{AUTHORIZED_MARKER}\"></div>")
-                )
-            );
-            if (ShowUndetermined)
-            {
-                builder.AddComponentParameter(
-                    4,
-                    nameof(PermissionView.Undetermined),
-                    (RenderFragment)(
-                        b => b.AddMarkupContent(0, $"<div id=\"{UNDETERMINED_MARKER}\"></div>")
-                    )
-                );
-            }
-            builder.CloseComponent();
-        }
-    }
-
-    private IRenderedComponent<DeferredContextPage> RenderDeferredPage(
-        TaskCompletionSource gate,
-        bool showUndetermined = false
-    ) =>
-        Render<DeferredContextPage>(parameters =>
+    private IRenderedComponent<PermissionView> RenderView(Guid[]? resourceIds = null) =>
+        Render<PermissionView>(parameters =>
             parameters
-                .Add(p => p.Gate, gate)
-                .Add(p => p.ShowUndetermined, showUndetermined)
+                .Add(p => p.Action, AuthAction.Create)
+                .Add(p => p.Resource, RESOURCE)
+                .Add(p => p.ResourceIds, resourceIds)
                 .Add(
-                    p => p.OnContextResolved,
-                    () => _userContext = PageTestHelpers.CreateUserContext()
+                    p => p.ChildContent,
+                    (RenderFragment)(
+                        b => b.AddMarkupContent(0, $"<div id=\"{AUTHORIZED_MARKER}\"></div>")
+                    )
                 )
+                .Add(p => p.NotAuthorized, "<div id=\"denied\"></div>")
+                .Add(p => p.Undetermined, $"<div id=\"{UNDETERMINED_MARKER}\"></div>")
         );
 
     [Fact]
-    public void PermissionView_RendersAuthorized_WhenUserContextArrivesAfterTheFirstCheck()
+    public void PermissionView_RendersAuthorized_WhenTheCheckPasses()
     {
-        var gate = new TaskCompletionSource();
-        var cut = RenderDeferredPage(gate);
-
-        gate.SetResult();
+        var cut = RenderView();
 
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll($"#{AUTHORIZED_MARKER}")));
     }
 
     [Fact]
-    public void PermissionView_RendersNothing_WhileTheUserContextIsStillUnknown()
+    public void PermissionView_RendersNotAuthorized_WhenTheUserGenuinelyLacksThePermission()
     {
-        var gate = new TaskCompletionSource();
+        AuthorizeWith(Task.FromResult(false));
 
-        var cut = RenderDeferredPage(gate);
+        var cut = RenderView();
+
+        Assert.Single(cut.FindAll("#denied"));
+        Assert.Empty(cut.FindAll($"#{AUTHORIZED_MARKER}"));
+    }
+
+    [Fact]
+    public void PermissionView_RendersUndetermined_WhileTheCheckIsRunning()
+    {
+        var answer = new TaskCompletionSource<bool>();
+        AuthorizeWith(answer.Task);
+
+        var cut = RenderView();
+
+        Assert.Single(cut.FindAll($"#{UNDETERMINED_MARKER}"));
+        Assert.Empty(cut.FindAll($"#{AUTHORIZED_MARKER}"));
+        answer.SetResult(true);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Single(cut.FindAll($"#{AUTHORIZED_MARKER}"));
+            Assert.Empty(cut.FindAll($"#{UNDETERMINED_MARKER}"));
+        });
+    }
+
+    [Fact]
+    public void PermissionView_RendersNeitherAnswer_ForASessionThatEnded()
+    {
+        _operationScopes.SignedIn = false;
+
+        var cut = RenderView();
 
         Assert.Empty(cut.FindAll($"#{AUTHORIZED_MARKER}"));
+        Assert.Empty(cut.FindAll("#denied"));
         _mockAuthorizationProvider.Verify(
             x =>
                 x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
@@ -122,65 +103,36 @@ public class PermissionViewTests : TestContext
     }
 
     [Fact]
-    public void PermissionView_RendersNotAuthorized_WhenTheUserGenuinelyLacksThePermission()
+    public void PermissionView_RendersUndetermined_ForAnAnonymousVisitor()
     {
-        _userContext = PageTestHelpers.CreateUserContext();
-        _mockAuthorizationProvider
-            .Setup(x =>
-                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>())
-            )
-            .ReturnsAsync(false);
+        _operationScopes.HasSession = false;
 
-        var cut = Render<PermissionView>(parameters =>
-            parameters
-                .Add(p => p.Action, AuthAction.Create)
-                .Add(p => p.Resource, RESOURCE)
-                .Add(p => p.NotAuthorized, "<div id=\"denied\"></div>")
-        );
-
-        Assert.Single(cut.FindAll("#denied"));
-    }
-
-    [Fact]
-    public void PermissionView_ChecksOnce_WhenTheContextIsAlreadyAvailable()
-    {
-        _userContext = PageTestHelpers.CreateUserContext();
-        var gate = new TaskCompletionSource();
-        gate.SetResult();
-
-        var cut = RenderDeferredPage(gate);
-
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll($"#{AUTHORIZED_MARKER}")));
-        _mockAuthorizationProvider.Verify(
-            x =>
-                x.IsAuthorizedAsync(It.IsAny<AuthAction>(), It.IsAny<string>(), It.IsAny<Guid[]>()),
-            Times.Once
-        );
-    }
-
-    [Fact]
-    public void PermissionView_RendersUndetermined_WhileTheUserContextIsStillUnknown()
-    {
-        var gate = new TaskCompletionSource();
-
-        var cut = RenderDeferredPage(gate, showUndetermined: true);
+        var cut = RenderView();
 
         Assert.Single(cut.FindAll($"#{UNDETERMINED_MARKER}"));
-        Assert.Empty(cut.FindAll($"#{AUTHORIZED_MARKER}"));
+        Assert.Empty(cut.FindAll("#denied"));
     }
 
     [Fact]
-    public void PermissionView_ReplacesUndetermined_OnceTheContextResolves()
+    public void PermissionView_OpensNoOperation_ForAParentRenderWithTheSameQuestion()
     {
-        var gate = new TaskCompletionSource();
-        var cut = RenderDeferredPage(gate, showUndetermined: true);
+        var id = Guid.NewGuid();
+        var cut = RenderView([id]);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll($"#{AUTHORIZED_MARKER}")));
 
-        gate.SetResult();
+        cut.Render(parameters => parameters.Add(p => p.ResourceIds, new[] { id }));
 
-        cut.WaitForAssertion(() =>
-        {
-            Assert.Single(cut.FindAll($"#{AUTHORIZED_MARKER}"));
-            Assert.Empty(cut.FindAll($"#{UNDETERMINED_MARKER}"));
-        });
+        Assert.Equal(1, _operationScopes.Runs);
+    }
+
+    [Fact]
+    public void PermissionView_ChecksAgain_ForADifferentResource()
+    {
+        var cut = RenderView([Guid.NewGuid()]);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll($"#{AUTHORIZED_MARKER}")));
+
+        cut.Render(parameters => parameters.Add(p => p.ResourceIds, new[] { Guid.NewGuid() }));
+
+        Assert.Equal(2, _operationScopes.Runs);
     }
 }

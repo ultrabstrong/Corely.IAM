@@ -1,4 +1,4 @@
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 @using Corely.IAM.Web.Configuration
 @inject NavigationManager Navigation
 @inject IOptions<IAMWebOptions> IamWebOptions
@@ -9,16 +9,16 @@
 }
 
 @code {
-    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
-    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
 
     private bool _noneReadable;
 
     protected override async Task OnInitializedAsync()
     {
-        if (await BlazorUserContextAccessor.GetUserContextAsync() == null)
+        var pages = await InOperationAsync(services =>
+            IamWebOptions.Value.ReadablePlatformSettingsPagesAsync(services.GetRequiredService<IAuthorizationProvider>())
+        );
+        if (pages is null)
             return;
-        var pages = await IamWebOptions.Value.ReadablePlatformSettingsPagesAsync(AuthorizationProvider);
         if (pages.Count == 0)
         {
             _noneReadable = true;

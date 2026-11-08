@@ -223,12 +223,6 @@ else
 <ConfirmModal @ref="_deleteModal" Title="Delete Group" Message="@($"Permanently delete group '{_group?.Name}'? This cannot be undone.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
 @code {
-    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
-    private IModificationService ModificationService => ScopedServices.GetRequiredService<IModificationService>();
-    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
-    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
-    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
-    private ISecurityPolicyProvider SecurityPolicyProvider => ScopedServices.GetRequiredService<ISecurityPolicyProvider>();
 
     private Group? _group;
     private string _editName = string.Empty;
@@ -262,9 +256,9 @@ else
     private List<ChildRef> PagedRoles => (_group?.Roles ?? []).Skip(_rolesSkip).Take(RelationPageSize).ToList();
     private int RolesTotalCount => _group?.Roles?.Count ?? 0;
 
-    protected override async Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync(IServiceProvider services)
     {
-        var result = await RetrievalService.GetGroupAsync(Id, hydrate: true);
+        var result = await services.GetRequiredService<IRetrievalService>().GetGroupAsync(Id, hydrate: true);
         if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
         {
             _group = result.Item;
@@ -273,10 +267,10 @@ else
             _assignedUserIds = (_group.Users ?? []).Select(u => u.Id).ToHashSet();
             _assignedRoleIds = (_group.Roles ?? []).Select(r => r.Id).ToHashSet();
             _hiddenRoleIds = [.. _assignedRoleIds];
-            _canAddUsers = await AuthorizationProvider.CanGrantGroupAsync(Id);
+            _canAddUsers = await services.GetRequiredService<IAuthorizationProvider>().CanGrantGroupAsync(Id);
             _assignedApiKeyIds = (_group.ApiKeys ?? []).Select(k => k.Id).ToHashSet();
-            _showApiKeys = (await SecurityPolicyProvider.GetPolicyAsync()).AllowsApiKeysIn(UserContext?.CurrentAccount?.IsPlatformAccount == true)
-                && await AuthorizationProvider.IsAuthorizedAsync(AuthAction.Read, ApiKey.RESOURCE_TYPE);
+            _showApiKeys = (await services.GetRequiredService<ISecurityPolicyProvider>().GetPolicyAsync()).AllowsApiKeysIn(UserContext?.CurrentAccount?.IsPlatformAccount == true)
+                && await services.GetRequiredService<IAuthorizationProvider>().IsAuthorizedAsync(AuthAction.Read, ApiKey.RESOURCE_TYPE);
             _effectivePermissions = result.EffectivePermissions;
         }
     }
@@ -285,9 +279,9 @@ else
 
     private async Task DeleteAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterGroupAsync(new DeregisterGroupRequest(Id, CurrentAccountId));
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterGroupAsync(new DeregisterGroupRequest(Id, CurrentAccountId));
             if (result.ResultCode == DeregisterGroupResultCode.Success)
             {
                 NavigationManager.NavigateTo(Links.Groups(CurrentAccountId));
@@ -311,52 +305,54 @@ else
         _isEditing = false;
     }
 
-    private async Task<(List<PickerItem>, int)> FetchAvailableUsersAsync(int skip, int take)
+    private Task<(List<PickerItem>, int)> FetchAvailableUsersAsync(int skip, int take) =>
+        InOperationAsync<(List<PickerItem>, int)>(async services =>
     {
-        var result = await RetrievalService.ListUsersAsync(new ListUsersRequest(CurrentAccountId, Skip: skip, Take: take));
+        var result = await services.GetRequiredService<IRetrievalService>().ListUsersAsync(new ListUsersRequest(CurrentAccountId, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             var items = result.Data.Items.Select(u => new PickerItem(u.Id, u.Username, u.Email)).ToList();
             return (items, result.Data.TotalCount);
         }
         return ([], 0);
-    }
+    });
 
-    private async Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take)
+    private Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take) =>
+        InOperationAsync<(List<PickerItem>, int)>(async services =>
     {
-        var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(CurrentAccountId, Skip: skip, Take: take));
+        var result = await services.GetRequiredService<IRetrievalService>().ListRolesAsync(new ListRolesRequest(CurrentAccountId, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
-            var grantable = await AuthorizationProvider.GetGrantableRoleIdsAsync(result.Data.Items.Select(x => x.Id));
+            var grantable = await services.GetRequiredService<IAuthorizationProvider>().GetGrantableRoleIdsAsync(result.Data.Items.Select(x => x.Id));
             _hiddenRoleIds.UnionWith(result.Data.Items.Select(x => x.Id).Where(id => !grantable.Contains(id)));
             var items = result.Data.Items.Select(r => new PickerItem(r.Id, r.Name, r.Description)).ToList();
             return (items, result.Data.TotalCount);
         }
         return ([], 0);
-    }
+    });
 
     private async Task SavePropertiesAsync()
     {
         if (string.IsNullOrWhiteSpace(_editName)) return;
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await ModificationService.ModifyGroupAsync(new UpdateGroupRequest(Id, CurrentAccountId, _editName, _editDescription));
+            var result = await services.GetRequiredService<IModificationService>().ModifyGroupAsync(new UpdateGroupRequest(Id, CurrentAccountId, _editName, _editDescription));
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Group updated.", result.Message);
             if (result.ResultCode == ModifyResultCode.Success)
             {
                 _isEditing = false;
-                await ReloadAsync();
+                await ReloadAsync(services);
             }
         });
     }
 
     private async Task AddUsersAsync(List<Guid> userIds)
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await RegistrationService.RegisterUsersWithGroupAsync(new RegisterUsersWithGroupRequest(userIds, Id, CurrentAccountId));
+            var result = await services.GetRequiredService<IRegistrationService>().RegisterUsersWithGroupAsync(new RegisterUsersWithGroupRequest(userIds, Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == AddUsersToGroupResultCode.Success, $"{userIds.Count} user(s) added.", result.Message);
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
@@ -364,32 +360,33 @@ else
 
     private async Task RemoveUserAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterUsersFromGroupAsync(new DeregisterUsersFromGroupRequest([_confirmItemId], Id, CurrentAccountId));
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterUsersFromGroupAsync(new DeregisterUsersFromGroupRequest([_confirmItemId], Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterUsersFromGroupResultCode.Success, "User removed.", result.Message);
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
-    private async Task<(List<PickerItem>, int)> FetchAvailableApiKeysAsync(int skip, int take)
+    private Task<(List<PickerItem>, int)> FetchAvailableApiKeysAsync(int skip, int take) =>
+        InOperationAsync<(List<PickerItem>, int)>(async services =>
     {
-        var result = await RetrievalService.ListApiKeysAsync(new ListApiKeysRequest(CurrentAccountId, Skip: skip, Take: take));
+        var result = await services.GetRequiredService<IRetrievalService>().ListApiKeysAsync(new ListApiKeysRequest(CurrentAccountId, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             var items = result.Data.Items.Select(k => new PickerItem(k.Id, k.Name, k.Description)).ToList();
             return (items, result.Data.TotalCount);
         }
         return ([], 0);
-    }
+    });
 
     private async Task AddApiKeysAsync(List<Guid> apiKeyIds)
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await RegistrationService.RegisterApiKeysWithGroupAsync(new RegisterApiKeysWithGroupRequest(apiKeyIds, Id, CurrentAccountId));
+            var result = await services.GetRequiredService<IRegistrationService>().RegisterApiKeysWithGroupAsync(new RegisterApiKeysWithGroupRequest(apiKeyIds, Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == AddApiKeysToGroupResultCode.Success, $"{apiKeyIds.Count} API key(s) added.", result.Message);
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
@@ -397,21 +394,21 @@ else
 
     private async Task RemoveApiKeyAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterApiKeysFromGroupAsync(new DeregisterApiKeysFromGroupRequest([_confirmItemId], Id, CurrentAccountId));
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterApiKeysFromGroupAsync(new DeregisterApiKeysFromGroupRequest([_confirmItemId], Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterApiKeysFromGroupResultCode.Success, "API key removed.", result.Message);
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
     private async Task AddRolesAsync(List<Guid> roleIds)
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await RegistrationService.RegisterRolesWithGroupAsync(new RegisterRolesWithGroupRequest(roleIds, Id, CurrentAccountId));
+            var result = await services.GetRequiredService<IRegistrationService>().RegisterRolesWithGroupAsync(new RegisterRolesWithGroupRequest(roleIds, Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == AssignRolesToGroupResultCode.Success, $"{roleIds.Count} role(s) added.", result.Message);
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
@@ -419,11 +416,11 @@ else
 
     private async Task RemoveRoleAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterRolesFromGroupAsync(new DeregisterRolesFromGroupRequest([_confirmItemId], Id, CurrentAccountId));
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterRolesFromGroupAsync(new DeregisterRolesFromGroupRequest([_confirmItemId], Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterRolesFromGroupResultCode.Success, "Role removed.", result.Message);
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 }

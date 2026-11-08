@@ -1,4 +1,4 @@
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 @inject NavigationManager Navigation
 
 @if (_providers.Count > 0)
@@ -41,8 +41,6 @@
               OnConfirm="UnlinkAsync" />
 
 @code {
-    private IFederatedIdentityService FederatedIdentityService => ScopedServices.GetRequiredService<IFederatedIdentityService>();
-    private IFederatedSignInService FederatedSignInService => ScopedServices.GetRequiredService<IFederatedSignInService>();
 
     [Parameter]
     public IReadOnlyList<LinkedIdentity> LinkedIdentities { get; set; } = [];
@@ -57,11 +55,11 @@
     private string? _message;
     private AlertType _messageType;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await ScopedServices.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
-        _providers = await FederatedSignInService.ListIdentityProvidersAsync();
-    }
+    protected override async Task OnInitializedAsync() =>
+        _providers =
+            await InOperationAsync(services =>
+                services.GetRequiredService<IFederatedSignInService>().ListIdentityProvidersAsync()
+            ) ?? [];
 
     private void Link(IdentityProviderType type) =>
         Navigation.NavigateTo(
@@ -81,7 +79,12 @@
         _busy = true;
         try
         {
-            var result = await FederatedIdentityService.UnlinkFederatedIdentityAsync(_unlinkTarget.Type);
+            var type = _unlinkTarget.Type;
+            var result = await InOperationAsync(services =>
+                services.GetRequiredService<IFederatedIdentityService>().UnlinkFederatedIdentityAsync(type)
+            );
+            if (result is null)
+                return;
             if (result.ResultCode == UnlinkFederatedIdentityResultCode.Success)
             {
                 SetMessage(true, $"{_unlinkTarget.DisplayName} account unlinked.");

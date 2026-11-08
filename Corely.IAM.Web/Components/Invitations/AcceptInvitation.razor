@@ -29,7 +29,6 @@
 </div>
 
 @code {
-    private IInvitationService InvitationService => ScopedServices.GetRequiredService<IInvitationService>();
 
     private string? _token;
     private string? _message;
@@ -39,7 +38,7 @@
     [SupplyParameterFromQuery(Name = "token")]
     public string? TokenParam { get; set; }
 
-    protected override Task OnInitializedAuthenticatedAsync()
+    protected override Task OnInitializedAuthenticatedAsync(IServiceProvider services)
     {
         if (!string.IsNullOrWhiteSpace(TokenParam))
         {
@@ -62,7 +61,11 @@
                 return;
             }
 
-            var result = await InvitationService.AcceptInvitationAsync(new AcceptInvitationRequest(token));
+            var result = await InOperationAsync(services =>
+                services.GetRequiredService<IInvitationService>().AcceptInvitationAsync(new AcceptInvitationRequest(token))
+            );
+            if (result is null)
+                return;
             if (result.ResultCode == AcceptInvitationResultCode.Success && result.AccountId != null)
             {
                 NavigationManager.NavigateTo(

@@ -1,7 +1,7 @@
 @page "/profile"
 @attribute [Authorize]
 @using Corely.IAM.FederatedIdentities.Models
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 @inject NavigationManager NavigationManager
 
 <PageTitle>Profile</PageTitle>
@@ -18,8 +18,8 @@
 @if (_authMethodsLoaded)
 {
     <TotpSection />
-    <PasswordSection HasBasicAuth="_hasBasicAuth" HasLinkedIdentity="_linkedIdentities.Count > 0" OnStatusChanged="LoadAuthMethodsAsync" />
-    <LinkedIdentitiesSection LinkedIdentities="_linkedIdentities" OnStatusChanged="LoadAuthMethodsAsync" />
+    <PasswordSection HasBasicAuth="_hasBasicAuth" HasLinkedIdentity="_linkedIdentities.Count > 0" OnStatusChanged="() => InOperationAsync(LoadAuthMethodsAsync)" />
+    <LinkedIdentitiesSection LinkedIdentities="_linkedIdentities" OnStatusChanged="() => InOperationAsync(LoadAuthMethodsAsync)" />
 }
 else
 {
@@ -39,9 +39,6 @@ else
               OnConfirm="DeleteAsync" />
 
 @code {
-    private IBlazorUserContextAccessor UserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
-    private IFederatedIdentityService FederatedIdentityService => ScopedServices.GetRequiredService<IFederatedIdentityService>();
-    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
 
     private string? _username;
     private string? _email;
@@ -53,15 +50,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var user = (await UserContextAccessor.GetUserContextAsync())!.User!;
-        _username = user.Username;
-        _email = user.Email;
-        await LoadAuthMethodsAsync();
+        await InOperationAsync(async services =>
+        {
+            var user = (await services.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync())!.User!;
+            _username = user.Username;
+            _email = user.Email;
+            await LoadAuthMethodsAsync(services);
+        });
     }
 
-    private async Task LoadAuthMethodsAsync()
+    private async Task LoadAuthMethodsAsync(IServiceProvider services)
     {
-        var methods = await FederatedIdentityService.GetAuthMethodsAsync();
+        var methods = await services.GetRequiredService<IFederatedIdentityService>().GetAuthMethodsAsync();
         _hasBasicAuth = methods.HasBasicAuth;
         _linkedIdentities = methods.LinkedIdentities;
         _authMethodsLoaded = methods.ResultCode == AuthMethodsResultCode.Success;
@@ -69,7 +69,11 @@ else
 
     private async Task DeleteAsync()
     {
-        var result = await DeregistrationService.DeregisterUserAsync();
+        var result = await InOperationAsync(services =>
+            services.GetRequiredService<IDeregistrationService>().DeregisterUserAsync()
+        );
+        if (result is null)
+            return;
         if (result.ResultCode != DeregisterUserResultCode.Success)
         {
             _deleteError = result.Message;

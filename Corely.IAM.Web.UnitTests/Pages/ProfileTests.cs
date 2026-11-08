@@ -25,6 +25,7 @@ public class ProfileTests : TestContext
 
     public ProfileTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         Services.AddSingleton<IIamWebLinks>(new FakeIamWebLinks());
         Services.AddSingleton(TimeProvider.System);
         Services.AddSingleton(_mockUserContextAccessor.Object);

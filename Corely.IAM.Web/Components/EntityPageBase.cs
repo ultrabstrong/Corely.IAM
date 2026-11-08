@@ -18,17 +18,26 @@ public abstract class EntityPageBase : AuthenticatedPageBase
     protected Guid _confirmItemId;
     protected string _confirmMessage = "";
 
-    protected sealed override async Task OnInitializedAuthenticatedAsync() => await ReloadAsync();
+    protected sealed override Task OnInitializedAuthenticatedAsync(IServiceProvider services) =>
+        ReloadAsync(services);
 
-    protected abstract Task LoadCoreAsync();
+    /// <summary>Loads the page's data from the operation's services.</summary>
+    protected abstract Task LoadCoreAsync(IServiceProvider services);
 
-    protected async Task ReloadAsync()
+    /// <summary>Reloads the page in an operation of its own.</summary>
+    protected Task ReloadAsync() => LoadAsync(() => InOperationAsync(LoadCoreAsync));
+
+    /// <summary>Reloads the page in the operation already running, such as an action's.</summary>
+    protected Task ReloadAsync(IServiceProvider services) =>
+        LoadAsync(() => LoadCoreAsync(services));
+
+    private async Task LoadAsync(Func<Task> load)
     {
         _loading = true;
         _loadFailed = false;
         try
         {
-            await LoadCoreAsync();
+            await load();
         }
         catch (Exception ex)
         {
@@ -53,14 +62,18 @@ public abstract class EntityPageBase : AuthenticatedPageBase
         _messageType = AlertType.Warning;
     }
 
-    protected async Task ExecuteSafeAsync(Func<Task> action)
+    /// <summary>
+    /// Runs a user's action in an operation of its own, unless the page is busy. An action that
+    /// changes data reloads with <see cref="ReloadAsync(IServiceProvider)"/> in the same operation.
+    /// </summary>
+    protected async Task ExecuteSafeAsync(Func<IServiceProvider, Task> action)
     {
         if (_loading)
             return;
         _loading = true;
         try
         {
-            await action();
+            await InOperationAsync(action);
         }
         catch (Exception ex)
         {

@@ -1,5 +1,5 @@
 @using Corely.IAM.Web.Extensions
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 
 @if (_checkComplete)
 {
@@ -25,8 +25,6 @@ else if (Undetermined != null)
 }
 
 @code {
-    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
-    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
 
     [Parameter]
     public AuthAction Action { get; set; }
@@ -55,14 +53,9 @@ else if (Undetermined != null)
     private string _lastResource = string.Empty;
     private Guid[]? _lastResourceIds;
 
+    // A parent re-renders often; only a change of what is asked opens an operation.
     protected override async Task OnParametersSetAsync()
     {
-        if (await BlazorUserContextAccessor.GetUserContextAsync() == null)
-        {
-            _checkComplete = false;
-            return;
-        }
-
         if (
             _checkComplete
             && Action == _lastAction
@@ -73,14 +66,21 @@ else if (Undetermined != null)
             return;
         }
 
-        _lastAction = Action;
-        _lastResource = Resource;
-        _lastResourceIds = ResourceIds;
-        _isAuthorized = await AuthorizationProvider.IsAuthorizedAsync(
-            Action,
-            Resource,
-            ResourceIds ?? []
-        );
-        _checkComplete = true;
+        var (action, resource, resourceIds) = (Action, Resource, ResourceIds);
+        var signedIn = await InOperationAsync(async services =>
+        {
+            _isAuthorized = await services.GetRequiredService<IAuthorizationProvider>().IsAuthorizedAsync(
+                action,
+                resource,
+                resourceIds ?? []
+            );
+        });
+        _checkComplete = signedIn;
+        if (!signedIn)
+            return;
+
+        _lastAction = action;
+        _lastResource = resource;
+        _lastResourceIds = resourceIds;
     }
 }

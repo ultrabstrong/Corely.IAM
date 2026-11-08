@@ -269,14 +269,6 @@ else
 
 @code {
     private Guid Id => CurrentAccountId;
-    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
-    private IModificationService ModificationService => ScopedServices.GetRequiredService<IModificationService>();
-    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
-    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
-    private IInvitationService InvitationService => ScopedServices.GetRequiredService<IInvitationService>();
-    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
-    private IFederatedIdentityService FederatedIdentityService => ScopedServices.GetRequiredService<IFederatedIdentityService>();
-    private IFederatedSignInService FederatedSignInService => ScopedServices.GetRequiredService<IFederatedSignInService>();
 
     private string? _accountName;
     private string? _originalAccountName;
@@ -319,17 +311,20 @@ else
     private Func<KeyType, string?, string?, Task<RevealAccountKeyResult>>? RevealKeyHandler =>
         _canRevealKeys ? RevealKeyAsync : null;
 
-    protected override async Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync(IServiceProvider services)
     {
-        var result = await RetrievalService.GetAccountAsync(Id, hydrate: true);
+        PublicKeysAddress = services.GetService<LinkGenerator>()?.AccountJwksPath(CurrentAccountId) is { } path
+            ? NavigationManager.ToAbsoluteUri(path.TrimStart('/')).ToString()
+            : null;
+        var result = await services.GetRequiredService<IRetrievalService>().GetAccountAsync(Id, hydrate: true);
         if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
         {
             _accountName = result.Item.AccountName;
             _users = result.Item.Users ?? [];
             _effectivePermissions = result.EffectivePermissions;
             _canRevealKeys = UserContext?.User != null
-                && await AuthorizationProvider.IsAuthorizedAsync(AuthAction.Execute, Account.SECRET_KEYS_RESOURCE_TYPE, Id);
-            await LoadRevealProofAsync();
+                && await services.GetRequiredService<IAuthorizationProvider>().IsAuthorizedAsync(AuthAction.Execute, Account.SECRET_KEYS_RESOURCE_TYPE, Id);
+            await LoadRevealProofAsync(services);
         }
         else
         {
@@ -337,11 +332,11 @@ else
             return;
         }
 
-        await LoadInvitationsAsync();
-        await LoadKeyProvidersAsync();
+        await LoadInvitationsAsync(services);
+        await LoadKeyProvidersAsync(services);
     }
 
-    private async Task LoadInvitationsAsync()
+    private async Task LoadInvitationsAsync(IServiceProvider services)
     {
         var filterBuilder = Filter.For<Invitation>();
         var hasFilter = false;
@@ -370,7 +365,7 @@ else
             };
         }
 
-        var invResult = await InvitationService.ListInvitationsAsync(
+        var invResult = await services.GetRequiredService<IInvitationService>().ListInvitationsAsync(
             new ListInvitationsRequest(Id, filter, order, _invitationsSkip, InvitationPageSize, _invStatusFilter)
         );
         if (invResult.ResultCode == RetrieveResultCode.Success && invResult.Data != null)
@@ -383,7 +378,7 @@ else
     private async Task OnInvitationPageChangedAsync(int newSkip)
     {
         _invitationsSkip = newSkip;
-        await LoadInvitationsAsync();
+        await InOperationAsync(LoadInvitationsAsync);
         StateHasChanged();
     }
 
@@ -398,7 +393,7 @@ else
         {
             await Task.Delay(300, token);
             _invitationsSkip = 0;
-            await LoadInvitationsAsync();
+            await InOperationAsync(LoadInvitationsAsync);
             StateHasChanged();
         }
         catch (TaskCanceledException) { }
@@ -407,7 +402,7 @@ else
     private async Task OnInvStatusChangedAsync()
     {
         _invitationsSkip = 0;
-        await LoadInvitationsAsync();
+        await InOperationAsync(LoadInvitationsAsync);
         StateHasChanged();
     }
 
@@ -428,7 +423,7 @@ else
             _invSortDirection = null;
         }
         _invitationsSkip = 0;
-        await LoadInvitationsAsync();
+        await InOperationAsync(LoadInvitationsAsync);
         StateHasChanged();
     }
 
@@ -458,9 +453,9 @@ else
     private async Task SaveAsync()
     {
         if (string.IsNullOrWhiteSpace(_accountName)) return;
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await ModificationService.ModifyAccountAsync(new UpdateAccountRequest(Id, _accountName));
+            var result = await services.GetRequiredService<IModificationService>().ModifyAccountAsync(new UpdateAccountRequest(Id, _accountName));
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Saved.", result.Message);
             if (result.ResultCode == ModifyResultCode.Success)
             {
@@ -474,9 +469,9 @@ else
 
     private async Task DeleteAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterAccountAsync(new DeregisterAccountRequest(CurrentAccountId));
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterAccountAsync(new DeregisterAccountRequest(CurrentAccountId));
             if (result.ResultCode == DeregisterAccountResultCode.Success)
             {
                 NavigationManager.NavigateTo(Links.Dashboard(), forceLoad: true);
@@ -490,7 +485,7 @@ else
 
     private async Task RemoveUserAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
             var removedUserId = _confirmItemId;
             var currentAccountId = UserContext?.CurrentAccount?.Id;
@@ -498,7 +493,7 @@ else
             if (currentAccountId == null)
                 return;
 
-            var result = await DeregistrationService.DeregisterUserFromAccountAsync(
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterUserFromAccountAsync(
                 new DeregisterUserFromAccountRequest(removedUserId, currentAccountId.Value)
             );
             if (result.ResultCode == DeregisterUserFromAccountResultCode.Success
@@ -508,7 +503,7 @@ else
                 return;
             }
             SetResultMessage(result.ResultCode == DeregisterUserFromAccountResultCode.Success, "User removed.", result.Message ?? "Failed.");
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
@@ -524,15 +519,15 @@ else
 
     private async Task CreateInvitationAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
             var request = new CreateInvitationRequest(Id, _inviteEmail!, _inviteDescription, _inviteExpirySeconds);
-            var result = await InvitationService.CreateInvitationAsync(request);
+            var result = await services.GetRequiredService<IInvitationService>().CreateInvitationAsync(request);
             if (result.ResultCode == CreateInvitationResultCode.Success)
             {
                 _createdToken = result.Token;
                 SetResultMessage(true, "Invitation created.");
-                await ReloadAsync();
+                await ReloadAsync(services);
             }
             else if (result.ResultCode == CreateInvitationResultCode.UserAlreadyInAccountError)
             {
@@ -560,86 +555,84 @@ else
 
     private async Task RevokeInvitationAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await InvitationService.RevokeInvitationAsync(new RevokeInvitationRequest(CurrentAccountId, _confirmItemId));
+            var result = await services.GetRequiredService<IInvitationService>().RevokeInvitationAsync(new RevokeInvitationRequest(CurrentAccountId, _confirmItemId));
             SetResultMessage(result.ResultCode == RevokeInvitationResultCode.Success, "Invitation revoked.", result.Message);
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
-    private string? PublicKeysAddress =>
-        ScopedServices.GetService<LinkGenerator>()?.AccountJwksPath(CurrentAccountId) is { } path
-            ? NavigationManager.ToAbsoluteUri(path.TrimStart('/')).ToString()
-            : null;
+    private string? PublicKeysAddress { get; set; }
 
     private const string KEYS_DESCRIPTION =
         "This account has its own symmetric and asymmetric encryption keys plus a signing key.";
 
-    private Task<RevealAccountKeyResult> RevealKeyAsync(KeyType keyType, string? currentPassword, string? totpCode) =>
-        RetrievalService.RevealAccountKeyAsync(new RevealAccountKeyRequest(CurrentAccountId, keyType, currentPassword, totpCode));
+    // An operation that cannot sign in is already leaving the page; the key panel shows this until it does.
+    private const string SESSION_ENDED = "Your session has ended. Sign in again.";
 
-    private async Task LoadRevealProofAsync()
+    private async Task<RevealAccountKeyResult> RevealKeyAsync(KeyType keyType, string? currentPassword, string? totpCode) =>
+        await InOperationAsync(services =>
+            services.GetRequiredService<IRetrievalService>().RevealAccountKeyAsync(new RevealAccountKeyRequest(CurrentAccountId, keyType, currentPassword, totpCode))
+        ) ?? new RevealAccountKeyResult(RevealAccountKeyResultCode.UnauthorizedError, SESSION_ENDED);
+
+    private async Task LoadRevealProofAsync(IServiceProvider services)
     {
-        var methods = await FederatedIdentityService.GetAuthMethodsAsync();
-        var enabled = await FederatedSignInService.ListIdentityProvidersAsync();
+        var methods = await services.GetRequiredService<IFederatedIdentityService>().GetAuthMethodsAsync();
+        var enabled = await services.GetRequiredService<IFederatedSignInService>().ListIdentityProvidersAsync();
         var linked = enabled.Where(p => methods.LinkedIdentities.Any(i => i.Type == p.Type)).ToList();
         _proofProviders = !methods.HasBasicAuth && linked.Count > 0 ? linked : null;
         _canProveIdentity = methods.HasBasicAuth || _proofProviders != null;
     }
 
-    private Task<ModifyResult> RotateKeyAsync(KeyType keyType) =>
-        ReloadKeysAfterAsync(ModificationService.RotateAccountKeyAsync(new RotateAccountKeyRequest(Id, keyType)));
-
-    private async Task<CompromiseAccountKeyResult> RotateCompromisedKeyAsync(KeyType keyType, string? currentPassword, string? totpCode)
+    private async Task<ModifyResult> RotateKeyAsync(KeyType keyType)
     {
-        var result = await ModificationService.RotateCompromisedAccountKeyAsync(
+        var result = await InOperationAsync(async services =>
+        {
+            var rotated = await services.GetRequiredService<IModificationService>().RotateAccountKeyAsync(new RotateAccountKeyRequest(Id, keyType));
+            if (rotated.ResultCode == ModifyResultCode.Success)
+                await LoadKeyProvidersAsync(services);
+            return rotated;
+        }) ?? new ModifyResult(ModifyResultCode.UnauthorizedError, SESSION_ENDED);
+        StateHasChanged();
+        return result;
+    }
+
+    private Task<CompromiseAccountKeyResult> RotateCompromisedKeyAsync(KeyType keyType, string? currentPassword, string? totpCode) =>
+        CompromiseKeyAsync(services => services.GetRequiredService<IModificationService>().RotateCompromisedAccountKeyAsync(
             new RotateCompromisedAccountKeyRequest(Id, keyType, new AccountKeyProof(currentPassword, totpCode))
-        );
-        await ReloadKeysAfterCompromiseAsync(result);
-        return result;
-    }
+        ));
 
-    private async Task<CompromiseAccountKeyResult> MarkKeyCompromisedAsync(KeyType keyType, int version, string? currentPassword, string? totpCode)
-    {
-        var result = await ModificationService.MarkAccountKeyCompromisedAsync(
+    private Task<CompromiseAccountKeyResult> MarkKeyCompromisedAsync(KeyType keyType, int version, string? currentPassword, string? totpCode) =>
+        CompromiseKeyAsync(services => services.GetRequiredService<IModificationService>().MarkAccountKeyCompromisedAsync(
             new MarkAccountKeyCompromisedRequest(Id, keyType, version, new AccountKeyProof(currentPassword, totpCode))
-        );
-        await ReloadKeysAfterCompromiseAsync(result);
+        ));
+
+    private async Task<CompromiseAccountKeyResult> CompromiseKeyAsync(Func<IServiceProvider, Task<CompromiseAccountKeyResult>> compromise)
+    {
+        var result = await InOperationAsync(async services =>
+        {
+            var compromised = await compromise(services);
+            if (compromised.ResultCode == CompromiseAccountKeyResultCode.Success)
+                await LoadKeyProvidersAsync(services);
+            return compromised;
+        }) ?? new CompromiseAccountKeyResult(CompromiseAccountKeyResultCode.UnauthorizedError, SESSION_ENDED);
+        StateHasChanged();
         return result;
     }
 
-    private async Task ReloadKeysAfterCompromiseAsync(CompromiseAccountKeyResult result)
+    private async Task LoadKeyProvidersAsync(IServiceProvider services)
     {
-        if (result.ResultCode == CompromiseAccountKeyResultCode.Success)
-        {
-            await LoadKeyProvidersAsync();
-            StateHasChanged();
-        }
-    }
-
-    private async Task<ModifyResult> ReloadKeysAfterAsync(Task<ModifyResult> rotation)
-    {
-        var result = await rotation;
-        if (result.ResultCode == ModifyResultCode.Success)
-        {
-            await LoadKeyProvidersAsync();
-            StateHasChanged();
-        }
-        return result;
-    }
-
-    private async Task LoadKeyProvidersAsync()
-    {
-        var symResult = await RetrievalService.GetAccountSymmetricEncryptionProviderAsync(Id);
+        var retrievalService = services.GetRequiredService<IRetrievalService>();
+        var symResult = await retrievalService.GetAccountSymmetricEncryptionProviderAsync(Id);
         if (symResult.ResultCode == RetrieveResultCode.Success)
             _symProvider = symResult.Item;
 
-        var asymResult = await RetrievalService.GetAccountAsymmetricEncryptionProviderAsync(Id);
+        var asymResult = await retrievalService.GetAccountAsymmetricEncryptionProviderAsync(Id);
         if (asymResult.ResultCode == RetrieveResultCode.Success)
             _asymProvider = asymResult.Item;
 
-        var sigResult = await RetrievalService.GetAccountAsymmetricSignatureProviderAsync(Id);
+        var sigResult = await retrievalService.GetAccountAsymmetricSignatureProviderAsync(Id);
         if (sigResult.ResultCode == RetrieveResultCode.Success)
             _sigProvider = sigResult.Item;
     }

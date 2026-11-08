@@ -1,4 +1,4 @@
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 
 <div class="section-divider mb-4">
     <div class="section-divider-label">
@@ -48,7 +48,6 @@
 </div>
 
 @code {
-    private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
 
     [Parameter, EditorRequired]
     public Guid AccountId { get; set; }
@@ -64,15 +63,11 @@
     private string? _message;
     private AlertType _messageType = AlertType.Info;
 
-    protected override async Task OnParametersSetAsync()
-    {
-        await ScopedServices.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
-        await LoadAsync();
-    }
+    protected override Task OnParametersSetAsync() => InOperationAsync(LoadAsync);
 
-    private async Task LoadAsync()
+    private async Task LoadAsync(IServiceProvider services)
     {
-        var result = await AuditService.GetAccountSettingsAsync(AccountId);
+        var result = await services.GetRequiredService<IAuditService>().GetAccountSettingsAsync(AccountId);
         if (result.ResultCode != RetrieveResultCode.Success || result.Settings is null)
         {
             _settings = null;
@@ -107,7 +102,9 @@
         _busy = true;
         try
         {
-            var result = await AuditService.UpdateAccountSettingsAsync(
+            await InOperationAsync(async services =>
+            {
+            var result = await services.GetRequiredService<IAuditService>().UpdateAccountSettingsAsync(
                 new UpdateAccountAuditSettingsRequest(
                     AccountId,
                     _accountMemberActions,
@@ -120,13 +117,14 @@
                 _isEditing = false;
                 _message = "Audit settings saved.";
                 _messageType = AlertType.Success;
-                await LoadAsync();
+                await LoadAsync(services);
             }
             else
             {
                 _message = result.Message;
                 _messageType = AlertType.Danger;
             }
+            });
         }
         finally
         {

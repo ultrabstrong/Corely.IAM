@@ -1,5 +1,5 @@
 @page "/"
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @attribute [Authorize]
 @using Corely.IAM.Web
@@ -94,8 +94,6 @@ else if (_userContext?.CurrentAccount != null)
 }
 
 @code {
-    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
-    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
 
     private UserContext? _userContext;
     private string? _newAccountName;
@@ -105,7 +103,9 @@ else if (_userContext?.CurrentAccount != null)
 
     protected override async Task OnInitializedAsync()
     {
-        _userContext = await BlazorUserContextAccessor.GetUserContextAsync();
+        _userContext = await InOperationAsync(services =>
+            services.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync()
+        );
     }
 
     private async Task CreateAccountAsync()
@@ -122,8 +122,12 @@ else if (_userContext?.CurrentAccount != null)
 
         try
         {
-            var result = await RegistrationService.RegisterAccountAsync(
-                new RegisterAccountRequest(_newAccountName, _userContext!.User!.Id));
+            var name = _newAccountName;
+            var result = await InOperationAsync(services =>
+                services.GetRequiredService<IRegistrationService>().RegisterAccountAsync(
+                    new RegisterAccountRequest(name, _userContext!.User!.Id)));
+            if (result is null)
+                return;
 
             if (result.ResultCode == RegisterAccountResultCode.Success)
             {

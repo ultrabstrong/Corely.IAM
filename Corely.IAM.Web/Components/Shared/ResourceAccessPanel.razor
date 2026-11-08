@@ -1,12 +1,10 @@
 @using Microsoft.Extensions.Logging
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 @inject ILogger<ResourceAccessPanel> Logger
 
 <EffectivePermissionsPanel AccountId="_accountId" Permissions="_permissions" UseCard="UseCard" />
 
 @code {
-    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
-    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
 
     [Parameter, EditorRequired]
     public string ResourceType { get; set; } = string.Empty;
@@ -31,13 +29,16 @@
         _permissions = null;
         try
         {
-            var userContext = await BlazorUserContextAccessor.GetUserContextAsync();
-            var result = await RetrievalService.GetCurrentUserEffectivePermissionsAsync(ResourceType, ResourceId);
-            if (_loaded != requested || result.ResultCode != RetrieveResultCode.Success)
-                return;
+            await InOperationAsync(async services =>
+            {
+                var userContext = await services.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
+                var result = await services.GetRequiredService<IRetrievalService>().GetCurrentUserEffectivePermissionsAsync(requested.ResourceType, requested.ResourceId);
+                if (_loaded != requested || result.ResultCode != RetrieveResultCode.Success)
+                    return;
 
-            _accountId = userContext?.CurrentAccount?.Id ?? Guid.Empty;
-            _permissions = result.Item;
+                _accountId = userContext?.CurrentAccount?.Id ?? Guid.Empty;
+                _permissions = result.Item;
+            });
         }
         catch (Exception ex)
         {

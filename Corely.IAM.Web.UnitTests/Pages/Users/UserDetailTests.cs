@@ -25,6 +25,7 @@ public class UserDetailTests : TestContext
 
     public UserDetailTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         Services.AddSingleton<IIamWebLinks>(new FakeIamWebLinks());
         Services.AddSingleton(_mockUserContextAccessor.Object);
         Services.AddSingleton(_mockRetrievalService.Object);

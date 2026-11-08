@@ -64,6 +64,7 @@ public class ApiKeyDetailGroupsTests : BunitContext
 
     public ApiKeyDetailGroupsTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddSingleton<IIamWebLinks>(new FakeIamWebLinks());
         Services.AddSingleton(_mockUserContextAccessor.Object);

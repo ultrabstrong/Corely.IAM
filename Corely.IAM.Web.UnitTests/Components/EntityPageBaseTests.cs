@@ -16,6 +16,7 @@ public class EntityPageBaseTests : TestContext
 
     public EntityPageBaseTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         Services.AddSingleton(_mockUserContextAccessor.Object);
         Services.AddSingleton<ILogger<EntityPageBase>>(NullLogger<EntityPageBase>.Instance);
     }
@@ -46,7 +47,7 @@ public class EntityPageBaseTests : TestContext
 
     private class LoadingProbePage : EntityPageBase
     {
-        protected override Task LoadCoreAsync() => Task.CompletedTask;
+        protected override Task LoadCoreAsync(IServiceProvider services) => Task.CompletedTask;
 
         protected override void BuildRenderTree(RenderTreeBuilder builder) =>
             builder.AddContent(0, _loading ? "loading" : "loaded");

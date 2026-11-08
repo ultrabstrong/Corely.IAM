@@ -16,9 +16,12 @@ public class AccountScopeTests : BunitContext
 
     private readonly Guid _routeAccountId = Guid.CreateVersion7();
     private readonly Mock<IBlazorUserContextAccessor> _userContextAccessor = new();
+    private readonly InlineOperationScopes _operationScopes;
 
     public AccountScopeTests()
     {
+        _operationScopes = new InlineOperationScopes(Services);
+        Services.AddSingleton<IOperationScopes>(_operationScopes);
         Services.AddSingleton(_userContextAccessor.Object);
         Services.GetRequiredService<NavigationManager>().NavigateTo(PAGE);
     }
@@ -82,9 +85,9 @@ public class AccountScopeTests : BunitContext
     }
 
     [Fact]
-    public void Render_SignsInAndComesBack_ForNoUser()
+    public void Render_SignsInAndComesBack_ForNoSession()
     {
-        _userContextAccessor.Setup(x => x.GetUserContextAsync()).ReturnsAsync((UserContext?)null);
+        _operationScopes.HasSession = false;
 
         var cut = RenderScope();
 
@@ -92,6 +95,17 @@ public class AccountScopeTests : BunitContext
             Expected($"signin?returnUrl={Uri.EscapeDataString("/" + PAGE)}"),
             NavigatedTo()
         );
+        Assert.DoesNotContain(CHILD, cut.Markup);
+    }
+
+    [Fact]
+    public void Render_LeavesTheRedirectToTheOperation_ForASessionThatEnded()
+    {
+        _operationScopes.SignedIn = false;
+
+        var cut = RenderScope();
+
+        Assert.Equal(Expected(PAGE), NavigatedTo());
         Assert.DoesNotContain(CHILD, cut.Markup);
     }
 

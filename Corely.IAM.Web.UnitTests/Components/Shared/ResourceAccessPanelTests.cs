@@ -5,6 +5,7 @@ using Corely.IAM.Services;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Web.Components.Shared;
 using Corely.IAM.Web.Services;
+using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.Web.UnitTests.Components.Shared;
@@ -17,6 +18,7 @@ public class ResourceAccessPanelTests : BunitContext
 
     public ResourceAccessPanelTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         var accountId = Guid.CreateVersion7();
         var account = new Account { Id = accountId, AccountName = "Acme" };
         var accessor = new Mock<IBlazorUserContextAccessor>();

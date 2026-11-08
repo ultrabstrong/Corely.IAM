@@ -94,13 +94,12 @@ else
 }
 
 @code {
-    private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
 
     private AuditEntry? _entry;
 
-    protected override async Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync(IServiceProvider services)
     {
-        var result = await AuditService.GetEntryAsync(Id);
+        var result = await services.GetRequiredService<IAuditService>().GetEntryAsync(Id);
         _entry = result.ResultCode == RetrieveResultCode.Success ? result.Item : null;
     }
 }

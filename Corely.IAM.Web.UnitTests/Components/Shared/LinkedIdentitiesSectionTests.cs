@@ -4,6 +4,7 @@ using Corely.IAM.IdentityProviders.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Components.Shared;
 using Corely.IAM.Web.Services;
+using Corely.IAM.Web.UnitTests.Helpers;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using TestContext = Bunit.TestContext;
@@ -22,6 +23,7 @@ public class LinkedIdentitiesSectionTests : TestContext
 
     public LinkedIdentitiesSectionTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         Services.AddSingleton(_identities.Object);
         Services.AddSingleton(_signIn.Object);
         Services.AddSingleton(new Mock<IBlazorUserContextAccessor>().Object);

@@ -193,7 +193,6 @@ else
             }
         </text>;
 
-    private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
 
     private List<AuditAccountOption> _accounts = [];
     private List<AuditAccountOption> _deletedAccounts = [];
@@ -211,14 +210,14 @@ else
     private AuditPurgeModal _purgeModal = null!;
     private IJSObjectReference? _downloadModule;
 
-    protected override async Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync(IServiceProvider services)
     {
         if (!_optionsLoaded)
         {
-            await LoadOptionsAsync();
+            await LoadOptionsAsync(services);
         }
 
-        var result = await AuditService.ListEntriesAsync(new ListAuditEntriesRequest(BuildFilter(), _skip, _take));
+        var result = await services.GetRequiredService<IAuditService>().ListEntriesAsync(new ListAuditEntriesRequest(BuildFilter(), _skip, _take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             _items = result.Data.Items;
@@ -230,12 +229,12 @@ else
         }
     }
 
-    private async Task LoadOptionsAsync()
+    private async Task LoadOptionsAsync(IServiceProvider services)
     {
-        var readable = await AuditService.ListAuditAccountsAsync(AuthAction.Read);
+        var readable = await services.GetRequiredService<IAuditService>().ListAuditAccountsAsync(AuthAction.Read);
         _accounts = [.. readable.Accounts];
         _deletedAccounts = [.. readable.DeletedAccounts];
-        var purgeable = await AuditService.ListAuditAccountsAsync(AuthAction.Delete);
+        var purgeable = await services.GetRequiredService<IAuditService>().ListAuditAccountsAsync(AuthAction.Delete);
         _canPurge = purgeable.IncludesEverything || purgeable.Accounts.Count > 0;
         _resourceTypes = ResourceTypeRegistry.GetAll();
         _optionsLoaded = true;
@@ -262,9 +261,9 @@ else
 
     private async Task ExportAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await AuditService.ExportEntriesAsync(BuildFilter());
+            var result = await services.GetRequiredService<IAuditService>().ExportEntriesAsync(BuildFilter());
             if (result.ResultCode != RetrieveResultCode.Success || result.Csv is null)
             {
                 SetResultMessage(false, string.Empty, "The audit log couldn't be exported.");

@@ -95,10 +95,6 @@ else
               OnConfirm="LeaveAccountAsync" />
 
 @code {
-    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
-    private IModificationService ModificationService => ScopedServices.GetRequiredService<IModificationService>();
-    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
-    private IFederatedIdentityService FederatedIdentityService => ScopedServices.GetRequiredService<IFederatedIdentityService>();
 
     private string? _username;
     private string? _email;
@@ -122,9 +118,9 @@ else
     private bool _hasBasicAuth;
     private IReadOnlyList<LinkedIdentity> _linkedIdentities = [];
 
-    protected override async Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync(IServiceProvider services)
     {
-        var result = await RetrievalService.GetUserAsync(UserContext!.User!.Id, hydrate: false);
+        var result = await services.GetRequiredService<IRetrievalService>().GetUserAsync(UserContext!.User!.Id, hydrate: false);
         if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
         {
             _username = result.Item.Username;
@@ -136,39 +132,41 @@ else
             return;
         }
 
-        await LoadKeyProvidersAsync();
-        await LoadAuthMethodsAsync();
+        await LoadKeyProvidersAsync(services);
+        await LoadAuthMethodsAsync(services);
     }
 
     private async Task<ModifyResult> RotateKeyAsync(KeyType keyType)
     {
-        var result = await ModificationService.RotateCurrentUserKeyAsync(keyType);
-        if (result.ResultCode == ModifyResultCode.Success)
+        var result = await InOperationAsync(async services =>
         {
-            await LoadKeyProvidersAsync();
-            StateHasChanged();
-        }
+            var rotated = await services.GetRequiredService<IModificationService>().RotateCurrentUserKeyAsync(keyType);
+            if (rotated.ResultCode == ModifyResultCode.Success)
+                await LoadKeyProvidersAsync(services);
+            return rotated;
+        }) ?? new ModifyResult(ModifyResultCode.UnauthorizedError, "Your session has ended. Sign in again.");
+        StateHasChanged();
         return result;
     }
 
-    private async Task LoadKeyProvidersAsync()
+    private async Task LoadKeyProvidersAsync(IServiceProvider services)
     {
-        var symResult = await RetrievalService.GetUserSymmetricEncryptionProviderAsync();
+        var symResult = await services.GetRequiredService<IRetrievalService>().GetUserSymmetricEncryptionProviderAsync();
         if (symResult.ResultCode == RetrieveResultCode.Success)
             _symProvider = symResult.Item;
 
-        var asymResult = await RetrievalService.GetUserAsymmetricEncryptionProviderAsync();
+        var asymResult = await services.GetRequiredService<IRetrievalService>().GetUserAsymmetricEncryptionProviderAsync();
         if (asymResult.ResultCode == RetrieveResultCode.Success)
             _asymProvider = asymResult.Item;
 
-        var sigResult = await RetrievalService.GetUserAsymmetricSignatureProviderAsync();
+        var sigResult = await services.GetRequiredService<IRetrievalService>().GetUserAsymmetricSignatureProviderAsync();
         if (sigResult.ResultCode == RetrieveResultCode.Success)
             _sigProvider = sigResult.Item;
     }
 
-    private async Task LoadAuthMethodsAsync()
+    private async Task LoadAuthMethodsAsync(IServiceProvider services)
     {
-        var methods = await FederatedIdentityService.GetAuthMethodsAsync();
+        var methods = await services.GetRequiredService<IFederatedIdentityService>().GetAuthMethodsAsync();
         if (methods.ResultCode == AuthMethodsResultCode.Success)
         {
             _hasBasicAuth = methods.HasBasicAuth;
@@ -178,7 +176,7 @@ else
 
     private async Task ReloadAuthMethodsAsync()
     {
-        await LoadAuthMethodsAsync();
+        await InOperationAsync(LoadAuthMethodsAsync);
         StateHasChanged();
     }
 
@@ -199,9 +197,9 @@ else
     private async Task SaveAsync()
     {
         if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_email)) return;
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await ModificationService.ModifyUserAsync(
+            var result = await services.GetRequiredService<IModificationService>().ModifyUserAsync(
                 new UpdateUserRequest(UserContext!.User!.Id, _username, _email)
             );
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Saved.", result.Message);
@@ -212,9 +210,9 @@ else
 
     private async Task DeleteAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterUserAsync();
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterUserAsync();
             if (result.ResultCode == DeregisterUserResultCode.Success)
             {
                 NavigationManager.NavigateTo(AppRoutes.SignOut, forceLoad: true);
@@ -233,9 +231,9 @@ else
 
     private async Task LeaveAccountAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterUserFromAccountAsync(
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterUserFromAccountAsync(
                 new DeregisterUserFromAccountRequest(UserContext!.User!.Id, _leaveAccountId)
             );
             if (result.ResultCode == DeregisterUserFromAccountResultCode.Success)

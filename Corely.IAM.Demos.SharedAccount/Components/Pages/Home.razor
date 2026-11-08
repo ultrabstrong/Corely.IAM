@@ -1,6 +1,6 @@
 @page "/"
 @attribute [Authorize]
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 @inject IDbContextFactory<NotesDbContext> DbFactory
 @inject TimeProvider TimeProvider
 @inject NavigationManager NavigationManager
@@ -71,9 +71,6 @@ else
 }
 
 @code {
-    private IBlazorUserContextAccessor UserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
-    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
-    private IInvitationService InvitationService => ScopedServices.GetRequiredService<IInvitationService>();
 
     private const string SWITCH_ACCOUNT_PATH = "/switch-account";
 
@@ -87,7 +84,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _context = await UserContextAccessor.GetUserContextAsync();
+        _context = await InOperationAsync(services =>
+            services.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync()
+        );
         if (_context?.CurrentAccount != null)
             await LoadNotesAsync();
     }
@@ -100,10 +99,15 @@ else
             return;
 
         _busy = true;
-        var result = await RegistrationService.RegisterAccountAsync(
-            new RegisterAccountRequest(_teamName.Trim(), _context!.User!.Id)
+        var name = _teamName.Trim();
+        var result = await InOperationAsync(services =>
+            services.GetRequiredService<IRegistrationService>().RegisterAccountAsync(
+                new RegisterAccountRequest(name, _context!.User!.Id)
+            )
         );
         _busy = false;
+        if (result is null)
+            return;
 
         if (result.ResultCode == RegisterAccountResultCode.Success)
             SwitchInto(result.CreatedAccountId);
@@ -119,10 +123,13 @@ else
             return;
 
         _busy = true;
-        var result = await InvitationService.AcceptInvitationAsync(
-            new AcceptInvitationRequest(_invitationToken.Trim())
+        var token = _invitationToken.Trim();
+        var result = await InOperationAsync(services =>
+            services.GetRequiredService<IInvitationService>().AcceptInvitationAsync(new AcceptInvitationRequest(token))
         );
         _busy = false;
+        if (result is null)
+            return;
 
         if (result.ResultCode == AcceptInvitationResultCode.Success && result.AccountId != null)
             SwitchInto(result.AccountId.Value);

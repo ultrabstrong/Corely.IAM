@@ -1,4 +1,4 @@
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 
 @if (_loaded)
 {
@@ -10,16 +10,13 @@ else
 }
 
 @code {
-    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
 
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
 
     private bool _loaded;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await BlazorUserContextAccessor.GetUserContextAsync();
-        _loaded = true;
-    }
+    // An empty operation proves the tab is signed in; when it is not, the operation has left the page.
+    protected override async Task OnInitializedAsync() =>
+        _loaded = await InOperationAsync(_ => Task.CompletedTask);
 }

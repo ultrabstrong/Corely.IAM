@@ -1,6 +1,6 @@
 @page "/team"
 @attribute [Authorize]
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 @inject NavigationManager NavigationManager
 
 <PageTitle>Team</PageTitle>
@@ -43,9 +43,6 @@ else
 }
 
 @code {
-    private IBlazorUserContextAccessor UserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
-    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
-    private IInvitationService InvitationService => ScopedServices.GetRequiredService<IInvitationService>();
 
     private const int INVITATION_LIFETIME_SECONDS = 7 * 24 * 60 * 60;
 
@@ -60,24 +57,27 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var account = (await UserContextAccessor.GetUserContextAsync())?.CurrentAccount;
-        if (account == null)
+        await InOperationAsync(async services =>
         {
-            NavigationManager.NavigateTo("/");
-            return;
-        }
+            var account = (await services.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync())?.CurrentAccount;
+            if (account == null)
+            {
+                NavigationManager.NavigateTo("/");
+                return;
+            }
 
-        _accountId = account.Id;
-        _accountName = account.AccountName;
+            _accountId = account.Id;
+            _accountName = account.AccountName;
 
-        var result = await RetrievalService.ListUsersAsync(new ListUsersRequest(_accountId, Take: 100));
-        if (result.ResultCode == RetrieveResultCode.UnauthorizedError)
-        {
-            _canManage = false;
-            return;
-        }
+            var result = await services.GetRequiredService<IRetrievalService>().ListUsersAsync(new ListUsersRequest(_accountId, Take: 100));
+            if (result.ResultCode == RetrieveResultCode.UnauthorizedError)
+            {
+                _canManage = false;
+                return;
+            }
 
-        _members = result.Data?.Items ?? [];
+            _members = result.Data?.Items ?? [];
+        });
     }
 
     private async Task InviteAsync()
@@ -85,9 +85,14 @@ else
         if (string.IsNullOrWhiteSpace(_inviteEmail))
             return;
 
-        var result = await InvitationService.CreateInvitationAsync(
-            new CreateInvitationRequest(_accountId, _inviteEmail.Trim(), null, INVITATION_LIFETIME_SECONDS)
+        var email = _inviteEmail.Trim();
+        var result = await InOperationAsync(services =>
+            services.GetRequiredService<IInvitationService>().CreateInvitationAsync(
+                new CreateInvitationRequest(_accountId, email, null, INVITATION_LIFETIME_SECONDS)
+            )
         );
+        if (result is null)
+            return;
         if (result.ResultCode != CreateInvitationResultCode.Success)
         {
             _message = result.Message;

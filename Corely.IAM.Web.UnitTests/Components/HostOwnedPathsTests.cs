@@ -17,6 +17,11 @@ namespace Corely.IAM.Web.UnitTests.Components;
 
 public class HostOwnedPathsTests : BunitContext
 {
+    public HostOwnedPathsTests()
+    {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
+    }
+
     private static readonly Assembly _assembly = typeof(AppRoutes).Assembly;
 
     [Fact]

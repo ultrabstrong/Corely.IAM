@@ -128,10 +128,6 @@ else
 <ConfirmModal @ref="_removeGroupModal" Title="Remove from Group" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveGroupAsync" />
 
 @code {
-    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
-    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
-    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
-    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
 
     private string? _username;
     private string? _email;
@@ -158,9 +154,9 @@ else
     private IIamAsymmetricEncryptionProvider? _asymProvider;
     private IIamAsymmetricSignatureProvider? _sigProvider;
 
-    protected override async Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync(IServiceProvider services)
     {
-        var result = await RetrievalService.GetUserAsync(Id, hydrate: true);
+        var result = await services.GetRequiredService<IRetrievalService>().GetUserAsync(Id, hydrate: true);
         if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
         {
             _username = result.Item.Username;
@@ -175,7 +171,7 @@ else
 
             if (Id == UserContext?.User?.Id)
             {
-                await LoadKeyProvidersAsync();
+                await LoadKeyProvidersAsync(services);
             }
         }
         else
@@ -184,42 +180,43 @@ else
         }
     }
 
-    private async Task LoadKeyProvidersAsync()
+    private async Task LoadKeyProvidersAsync(IServiceProvider services)
     {
-        var symResult = await RetrievalService.GetUserSymmetricEncryptionProviderAsync();
+        var symResult = await services.GetRequiredService<IRetrievalService>().GetUserSymmetricEncryptionProviderAsync();
         if (symResult.ResultCode == RetrieveResultCode.Success)
             _symProvider = symResult.Item;
 
-        var asymResult = await RetrievalService.GetUserAsymmetricEncryptionProviderAsync();
+        var asymResult = await services.GetRequiredService<IRetrievalService>().GetUserAsymmetricEncryptionProviderAsync();
         if (asymResult.ResultCode == RetrieveResultCode.Success)
             _asymProvider = asymResult.Item;
 
-        var sigResult = await RetrievalService.GetUserAsymmetricSignatureProviderAsync();
+        var sigResult = await services.GetRequiredService<IRetrievalService>().GetUserAsymmetricSignatureProviderAsync();
         if (sigResult.ResultCode == RetrieveResultCode.Success)
             _sigProvider = sigResult.Item;
     }
 
-    private async Task<(List<PickerItem>, int)> FetchAvailableGroupsAsync(int skip, int take)
+    private Task<(List<PickerItem>, int)> FetchAvailableGroupsAsync(int skip, int take) =>
+        InOperationAsync<(List<PickerItem>, int)>(async services =>
     {
-        var result = await RetrievalService.ListGroupsAsync(new ListGroupsRequest(CurrentAccountId, Skip: skip, Take: take));
+        var result = await services.GetRequiredService<IRetrievalService>().ListGroupsAsync(new ListGroupsRequest(CurrentAccountId, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
-            var grantable = await AuthorizationProvider.GetGrantableGroupIdsAsync(result.Data.Items.Select(x => x.Id));
-            var changeable = await AuthorizationProvider.GetAuthorizedResourceIdsAsync(AuthAction.Update, Group.RESOURCE_TYPE);
+            var grantable = await services.GetRequiredService<IAuthorizationProvider>().GetGrantableGroupIdsAsync(result.Data.Items.Select(x => x.Id));
+            var changeable = await services.GetRequiredService<IAuthorizationProvider>().GetAuthorizedResourceIdsAsync(AuthAction.Update, Group.RESOURCE_TYPE);
             _hiddenGroupIds.UnionWith(result.Data.Items.Select(x => x.Id).Where(id => !grantable.Contains(id) || changeable?.Contains(id) == false));
             var items = result.Data.Items.Select(g => new PickerItem(g.Id, g.Name, g.Description)).ToList();
             return (items, result.Data.TotalCount);
         }
         return ([], 0);
-    }
+    });
 
     private async Task AddGroupsAsync(List<Guid> groupIds)
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
             foreach (var groupId in groupIds)
             {
-                var result = await RegistrationService.RegisterUsersWithGroupAsync(
+                var result = await services.GetRequiredService<IRegistrationService>().RegisterUsersWithGroupAsync(
                     new RegisterUsersWithGroupRequest([Id], groupId, CurrentAccountId)
                 );
                 if (result.ResultCode != AddUsersToGroupResultCode.Success)
@@ -229,7 +226,7 @@ else
                 }
             }
             SetResultMessage(true, $"{groupIds.Count} group(s) assigned.", null);
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
@@ -237,34 +234,35 @@ else
 
     private async Task RemoveGroupAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterUsersFromGroupAsync(new DeregisterUsersFromGroupRequest([Id], _confirmItemId, CurrentAccountId));
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterUsersFromGroupAsync(new DeregisterUsersFromGroupRequest([Id], _confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterUsersFromGroupResultCode.Success, "Removed from group.", result.Message ?? "Failed.");
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
-    private async Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take)
+    private Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take) =>
+        InOperationAsync<(List<PickerItem>, int)>(async services =>
     {
-        var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(CurrentAccountId, Skip: skip, Take: take));
+        var result = await services.GetRequiredService<IRetrievalService>().ListRolesAsync(new ListRolesRequest(CurrentAccountId, Skip: skip, Take: take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
-            var grantable = await AuthorizationProvider.GetGrantableRoleIdsAsync(result.Data.Items.Select(x => x.Id));
+            var grantable = await services.GetRequiredService<IAuthorizationProvider>().GetGrantableRoleIdsAsync(result.Data.Items.Select(x => x.Id));
             _hiddenRoleIds.UnionWith(result.Data.Items.Select(x => x.Id).Where(id => !grantable.Contains(id)));
             var items = result.Data.Items.Select(r => new PickerItem(r.Id, r.Name, r.Description)).ToList();
             return (items, result.Data.TotalCount);
         }
         return ([], 0);
-    }
+    });
 
     private async Task AddRolesAsync(List<Guid> roleIds)
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await RegistrationService.RegisterRolesWithUserAsync(new RegisterRolesWithUserRequest(roleIds, Id, CurrentAccountId));
+            var result = await services.GetRequiredService<IRegistrationService>().RegisterRolesWithUserAsync(new RegisterRolesWithUserRequest(roleIds, Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == AssignRolesToUserResultCode.Success, $"{roleIds.Count} role(s) assigned.", result.Message ?? "Failed.");
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
@@ -272,11 +270,11 @@ else
 
     private async Task RemoveRoleAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterRolesFromUserAsync(new DeregisterRolesFromUserRequest([_confirmItemId], Id, CurrentAccountId));
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterRolesFromUserAsync(new DeregisterRolesFromUserRequest([_confirmItemId], Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterRolesFromUserResultCode.Success, "Role removed.", result.Message ?? "Failed.");
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 

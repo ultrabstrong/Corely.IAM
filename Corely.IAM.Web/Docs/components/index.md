@@ -57,21 +57,23 @@ Reusable Blazor components in the `Corely.IAM.Web.Components.Shared` namespace.
 
 ## Services and scopes
 
-A component that calls services inherits `OwningComponentBase`, takes those services from
-`ScopedServices`, and signs its own scope in through `IBlazorUserContextAccessor` resolved from the same
-scope. Blazor Server shares one DI scope across a browser tab, so without this every component in the tab
-would use one `DbContext`, and two loading together fail with "A second operation was started on this
-context instance". `PermissionView`, `TotpSection`, `PasswordSection`, `LinkedAccountsSection`,
-`AuthenticatedContent`, `AccountHeader` and `AccountScope` work this way; components that only render what they
-are given, such as `EncryptionSigningPanel`, do not need to.
+A component that calls services inherits `OperationComponentBase` and runs each action through
+`InOperationAsync`, in a DI scope of its own that is signed in as the tab's user and disposed when the
+action ends. Blazor Server keeps one scope per browser tab for as long as the tab is open, so a
+component holding services for its lifetime would read what it loaded minutes ago, and two sharing a
+`DbContext` fail with "A second operation was started on this context instance". `PermissionView`,
+`TotpSection`, `PasswordSection`, `LinkedIdentitiesSection`, `AuthenticatedContent`, `AccountHeader` and
+`AccountScope` work this way; components that only render what they are given, such as
+`EncryptionSigningPanel`, do not need to.
 
 ```csharp
-private IMfaService MfaService => ScopedServices.GetRequiredService<IMfaService>();
+var status = await InOperationAsync(services =>
+    services.GetRequiredService<IMfaService>().GetTotpStatusAsync()
+);
 ```
 
-Never `@inject` a scoped service that reaches the database into such a component: property injection
-resolves from the tab's scope even inside `OwningComponentBase`.
-
+Never `@inject` a scoped service that reaches the database, or keep one in a field: either outlives
+the action.
 ## Topics
 
 - [Accounts](accounts.md)

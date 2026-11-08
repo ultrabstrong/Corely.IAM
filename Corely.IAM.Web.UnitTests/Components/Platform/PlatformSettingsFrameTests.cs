@@ -22,6 +22,7 @@ public class PlatformSettingsFrameTests : TestContext
 
     public PlatformSettingsFrameTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         var userContextAccessor = new Mock<IBlazorUserContextAccessor>();
         userContextAccessor
             .Setup(x => x.GetUserContextAsync())

@@ -1,4 +1,4 @@
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 @inject IJSRuntime JSRuntime
 
 <div class="section-divider mb-4 mt-4">
@@ -129,7 +129,6 @@
 </div>
 
 @code {
-    private IMfaService MfaService => ScopedServices.GetRequiredService<IMfaService>();
 
     [Parameter]
     public EventCallback OnStatusChanged { get; set; }
@@ -153,11 +152,7 @@
     private string? _message;
     private AlertType _messageType;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await ScopedServices.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
-        await LoadStatusAsync();
-    }
+    protected override Task OnInitializedAsync() => InOperationAsync(LoadStatusAsync);
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -204,9 +199,9 @@
         await base.DisposeAsyncCore();
     }
 
-    private async Task LoadStatusAsync()
+    private async Task LoadStatusAsync(IServiceProvider services)
     {
-        var status = await MfaService.GetTotpStatusAsync();
+        var status = await services.GetRequiredService<IMfaService>().GetTotpStatusAsync();
         if (status.ResultCode == TotpStatusResultCode.Success)
         {
             _enabled = status.IsEnabled;
@@ -216,9 +211,9 @@
 
     private async Task EnableAsync()
     {
-        await RunSafeAsync(async () =>
+        await RunSafeAsync(async services =>
         {
-            var result = await MfaService.EnableTotpAsync();
+            var result = await services.GetRequiredService<IMfaService>().EnableTotpAsync();
             if (result.ResultCode == EnableTotpResultCode.Success)
             {
                 _setupPhase = true;
@@ -238,15 +233,15 @@
     private async Task ConfirmAsync()
     {
         if (string.IsNullOrWhiteSpace(_confirmCode)) return;
-        await RunSafeAsync(async () =>
+        await RunSafeAsync(async services =>
         {
-            var result = await MfaService.ConfirmTotpAsync(new ConfirmTotpRequest(_confirmCode.Trim()));
+            var result = await services.GetRequiredService<IMfaService>().ConfirmTotpAsync(new ConfirmTotpRequest(_confirmCode.Trim()));
             if (result.ResultCode == ConfirmTotpResultCode.Success)
             {
                 _setupPhase = false;
                 _enabled = true;
                 _confirmCode = "";
-                await LoadStatusAsync();
+                await LoadStatusAsync(services);
                 SetMessage(true, "Two-factor authentication enabled.");
                 await OnStatusChanged.InvokeAsync();
             }
@@ -284,13 +279,13 @@
 
     private async Task RegenerateAsync()
     {
-        await RunSafeAsync(async () =>
+        await RunSafeAsync(async services =>
         {
-            var result = await MfaService.RegenerateTotpRecoveryCodesAsync();
+            var result = await services.GetRequiredService<IMfaService>().RegenerateTotpRecoveryCodesAsync();
             if (result.ResultCode == RegenerateTotpRecoveryCodesResultCode.Success)
             {
                 _regeneratedCodes = result.RecoveryCodes;
-                await LoadStatusAsync();
+                await LoadStatusAsync(services);
                 SetMessage(true, "Recovery codes regenerated. Save them now.");
             }
             else
@@ -303,9 +298,9 @@
     private async Task DisableAsync()
     {
         if (string.IsNullOrWhiteSpace(_disableCode)) return;
-        await RunSafeAsync(async () =>
+        await RunSafeAsync(async services =>
         {
-            var result = await MfaService.DisableTotpAsync(new DisableTotpRequest(_disableCode.Trim()));
+            var result = await services.GetRequiredService<IMfaService>().DisableTotpAsync(new DisableTotpRequest(_disableCode.Trim()));
             if (result.ResultCode == DisableTotpResultCode.Success)
             {
                 _enabled = false;
@@ -322,11 +317,11 @@
         });
     }
 
-    private async Task RunSafeAsync(Func<Task> action)
+    private async Task RunSafeAsync(Func<IServiceProvider, Task> action)
     {
         if (_busy) return;
         _busy = true;
-        try { await action(); }
+        try { await InOperationAsync(action); }
         catch { SetMessage(false, "An unexpected error occurred."); }
         finally { _busy = false; }
     }

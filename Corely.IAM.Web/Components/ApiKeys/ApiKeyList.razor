@@ -109,11 +109,6 @@ else
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
 
-    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
-    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
-    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
-    private ISecurityPolicyProvider SecurityPolicyProvider => ScopedServices.GetRequiredService<ISecurityPolicyProvider>();
-    private TimeProvider TimeProvider => ScopedServices.GetRequiredService<TimeProvider>();
 
     private bool _enabled;
     private int _maxLifetimeDays = SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_DEFAULT;
@@ -124,9 +119,9 @@ else
     private ApiKeySecretModal _newKeyModal = null!;
     private ConfirmModal _confirmModal = null!;
 
-    protected override async Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync(IServiceProvider services)
     {
-        var policy = await SecurityPolicyProvider.GetPolicyAsync();
+        var policy = await services.GetRequiredService<ISecurityPolicyProvider>().GetPolicyAsync();
         _enabled = policy.AllowsApiKeysIn(UserContext?.CurrentAccount?.IsPlatformAccount == true);
         _maxLifetimeDays = policy.ApiKeyMaxLifetimeDays;
         _newLifetimeDays = Math.Min(_newLifetimeDays, _maxLifetimeDays);
@@ -139,7 +134,7 @@ else
         var order = _sortColumn == nameof(ApiKey.Name) && _sortDirection != null
             ? Order.For<ApiKey>().By(k => k.Name, _sortDirection.Value)
             : null;
-        var result = await RetrievalService.ListApiKeysAsync(new ListApiKeysRequest(CurrentAccountId, filter, order, _skip, _take));
+        var result = await services.GetRequiredService<IRetrievalService>().ListApiKeysAsync(new ListApiKeysRequest(CurrentAccountId, filter, order, _skip, _take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             _items = result.Data.Items;
@@ -154,19 +149,19 @@ else
     private async Task CreateAsync()
     {
         if (string.IsNullOrWhiteSpace(_newName)) return;
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await RegistrationService.RegisterApiKeyAsync(new RegisterApiKeyRequest(
+            var result = await services.GetRequiredService<IRegistrationService>().RegisterApiKeyAsync(new RegisterApiKeyRequest(
                 _newName,
                 CurrentAccountId,
                 _newDescription,
-                TimeProvider.GetUtcNow().UtcDateTime.AddDays(Math.Clamp(_newLifetimeDays, 1, _maxLifetimeDays))));
+                services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime.AddDays(Math.Clamp(_newLifetimeDays, 1, _maxLifetimeDays))));
             SetResultMessage(result.ResultCode == CreateApiKeyResultCode.Success, "API key created.", result.Message);
             if (result.Key is not null)
                 _newKeyModal.Show(result.Key);
             _newName = null;
             _newDescription = null;
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
@@ -175,11 +170,11 @@ else
 
     private async Task DeleteAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterApiKeyAsync(new DeregisterApiKeyRequest(_confirmItemId, CurrentAccountId));
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterApiKeyAsync(new DeregisterApiKeyRequest(_confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterApiKeyResultCode.Success, "API key deleted.", result.Message);
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 }

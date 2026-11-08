@@ -84,13 +84,11 @@ else
 <ConfirmModal @ref="_confirmModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveAsync" />
 
 @code {
-    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
-    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
 
     private string _searchEmail = string.Empty;
     private ConfirmModal _confirmModal = null!;
 
-    protected override async Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync(IServiceProvider services)
     {
         var filterBuilder = Filter.For<User>();
         var hasFilter = false;
@@ -115,7 +113,7 @@ else
                 _ => null
             };
         }
-        var result = await RetrievalService.ListUsersAsync(new ListUsersRequest(CurrentAccountId, filter, order, _skip, _take));
+        var result = await services.GetRequiredService<IRetrievalService>().ListUsersAsync(new ListUsersRequest(CurrentAccountId, filter, order, _skip, _take));
         if (result.ResultCode == RetrieveResultCode.Success && result.Data != null)
         {
             _items = result.Data.Items;
@@ -131,7 +129,7 @@ else
 
     private async Task RemoveAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
             var removedUserId = _confirmItemId;
             var currentAccountId = UserContext?.CurrentAccount?.Id;
@@ -139,7 +137,7 @@ else
             if (currentAccountId == null)
                 return;
 
-            var result = await DeregistrationService.DeregisterUserFromAccountAsync(
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterUserFromAccountAsync(
                 new DeregisterUserFromAccountRequest(removedUserId, currentAccountId.Value)
             );
             if (result.ResultCode == DeregisterUserFromAccountResultCode.Success
@@ -149,7 +147,7 @@ else
                 return;
             }
             SetResultMessage(result.ResultCode == DeregisterUserFromAccountResultCode.Success, "Removed.", result.Message ?? "Failed.");
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 }

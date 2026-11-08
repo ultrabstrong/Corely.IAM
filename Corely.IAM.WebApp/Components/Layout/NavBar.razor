@@ -1,4 +1,4 @@
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 @inject NavigationManager NavigationManager
 @inject IAccountDisplayState AccountDisplayState
 @inject IOptions<IAMWebOptions> IamWebOptions
@@ -82,9 +82,6 @@
 </nav>
 
 @code {
-    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
-    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
-    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
 
     private bool _isAuthenticated;
     private bool _hasAccount;
@@ -100,45 +97,48 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var context = await BlazorUserContextAccessor.GetUserContextAsync();
-        _isAuthenticated = context?.User != null;
-        _hasAccount = context?.CurrentAccount != null;
-        _canOpenPlatformSettings =
-            context?.CurrentAccount?.IsPlatformAccount == true
-            && (await IamWebOptions.Value.ReadablePlatformSettingsPagesAsync(AuthorizationProvider)).Count > 0;
-        await RefreshApiKeysVisibilityAsync();
-        var enterableAccounts = _isAuthenticated ? await CountEnterableAccountsAsync() : 0;
-        _hasAnyAccounts = enterableAccounts > 0;
-        _hasMultipleAccounts = enterableAccounts > 1;
-        _accountId = context?.CurrentAccount?.Id ?? Guid.Empty;
-        _username = context?.User?.Username;
-        _accountName = context?.CurrentAccount?.AccountName;
+        await InOperationAsync(async services =>
+        {
+            var context = await services.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
+            _isAuthenticated = context?.User != null;
+            _hasAccount = context?.CurrentAccount != null;
+            _canOpenPlatformSettings =
+                context?.CurrentAccount?.IsPlatformAccount == true
+                && (await IamWebOptions.Value.ReadablePlatformSettingsPagesAsync(services.GetRequiredService<IAuthorizationProvider>())).Count > 0;
+            await RefreshApiKeysVisibilityAsync(services);
+            var enterableAccounts = _isAuthenticated ? await CountEnterableAccountsAsync(services) : 0;
+            _hasAnyAccounts = enterableAccounts > 0;
+            _hasMultipleAccounts = enterableAccounts > 1;
+            _accountId = context?.CurrentAccount?.Id ?? Guid.Empty;
+            _username = context?.User?.Username;
+            _accountName = context?.CurrentAccount?.AccountName;
+        });
         AccountDisplayState.OnChanged += OnAccountNameChanged;
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 
-    private async Task RefreshApiKeysVisibilityAsync()
+    private async Task RefreshApiKeysVisibilityAsync(IServiceProvider services)
     {
-        var account = (await BlazorUserContextAccessor.GetUserContextAsync())?.CurrentAccount;
+        var account = (await services.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync())?.CurrentAccount;
         _canSeeApiKeys =
             account != null
-            && (await ScopedServices.GetRequiredService<ISecurityPolicyProvider>().GetPolicyAsync())
+            && (await services.GetRequiredService<ISecurityPolicyProvider>().GetPolicyAsync())
                 .AllowsApiKeysIn(account.IsPlatformAccount)
-            && await AuthorizationProvider.IsAuthorizedAsync(AuthAction.Read, ApiKey.RESOURCE_TYPE);
+            && await services.GetRequiredService<IAuthorizationProvider>().IsAuthorizedAsync(AuthAction.Read, ApiKey.RESOURCE_TYPE);
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         InvokeAsync(async () =>
         {
-            await RefreshApiKeysVisibilityAsync();
+            await InOperationAsync(RefreshApiKeysVisibilityAsync);
             StateHasChanged();
         });
     }
 
-    private async Task<int> CountEnterableAccountsAsync()
+    private static async Task<int> CountEnterableAccountsAsync(IServiceProvider services)
     {
-        var result = await RetrievalService.ListAccountsAsync(new ListAccountsRequest(Take: 2));
+        var result = await services.GetRequiredService<IRetrievalService>().ListAccountsAsync(new ListAccountsRequest(Take: 2));
         return result.Data?.TotalCount ?? 0;
     }
 
@@ -147,10 +147,10 @@
         InvokeAsync(StateHasChanged);
     }
 
-    protected override void Dispose(bool disposing)
+    protected override ValueTask DisposeAsyncCore()
     {
         AccountDisplayState.OnChanged -= OnAccountNameChanged;
         NavigationManager.LocationChanged -= OnLocationChanged;
-        base.Dispose(disposing);
+        return base.DisposeAsyncCore();
     }
 }

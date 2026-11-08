@@ -25,6 +25,7 @@ public class ApiKeyListTests : BunitContext
 
     public ApiKeyListTests()
     {
+        Services.AddSingleton<IOperationScopes>(new InlineOperationScopes(Services));
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddSingleton<IIamWebLinks>(new FakeIamWebLinks());
         Services.AddSingleton(_mockUserContextAccessor.Object);

@@ -5,12 +5,51 @@ Class hierarchy for the Blazor management components in Corely.IAM.Web, and for 
 ## Hierarchy
 
 ```
-OwningComponentBase (Blazor)
-└── AuthenticatedPageBase
+ComponentBase (Blazor)
+└── OperationComponentBase
+    └── AuthenticatedPageBase
     └── EntityPageBase
         ├── EntityListPageBase<T>
         └── EntityDetailPageBase
 ```
+
+## OperationComponentBase
+
+For any component that calls services, page or not.
+
+| Member | Description |
+|--------|-------------|
+| `InOperationAsync(services => ...)` | Runs one action in a DI scope of its own, signed in as the tab's user, and disposes it when the action ends. Returns the work's result, or `default` (`false` for the non generic form) when the scope could not be signed in |
+| `HasSession` | Whether the tab arrived with a session at all |
+| `DisposeAsyncCore()` | Override to release what the component holds, calling the base. Blazor disposes a component through `IAsyncDisposable` only, so a derived component never implements `IDisposable` |
+
+### Each action runs in a scope of its own
+
+Blazor Server keeps one DI scope per browser tab, and a component can stay on screen for minutes. A
+`DbContext` kept that long returns the rows it already loaded instead of what the database holds now,
+and two components sharing one fail with "A second operation was started on this context instance".
+So every user visible action (the reads that render together on load, one timer tick, a button's
+action with the reload after it) runs through `InOperationAsync` and resolves what it needs from the
+provider it is handed:
+
+```csharp
+protected override Task OnInitializedAsync() =>
+    InOperationAsync(async services =>
+    {
+        var result = await services.GetRequiredService<IRetrievalService>().GetGroupAsync(Id);
+        _group = result.Item;
+    });
+```
+
+Never keep a service in a field across actions, and never `@inject` or `[Inject]` a scoped service
+that reaches the database: property injection resolves from the tab's scope and brings back both
+problems. Singletons, framework services (`NavigationManager`, `IJSRuntime`, `ILogger<T>`,
+`IOptions<T>`) and `IAccountDisplayState`, which is shared across the tab on purpose, stay injected.
+
+When a scope cannot be signed in, the work does not run and the browser leaves the page: to sign in
+when there is no session, or a full reload when the token expired or was revoked, which renews it from
+the refresh token or signs the user out. A page left open past its token's life reloads on its next
+action.
 
 ## AuthenticatedPageBase
 
@@ -21,26 +60,11 @@ Ensures user context is loaded. Redirects unauthenticated users to `/signin`, re
 | `UserContext` | `UserContext?` | Current authenticated user context |
 | `IsAuthenticated` | `bool` | `true` if `UserContext?.User != null` |
 | `CurrentAccountId` | `Guid` | The current account's id from the token, or `Guid.Empty` |
-| `OnInitializedAuthenticatedAsync()` | `virtual Task` | Override point, called after successful authentication |
+| `OnInitializedAuthenticatedAsync(services)` | `virtual Task` | Override point, called after successful authentication, in the same operation |
 
-**Behavior:** Sealed `OnInitializedAsync()` calls `BlazorUserContextAccessor.GetUserContextAsync()`. If not authenticated, redirects to sign-in with `forceLoad: true`.
-
-### Services come from the page's own scope
-
-Blazor Server keeps one DI scope per browser tab, so every component in the tab would otherwise share
-one `DbContext`, and two components loading at once fail with "A second operation was started on this
-context instance". Every page therefore owns a scope, created with the page and disposed with it, and
-takes its services from `ScopedServices`:
-
-```csharp
-private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
-```
-
-`OnInitializedAsync()` signs that scope in, so services resolved from it see the user. Do not `@inject`
-or `[Inject]` a scoped service that reaches the database: property injection always resolves from the
-tab's scope and brings the shared context back. Singletons, framework services (`NavigationManager`,
-`IJSRuntime`, `ILogger<T>`, `IOptions<T>`) and `IAccountDisplayState`, which is shared across the tab on
-purpose, stay injected.
+**Behavior:** `OnInitializedAsync()` runs one operation that loads `UserContext` and then calls
+`OnInitializedAuthenticatedAsync(services)` with that operation's services. A tab with no session is
+sent to sign in with `forceLoad: true`.
 
 ## EntityPageBase
 
@@ -57,20 +81,21 @@ Centralized error handling, loading state, and confirmation dialog support.
 
 | Method | Description |
 |--------|-------------|
-| `LoadCoreAsync()` | Abstract: load page data |
-| `ReloadAsync()` | Wraps `LoadCoreAsync()` with loading state and error handling |
-| `FailLoad(resultCode, resourceName)` | Marks the load failed and says why: no access, or couldn't be loaded. Call it from `LoadCoreAsync()` when a retrieval doesn't succeed |
-| `ExecuteSafeAsync(action)` | Wraps any async action with try-catch and loading state |
+| `LoadCoreAsync(services)` | Abstract: load page data from the operation's services |
+| `ReloadAsync()` | Runs `LoadCoreAsync` in an operation of its own, with loading state and error handling |
+| `ReloadAsync(services)` | The same, in the operation already running, such as an action's |
+| `FailLoad(resultCode, resourceName)` | Marks the load failed and says why: no access, or couldn't be loaded. Call it from `LoadCoreAsync` when a retrieval doesn't succeed |
+| `ExecuteSafeAsync(services => ...)` | Runs a user's action in an operation of its own with try-catch and loading state; an action that changes data reloads with `ReloadAsync(services)` |
 | `SetResultMessage(success, msg, failMsg)` | Sets alert state from operation result |
 | `TryParseGuid(input, out result)` | Safe GUID parse with error alert on failure |
 | `ShowConfirmation(modal, id, msg)` | Opens a `ConfirmModal` for a specific entity |
 
-**Behavior:** Sealed `OnInitializedAuthenticatedAsync()` automatically calls `ReloadAsync()` on page load.
+**Behavior:** Sealed `OnInitializedAuthenticatedAsync(services)` loads the page in the operation that signed it in.
 
 ## EntityListPageBase\<T\>
 
 Pagination, search, and sort for entity list pages. A derived page that disposes its own resources
-overrides `DisposeAsyncCore()` and calls the base, which disposes the scope.
+overrides `DisposeAsyncCore()` and calls the base.
 
 | Member | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -107,11 +132,9 @@ Create a custom list page:
 @inherits EntityListPageBase<MyItem>
 
 @code {
-    private IMyService MyService => ScopedServices.GetRequiredService<IMyService>();
-
-    protected override async Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync(IServiceProvider services)
     {
-        var result = await MyService.ListAsync(_skip, _take, _searchText);
+        var result = await services.GetRequiredService<IMyService>().ListAsync(_skip, _take, _searchText);
         _items = result.Items;
         _totalCount = result.TotalCount;
     }

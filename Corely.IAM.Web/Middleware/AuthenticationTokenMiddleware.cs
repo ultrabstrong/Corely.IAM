@@ -95,6 +95,7 @@ internal class AuthenticationTokenMiddleware(
                     renewResult.RefreshExpiresUtc.Value,
                     context.Request.IsHttps
                 );
+                context.Items[AuthCookieManager.RENEWED_AUTH_TOKEN_ITEM] = renewResult.AuthToken;
                 SetUserPrincipal(context, userContextProvider);
                 return;
             }

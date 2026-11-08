@@ -151,11 +151,6 @@ else
 <ConfirmModal @ref="_removeRoleModal" Title="Remove from Role" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveRoleAsync" />
 
 @code {
-    private IRetrievalService RetrievalService => ScopedServices.GetRequiredService<IRetrievalService>();
-    private IDeregistrationService DeregistrationService => ScopedServices.GetRequiredService<IDeregistrationService>();
-    private IModificationService ModificationService => ScopedServices.GetRequiredService<IModificationService>();
-    private IRegistrationService RegistrationService => ScopedServices.GetRequiredService<IRegistrationService>();
-    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
 
     private Permission? _permission;
     private List<EffectivePermission>? _effectivePermissions;
@@ -173,40 +168,41 @@ else
     private List<ChildRef> PagedRoles => (_permission?.Roles ?? []).Skip(_rolesSkip).Take(RelationPageSize).ToList();
     private int RolesTotalCount => _permission?.Roles?.Count ?? 0;
 
-    protected override async Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync(IServiceProvider services)
     {
-        var result = await RetrievalService.GetPermissionAsync(Id, hydrate: true);
+        var result = await services.GetRequiredService<IRetrievalService>().GetPermissionAsync(Id, hydrate: true);
         if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
         {
             _permission = result.Item;
             _hiddenRoleIds = (_permission.Roles ?? []).Select(r => r.Id).ToHashSet();
-            _showRoles = await AuthorizationProvider.IsAuthorizedAsync(AuthAction.Read, Role.RESOURCE_TYPE);
-            _canGrantPermission = await AuthorizationProvider.CanGrantPermissionsAsync([Id]);
+            _showRoles = await services.GetRequiredService<IAuthorizationProvider>().IsAuthorizedAsync(AuthAction.Read, Role.RESOURCE_TYPE);
+            _canGrantPermission = await services.GetRequiredService<IAuthorizationProvider>().CanGrantPermissionsAsync([Id]);
             _effectivePermissions = result.EffectivePermissions;
         }
     }
 
-    private async Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take)
-    {
-        var result = await RetrievalService.ListRolesAsync(new ListRolesRequest(CurrentAccountId, Skip: skip, Take: take));
-        if (result.ResultCode != RetrieveResultCode.Success || result.Data == null)
-            return ([], 0);
+    private Task<(List<PickerItem>, int)> FetchAvailableRolesAsync(int skip, int take) =>
+        InOperationAsync<(List<PickerItem>, int)>(async services =>
+        {
+            var result = await services.GetRequiredService<IRetrievalService>().ListRolesAsync(new ListRolesRequest(CurrentAccountId, Skip: skip, Take: take));
+            if (result.ResultCode != RetrieveResultCode.Success || result.Data == null)
+                return ([], 0);
 
-        var changeable = await AuthorizationProvider.GetAuthorizedResourceIdsAsync(AuthAction.Update, Role.RESOURCE_TYPE);
-        if (changeable != null)
-            _hiddenRoleIds.UnionWith(result.Data.Items.Select(r => r.Id).Where(id => !changeable.Contains(id)));
-        return ([.. result.Data.Items.Select(r => new PickerItem(r.Id, r.Name, r.Description))], result.Data.TotalCount);
-    }
+            var changeable = await services.GetRequiredService<IAuthorizationProvider>().GetAuthorizedResourceIdsAsync(AuthAction.Update, Role.RESOURCE_TYPE);
+            if (changeable != null)
+                _hiddenRoleIds.UnionWith(result.Data.Items.Select(r => r.Id).Where(id => !changeable.Contains(id)));
+            return ([.. result.Data.Items.Select(r => new PickerItem(r.Id, r.Name, r.Description))], result.Data.TotalCount);
+        });
 
     private async Task AddToRolesAsync(List<Guid> roleIds)
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
             var added = 0;
             string? failure = null;
             foreach (var roleId in roleIds)
             {
-                var result = await RegistrationService.RegisterPermissionsWithRoleAsync(new RegisterPermissionsWithRoleRequest([Id], roleId, CurrentAccountId));
+                var result = await services.GetRequiredService<IRegistrationService>().RegisterPermissionsWithRoleAsync(new RegisterPermissionsWithRoleRequest([Id], roleId, CurrentAccountId));
                 if (result.ResultCode != AssignPermissionsToRoleResultCode.Success)
                 {
                     failure = result.Message;
@@ -215,7 +211,7 @@ else
                 added++;
             }
             SetResultMessage(failure == null, $"Added to {added} role(s).", $"Added to {added} of {roleIds.Count} role(s). {failure}");
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
@@ -223,11 +219,11 @@ else
 
     private async Task RemoveRoleAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterPermissionsFromRoleAsync(new DeregisterPermissionsFromRoleRequest([Id], _confirmItemId, CurrentAccountId));
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterPermissionsFromRoleAsync(new DeregisterPermissionsFromRoleRequest([Id], _confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterPermissionsFromRoleResultCode.Success, "Removed from role.", result.Message);
-            await ReloadAsync();
+            await ReloadAsync(services);
         });
     }
 
@@ -241,14 +237,14 @@ else
 
     private async Task SaveAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await ModificationService.ModifyPermissionAsync(new UpdatePermissionRequest(Id, CurrentAccountId, _editDescription));
+            var result = await services.GetRequiredService<IModificationService>().ModifyPermissionAsync(new UpdatePermissionRequest(Id, CurrentAccountId, _editDescription));
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Permission updated.", result.Message);
             if (result.ResultCode == ModifyResultCode.Success)
             {
                 _isEditing = false;
-                await ReloadAsync();
+                await ReloadAsync(services);
             }
         });
     }
@@ -261,9 +257,9 @@ else
 
     private async Task DeleteAsync()
     {
-        await ExecuteSafeAsync(async () =>
+        await ExecuteSafeAsync(async services =>
         {
-            var result = await DeregistrationService.DeregisterPermissionAsync(new DeregisterPermissionRequest(Id, CurrentAccountId));
+            var result = await services.GetRequiredService<IDeregistrationService>().DeregisterPermissionAsync(new DeregisterPermissionRequest(Id, CurrentAccountId));
             if (result.ResultCode == DeregisterPermissionResultCode.Success)
             {
                 NavigationManager.NavigateTo(Links.Permissions(CurrentAccountId));

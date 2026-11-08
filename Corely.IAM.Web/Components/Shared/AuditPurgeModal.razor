@@ -1,4 +1,4 @@
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 
 @if (_visible)
 {
@@ -76,7 +76,6 @@
 }
 
 @code {
-    private IAuditService AuditService => ScopedServices.GetRequiredService<IAuditService>();
 
     private const string OUTSIDE_ANY_ACCOUNT = "none";
 
@@ -105,8 +104,11 @@
         _count = null;
         StateHasChanged();
 
-        await ScopedServices.GetRequiredService<IBlazorUserContextAccessor>().GetUserContextAsync();
-        var result = await AuditService.ListAuditAccountsAsync(AuthAction.Delete);
+        var result = await InOperationAsync(services =>
+            services.GetRequiredService<IAuditService>().ListAuditAccountsAsync(AuthAction.Delete)
+        );
+        if (result is null)
+            return;
         _accounts = [.. result.Accounts];
         _includesEverything = result.IncludesEverything;
         _deletedAccounts = [.. result.DeletedAccounts];
@@ -135,8 +137,12 @@
 
         _busy = true;
         _error = null;
-        var result = await AuditService.CountPurgeableEntriesAsync(request);
+        var result = await InOperationAsync(services =>
+            services.GetRequiredService<IAuditService>().CountPurgeableEntriesAsync(request)
+        );
         _busy = false;
+        if (result is null)
+            return;
         if (result.ResultCode != PurgeAuditEntriesResultCode.Success)
         {
             _error = "You can't purge audit entries there.";
@@ -152,8 +158,12 @@
             return;
 
         _busy = true;
-        var result = await AuditService.PurgeEntriesAsync(request);
+        var result = await InOperationAsync(services =>
+            services.GetRequiredService<IAuditService>().PurgeEntriesAsync(request)
+        );
         _busy = false;
+        if (result is null)
+            return;
         if (result.ResultCode != PurgeAuditEntriesResultCode.Success)
         {
             _error = "The audit entries couldn't be purged.";

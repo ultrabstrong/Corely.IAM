@@ -1,4 +1,4 @@
-@inherits OwningComponentBase
+@inherits OperationComponentBase
 @inject IIamWebLinks Links
 @inject NavigationManager Navigation
 @using Corely.IAM.Web.Configuration
@@ -35,8 +35,6 @@
 </div>
 
 @code {
-    private IBlazorUserContextAccessor BlazorUserContextAccessor => ScopedServices.GetRequiredService<IBlazorUserContextAccessor>();
-    private IAuthorizationProvider AuthorizationProvider => ScopedServices.GetRequiredService<IAuthorizationProvider>();
 
     [Parameter, EditorRequired]
     public RenderFragment ChildContent { get; set; } = default!;
@@ -47,12 +45,10 @@
         _pages.FirstOrDefault(p => Navigation.Uri.TrimEnd('/').EndsWith(p.Path.TrimEnd('/'), StringComparison.OrdinalIgnoreCase))?.Path
         ?? string.Empty;
 
-    protected override async Task OnInitializedAsync()
-    {
-        if (await BlazorUserContextAccessor.GetUserContextAsync() == null)
-            return;
-        _pages = await IamWebOptions.Value.ReadablePlatformSettingsPagesAsync(AuthorizationProvider);
-    }
+    protected override async Task OnInitializedAsync() =>
+        _pages = await InOperationAsync(services =>
+            IamWebOptions.Value.ReadablePlatformSettingsPagesAsync(services.GetRequiredService<IAuthorizationProvider>())
+        ) ?? _pages;
 
     private void OnPick(ChangeEventArgs e)
     {

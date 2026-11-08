@@ -158,8 +158,9 @@ only exemption, with a test that a callback without a matching cookie changes no
    upon as a stable identifier for the End-User" [S4 §5.7]. Microsoft Graph models linked identities
    the same way: "The combination of issuer and issuerAssignedId must be unique" [S20]. An OAuth 2.0
    provider with no issuer gets a fixed issuer per provider type, as Graph does (`facebook.com`)
-   [S20]: the provider's own origin, `https://github.com`, `https://www.facebook.com` and
-   `https://www.amazon.com` **(ours)**.
+   [S20]: the provider's own origin, `https://www.facebook.com` and `https://www.amazon.com`
+   **(ours)**. GitHub's is `https://github.com/login/oauth`, the RFC 9207 `iss` it sends on its
+   callback, which its docs do not state: found on the first real sign in.
 2. **An email alone never signs in to an existing user.** Email "MUST NOT be used as unique
    identifiers", and an issuer "MAY re-use an email Claim Value across different End-Users" [S4 §5.7];
    Microsoft: never use `email`, `preferred_username` or `upn` to identify or authorize [S12 "Validate

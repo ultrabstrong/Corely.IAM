@@ -435,12 +435,16 @@ public sealed class FederationClientTests : IDisposable
 
         var identity = await RedeemAsync(
             new GitHubProviderDefinition(),
-            Correlation(IdentityProviderType.GitHub, nonce: null, issuer: "https://github.com")
+            Correlation(
+                IdentityProviderType.GitHub,
+                nonce: null,
+                issuer: "https://github.com/login/oauth"
+            )
         );
 
         Assert.NotNull(identity);
         Assert.Equal("42", identity.Subject);
-        Assert.Equal("https://github.com", identity.Issuer);
+        Assert.Equal("https://github.com/login/oauth", identity.Issuer);
         Assert.Equal("main@example.com", identity.Email);
         Assert.True(identity.EmailVerified);
         Assert.Contains("code_verifier=", _stub.RequestBodies[0]);
@@ -463,7 +467,11 @@ public sealed class FederationClientTests : IDisposable
 
         var identity = await RedeemAsync(
             new GitHubProviderDefinition(),
-            Correlation(IdentityProviderType.GitHub, nonce: null, issuer: "https://github.com")
+            Correlation(
+                IdentityProviderType.GitHub,
+                nonce: null,
+                issuer: "https://github.com/login/oauth"
+            )
         );
 
         Assert.Null(identity!.Email);

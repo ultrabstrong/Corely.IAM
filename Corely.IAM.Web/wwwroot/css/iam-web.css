@@ -78,9 +78,19 @@ h1[tabindex="-1"]:focus {
 }
 
 /* Auth pages */
-.auth-container {
-    margin-block: auto;
-    padding-block: clamp(1rem, 4vh, 3rem);
+.iam-main:has(> .auth-container) {
+    flex-direction: column;
+    align-items: center;
+}
+
+.iam-main:has(> .auth-container)::before,
+.iam-main:has(> .auth-container)::after {
+    content: "";
+    flex: 1 0 clamp(1rem, 4vh, 3rem);
+}
+
+.iam-main:has(> .auth-container)::after {
+    flex-grow: 2;
 }
 
 .auth-card {
@@ -945,8 +955,11 @@ span.cell-icon {
 
     .iam-main .auth-container {
         width: 100%;
-        margin-block: 0;
-        padding-block: 1rem;
+    }
+
+    .iam-main:has(> .auth-container)::before,
+    .iam-main:has(> .auth-container)::after {
+        flex: 0 0 1rem;
     }
 }
 

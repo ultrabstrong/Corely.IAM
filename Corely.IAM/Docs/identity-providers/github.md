@@ -8,7 +8,8 @@ OAuth 2.0 through a GitHub App, with a client secret.
    GitHub creates apps only on github.com.
 2. Set the callback URL to `https://<host>/signin/callback/github`.
 3. Under Account permissions, give "Email addresses" read access.
-4. Copy the client ID and generate a client secret.
+4. Copy the client ID from the app's General page, then generate a client secret on its Credentials
+   page. Sign in needs no private key: delete any GitHub created.
 
 ## Configure
 

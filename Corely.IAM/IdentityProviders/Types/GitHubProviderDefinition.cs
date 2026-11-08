@@ -14,7 +14,7 @@ internal sealed class GitHubProviderDefinition : OAuth2ProviderDefinition
 
     public override IdentityProviderType Type => IdentityProviderType.GitHub;
     public override string DisplayName => "GitHub";
-    public override string Issuer => "https://github.com";
+    public override string Issuer => "https://github.com/login/oauth";
     public override string AuthorizationEndpoint => "https://github.com/login/oauth/authorize";
     public override string TokenEndpoint => "https://github.com/login/oauth/access_token";
     public override IReadOnlyList<string> Scopes { get; } = [];

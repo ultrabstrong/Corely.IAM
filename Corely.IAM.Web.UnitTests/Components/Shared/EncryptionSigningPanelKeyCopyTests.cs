@@ -165,10 +165,11 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         Button(cut, "Show key").Click();
 
         Assert.Equal((keyType, "pw", "123456"), Assert.Single(_calls));
-        Assert.Equal(SECRET, cut.Find(".tab-content textarea[readonly]").TextContent);
+        Assert.Equal(SECRET, cut.Find(".revealed-key-modal textarea[readonly]").TextContent);
         foreach (var warning in warnings)
-            Assert.Contains(warning, cut.Find(".tab-content .alert-warning").TextContent);
-        Assert.Contains("version 3", cut.Markup);
+            Assert.Contains(warning, cut.Find(".revealed-key-modal .alert-warning").TextContent);
+        Assert.Contains("Version 3", cut.Find(".revealed-key-modal").TextContent);
+        Assert.DoesNotContain(SECRET, cut.Find(".tab-content").InnerHtml);
     }
 
     [Fact]
@@ -211,15 +212,19 @@ public class EncryptionSigningPanelKeyCopyTests : BunitContext
         );
     }
 
-    [Fact]
-    public void Hide_ClearsTheKey()
+    [Theory]
+    [InlineData(".revealed-key-modal .modal-footer button")]
+    [InlineData(".revealed-key-modal .btn-close")]
+    [InlineData(".revealed-key-modal")]
+    public void ClosingTheKey_ClearsIt(string closer)
     {
         var cut = RenderPanel();
         Reveal(cut, "Copy key");
 
-        cut.Find("button[title='Hide']").Click();
+        cut.Find(closer).Click();
 
         Assert.DoesNotContain(SECRET, cut.Markup);
+        Assert.Empty(cut.FindAll(".revealed-key-modal"));
     }
 
     [Fact]

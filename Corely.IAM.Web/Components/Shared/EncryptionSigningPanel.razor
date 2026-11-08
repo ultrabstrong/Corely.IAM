@@ -76,7 +76,6 @@
                         <button class="btn btn-outline-warning btn-sm @RotateMargin enc-rotate" @onclick="() => ConfirmRotate(KeyType.SymmetricEncryption)" disabled="@_busy">Rotate key</button>
                     }
                 </div>
-                @RevealedKey(KeyType.SymmetricEncryption)
                 @if (_symOutput != null)
                 {
                     <div class="mb-3">
@@ -134,7 +133,6 @@
                         <button class="btn btn-outline-warning btn-sm @RotateMargin enc-rotate" @onclick="() => ConfirmRotate(KeyType.AsymmetricEncryption)" disabled="@_busy">Rotate key</button>
                     }
                 </div>
-                @RevealedKey(KeyType.AsymmetricEncryption)
                 @if (_asymOutput != null)
                 {
                     <div class="mb-3">
@@ -196,7 +194,6 @@
                         <button class="btn btn-outline-warning btn-sm @RotateMargin enc-rotate" @onclick="() => ConfirmRotate(KeyType.AsymmetricSignature)" disabled="@_busy">Rotate key</button>
                     }
                 </div>
-                @RevealedKey(KeyType.AsymmetricSignature)
                 @if (_sigResult != null)
                 {
                     <div class="alert @(_sigResultIsValid == true ? "alert-success" : _sigResultIsValid == false ? "alert-danger" : "alert-info") py-2">@_sigResult</div>
@@ -242,6 +239,8 @@
         <input type="text" class="form-control form-control-sm" autocomplete="one-time-code" @bind="_revealTotpCode" />
     </div>
 </FormModal>
+
+@RevealedKeyModal
 
 @code {
     [Parameter]
@@ -436,25 +435,35 @@
             </ul>
         </div>;
 
-    private RenderFragment RevealedKey(KeyType keyType) =>
+    private RenderFragment RevealedKeyModal =>
         @<text>
-            @if (_revealedKey != null && _revealedKeyType == keyType)
+            @if (_revealedKey != null)
             {
-                <div class="mb-3">
-                    @KeyWarning(keyType)
-                    <label class="form-label fw-semibold">
-                        @keyType.CopyKeyLabel(), version @_revealedVersion, @_revealedProviderName, @keyType.KeyFormat()
-                    </label>
-                    <div class="d-flex align-items-start gap-1">
-                        <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@_revealedKey</textarea>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopyRevealedKeyAsync" title="Copy">
-                            <i class="bi @(_revealedKeyCopied ? "bi-check text-success" : "bi-copy")"></i>
-                        </button>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="ClearRevealedKey" title="Hide">
-                            <i class="bi bi-eye-slash"></i>
-                        </button>
+                <div class="modal fade show d-block revealed-key-modal" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="ClearRevealedKey">
+                    <div class="modal-dialog" @onclick:stopPropagation="true">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">@_revealedKeyType.CopyKeyLabel()</h5>
+                                <button type="button" class="btn-close" @onclick="ClearRevealedKey" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                @KeyWarning(_revealedKeyType)
+                                <label class="form-label fw-semibold">
+                                    Version @_revealedVersion, @_revealedProviderName, @_revealedKeyType.KeyFormat()
+                                </label>
+                                <div class="d-flex align-items-start gap-1">
+                                    <textarea class="form-control form-control-sm font-monospace flex-grow-1" rows="1" style="field-sizing: content; resize: none;" onfocus="this.select()" readonly>@_revealedKey</textarea>
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="CopyRevealedKeyAsync" title="Copy">
+                                        <i class="bi @(_revealedKeyCopied ? "bi-check text-success" : "bi-copy")"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">This closes after @KEY_VISIBLE_SECONDS seconds and the key is not shown again. The clipboard keeps what you copy, so clear it when you are done.</small>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary btn-sm" @onclick="ClearRevealedKey">Done</button>
+                            </div>
+                        </div>
                     </div>
-                    <small class="text-muted">Hidden after @KEY_VISIBLE_SECONDS seconds. The clipboard keeps what you copy, so clear it when you are done.</small>
                 </div>
             }
         </text>;

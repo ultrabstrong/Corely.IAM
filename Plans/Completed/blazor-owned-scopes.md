@@ -1,9 +1,9 @@
 # Blazor components own their scopes
 
-**Status: phase 1 done, phase 2 not started.** Phase 1 (a scope per component) shipped in
-Corely.IAM.Web 3.4.0 and 3.5.0, Billing.Web 2.2.0, Billing.Web.IAM 2.1.0 and Billing.IAM 2.1.0;
-DocsToData converted and committed, push pending the owner. Phase 2 (a scope per operation, at the end
-of this file) fixes the stale reads phase 1 left in place. Found while verifying auditing
+**Status: done.** Phase 1 (a scope per component) shipped in Corely.IAM.Web 3.4.0 and 3.5.0,
+Billing.Web 2.2.0, Billing.Web.IAM 2.1.0 and Billing.IAM 2.1.0. Phase 2 (a scope per operation, at
+the end of this file) released as Corely.IAM.Web 11.0.0, Corely.Billing.Web 7.0.0 and
+Corely.Billing.Web.IAM 9.0.0, and taken by DocsToData; its "As built" section records what differs. Found while verifying auditing
 ([auditing.md](../Completed/auditing.md)): `/audit` never finishes loading.
 
 ## Why
@@ -79,7 +79,7 @@ this for every page that inherits it.
 | Corely.Billing | `Corely.Billing.Web` | NuGet `Corely.Billing.Web` | Base classes, replace `BillingCallGate` |
 | Corely.Billing | `Corely.Billing.Web.IAM` | NuGet `Corely.Billing.Web.IAM` | Check the account accessor works in a component's own scope |
 | Corely.Billing | Demo hosts | Apps | Their own pages that call services |
-| DocsToData | `DocsToData.AdminPortalWebApp` | App | Its pages, modals and nav bar |
+| DocsToData | `DocsToData.WebApp` | App | Its pages, modals and nav bar |
 
 Corely.Billing, Corely.Billing.IAM, Corely.IAM and the migration CLIs do not change.
 
@@ -270,7 +270,7 @@ packages are released and taken by DocsToData.
   one, bobby is refused, with a clean log; the Portal demo's dashboard, simulate, export, grants and
   usage pages load clean.
 
-### DocsToData (step 3): done, committed locally, not pushed
+### DocsToData (step 3): done
 
 - Took the stable packages, converted the nav bar, home page, four modals and the code behind pages.
   `ProviderModelSelect` and `ProviderLabel` stay as they are: their resolver only reads provider
@@ -287,8 +287,6 @@ packages are released and taken by DocsToData.
   (the host exits with code 1); the portal tier passes including the browser tests; a click through
   as admin on desktop and phone, Run Once end to end, and provisioner signing in with a code,
   entering Demo Account and creating a grant, with a clean log.
-- **Not pushed.** DocsToData's CLAUDE.md rations pushes (GitHub Free Actions budget); the two commits
-  wait for the owner.
 
 ## Phase 2: a scope per operation
 
@@ -532,3 +530,35 @@ No component in Corely.IAM.Web, Corely.Billing.Web, their demos or DocsToData in
 `OwningComponentBase` or reads `ScopedServices`; the rewritten injection tests and the freshness and
 expiry tests pass; `DocumentJobService` has no `AsNoTracking()`; every page loads clean in a browser;
 and the new IAM.Web and Billing packages are released and taken by DocsToData.
+
+### As built
+
+1. **`IOperationScopes` has `HasSession`.** A tab with no session cookie runs no work and navigates
+   nowhere, rather than being sent to sign in: `PermissionView` documents anonymous content on public
+   pages, and a forced sign in would break it. `AuthenticatedPageBase` and `AccountScope` send a tab
+   with no session to sign in themselves. A session whose token no longer signs in reloads the page,
+   as planned.
+2. **`AuthenticatedPageBase` derives from `OperationComponentBase`** instead of duplicating it, and
+   loads `UserContext` and the page's data in one operation:
+   `OnInitializedAuthenticatedAsync(IServiceProvider)` and `LoadCoreAsync(IServiceProvider)` take that
+   operation's services. `ReloadAsync()` opens an operation; `ReloadAsync(services)` reuses the one an
+   action is running, and `ExecuteSafeAsync` hands its action the services.
+3. **Disposal kept its shape.** `OperationComponentBase` (and Billing's `BillingOperationComponentBase`)
+   implement `IAsyncDisposable` with the same `DisposeAsyncCore()` override point `OwningComponentBase`
+   had, so derived overrides kept compiling. Blazor calls only `DisposeAsync` on a component that has
+   both, so `NavBar`'s `Dispose(bool)` moved into `DisposeAsyncCore()` rather than an `IDisposable`
+   beside it.
+4. **The middleware hands a token it renewed to the rest of the request** (`HttpContext.Items`), so an
+   operation in that request signs in with the new token instead of the expired cookie.
+5. **Billing:** `BillingOperationComponentBase` is the base both `BillingComponentBase` and
+   `BillingPageBase` share. Exports run through `RunExportAsync`, which builds the exporter inside the
+   export's operation. `IGrantActionGate` stays injected: it only renders `PermissionView`s.
+6. **DocsToData:** `MutationRunner`'s actions run in an operation each, with the reload after them.
+   `IDocumentExtractionProviderResolver` stays injected in `ProviderLabel` and `ProviderModelSelect`
+   (its providers call out over HTTP and never reach the database); the injection test allows it.
+7. **Tests.** The freshness tests open a tab scope on each host's real registrations and read through
+   its operations: IAM.Web's on a renamed account, Billing's on the Portal demo with a cancelled grant
+   request, DocsToData's on a job the Functions host completed. Each fails when the tab keeps one
+   scope. The expiry test checks the reload and that the reload renews; it fails when sign in is
+   cached. The WithIAM demo tests now create the IAM schema, which the sign in page reads since
+   Corely.IAM 7.

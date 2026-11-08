@@ -29,7 +29,7 @@ Blazor Server keeps one DI scope per browser tab, and a component can stay on sc
 `DbContext` kept that long returns the rows it already loaded instead of what the database holds now,
 and two components sharing one fail with "A second operation was started on this context instance".
 So every user visible action (the reads that render together on load, one timer tick, a button's
-action with the reload after it) runs through `InOperationAsync` and resolves what it needs from the
+action) runs through `InOperationAsync` and resolves what it needs from the
 provider it is handed:
 
 ```csharp
@@ -41,7 +41,8 @@ protected override Task OnInitializedAsync() =>
     });
 ```
 
-Never keep a service in a field across actions, and never `@inject` or `[Inject]` a scoped service
+A reload after an action is an operation of its own: a service may write in SQL, which the action's
+scope would not see. Never keep a service in a field across actions, and never `@inject` or `[Inject]` a scoped service
 that reaches the database: property injection resolves from the tab's scope and brings back both
 problems. Singletons, framework services (`NavigationManager`, `IJSRuntime`, `ILogger<T>`,
 `IOptions<T>`) and `IAccountDisplayState`, which is shared across the tab on purpose, stay injected.
@@ -82,10 +83,9 @@ Centralized error handling, loading state, and confirmation dialog support.
 | Method | Description |
 |--------|-------------|
 | `LoadCoreAsync(services)` | Abstract: load page data from the operation's services |
-| `ReloadAsync()` | Runs `LoadCoreAsync` in an operation of its own, with loading state and error handling |
-| `ReloadAsync(services)` | The same, in the operation already running, such as an action's |
+| `ReloadAsync()` | Runs `LoadCoreAsync` in an operation of its own, with loading state and error handling. After an action it reads what the action wrote, even a write a service made in SQL, which a read in the action's own scope would miss |
 | `FailLoad(resultCode, resourceName)` | Marks the load failed and says why: no access, or couldn't be loaded. Call it from `LoadCoreAsync` when a retrieval doesn't succeed |
-| `ExecuteSafeAsync(services => ...)` | Runs a user's action in an operation of its own with try-catch and loading state; an action that changes data reloads with `ReloadAsync(services)` |
+| `ExecuteSafeAsync(services => ...)` | Runs a user's action in an operation of its own with try-catch and loading state; an action that changes data then calls `ReloadAsync()` |
 | `SetResultMessage(success, msg, failMsg)` | Sets alert state from operation result |
 | `TryParseGuid(input, out result)` | Safe GUID parse with error alert on failure |
 | `ShowConfirmation(modal, id, msg)` | Opens a `ConfirmModal` for a specific entity |

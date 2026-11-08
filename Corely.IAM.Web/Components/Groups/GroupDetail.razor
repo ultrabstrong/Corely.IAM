@@ -341,7 +341,7 @@ else
             if (result.ResultCode == ModifyResultCode.Success)
             {
                 _isEditing = false;
-                await ReloadAsync(services);
+                await ReloadAsync();
             }
         });
     }
@@ -352,7 +352,7 @@ else
         {
             var result = await services.GetRequiredService<IRegistrationService>().RegisterUsersWithGroupAsync(new RegisterUsersWithGroupRequest(userIds, Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == AddUsersToGroupResultCode.Success, $"{userIds.Count} user(s) added.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -364,7 +364,7 @@ else
         {
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterUsersFromGroupAsync(new DeregisterUsersFromGroupRequest([_confirmItemId], Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterUsersFromGroupResultCode.Success, "User removed.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -386,7 +386,7 @@ else
         {
             var result = await services.GetRequiredService<IRegistrationService>().RegisterApiKeysWithGroupAsync(new RegisterApiKeysWithGroupRequest(apiKeyIds, Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == AddApiKeysToGroupResultCode.Success, $"{apiKeyIds.Count} API key(s) added.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -398,7 +398,7 @@ else
         {
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterApiKeysFromGroupAsync(new DeregisterApiKeysFromGroupRequest([_confirmItemId], Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterApiKeysFromGroupResultCode.Success, "API key removed.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -408,7 +408,7 @@ else
         {
             var result = await services.GetRequiredService<IRegistrationService>().RegisterRolesWithGroupAsync(new RegisterRolesWithGroupRequest(roleIds, Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == AssignRolesToGroupResultCode.Success, $"{roleIds.Count} role(s) added.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -420,7 +420,7 @@ else
         {
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterRolesFromGroupAsync(new DeregisterRolesFromGroupRequest([_confirmItemId], Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterRolesFromGroupResultCode.Success, "Role removed.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 }

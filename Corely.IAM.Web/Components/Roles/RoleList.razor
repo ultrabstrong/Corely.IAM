@@ -153,7 +153,7 @@ else
             var result = await services.GetRequiredService<IRegistrationService>().RegisterRoleAsync(new RegisterRoleRequest(_newRoleName, CurrentAccountId));
             SetResultMessage(result.ResultCode == CreateRoleResultCode.Success, "Role created.", result.Message);
             _newRoleName = string.Empty;
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -165,7 +165,7 @@ else
         {
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterRoleAsync(new DeregisterRoleRequest(_confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterRoleResultCode.Success, "Role deleted.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 }

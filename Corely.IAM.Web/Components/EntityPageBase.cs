@@ -19,17 +19,16 @@ public abstract class EntityPageBase : AuthenticatedPageBase
     protected string _confirmMessage = "";
 
     protected sealed override Task OnInitializedAuthenticatedAsync(IServiceProvider services) =>
-        ReloadAsync(services);
+        LoadAsync(() => LoadCoreAsync(services));
 
     /// <summary>Loads the page's data from the operation's services.</summary>
     protected abstract Task LoadCoreAsync(IServiceProvider services);
 
-    /// <summary>Reloads the page in an operation of its own.</summary>
+    /// <summary>
+    /// Reloads the page in an operation of its own. After an action, this reads what the action
+    /// wrote even when a service wrote it in SQL, which a read in the action's own scope would not.
+    /// </summary>
     protected Task ReloadAsync() => LoadAsync(() => InOperationAsync(LoadCoreAsync));
-
-    /// <summary>Reloads the page in the operation already running, such as an action's.</summary>
-    protected Task ReloadAsync(IServiceProvider services) =>
-        LoadAsync(() => LoadCoreAsync(services));
 
     private async Task LoadAsync(Func<Task> load)
     {
@@ -64,7 +63,7 @@ public abstract class EntityPageBase : AuthenticatedPageBase
 
     /// <summary>
     /// Runs a user's action in an operation of its own, unless the page is busy. An action that
-    /// changes data reloads with <see cref="ReloadAsync(IServiceProvider)"/> in the same operation.
+    /// changes data then calls <see cref="ReloadAsync"/>, which reads in a fresh operation.
     /// </summary>
     protected async Task ExecuteSafeAsync(Func<IServiceProvider, Task> action)
     {

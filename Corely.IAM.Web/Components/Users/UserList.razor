@@ -147,7 +147,7 @@ else
                 return;
             }
             SetResultMessage(result.ResultCode == DeregisterUserFromAccountResultCode.Success, "Removed.", result.Message ?? "Failed.");
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 }

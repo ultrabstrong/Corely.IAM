@@ -13,7 +13,7 @@ does not change.
 | `AuthenticatedPageBase.BlazorUserContextAccessor` | Gone; `UserContext` is loaded in the page's first operation |
 | `OnInitializedAuthenticatedAsync()` | `OnInitializedAuthenticatedAsync(IServiceProvider services)`, in the operation that signed the page in |
 | `EntityPageBase.LoadCoreAsync()` | `LoadCoreAsync(IServiceProvider services)` |
-| `EntityPageBase.ExecuteSafeAsync(Func<Task>)` | `ExecuteSafeAsync(Func<IServiceProvider, Task>)`; reload inside it with `ReloadAsync(services)` |
+| `EntityPageBase.ExecuteSafeAsync(Func<Task>)` | `ExecuteSafeAsync(Func<IServiceProvider, Task>)`; `ReloadAsync()` inside it reads in a fresh operation |
 | Disposal came from `OwningComponentBase` | `OperationComponentBase` implements `IAsyncDisposable` with the same `DisposeAsyncCore()` override point. An override of `Dispose(bool)` moves to `DisposeAsyncCore()`: Blazor calls only `DisposeAsync` on a component that has both, so an `IDisposable` added beside it is never called |
 
 A page left open past its auth token's life now reloads on its next action, which renews the session
@@ -36,7 +36,7 @@ or signs the user out, and a revoked session ends on the next action rather than
        ExecuteSafeAsync(async services =>
        {
            await services.GetRequiredService<IMyService>().SaveAsync(_model);
-           await ReloadAsync(services);
+           await ReloadAsync();
        });
    ```
 

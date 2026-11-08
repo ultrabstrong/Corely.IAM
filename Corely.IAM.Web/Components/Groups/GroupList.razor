@@ -144,7 +144,7 @@ else
             var result = await services.GetRequiredService<IRegistrationService>().RegisterGroupAsync(new RegisterGroupRequest(_newGroupName, CurrentAccountId));
             SetResultMessage(result.ResultCode == CreateGroupResultCode.Success, "Group created.", result.Message);
             _newGroupName = string.Empty;
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -156,7 +156,7 @@ else
         {
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterGroupAsync(new DeregisterGroupRequest(_confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterGroupResultCode.Success, "Group deleted.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 }

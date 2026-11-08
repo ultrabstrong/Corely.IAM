@@ -161,7 +161,7 @@ else
                 _newKeyModal.Show(result.Key);
             _newName = null;
             _newDescription = null;
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -174,7 +174,7 @@ else
         {
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterApiKeyAsync(new DeregisterApiKeyRequest(_confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterApiKeyResultCode.Success, "API key deleted.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 }

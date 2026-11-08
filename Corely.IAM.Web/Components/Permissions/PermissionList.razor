@@ -230,7 +230,7 @@ else
                 new RegisterPermissionRequest(CurrentAccountId, _newResourceType, resourceId, _newCreate, _newRead, _newUpdate, _newDelete, _newExecute, string.IsNullOrWhiteSpace(_newDescription) ? null : _newDescription.Trim()));
             SetResultMessage(result.ResultCode == CreatePermissionResultCode.Success, "Permission created.", result.Message);
             ResetCreateForm();
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -259,7 +259,7 @@ else
         {
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterPermissionAsync(new DeregisterPermissionRequest(_confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterPermissionResultCode.Success, "Permission deleted.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 }

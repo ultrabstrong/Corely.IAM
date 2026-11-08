@@ -215,7 +215,7 @@ else
             if (result.ResultCode == ModifyResultCode.Success)
             {
                 _isEditing = false;
-                await ReloadAsync(services);
+                await ReloadAsync();
             }
         });
     }
@@ -238,7 +238,7 @@ else
             SetResultMessage(result.ResultCode == RotateApiKeySecretResultCode.Success, $"{_rotateSlot} secret issued.", result.Message);
             if (result.Key is not null)
                 _newKeyModal.Show(result.Key);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -287,7 +287,7 @@ else
         {
             var result = await services.GetRequiredService<IRegistrationService>().RegisterRolesWithApiKeyAsync(new RegisterRolesWithApiKeyRequest(roleIds, Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == AssignRolesToApiKeyResultCode.Success, $"{roleIds.Count} role(s) assigned.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -297,7 +297,7 @@ else
         {
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterRolesFromApiKeyAsync(new DeregisterRolesFromApiKeyRequest([roleId], Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterRolesFromApiKeyResultCode.Success, "Role removed.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -315,7 +315,7 @@ else
                 }
             }
             SetResultMessage(true, $"{groupIds.Count} group(s) assigned.", null);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -325,7 +325,7 @@ else
         {
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterApiKeysFromGroupAsync(new DeregisterApiKeysFromGroupRequest([Id], groupId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterApiKeysFromGroupResultCode.Success, "Removed from group.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 }

@@ -211,7 +211,7 @@
             {
                 SetMessage(true, $"{edit.Type} saved.");
                 _editing = null;
-                await LoadAsync(services);
+                await InOperationAsync(LoadAsync);
             }
             else
             {

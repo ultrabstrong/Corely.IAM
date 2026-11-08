@@ -503,7 +503,7 @@ else
                 return;
             }
             SetResultMessage(result.ResultCode == DeregisterUserFromAccountResultCode.Success, "User removed.", result.Message ?? "Failed.");
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -527,7 +527,7 @@ else
             {
                 _createdToken = result.Token;
                 SetResultMessage(true, "Invitation created.");
-                await ReloadAsync(services);
+                await ReloadAsync();
             }
             else if (result.ResultCode == CreateInvitationResultCode.UserAlreadyInAccountError)
             {
@@ -559,7 +559,7 @@ else
         {
             var result = await services.GetRequiredService<IInvitationService>().RevokeInvitationAsync(new RevokeInvitationRequest(CurrentAccountId, _confirmItemId));
             SetResultMessage(result.ResultCode == RevokeInvitationResultCode.Success, "Invitation revoked.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -591,7 +591,7 @@ else
         {
             var rotated = await services.GetRequiredService<IModificationService>().RotateAccountKeyAsync(new RotateAccountKeyRequest(Id, keyType));
             if (rotated.ResultCode == ModifyResultCode.Success)
-                await LoadKeyProvidersAsync(services);
+                await InOperationAsync(LoadKeyProvidersAsync);
             return rotated;
         }) ?? new ModifyResult(ModifyResultCode.UnauthorizedError, SESSION_ENDED);
         StateHasChanged();
@@ -614,7 +614,7 @@ else
         {
             var compromised = await compromise(services);
             if (compromised.ResultCode == CompromiseAccountKeyResultCode.Success)
-                await LoadKeyProvidersAsync(services);
+                await InOperationAsync(LoadKeyProvidersAsync);
             return compromised;
         }) ?? new CompromiseAccountKeyResult(CompromiseAccountKeyResultCode.UnauthorizedError, SESSION_ENDED);
         StateHasChanged();

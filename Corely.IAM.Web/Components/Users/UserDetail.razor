@@ -226,7 +226,7 @@ else
                 }
             }
             SetResultMessage(true, $"{groupIds.Count} group(s) assigned.", null);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -238,7 +238,7 @@ else
         {
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterUsersFromGroupAsync(new DeregisterUsersFromGroupRequest([Id], _confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterUsersFromGroupResultCode.Success, "Removed from group.", result.Message ?? "Failed.");
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -262,7 +262,7 @@ else
         {
             var result = await services.GetRequiredService<IRegistrationService>().RegisterRolesWithUserAsync(new RegisterRolesWithUserRequest(roleIds, Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == AssignRolesToUserResultCode.Success, $"{roleIds.Count} role(s) assigned.", result.Message ?? "Failed.");
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -274,7 +274,7 @@ else
         {
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterRolesFromUserAsync(new DeregisterRolesFromUserRequest([_confirmItemId], Id, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterRolesFromUserResultCode.Success, "Role removed.", result.Message ?? "Failed.");
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 

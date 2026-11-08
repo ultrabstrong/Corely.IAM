@@ -211,7 +211,7 @@ else
                 added++;
             }
             SetResultMessage(failure == null, $"Added to {added} role(s).", $"Added to {added} of {roleIds.Count} role(s). {failure}");
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -223,7 +223,7 @@ else
         {
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterPermissionsFromRoleAsync(new DeregisterPermissionsFromRoleRequest([Id], _confirmItemId, CurrentAccountId));
             SetResultMessage(result.ResultCode == DeregisterPermissionsFromRoleResultCode.Success, "Removed from role.", result.Message);
-            await ReloadAsync(services);
+            await ReloadAsync();
         });
     }
 
@@ -244,7 +244,7 @@ else
             if (result.ResultCode == ModifyResultCode.Success)
             {
                 _isEditing = false;
-                await ReloadAsync(services);
+                await ReloadAsync();
             }
         });
     }

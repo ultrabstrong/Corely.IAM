@@ -117,7 +117,7 @@
                 _isEditing = false;
                 _message = "Audit settings saved.";
                 _messageType = AlertType.Success;
-                await LoadAsync(services);
+                await InOperationAsync(LoadAsync);
             }
             else
             {

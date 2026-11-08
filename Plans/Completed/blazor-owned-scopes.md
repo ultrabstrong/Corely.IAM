@@ -541,22 +541,28 @@ and the new IAM.Web and Billing packages are released and taken by DocsToData.
 2. **`AuthenticatedPageBase` derives from `OperationComponentBase`** instead of duplicating it, and
    loads `UserContext` and the page's data in one operation:
    `OnInitializedAuthenticatedAsync(IServiceProvider)` and `LoadCoreAsync(IServiceProvider)` take that
-   operation's services. `ReloadAsync()` opens an operation; `ReloadAsync(services)` reuses the one an
-   action is running, and `ExecuteSafeAsync` hands its action the services.
-3. **Disposal kept its shape.** `OperationComponentBase` (and Billing's `BillingOperationComponentBase`)
+   operation's services, and `ExecuteSafeAsync` hands its action the services.
+3. **A reload after an action is an operation of its own,** not part of the action's as "The shape"
+   item 1 planned. A service that writes in SQL (`ExecuteUpdate`, as `RecordRetryRequestAsync` and
+   `CancelJobAsync` do) leaves the action's `DbContext` holding the old row, so a reload in the same
+   scope showed the job page's retry as not requested; DocsToData's integration tier, with its
+   `AsNoTracking()` calls gone, found it. `ReloadAsync()` always opens a fresh operation, and every
+   component's reload after a change does the same, at the cost of one more sign in per action.
+4. **Disposal kept its shape.** `OperationComponentBase` (and Billing's `BillingOperationComponentBase`)
    implement `IAsyncDisposable` with the same `DisposeAsyncCore()` override point `OwningComponentBase`
    had, so derived overrides kept compiling. Blazor calls only `DisposeAsync` on a component that has
    both, so `NavBar`'s `Dispose(bool)` moved into `DisposeAsyncCore()` rather than an `IDisposable`
    beside it.
-4. **The middleware hands a token it renewed to the rest of the request** (`HttpContext.Items`), so an
+5. **The middleware hands a token it renewed to the rest of the request** (`HttpContext.Items`), so an
    operation in that request signs in with the new token instead of the expired cookie.
-5. **Billing:** `BillingOperationComponentBase` is the base both `BillingComponentBase` and
+6. **Billing:** `BillingOperationComponentBase` is the base both `BillingComponentBase` and
    `BillingPageBase` share. Exports run through `RunExportAsync`, which builds the exporter inside the
    export's operation. `IGrantActionGate` stays injected: it only renders `PermissionView`s.
-6. **DocsToData:** `MutationRunner`'s actions run in an operation each, with the reload after them.
+7. **DocsToData:** `MutationRunner`'s actions run in an operation each, and the reload after one in
+   a fresh operation.
    `IDocumentExtractionProviderResolver` stays injected in `ProviderLabel` and `ProviderModelSelect`
    (its providers call out over HTTP and never reach the database); the injection test allows it.
-7. **Tests.** The freshness tests open a tab scope on each host's real registrations and read through
+8. **Tests.** The freshness tests open a tab scope on each host's real registrations and read through
    its operations: IAM.Web's on a renamed account, Billing's on the Portal demo with a cancelled grant
    request, DocsToData's on a job the Functions host completed. Each fails when the tab keeps one
    scope. The expiry test checks the reload and that the reload renews; it fails when sign in is

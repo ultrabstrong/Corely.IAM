@@ -241,7 +241,7 @@
                 _setupPhase = false;
                 _enabled = true;
                 _confirmCode = "";
-                await LoadStatusAsync(services);
+                await InOperationAsync(LoadStatusAsync);
                 SetMessage(true, "Two-factor authentication enabled.");
                 await OnStatusChanged.InvokeAsync();
             }
@@ -285,7 +285,7 @@
             if (result.ResultCode == RegenerateTotpRecoveryCodesResultCode.Success)
             {
                 _regeneratedCodes = result.RecoveryCodes;
-                await LoadStatusAsync(services);
+                await InOperationAsync(LoadStatusAsync);
                 SetMessage(true, "Recovery codes regenerated. Save them now.");
             }
             else

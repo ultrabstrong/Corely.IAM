@@ -13,6 +13,7 @@ internal sealed class MicrosoftProviderDefinition : OpenIdConnectProviderDefinit
     public override IdentityProviderType Type => IdentityProviderType.Microsoft;
     public override string DisplayName => "Microsoft";
     public override bool ForcesFreshSignInForReauthentication => true;
+    public override bool OffersAccountPicker => true;
 
     public override IReadOnlyList<IdentityProviderCredentialKind> CredentialKinds { get; } =
     [IdentityProviderCredentialKind.Certificate, IdentityProviderCredentialKind.ClientSecret];
@@ -24,8 +25,8 @@ internal sealed class MicrosoftProviderDefinition : OpenIdConnectProviderDefinit
         FederatedSignInPurpose purpose
     ) =>
         purpose == FederatedSignInPurpose.Reauthenticate
-            ? new Dictionary<string, string> { ["prompt"] = "login", ["max_age"] = "0" }
-            : new Dictionary<string, string>();
+            ? new Dictionary<string, string> { [PROMPT_PARAMETER] = "login", ["max_age"] = "0" }
+            : base.AuthorizationParameters(purpose);
 
     public override bool IsValidIssuer(
         string issuer,

@@ -13,9 +13,17 @@ internal abstract class IdentityProviderDefinition
     public virtual IReadOnlyList<IdentityProviderCredentialKind> CredentialKinds { get; } =
     [IdentityProviderCredentialKind.ClientSecret];
 
+    public const string PROMPT_PARAMETER = "prompt";
+    public const string SELECT_ACCOUNT_PROMPT = "select_account";
+
     public virtual bool UsesPkce => true;
+
+    public virtual bool OffersAccountPicker => false;
 
     public virtual IReadOnlyDictionary<string, string> AuthorizationParameters(
         FederatedSignInPurpose purpose
-    ) => new Dictionary<string, string>();
+    ) =>
+        purpose == FederatedSignInPurpose.Link && OffersAccountPicker
+            ? new Dictionary<string, string> { [PROMPT_PARAMETER] = SELECT_ACCOUNT_PROMPT }
+            : new Dictionary<string, string>();
 }

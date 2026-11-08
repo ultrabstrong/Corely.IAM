@@ -43,7 +43,7 @@ it was meant for.
 | Purpose | Needs | Does |
 |---------|-------|------|
 | `SignIn` | Nothing | Signs in the user linked to the identity. With none linked, creates one when the provider allows sign up and vouches for the email |
-| `Link` | A signed in user | Links the identity to that user |
+| `Link` | A signed in user | Links the identity to that user. Google, Microsoft and GitHub show their account picker (`prompt=select_account`), so a user signed in to the provider with another account picks the right one |
 | `Reauthenticate` | A signed in user | Records proof, for five minutes and this session only, that the user just signed in with an identity linked to them |
 
 Signing in goes through two factor like a password sign in: `MfaRequiredChallenge` comes back when

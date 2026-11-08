@@ -17,6 +17,7 @@ internal sealed class GoogleProviderDefinition : OpenIdConnectProviderDefinition
 
     public override IdentityProviderType Type => IdentityProviderType.Google;
     public override string DisplayName => "Google";
+    public override bool OffersAccountPicker => true;
 
     public override string DiscoveryUrl(IdentityProviderSettings settings) => DISCOVERY_URL;
 

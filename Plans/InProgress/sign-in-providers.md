@@ -367,6 +367,11 @@ What turned out differently:
    logo outside a sign in button.
 8. Sign up, and the provider buttons on sign in, show "By signing up (or continuing), you agree to our
    Terms of Use and Privacy Policy" from an overridable `_SignUpTerms` partial.
+9. Proven against the real providers on localhost: Google, Microsoft (certificate credential),
+   GitHub and Facebook, each through sign up or the duplicate email refusal, linking, unlinking and
+   sign in, plus reauthentication through Google. Amazon is tested against stubs only: its developer
+   registration is left for a real business account. Its issuer is the one unconfirmed value, so a
+   first real sign in that reports an issuer mismatch shows the value in the callback URL.
 
 ## Sources
 

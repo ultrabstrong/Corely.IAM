@@ -1,7 +1,7 @@
 # External identity providers
 
-**Status:** released as Corely.IAM 7.0.1, Corely.IAM.CompiledModel.MsSql and .MySql 7.0.1,
-Corely.IAM.Web 10.0.1 and Corely.IAM.DataAccessMigrations.Cli 7.0.1. Tags 7.0.0 and 10.0.0 published nothing: they sat on a commit GitHub skips. See [As built](#as-built).
+**Status:** released as Corely.IAM 7.0.0, Corely.IAM.CompiledModel.MsSql and .MySql 7.0.0,
+Corely.IAM.Web 10.0.0 and Corely.IAM.DataAccessMigrations.Cli 7.0.0. See [As built](#as-built).
 
 The DocsToData owner (2026-11-04): turning on Google sign in should be a platform setting, not a
 redeploy, and the same place should later hold other providers. Today Google is switched on only by

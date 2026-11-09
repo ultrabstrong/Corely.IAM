@@ -73,8 +73,6 @@
         return Task.CompletedTask;
     }
 
-    // The token is a secret: once read, it leaves the address bar, so it is not left in history
-    // or copied along with the address.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender || !_fromLink)

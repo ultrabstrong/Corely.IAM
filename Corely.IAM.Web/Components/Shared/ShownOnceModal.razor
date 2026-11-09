@@ -36,10 +36,6 @@
     private string? _note;
     private bool _copied;
 
-    /// <summary>
-    /// Shows <paramref name="message"/>, and when <paramref name="value"/> is given, that value once
-    /// with a copy button and <paramref name="note"/> beneath it.
-    /// </summary>
     public void Show(string title, RenderFragment message, string? value = null, string? note = null)
     {
         _title = title;

@@ -6,10 +6,6 @@ using Microsoft.Extensions.Options;
 
 namespace Corely.IAM.WebApp.Invitations;
 
-/// <summary>
-/// Stands in for email in the reference app: the last invitation is kept in memory and shown on
-/// the invitation preview page.
-/// </summary>
 internal sealed class PreviewInvitationSender(
     InvitationPreviewStore store,
     IOptions<DemoFeaturesOptions> options,
@@ -35,7 +31,6 @@ internal sealed class PreviewInvitationSender(
         );
     }
 
-    // The sender runs outside any request, so the site's address comes from the server itself.
     private string PreviewUrl()
     {
         var addresses = server.Features.Get<IServerAddressesFeature>()?.Addresses ?? [];

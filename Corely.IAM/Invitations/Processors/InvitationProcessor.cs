@@ -180,8 +180,6 @@ internal class InvitationProcessor(
         );
     }
 
-    // The invitation already exists, so a sender that fails or throws must not lose it: the
-    // token goes back to the inviter to hand over instead.
     private async Task<(InvitationDeliveryStatus Status, string? Message)> SendAsync(
         InvitationDelivery delivery
     )

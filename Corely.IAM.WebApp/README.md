@@ -109,8 +109,10 @@ The preview page is controlled by `DemoFeatures:EnablePasswordRecoveryPreview` i
 
 ### Invitation Delivery Demo
 
-The WebApp registers a preview `IInvitationSender` that stands in for email. `DemoFeatures:InvitationPreview`
-picks what an inviter sees after creating an invitation, read at startup:
+In Development, the WebApp registers a preview `IInvitationSender` that stands in for email; in any
+other environment it registers none and `/invitation-preview` answers 404, since the page shows the
+last invitation's link to whoever opens it. `DemoFeatures:InvitationPreview` picks what an inviter
+sees after creating an invitation, read at startup:
 
 | Value | Inviter sees |
 |-------|--------------|

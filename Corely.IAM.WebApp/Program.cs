@@ -53,8 +53,9 @@ builder.Services.AddIAMWeb(options =>
 builder.Services.AddIAMWebBlazor<WebAppLinks>();
 builder.Services.AddSingleton<InvitationPreviewStore>();
 if (
-    builder.Configuration.GetSection(DemoFeaturesOptions.NAME).Get<DemoFeaturesOptions>()
-    is not { InvitationPreview: InvitationPreviewMode.Off }
+    builder.Environment.IsDevelopment()
+    && builder.Configuration.GetSection(DemoFeaturesOptions.NAME).Get<DemoFeaturesOptions>()
+        is not { InvitationPreview: InvitationPreviewMode.Off }
 )
     builder.Services.AddScoped<IInvitationSender, PreviewInvitationSender>();
 builder.Services.AddWebAppApi();

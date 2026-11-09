@@ -18,8 +18,6 @@ internal static class StringExtensions
 
     extension(string path)
     {
-        // Moving between sign in and sign up keeps where the visitor was going, such as an
-        // invitation link.
         public string WithReturnUrl(string? returnUrl) =>
             string.IsNullOrWhiteSpace(returnUrl)
                 ? path

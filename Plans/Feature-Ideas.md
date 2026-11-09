@@ -66,6 +66,16 @@ How long a browser session lasts is fixed today: the refresh cookie lives until 
 - [ ] Checked: the session may use a longer lifetime, a second setting on `SecurityPolicy` with its range
 - Useful on shared computers; unrelated to API keys and native clients
 
+### Passkeys
+Sign in with a passkey (WebAuthn), and count it as the second factor. Wanted, but not something a first customer needs, so it waits behind customer work.
+- [ ] A WebAuthn library for registration and assertion checks; check its license and upkeep first (Fido2NetLib is the usual one; .NET 10's passkeys live in ASP.NET Core Identity, which IAM does not use)
+- [ ] A credentials table (user, credential id, public key, sign counter, name, last used) and short lived challenges like `MfaChallenges`, with migrations for both providers and new compiled models
+- [ ] Register, list, rename and remove passkeys; sign in with one and get a session as password sign in does
+- [ ] Corely.IAM.Web: its first real browser script, for the create and get calls; a passkey button and autofill on sign in; a passkeys section on the profile
+- [ ] Decide whether a passkey skips TOTP, what that means for platform members' required TOTP, and a security setting to turn passkeys on
+- [ ] Each host names its relying party domain, since a passkey works only on the domain it was made for
+- Proving the browser side needs a real browser with a virtual authenticator; IAM has no browser tier, so a consumer's opt in browser tests would carry it
+
 ### Native app sign in through the browser
 A first party native or desktop app with no browser of its own signs a user in by opening IAM's sign in page in the system browser, so the pages, their bot check and MFA all apply. Authorization code with PKCE.
 - [ ] Session delegation: issue a separate token pair for an already signed in user and another device, with its own device id, so it lists and revokes on its own. IAM has no public way to do this today

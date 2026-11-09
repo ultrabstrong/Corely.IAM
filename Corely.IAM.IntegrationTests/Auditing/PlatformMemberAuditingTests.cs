@@ -191,20 +191,14 @@ public class PlatformMemberAuditingTests : IAsyncLifetime
             var permissionIds = new List<Guid>();
             foreach (var (resourceType, actions) in grants)
             {
-                var permission = await registration.RegisterPermissionAsync(
-                    new RegisterPermissionRequest(
+                permissionIds.Add(
+                    await _scenario.PermissionIdAsync(
+                        services,
                         _platformAccountId,
                         resourceType,
-                        Guid.Empty,
-                        actions.Contains(AuthAction.Create),
-                        actions.Contains(AuthAction.Read),
-                        actions.Contains(AuthAction.Update),
-                        actions.Contains(AuthAction.Delete),
-                        actions.Contains(AuthAction.Execute)
+                        actions
                     )
                 );
-                Assert.Equal(CreatePermissionResultCode.Success, permission.ResultCode);
-                permissionIds.Add(permission.CreatedPermissionId);
             }
             await registration.RegisterPermissionsWithRoleAsync(
                 new RegisterPermissionsWithRoleRequest(

@@ -176,9 +176,10 @@ public static class ServiceRegistrationExtensions
             serviceCollection.Decorate<IRetrievalService, RetrievalServiceAuditDecorator>();
             serviceCollection.Decorate<IRetrievalService, RetrievalServiceTelemetryDecorator>();
             serviceCollection.AddScoped<IPlatformService, PlatformService>();
+            serviceCollection.AddScoped<PlatformSupportDefaults>();
             serviceCollection.Decorate<IPlatformService, PlatformServiceAuthorizationDecorator>();
             serviceCollection.Decorate<IPlatformService, PlatformServiceAuditDecorator>();
-            serviceCollection.AddHostedService<PlatformOwnerPermissionsStartup>();
+            serviceCollection.AddHostedService<PlatformDefaultsStartup>();
             serviceCollection.AddHostedService<OwnerDefaultsStartup>();
             serviceCollection.AddHostedService<SecurityPolicyStartup>();
             serviceCollection.AddScoped<IModificationService, ModificationService>();

@@ -5,9 +5,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Corely.IAM.Platform;
 
-internal sealed class PlatformOwnerPermissionsStartup(
+internal sealed class PlatformDefaultsStartup(
     IServiceScopeFactory scopeFactory,
-    ILogger<PlatformOwnerPermissionsStartup> logger
+    ILogger<PlatformDefaultsStartup> logger
 ) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -18,12 +18,15 @@ internal sealed class PlatformOwnerPermissionsStartup(
             await scope
                 .ServiceProvider.GetRequiredService<IPlatformService>()
                 .CompletePlatformOwnerPermissionsAsync();
+            await scope
+                .ServiceProvider.GetRequiredService<PlatformSupportDefaults>()
+                .CompleteAsync();
         }
         catch (Exception ex)
         {
             logger.LogError(
                 ex,
-                "Could not complete the platform Owner role's permissions at startup; it is retried on the next start"
+                "Could not complete the platform account's default roles at startup; it is retried on the next start"
             );
         }
     }

@@ -13,6 +13,7 @@ using Corely.IAM.Models;
 using Corely.IAM.Permissions;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Providers;
+using Corely.IAM.Platform;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Mappers;
 using Corely.IAM.Platform.Models;
@@ -49,6 +50,7 @@ internal class PlatformService(
     IdentityProviderCredentialCipher identityProviderCredentialCipher,
     IdentityProviderCatalog identityProviderCatalog,
     IFederatedIdentityProcessor federatedIdentityProcessor,
+    PlatformSupportDefaults platformSupportDefaults,
     ILogger<PlatformService> logger
 ) : IPlatformService
 {
@@ -168,6 +170,7 @@ internal class PlatformService(
             await SaveSecuritySettingsAsync(_configuredSecurityPolicy.Policy);
             await SaveConfiguredIdentityProvidersAsync();
             await CompletePlatformOwnerPermissionsAsync();
+            await platformSupportDefaults.CompleteAsync();
 
             _logger.LogInformation(
                 "Bootstrapped the platform account {AccountId} owned by {UserId}",

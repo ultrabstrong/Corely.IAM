@@ -149,6 +149,31 @@ public class IAMOptionsTests
         Assert.Equal([AuthAction.Read], options.CustomResourceTypes["invoice"].OwnerActions);
     }
 
+    [Fact]
+    public void SetSupportActions_ReplacesTheDefault_ForRegisteredType()
+    {
+        var options = IAMOptions.Create(_configuration, Mock.Of<ISecurityConfigurationProvider>());
+
+        options
+            .RegisterResourceType("invoice", "Customer invoices", AuthAction.Read)
+            .SetSupportActions("Invoice", AuthAction.Read, AuthAction.Create, AuthAction.Create);
+
+        Assert.Equal(
+            [AuthAction.Read, AuthAction.Create],
+            options.CustomResourceTypes["invoice"].SupportActions
+        );
+    }
+
+    [Fact]
+    public void SetSupportActions_Throws_ForUnregisteredType()
+    {
+        var options = IAMOptions.Create(_configuration, Mock.Of<ISecurityConfigurationProvider>());
+
+        Assert.Throws<InvalidOperationException>(() =>
+            options.SetSupportActions("invoice", AuthAction.Read)
+        );
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

@@ -2,9 +2,14 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Enums;
+using Corely.IAM.Audits.Models;
+using Corely.IAM.Groups.Entities;
+using Corely.IAM.Groups.Models;
 using Corely.IAM.IntegrationTests.Infrastructure;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Platform;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Roles.Models;
@@ -116,6 +121,164 @@ public class PlatformAccountTests : IAsyncLifetime
         );
 
         Assert.Equal(0, added);
+    }
+
+    [Fact]
+    public async Task Bootstrap_PutsViewerAndSetupRolesInTheSupportGroup_ForFirstRun()
+    {
+        var roles = await _scenario.Host.QueryAsync(db =>
+            db.Set<GroupEntity>()
+                .Where(g =>
+                    g.AccountId == _platformAccountId && g.Name == Group.ACCOUNT_SUPPORT_GROUP_NAME
+                )
+                .SelectMany(g => g.Roles!)
+                .Where(r => r.IsSystemDefined)
+                .Select(r => r.Name)
+                .ToListAsync()
+        );
+
+        Assert.Equal([Role.ACCOUNT_SETUP_ROLE_NAME, Role.ACCOUNT_VIEWER_ROLE_NAME], roles.Order());
+    }
+
+    [Fact]
+    public async Task CompleteSupportDefaults_GivesViewerReadOnTypesThatAllowIt_ForEveryRegisteredType()
+    {
+        var viewer = await SupportRolePermissionsAsync(Role.ACCOUNT_VIEWER_ROLE_NAME);
+
+        Assert.Contains($"{Account.RESOURCE_TYPE}:R", viewer);
+        Assert.Contains($"{IamScenario.INVOICE_RESOURCE_TYPE}:R", viewer);
+        Assert.Contains($"{AuditEntry.RESOURCE_TYPE}:R", viewer);
+        Assert.All(viewer, p => Assert.EndsWith(":R", p));
+        Assert.DoesNotContain(viewer, p => p.StartsWith($"{Account.SECRET_KEYS_RESOURCE_TYPE}:"));
+        Assert.DoesNotContain(viewer, p => p.StartsWith($"{SecurityPolicy.RESOURCE_TYPE}:"));
+        Assert.DoesNotContain(viewer, p => p.StartsWith($"{IamScenario.REPORT_RESOURCE_TYPE}:"));
+    }
+
+    [Fact]
+    public async Task CompleteSupportDefaults_GivesSetupOnlyTheDeclaredChanges_ForSupportActions()
+    {
+        Assert.Equal(
+            [$"{IamScenario.INVOICE_RESOURCE_TYPE}:C"],
+            await SupportRolePermissionsAsync(Role.ACCOUNT_SETUP_ROLE_NAME)
+        );
+    }
+
+    [Fact]
+    public async Task CompleteSupportDefaults_ChangesNothing_ForCompleteSupport()
+    {
+        var changes = await _scenario.Host.WithScopeAsync(services =>
+            services.GetRequiredService<PlatformSupportDefaults>().CompleteAsync()
+        );
+
+        Assert.Equal(0, changes);
+    }
+
+    [Fact]
+    public async Task CompleteSupportDefaults_AdoptsHandMadeRoleAndDropsExtras_ForRoleBuiltByHand()
+    {
+        await _scenario.Host.QueryAsync(async db =>
+        {
+            var setup = await db.Set<RoleEntity>()
+                .Include(r => r.Permissions)
+                .SingleAsync(r =>
+                    r.AccountId == _platformAccountId && r.Name == Role.ACCOUNT_SETUP_ROLE_NAME
+                );
+            var ownerInvoice = await db.Set<PermissionEntity>()
+                .SingleAsync(p =>
+                    p.AccountId == _platformAccountId
+                    && p.ResourceType == IamScenario.INVOICE_RESOURCE_TYPE
+                    && p.Create
+                    && p.Read
+                    && p.Update
+                    && p.Delete
+                    && p.Execute
+                );
+            setup.IsSystemDefined = false;
+            setup.Permissions!.Clear();
+            setup.Permissions.Add(ownerInvoice);
+            return await db.SaveChangesAsync();
+        });
+
+        var changes = await _scenario.Host.WithScopeAsync(services =>
+            services.GetRequiredService<PlatformSupportDefaults>().CompleteAsync()
+        );
+
+        Assert.True(changes > 0);
+        Assert.Equal(
+            [$"{IamScenario.INVOICE_RESOURCE_TYPE}:C"],
+            await SupportRolePermissionsAsync(Role.ACCOUNT_SETUP_ROLE_NAME)
+        );
+        Assert.Contains(
+            $"{IamScenario.INVOICE_RESOURCE_TYPE}:CRUDX",
+            await SupportRolePermissionsAsync(Role.OWNER_ROLE_NAME)
+        );
+    }
+
+    [Fact]
+    public async Task CompleteSupportDefaults_PutsRoleBackInGroup_ForRoleTakenOut()
+    {
+        await _scenario.Host.QueryAsync(async db =>
+        {
+            var group = await db.Set<GroupEntity>()
+                .Include(g => g.Roles)
+                .SingleAsync(g =>
+                    g.AccountId == _platformAccountId && g.Name == Group.ACCOUNT_SUPPORT_GROUP_NAME
+                );
+            group.Roles!.Remove(group.Roles.Single(r => r.Name == Role.ACCOUNT_VIEWER_ROLE_NAME));
+            return await db.SaveChangesAsync();
+        });
+
+        var changes = await _scenario.Host.WithScopeAsync(services =>
+            services.GetRequiredService<PlatformSupportDefaults>().CompleteAsync()
+        );
+
+        Assert.Equal(1, changes);
+    }
+
+    [Fact]
+    public async Task SupportGroupMember_ReadsAnotherAccountAndMakesOnlySetupChanges_ForSupportGroup()
+    {
+        await JoinSupportGroupAsync();
+
+        Assert.True(await OutsiderMayAsync(AuthAction.Read, User.RESOURCE_TYPE));
+        Assert.True(await OutsiderMayAsync(AuthAction.Read, IamScenario.INVOICE_RESOURCE_TYPE));
+        Assert.True(await OutsiderMayAsync(AuthAction.Create, IamScenario.INVOICE_RESOURCE_TYPE));
+        Assert.False(await OutsiderMayAsync(AuthAction.Update, IamScenario.INVOICE_RESOURCE_TYPE));
+        Assert.False(await OutsiderMayAsync(AuthAction.Update, User.RESOURCE_TYPE));
+        Assert.False(await OutsiderMayAsync(AuthAction.Read, Account.SECRET_KEYS_RESOURCE_TYPE));
+    }
+
+    private Task<bool> OutsiderMayAsync(AuthAction action, string resourceType) =>
+        _scenario.IsAuthorizedAsync(
+            _scenario.OutsiderUsername,
+            _scenario.AccountId,
+            action,
+            resourceType
+        );
+
+    private async Task JoinSupportGroupAsync()
+    {
+        var userId = _scenario.OutsiderUserId;
+        var groupId = await _scenario.Host.QueryAsync(db =>
+            db.Set<GroupEntity>()
+                .Where(g =>
+                    g.AccountId == _platformAccountId && g.Name == Group.ACCOUNT_SUPPORT_GROUP_NAME
+                )
+                .Select(g => g.Id)
+                .SingleAsync()
+        );
+        await _scenario.AsSystemAsync(async services =>
+        {
+            var registration = services.GetRequiredService<IRegistrationService>();
+            await registration.RegisterUserWithAccountAsync(
+                new RegisterUserWithAccountRequest(userId, _platformAccountId)
+            );
+            await registration.RegisterUsersWithGroupAsync(
+                new RegisterUsersWithGroupRequest([userId], groupId, _platformAccountId)
+            );
+            return true;
+        });
+        await _scenario.EnrollTwoFactorAsync(_scenario.OutsiderUsername);
     }
 
     [Fact]
@@ -486,20 +649,14 @@ public class PlatformAccountTests : IAsyncLifetime
             var permissionIds = new List<Guid>();
             foreach (var (resourceType, actions) in grants)
             {
-                var permission = await registration.RegisterPermissionAsync(
-                    new RegisterPermissionRequest(
+                permissionIds.Add(
+                    await _scenario.PermissionIdAsync(
+                        services,
                         _platformAccountId,
                         resourceType,
-                        Guid.Empty,
-                        actions.Contains(AuthAction.Create),
-                        actions.Contains(AuthAction.Read),
-                        actions.Contains(AuthAction.Update),
-                        actions.Contains(AuthAction.Delete),
-                        actions.Contains(AuthAction.Execute)
+                        actions
                     )
                 );
-                Assert.Equal(CreatePermissionResultCode.Success, permission.ResultCode);
-                permissionIds.Add(permission.CreatedPermissionId);
             }
             await registration.RegisterPermissionsWithRoleAsync(
                 new RegisterPermissionsWithRoleRequest(
@@ -514,4 +671,22 @@ public class PlatformAccountTests : IAsyncLifetime
             return true;
         });
     }
+
+    private Task<List<string>> SupportRolePermissionsAsync(string roleName) =>
+        _scenario.Host.QueryAsync(async db =>
+            (
+                await db.Set<RoleEntity>()
+                    .Where(r =>
+                        r.AccountId == _platformAccountId && r.Name == roleName && r.IsSystemDefined
+                    )
+                    .SelectMany(r => r.Permissions!)
+                    .Where(p => p.ResourceId == Guid.Empty && p.IsSystemDefined)
+                    .ToListAsync()
+            )
+                .Select(p =>
+                    $"{p.ResourceType}:{(p.Create ? "C" : "")}{(p.Read ? "R" : "")}{(p.Update ? "U" : "")}{(p.Delete ? "D" : "")}{(p.Execute ? "X" : "")}"
+                )
+                .Order()
+                .ToList()
+        );
 }

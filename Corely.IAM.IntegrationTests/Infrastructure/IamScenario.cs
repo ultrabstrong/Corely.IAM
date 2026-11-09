@@ -1,5 +1,6 @@
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Roles.Models;
 using Corely.IAM.Security.Enums;
@@ -8,6 +9,7 @@ using Corely.IAM.Services;
 using Corely.IAM.TotpAuths.Models;
 using Corely.IAM.TotpAuths.Providers;
 using Corely.IAM.Users.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Corely.IAM.IntegrationTests.Infrastructure;
@@ -58,6 +60,7 @@ public sealed class IamScenario : IAsyncLifetime
             options =>
                 options
                     .RegisterResourceType(INVOICE_RESOURCE_TYPE, "Invoices", AuthAction.Read)
+                    .SetSupportActions(INVOICE_RESOURCE_TYPE, AuthAction.Read, AuthAction.Create)
                     .RegisterResourceType(REPORT_RESOURCE_TYPE, "Reports"),
             _configuration
         );
@@ -175,6 +178,53 @@ public sealed class IamScenario : IAsyncLifetime
             services.GetRequiredService<IAuthenticationService>().AuthenticateAsSystem("system");
             return await work(services);
         });
+
+    public async Task<Guid> PermissionIdAsync(
+        IServiceProvider services,
+        Guid accountId,
+        string resourceType,
+        AuthAction[] actions
+    )
+    {
+        var create = actions.Contains(AuthAction.Create);
+        var read = actions.Contains(AuthAction.Read);
+        var update = actions.Contains(AuthAction.Update);
+        var delete = actions.Contains(AuthAction.Delete);
+        var execute = actions.Contains(AuthAction.Execute);
+        var permission = await services
+            .GetRequiredService<IRegistrationService>()
+            .RegisterPermissionAsync(
+                new RegisterPermissionRequest(
+                    accountId,
+                    resourceType,
+                    Guid.Empty,
+                    create,
+                    read,
+                    update,
+                    delete,
+                    execute
+                )
+            );
+        if (permission.ResultCode == CreatePermissionResultCode.Success)
+            return permission.CreatedPermissionId;
+
+        Assert.Equal(CreatePermissionResultCode.PermissionExistsError, permission.ResultCode);
+        return await Host.QueryAsync(db =>
+            db.Set<PermissionEntity>()
+                .Where(p =>
+                    p.AccountId == accountId
+                    && p.ResourceType == resourceType
+                    && p.ResourceId == Guid.Empty
+                    && p.Create == create
+                    && p.Read == read
+                    && p.Update == update
+                    && p.Delete == delete
+                    && p.Execute == execute
+                )
+                .Select(p => p.Id)
+                .SingleAsync()
+        );
+    }
 
     private Task<Guid> RegisterUserAsync(string username) =>
         Host.WithScopeAsync(async services =>

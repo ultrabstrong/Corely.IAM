@@ -6,6 +6,8 @@ public class Role
 {
     public const string RESOURCE_TYPE = "role";
     public const string OWNER_ROLE_NAME = "Owner Role";
+    public const string ACCOUNT_VIEWER_ROLE_NAME = "Account Viewer Role";
+    public const string ACCOUNT_SETUP_ROLE_NAME = "Account Setup Role";
     public const int NAME_MIN_LENGTH = 1;
     public const int NAME_MAX_LENGTH = 100;
 

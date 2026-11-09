@@ -31,20 +31,31 @@ Because a platform member's access is ordinary permissions, the rest of IAM need
 the grant only what you hold rule bounds what platform members can hand out, and a slim role gives a
 slim reach.
 
-## Roles to build
+## The account support group
 
-The platform account's owner holds full access on every registered resource type, so they can build
-any role. Keep that owner for rare use and give day to day work narrower roles.
+The platform account's owner holds full access on every registered resource type. Keep that owner
+for rare use: day to day work goes to the **Account Support Group**, which the platform account
+always has.
 
 | Role | Permissions in the platform account | Can, in any account |
 |------|-------------------------------------|---------------------|
-| Platform owner (bootstrapped) | Full access on every type | Everything |
-| Grant provisioner | Account : Read, Grant : Read & Create | See every account and its grants, add grants. Nothing else |
-| Support viewer | Account : Read, User : Read, Role : Read | Look into any account's users and roles, change nothing |
-| Account manager | Account : Read & Update | Open any account, rename it, manage its invitations |
+| Owner Role (bootstrapped user) | Full access on every type | Everything |
+| Account Viewer Role | Read on every type whose support actions include Read | See every account and everything in it, change nothing |
+| Account Setup Role | Each type's other support actions | Only the changes the registered types allow support, such as approving a grant |
 
-`grant` is an example of a host type (from Corely.Billing); any registered type works the same way.
-Read on a type is needed to see its records, so a role that creates them should usually read them too.
+Both roles are in the group, so adding a platform member to the group is all it takes. Each type's
+support actions come from its registration ([Resource Types](resource-types.md)): Read by default
+when the owner can read, nothing on `account_secret_keys` or the platform settings types, and more
+only where a host or library calls `SetSupportActions`.
+
+Bootstrap creates the group and both roles, and every start of an application calling
+`AddIAMServices` completes them: each role is given exactly the permissions its types call for and
+loses any other, both roles are system defined, and the group is put back with both roles if either
+was taken out or the group deleted. A role with the same name that was built by hand is adopted.
+Anything a platform member needs beyond that goes in a role of its own; the support roles are not
+the place for it.
+
+Other roles work as anywhere else. The owner can build any role, and a slim role gives a slim reach.
 
 ## Enabling it
 
@@ -67,6 +78,7 @@ It creates, in one go:
 - the account (`Platform` unless `--account-name` says otherwise), flagged as the platform account,
   with that user as its owner;
 - full access on every IAM resource type for the account's Owner role;
+- the [account support group](#the-account-support-group) and its two roles;
 - the platform's security settings, from `--settings` or `--use-defaults`. Exactly one is required;
   see [where security settings come from](#where-security-settings-come-from).
 
@@ -82,20 +94,21 @@ created under any other key cannot sign in.
 
 The CLI does not load the application, so it cannot know the resource types the application
 registers (`grant`, `extraction` and so on). Every time an application calling `AddIAMServices` starts,
-a hosted service gives the platform Owner role full access on any registered type it is missing. Most
-starts this is one query that finds everything in place; a type registered later is picked up on the
-next start. Nothing happens when there is no platform account.
+a hosted service gives the platform Owner role full access on any registered type it is missing, and
+completes the account support group from the registered types' support actions. Most starts this
+finds everything in place; a type registered later is picked up on the next start. Nothing happens
+when there is no platform account.
 
-The same work is available as `IPlatformService.CompletePlatformOwnerPermissionsAsync()`.
+The Owner role's part is also available as `IPlatformService.CompletePlatformOwnerPermissionsAsync()`.
 
 ## Using it
 
 1. **Sign in as the platform owner** with the generated password and an authenticator code.
 2. **Invite platform admins.** They sign up as ordinary users first, then accept an invitation to the
    platform account, exactly as for any account.
-3. **Give them slim roles.** Create the roles above (or your own) in the platform account and assign
-   them. The owner can only hand out what it holds, which is everything; a platform admin with a slim
-   role can only hand out that slim set.
+3. **Add them to the Account Support Group,** or give them roles of your own. The owner can only
+   hand out what it holds, which is everything; a platform admin with a slim role can only hand out
+   that slim set.
 4. **Work in a customer account.** A platform admin with Account Read picks the account from the
    account list and switches into it. Pages work as they do for the account's own members, limited
    to what the platform roles allow. The Your access panel marks each role that comes from the
@@ -198,6 +211,7 @@ whichever place they come from.
 | `Account.IsPlatformAccount` | Marks the platform account |
 | `IPlatformService.BootstrapPlatformAsync(BootstrapPlatformRequest)` | What the CLI command runs; returns the owner's credentials |
 | `IPlatformService.CompletePlatformOwnerPermissionsAsync()` | Gives the platform Owner role any missing full access rows; returns how many it added |
+| `Group.ACCOUNT_SUPPORT_GROUP_NAME`, `Role.ACCOUNT_VIEWER_ROLE_NAME`, `Role.ACCOUNT_SETUP_ROLE_NAME` | The support group's and roles' names |
 | `IPlatformService.GetSecuritySettingsAsync()` | The security settings in force; needs Read on `platform_security_settings` in the platform account |
 | `IPlatformService.UpdateSecuritySettingsAsync(SecurityPolicy)` | Saves them; needs Update there. `NotFoundError` without a platform account |
 | `IPlatformService.GetIdentityProvidersAsync()` | Every identity provider's settings, credentials left out; needs Read on `platform_security_settings` |

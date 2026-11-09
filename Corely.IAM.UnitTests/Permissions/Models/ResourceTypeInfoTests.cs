@@ -44,4 +44,18 @@ public class ResourceTypeInfoTests
 
         Assert.Equal("Document Workflows : Read", type.OwnerDefaultDescription());
     }
+
+    [Theory]
+    [InlineData(new[] { AuthAction.Read, AuthAction.Update }, new[] { AuthAction.Read })]
+    [InlineData(new[] { AuthAction.Execute }, new AuthAction[0])]
+    [InlineData(new AuthAction[0], new AuthAction[0])]
+    public void SupportActions_DefaultsToReadWhenOwnersRead_ForOwnerActions(
+        AuthAction[] ownerActions,
+        AuthAction[] expected
+    )
+    {
+        var type = new ResourceTypeInfo("group", "Groups", ownerActions);
+
+        Assert.Equal(expected, type.SupportActions);
+    }
 }

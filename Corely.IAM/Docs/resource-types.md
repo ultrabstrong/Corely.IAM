@@ -7,6 +7,7 @@ Resource types are compile-time concepts that categorize what a permission grant
 - **Pre-registered IAM types**: all built-in types available at startup
 - **Custom types**: host apps register additional types during DI setup
 - **Owner actions**: each type declares which actions an account's Owner role gets on it
+- **Support actions**: each type declares what the platform account's support group gets on it
 - **Case-insensitive**: `"account"`, `"Account"`, and `"ACCOUNT"` are treated as the same type
 - **Validation integration**: `PermissionValidator` rejects unknown resource types
 - **No persistence**: resource types are not stored in the database; they exist only in memory
@@ -59,6 +60,17 @@ A type registered without owner actions gives the owner nothing on it; access to
 permissions created explicitly. Duplicate names (including case variants) are overwritten with the
 latest value. A name already taken by a built-in type, or `"*"`, throws when services are added.
 
+A type's support actions say what the [platform account's support group](platform.md#the-account-support-group)
+gets on it. They default to Read when the owner actions include Read, and nothing otherwise, so
+the built-in types give support Read on everything but `account_secret_keys` and the platform
+settings types. Give support more on a registered type with `SetSupportActions`, after registering it:
+
+```csharp
+options
+    .RegisterResourceType("invoice", "Invoices", "Bills sent to customers", "Billing", AuthAction.Read)
+    .SetSupportActions("invoice", AuthAction.Read, AuthAction.Create);
+```
+
 Registering a type lets IAM check permissions on it. It does not scope your rows of that type to an
 account: see [Gotchas](gotchas.md#permissions-do-not-keep-accounts-apart-in-your-own-tables).
 
@@ -103,6 +115,7 @@ public record ResourceTypeInfo(
 {
     public string Title { get; init; }
     public string? Group { get; init; }
+    public IReadOnlyList<AuthAction> SupportActions { get; init; }
 }
 ```
 

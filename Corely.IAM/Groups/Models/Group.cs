@@ -5,6 +5,7 @@ namespace Corely.IAM.Groups.Models;
 public class Group
 {
     public const string RESOURCE_TYPE = "group";
+    public const string ACCOUNT_SUPPORT_GROUP_NAME = "Account Support Group";
     public const int NAME_MIN_LENGTH = 1;
     public const int NAME_MAX_LENGTH = 100;
 

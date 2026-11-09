@@ -104,6 +104,20 @@ public class IAMOptions
         return this;
     }
 
+    public IAMOptions SetSupportActions(string name, params AuthAction[] supportActions)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(supportActions);
+        if (!CustomResourceTypes.TryGetValue(name, out var type))
+        {
+            throw new InvalidOperationException(
+                $"Resource type '{name}' is not registered. Register it before setting its support actions."
+            );
+        }
+        CustomResourceTypes[name] = type with { SupportActions = [.. supportActions.Distinct()] };
+        return this;
+    }
+
     public IAMOptions UseSymmetricEncryption(string code)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);

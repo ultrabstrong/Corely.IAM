@@ -13,6 +13,8 @@ public record ResourceTypeInfo(
 
     public string Title { get; init; } = Name;
     public string? Group { get; init; }
+    public IReadOnlyList<AuthAction> SupportActions { get; init; } =
+        OwnerActions.Contains(AuthAction.Read) ? [AuthAction.Read] : [];
 
     public string OwnerDefaultDescription() =>
         PermissionLabelProvider.GetName(

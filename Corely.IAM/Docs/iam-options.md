@@ -68,6 +68,7 @@ var options = IAMOptions.Create(configuration, securityConfigProvider, efConfigF
 | Method | Parameter | Default | Description |
 |--------|-----------|---------|-------------|
 | `RegisterResourceType` | `name`, `description`, `params ownerActions` | none | Adds a custom resource type to the registry, with the actions an account owner gets on it |
+| `SetSupportActions` | `name`, `params supportActions` | Read, when the owner can read | What the platform account's support group gets on a registered type; see [Platform Account](platform.md#the-account-support-group) |
 | `UseSymmetricEncryption` | `code` | `AES_CODE` | Symmetric encryption algorithm |
 | `UseAsymmetricEncryption` | `code` | `RSA_CODE` | Asymmetric encryption algorithm |
 | `UseAsymmetricSignature` | `code` | `ECDSA_SHA256_CODE` | Asymmetric signature algorithm |

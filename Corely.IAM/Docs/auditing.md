@@ -83,6 +83,11 @@ through `IAuditService` applies at once on that instance and on others when thei
 - every entry where the caller is the actor;
 - everything, entries outside any account and system context included, for a caller holding Read on `audit` in the platform account, or under system context.
 
+An API key is a caller like any other: it holds Read on `audit` through its own roles and groups, in its
+own account, and only while the platform's `ApiKeyResourceTypes` includes `audit`. The rule that
+shows a caller its own entries is for users: a key sees the entries it made only through that
+permission.
+
 ```csharp
 var result = await auditService.ListEntriesAsync(new ListAuditEntriesRequest(
     new AuditEntryFilter

@@ -4,7 +4,9 @@ using Corely.IAM.Audits.Models;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Mappers;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Enums;
+using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +14,8 @@ namespace Corely.IAM.Audits.Providers;
 
 internal class AuditAccessProvider(
     IUserContextProvider userContextProvider,
-    IReadonlyRepo<PermissionEntity> permissionRepo
+    IReadonlyRepo<PermissionEntity> permissionRepo,
+    ISecurityPolicyProvider securityPolicyProvider
 ) : IAuditAccessProvider
 {
     private readonly IUserContextProvider _userContextProvider = userContextProvider.ThrowIfNull(
@@ -21,6 +24,8 @@ internal class AuditAccessProvider(
     private readonly IReadonlyRepo<PermissionEntity> _permissionRepo = permissionRepo.ThrowIfNull(
         nameof(permissionRepo)
     );
+    private readonly ISecurityPolicyProvider _securityPolicyProvider =
+        securityPolicyProvider.ThrowIfNull(nameof(securityPolicyProvider));
 
     public async Task<AuditAccess> GetAccessAsync(AuthAction action)
     {
@@ -29,10 +34,11 @@ internal class AuditAccessProvider(
             return AuditAccess.None;
         if (context.IsSystemContext)
             return AuditAccess.All;
-        if (context.User is not { } user)
+
+        var held = await HeldAsync(context, action, AuditEntry.RESOURCE_TYPE);
+        if (held is null)
             return AuditAccess.None;
 
-        var held = await HeldAsync(user.Id, action, AuditEntry.RESOURCE_TYPE);
         var everything = held.Any(p =>
             p.Account?.IsPlatformAccount == true && p.ResourceId == Guid.Empty
         );
@@ -40,7 +46,7 @@ internal class AuditAccessProvider(
             .Select(p => p.AccountId)
             .ToHashSet();
 
-        return new AuditAccess(everything, accountIds, user.Id);
+        return new AuditAccess(everything, accountIds, context.User?.Id);
     }
 
     public async Task<bool> HoldsInPlatformAccountAsync(AuthAction action, string resourceType)
@@ -50,30 +56,54 @@ internal class AuditAccessProvider(
             return false;
         if (context.IsSystemContext)
             return true;
-        if (context.User is not { } user)
-            return false;
 
-        return (await HeldAsync(user.Id, action, resourceType)).Any(p =>
-            p.Account?.IsPlatformAccount == true && p.ResourceId == Guid.Empty
-        );
+        return (await HeldAsync(context, action, resourceType))?.Any(p =>
+                p.Account?.IsPlatformAccount == true && p.ResourceId == Guid.Empty
+            ) == true;
     }
 
-    private async Task<List<PermissionEntity>> HeldAsync(
-        Guid userId,
+    private async Task<List<PermissionEntity>?> HeldAsync(
+        UserContext context,
         AuthAction action,
         string resourceType
-    ) =>
-        (
-            await _permissionRepo.ListAsync(
+    )
+    {
+        List<PermissionEntity> permissions;
+        if (context.ApiKey is { } apiKey)
+        {
+            var allowedTypes = (await _securityPolicyProvider.GetPolicyAsync()).ApiKeyResourceTypes;
+            if (!allowedTypes.Contains(resourceType))
+                return [];
+
+            var accountId = context.CurrentAccount?.Id;
+            permissions = await _permissionRepo.ListAsync(
+                p =>
+                    p.ResourceType == resourceType
+                    && p.AccountId == accountId
+                    && p.Roles!.Any(r =>
+                        r.ApiKeys!.Any(k => k.Id == apiKey.Id)
+                        || r.Groups!.Any(g => g.ApiKeys!.Any(k => k.Id == apiKey.Id))
+                    ),
+                include: q => q.Include(p => p.Account)
+            );
+        }
+        else if (context.User is { } user)
+        {
+            permissions = await _permissionRepo.ListAsync(
                 p =>
                     p.ResourceType == resourceType
                     && p.Roles!.Any(r =>
-                        r.Users!.Any(u => u.Id == userId)
-                        || r.Groups!.Any(g => g.Users!.Any(u => u.Id == userId))
+                        r.Users!.Any(u => u.Id == user.Id)
+                        || r.Groups!.Any(g => g.Users!.Any(u => u.Id == user.Id))
                     ),
                 include: q => q.Include(p => p.Account)
-            )
-        )
-            .Where(p => p.Allows(action))
-            .ToList();
+            );
+        }
+        else
+        {
+            return null;
+        }
+
+        return [.. permissions.Where(p => p.Allows(action))];
+    }
 }

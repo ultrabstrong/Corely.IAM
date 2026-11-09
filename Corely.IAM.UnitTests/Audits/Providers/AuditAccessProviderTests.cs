@@ -1,12 +1,15 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.ApiKeys.Entities;
+using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
 using Corely.IAM.Platform.Models;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Roles.Entities;
 using Corely.IAM.Security.Enums;
 using Corely.IAM.Users.Entities;
@@ -19,6 +22,7 @@ public class AuditAccessProviderTests
 {
     private readonly ServiceFactory _serviceFactory = new();
     private readonly Mock<IUserContextProvider> _userContextProvider = new();
+    private readonly Mock<ISecurityPolicyProvider> _securityPolicyProvider = new();
     private readonly AuditAccessProvider _provider;
     private readonly Guid _userId = Guid.CreateVersion7();
 
@@ -26,8 +30,147 @@ public class AuditAccessProviderTests
     {
         _provider = new AuditAccessProvider(
             _userContextProvider.Object,
-            _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>()
+            _serviceFactory.GetRequiredService<IReadonlyRepo<PermissionEntity>>(),
+            _securityPolicyProvider.Object
         );
+        AllowKeysOn(AuditEntry.RESOURCE_TYPE);
+    }
+
+    [Fact]
+    public async Task GetAccess_ReachesTheKeysAccount_ForAKeyWhoseRoleGrantsTheAction()
+    {
+        var (keyId, accountId) = await GrantKeyAsync(isPlatform: false, read: true);
+        SignInAs(keyId, accountId);
+
+        var access = await _provider.GetAccessAsync(AuthAction.Read);
+
+        Assert.False(access.Everything);
+        Assert.Equal([accountId], access.AccountIds);
+        Assert.Null(access.ViewerUserId);
+    }
+
+    [Fact]
+    public async Task GetAccess_CountsAGrantThroughAGroup_ForAKey()
+    {
+        var (keyId, accountId) = await GrantKeyAsync(
+            isPlatform: false,
+            read: true,
+            throughGroup: true
+        );
+        SignInAs(keyId, accountId);
+
+        Assert.Equal([accountId], (await _provider.GetAccessAsync(AuthAction.Read)).AccountIds);
+    }
+
+    [Fact]
+    public async Task GetAccess_ReachesNothing_ForAKeyWithoutTheAction()
+    {
+        var (keyId, accountId) = await GrantKeyAsync(isPlatform: false, delete: true);
+        SignInAs(keyId, accountId);
+
+        Assert.Empty((await _provider.GetAccessAsync(AuthAction.Read)).AccountIds);
+    }
+
+    [Fact]
+    public async Task GetAccess_ReachesNothing_ForAKeyWhenThePlatformDoesNotAllowAudit()
+    {
+        AllowKeysOn("extraction");
+        var (keyId, accountId) = await GrantKeyAsync(isPlatform: false, read: true);
+        SignInAs(keyId, accountId);
+
+        var access = await _provider.GetAccessAsync(AuthAction.Read);
+
+        Assert.False(access.Everything);
+        Assert.Empty(access.AccountIds);
+    }
+
+    [Fact]
+    public async Task GetAccess_IgnoresAGrantInAnotherAccount_ForAKey()
+    {
+        var (keyId, _) = await GrantKeyAsync(isPlatform: false, read: true);
+        SignInAs(keyId, Guid.CreateVersion7());
+
+        Assert.Empty((await _provider.GetAccessAsync(AuthAction.Read)).AccountIds);
+    }
+
+    private void AllowKeysOn(params string[] resourceTypes) =>
+        _securityPolicyProvider
+            .Setup(x => x.GetPolicyAsync())
+            .ReturnsAsync(SecurityPolicy.Default with { ApiKeyResourceTypes = new(resourceTypes) });
+
+    private void SignInAs(Guid keyId, Guid accountId) =>
+        _userContextProvider
+            .Setup(x => x.GetUserContext())
+            .Returns(
+                new UserContext(
+                    new ApiKey
+                    {
+                        Id = keyId,
+                        AccountId = accountId,
+                        Name = "key",
+                    },
+                    new Account { Id = accountId, AccountName = "current" },
+                    "device"
+                )
+            );
+
+    private async Task<(Guid KeyId, Guid AccountId)> GrantKeyAsync(
+        bool isPlatform,
+        bool read = false,
+        bool delete = false,
+        bool throughGroup = false
+    )
+    {
+        var account = new AccountEntity
+        {
+            Id = Guid.CreateVersion7(),
+            AccountName = $"account-{Guid.CreateVersion7()}",
+            IsPlatformAccount = isPlatform,
+        };
+        await _serviceFactory.GetRequiredService<IRepo<AccountEntity>>().CreateAsync(account);
+
+        var key = new ApiKeyEntity
+        {
+            Id = Guid.CreateVersion7(),
+            AccountId = account.Id,
+            Name = "key",
+        };
+        var role = new RoleEntity
+        {
+            Id = Guid.CreateVersion7(),
+            Name = "Auditors",
+            AccountId = account.Id,
+            Account = account,
+            ApiKeys = throughGroup ? [] : [key],
+            Groups = throughGroup
+                ?
+                [
+                    new GroupEntity
+                    {
+                        Id = Guid.CreateVersion7(),
+                        Name = "Group",
+                        AccountId = account.Id,
+                        ApiKeys = [key],
+                    },
+                ]
+                : [],
+        };
+        await _serviceFactory
+            .GetRequiredService<IRepo<PermissionEntity>>()
+            .CreateAsync(
+                new PermissionEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    AccountId = account.Id,
+                    Account = account,
+                    ResourceType = AuditEntry.RESOURCE_TYPE,
+                    ResourceId = Guid.Empty,
+                    Read = read,
+                    Delete = delete,
+                    Roles = [role],
+                }
+            );
+        return (key.Id, account.Id);
     }
 
     [Fact]

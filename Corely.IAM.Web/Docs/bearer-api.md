@@ -131,6 +131,34 @@ verifier that meets an unknown `kid` fetches again. What is listed after a rotat
 It is open to anyone, so give it a rate limit. An account's existence can be learned from it by anyone
 holding the id.
 
+## Managing the account
+
+Opt in to let a signed in caller, a person's token or an API key, manage its current account's
+members and access. Nothing is mapped unless the host calls it.
+
+```csharp
+app.MapIAMAccountEndpoints("/api").RequireRateLimiting("per-caller");
+```
+
+| Routes under the prefix | Do |
+|-------------------------|----|
+| `/users` | List the members, remove one, give or take a role |
+| `/invitations` | List, invite by email (the token is returned once), revoke |
+| `/groups` | List, read, create, change, delete, and add or remove members, keys and roles |
+| `/roles` | List, read, create, change, delete, and add or remove permissions |
+| `/permissions` | List, read, create, describe, delete |
+| `/apikeys` | List, read, create (the key is returned once), rename, revoke, and give or take roles |
+| `/audit` | The account's audit log, newest first, by `from`, `to`, `resourceType`, `action`, `resultCode` |
+
+Every route works in the caller's current account and passes it to the services, which refuse an id
+from another account the same way as one that does not exist. Each service checks its own permission,
+so a key reaches only the types its roles hold that the platform's `ApiKeyResourceTypes` allows; a host
+that wants keys to have none of this leaves those types out. Granting a role or a permission still
+needs the caller to hold what it hands out. Answers use `ApiResponse`, with `403` for a refused
+permission, `404` for an id not in the account, `400` for a bad body or id list and `409` for a
+conflict such as a name in use. No route reads an API key's secret, the account's own keys, or a
+person's password, email or two factor sign in.
+
 ## OpenAPI
 
 The token endpoints carry names, summaries and typed results, so a host's OpenAPI document describes

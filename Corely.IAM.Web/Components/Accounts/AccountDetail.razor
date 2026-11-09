@@ -239,33 +239,7 @@ else
     </div>
 </FormModal>
 
-@if (_createdToken != null)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="() => _createdToken = null">
-        <div class="modal-dialog" @onclick:stopPropagation="true">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Invitation Created</h5>
-                    <button type="button" class="btn-close" @onclick="() => _createdToken = null"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-success mb-0">
-                        <strong>Copy this token</strong> — it will not be shown again.
-                        <div class="input-group mt-2">
-                            <input type="text" class="form-control form-control-sm font-monospace" readonly value="@_createdToken" onclick="this.select()" />
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary btn-sm" @onclick="CopyTokenAsync">
-                        @(_tokenCopied ? "Copied!" : "Copy to Clipboard")
-                    </button>
-                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => { _createdToken = null; _tokenCopied = false; }">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
+<ShownOnceModal @ref="_invitationCreatedModal" />
 
 @code {
     private Guid Id => CurrentAccountId;
@@ -290,8 +264,7 @@ else
     private string? _inviteEmail;
     private string? _inviteDescription;
     private int _inviteExpirySeconds = CreateInvitationRequest.DEFAULT_EXPIRY_SECONDS;
-    private string? _createdToken;
-    private bool _tokenCopied;
+    private ShownOnceModal _invitationCreatedModal = null!;
     private CancellationTokenSource? _invSearchCts;
 
     private int _usersSkip;
@@ -512,8 +485,6 @@ else
         _inviteEmail = string.Empty;
         _inviteDescription = string.Empty;
         _inviteExpirySeconds = CreateInvitationRequest.DEFAULT_EXPIRY_SECONDS;
-        _createdToken = null;
-        _tokenCopied = false;
         _createInvitationModal.Show();
     }
 
@@ -525,7 +496,7 @@ else
             var result = await services.GetRequiredService<IInvitationService>().CreateInvitationAsync(request);
             if (result.ResultCode == CreateInvitationResultCode.Success)
             {
-                _createdToken = result.Token;
+                ShowInvitationCreated(request.Email, result);
                 SetResultMessage(true, "Invitation created.");
                 await ReloadAsync();
             }
@@ -540,14 +511,24 @@ else
         });
     }
 
-    private async Task CopyTokenAsync()
+    private void ShowInvitationCreated(string email, CreateInvitationResult result)
     {
-        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", _createdToken);
-        _tokenCopied = true;
-        StateHasChanged();
-        await Task.Delay(1500);
-        _tokenCopied = false;
-        StateHasChanged();
+        if (result.Delivery == InvitationDeliveryStatus.Sent || result.Token is null)
+        {
+            _invitationCreatedModal.Show("Invitation sent", @<text>@result.DeliveryMessage</text>);
+            return;
+        }
+
+        var link = $"{NavigationManager.ToAbsoluteUri(Links.AcceptInvitation().TrimStart('/'))}?token={Uri.EscapeDataString(result.Token)}";
+        var failed = result.Delivery == InvitationDeliveryStatus.Failed
+            ? $"The invitation could not be sent{(string.IsNullOrWhiteSpace(result.DeliveryMessage) ? "." : $": {result.DeliveryMessage.TrimEnd('.')}.")} "
+            : null;
+        _invitationCreatedModal.Show(
+            failed is null ? "Invitation link" : "Invitation not sent",
+            @<text>@failed Send this link to <strong>@email</strong>. It works only when they sign in with that address, and expires <LocalTime Value="result.ExpiresUtc" />.</text>,
+            link,
+            "Shown once. If it is lost, revoke the invitation and invite again."
+        );
     }
 
     private void ConfirmRevokeInvitation(Guid invitationId, string email) =>

@@ -3,12 +3,18 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.Invitations.Entities;
+using Corely.IAM.Invitations.Enums;
 using Corely.IAM.Invitations.Models;
 using Corely.IAM.Invitations.Processors;
+using Corely.IAM.Invitations.Providers;
+using Corely.IAM.Security.Mappers;
+using Corely.IAM.Security.Models;
 using Corely.IAM.Users.Entities;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
+using Corely.Security.Hashing.Factories;
+using Corely.Security.Secrets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -21,16 +27,23 @@ public class InvitationProcessorTests
 
     public InvitationProcessorTests()
     {
-        _invitationProcessor = new InvitationProcessor(
+        _invitationProcessor = CreateProcessor();
+    }
+
+    private InvitationProcessor CreateProcessor(IInvitationSender? sender = null) =>
+        new(
             _serviceFactory.GetRequiredService<IRepo<InvitationEntity>>(),
             _serviceFactory.GetRequiredService<IRepo<AccountEntity>>(),
             _serviceFactory.GetRequiredService<IAccountProcessor>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
+            _serviceFactory.GetRequiredService<IHashProviderFactory>(),
+            _serviceFactory.GetRequiredService<IamHashCodes>(),
+            _serviceFactory.GetRequiredService<ISecretProvider>(),
             _serviceFactory.GetRequiredService<TimeProvider>(),
-            _serviceFactory.GetRequiredService<ILogger<InvitationProcessor>>()
+            _serviceFactory.GetRequiredService<ILogger<InvitationProcessor>>(),
+            sender
         );
-    }
 
     private async Task<UserEntity> CreateUserAsync(string? email = null)
     {
@@ -105,22 +118,27 @@ public class InvitationProcessorTests
         setter.SetUserContext(context);
     }
 
-    private async Task<InvitationEntity> CreateInvitationEntityAsync(
+    private async Task<(InvitationEntity Entity, string Token)> CreateInvitationEntityAsync(
         Guid accountId,
         Guid createdByUserId,
         string email = "invite@test.com",
-        string? token = null,
         DateTime? expiresUtc = null,
         Guid? acceptedByUserId = null,
         DateTime? acceptedUtc = null,
         DateTime? revokedUtc = null
     )
     {
+        var secret = _serviceFactory.GetRequiredService<ISecretProvider>().CreateSecret();
         var entity = new InvitationEntity
         {
             Id = Guid.CreateVersion7(),
             AccountId = accountId,
-            Token = token ?? Guid.CreateVersion7().ToString("N"),
+            SecretHash = secret
+                .ToHashedValueFromPlainText(
+                    _serviceFactory.GetRequiredService<IHashProviderFactory>(),
+                    _serviceFactory.GetRequiredService<IamHashCodes>().TokenHashCode
+                )
+                .ToHashString()!,
             CreatedByUserId = createdByUserId,
             Email = email,
             ExpiresUtc = expiresUtc ?? DateTime.UtcNow.AddDays(7),
@@ -129,7 +147,7 @@ public class InvitationProcessorTests
             RevokedUtc = revokedUtc,
         };
         var repo = _serviceFactory.GetRequiredService<IRepo<InvitationEntity>>();
-        return await repo.CreateAsync(entity);
+        return (await repo.CreateAsync(entity), new InvitationToken(entity.Id, secret).ToString());
     }
 
     [Fact]
@@ -465,13 +483,13 @@ public class InvitationProcessorTests
         var invitation = await CreateInvitationEntityAsync(account.Id, creator.Id);
 
         var result = await _invitationProcessor.RevokeInvitationAsync(
-            new RevokeInvitationRequest(account.Id, invitation.Id)
+            new RevokeInvitationRequest(account.Id, invitation.Entity.Id)
         );
 
         Assert.Equal(RevokeInvitationResultCode.Success, result.ResultCode);
 
         var repo = _serviceFactory.GetRequiredService<IRepo<InvitationEntity>>();
-        var entity = await repo.GetAsync(i => i.Id == invitation.Id);
+        var entity = await repo.GetAsync(i => i.Id == invitation.Entity.Id);
         Assert.NotNull(entity);
         Assert.NotNull(entity.RevokedUtc);
     }
@@ -500,7 +518,7 @@ public class InvitationProcessorTests
         );
 
         var result = await _invitationProcessor.RevokeInvitationAsync(
-            new RevokeInvitationRequest(account.Id, invitation.Id)
+            new RevokeInvitationRequest(account.Id, invitation.Entity.Id)
         );
 
         Assert.Equal(RevokeInvitationResultCode.InvitationAlreadyAcceptedError, result.ResultCode);
@@ -516,7 +534,7 @@ public class InvitationProcessorTests
         var invitation = await CreateInvitationEntityAsync(otherAccount.Id, creator.Id);
 
         var result = await _invitationProcessor.RevokeInvitationAsync(
-            new RevokeInvitationRequest(account.Id, invitation.Id)
+            new RevokeInvitationRequest(account.Id, invitation.Entity.Id)
         );
 
         Assert.Equal(RevokeInvitationResultCode.InvitationNotFoundError, result.ResultCode);
@@ -552,5 +570,156 @@ public class InvitationProcessorTests
 
         Assert.NotNull(result.Data);
         Assert.Equal(2, result.Data.Items.Count);
+    }
+
+    private async Task<(
+        AccountEntity Account,
+        CreateInvitationResult Result
+    )> CreateWithSenderAsync(IInvitationSender? sender)
+    {
+        var user = await CreateUserAsync("inviter@test.com");
+        var account = await CreateAccountAsync("Acme");
+        SetUserContext(user, account);
+        var result = await CreateProcessor(sender)
+            .CreateInvitationAsync(
+                new CreateInvitationRequest(
+                    account.Id,
+                    "invitee@test.com",
+                    "Welcome",
+                    CreateInvitationRequest.MIN_EXPIRY_SECONDS
+                )
+            );
+        return (account, result);
+    }
+
+    [Fact]
+    public async Task CreateInvitation_StoresOnlyTheSecretsHash_ForNewInvitation()
+    {
+        var (_, result) = await CreateWithSenderAsync(null);
+
+        var entity = await _serviceFactory
+            .GetRequiredService<IRepo<InvitationEntity>>()
+            .GetAsync(i => i.Id == result.InvitationId);
+        Assert.True(InvitationToken.TryParse(result.Token, out var token));
+        Assert.Equal(result.InvitationId, token.InvitationId);
+        Assert.DoesNotContain(token.Secret, entity!.SecretHash);
+    }
+
+    [Fact]
+    public async Task CreateInvitation_ReturnsTokenNotAttempted_ForNoSender()
+    {
+        var (_, result) = await CreateWithSenderAsync(null);
+
+        Assert.Equal(InvitationDeliveryStatus.NotAttempted, result.Delivery);
+        Assert.NotNull(result.Token);
+        Assert.NotNull(result.ExpiresUtc);
+        Assert.Null(result.DeliveryMessage);
+    }
+
+    [Fact]
+    public async Task CreateInvitation_HandsTheSenderEveryFact_ForRegisteredSender()
+    {
+        InvitationDelivery? delivered = null;
+        var sender = new Mock<IInvitationSender>();
+        sender
+            .Setup(s => s.SendAsync(It.IsAny<InvitationDelivery>()))
+            .Callback<InvitationDelivery>(d => delivered = d)
+            .ReturnsAsync(new InvitationSendResult(InvitationSendResultCode.Sent));
+
+        var (account, result) = await CreateWithSenderAsync(sender.Object);
+
+        Assert.NotNull(delivered);
+        Assert.Equal(result.InvitationId, delivered.InvitationId);
+        Assert.Equal(account.Id, delivered.AccountId);
+        Assert.Equal("Acme", delivered.AccountName);
+        Assert.Equal("invitee@test.com", delivered.Email);
+        Assert.Equal("Welcome", delivered.Description);
+        Assert.Equal(result.ExpiresUtc, delivered.ExpiresUtc);
+        Assert.Equal("inviter@test.com", delivered.InvitedByEmail);
+
+        SetUserContext(await CreateUserAsync("invitee@test.com"));
+        var accepted = await _invitationProcessor.AcceptInvitationAsync(
+            new AcceptInvitationRequest(delivered.Token)
+        );
+        Assert.Equal(AcceptInvitationResultCode.Success, accepted.ResultCode);
+    }
+
+    [Fact]
+    public async Task CreateInvitation_WithholdsTokenWithDefaultMessage_ForSentWithoutMessage()
+    {
+        var sender = new Mock<IInvitationSender>();
+        sender
+            .Setup(s => s.SendAsync(It.IsAny<InvitationDelivery>()))
+            .ReturnsAsync(new InvitationSendResult(InvitationSendResultCode.Sent));
+
+        var (_, result) = await CreateWithSenderAsync(sender.Object);
+
+        Assert.Equal(InvitationDeliveryStatus.Sent, result.Delivery);
+        Assert.Null(result.Token);
+        Assert.Equal("Invitation sent to invitee@test.com.", result.DeliveryMessage);
+    }
+
+    [Fact]
+    public async Task CreateInvitation_ReturnsSendersMessage_ForSentWithMessage()
+    {
+        var sender = new Mock<IInvitationSender>();
+        sender
+            .Setup(s => s.SendAsync(It.IsAny<InvitationDelivery>()))
+            .ReturnsAsync(
+                new InvitationSendResult(InvitationSendResultCode.Sent, "Emailed, check spam.")
+            );
+
+        var (_, result) = await CreateWithSenderAsync(sender.Object);
+
+        Assert.Equal("Emailed, check spam.", result.DeliveryMessage);
+    }
+
+    [Fact]
+    public async Task CreateInvitation_ReturnsTokenAndReason_ForNotSent()
+    {
+        var sender = new Mock<IInvitationSender>();
+        sender
+            .Setup(s => s.SendAsync(It.IsAny<InvitationDelivery>()))
+            .ReturnsAsync(
+                new InvitationSendResult(InvitationSendResultCode.NotSent, "mailbox full")
+            );
+
+        var (_, result) = await CreateWithSenderAsync(sender.Object);
+
+        Assert.Equal(CreateInvitationResultCode.Success, result.ResultCode);
+        Assert.Equal(InvitationDeliveryStatus.Failed, result.Delivery);
+        Assert.NotNull(result.Token);
+        Assert.Equal("mailbox full", result.DeliveryMessage);
+    }
+
+    [Fact]
+    public async Task CreateInvitation_ReturnsToken_ForSenderThatThrows()
+    {
+        var sender = new Mock<IInvitationSender>();
+        sender
+            .Setup(s => s.SendAsync(It.IsAny<InvitationDelivery>()))
+            .ThrowsAsync(new InvalidOperationException("boom"));
+
+        var (_, result) = await CreateWithSenderAsync(sender.Object);
+
+        Assert.Equal(CreateInvitationResultCode.Success, result.ResultCode);
+        Assert.Equal(InvitationDeliveryStatus.Failed, result.Delivery);
+        Assert.NotNull(result.Token);
+    }
+
+    [Fact]
+    public async Task AcceptInvitation_ReturnsNotFound_ForWrongSecret()
+    {
+        var creator = await CreateUserAsync();
+        var acceptor = await CreateUserAsync("invite@test.com");
+        var account = await CreateAccountAsync();
+        var (entity, _) = await CreateInvitationEntityAsync(account.Id, creator.Id);
+        SetUserContext(acceptor);
+
+        var result = await _invitationProcessor.AcceptInvitationAsync(
+            new AcceptInvitationRequest(new InvitationToken(entity.Id, "not-the-secret").ToString())
+        );
+
+        Assert.Equal(AcceptInvitationResultCode.InvitationNotFoundError, result.ResultCode);
     }
 }

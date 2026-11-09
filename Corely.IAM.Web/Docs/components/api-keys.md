@@ -13,7 +13,7 @@ settings leave keys off for the account, the page says so and lists nothing.
 - **Search**: name
 - **Sort**: name
 - **Create**: modal form with name, description and lifetime in days, no longer than
-  `ApiKeyMaxLifetimeDays`. The new key is shown once in `ApiKeySecretModal`, with a copy button
+  `ApiKeyMaxLifetimeDays`. The new key is shown once in `ShownOnceModal`, with a copy button
 - **Delete**: confirmation modal
 - **Locked badge**: shown while repeated wrong secrets have locked the key
 
@@ -34,7 +34,7 @@ Key properties, its two secrets, and its roles and groups.
 **Features:**
 - **Edit properties**: name, description
 - **Secrets**: the primary and secondary slot with prefix, expiry and last use. Issue or rotate either
-  slot; the new key is shown once in `ApiKeySecretModal`
+  slot; the new key is shown once in `ShownOnceModal`
 - **Roles and groups**: add and remove, with pickers that offer only roles and groups the caller could
   grant
 - **Allowed types**: the resource types the platform lets keys act on

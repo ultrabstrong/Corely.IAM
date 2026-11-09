@@ -27,4 +27,22 @@ public class StringExtensionsTests
     {
         Assert.Null(url.AsLocalUrl());
     }
+
+    [Fact]
+    public void WithReturnUrl_EscapesTheReturnUrl_ForReturnUrlWithQuery()
+    {
+        Assert.Equal(
+            "/register?returnUrl=%2Faccept-invitation%3Ftoken%3Da.b",
+            "/register".WithReturnUrl("/accept-invitation?token=a.b")
+        );
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void WithReturnUrl_KeepsThePath_ForNoReturnUrl(string? returnUrl)
+    {
+        Assert.Equal("/register", "/register".WithReturnUrl(returnUrl));
+    }
 }

@@ -1,0 +1,35 @@
+@page "/invitation-preview"
+@model Corely.IAM.WebApp.Pages.Authentication.InvitationPreviewModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Invitation Preview";
+}
+
+<div class="auth-card">
+    <h2 class="mb-3">Demo Invitation Preview</h2>
+    <p class="text-muted">
+        This page stands in for the invitation email in the reference app. A real host sends the link
+        through its own channel instead of showing it here.
+    </p>
+
+    @if (Model.Delivery is not { } delivery)
+    {
+        <div class="alert alert-warning" role="alert">No invitation has been sent since the app started.</div>
+    }
+    else
+    {
+        <dl>
+            <dt>To</dt>
+            <dd>@delivery.Email</dd>
+            <dt>Account</dt>
+            <dd>@delivery.AccountName</dd>
+            <dt>Invited by</dt>
+            <dd>@delivery.InvitedByUsername (@delivery.InvitedByEmail)</dd>
+            <dt>Expires</dt>
+            <dd>@delivery.ExpiresUtc.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+        </dl>
+        <div class="d-grid">
+            <a class="btn btn-primary" href="@Model.AcceptUrl">Open the invitation link</a>
+        </div>
+    }
+</div>

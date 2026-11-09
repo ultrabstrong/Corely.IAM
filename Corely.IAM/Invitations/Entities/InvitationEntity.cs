@@ -6,12 +6,11 @@ namespace Corely.IAM.Invitations.Entities;
 
 internal class InvitationEntity : IHasCreatedUtc, IHasModifiedUtc, IAccountOwnedEntity
 {
-    public const int TOKEN_LENGTH = 32;
-    public const int TOKEN_MAX_LENGTH = 64;
+    public const int SECRET_HASH_MAX_LENGTH = 250;
 
     public Guid Id { get; set; }
     public Guid AccountId { get; set; }
-    public string Token { get; set; } = null!;
+    public string SecretHash { get; set; } = null!;
     public Guid CreatedByUserId { get; set; }
     public string Email { get; set; } = null!;
     public string? Description { get; set; }

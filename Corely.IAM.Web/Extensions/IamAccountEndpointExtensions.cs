@@ -397,8 +397,14 @@ public static class IamAccountEndpointExtensions
         );
         return result.ResultCode.ToApiResult(
             result.Message,
-            result is { InvitationId: { } id, Token: { } token }
-                ? new CreatedInvitationResponse(id, token)
+            result is { InvitationId: { } id, ExpiresUtc: { } expiresUtc }
+                ? new CreatedInvitationResponse(
+                    id,
+                    result.Token,
+                    expiresUtc,
+                    result.Delivery,
+                    result.DeliveryMessage
+                )
                 : null
         );
     }

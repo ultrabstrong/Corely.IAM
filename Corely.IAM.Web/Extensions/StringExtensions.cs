@@ -15,4 +15,14 @@ internal static class StringExtensions
             return url.Any(char.IsControl) ? null : url;
         }
     }
+
+    extension(string path)
+    {
+        // Moving between sign in and sign up keeps where the visitor was going, such as an
+        // invitation link.
+        public string WithReturnUrl(string? returnUrl) =>
+            string.IsNullOrWhiteSpace(returnUrl)
+                ? path
+                : $"{path}?returnUrl={Uri.EscapeDataString(returnUrl)}";
+    }
 }

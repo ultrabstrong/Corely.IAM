@@ -9,6 +9,7 @@ public static class WebAppRoutes
     public const string Home = "/";
     public const string Profile = "/profile";
     public const string AcceptInvitation = "/accept-invitation";
+    public const string InvitationPreview = "/invitation-preview";
     public const string PlatformSettings = "/platform-settings";
     public const string PlatformAuditSettings = "/platform-settings/audit";
     public const string PlatformSecuritySettings = "/platform-settings/security";

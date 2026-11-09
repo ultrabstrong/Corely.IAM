@@ -11,7 +11,7 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
     public partial class IamDbContextModel
     {
         private IamDbContextModel()
-            : base(skipDetectChanges: false, modelId: new Guid("9653c4e7-7b51-40d7-99e1-a910dbb63754"), entityTypeCount: 31)
+            : base(skipDetectChanges: false, modelId: new Guid("9ffde10d-899c-4a76-8d47-806ad40807f7"), entityTypeCount: 31)
         {
         }
 

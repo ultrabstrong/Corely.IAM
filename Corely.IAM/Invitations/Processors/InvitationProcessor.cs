@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Security.Cryptography;
 using Corely.Common.Extensions;
 using Corely.Common.Filtering;
 using Corely.Common.Filtering.Ordering;
@@ -11,11 +10,16 @@ using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Invitations.Enums;
 using Corely.IAM.Invitations.Mappers;
 using Corely.IAM.Invitations.Models;
+using Corely.IAM.Invitations.Providers;
 using Corely.IAM.Models;
+using Corely.IAM.Security.Mappers;
 using Corely.IAM.Security.Models;
+using Corely.IAM.Security.Providers;
 using Corely.IAM.Users.Models;
 using Corely.IAM.Users.Providers;
 using Corely.IAM.Validators;
+using Corely.Security.Hashing.Factories;
+using Corely.Security.Secrets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -27,10 +31,21 @@ internal class InvitationProcessor(
     IAccountProcessor accountProcessor,
     IUserContextProvider userContextProvider,
     IValidationProvider validationProvider,
+    IHashProviderFactory hashProviderFactory,
+    IamHashCodes hashCodes,
+    ISecretProvider secretProvider,
     TimeProvider timeProvider,
-    ILogger<InvitationProcessor> logger
+    ILogger<InvitationProcessor> logger,
+    IInvitationSender? invitationSender = null
 ) : IInvitationProcessor
 {
+    private readonly IHashProviderFactory _hashProviderFactory = hashProviderFactory.ThrowIfNull(
+        nameof(hashProviderFactory)
+    );
+    private readonly IamHashCodes _hashCodes = hashCodes.ThrowIfNull(nameof(hashCodes));
+    private readonly ISecretProvider _secretProvider = secretProvider.ThrowIfNull(
+        nameof(secretProvider)
+    );
     private readonly IRepo<InvitationEntity> _invitationRepo = invitationRepo.ThrowIfNull(
         nameof(invitationRepo)
     );
@@ -48,6 +63,7 @@ internal class InvitationProcessor(
     );
     private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
     private readonly ILogger<InvitationProcessor> _logger = logger.ThrowIfNull(nameof(logger));
+    private readonly IInvitationSender? _invitationSender = invitationSender;
 
     public async Task<CreateInvitationResult> CreateInvitationAsync(CreateInvitationRequest request)
     {
@@ -69,6 +85,7 @@ internal class InvitationProcessor(
                 await q.Where(a => a.Id == request.AccountId)
                     .Select(a => new
                     {
+                        a.AccountName,
                         ExistingMemberId = a.Users!.Where(u => u.Email == request.Email)
                             .Select(u => (Guid?)u.Id)
                             .FirstOrDefault(),
@@ -105,7 +122,7 @@ internal class InvitationProcessor(
         }
 
         var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-        if (GetRequiredUserContext("create invitations").User?.Id is not { } userId)
+        if (GetRequiredUserContext("create invitations").User is not { } inviter)
         {
             return new CreateInvitationResult(
                 CreateInvitationResultCode.UnauthorizedError,
@@ -115,19 +132,15 @@ internal class InvitationProcessor(
             );
         }
 
-        var tokenBytes = RandomNumberGenerator.GetBytes(InvitationEntity.TOKEN_LENGTH);
-        var token = Convert
-            .ToBase64String(tokenBytes)
-            .Replace("+", "-")
-            .Replace("/", "_")
-            .TrimEnd('=');
-
+        var secret = _secretProvider.CreateSecret();
         var entity = new InvitationEntity
         {
             Id = Guid.CreateVersion7(),
             AccountId = request.AccountId,
-            Token = token,
-            CreatedByUserId = userId,
+            SecretHash = secret
+                .ToHashedValueFromPlainText(_hashProviderFactory, _hashCodes.TokenHashCode)
+                .ToHashString()!,
+            CreatedByUserId = inviter.Id,
             Email = request.Email,
             Description = request.Description,
             ExpiresUtc = utcNow.AddSeconds(request.ExpiresInSeconds),
@@ -141,29 +154,83 @@ internal class InvitationProcessor(
             request.AccountId
         );
 
+        var token = new InvitationToken(entity.Id, secret).ToString();
+        var (delivery, deliveryMessage) = await SendAsync(
+            new InvitationDelivery(
+                entity.Id,
+                entity.AccountId,
+                accountCheck.AccountName,
+                entity.Email,
+                entity.Description,
+                entity.ExpiresUtc,
+                inviter.Username,
+                inviter.Email,
+                token
+            )
+        );
+
         return new CreateInvitationResult(
             CreateInvitationResultCode.Success,
             string.Empty,
-            token,
-            entity.Id
+            delivery == InvitationDeliveryStatus.Sent ? null : token,
+            entity.Id,
+            ExpiresUtc: entity.ExpiresUtc,
+            Delivery: delivery,
+            DeliveryMessage: deliveryMessage
         );
+    }
+
+    // The invitation already exists, so a sender that fails or throws must not lose it: the
+    // token goes back to the inviter to hand over instead.
+    private async Task<(InvitationDeliveryStatus Status, string? Message)> SendAsync(
+        InvitationDelivery delivery
+    )
+    {
+        if (_invitationSender == null)
+            return (InvitationDeliveryStatus.NotAttempted, null);
+
+        try
+        {
+            var result = await _invitationSender.SendAsync(delivery);
+            return result.ResultCode == InvitationSendResultCode.Sent
+                ? (
+                    InvitationDeliveryStatus.Sent,
+                    result.Message ?? $"Invitation sent to {delivery.Email}."
+                )
+                : (InvitationDeliveryStatus.Failed, result.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Invitation sender failed for invitation {InvitationId}",
+                delivery.InvitationId
+            );
+            return (InvitationDeliveryStatus.Failed, null);
+        }
     }
 
     public async Task<AcceptInvitationResult> AcceptInvitationAsync(AcceptInvitationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-        if (string.IsNullOrWhiteSpace(request.Token))
+        if (!InvitationToken.TryParse(request.Token, out var invitationToken))
         {
             return new AcceptInvitationResult(
                 AcceptInvitationResultCode.InvitationNotFoundError,
-                "Token is required",
+                "Invitation not found",
                 null
             );
         }
 
-        var invitationEntity = await _invitationRepo.GetAsync(i => i.Token == request.Token);
-        if (invitationEntity == null)
+        var invitationId = invitationToken.InvitationId;
+        var invitationEntity = await _invitationRepo.GetAsync(i => i.Id == invitationId);
+        if (
+            invitationEntity == null
+            || !invitationEntity
+                .SecretHash.ToHashedValue(_hashProviderFactory)
+                .Verify(invitationToken.Secret)
+        )
         {
             _logger.LogWarning("Invitation not found for provided token");
             return new AcceptInvitationResult(

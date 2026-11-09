@@ -1,0 +1,73 @@
+@inject IJSRuntime JS
+
+@if (_message is not null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@_title</h5>
+                </div>
+                <div class="modal-body">
+                    <p class="@(_value is null ? "mb-0" : null)">@_message</p>
+                    @if (_value is not null)
+                    {
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace" readonly value="@_value" aria-label="@_title" />
+                            <button type="button" class="btn btn-outline-secondary" @onclick="CopyAsync" title="Copy">
+                                <i class="bi @(_copied ? "bi-check2" : "bi-copy")" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <p class="form-text mb-0">@_note</p>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary btn-sm" @onclick="Close">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string? _title;
+    private RenderFragment? _message;
+    private string? _value;
+    private string? _note;
+    private bool _copied;
+
+    /// <summary>
+    /// Shows <paramref name="message"/>, and when <paramref name="value"/> is given, that value once
+    /// with a copy button and <paramref name="note"/> beneath it.
+    /// </summary>
+    public void Show(string title, RenderFragment message, string? value = null, string? note = null)
+    {
+        _title = title;
+        _message = message;
+        _value = value;
+        _note = note;
+        _copied = false;
+        StateHasChanged();
+    }
+
+    public void ShowApiKey(string key) =>
+        Show("New API key", @<text>Copy this key now.</text>, key, "Shown once. It cannot be recovered.");
+
+    private void Close()
+    {
+        _message = null;
+        _value = null;
+    }
+
+    private async Task CopyAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", _value);
+            _copied = true;
+        }
+        catch (JSException)
+        {
+        }
+    }
+}

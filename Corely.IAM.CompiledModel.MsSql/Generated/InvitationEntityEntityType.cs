@@ -25,7 +25,7 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
                 propertyCount: 12,
                 navigationCount: 1,
                 foreignKeyCount: 1,
-                unnamedIndexCount: 2,
+                unnamedIndexCount: 1,
                 keyCount: 1);
 
             var id = runtimeEntityType.AddProperty(
@@ -124,13 +124,13 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
                 nullable: true);
             revokedUtc.AddAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.None);
 
-            var token = runtimeEntityType.AddProperty(
-                "Token",
+            var secretHash = runtimeEntityType.AddProperty(
+                "SecretHash",
                 typeof(string),
-                propertyInfo: typeof(InvitationEntity).GetProperty("Token", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
-                fieldInfo: typeof(InvitationEntity).GetField("<Token>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
-                maxLength: 64);
-            token.AddAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.None);
+                propertyInfo: typeof(InvitationEntity).GetProperty("SecretHash", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                fieldInfo: typeof(InvitationEntity).GetField("<SecretHash>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                maxLength: 250);
+            secretHash.AddAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.None);
 
             var key = runtimeEntityType.AddKey(
                 new[] { id });
@@ -138,10 +138,6 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
 
             var index = runtimeEntityType.AddIndex(
                 new[] { accountId });
-
-            var index0 = runtimeEntityType.AddIndex(
-                new[] { token },
-                unique: true);
 
             return runtimeEntityType;
         }

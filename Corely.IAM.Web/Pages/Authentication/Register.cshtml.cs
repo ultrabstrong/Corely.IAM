@@ -1,6 +1,7 @@
 using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Web.Configuration;
+using Corely.IAM.Web.Extensions;
 using Corely.IAM.Web.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -30,13 +31,18 @@ public class RegisterModel(
     [BindProperty]
     public string ConfirmPassword { get; set; } = string.Empty;
 
+    [BindProperty(SupportsGet = true)]
+    public string? ReturnUrl { get; set; }
+
     public string? ErrorMessage { get; set; }
 
     public IActionResult OnGet()
     {
+        ReturnUrl = ReturnUrl.AsLocalUrl();
+
         if (User.Identity?.IsAuthenticated == true)
         {
-            return Redirect(iamWebOptions.Value.HomePath);
+            return Redirect(ReturnUrl ?? iamWebOptions.Value.HomePath);
         }
 
         return Page();
@@ -44,6 +50,8 @@ public class RegisterModel(
 
     public async Task<IActionResult> OnPostAsync()
     {
+        ReturnUrl = ReturnUrl.AsLocalUrl();
+
         if (Password != ConfirmPassword)
         {
             ErrorMessage = "Passwords do not match.";
@@ -86,9 +94,9 @@ public class RegisterModel(
                 signInResult.RefreshExpiresUtc!.Value,
                 Request.IsHttps
             );
-            return Redirect(iamWebOptions.Value.HomePath);
+            return Redirect(ReturnUrl ?? iamWebOptions.Value.HomePath);
         }
 
-        return Redirect(AppRoutes.SignIn);
+        return Redirect(AppRoutes.SignIn.WithReturnUrl(ReturnUrl));
     }
 }

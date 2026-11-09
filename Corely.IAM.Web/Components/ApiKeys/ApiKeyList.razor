@@ -101,7 +101,7 @@ else
     </div>
 </FormModal>
 
-<ApiKeySecretModal @ref="_newKeyModal" />
+<ShownOnceModal @ref="_newKeyModal" />
 
 <ConfirmModal @ref="_confirmModal" Title="Delete API key" Message="@_confirmMessage" ConfirmText="Delete" OnConfirm="DeleteAsync" />
 
@@ -116,7 +116,7 @@ else
     private string? _newDescription;
     private int _newLifetimeDays = SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_DEFAULT;
     private FormModal _createModal = null!;
-    private ApiKeySecretModal _newKeyModal = null!;
+    private ShownOnceModal _newKeyModal = null!;
     private ConfirmModal _confirmModal = null!;
 
     protected override async Task LoadCoreAsync(IServiceProvider services)
@@ -158,7 +158,7 @@ else
                 services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime.AddDays(Math.Clamp(_newLifetimeDays, 1, _maxLifetimeDays))));
             SetResultMessage(result.ResultCode == CreateApiKeyResultCode.Success, "API key created.", result.Message);
             if (result.Key is not null)
-                _newKeyModal.Show(result.Key);
+                _newKeyModal.ShowApiKey(result.Key);
             _newName = null;
             _newDescription = null;
             await ReloadAsync();

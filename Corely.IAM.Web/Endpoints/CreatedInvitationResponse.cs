@@ -1,3 +1,12 @@
+using Corely.IAM.Invitations.Enums;
+
 namespace Corely.IAM.Web.Endpoints;
 
-internal sealed record CreatedInvitationResponse(Guid Id, string Token);
+/// <param name="Token">Null when the host's sender delivered the invitation.</param>
+internal sealed record CreatedInvitationResponse(
+    Guid Id,
+    string? Token,
+    DateTime ExpiresUtc,
+    InvitationDeliveryStatus Delivery,
+    string? DeliveryMessage
+);

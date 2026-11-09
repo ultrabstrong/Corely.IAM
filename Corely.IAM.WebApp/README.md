@@ -107,6 +107,19 @@ The app launches at **https://localhost:7100**.
 
 The preview page is controlled by `DemoFeatures:EnablePasswordRecoveryPreview` in `appsettings.json` / `appsettings.template.json`. In a real host, the token would be delivered through email or another trusted channel instead of being displayed in the UI.
 
+### Invitation Delivery Demo
+
+The WebApp registers a preview `IInvitationSender` that stands in for email. `DemoFeatures:InvitationPreview`
+picks what an inviter sees after creating an invitation, read at startup:
+
+| Value | Inviter sees |
+|-------|--------------|
+| `Send` (default) | "Invitation sent", with the address of `/invitation-preview`, which shows the last invitation and its link |
+| `Off` | No sender is registered: the accept link, shown once with Copy |
+| `Fail` | A sender that always fails: "Invitation not sent", then the link |
+
+For one run without editing a file: `$env:DemoFeatures__InvitationPreview = 'Off'; dotnet run`.
+
 ## Optional: Seq Logging
 
 The default config sends structured logs to [Seq](https://datalust.co/seq) at `http://localhost:5341`. If Seq isn't running, the app still works and console logging is unaffected. Remove the Seq entry from `Serilog:WriteTo` in `appsettings.json` to suppress connection warnings.

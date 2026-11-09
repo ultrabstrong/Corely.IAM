@@ -143,7 +143,7 @@ app.MapIAMAccountEndpoints("/api").RequireRateLimiting("per-caller");
 | Routes under the prefix | Do |
 |-------------------------|----|
 | `/users` | List the members, remove one, give or take a role |
-| `/invitations` | List, invite by email (the token is returned once), revoke |
+| `/invitations` | List, invite by email (sent by the host's `IInvitationSender` when one is registered, otherwise the token is returned once, with `delivery` saying which), revoke |
 | `/groups` | List, read, create, change, delete, and add or remove members, keys and roles |
 | `/roles` | List, read, create, change, delete, and add or remove permissions |
 | `/permissions` | List, read, create, describe, delete |

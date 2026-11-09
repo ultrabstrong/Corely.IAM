@@ -25,7 +25,7 @@ internal class InvitationProcessorTelemetryDecorator(
             nameof(InvitationProcessor),
             request,
             () => _inner.CreateInvitationAsync(request),
-            logResult: true
+            logResult: false
         );
 
     public async Task<AcceptInvitationResult> AcceptInvitationAsync(

@@ -135,7 +135,7 @@ else
 
 <ConfirmModal @ref="_rotateModal" Title="@_rotateTitle" Message="@_rotateMessage" ConfirmText="@_rotateTitle" OnConfirm="RotateAsync" />
 <ConfirmModal @ref="_deleteModal" Title="Delete API key" Message="@($"Delete API key '{_key?.Name}'? Anything using it stops working at once.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
-<ApiKeySecretModal @ref="_newKeyModal" />
+<ShownOnceModal @ref="_newKeyModal" />
 
 @code {
 
@@ -154,7 +154,7 @@ else
     private EntityPickerModal _groupPicker = null!;
     private ConfirmModal _rotateModal = null!;
     private ConfirmModal _deleteModal = null!;
-    private ApiKeySecretModal _newKeyModal = null!;
+    private ShownOnceModal _newKeyModal = null!;
 
     protected override async Task LoadCoreAsync(IServiceProvider services)
     {
@@ -237,7 +237,7 @@ else
             var result = await services.GetRequiredService<IModificationService>().RotateApiKeySecretAsync(new RotateApiKeySecretRequest(Id, CurrentAccountId, _rotateSlot));
             SetResultMessage(result.ResultCode == RotateApiKeySecretResultCode.Success, $"{_rotateSlot} secret issued.", result.Message);
             if (result.Key is not null)
-                _newKeyModal.Show(result.Key);
+                _newKeyModal.ShowApiKey(result.Key);
             await ReloadAsync();
         });
     }

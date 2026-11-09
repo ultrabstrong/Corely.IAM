@@ -22,7 +22,7 @@ Account detail page with invitation management, user listing, and encryption key
 - **Create**: modal form with email, description, expiry duration (1h/1d/7d/30d)
 - **Revoke**: available for pending invitations only
 - **Status badges**: Pending (green), Accepted (blue), Revoked (red), Expired (gray)
-- **Token display**: one-time token shown after creation with "Copy to Clipboard" button
+- **After creating**, in `ShownOnceModal`: when the host's `IInvitationSender` sent it, "Invitation sent" and the sender's message. Otherwise the accept link (`IIamWebLinks.AcceptInvitation()` with `?token=`) once, with Copy, who it is for and when it expires; a failed send says so first
 
 ### Users Section
 - Paginated (10 per page), view/remove individual users
@@ -50,5 +50,5 @@ Account detail page with invitation management, user listing, and encryption key
 - Account name changes update `IAccountDisplayState` to reflect in the NavBar
 - Removing the logged-in user redirects to `/select-account`
 - Deleting the account goes to `IIamWebLinks.Dashboard` with full page reload
-- Invitation token is shown once on creation. It cannot be retrieved again
+- An invitation link is shown once on creation. It cannot be retrieved again
 - Key providers loaded asynchronously from `IRetrievalService`

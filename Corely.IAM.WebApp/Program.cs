@@ -1,5 +1,6 @@
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM;
+using Corely.IAM.Invitations.Providers;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.Web.Extensions;
@@ -8,6 +9,7 @@ using Corely.IAM.WebApp.Api;
 using Corely.IAM.WebApp.Auditing;
 using Corely.IAM.WebApp.Components;
 using Corely.IAM.WebApp.DataAccess;
+using Corely.IAM.WebApp.Invitations;
 using Corely.IAM.WebApp.Security;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -49,6 +51,12 @@ builder.Services.AddIAMWeb(options =>
     );
 });
 builder.Services.AddIAMWebBlazor<WebAppLinks>();
+builder.Services.AddSingleton<InvitationPreviewStore>();
+if (
+    builder.Configuration.GetSection(DemoFeaturesOptions.NAME).Get<DemoFeaturesOptions>()
+    is not { InvitationPreview: InvitationPreviewMode.Off }
+)
+    builder.Services.AddScoped<IInvitationSender, PreviewInvitationSender>();
 builder.Services.AddWebAppApi();
 
 var securityConfigProvider = new SecurityConfigurationProvider(builder.Configuration);

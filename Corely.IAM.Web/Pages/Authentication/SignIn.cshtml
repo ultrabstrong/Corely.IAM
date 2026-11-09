@@ -1,5 +1,6 @@
 @page "/signin"
 @model Corely.IAM.Web.Pages.Authentication.SignInModel
+@using Corely.IAM.Web.Extensions
 @{
     Layout = "_AuthLayout";
     ViewData["Title"] = "Sign In";
@@ -11,7 +12,7 @@
             <button class="nav-link active" type="button">Sign In</button>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" href="@Corely.IAM.Web.AppRoutes.Register">Sign Up</a>
+            <a class="nav-link" href="@Corely.IAM.Web.AppRoutes.Register.WithReturnUrl(Model.ReturnUrl)">Sign Up</a>
         </li>
     </ul>
 

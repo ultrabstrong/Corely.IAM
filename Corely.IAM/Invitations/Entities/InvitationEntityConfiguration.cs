@@ -17,9 +17,10 @@ internal sealed class InvitationEntityConfiguration : EntityConfigurationBase<In
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).ValueGeneratedNever();
 
-        builder.Property(e => e.Token).IsRequired().HasMaxLength(InvitationEntity.TOKEN_MAX_LENGTH);
-
-        builder.HasIndex(e => e.Token).IsUnique();
+        builder
+            .Property(e => e.SecretHash)
+            .IsRequired()
+            .HasMaxLength(InvitationEntity.SECRET_HASH_MAX_LENGTH);
 
         builder.Property(e => e.Email).IsRequired().HasMaxLength(User.EMAIL_MAX_LENGTH);
 

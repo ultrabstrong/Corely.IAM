@@ -182,6 +182,53 @@ public class ReturnUrlTests : FunctionalTestBase
         AssertStaysOnSite(response);
     }
 
+    private const string INVITATION_LINK = $"{WebAppRoutes.AcceptInvitation}?token=abc.def";
+
+    private Task<HttpResponseMessage> SignUpReturningToAsync(string returnUrl) =>
+        Client.PostFormAsync(
+            $"{AppRoutes.Register}?returnUrl={Uri.EscapeDataString(returnUrl)}",
+            new Dictionary<string, string>
+            {
+                ["Username"] = "invitee",
+                ["Email"] = "invitee@example.com",
+                ["Password"] = SeedData.OwnerPassword,
+                ["ConfirmPassword"] = SeedData.OwnerPassword,
+                ["ReturnUrl"] = returnUrl,
+            }
+        );
+
+    [Fact]
+    public async Task SignInPage_SignUpLinkCarriesTheReturnUrl()
+    {
+        using var response = await Client.GetAsync(
+            $"{AppRoutes.SignIn}?ReturnUrl={Uri.EscapeDataString(INVITATION_LINK)}"
+        );
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        Assert.Contains(
+            $"{AppRoutes.Register}?returnUrl={Uri.EscapeDataString(INVITATION_LINK)}",
+            System.Net.WebUtility.HtmlDecode(html)
+        );
+    }
+
+    [Fact]
+    public async Task SignUp_LandsOnTheReturnUrl()
+    {
+        using var response = await SignUpReturningToAsync(INVITATION_LINK);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(INVITATION_LINK, Location(response));
+    }
+
+    [Fact]
+    public async Task SignUp_NeverRedirectsOffSite()
+    {
+        using var response = await SignUpReturningToAsync(OFF_SITE);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        AssertStaysOnSite(response);
+    }
+
     [Fact]
     public async Task SelectAccount_LandsOnTheReturnUrl()
     {

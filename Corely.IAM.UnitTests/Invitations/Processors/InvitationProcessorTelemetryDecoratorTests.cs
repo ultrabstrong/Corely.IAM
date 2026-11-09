@@ -22,7 +22,7 @@ public class InvitationProcessorTelemetryDecoratorTests
     }
 
     [Fact]
-    public async Task CreateInvitation_DelegatesToInnerAndLogsResult()
+    public async Task CreateInvitation_DelegatesToInnerWithoutLoggingResult_ForResultCarryingToken()
     {
         var request = new CreateInvitationRequest(
             Guid.CreateVersion7(),
@@ -44,7 +44,7 @@ public class InvitationProcessorTelemetryDecoratorTests
 
         Assert.Equal(expectedResult, result);
         _mockInnerProcessor.Verify(x => x.CreateInvitationAsync(request), Times.Once);
-        VerifyLoggedWithResult();
+        VerifyResultNotLogged();
     }
 
     [Fact]
@@ -122,5 +122,18 @@ public class InvitationProcessorTelemetryDecoratorTests
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()
                 ),
             Times.Once
+        );
+
+    private void VerifyResultNotLogged() =>
+        _mockLogger.Verify(
+            x =>
+                x.Log(
+                    It.IsAny<LogLevel>(),
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("with result")),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Never
         );
 }

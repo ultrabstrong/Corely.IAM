@@ -1,5 +1,6 @@
 @page "/register"
 @model Corely.IAM.Web.Pages.Authentication.RegisterModel
+@using Corely.IAM.Web.Extensions
 @{
     Layout = "_AuthLayout";
     ViewData["Title"] = "Sign Up";
@@ -8,7 +9,7 @@
 <div class="auth-card">
     <ul class="nav nav-tabs mb-4" role="tablist">
         <li class="nav-item" role="presentation">
-            <a class="nav-link" href="@Corely.IAM.Web.AppRoutes.SignIn">Sign In</a>
+            <a class="nav-link" href="@Corely.IAM.Web.AppRoutes.SignIn.WithReturnUrl(Model.ReturnUrl)">Sign In</a>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link active" type="button">Sign Up</button>
@@ -22,6 +23,7 @@
 
     <form method="post">
         @Html.AntiForgeryToken()
+        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
         <div class="mb-3">
             <label for="username" class="form-label">Username</label>
             <input type="text" class="form-control" id="username" name="Username"
@@ -44,7 +46,7 @@
         <button type="submit" data-busy-spinner class="btn btn-primary w-100">Sign Up</button>
     </form>
 
-    @await Html.PartialAsync("_IdentityProviderButtons", new Corely.IAM.Web.Pages.Authentication.IdentityProviderButtonsModel(true, null))
+    @await Html.PartialAsync("_IdentityProviderButtons", new Corely.IAM.Web.Pages.Authentication.IdentityProviderButtonsModel(true, Model.ReturnUrl))
     @await Html.PartialAsync("_SignUpTerms", new Corely.IAM.Web.Pages.Authentication.SignUpTermsModel(false))
 </div>
 

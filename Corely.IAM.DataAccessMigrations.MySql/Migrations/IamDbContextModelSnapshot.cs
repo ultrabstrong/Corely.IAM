@@ -624,17 +624,14 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.Property<DateTime?>("RevokedUtc")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("Token")
+                    b.Property<string>("SecretHash")
                         .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("varchar(64)");
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AccountId");
-
-                    b.HasIndex("Token")
-                        .IsUnique();
 
                     b.ToTable("Invitations", (string)null);
                 });

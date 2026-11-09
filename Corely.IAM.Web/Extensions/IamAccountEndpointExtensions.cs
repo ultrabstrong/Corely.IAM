@@ -31,81 +31,91 @@ public static class IamAccountEndpointExtensions
                 .MapGet("/users", ListUsersAsync)
                 .WithName("IamListUsers")
                 .Produces<ApiResponse<PageResponse<UserResponse>>>()
-                .WithSummary("The account's members");
+                .WithSummary("The account's members. Needs Read on user");
             group
                 .MapDelete("/users/{userId:guid}", RemoveUserAsync)
                 .WithName("IamRemoveUser")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Remove a member from the account");
+                .WithSummary("Remove a member from the account. Needs Update on account");
             group
                 .MapPost("/users/{userId:guid}/roles", AddRolesToUserAsync)
                 .WithName("IamAddRolesToUser")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Give a member roles");
+                .WithSummary(
+                    "Give a member roles. Needs Update on user and Read on role, and the caller must hold everything the roles grant"
+                );
             group
                 .MapDelete("/users/{userId:guid}/roles/{roleId:guid}", RemoveRoleFromUserAsync)
                 .WithName("IamRemoveRoleFromUser")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Take a role from a member");
+                .WithSummary("Take a role from a member. Needs Update on user and Read on role");
 
             group
                 .MapGet("/invitations", ListInvitationsAsync)
                 .WithName("IamListInvitations")
                 .Produces<ApiResponse<PageResponse<InvitationResponse>>>()
-                .WithSummary("The account's invitations");
+                .WithSummary("The account's invitations. Needs Read on account");
             group
                 .MapPost("/invitations", CreateInvitationAsync)
                 .WithName("IamCreateInvitation")
                 .Produces<ApiResponse<CreatedInvitationResponse>>()
                 .WithSummary(
-                    "Invite someone by email. The token is returned once; send it to them"
+                    "Invite someone by email. The token is returned once; send it to them. Needs Update on account"
                 );
             group
                 .MapDelete("/invitations/{invitationId:guid}", RevokeInvitationAsync)
                 .WithName("IamRevokeInvitation")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Revoke an invitation");
+                .WithSummary("Revoke an invitation. Needs Update on account");
 
             group
                 .MapGet("/groups", ListGroupsAsync)
                 .WithName("IamListGroups")
                 .Produces<ApiResponse<PageResponse<GroupResponse>>>()
-                .WithSummary("The account's groups");
+                .WithSummary("The account's groups. Needs Read on group");
             group
                 .MapGet("/groups/{groupId:guid}", GetGroupAsync)
                 .WithName("IamGetGroup")
                 .Produces<ApiResponse<GroupResponse>>()
-                .WithSummary("A group with its members, keys and roles");
+                .WithSummary("A group with its members, keys and roles. Needs Read on group");
             group
                 .MapPost("/groups", CreateGroupAsync)
                 .WithName("IamCreateGroup")
                 .Produces<ApiResponse<CreatedResponse>>()
-                .WithSummary("Create a group");
+                .WithSummary(
+                    "Create a group. Needs Create on group, and Update on group to set a description"
+                );
             group
                 .MapPut("/groups/{groupId:guid}", UpdateGroupAsync)
                 .WithName("IamUpdateGroup")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Rename or describe a group");
+                .WithSummary("Rename or describe a group. Needs Update on group");
             group
                 .MapDelete("/groups/{groupId:guid}", DeleteGroupAsync)
                 .WithName("IamDeleteGroup")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Delete a group");
+                .WithSummary("Delete a group. Needs Delete on group");
             group
                 .MapPost("/groups/{groupId:guid}/users", AddUsersToGroupAsync)
                 .WithName("IamAddUsersToGroup")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Add members to a group");
+                .WithSummary(
+                    "Add members to a group. Needs Update on group and Read on user, and the caller must hold everything the group grants"
+                );
             group
                 .MapDelete("/groups/{groupId:guid}/users/{userId:guid}", RemoveUserFromGroupAsync)
                 .WithName("IamRemoveUserFromGroup")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Take a member out of a group");
+                .WithSummary(
+                    "Take a member out of a group. Needs Update on group and Read on user"
+                );
             group
                 .MapPost("/groups/{groupId:guid}/apikeys", AddApiKeysToGroupAsync)
                 .WithName("IamAddApiKeysToGroup")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Add API keys to a group");
+                .WithSummary(
+                    "Add API keys to a group. Needs Update on group and Read on api_key, and the caller must hold everything the group grants"
+                );
             group
                 .MapDelete(
                     "/groups/{groupId:guid}/apikeys/{apiKeyId:guid}",
@@ -113,48 +123,56 @@ public static class IamAccountEndpointExtensions
                 )
                 .WithName("IamRemoveApiKeyFromGroup")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Take an API key out of a group");
+                .WithSummary(
+                    "Take an API key out of a group. Needs Update on group and Read on api_key"
+                );
             group
                 .MapPost("/groups/{groupId:guid}/roles", AddRolesToGroupAsync)
                 .WithName("IamAddRolesToGroup")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Give a group roles");
+                .WithSummary(
+                    "Give a group roles. Needs Update on group and Read on role, and the caller must hold everything the roles grant"
+                );
             group
                 .MapDelete("/groups/{groupId:guid}/roles/{roleId:guid}", RemoveRoleFromGroupAsync)
                 .WithName("IamRemoveRoleFromGroup")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Take a role from a group");
+                .WithSummary("Take a role from a group. Needs Update on group and Read on role");
 
             group
                 .MapGet("/roles", ListRolesAsync)
                 .WithName("IamListRoles")
                 .Produces<ApiResponse<PageResponse<RoleResponse>>>()
-                .WithSummary("The account's roles");
+                .WithSummary("The account's roles. Needs Read on role");
             group
                 .MapGet("/roles/{roleId:guid}", GetRoleAsync)
                 .WithName("IamGetRole")
                 .Produces<ApiResponse<RoleResponse>>()
-                .WithSummary("A role with who holds it and its permissions");
+                .WithSummary("A role with who holds it and its permissions. Needs Read on role");
             group
                 .MapPost("/roles", CreateRoleAsync)
                 .WithName("IamCreateRole")
                 .Produces<ApiResponse<CreatedResponse>>()
-                .WithSummary("Create a role");
+                .WithSummary(
+                    "Create a role. Needs Create on role, and Update on role to set a description"
+                );
             group
                 .MapPut("/roles/{roleId:guid}", UpdateRoleAsync)
                 .WithName("IamUpdateRole")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Rename or describe a role");
+                .WithSummary("Rename or describe a role. Needs Update on role");
             group
                 .MapDelete("/roles/{roleId:guid}", DeleteRoleAsync)
                 .WithName("IamDeleteRole")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Delete a role");
+                .WithSummary("Delete a role. Needs Delete on role");
             group
                 .MapPost("/roles/{roleId:guid}/permissions", AddPermissionsToRoleAsync)
                 .WithName("IamAddPermissionsToRole")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Add permissions to a role");
+                .WithSummary(
+                    "Add permissions to a role. Needs Update on role and Read on permission, and the caller must hold the permissions it adds"
+                );
             group
                 .MapDelete(
                     "/roles/{roleId:guid}/permissions/{permissionId:guid}",
@@ -162,68 +180,72 @@ public static class IamAccountEndpointExtensions
                 )
                 .WithName("IamRemovePermissionFromRole")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Take a permission from a role");
+                .WithSummary(
+                    "Take a permission from a role. Needs Update on role and Read on permission"
+                );
 
             group
                 .MapGet("/permissions", ListPermissionsAsync)
                 .WithName("IamListPermissions")
                 .Produces<ApiResponse<PageResponse<PermissionResponse>>>()
-                .WithSummary("The account's permissions");
+                .WithSummary("The account's permissions. Needs Read on permission");
             group
                 .MapGet("/permissions/{permissionId:guid}", GetPermissionAsync)
                 .WithName("IamGetPermission")
                 .Produces<ApiResponse<PermissionResponse>>()
-                .WithSummary("A permission and the roles that hold it");
+                .WithSummary("A permission and the roles that hold it. Needs Read on permission");
             group
                 .MapPost("/permissions", CreatePermissionAsync)
                 .WithName("IamCreatePermission")
                 .Produces<ApiResponse<CreatedResponse>>()
                 .WithSummary(
-                    "Create a permission on a resource type, or on one resource by its id"
+                    "Create a permission on a resource type, or on one resource by its id. Needs Create on permission"
                 );
             group
                 .MapPut("/permissions/{permissionId:guid}", UpdatePermissionAsync)
                 .WithName("IamUpdatePermission")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Describe a permission");
+                .WithSummary("Describe a permission. Needs Update on permission");
             group
                 .MapDelete("/permissions/{permissionId:guid}", DeletePermissionAsync)
                 .WithName("IamDeletePermission")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Delete a permission");
+                .WithSummary("Delete a permission. Needs Delete on permission");
 
             group
                 .MapGet("/apikeys", ListApiKeysAsync)
                 .WithName("IamListApiKeys")
                 .Produces<ApiResponse<PageResponse<ApiKeyResponse>>>()
-                .WithSummary("The account's API keys, never their secrets");
+                .WithSummary("The account's API keys, never their secrets. Needs Read on api_key");
             group
                 .MapGet("/apikeys/{apiKeyId:guid}", GetApiKeyAsync)
                 .WithName("IamGetApiKey")
                 .Produces<ApiResponse<ApiKeyResponse>>()
-                .WithSummary("An API key, never its secret");
+                .WithSummary("An API key, never its secret. Needs Read on api_key");
             group
                 .MapPost("/apikeys", CreateApiKeyAsync)
                 .WithName("IamCreateApiKey")
                 .Produces<ApiResponse<CreatedApiKeyResponse>>()
                 .WithSummary(
-                    "Create an API key. Its key is returned once and can never be read again"
+                    "Create an API key. Its key is returned once and can never be read again. Needs Create on api_key"
                 );
             group
                 .MapPut("/apikeys/{apiKeyId:guid}", UpdateApiKeyAsync)
                 .WithName("IamUpdateApiKey")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Rename or describe an API key");
+                .WithSummary("Rename or describe an API key. Needs Update on api_key");
             group
                 .MapDelete("/apikeys/{apiKeyId:guid}", DeleteApiKeyAsync)
                 .WithName("IamDeleteApiKey")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Revoke an API key");
+                .WithSummary("Revoke an API key. Needs Delete on api_key");
             group
                 .MapPost("/apikeys/{apiKeyId:guid}/roles", AddRolesToApiKeyAsync)
                 .WithName("IamAddRolesToApiKey")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Give an API key roles");
+                .WithSummary(
+                    "Give an API key roles. Needs Update on api_key and Read on role, and the caller must hold everything the roles grant"
+                );
             group
                 .MapDelete(
                     "/apikeys/{apiKeyId:guid}/roles/{roleId:guid}",
@@ -231,13 +253,15 @@ public static class IamAccountEndpointExtensions
                 )
                 .WithName("IamRemoveRoleFromApiKey")
                 .Produces<ApiResponse<object>>()
-                .WithSummary("Take a role from an API key");
+                .WithSummary(
+                    "Take a role from an API key. Needs Update on api_key and Read on role"
+                );
 
             group
                 .MapGet("/audit", ListAuditEntriesAsync)
                 .WithName("IamListAuditEntries")
                 .Produces<ApiResponse<PageResponse<AuditEntryResponse>>>()
-                .WithSummary("The account's audit log, newest first");
+                .WithSummary("The account's audit log, newest first. Needs Read on audit");
 
             return group;
         }
@@ -421,13 +445,21 @@ public static class IamAccountEndpointExtensions
         if (AccountOf(context) is not { } accountId)
             return NoAccount();
         var result = await registration.RegisterGroupAsync(new(body.Name, accountId));
-        if (result.ResultCode.ApiStatusCode() == StatusCodes.Status200OK && body.Description is { })
-            await modification.ModifyGroupAsync(
-                new(result.CreatedGroupId, accountId, body.Name, body.Description)
-            );
+        var created = new CreatedResponse(result.CreatedGroupId);
+        if (
+            result.ResultCode.ApiStatusCode() != StatusCodes.Status200OK
+            || body.Description is null
+        )
+            return result.ResultCode.ToApiResult(result.Message, created);
+
+        var described = await modification.ModifyGroupAsync(
+            new(result.CreatedGroupId, accountId, body.Name, body.Description)
+        );
         return result.ResultCode.ToApiResult(
-            result.Message,
-            new CreatedResponse(result.CreatedGroupId)
+            described.ResultCode.ApiStatusCode() == StatusCodes.Status200OK
+                ? result.Message
+                : $"Created without its description: {described.Message}",
+            created
         );
     }
 
@@ -578,13 +610,21 @@ public static class IamAccountEndpointExtensions
         if (AccountOf(context) is not { } accountId)
             return NoAccount();
         var result = await registration.RegisterRoleAsync(new(body.Name, accountId));
-        if (result.ResultCode.ApiStatusCode() == StatusCodes.Status200OK && body.Description is { })
-            await modification.ModifyRoleAsync(
-                new(result.CreatedRoleId, accountId, body.Name, body.Description)
-            );
+        var created = new CreatedResponse(result.CreatedRoleId);
+        if (
+            result.ResultCode.ApiStatusCode() != StatusCodes.Status200OK
+            || body.Description is null
+        )
+            return result.ResultCode.ToApiResult(result.Message, created);
+
+        var described = await modification.ModifyRoleAsync(
+            new(result.CreatedRoleId, accountId, body.Name, body.Description)
+        );
         return result.ResultCode.ToApiResult(
-            result.Message,
-            new CreatedResponse(result.CreatedRoleId)
+            described.ResultCode.ApiStatusCode() == StatusCodes.Status200OK
+                ? result.Message
+                : $"Created without its description: {described.Message}",
+            created
         );
     }
 

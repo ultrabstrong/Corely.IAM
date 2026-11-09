@@ -1,12 +1,16 @@
 # Invitation handoff
 
+Status: released in `Corely.IAM` 7.2.0, both compiled models 7.2.0,
+`Corely.IAM.DataAccessMigrations.Cli` 7.1.0 and `Corely.IAM.Web` 11.2.0, proven in DocsToData on a
+local build, whose invitation email registers the first `IInvitationSender`.
+
 Creating an invitation on Account Detail opens an "Invitation Created" modal that shows the raw
 token in plain text, under "Copy this token, it will not be shown again", with nothing else. It
 doesn't say what the token is, who it is for, what to do with it, or how the recipient uses it. It
 also shows the secret in clear by default, readable by anyone watching the screen, a screen share or
 a recording. Found on DocsToData dev, 2026-11-09.
 
-What "fixed" looks like is not decided. Part one of this plan settles that; part two builds it.
+Part one of this plan settled what "fixed" looks like; part two records what was built.
 
 ## What exists
 
@@ -94,10 +98,7 @@ Settle each question with the owner, write the answer in place of the question, 
    whether they show a link.
 3. Read the API key creation modal for question 6.
 
-## Part two: build
-
-Built, as Corely.IAM 7.2.0, both compiled models 7.2.0, Corely.IAM.DataAccessMigrations.Cli 7.1.0
-and Corely.IAM.Web 11.2.0. Not yet tagged: the consumer proof below comes first.
+## Part two: as built
 
 1. **Seam**: `IInvitationSender` in `Corely.IAM.Invitations.Providers`, taking `InvitationDelivery`
    and returning `InvitationSendResult`. `InvitationProcessor` takes it as an optional constructor

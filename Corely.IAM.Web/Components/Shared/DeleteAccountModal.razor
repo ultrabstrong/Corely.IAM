@@ -1,0 +1,90 @@
+@inject IOptions<Corely.IAM.Web.Configuration.IAMWebOptions> IamWebOptions
+
+@if (_visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @onclick="OnBackdropClick">
+        <div class="modal-dialog" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">Delete account</h5>
+                    <button type="button" class="btn-close" @onclick="Hide" disabled="@_loading"></button>
+                </div>
+                <div class="modal-body">
+                    @if (IamWebOptions.Value.AccountDeletionNotice is { } notice)
+                    {
+                        <DynamicComponent Type="notice" />
+                    }
+                    else
+                    {
+                        <p class="text-danger">Permanently delete account '@AccountName'? This cannot be undone.</p>
+                    }
+                    <label class="form-label" for="delete-account-confirmation">
+                        Type <strong>@AccountName</strong> to confirm.
+                    </label>
+                    <input id="delete-account-confirmation" type="text" class="form-control" autocomplete="off"
+                           @bind="_typedName" @bind:event="oninput" disabled="@_loading" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Hide" disabled="@_loading">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmAsync" disabled="@(!NameMatches || _loading)">
+                        @if (_loading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        }
+                        Delete this account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string AccountName { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    private bool _visible;
+    private bool _loading;
+    private string? _typedName;
+
+    private bool NameMatches => !string.IsNullOrEmpty(AccountName) && _typedName == AccountName;
+
+    public void Show()
+    {
+        _typedName = null;
+        _visible = true;
+        _loading = false;
+        StateHasChanged();
+    }
+
+    public void Hide()
+    {
+        if (_loading)
+            return;
+        _visible = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmAsync()
+    {
+        if (!NameMatches)
+            return;
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            await OnConfirm.InvokeAsync();
+        }
+        finally
+        {
+            _loading = false;
+            _visible = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnBackdropClick() => Hide();
+}

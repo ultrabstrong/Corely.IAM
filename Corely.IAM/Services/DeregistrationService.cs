@@ -44,9 +44,12 @@ internal class DeregistrationService(
     IAuthorizationCacheClearer authorizationCacheClearer,
     IReauthenticationProvider reauthenticationProvider,
     AuditSettingsCache auditSettingsCache,
-    IAuthenticationProvider authenticationProvider
+    IAuthenticationProvider authenticationProvider,
+    IAccountClosureProcessor accountClosureProcessor
 ) : IDeregistrationService
 {
+    private readonly IAccountClosureProcessor _accountClosureProcessor =
+        accountClosureProcessor.ThrowIfNull(nameof(accountClosureProcessor));
     private readonly IAuthenticationProvider _authenticationProvider =
         authenticationProvider.ThrowIfNull(nameof(authenticationProvider));
     private readonly ILogger<DeregistrationService> _logger = logger.ThrowIfNull(nameof(logger));
@@ -119,6 +122,19 @@ internal class DeregistrationService(
 
         _logger.LogInformation("Deregistering account {AccountId}", accountId);
 
+        var purged = await _accountClosureProcessor.PurgeAccountDataAsync(accountId);
+        if (purged.ResultCode != CloseAccountResultCode.Success)
+        {
+            _logger.LogInformation(
+                "Deregistering account failed for account id {AccountId}",
+                accountId
+            );
+            return new DeregisterAccountResult(
+                purged.ResultCode.ToDeregisterAccountResultCode(),
+                purged.Message
+            );
+        }
+
         var result = await _accountProcessor.DeleteAccountAsync(accountId);
 
         if (result.ResultCode != DeleteAccountResultCode.Success)
@@ -143,6 +159,38 @@ internal class DeregistrationService(
 
         _logger.LogInformation("Account {AccountId} deregistered", accountId);
         return new DeregisterAccountResult(DeregisterAccountResultCode.Success, string.Empty);
+    }
+
+    public async Task<DeregisterAccountAccessResult> DeregisterAccountAccessAsync(
+        DeregisterAccountAccessRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+        var context = _userContextProvider.GetUserContext();
+        var accountId = request.AccountId;
+
+        _logger.LogInformation("Removing every way into account {AccountId}", accountId);
+
+        var result = await _accountClosureProcessor.RemoveAccountAccessAsync(accountId);
+        if (result.ResultCode != CloseAccountResultCode.Success)
+        {
+            return new DeregisterAccountAccessResult(
+                result.ResultCode.ToDeregisterAccountAccessResultCode(),
+                result.Message
+            );
+        }
+
+        _authorizationCacheClearer.ClearCache();
+        if (context is { IsSystemContext: false })
+        {
+            context.AvailableAccounts.RemoveAll(a => a.Id == accountId);
+            _userContextSetter.SetUserContext(context with { CurrentAccount = null });
+        }
+
+        return new DeregisterAccountAccessResult(
+            DeregisterAccountAccessResultCode.Success,
+            string.Empty
+        );
     }
 
     public async Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request)

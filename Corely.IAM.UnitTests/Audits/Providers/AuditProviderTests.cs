@@ -33,6 +33,7 @@ public class AuditProviderTests
     private readonly Mock<ILogger<AuditProvider>> _logger = new();
     private readonly List<AuditEntryEntity> _written = [];
     private readonly AuditProvider _provider;
+    private AccountDeletionPolicy _deletionPolicy = new(false);
 
     private readonly Guid _accountId = Guid.CreateVersion7();
     private readonly Guid _memberId = Guid.CreateVersion7();
@@ -60,6 +61,9 @@ public class AuditProviderTests
             .Setup(s => s.GetService(typeof(IRepo<AuditEntryEntity>)))
             .Returns(_entryRepo.Object);
         scopedServices.Setup(s => s.GetService(typeof(IAuditPolicy))).Returns(_policy.Object);
+        scopedServices
+            .Setup(s => s.GetService(typeof(AccountDeletionPolicy)))
+            .Returns(() => _deletionPolicy);
         scopedServices
             .Setup(s => s.GetService(typeof(IReadonlyRepo<AccountEntity>)))
             .Returns(_serviceFactory.GetRequiredService<IReadonlyRepo<AccountEntity>>());
@@ -526,6 +530,41 @@ public class AuditProviderTests
         var entry = Assert.Single(_written);
         Assert.Equal("Acme", entry.Details);
         Assert.Equal(AuditCohort.AccountMember, entry.Cohort);
+    }
+
+    [Fact]
+    public async Task Record_WritesNoAccountName_ForADeletedAccountOnAHostThatPurgesAccountData()
+    {
+        _deletionPolicy = new AccountDeletionPolicy(true);
+        _policy
+            .Setup(p =>
+                p.IsAlwaysRecorded(
+                    nameof(IDeregistrationService),
+                    nameof(IDeregistrationService.DeregisterAccountAsync)
+                )
+            )
+            .Returns(true);
+        await SeedAccountAsync();
+        _userContextProvider.Context = UserIn(_memberId, _accountId);
+
+        await _provider.RecordAsync(
+            new AuditCall(nameof(IDeregistrationService), AuthAction.Delete, Account.RESOURCE_TYPE)
+            {
+                AccountId = _accountId,
+                ResourceIds = [_accountId],
+                Detail = AuditDetail.DeletedAccountName,
+            },
+            () =>
+                Task.FromResult(
+                    new DeregisterAccountResult(DeregisterAccountResultCode.Success, "")
+                ),
+            r => AuditOutcome.Of(r.ResultCode),
+            nameof(IDeregistrationService.DeregisterAccountAsync)
+        );
+
+        var entry = Assert.Single(_written);
+        Assert.Null(entry.Details);
+        Assert.Equal(_accountId, entry.AccountId);
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Audits.Entities;
 using Corely.IAM.Audits.Enums;
 using Corely.IAM.Audits.Mappers;
@@ -269,7 +270,9 @@ internal class AuditProvider(
         call.Detail switch
         {
             AuditDetail.DeletedUsername => before?.User?.Username,
-            AuditDetail.DeletedAccountName when accountId is { } id => (
+            AuditDetail.DeletedAccountName
+                when accountId is { } id
+                    && !services.GetRequiredService<AccountDeletionPolicy>().PurgesAccountData => (
                 await services
                     .GetRequiredService<IReadonlyRepo<AccountEntity>>()
                     .GetAsync(a => a.Id == id)

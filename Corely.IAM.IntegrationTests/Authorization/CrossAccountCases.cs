@@ -351,6 +351,15 @@ internal static class CrossAccountCases
                         .DeregisterAccountAsync(new DeregisterAccountRequest(a.VictimAccountId))
                 ),
             [
+                $"{nameof(IDeregistrationService)}.{nameof(IDeregistrationService.DeregisterAccountAccessAsync)}"
+            ] = a =>
+                a.WritesNothingAsync(s =>
+                    Get<IDeregistrationService>(s)
+                        .DeregisterAccountAccessAsync(
+                            new DeregisterAccountAccessRequest(a.VictimAccountId)
+                        )
+                ),
+            [
                 $"{nameof(IDeregistrationService)}.{nameof(IDeregistrationService.DeregisterGroupAsync)}"
             ] = a =>
                 a.WritesNothingAsync(

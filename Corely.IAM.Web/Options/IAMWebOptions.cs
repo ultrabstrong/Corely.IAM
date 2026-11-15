@@ -11,6 +11,8 @@ public sealed class IAMWebOptions
 
     public bool AcceptBearerTokens { get; set; }
 
+    public Type? AccountDeletionNotice { get; set; }
+
     public List<PlatformSettingsPage> PlatformSettingsPages { get; } = [];
 
     public async Task<IReadOnlyList<PlatformSettingsPage>> ReadablePlatformSettingsPagesAsync(

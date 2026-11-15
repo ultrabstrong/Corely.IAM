@@ -34,6 +34,8 @@ public class IAMOptions
 
     internal string TokenHashCode { get; private set; } = HashConstants.SALTED_SHA256_CODE;
 
+    internal bool PurgesAccountDataOnDeletion { get; private set; }
+
     internal Dictionary<string, ResourceTypeInfo> CustomResourceTypes { get; } =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -150,6 +152,12 @@ public class IAMOptions
     {
         ArgumentNullException.ThrowIfNull(model);
         CompiledModel = model;
+        return this;
+    }
+
+    public IAMOptions PurgeAccountDataOnDeletion()
+    {
+        PurgesAccountDataOnDeletion = true;
         return this;
     }
 

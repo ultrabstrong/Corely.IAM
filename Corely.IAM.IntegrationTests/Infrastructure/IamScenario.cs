@@ -20,6 +20,8 @@ public sealed class IamScenario : IAsyncLifetime
 
     public IamScenario() { }
 
+    internal bool PurgesAccountDataOnDeletion { get; init; }
+
     internal IamScenario(IReadOnlyDictionary<string, string?> configuration)
     {
         _configuration = configuration;
@@ -58,10 +60,14 @@ public sealed class IamScenario : IAsyncLifetime
     {
         Host = new IamTestHost(
             options =>
+            {
                 options
                     .RegisterResourceType(INVOICE_RESOURCE_TYPE, "Invoices", AuthAction.Read)
                     .SetSupportActions(INVOICE_RESOURCE_TYPE, AuthAction.Read, AuthAction.Create)
-                    .RegisterResourceType(REPORT_RESOURCE_TYPE, "Reports"),
+                    .RegisterResourceType(REPORT_RESOURCE_TYPE, "Reports");
+                if (PurgesAccountDataOnDeletion)
+                    options.PurgeAccountDataOnDeletion();
+            },
             _configuration
         );
 

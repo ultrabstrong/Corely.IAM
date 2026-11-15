@@ -216,7 +216,7 @@ else
 }
 
 <ConfirmModal @ref="_removeUserModal" Title="Remove User" Message="@_confirmMessage" ConfirmText="Remove" OnConfirm="RemoveUserAsync" />
-<ConfirmModal @ref="_deleteModal" Title="Delete Account" Message="@($"Permanently delete account '{_accountName}'? This cannot be undone.")" ConfirmText="Delete" OnConfirm="DeleteAsync" />
+<DeleteAccountModal @ref="_deleteModal" AccountName="@(_originalAccountName ?? string.Empty)" OnConfirm="DeleteAsync" />
 <ConfirmModal @ref="_revokeInvitationModal" Title="Revoke Invitation" Message="@_confirmMessage" ConfirmText="Revoke" OnConfirm="RevokeInvitationAsync" />
 
 <FormModal @ref="_createInvitationModal" Title="Create Invitation" ConfirmText="Create" OnConfirm="CreateInvitationAsync">
@@ -250,7 +250,7 @@ else
     private List<ChildRef> _users = [];
     private List<EffectivePermission>? _effectivePermissions;
     private ConfirmModal _removeUserModal = null!;
-    private ConfirmModal _deleteModal = null!;
+    private DeleteAccountModal _deleteModal = null!;
     private ConfirmModal _revokeInvitationModal = null!;
     private FormModal _createInvitationModal = null!;
 
@@ -447,7 +447,7 @@ else
             var result = await services.GetRequiredService<IDeregistrationService>().DeregisterAccountAsync(new DeregisterAccountRequest(CurrentAccountId));
             if (result.ResultCode == DeregisterAccountResultCode.Success)
             {
-                NavigationManager.NavigateTo(Links.Dashboard(), forceLoad: true);
+                NavigationManager.NavigateTo(AppRoutes.SelectAccount, forceLoad: true);
                 return;
             }
             SetResultMessage(false, string.Empty, result.Message);

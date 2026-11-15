@@ -33,6 +33,7 @@ public class DeregistrationServiceTests
     private readonly Mock<IRoleProcessor> _mockRoleProcessor = new();
     private readonly Mock<IGroupProcessor> _mockGroupProcessor = new();
     private readonly Mock<IAccountProcessor> _mockAccountProcessor = new();
+    private readonly Mock<IAccountClosureProcessor> _mockAccountClosureProcessor = new();
     private readonly Mock<IUserProcessor> _mockUserProcessor = new();
     private readonly Mock<IBasicAuthProcessor> _mockBasicAuthProcessor = new();
     private readonly Mock<IUserContextProvider> _mockUserContextProvider = new();
@@ -72,8 +73,13 @@ public class DeregistrationServiceTests
             _mockAuthorizationCacheClearer.Object,
             _mockReauthenticationProvider.Object,
             _auditSettingsCache,
-            _mockAuthenticationProvider.Object
+            _mockAuthenticationProvider.Object,
+            _mockAccountClosureProcessor.Object
         );
+
+        _mockAccountClosureProcessor
+            .Setup(x => x.PurgeAccountDataAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(new CloseAccountResult(CloseAccountResultCode.Success, string.Empty));
 
         _mockReauthenticationProvider
             .Setup(x => x.VerifyCurrentPasswordAsync(It.IsAny<Guid>(), It.IsAny<string?>()))
@@ -369,6 +375,83 @@ public class DeregistrationServiceTests
         );
 
         Assert.Equal(DeregisterAccountResultCode.UnauthorizedError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task DeregisterAccount_PurgesBeforeDeleting_ForEveryDeletion()
+    {
+        var order = new List<string>();
+        _mockAccountClosureProcessor
+            .Setup(x => x.PurgeAccountDataAsync(It.IsAny<Guid>()))
+            .Callback(() => order.Add("purge"))
+            .ReturnsAsync(new CloseAccountResult(CloseAccountResultCode.Success, string.Empty));
+        _mockAccountProcessor
+            .Setup(x => x.DeleteAccountAsync(It.IsAny<Guid>()))
+            .Callback(() => order.Add("delete"))
+            .ReturnsAsync(new DeleteAccountResult(DeleteAccountResultCode.Success, string.Empty));
+
+        await _service.DeregisterAccountAsync(
+            new DeregisterAccountRequest(_userContext.CurrentAccount!.Id)
+        );
+
+        Assert.Equal(["purge", "delete"], order);
+    }
+
+    [Fact]
+    public async Task DeregisterAccount_DeletesNothing_WhenThePurgeIsRefused()
+    {
+        _mockAccountClosureProcessor
+            .Setup(x => x.PurgeAccountDataAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(
+                new CloseAccountResult(CloseAccountResultCode.UnauthorizedError, "Unauthorized")
+            );
+
+        var result = await _service.DeregisterAccountAsync(
+            new DeregisterAccountRequest(_userContext.CurrentAccount!.Id)
+        );
+
+        Assert.Equal(DeregisterAccountResultCode.UnauthorizedError, result.ResultCode);
+        _mockAccountProcessor.Verify(x => x.DeleteAccountAsync(It.IsAny<Guid>()), Times.Never);
+    }
+
+    #endregion
+
+    #region DeregisterAccountAccessAsync
+
+    [Fact]
+    public async Task DeregisterAccountAccess_ClearsAccountFromContext_WhenAccessIsRemoved()
+    {
+        _mockAccountClosureProcessor
+            .Setup(x => x.RemoveAccountAccessAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(new CloseAccountResult(CloseAccountResultCode.Success, string.Empty));
+
+        var result = await _service.DeregisterAccountAccessAsync(
+            new DeregisterAccountAccessRequest(_userContext.CurrentAccount!.Id)
+        );
+
+        Assert.Equal(DeregisterAccountAccessResultCode.Success, result.ResultCode);
+        _mockUserContextSetter.Verify(
+            x => x.SetUserContext(It.Is<UserContext>(c => c.CurrentAccount == null)),
+            Times.Once
+        );
+        _mockAuthorizationCacheClearer.Verify(x => x.ClearCache(), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeregisterAccountAccess_LeavesContextAlone_WhenRefused()
+    {
+        _mockAccountClosureProcessor
+            .Setup(x => x.RemoveAccountAccessAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(
+                new CloseAccountResult(CloseAccountResultCode.PlatformAccountError, "Platform")
+            );
+
+        var result = await _service.DeregisterAccountAccessAsync(
+            new DeregisterAccountAccessRequest(_userContext.CurrentAccount!.Id)
+        );
+
+        Assert.Equal(DeregisterAccountAccessResultCode.PlatformAccountError, result.ResultCode);
+        _mockUserContextSetter.Verify(x => x.SetUserContext(It.IsAny<UserContext>()), Times.Never);
     }
 
     #endregion

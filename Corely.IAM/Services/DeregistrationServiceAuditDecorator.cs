@@ -48,6 +48,19 @@ internal class DeregistrationServiceAuditDecorator(
             r => AuditOutcome.Of(r.ResultCode)
         );
 
+    public Task<DeregisterAccountAccessResult> DeregisterAccountAccessAsync(
+        DeregisterAccountAccessRequest request
+    ) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Update, Account.RESOURCE_TYPE)
+            {
+                AccountId = request.AccountId,
+                ResourceIds = [request.AccountId],
+            },
+            () => _inner.DeregisterAccountAccessAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
     public Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request) =>
         _auditProvider.RecordAsync(
             new AuditCall(SERVICE, AuthAction.Delete, Group.RESOURCE_TYPE)

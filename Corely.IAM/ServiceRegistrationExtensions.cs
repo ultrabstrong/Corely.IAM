@@ -1,4 +1,5 @@
 using Corely.DataAccess.Extensions;
+using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.ApiKeys.Processors;
 using Corely.IAM.ApiKeys.Providers;
@@ -258,6 +259,19 @@ public static class ServiceRegistrationExtensions
             serviceCollection.AddScoped<IAccountProcessor, AccountProcessor>();
             serviceCollection.Decorate<IAccountProcessor, AccountProcessorAuthorizationDecorator>();
             serviceCollection.Decorate<IAccountProcessor, AccountProcessorTelemetryDecorator>();
+
+            serviceCollection.AddSingleton(
+                new AccountDeletionPolicy(options.PurgesAccountDataOnDeletion)
+            );
+            serviceCollection.AddScoped<IAccountClosureProcessor, AccountClosureProcessor>();
+            serviceCollection.Decorate<
+                IAccountClosureProcessor,
+                AccountClosureProcessorAuthorizationDecorator
+            >();
+            serviceCollection.Decorate<
+                IAccountClosureProcessor,
+                AccountClosureProcessorTelemetryDecorator
+            >();
 
             serviceCollection.AddScoped<IKeyRotationProcessor, KeyRotationProcessor>();
             serviceCollection.Decorate<

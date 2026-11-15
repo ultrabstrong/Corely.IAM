@@ -27,6 +27,10 @@ internal class DeregistrationServiceAuthorizationDecorator(
         DeregisterAccountRequest request
     ) => await _inner.DeregisterAccountAsync(request);
 
+    public Task<DeregisterAccountAccessResult> DeregisterAccountAccessAsync(
+        DeregisterAccountAccessRequest request
+    ) => _inner.DeregisterAccountAccessAsync(request);
+
     public Task<DeregisterGroupResult> DeregisterGroupAsync(DeregisterGroupRequest request) =>
         _inner.DeregisterGroupAsync(request);
 

@@ -8,6 +8,7 @@ Deletes entities and removes relationships between entities.
 |--------|-----------|---------|
 | `DeregisterUserAsync` | *(none; uses current user context)* | `DeregisterUserResult` |
 | `DeregisterAccountAsync` | `DeregisterAccountRequest` | `DeregisterAccountResult` |
+| `DeregisterAccountAccessAsync` | `DeregisterAccountAccessRequest` | `DeregisterAccountAccessResult` |
 | `DeregisterGroupAsync` | `DeregisterGroupRequest` | `DeregisterGroupResult` |
 | `DeregisterApiKeyAsync` | `DeregisterApiKeyRequest` | `DeregisterApiKeyResult` |
 | `DeregisterRoleAsync` | `DeregisterRoleRequest` | `DeregisterRoleResult` |
@@ -41,6 +42,17 @@ var result = await deregistrationService.DeregisterAccountAsync(
 ```
 
 Deletes the specified account after service-level account-context validation.
+
+A host that called `IAMOptions.PurgeAccountDataOnDeletion()` also deletes, before the account row, every audit entry, auth token and MFA challenge carrying the account's id. The deletion's own audit entry is then written without the account name, so nothing of the account remains but its id in that one entry.
+
+### Close an Account Before Deleting It
+
+```csharp
+var result = await deregistrationService.DeregisterAccountAccessAsync(
+    new DeregisterAccountAccessRequest(accountId));
+```
+
+Removes every member, the sole owner included, deletes the account's API keys and revokes its pending invitations, so nobody can reach the account while a host removes its own data. It needs what deleting the account needs (`Delete` on the account, in that account), refuses the platform account, and leaves the account row for `DeregisterAccountAsync`.
 
 ### Remove Users from a Group
 

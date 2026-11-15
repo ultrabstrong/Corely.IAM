@@ -390,6 +390,11 @@ New services go in `Services/` with an interface, registered in `ServiceRegistra
 - Always use `ISymmetricEncryptedValue` or `IAsymmetricEncryptedValue` — never store decrypted values as strings
 - CRUDX permission model (Create, Read, Update, Delete, Execute). Every permission names exactly one resource type; there is no wildcard type. `ResourceId == Guid.Empty` covers all resources of that type
 - The Owner role gets one system-defined permission per type with owner actions, declared in `RegisterResourceType(name, description, params AuthAction[] ownerActions)`; the five IAM types carry all five actions. System-defined permissions cannot be deleted or detached from the Owner role
+- **Everything an account stores is deleted with the account.** A new entity or column holding an
+  account id is not finished until deleting the account removes it, by cascade from the account or,
+  for a row with no foreign key, in `AccountClosureProcessor.PurgeAccountDataAsync` under
+  `PurgeAccountDataOnDeletion`, with a test proving it. Relying on expiry or a scheduled cleanup does
+  not count. `AccountDeletionCoverageTests` fails on an entity with an account id that is neither.
 - **Every processor lookup of a row by id is scoped to the account the call names.** Account owned
   entities implement `IAccountOwnedEntity`, and a by-id lookup of one is
   `scope.ByIdPredicate<TEntity>(id)`; a filter inside a larger query is

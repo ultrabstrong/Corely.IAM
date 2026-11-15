@@ -12,7 +12,7 @@ Account detail page with invitation management, user listing, and encryption key
 
 ### Details Section
 - **Edit**: account name (toggleable edit mode)
-- **Delete**: confirmation modal, then the host's `IIamWebLinks.Dashboard`
+- **Delete**: a danger dialog that enables Delete only once the account name is typed exactly, above the host's notice when `IAMWebOptions.AccountDeletionNotice` names a component, then `/select-account`
 
 ### Invitations Section
 - **Search**: email, description (debounced with cancellation)

@@ -29,7 +29,8 @@ written.
 
 Entries refer to users and accounts by id with no foreign key, so they outlive both. A deleted user's
 or account's name is read back from its deletion entry, which is why those two deletions are always
-recorded.
+recorded. A host that called `IAMOptions.PurgeAccountDataOnDeletion()` deletes an account's entries with the
+account, and its deletion entry keeps the account id without the name.
 
 ## Cohorts
 

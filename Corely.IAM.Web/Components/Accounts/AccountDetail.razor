@@ -293,6 +293,7 @@ else
         if (result.ResultCode == RetrieveResultCode.Success && result.Item != null)
         {
             _accountName = result.Item.AccountName;
+            _originalAccountName = _accountName;
             _users = result.Item.Users ?? [];
             _effectivePermissions = result.EffectivePermissions;
             _canRevealKeys = UserContext?.User != null
@@ -433,6 +434,7 @@ else
             if (result.ResultCode == ModifyResultCode.Success)
             {
                 _isEditing = false;
+                _originalAccountName = _accountName;
                 AccountDisplayState.UpdateAccountName(_accountName!);
             }
         });

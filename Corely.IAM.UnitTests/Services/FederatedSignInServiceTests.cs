@@ -1,12 +1,14 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.DataAccess.Interfaces.UnitOfWork;
 using Corely.IAM.EmailVerifications.Processors;
+using Corely.IAM.EmailVerifications.Providers;
 using Corely.IAM.FederatedIdentities.Models;
 using Corely.IAM.FederatedIdentities.Processors;
 using Corely.IAM.IdentityProviders.Enums;
 using Corely.IAM.IdentityProviders.Models;
 using Corely.IAM.IdentityProviders.Providers;
 using Corely.IAM.IdentityProviders.Types;
+using Corely.IAM.Platform.Providers;
 using Corely.IAM.Security.Entities;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Entities;
@@ -46,7 +48,11 @@ public class FederatedSignInServiceTests
                 new LinkFederatedIdentityResult(LinkFederatedIdentityResultCode.Success, "")
             );
 
-        _service = new FederatedSignInService(
+        _service = Service(confirmationApplies: false);
+    }
+
+    private FederatedSignInService Service(bool confirmationApplies) =>
+        new(
             _settings.Object,
             new IdentityProviderCatalog(),
             _client.Object,
@@ -58,10 +64,13 @@ public class FederatedSignInServiceTests
             _userContext.Object,
             _serviceFactory.GetRequiredService<IUnitOfWorkProvider>(),
             _serviceFactory.GetRequiredService<IEmailVerificationProcessor>(),
+            new EmailVerificationRequirement(
+                _serviceFactory.GetRequiredService<ISecurityPolicyProvider>(),
+                confirmationApplies ? new Mock<IEmailVerificationSender>().Object : null
+            ),
             TimeProvider.System,
             NullLogger<FederatedSignInService>.Instance
         );
-    }
 
     private static IdentityProviderSettings Settings(
         IdentityProviderType type,
@@ -325,12 +334,24 @@ public class FederatedSignInServiceTests
     }
 
     [Fact]
-    public async Task SignIn_ClaimsAnUnconfirmedUserHoldingTheEmail()
+    public async Task SignIn_NeverJoinsAnUnconfirmedUserByEmail_WhereConfirmationDoesNotApply()
+    {
+        await CreateUserAsync("existing", "new.person@example.com");
+        Returns(Identity());
+
+        var result = await _service.CompleteFederatedSignInAsync(Request());
+
+        Assert.Equal(CompleteFederatedSignInResultCode.EmailInUseError, result.ResultCode);
+    }
+
+    [Fact]
+    public async Task SignIn_ClaimsAnUnconfirmedUserHoldingTheEmail_WhileConfirmationApplies()
     {
         var holderId = await CreateUserAsync("existing", "new.person@example.com");
         Returns(Identity());
 
-        var result = await _service.CompleteFederatedSignInAsync(Request());
+        var result = await Service(confirmationApplies: true)
+            .CompleteFederatedSignInAsync(Request());
 
         Assert.Equal(CompleteFederatedSignInResultCode.Success, result.ResultCode);
         _identities.Verify(

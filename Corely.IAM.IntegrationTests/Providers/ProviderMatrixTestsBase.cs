@@ -192,15 +192,12 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
     }
 
     [RequiresDockerFact]
-    public async Task Migrate_ConfirmsTheEmail_OfAUserWhoseLinkedProviderVouchedForIt()
+    public async Task Migrate_ConfirmsTheEmail_OfEveryUserThatAlreadyExisted()
     {
-        var createdUtc = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
         await Host.QueryAsync(async db =>
         {
             await db.GetService<IMigrator>().MigrateAsync("HashInvitationTokens");
-            return await db.Database.ExecuteSqlInterpolatedAsync(
-                $"INSERT INTO FederatedIdentities (Id, UserId, ProviderType, Issuer, Subject, Email, EmailVerified, CreatedUtc) SELECT {Guid.CreateVersion7()}, Id, {(int)IdentityProviderType.Google}, {"https://accounts.google.com"}, {"vouched-subject"}, Email, {true}, {createdUtc} FROM Users WHERE Id = {_ownerUserId}"
-            );
+            return 0;
         });
 
         await Host.MigrateAsync();

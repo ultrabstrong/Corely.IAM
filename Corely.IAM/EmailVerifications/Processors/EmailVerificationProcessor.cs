@@ -12,7 +12,6 @@ using Corely.IAM.Security.Models;
 using Corely.IAM.Security.Providers;
 using Corely.IAM.TotpAuths.Entities;
 using Corely.IAM.Users.Entities;
-using Corely.IAM.Users.Processors;
 using Corely.Security.Hashing.Factories;
 using Corely.Security.Secrets;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +28,6 @@ internal class EmailVerificationProcessor(
     IRepo<FederatedIdentityEntity> federatedIdentityRepo,
     IRepo<PasswordRecoveryEntity> passwordRecoveryRepo,
     IAuthenticationProvider authenticationProvider,
-    IUserOwnershipProcessor userOwnershipProcessor,
     ISecurityPolicyProvider securityPolicyProvider,
     EmailVerificationRequirement requirement,
     IHashProviderFactory hashProviderFactory,
@@ -56,8 +54,6 @@ internal class EmailVerificationProcessor(
         passwordRecoveryRepo.ThrowIfNull(nameof(passwordRecoveryRepo));
     private readonly IAuthenticationProvider _authenticationProvider =
         authenticationProvider.ThrowIfNull(nameof(authenticationProvider));
-    private readonly IUserOwnershipProcessor _userOwnershipProcessor =
-        userOwnershipProcessor.ThrowIfNull(nameof(userOwnershipProcessor));
     private readonly ISecurityPolicyProvider _securityPolicyProvider =
         securityPolicyProvider.ThrowIfNull(nameof(securityPolicyProvider));
     private readonly EmailVerificationRequirement _requirement = requirement.ThrowIfNull(
@@ -352,18 +348,9 @@ internal class EmailVerificationProcessor(
             u => u.Id == userId,
             include: q => q.Include(u => u.Accounts).Include(u => u.Groups).Include(u => u.Roles)
         );
-        if (holder == null)
+        // A user in any account has been put to use, whoever made it, so it is never deleted here.
+        if (holder == null || holder.Accounts?.Count > 0)
             return false;
-
-        foreach (var account in holder.Accounts?.ToList() ?? [])
-        {
-            if (
-                (
-                    await _userOwnershipProcessor.IsSoleOwnerOfAccountAsync(holder.Id, account.Id)
-                ).IsSoleOwner
-            )
-                return false;
-        }
 
         holder.Accounts?.Clear();
         holder.Groups?.Clear();
@@ -386,7 +373,12 @@ internal class EmailVerificationProcessor(
         if (user.EmailVerifiedUtc != null)
             return;
 
-        if (proof is EmailProof.PasswordRecovery or EmailProof.IdentityProviderClaim)
+        // Only while confirmation applies is an unconfirmed user one that never proved its address;
+        // on a host without it every user is unconfirmed, real ones included.
+        if (
+            (proof is EmailProof.PasswordRecovery or EmailProof.IdentityProviderClaim)
+            && await _requirement.AppliesAsync()
+        )
             await TakeOverAsync(user, proof, keptIdentityId);
 
         user.EmailVerifiedUtc = utcNow;
@@ -411,30 +403,6 @@ internal class EmailVerificationProcessor(
             s => s.SetProperty(r => r.InvalidatedUtc, utcNow)
         );
         await _challengeRepo.ExecuteDeleteAsync(c => c.UserId == user.Id);
-
-        var member = await _userRepo.GetAsync(
-            u => u.Id == user.Id,
-            include: q => q.Include(u => u.Accounts).Include(u => u.Groups).Include(u => u.Roles)
-        );
-        foreach (var account in member?.Accounts?.ToList() ?? [])
-        {
-            if (
-                (
-                    await _userOwnershipProcessor.IsSoleOwnerOfAccountAsync(user.Id, account.Id)
-                ).IsSoleOwner
-            )
-                continue;
-
-            member!.Accounts!.Remove(account);
-            foreach (
-                var group in member.Groups?.Where(g => g.AccountId == account.Id).ToList() ?? []
-            )
-                member.Groups!.Remove(group);
-            foreach (var role in member.Roles?.Where(r => r.AccountId == account.Id).ToList() ?? [])
-                member.Roles!.Remove(role);
-        }
-        if (member != null)
-            await _userRepo.UpdateAsync(member);
 
         _logger.LogWarning(
             "Took over unconfirmed user {UserId} on proof of its email by {EmailProof}",

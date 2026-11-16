@@ -42,9 +42,7 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                 defaultValue: true
             );
 
-            migrationBuilder.Sql(
-                "UPDATE Users SET EmailVerifiedUtc = UTC_TIMESTAMP(6) WHERE EXISTS (SELECT 1 FROM FederatedIdentities f WHERE f.UserId = Users.Id AND f.EmailVerified = 1 AND f.Email = Users.Email)"
-            );
+            migrationBuilder.Sql("UPDATE Users SET EmailVerifiedUtc = UTC_TIMESTAMP(6)");
 
             migrationBuilder
                 .CreateTable(

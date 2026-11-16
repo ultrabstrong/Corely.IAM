@@ -257,6 +257,21 @@ What turned out differently:
     narrows the gap item 1 left: someone sent a link they did not ask for can remove the sign up
     instead of confirming it. Item 3 of the Web section is replaced by this.
 
+14. **Takeover and deletion narrowed after the first release attempt.** A push security review found
+    that every user existing before the upgrade counted as unconfirmed, and that a host without a
+    sender keeps every user unconfirmed forever, so a real user who reset their password or signed in
+    with a provider would be taken over. The 7.5.0 release run was cancelled before it published.
+    Now:
+    1. The migration confirms every user that already exists, not only those a provider vouched for.
+    2. The takeover (recovery, or a provider claiming the address at sign up) happens only while
+       confirmation applies; otherwise those confirm the email and touch nothing else, and federated
+       sign up over an unconfirmed holder answers `EmailInUseError` as before.
+    3. The takeover never removes account memberships. While confirmation applies an unconfirmed user
+       cannot have gained any, so the sole owner rule in the Squatting section is gone.
+    4. Neither password sign up nor "I didn't sign up" deletes a user that belongs to any account.
+
+    This supersedes the membership parts of the Squatting section and of items 2 and 13.
+
 ### Upgrading a consumer
 
 A consumer that builds IAM's schema from a generated script regenerates it. DocsToData's is

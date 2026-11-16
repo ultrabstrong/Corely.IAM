@@ -5,6 +5,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.DataAccess.Interfaces.UnitOfWork;
 using Corely.IAM.EmailVerifications.Models;
 using Corely.IAM.EmailVerifications.Processors;
+using Corely.IAM.EmailVerifications.Providers;
 using Corely.IAM.Extensions;
 using Corely.IAM.FederatedIdentities.Models;
 using Corely.IAM.FederatedIdentities.Processors;
@@ -34,10 +35,13 @@ internal class FederatedSignInService(
     IUserContextProvider userContextProvider,
     IUnitOfWorkProvider uowProvider,
     IEmailVerificationProcessor emailVerificationProcessor,
+    EmailVerificationRequirement emailVerificationRequirement,
     TimeProvider timeProvider,
     ILogger<FederatedSignInService> logger
 ) : IFederatedSignInService
 {
+    private readonly EmailVerificationRequirement _emailVerificationRequirement =
+        emailVerificationRequirement.ThrowIfNull(nameof(emailVerificationRequirement));
     private readonly IEmailVerificationProcessor _emailVerificationProcessor =
         emailVerificationProcessor.ThrowIfNull(nameof(emailVerificationProcessor));
     public const int MAX_USERNAME_ATTEMPTS = 10;
@@ -302,7 +306,13 @@ internal class FederatedSignInService(
             );
 
         var holder = await _userRepo.GetAsync(u => u.Email == identity.Email);
-        if (holder is { EmailVerifiedUtc: not null })
+        if (
+            holder != null
+            && (
+                holder.EmailVerifiedUtc != null
+                || !await _emailVerificationRequirement.AppliesAsync()
+            )
+        )
             return (
                 null,
                 Failed(

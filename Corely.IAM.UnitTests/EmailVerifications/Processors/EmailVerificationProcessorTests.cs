@@ -320,8 +320,29 @@ public class EmailVerificationProcessorTests
         Assert.False(await Repo<FederatedIdentityEntity>().AnyAsync(f => f.UserId == user.Id));
         var after = await Repo<UserEntity>()
             .GetAsync(u => u.Id == user.Id, include: q => q.Include(u => u.Accounts));
-        Assert.Empty(after!.Accounts!);
+        Assert.Single(after!.Accounts!);
         Assert.NotNull(after.EmailVerifiedUtc);
+    }
+
+    [Fact]
+    public async Task MarkVerifiedAsync_TakesNothingOver_ForAHostWhereConfirmationDoesNotApply()
+    {
+        _factory = Factory(withSender: false);
+        var user = await CreateUserAsync();
+        await Repo<TotpAuthEntity>()
+            .CreateAsync(
+                new TotpAuthEntity
+                {
+                    Id = Guid.CreateVersion7(),
+                    UserId = user.Id,
+                    EncryptedSecret = "s",
+                }
+            );
+
+        await Processor.MarkVerifiedAsync(user.Id, EmailProof.PasswordRecovery);
+
+        Assert.True(await Repo<TotpAuthEntity>().AnyAsync(t => t.UserId == user.Id));
+        Assert.NotNull((await UserAsync(user.Id))!.EmailVerifiedUtc);
     }
 
     [Theory]
@@ -379,6 +400,21 @@ public class EmailVerificationProcessorTests
     {
         _factory = Factory(withSender: false);
         var user = await CreateUserAsync();
+
+        Assert.False(await Processor.ReplaceUnconfirmedHolderAsync(EMAIL));
+        Assert.NotNull(await UserAsync(user.Id));
+    }
+
+    [Fact]
+    public async Task ReplaceUnconfirmedHolderAsync_KeepsAHolderInAnAccount()
+    {
+        var user = await CreateUserAsync();
+        var account = await Repo<AccountEntity>()
+            .CreateAsync(new AccountEntity { Id = Guid.CreateVersion7(), AccountName = "joined" });
+        var holder = await Repo<UserEntity>()
+            .GetAsync(u => u.Id == user.Id, include: q => q.Include(u => u.Accounts));
+        holder!.Accounts = [account];
+        await Repo<UserEntity>().UpdateAsync(holder);
 
         Assert.False(await Processor.ReplaceUnconfirmedHolderAsync(EMAIL));
         Assert.NotNull(await UserAsync(user.Id));

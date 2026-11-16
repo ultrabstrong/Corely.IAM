@@ -40,7 +40,7 @@ internal sealed class EmailVerificationSender(IMailer mailer) : IEmailVerificati
 Corely.IAM.Web's page for the link asks "Confirm my email" or "I didn't sign up"; opening the link
 alone changes nothing. Confirming confirms the user as it stands. Refusing calls
 `RejectEmailVerificationAsync`, which, for a link still pending and while confirmation is required,
-deletes the unconfirmed user. Otherwise, or when it is the only owner of an account, the user is kept
+deletes the unconfirmed user. Otherwise, or when it belongs to any account, the user is kept
 with its links invalidated and its sessions ended, and `Removed` is false. With no
 sender registered, the request methods return the token in the result instead, and
 confirmation is never required.
@@ -76,17 +76,21 @@ while the user's email still equals the address it was sent to (`EmailChangedErr
 
 ## Squatting
 
-Someone can register an address they do not own. Two kinds of proof from someone else take such a
-user over: a completed password recovery, and an identity provider vouching for the address at
-federated sign up. Before confirming, IAM removes the user's password (not for recovery, which sets a
-new one), two factor, other linked identities, sessions, pending recoveries and challenges, and its
-account memberships except accounts it is the only owner of, which pass to the new holder.
+Someone can register an address they do not own. While confirmation is required, two kinds of proof
+from someone else take such a user over: a completed password recovery, and an identity provider
+vouching for the address at federated sign up. Before confirming, IAM removes the user's password (not
+for recovery, which sets a new one), two factor, other linked identities, sessions, pending
+recoveries and challenges. Account memberships stay; an unconfirmed user cannot have gained any while
+confirmation applies.
 
 Password sign up for an address held by an unconfirmed user replaces that user while confirmation
-applies, so whoever controls the inbox is the only one who can ever finish. A holder that is the only
-owner of an account is kept.
+applies, so whoever controls the inbox is the only one who can ever finish. A holder that belongs to
+any account is never deleted.
 
-A host with no sender has neither the requirement nor the replacement at sign up.
+A host with no sender has no requirement, no takeover and no replacement: every user there is
+unconfirmed, real ones included, so a recovery or a provider only confirms the email, and federated
+sign up still answers `EmailInUseError` for an address already in use. Users that existed before the
+upgrade are confirmed by its migration.
 
 ## Result Codes
 

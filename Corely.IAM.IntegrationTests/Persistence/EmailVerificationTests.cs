@@ -1,8 +1,6 @@
 using Corely.IAM.EmailVerifications.Entities;
 using Corely.IAM.EmailVerifications.Models;
-using Corely.IAM.EmailVerifications.Processors;
 using Corely.IAM.IntegrationTests.Infrastructure;
-using Corely.IAM.Models;
 using Corely.IAM.Services;
 using Corely.IAM.Users.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -55,52 +53,6 @@ public class EmailVerificationTests : IAsyncLifetime
             0,
             await _scenario.Host.QueryAsync(db => db.Set<EmailVerificationEntity>().CountAsync())
         );
-    }
-
-    [Fact]
-    public async Task TakeOver_RemovesMemberships_ButKeepsAnAccountTheHolderAloneOwns()
-    {
-        var ownAccountId = await _scenario.ActAsAsync(
-            _scenario.OutsiderUsername,
-            null,
-            async services =>
-            {
-                var own = await services
-                    .GetRequiredService<IRegistrationService>()
-                    .RegisterAccountAsync(
-                        new RegisterAccountRequest("Outsider's own", _scenario.OutsiderUserId)
-                    );
-                Assert.Equal(RegisterAccountResultCode.Success, own.ResultCode);
-                return own.CreatedAccountId;
-            }
-        );
-        await _scenario.AsSystemAsync(async services =>
-        {
-            var joined = await services
-                .GetRequiredService<IRegistrationService>()
-                .RegisterUserWithAccountAsync(
-                    new RegisterUserWithAccountRequest(
-                        _scenario.OutsiderUserId,
-                        _scenario.AccountId
-                    )
-                );
-            Assert.Equal(RegisterUserWithAccountResultCode.Success, joined.ResultCode);
-            return joined;
-        });
-
-        await _scenario.Host.WithScopeAsync(services =>
-            services
-                .GetRequiredService<IEmailVerificationProcessor>()
-                .MarkVerifiedAsync(_scenario.OutsiderUserId, EmailProof.IdentityProviderClaim)
-        );
-
-        var accountIds = await _scenario.Host.QueryAsync(db =>
-            db.Set<UserEntity>()
-                .Where(u => u.Id == _scenario.OutsiderUserId)
-                .SelectMany(u => u.Accounts!.Select(a => a.Id))
-                .ToListAsync()
-        );
-        Assert.Equal([ownAccountId], accountIds);
     }
 
     private Task<VerifyEmailResult> VerifyAsync(string token) =>

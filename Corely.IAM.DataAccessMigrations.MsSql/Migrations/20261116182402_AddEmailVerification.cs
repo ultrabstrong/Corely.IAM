@@ -42,9 +42,7 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                 defaultValue: true
             );
 
-            migrationBuilder.Sql(
-                "EXEC(N'UPDATE Users SET EmailVerifiedUtc = SYSUTCDATETIME() WHERE EXISTS (SELECT 1 FROM FederatedIdentities f WHERE f.UserId = Users.Id AND f.EmailVerified = 1 AND f.Email = Users.Email)')"
-            );
+            migrationBuilder.Sql("EXEC(N'UPDATE Users SET EmailVerifiedUtc = SYSUTCDATETIME()')");
 
             migrationBuilder.CreateTable(
                 name: "EmailVerificationChallenges",

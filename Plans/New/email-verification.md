@@ -5,18 +5,26 @@ is typed, and `UserEntity.Email` has a unique index, so someone can register an 
 theirs and the owner later gets "user exists". Federated sign up (`sign-in-providers.md`) relies on
 the provider having confirmed it; nothing else does.
 
-IAM sends no email. It does what it does for password recovery: makes a token, hands it to the host
-to deliver however it likes, and checks it when it comes back.
+IAM sends no email itself. It does what it does for invitations: builds a delivery carrying a token,
+hands it to the host's sender, and checks the token when it comes back.
 
 ## What exists
 
 1. **Password recovery** (`IPasswordRecoveryService`, `Docs/services/password-recovery.md`) is the
-   pattern to follow: a token `{recoveryId}.{secret}`, only the secret's hash stored, a newer request
-   invalidates older pending ones, a fixed expiry, single use, and the host delivers the token.
-2. **Invitations** carry an email too, but bind an account membership to an address; accepting one
-   checks the signed in user's email matches (`InvitationProcessor`, `EmailMismatchError`). They
-   prove nothing about the user's own address.
-3. `UpdateUserRequest` can change a user's email.
+   pattern for the token: `{recoveryId}.{secret}`, only the secret's hash stored, a newer request
+   invalidates older pending ones, a fixed expiry, single use.
+2. **Invitations** are the pattern for delivery: `IInvitationSender` in core
+   (`Invitations/Providers`) takes an `InvitationDelivery` holding the token, the host builds the link
+   with `IIamWebLinks`, and with no sender registered the token goes back to the caller. Invitations
+   also carry an email, but bind a membership to an address; accepting one checks the signed in
+   user's email matches (`InvitationProcessor`, `EmailMismatchError`). They prove nothing about the
+   user's own address.
+3. **The MFA challenge** is the pattern for pausing a sign in: `SignInAsync` stores an
+   `MfaChallengeEntity` (user, device, account, expiry) and returns `MfaRequiredChallenge` with a
+   token, and `VerifyMfaAsync` exchanges it for the session.
+4. `UpdateUserRequest` can change a user's email.
+5. `FederatedIdentities.EmailVerified` records whether a provider vouched for a linked identity's
+   email, and federated sign up refuses an address already in use (`FederatedSignInService`).
 
 ## The shape
 
@@ -29,50 +37,94 @@ to deliver however it likes, and checks it when it comes back.
 
    | Method | Context | Does |
    |---|---|---|
-   | `RequestEmailVerificationAsync()` | The signed in user, not system | Returns a token for the user's current email, invalidating older pending ones. `AlreadyVerifiedError` when it is confirmed |
-   | `RequestEmailVerificationAsync(Guid userId)` | System context | The same for a host that sends at sign up or in a batch |
-   | `VerifyEmailAsync(VerifyEmailRequest)` | None | Takes the token; confirms when it is valid, pending, unexpired and the address still matches |
+   | `RequestEmailVerificationAsync()` | The signed in user, not system | Profile's Resend. Sends a link for the user's current email, invalidating older pending ones. `AlreadyVerifiedError` when it is confirmed |
+   | `RequestEmailVerificationAsync(Guid userId)` | System context | The same, for a host that sends at sign up or in a batch |
+   | `RequestEmailVerificationAsync(string challengeToken)` | None; the challenge token is the authority | The waiting page's Resend (item 9) |
+   | `GetEmailVerificationStatusAsync(string challengeToken)` | None; the challenge token is the authority | Item 7 |
+   | `VerifyEmailAsync(VerifyEmailRequest)` | None | Takes the link's token; confirms when it is valid, pending, unexpired and the address still matches |
 
    The token is `{verificationId}.{secret}` with the secret hashed, as for recovery. Result codes
-   mirror recovery's: not found, expired, already used, invalidated, plus `EmailChangedError`.
-4. **Federated identities count.** `sign-in-providers.md` records on each linked identity whether
-   the provider vouched for its email (`FederatedIdentities.EmailVerified`). A user whose current
-   email matches a linked identity the provider vouched for is confirmed, at sign up, at link, and
-   once for existing rows when this plan lands. This plan reads that column; the federated plan
-   does not depend on this one.
-5. **Lifetime is a security setting**, `EmailVerificationTtlSeconds` on `SecurityPolicy` with a range,
+   mirror recovery's: not found, expired, already used, invalidated, plus `EmailChangedError`, and
+   `ResendCooldownError` with when the next one is allowed.
+4. **Sending goes through the host, as invitations do.** `IEmailVerificationSender` in core
+   (`EmailVerifications/Providers`) takes an `EmailVerificationDelivery` (user id, email, expiry,
+   token) and returns a send result. The host builds the link with `IIamWebLinks.ConfirmEmail()` and
+   `?token=`. With no sender registered, the request methods return the token instead, the way an
+   invitation does, and the requirement in item 9 does not apply.
+5. **Federated identities count.** A user whose current email matches a linked identity the provider
+   vouched for is confirmed, at sign up, at link, and once for existing rows by the migration that
+   adds the column (item in Tables).
+6. **Lifetime is a security setting**, `EmailVerificationTtlSeconds` on `SecurityPolicy` with a range,
    in configuration until a platform account and on the Security page after, like every other
    setting. 1800 (30 minutes) by default.
-6. **Resend has a cooldown**, so the page cannot be used to flood an inbox: a new link at most once
-   a minute per user (`EmailVerificationResendSeconds`, also a setting), and each new link
-   invalidates the last.
 7. **The status is readable**, so a page can say the right thing:
    `GetEmailVerificationStatusAsync(challengeToken)` returns sent (with when, and when it expires),
    expired, confirmed, or none sent yet, and when the next resend is allowed.
-8. **A confirmed challenge finishes the sign in.** The challenge token from sign up or sign in is
-   exchanged for a session once the email is confirmed, within the challenge's lifetime, so the
-   waiting tab carries on by itself and nobody types a password twice.
-9. **A link opened twice still says confirmed.** Mail scanners open links before people do; a link
-   whose verification is already complete for that address shows success, not "already used".
-10. **Confirmation is required by default once a host can send.** `RequireVerifiedEmail` on
-    `SecurityPolicy` is on by default, and applies only while an `IEmailVerificationSender` is
-    registered; a host without one sees no change, and the setting cannot be saved on without one. A
-    host or platform member can turn it off. While it applies:
-    1. Sign in by any method returns `EmailVerificationRequiredChallenge` with a challenge token, the
-       way `MfaRequiredChallenge` works, instead of a session. The challenge token does one thing:
-       `RequestEmailVerificationAsync(challengeToken)` sends a fresh link, and once the email is
-       confirmed the same token is exchanged for the session (item 8).
-    2. Accepting an invitation needs a confirmed email.
-    3. Password recovery is unaffected: it already proves the inbox, so completing one also sets
-       `EmailVerifiedUtc`.
+8. **Resend has a cooldown**, so the page cannot be used to flood an inbox: a new link at most once
+   a minute per user (`EmailVerificationResendSeconds`, also a setting), and each new link
+   invalidates the last.
+9. **Confirmation is required by default once a host can send.** `RequireVerifiedEmail` on
+   `SecurityPolicy` is on by default, and applies only while an `IEmailVerificationSender` is
+   registered; a host without one sees no change, and the setting cannot be saved on without one. A
+   host or platform member can turn it off. While it applies:
+   1. **Sign in checks in a fixed order:** the credential (password or provider), then MFA when the
+      user has it, then the email. A user without MFA goes straight from the credential to the email
+      check. Only someone who has fully proved who they are can make IAM send a link.
+   2. **An unconfirmed user gets `EmailVerificationRequiredChallenge`** with a challenge token
+      instead of a session, the way `MfaRequiredChallenge` works. The challenge is stored like an MFA
+      challenge (token hash, user, device, account, expiry) in `EmailVerificationChallenges`. The
+      first link is sent when the challenge is created, unless a pending one is still inside its
+      cooldown.
+   3. **The challenge lives as long as its link.** It expires with the newest link it sent, so a
+      Resend extends it and the waiting tab never runs out before the link does. It needs no setting
+      of its own.
+   4. **A confirmed challenge finishes the sign in.**
+      `IAuthenticationService.CompleteEmailVerificationAsync(challengeToken)` exchanges the token for
+      the session once the email is confirmed, and returns `EmailVerificationPendingError` until
+      then, so the waiting tab carries on by itself and nobody types a password twice. Like
+      `VerifyMfaAsync`, the exchange is single use.
+   5. **Joining an account needs a confirmed email**, by every path: `AcceptInvitationAsync`,
+      `RegisterUserWithAccountAsync` (an admin adding the user) and `RegisterAccountAsync` (the user
+      creating one). Each method checks it itself, rather than relying on sign in having stopped
+      the user.
+   6. **Password recovery is unaffected:** it already proves the inbox, so completing one also sets
+      `EmailVerifiedUtc`.
+10. **A link opened twice still says confirmed.** Mail scanners open links before people do; a link
+    whose verification is already complete for that address shows success, not "already used".
 11. **Who is confirmed without a link:**
-    1. A federated sign up or link the provider vouches for (`sign-in-providers.md`).
+    1. A federated sign up or link the provider vouches for.
     2. The platform owner at bootstrap: the operator supplies the address.
     3. A user registered under system context with `EmailVerified = true` on the request: the host
        vouches, as for imported users and the demo seed (`SeedWebAppDemo.ps1`, `Start-LocalStack.ps1`).
     4. A completed password recovery.
-12. **Squatting is reclaimed through password recovery.** It mails the address, so the real owner
-   can reset the squatter's password and take the user over. The docs say so; nothing else is built.
+
+## Squatting
+
+Someone can register an address they do not own. The known attack built on this is account
+pre-hijacking (S4): the squatter sets a password, the real owner later arrives through a provider or
+recovery and gets the same user, and the squatter's password, MFA or session still works. IAM closes
+it three ways:
+
+1. **An unconfirmed user can do nothing** while the requirement applies (item 9): no session, no
+   invitation. A host with no sender has neither the requirement nor this protection, and the docs
+   say so beside the setting.
+2. **Proving the address takes the user over.** Any confirmation of an address whose user was never
+   confirmed (the link, a completed recovery, or a provider vouching for it at sign up or link)
+   first removes everything that lets anyone act as that user: the password, TOTP, other linked
+   identities, auth tokens and sessions, and pending recoveries and verifications. The confirming
+   person then holds the only way in. The takeover is audited.
+   While the requirement applies an unconfirmed user cannot have joined any account (item 9.5). On a
+   host without a sender it can have, so the takeover also removes its memberships, except accounts
+   it is the only owner of: those pass to the new holder, so no account is left without an owner.
+3. **Sign up does not stop at an unconfirmed holder.** Federated sign up with a vouched email for an
+   address held by a user never confirmed is item 2's takeover, not `EmailInUseError`. Password sign
+   up for such an address replaces the holder when it has never signed in (which, while the
+   requirement applies, is every unconfirmed user): the old user and its credentials are deleted and
+   the new one starts unconfirmed, with its own link. Whoever controls the inbox is the only one who
+   can ever finish. A holder that has signed in (a host without the requirement) still answers
+   "user exists".
+
+Unconfirmed users are not deleted on a timer. Item 3 frees an address whenever its owner turns up.
 
 ## Corely.IAM.Web
 
@@ -81,10 +133,10 @@ pages, and the host supplies only what it alone can do, sending the email.
 
 1. **The pages are Corely.IAM.Web's**: the "Confirm your email to continue" page and the confirm
    link's page, Razor pages at authentication paths in `AppRoutes`, like sign in.
-2. **Sending is the host's**, through `IEmailVerificationSender.SendAsync(email, confirmUrl)`,
-   registered by the host. Corely.IAM.Web builds the URL. With no sender registered the requirement
-   does not apply (item 10), and the Security page says so beside the setting. `Corely.IAM.WebApp` registers a sender that shows the link on a preview
-   page in Development, as password recovery's preview does.
+2. **Sending is the host's**, through `IEmailVerificationSender` (item 4), building the link from
+   `IIamWebLinks.ConfirmEmail()`. With no sender registered the requirement does not apply, and the
+   Security page says so beside the setting. `Corely.IAM.WebApp` registers a sender that shows the
+   link on a preview page in Development, as `PreviewInvitationSender` does.
 3. **The link confirms on GET.** The CLAUDE.md rule against cross site GETs that change state guards
    against ambient authority: another site using the signed in user's cookie. Here the authority is
    the unguessable token, which confirms only the one address it was sent to and signs nobody in. A
@@ -94,8 +146,9 @@ pages, and the host supplies only what it alone can do, sending the email.
 
 ### The user's path
 
-1. Sign up, or sign in unconfirmed: a "Confirm your email to continue" page, naming the address,
-   with "Check your spam folder" and a Resend button that counts down its cooldown.
+1. Sign up, or sign in unconfirmed (after MFA, when the user has it): a "Confirm your email to
+   continue" page, naming the address, with "Check your spam folder" and a Resend button that counts
+   down its cooldown.
 2. Click the link in the email: that tab says the email is confirmed.
 3. The waiting tab notices (it checks the status every few seconds) and continues signed in.
 4. Link missed or expired: signing in lands on the same page, saying "Your link expired" with Resend.
@@ -106,6 +159,12 @@ pages, and the host supplies only what it alone can do, sending the email.
 |---|---|
 | `Users` | adds `EmailVerifiedUtc` (nullable) |
 | `EmailVerifications` (new) | `Id`, `UserId`, `Email`, `SecretHash`, `ExpiresUtc`, `CompletedUtc`, `InvalidatedUtc`, `CreatedUtc` |
+| `EmailVerificationChallenges` (new) | `Id`, `UserId`, `TokenHash`, `DeviceId`, `AccountId`, `ExpiresUtc`, `CompletedUtc`, `CreatedUtc` |
+
+1. Both new tables reference `Users` with a cascading delete, as `PasswordRecoveries` and
+   `FederatedIdentities` do, so deleting a user or purging an account removes them.
+2. The migration sets `EmailVerifiedUtc` on existing users whose email matches a linked identity
+   with `EmailVerified` set (item 5).
 
 ## Sources
 
@@ -117,22 +176,29 @@ an inbox. **To read** at the cited sections before building, as `sign-in-provide
 | S1 | OWASP, forgot password cheat sheet (URL tokens): https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html |
 | S2 | OWASP, authentication cheat sheet: https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html |
 | S3 | NIST SP 800-63B, out of band and email guidance: https://pages.nist.gov/800-63-4/sp800-63b.html |
+| S4 | Sudhodanan and Paverd, "Pre-hijacked accounts: An Empirical Study of Security Failures in User Account Creation on the Web", USENIX Security 2022 |
 
 ## Releasing
 
-A minor release of Corely.IAM and Corely.IAM.Web, on its own, independent of `sign-in-providers.md`.
-Nothing in it breaks a host: the table and column are additive, the sign in result code is a new
-value, and the requirement takes effect only once a host registers a sender. No released host has
-users yet, so nobody is grandfathered.
+A minor release of Corely.IAM and Corely.IAM.Web, on its own. Nothing in it breaks a host: the
+tables and column are additive, the sign in result code is a new value, and the requirement takes
+effect only once a host registers a sender. No released host has users yet, so nobody is
+grandfathered.
 
 ## Tests
 
 1. Unit: request, verify, expiry, reuse, invalidation by a newer request, `EmailChangedError`,
-   clearing on email change, federated sign up and link setting it, the system and user context
-   checks, the sign in challenge for every sign in method with the setting on and none with it off,
-   invitation acceptance refused, recovery setting it, bootstrap and system registration setting it.
-2. Integration: the new table and column, and that only the secret's hash is stored.
-3. Functional: a sign in needing confirmation lands on the waiting page; the confirm link confirms
+   clearing on email change, the resend cooldown, federated sign up and link setting it, the system,
+   user and challenge token contexts, the sign in challenge for every sign in method with the setting
+   on and none with it off, MFA before the email check, a Resend extending the challenge, the
+   challenge exchanged once and only after confirming, all three ways of joining an account refused, recovery
+   setting it, bootstrap and system registration setting it, no sender returning the token.
+2. Squatting: each kind of confirmation removing the squatter's password, TOTP, other identities,
+   sessions and pending tokens, and its memberships except sole owned accounts; federated sign up taking over an unconfirmed holder; password sign
+   up replacing a never signed in holder and refusing one that has signed in.
+3. Integration: the new tables and column, only hashes stored, the cascade on user deletion and
+   account purge, and the migration's backfill.
+4. Functional: a sign in needing confirmation lands on the waiting page; the confirm link confirms
    on a cross site GET and signs nobody in; the waiting page continues once confirmed; resend
    honors the cooldown; the `CrossSiteRequestTests` exemption.
-4. `CrossAccountCoverageTests`: a reasoned exemption; verification belongs to users, not accounts.
+5. `CrossAccountCoverageTests`: a reasoned exemption; verification belongs to users, not accounts.

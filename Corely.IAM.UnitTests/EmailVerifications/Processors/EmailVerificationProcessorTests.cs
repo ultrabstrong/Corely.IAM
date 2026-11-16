@@ -203,6 +203,41 @@ public class EmailVerificationProcessorTests
     }
 
     [Fact]
+    public async Task RejectAsync_RefusesALinkNoLongerPending()
+    {
+        var user = await CreateUserAsync();
+        await Processor.RequestForUserAsync(user.Id);
+        _clock.Advance(SecurityPolicy.EMAIL_VERIFICATION_TTL_SECONDS_DEFAULT);
+
+        var result = await Processor.RejectAsync(new(_sent.Single().Token));
+
+        Assert.Equal(
+            RejectEmailVerificationResultCode.EmailVerificationNotFoundError,
+            result.ResultCode
+        );
+        Assert.NotNull(await UserAsync(user.Id));
+    }
+
+    [Fact]
+    public async Task RejectAsync_KeepsTheUserButEndsTheLink_ForAHostWhereConfirmationDoesNotApply()
+    {
+        _factory = Factory(withSender: false);
+        var user = await CreateUserAsync();
+        var token = (await Processor.RequestForUserAsync(user.Id)).Token!;
+
+        var result = await Processor.RejectAsync(new(token));
+        var again = await Processor.RejectAsync(new(token));
+
+        Assert.Equal(RejectEmailVerificationResultCode.Success, result.ResultCode);
+        Assert.False(result.Removed);
+        Assert.NotNull(await UserAsync(user.Id));
+        Assert.Equal(
+            RejectEmailVerificationResultCode.EmailVerificationNotFoundError,
+            again.ResultCode
+        );
+    }
+
+    [Fact]
     public async Task RejectAsync_KeepsAConfirmedUser()
     {
         var user = await CreateUserAsync();

@@ -31,7 +31,7 @@
     else if (Model.Rejected && !Model.Removed)
     {
         <h4 class="mb-3">Sign up kept</h4>
-        <p>This sign up owns an account, so it was not removed. Its sessions are signed out and its link no longer works. To take it over, reset its password from the sign in page.</p>
+        <p>This sign up could not be removed, as it may already be in use. Its sessions are signed out and its link no longer works. To take it over, reset its password from the sign in page.</p>
         <a class="btn btn-primary w-100" href="@Corely.IAM.Web.AppRoutes.SignIn">Sign in</a>
     }
     else if (Model.Rejected)

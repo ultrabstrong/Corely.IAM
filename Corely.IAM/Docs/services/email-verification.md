@@ -39,8 +39,9 @@ internal sealed class EmailVerificationSender(IMailer mailer) : IEmailVerificati
 
 Corely.IAM.Web's page for the link asks "Confirm my email" or "I didn't sign up"; opening the link
 alone changes nothing. Confirming confirms the user as it stands. Refusing calls
-`RejectEmailVerificationAsync`, which deletes an unconfirmed user (one that is the only owner of an
-account is kept, with its links invalidated and its sessions ended, and `Removed` is false). With no
+`RejectEmailVerificationAsync`, which, for a link still pending and while confirmation is required,
+deletes the unconfirmed user. Otherwise, or when it is the only owner of an account, the user is kept
+with its links invalidated and its sessions ended, and `Removed` is false. With no
 sender registered, the request methods return the token in the result instead, and
 confirmation is never required.
 

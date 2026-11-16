@@ -318,7 +318,19 @@ internal class EmailVerificationProcessor(
                 "This email is already confirmed. To get back in, reset the password"
             );
 
-        var removed = await DeleteUnconfirmedAsync(user.Id);
+        if (
+            verification.CompletedUtc != null
+            || verification.InvalidatedUtc != null
+            || verification.ExpiresUtc <= Now()
+        )
+            return new(
+                RejectEmailVerificationResultCode.EmailVerificationNotFoundError,
+                "This link is no longer active. Use the most recent one"
+            );
+
+        // Only while confirmation applies is an unconfirmed user sure to have done nothing; on a
+        // host without it the user may be in real use, so it is signed out rather than deleted.
+        var removed = await _requirement.AppliesAsync() && await DeleteUnconfirmedAsync(user.Id);
         if (!removed)
         {
             var utcNow = Now();

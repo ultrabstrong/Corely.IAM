@@ -250,8 +250,10 @@ What turned out differently:
 13. **The link no longer confirms on GET.** Opening it shows "Confirm my email" and "I didn't sign up",
     each a post with an antiforgery token, so a mail scanner that opens it first confirms nothing and
     `/confirm-email` needs no exception to the cross site GET rule. "I didn't sign up" calls
-    `RejectEmailVerificationAsync`, which deletes the unconfirmed user and so ends its waiting sign in;
-    one that is the only owner of an account is kept, its links invalidated and sessions ended. This
+    `RejectEmailVerificationAsync`, which, on a link still pending, deletes the unconfirmed user and so
+    ends its waiting sign in. It deletes only while confirmation applies, since only then has an
+    unconfirmed user surely done nothing; otherwise, or for one that is the only owner of an account,
+    the user is kept with its links invalidated and sessions ended. This
     narrows the gap item 1 left: someone sent a link they did not ask for can remove the sign up
     instead of confirming it. Item 3 of the Web section is replaced by this.
 

@@ -12,6 +12,8 @@ Pre-authentication pages are Razor Pages (server-rendered, no Blazor dependency)
 | `/create-account` | CreateAccount | New account form |
 | `/signout` | SignOut | Sign out and clear cookies; asks first unless the request is same origin |
 | `/verify-mfa` | VerifyMfa | MFA code entry after sign-in |
+| `/verify-email` | VerifyEmail | "Confirm your email to continue", while a sign in waits for the link |
+| `/confirm-email` | ConfirmEmail | The confirmation link's page |
 | `/signin/start/{provider}` | FederatedSignInStart | Sends the browser to an identity provider |
 | `/signin/callback/{provider}` | FederatedSignInCallback | Completes the sign in the provider sends back |
 
@@ -43,6 +45,28 @@ When TOTP is enabled for a user, sign-in (password or identity provider) returns
 5. On success: cookies are set and the user proceeds as in the sign-in flow, return URL included
 6. On expired challenge: redirect back to `/signin`
 7. On invalid code: error message displayed, user can retry
+
+## Email Confirmation Flow
+
+While the host registers an `IEmailVerificationSender` and `RequireVerifiedEmail` is on, sign in for a
+user whose email is not confirmed (after two factor, when the user has it) returns
+`EmailVerificationRequiredChallenge`. See [Email verification](../../Corely.IAM/Docs/services/email-verification.md).
+
+1. The challenge token is stored in `TempData` and the user is redirected to `/verify-email`, which
+   names the address and offers Resend, counting down the wait between links
+2. The host's sender delivers a link to `/confirm-email?token=`; opening it confirms the email and
+   signs nobody in
+3. The waiting page checks the status every few seconds (`email-verification.js`) and, once
+   confirmed, posts `IAuthenticationService.CompleteEmailVerificationAsync()`: cookies are set and the
+   user proceeds as in the sign-in flow, return URL included
+4. A sign in that expired goes back to `/signin`
+
+The confirmation link confirms on GET when another site (an inbox) opened it. The authority is the
+unguessable token, not the cookie: it confirms only the address it was sent to and signs nobody in, so
+a link someone was tricked into opening can only confirm the trickster's own address.
+
+Hosts add to the waiting page through the empty `Pages/Authentication/_VerifyEmailAssist.cshtml`
+partial, as the reference app does to open its email preview.
 
 ## Identity Provider Flow
 
@@ -90,6 +114,7 @@ cookie middleware, and `RedirectToLogin`, `AuthenticatedPageBase` and `AccountSc
 |------|------------|
 | `/signin` | The query string (either spelling), then a hidden field in the form |
 | `/verify-mfa` | `TempData`, beside the MFA challenge, then a hidden field |
+| `/verify-email` | `TempData`, beside the email challenge, then a hidden field |
 | Identity provider sign in | Sealed in the `__Host-federated_sign_in` cookie with the rest of the correlation |
 | `/select-account` | `?returnUrl=` and a hidden field, through to the switch |
 | `/switch-account` | `?returnUrl=`, kept on the confirm form when another site sent the request |

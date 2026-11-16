@@ -1,4 +1,6 @@
 @inherits EntityPageBase
+@using Corely.IAM.EmailVerifications.Models
+@using Corely.IAM.EmailVerifications.Providers
 @inject IIamWebLinks Links
 
 <div class="management-header">
@@ -36,7 +38,21 @@ else
             <span class="prop-label cell-hide">Username</span>
             <span class="prop-value cell-title">@_username</span>
             <span class="prop-label cell-hide">Email</span>
-            <span class="prop-value cell-sub">@_email</span>
+            <span class="prop-value cell-sub">
+                @_email
+                @if (_emailVerified)
+                {
+                    <span class="badge text-bg-success ms-1">Confirmed</span>
+                }
+                else
+                {
+                    <span class="badge text-bg-warning ms-1">Not confirmed</span>
+                    @if (_canSendLink)
+                    {
+                        <button class="btn btn-link btn-sm p-0 ms-2 align-baseline" @onclick="ResendAsync" disabled="@_loading">Send a link</button>
+                    }
+                }
+            </span>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-primary btn-sm" @onclick="StartEdit">Edit</button>
@@ -115,6 +131,8 @@ else
     private IIamAsymmetricEncryptionProvider? _asymProvider;
     private IIamAsymmetricSignatureProvider? _sigProvider;
 
+    private bool _emailVerified;
+    private bool _canSendLink;
     private bool _hasBasicAuth;
     private IReadOnlyList<LinkedIdentity> _linkedIdentities = [];
 
@@ -125,6 +143,8 @@ else
         {
             _username = result.Item.Username;
             _email = result.Item.Email;
+            _emailVerified = result.Item.IsEmailVerified;
+            _canSendLink = services.GetService<IEmailVerificationSender>() != null;
         }
         else
         {
@@ -204,7 +224,28 @@ else
             );
             SetResultMessage(result.ResultCode == ModifyResultCode.Success, "Saved.", result.Message);
             if (result.ResultCode == ModifyResultCode.Success)
+            {
+                if (!string.Equals(_email, _originalEmail, StringComparison.OrdinalIgnoreCase))
+                    _emailVerified = false;
                 _isEditing = false;
+            }
+        });
+    }
+
+    private async Task ResendAsync()
+    {
+        await ExecuteSafeAsync(async services =>
+        {
+            var result = await services.GetRequiredService<IEmailVerificationService>().RequestEmailVerificationAsync();
+            var sent = result.ResultCode == RequestEmailVerificationResultCode.Success
+                && result.Delivery == EmailVerificationDeliveryStatus.Sent;
+            SetResultMessage(
+                sent,
+                $"A link is on its way to {_email}.",
+                result.ResultCode == RequestEmailVerificationResultCode.Success
+                    ? "The email could not be sent. Try again in a moment."
+                    : result.Message
+            );
         });
     }
 

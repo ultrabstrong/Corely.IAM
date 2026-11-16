@@ -19,7 +19,7 @@ namespace Corely.IAM.CompiledModel.MySql.Generated
                 "Corely.IAM.Platform.Entities.PlatformSecuritySettingsEntity",
                 typeof(PlatformSecuritySettingsEntity),
                 baseEntityType,
-                propertyCount: 21,
+                propertyCount: 24,
                 keyCount: 1);
 
             var id = runtimeEntityType.AddProperty(
@@ -82,6 +82,20 @@ namespace Corely.IAM.CompiledModel.MySql.Generated
                 sentinel: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
             createdUtc.AddAnnotation("Relational:ColumnType", "TIMESTAMP");
             createdUtc.AddAnnotation("Relational:DefaultValueSql", "(UTC_TIMESTAMP)");
+
+            var emailVerificationResendSeconds = runtimeEntityType.AddProperty(
+                "EmailVerificationResendSeconds",
+                typeof(int),
+                propertyInfo: typeof(PlatformSecuritySettingsEntity).GetProperty("EmailVerificationResendSeconds", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                fieldInfo: typeof(PlatformSecuritySettingsEntity).GetField("<EmailVerificationResendSeconds>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                sentinel: 0);
+
+            var emailVerificationTtlSeconds = runtimeEntityType.AddProperty(
+                "EmailVerificationTtlSeconds",
+                typeof(int),
+                propertyInfo: typeof(PlatformSecuritySettingsEntity).GetProperty("EmailVerificationTtlSeconds", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                fieldInfo: typeof(PlatformSecuritySettingsEntity).GetField("<EmailVerificationTtlSeconds>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                sentinel: 0);
 
             var lockoutCooldownSeconds = runtimeEntityType.AddProperty(
                 "LockoutCooldownSeconds",
@@ -166,6 +180,13 @@ namespace Corely.IAM.CompiledModel.MySql.Generated
                 typeof(bool),
                 propertyInfo: typeof(PlatformSecuritySettingsEntity).GetProperty("RequireUppercase", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
                 fieldInfo: typeof(PlatformSecuritySettingsEntity).GetField("<RequireUppercase>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                sentinel: false);
+
+            var requireVerifiedEmail = runtimeEntityType.AddProperty(
+                "RequireVerifiedEmail",
+                typeof(bool),
+                propertyInfo: typeof(PlatformSecuritySettingsEntity).GetProperty("RequireVerifiedEmail", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                fieldInfo: typeof(PlatformSecuritySettingsEntity).GetField("<RequireVerifiedEmail>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
                 sentinel: false);
 
             var totpRecoveryCodeCount = runtimeEntityType.AddProperty(

@@ -83,6 +83,13 @@ internal static class SettingChangeExtensions
                     Was<ResourceTypeSet>(change),
                     Now<ResourceTypeSet>(change)
                 ),
+                PlatformSetting.RequireVerifiedEmail => Now<bool>(change)
+                    ? "Users who have not confirmed their email are sent a link at their next sign in, and cannot join an account until they open it. This applies only while the host sends email."
+                    : "Users can sign in and join accounts without confirming their email.",
+                PlatformSetting.EmailVerificationTtlSeconds =>
+                    $"New confirmation links will work for {Duration(Now<int>(change))}, instead of {Duration(Was<int>(change))}.",
+                PlatformSetting.EmailVerificationResendSeconds =>
+                    $"Users can ask for a new confirmation link every {Duration(Now<int>(change))}, instead of every {Duration(Was<int>(change))}.",
                 _ => throw new ArgumentOutOfRangeException(nameof(change)),
             };
     }

@@ -4,6 +4,7 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
 using Corely.IAM.ApiKeys.Entities;
 using Corely.IAM.Audits.Entities;
+using Corely.IAM.EmailVerifications.Entities;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Security.Entities;
@@ -28,6 +29,7 @@ public class AccountClosureProcessorTests
             Repo<AuditEntryEntity>(),
             Repo<AuthTokenEntity>(),
             Repo<MfaChallengeEntity>(),
+            Repo<EmailVerificationChallengeEntity>(),
             new AccountDeletionPolicy(purges),
             TimeProvider.System,
             NullLogger<AccountClosureProcessor>.Instance

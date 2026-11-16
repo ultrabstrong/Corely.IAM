@@ -1,6 +1,7 @@
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Mappers;
+using Corely.IAM.EmailVerifications.Entities;
 using Corely.IAM.Groups.Mappers;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Entities;
@@ -27,9 +28,14 @@ internal class UserProcessor(
     ISymmetricEncryptionProviderFactory encryptionProviderFactory,
     IValidationProvider validationProvider,
     IUserContextProvider userContextProvider,
+    IRepo<EmailVerificationEntity> emailVerificationRepo,
+    TimeProvider timeProvider,
     ILogger<UserProcessor> logger
 ) : IUserProcessor
 {
+    private readonly IRepo<EmailVerificationEntity> _emailVerificationRepo =
+        emailVerificationRepo.ThrowIfNull(nameof(emailVerificationRepo));
+    private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
     private readonly IRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
     private readonly IReadonlyRepo<RoleEntity> _roleRepo = roleRepo.ThrowIfNull(nameof(roleRepo));
     private readonly IUserOwnershipProcessor _userOwnershipProcessor =
@@ -167,9 +173,25 @@ internal class UserProcessor(
             );
         }
 
+        var emailChanged = !string.Equals(
+            entity.Email,
+            request.Email,
+            StringComparison.OrdinalIgnoreCase
+        );
         entity.Username = request.Username;
         entity.Email = request.Email;
+        if (emailChanged)
+            entity.EmailVerifiedUtc = null;
         await _userRepo.UpdateAsync(entity);
+
+        if (emailChanged)
+        {
+            var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+            await _emailVerificationRepo.ExecuteUpdateAsync(
+                v => v.UserId == entity.Id && v.CompletedUtc == null && v.InvalidatedUtc == null,
+                s => s.SetProperty(v => v.InvalidatedUtc, utcNow)
+            );
+        }
         return new ModifyResult(ModifyResultCode.Success, string.Empty);
     }
 

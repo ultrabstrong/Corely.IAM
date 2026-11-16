@@ -23,7 +23,10 @@ public record SecurityPolicy(
     bool ApiKeysEnabled,
     bool PlatformAccountApiKeysEnabled,
     int ApiKeyMaxLifetimeDays,
-    ResourceTypeSet ApiKeyResourceTypes
+    ResourceTypeSet ApiKeyResourceTypes,
+    bool RequireVerifiedEmail,
+    int EmailVerificationTtlSeconds,
+    int EmailVerificationResendSeconds
 )
 {
     public const string RESOURCE_TYPE = "platform_security_settings";
@@ -81,6 +84,16 @@ public record SecurityPolicy(
     public const int API_KEY_MAX_LIFETIME_DAYS_MIN = 1;
     public const int API_KEY_MAX_LIFETIME_DAYS_MAX = 3650;
 
+    public const bool REQUIRE_VERIFIED_EMAIL_DEFAULT = true;
+
+    public const int EMAIL_VERIFICATION_TTL_SECONDS_DEFAULT = 1800;
+    public const int EMAIL_VERIFICATION_TTL_SECONDS_MIN = 300;
+    public const int EMAIL_VERIFICATION_TTL_SECONDS_MAX = 86400;
+
+    public const int EMAIL_VERIFICATION_RESEND_SECONDS_DEFAULT = 60;
+    public const int EMAIL_VERIFICATION_RESEND_SECONDS_MIN = 30;
+    public const int EMAIL_VERIFICATION_RESEND_SECONDS_MAX = 900;
+
     public static SecurityPolicy Default { get; } =
         new(
             PASSWORD_MINIMUM_LENGTH_DEFAULT,
@@ -100,7 +113,10 @@ public record SecurityPolicy(
             API_KEYS_ENABLED_DEFAULT,
             PLATFORM_ACCOUNT_API_KEYS_ENABLED_DEFAULT,
             API_KEY_MAX_LIFETIME_DAYS_DEFAULT,
-            ResourceTypeSet.Empty
+            ResourceTypeSet.Empty,
+            REQUIRE_VERIFIED_EMAIL_DEFAULT,
+            EMAIL_VERIFICATION_TTL_SECONDS_DEFAULT,
+            EMAIL_VERIFICATION_RESEND_SECONDS_DEFAULT
         );
 
     public bool AllowsApiKeysIn(bool isPlatformAccount) =>
@@ -222,6 +238,24 @@ public record SecurityPolicy(
                 ApiKeyResourceTypes,
                 updated.ApiKeyResourceTypes,
                 updated.ApiKeyResourceTypes.Types.Any(t => !ApiKeyResourceTypes.Contains(t))
+            ),
+            SettingChange.Between(
+                PlatformSetting.RequireVerifiedEmail,
+                RequireVerifiedEmail,
+                updated.RequireVerifiedEmail,
+                RequireVerifiedEmail && !updated.RequireVerifiedEmail
+            ),
+            SettingChange.Between(
+                PlatformSetting.EmailVerificationTtlSeconds,
+                EmailVerificationTtlSeconds,
+                updated.EmailVerificationTtlSeconds,
+                updated.EmailVerificationTtlSeconds > EmailVerificationTtlSeconds
+            ),
+            SettingChange.Between(
+                PlatformSetting.EmailVerificationResendSeconds,
+                EmailVerificationResendSeconds,
+                updated.EmailVerificationResendSeconds,
+                updated.EmailVerificationResendSeconds < EmailVerificationResendSeconds
             ),
         }
             .OfType<SettingChange>()

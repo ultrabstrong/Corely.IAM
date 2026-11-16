@@ -5,6 +5,7 @@ using Corely.IAM.Accounts.Processors;
 using Corely.IAM.ApiKeys.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.EmailVerifications.Processors;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.Models;
@@ -37,6 +38,7 @@ public class RegistrationServiceTests
     private readonly Mock<IPermissionProcessor> _permissionProcessorMock;
     private readonly Mock<IUserContextProvider> _userContextProviderMock = new();
     private readonly Mock<IReauthenticationProvider> _reauthenticationProviderMock = new();
+    private readonly Mock<IEmailVerificationProcessor> _emailVerificationProcessorMock = new();
     private readonly RegistrationService _registrationService;
 
     private CreateAccountResultCode _createAccountResultCode = CreateAccountResultCode.Success;
@@ -105,7 +107,9 @@ public class RegistrationServiceTests
             _reauthenticationProviderMock.Object,
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _unitOfWorkProviderMock.Object,
-            _mockAuthenticationProvider.Object
+            _mockAuthenticationProvider.Object,
+            _emailVerificationProcessorMock.Object,
+            TimeProvider.System
         );
     }
 
@@ -362,6 +366,54 @@ public class RegistrationServiceTests
 
         Assert.NotNull(ex);
         Assert.IsType<ArgumentNullException>(ex);
+    }
+
+    [Fact]
+    public async Task RegisterUser_RefusesAConfirmedEmail_OutsideSystemContext()
+    {
+        var result = await _registrationService.RegisterUserAsync(
+            new RegisterUserRequest("someone", "someone@example.com", "pw", EmailVerified: true)
+        );
+
+        Assert.Equal(RegisterUserResultCode.UnauthorizedError, result.ResultCode);
+        _userProcessorMock.Verify(
+            m => m.CreateUserAsync(It.IsAny<CreateUserRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task RegisterAccount_Refuses_ForAnOwnerWhoMustConfirmTheirEmail()
+    {
+        var request = _fixture.Create<RegisterAccountRequest>();
+        _emailVerificationProcessorMock
+            .Setup(m => m.MustConfirmEmailAsync(request.OwnerUserId))
+            .ReturnsAsync(true);
+
+        var result = await _registrationService.RegisterAccountAsync(request);
+
+        Assert.Equal(RegisterAccountResultCode.EmailNotVerifiedError, result.ResultCode);
+        _accountProcessorMock.Verify(
+            m => m.CreateAccountAsync(It.IsAny<CreateAccountRequest>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task RegisterUserWithAccount_Refuses_ForAUserWhoMustConfirmTheirEmail()
+    {
+        var request = _fixture.Create<RegisterUserWithAccountRequest>();
+        _emailVerificationProcessorMock
+            .Setup(m => m.MustConfirmEmailAsync(request.UserId))
+            .ReturnsAsync(true);
+
+        var result = await _registrationService.RegisterUserWithAccountAsync(request);
+
+        Assert.Equal(RegisterUserWithAccountResultCode.EmailNotVerifiedError, result.ResultCode);
+        _accountProcessorMock.Verify(
+            m => m.AddUserToAccountAsync(It.IsAny<AddUserToAccountRequest>()),
+            Times.Never
+        );
     }
 
     [Fact]

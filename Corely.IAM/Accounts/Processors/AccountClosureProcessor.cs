@@ -4,6 +4,7 @@ using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.ApiKeys.Entities;
 using Corely.IAM.Audits.Entities;
+using Corely.IAM.EmailVerifications.Entities;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Security.Entities;
@@ -19,6 +20,7 @@ internal class AccountClosureProcessor(
     IRepo<AuditEntryEntity> auditEntryRepo,
     IRepo<AuthTokenEntity> authTokenRepo,
     IRepo<MfaChallengeEntity> mfaChallengeRepo,
+    IRepo<EmailVerificationChallengeEntity> emailVerificationChallengeRepo,
     AccountDeletionPolicy policy,
     TimeProvider timeProvider,
     ILogger<AccountClosureProcessor> logger
@@ -40,6 +42,8 @@ internal class AccountClosureProcessor(
     private readonly IRepo<MfaChallengeEntity> _mfaChallengeRepo = mfaChallengeRepo.ThrowIfNull(
         nameof(mfaChallengeRepo)
     );
+    private readonly IRepo<EmailVerificationChallengeEntity> _emailVerificationChallengeRepo =
+        emailVerificationChallengeRepo.ThrowIfNull(nameof(emailVerificationChallengeRepo));
     private readonly AccountDeletionPolicy _policy = policy.ThrowIfNull(nameof(policy));
     private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
     private readonly ILogger<AccountClosureProcessor> _logger = logger.ThrowIfNull(nameof(logger));
@@ -103,13 +107,17 @@ internal class AccountClosureProcessor(
         var mfaChallenges = await _mfaChallengeRepo.ExecuteDeleteAsync(c =>
             c.AccountId == accountId
         );
+        var emailChallenges = await _emailVerificationChallengeRepo.ExecuteDeleteAsync(c =>
+            c.AccountId == accountId
+        );
 
         _logger.LogInformation(
-            "Purged account {AccountId} before deleting it: {AuditEntryCount} audit entries, {AuthTokenCount} auth tokens and {MfaChallengeCount} MFA challenges",
+            "Purged account {AccountId} before deleting it: {AuditEntryCount} audit entries, {AuthTokenCount} auth tokens, {MfaChallengeCount} MFA challenges and {EmailVerificationChallengeCount} email verification challenges",
             accountId,
             auditEntries,
             authTokens,
-            mfaChallenges
+            mfaChallenges,
+            emailChallenges
         );
         return new CloseAccountResult(CloseAccountResultCode.Success, string.Empty);
     }

@@ -51,6 +51,7 @@ public sealed class IamWebApplicationFactory : WebApplicationFactory<Program>
                     AuthSessionIdleTimeoutSeconds.ToString(),
                 ["SecurityOptions:MaxLoginAttempts"] = "5",
                 ["SecurityOptions:MfaChallengeTimeoutSeconds"] = "300",
+                ["SecurityOptions:RequireVerifiedEmail"] = "false",
                 ["DemoFeatures:EnablePasswordRecoveryPreview"] = "true",
                 ["DemoFeatures:PlatformOwnerTotpSecret"] = "",
             }.Concat(Settings)

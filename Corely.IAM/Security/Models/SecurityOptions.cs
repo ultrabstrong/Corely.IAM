@@ -27,6 +27,11 @@ public class SecurityOptions
     public int ApiKeyMaxLifetimeDays { get; set; } =
         SecurityPolicy.API_KEY_MAX_LIFETIME_DAYS_DEFAULT;
     public string[] ApiKeyResourceTypes { get; set; } = [];
+    public bool RequireVerifiedEmail { get; set; } = SecurityPolicy.REQUIRE_VERIFIED_EMAIL_DEFAULT;
+    public int EmailVerificationTtlSeconds { get; set; } =
+        SecurityPolicy.EMAIL_VERIFICATION_TTL_SECONDS_DEFAULT;
+    public int EmailVerificationResendSeconds { get; set; } =
+        SecurityPolicy.EMAIL_VERIFICATION_RESEND_SECONDS_DEFAULT;
 
     public int PermissionCacheTtlSeconds { get; set; } = 30;
     public Dictionary<string, IdentityProviderOptions> IdentityProviders { get; set; } = [];
@@ -50,6 +55,9 @@ public class SecurityOptions
             ApiKeysEnabled,
             PlatformAccountApiKeysEnabled,
             ApiKeyMaxLifetimeDays,
-            new ResourceTypeSet(ApiKeyResourceTypes)
+            new ResourceTypeSet(ApiKeyResourceTypes),
+            RequireVerifiedEmail,
+            EmailVerificationTtlSeconds,
+            EmailVerificationResendSeconds
         );
 }

@@ -65,6 +65,12 @@ public class FederatedSignInCallbackModel(
             return Redirect(AppRoutes.VerifyMfa);
         }
 
+        if (
+            result.ResultCode
+            == CompleteFederatedSignInResultCode.EmailVerificationRequiredChallenge
+        )
+            return VerifyEmailModel.RedirectFor(this, result.SignIn!, returnUrl);
+
         if (result.ResultCode != CompleteFederatedSignInResultCode.Success)
         {
             ErrorMessage = result.Message;

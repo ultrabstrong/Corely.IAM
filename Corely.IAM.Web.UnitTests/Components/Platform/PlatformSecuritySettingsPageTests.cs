@@ -112,12 +112,12 @@ public class PlatformSecuritySettingsTests : TestContext
     {
         var cut = Render<PlatformSecuritySettings>();
         cut.WaitForAssertion(() =>
-            Assert.Equal(4, cut.FindAll("button").Count(b => b.TextContent == "Edit"))
+            Assert.Equal(5, cut.FindAll("button").Count(b => b.TextContent == "Edit"))
         );
 
         cut.FindAll("button").Where(b => b.TextContent == "Edit").ElementAt(2).Click();
 
-        Assert.Equal(3, cut.FindAll("button").Count(b => b.TextContent == "Edit"));
+        Assert.Equal(4, cut.FindAll("button").Count(b => b.TextContent == "Edit"));
         Assert.Equal(2, cut.FindAll("input[type=number]").Count);
         Assert.Empty(cut.FindAll("input[type=checkbox]"));
     }

@@ -69,5 +69,15 @@ internal class SecurityPolicyValidator : AbstractValidator<SecurityPolicy>
                 SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MIN,
                 SecurityPolicy.TOTP_RECOVERY_CODE_COUNT_MAX
             );
+        RuleFor(m => m.EmailVerificationTtlSeconds)
+            .InclusiveBetween(
+                SecurityPolicy.EMAIL_VERIFICATION_TTL_SECONDS_MIN,
+                SecurityPolicy.EMAIL_VERIFICATION_TTL_SECONDS_MAX
+            );
+        RuleFor(m => m.EmailVerificationResendSeconds)
+            .InclusiveBetween(
+                SecurityPolicy.EMAIL_VERIFICATION_RESEND_SECONDS_MIN,
+                SecurityPolicy.EMAIL_VERIFICATION_RESEND_SECONDS_MAX
+            );
     }
 }

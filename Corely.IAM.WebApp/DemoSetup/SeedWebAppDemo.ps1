@@ -568,6 +568,7 @@ if ($pendingUsers.Count -gt 0) {
                 Username = $_.Username
                 Email = $_.Email
                 Password = 'Test1234'
+                EmailVerified = $true
             }
         }
     )

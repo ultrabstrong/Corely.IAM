@@ -26,7 +26,10 @@ internal static class PlatformSecuritySettingsMapper
                 entity.ApiKeysEnabled,
                 entity.PlatformAccountApiKeysEnabled,
                 entity.ApiKeyMaxLifetimeDays,
-                ResourceTypeSet.FromStoredValue(entity.ApiKeyResourceTypes)
+                ResourceTypeSet.FromStoredValue(entity.ApiKeyResourceTypes),
+                entity.RequireVerifiedEmail,
+                entity.EmailVerificationTtlSeconds,
+                entity.EmailVerificationResendSeconds
             );
 
         public void Apply(SecurityPolicy policy)
@@ -49,6 +52,9 @@ internal static class PlatformSecuritySettingsMapper
             entity.PlatformAccountApiKeysEnabled = policy.PlatformAccountApiKeysEnabled;
             entity.ApiKeyMaxLifetimeDays = policy.ApiKeyMaxLifetimeDays;
             entity.ApiKeyResourceTypes = policy.ApiKeyResourceTypes.ToStoredValue();
+            entity.RequireVerifiedEmail = policy.RequireVerifiedEmail;
+            entity.EmailVerificationTtlSeconds = policy.EmailVerificationTtlSeconds;
+            entity.EmailVerificationResendSeconds = policy.EmailVerificationResendSeconds;
         }
     }
 

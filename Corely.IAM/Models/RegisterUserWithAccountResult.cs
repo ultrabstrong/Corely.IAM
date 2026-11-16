@@ -7,6 +7,7 @@ public enum RegisterUserWithAccountResultCode
     AccountNotFoundError,
     UserAlreadyInAccountError,
     UnauthorizedError,
+    EmailNotVerifiedError,
 }
 
 public record RegisterUserWithAccountResult(

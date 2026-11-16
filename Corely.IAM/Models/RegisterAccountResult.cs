@@ -7,6 +7,7 @@ public enum RegisterAccountResultCode
     AccountExistsError,
     SystemRoleAssignmentError,
     UnauthorizedError,
+    EmailNotVerifiedError,
 }
 
 public record RegisterAccountResult(

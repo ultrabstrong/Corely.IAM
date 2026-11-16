@@ -1,5 +1,8 @@
 # Email verification
 
+**Status:** built as Corely.IAM 7.5.0, Corely.IAM.CompiledModel.MsSql and .MySql 7.5.0,
+Corely.IAM.DataAccessMigrations.Cli 7.3.0 and Corely.IAM.Web 11.4.0. See "As built" at the end.
+
 IAM never confirms that a user controls the email on their account. Password sign up takes whatever
 is typed, and `UserEntity.Email` has a unique index, so someone can register an address that is not
 theirs and the owner later gets "user exists". Federated sign up (`sign-in-providers.md`) relies on
@@ -202,3 +205,72 @@ grandfathered.
    on a cross site GET and signs nobody in; the waiting page continues once confirmed; resend
    honors the cooldown; the `CrossSiteRequestTests` exemption.
 5. `CrossAccountCoverageTests`: a reasoned exemption; verification belongs to users, not accounts.
+
+## As built
+
+What turned out differently:
+
+1. **The link never takes a user over.** The person opening a link is normally the one who signed up,
+   so wiping credentials on it would wipe their own password. Only proof from someone else takes over:
+   a completed password recovery, and a provider vouching for the address at federated sign up. A
+   provider vouching through an identity already linked (at sign in or at link) confirms without a
+   takeover, and so does bootstrap. The confirmation email says to ignore it when the reader did not
+   sign up.
+2. **Password sign up replaces an unconfirmed holder only while the requirement applies.** Without a
+   sender nobody can prove the inbox, so a replacement there would let any later sign up delete the
+   earlier one. Elsewhere the holder still answers "user exists". A holder that is the only owner of an
+   account is kept.
+3. **Distinct method names, not overloads:** `RequestEmailVerificationForUserAsync(Guid)` and
+   `ResendEmailVerificationAsync(string)`, because the audit and coverage tests key on method names.
+4. **The challenge outlives its newest link by one link lifetime**, so the waiting page can still offer
+   Resend after the link expires; each Resend extends it.
+5. **`EmailVerifications.SentUtc`** carries the send time for the cooldown, because `CreatedUtc` is
+   set by the database clock, which a test clock cannot move.
+6. **No `IIamWebLinks.ConfirmEmail()`.** The confirm page is a Corely.IAM.Web Razor page at
+   `AppRoutes.ConfirmEmail`, so a sender builds the link from that route, as `PreviewEmailVerificationSender`'s
+   preview page does.
+7. **The setting can be saved on without a sender.** It is stored either way and applies only while a
+   sender is registered; the Security page says so instead of refusing the save.
+8. **The takeover is logged, not given an audit entry of its own.** The call that caused it (a
+   verification, a recovery, a federated sign in) is audited as usual.
+9. **`EmailVerificationChallenges` holds the sign in's account id**, so `PurgeAccountDataAsync` deletes
+   its rows with the account, beside MFA challenges.
+10. **Seeding:** the DevTools `register user` command runs as the system when a request sets
+    `EmailVerified`, which `SeedWebAppDemo.ps1` does. The functional test host turns the requirement
+    off by default and confirms its seeded owner; `EmailVerificationTests` turns it on.
+
+11. **The confirm page sends `Referrer-Policy: no-referrer`**, since its address carries the token
+    (S1, URL tokens step 3).
+
+12. **The SQL Server backfill runs through `EXEC(N'...')`**, as `SessionHardening`'s does. The
+    idempotent script puts the `ALTER TABLE` and the `UPDATE` in one batch, and SQL Server compiles
+    the batch before the column exists. DocsToData's portal tests, which build from that script, found
+    it; the provider matrix's idempotent script test proves the fix.
+
+### Upgrading a consumer
+
+A consumer that builds IAM's schema from a generated script regenerates it. DocsToData's is
+`iac/local/iam-schema.sql`, per its `iac/local/README.md`; with it regenerated, DocsToData's full
+pass is green on a local build of these versions.
+
+### Checked against the sources
+
+Read after building, at the cited sections:
+
+1. **S1 (OWASP forgot password, URL tokens):** random from a secure generator, long enough against
+   brute force, stored hashed, single use, expiring, bound to one user: all met. Build the link
+   without trusting the Host header: the docs' sender hard codes the origin. No referrer: added (item
+   11). Rate limit token requests: the resend wait.
+2. **S2 (OWASP authentication):** registration should answer the same whether or not the user exists
+   ("A link to activate your account has been emailed"). Corely.IAM.Web's sign up still says which
+   username or email is taken. That predates this plan and is not changed by it.
+3. **S3 (NIST 800-63B-4):** email must not be an authenticator, but confirmation codes sent to
+   validate an address are outside that rule. Recovery codes sent by email last at most 24 hours; the
+   link lifetime's range tops out at 86400 seconds.
+4. **S4 (pre-hijacking):** the root cause of all five attacks is using an account before its
+   identifier is verified, and the fix is to verify before allowing any action (item 9). Its defence
+   in depth: a password reset signs out every session (recovery already did), cancels pending email
+   changes (IAM changes email at once, so there are none) and unlinks identities (the takeover); a
+   federated sign up over a classic account must make sure one person controls both (the takeover
+   wipes the classic credentials); limit how often a link can be requested (the resend wait). Pruning
+   unverified accounts is optional and was left out.

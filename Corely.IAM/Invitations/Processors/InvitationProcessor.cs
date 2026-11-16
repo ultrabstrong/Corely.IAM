@@ -6,6 +6,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.EmailVerifications.Processors;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Invitations.Enums;
 using Corely.IAM.Invitations.Mappers;
@@ -35,10 +36,13 @@ internal class InvitationProcessor(
     IamHashCodes hashCodes,
     ISecretProvider secretProvider,
     TimeProvider timeProvider,
+    IEmailVerificationProcessor emailVerificationProcessor,
     ILogger<InvitationProcessor> logger,
     IInvitationSender? invitationSender = null
 ) : IInvitationProcessor
 {
+    private readonly IEmailVerificationProcessor _emailVerificationProcessor =
+        emailVerificationProcessor.ThrowIfNull(nameof(emailVerificationProcessor));
     private readonly IHashProviderFactory _hashProviderFactory = hashProviderFactory.ThrowIfNull(
         nameof(hashProviderFactory)
     );
@@ -287,6 +291,15 @@ internal class InvitationProcessor(
             return new AcceptInvitationResult(
                 AcceptInvitationResultCode.EmailMismatchError,
                 "This invitation is for a different user",
+                null
+            );
+        }
+
+        if (await _emailVerificationProcessor.MustConfirmEmailAsync(userId))
+        {
+            return new AcceptInvitationResult(
+                AcceptInvitationResultCode.EmailNotVerifiedError,
+                "Confirm your email before accepting an invitation",
                 null
             );
         }

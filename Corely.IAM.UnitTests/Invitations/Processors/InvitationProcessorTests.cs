@@ -2,6 +2,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
 using Corely.IAM.Accounts.Processors;
+using Corely.IAM.EmailVerifications.Processors;
 using Corely.IAM.Invitations.Entities;
 using Corely.IAM.Invitations.Enums;
 using Corely.IAM.Invitations.Models;
@@ -41,6 +42,7 @@ public class InvitationProcessorTests
             _serviceFactory.GetRequiredService<IamHashCodes>(),
             _serviceFactory.GetRequiredService<ISecretProvider>(),
             _serviceFactory.GetRequiredService<TimeProvider>(),
+            _serviceFactory.GetRequiredService<IEmailVerificationProcessor>(),
             _serviceFactory.GetRequiredService<ILogger<InvitationProcessor>>(),
             sender
         );

@@ -7,6 +7,8 @@ using Corely.IAM.Audits.Models;
 using Corely.IAM.Audits.Providers;
 using Corely.IAM.BasicAuths.Processors;
 using Corely.IAM.DataAccess;
+using Corely.IAM.EmailVerifications.Processors;
+using Corely.IAM.EmailVerifications.Providers;
 using Corely.IAM.FederatedIdentities.Processors;
 using Corely.IAM.Groups.Processors;
 using Corely.IAM.IdentityProviders.Models;
@@ -249,6 +251,20 @@ public static class ServiceRegistrationExtensions
                 PasswordRecoveryServiceTelemetryDecorator
             >();
 
+            serviceCollection.AddScoped<IEmailVerificationService, EmailVerificationService>();
+            serviceCollection.Decorate<
+                IEmailVerificationService,
+                EmailVerificationServiceAuthorizationDecorator
+            >();
+            serviceCollection.Decorate<
+                IEmailVerificationService,
+                EmailVerificationServiceAuditDecorator
+            >();
+            serviceCollection.Decorate<
+                IEmailVerificationService,
+                EmailVerificationServiceTelemetryDecorator
+            >();
+
             serviceCollection.AddScoped<IAuditService, AuditService>();
             serviceCollection.Decorate<IAuditService, AuditServiceAuthorizationDecorator>();
             serviceCollection.Decorate<IAuditService, AuditServiceAuditDecorator>();
@@ -343,6 +359,13 @@ public static class ServiceRegistrationExtensions
             serviceCollection.Decorate<
                 IPasswordRecoveryProcessor,
                 PasswordRecoveryProcessorTelemetryDecorator
+            >();
+
+            serviceCollection.AddScoped<EmailVerificationRequirement>();
+            serviceCollection.AddScoped<IEmailVerificationProcessor, EmailVerificationProcessor>();
+            serviceCollection.Decorate<
+                IEmailVerificationProcessor,
+                EmailVerificationProcessorTelemetryDecorator
             >();
 
             serviceCollection.AddSingleton<ITotpProvider, TotpProvider>();

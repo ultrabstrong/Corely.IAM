@@ -351,6 +351,89 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.ToTable("BasicAuths", (string)null);
                 });
 
+            modelBuilder.Entity("Corely.IAM.EmailVerifications.Entities.EmailVerificationChallengeEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CompletedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TIMESTAMP")
+                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("SecretHash")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("EmailVerificationChallenges", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.EmailVerifications.Entities.EmailVerificationEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CompletedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TIMESTAMP")
+                        .HasDefaultValueSql("(UTC_TIMESTAMP)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("varchar(254)");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("InvalidatedUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("SecretHash")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<DateTime>("SentUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("EmailVerifications", (string)null);
+                });
+
             modelBuilder.Entity("Corely.IAM.Entities.ApiKeyGroup", b =>
                 {
                     b.Property<Guid>("ApiKeysId")
@@ -802,6 +885,12 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .HasColumnType("TIMESTAMP")
                         .HasDefaultValueSql("(UTC_TIMESTAMP)");
 
+                    b.Property<int>("EmailVerificationResendSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EmailVerificationTtlSeconds")
+                        .HasColumnType("int");
+
                     b.Property<int>("LockoutCooldownSeconds")
                         .HasColumnType("int");
 
@@ -836,6 +925,9 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("RequireUppercase")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("RequireVerifiedEmail")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<int>("TotpRecoveryCodeCount")
@@ -1101,6 +1193,9 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                         .HasMaxLength(254)
                         .HasColumnType("varchar(254)");
 
+                    b.Property<DateTime?>("EmailVerifiedUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int>("FailedLoginsSinceLastSuccess")
                         .HasColumnType("int");
 
@@ -1232,6 +1327,28 @@ namespace Corely.IAM.DataAccessMigrations.MySql.Migrations
                     b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
                         .WithOne("BasicAuth")
                         .HasForeignKey("Corely.IAM.BasicAuths.Entities.BasicAuthEntity", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Corely.IAM.EmailVerifications.Entities.EmailVerificationChallengeEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Corely.IAM.EmailVerifications.Entities.EmailVerificationEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

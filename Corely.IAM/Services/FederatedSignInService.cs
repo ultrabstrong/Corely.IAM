@@ -3,6 +3,8 @@ using System.Text;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.DataAccess.Interfaces.UnitOfWork;
+using Corely.IAM.EmailVerifications.Models;
+using Corely.IAM.EmailVerifications.Processors;
 using Corely.IAM.Extensions;
 using Corely.IAM.FederatedIdentities.Models;
 using Corely.IAM.FederatedIdentities.Processors;
@@ -31,10 +33,13 @@ internal class FederatedSignInService(
     AuthenticationService authenticationService,
     IUserContextProvider userContextProvider,
     IUnitOfWorkProvider uowProvider,
+    IEmailVerificationProcessor emailVerificationProcessor,
     TimeProvider timeProvider,
     ILogger<FederatedSignInService> logger
 ) : IFederatedSignInService
 {
+    private readonly IEmailVerificationProcessor _emailVerificationProcessor =
+        emailVerificationProcessor.ThrowIfNull(nameof(emailVerificationProcessor));
     public const int MAX_USERNAME_ATTEMPTS = 10;
 
     private readonly IIdentityProviderSettingsProvider _identityProviderSettingsProvider =
@@ -221,6 +226,18 @@ internal class FederatedSignInService(
             userId = newUserId;
             createdUser = true;
         }
+        else if (identity.EmailVerified && identity.HasEmail)
+        {
+            var user = await _userRepo.GetAsync(u => u.Id == userId.Value);
+            if (
+                user is { EmailVerifiedUtc: null }
+                && string.Equals(user.Email, identity.Email, StringComparison.OrdinalIgnoreCase)
+            )
+                await _emailVerificationProcessor.MarkVerifiedAsync(
+                    user.Id,
+                    EmailProof.LinkedIdentity
+                );
+        }
 
         var signIn = await _authenticationService.SignInVerifiedUserAsync(
             userId.Value,
@@ -232,6 +249,8 @@ internal class FederatedSignInService(
             SignInResultCode.Success => CompleteFederatedSignInResultCode.Success,
             SignInResultCode.MfaRequiredChallenge =>
                 CompleteFederatedSignInResultCode.MfaRequiredChallenge,
+            SignInResultCode.EmailVerificationRequiredChallenge =>
+                CompleteFederatedSignInResultCode.EmailVerificationRequiredChallenge,
             SignInResultCode.UserLockedError => CompleteFederatedSignInResultCode.UserLockedError,
             _ => CompleteFederatedSignInResultCode.SignInError,
         };
@@ -282,7 +301,8 @@ internal class FederatedSignInService(
                 )
             );
 
-        if (await _userRepo.AnyAsync(u => u.Email == identity.Email))
+        var holder = await _userRepo.GetAsync(u => u.Email == identity.Email);
+        if (holder is { EmailVerifiedUtc: not null })
             return (
                 null,
                 Failed(
@@ -297,11 +317,45 @@ internal class FederatedSignInService(
         {
             await _uowProvider.BeginAsync();
 
+            if (holder != null)
+            {
+                await _emailVerificationProcessor.MarkVerifiedAsync(
+                    holder.Id,
+                    EmailProof.IdentityProviderClaim
+                );
+                var claimed = await _federatedIdentityProcessor.LinkToNewUserAsync(
+                    holder.Id,
+                    identity
+                );
+                if (claimed.ResultCode != LinkFederatedIdentityResultCode.Success)
+                    return (
+                        null,
+                        Failed(
+                            request,
+                            CompleteFederatedSignInResultCode.IdentityInUseError,
+                            claimed.Message
+                        )
+                    );
+
+                await _uowProvider.CommitAsync();
+                committed = true;
+                _logger.LogInformation(
+                    "User {UserId} was claimed by the owner of its email through a {Type} identity",
+                    holder.Id,
+                    identity.Type
+                );
+                return (holder.Id, null);
+            }
+
             CreateUserResult? created = null;
             for (var attempt = 0; attempt < MAX_USERNAME_ATTEMPTS; attempt++)
             {
                 created = await _userProcessor.CreateUserAsync(
-                    new(identity.Email!.UsernameCandidate(attempt), identity.Email!)
+                    new(
+                        identity.Email!.UsernameCandidate(attempt),
+                        identity.Email!,
+                        _timeProvider.GetUtcNow().UtcDateTime
+                    )
                 );
                 if (created.ResultCode != CreateUserResultCode.UserExistsError)
                     break;
@@ -367,6 +421,14 @@ internal class FederatedSignInService(
             );
 
         var linked = await _federatedIdentityProcessor.LinkAsync(userId, identity);
+        if (
+            linked.ResultCode == LinkFederatedIdentityResultCode.Success
+            && identity.EmailVerified
+            && identity.HasEmail
+            && await _userRepo.AnyAsync(u => u.Id == userId && u.Email == identity.Email)
+        )
+            await _emailVerificationProcessor.MarkVerifiedAsync(userId, EmailProof.LinkedIdentity);
+
         return linked.ResultCode switch
         {
             LinkFederatedIdentityResultCode.Success => new(

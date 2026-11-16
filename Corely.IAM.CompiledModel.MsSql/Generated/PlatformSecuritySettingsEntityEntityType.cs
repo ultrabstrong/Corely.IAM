@@ -19,7 +19,7 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
                 "Corely.IAM.Platform.Entities.PlatformSecuritySettingsEntity",
                 typeof(PlatformSecuritySettingsEntity),
                 baseEntityType,
-                propertyCount: 21,
+                propertyCount: 24,
                 keyCount: 1);
 
             var id = runtimeEntityType.AddProperty(
@@ -90,6 +90,22 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
             createdUtc.AddAnnotation("Relational:ColumnType", "DATETIME2");
             createdUtc.AddAnnotation("Relational:DefaultValueSql", "(SYSUTCDATETIME())");
             createdUtc.AddAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.None);
+
+            var emailVerificationResendSeconds = runtimeEntityType.AddProperty(
+                "EmailVerificationResendSeconds",
+                typeof(int),
+                propertyInfo: typeof(PlatformSecuritySettingsEntity).GetProperty("EmailVerificationResendSeconds", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                fieldInfo: typeof(PlatformSecuritySettingsEntity).GetField("<EmailVerificationResendSeconds>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                sentinel: 0);
+            emailVerificationResendSeconds.AddAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.None);
+
+            var emailVerificationTtlSeconds = runtimeEntityType.AddProperty(
+                "EmailVerificationTtlSeconds",
+                typeof(int),
+                propertyInfo: typeof(PlatformSecuritySettingsEntity).GetProperty("EmailVerificationTtlSeconds", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                fieldInfo: typeof(PlatformSecuritySettingsEntity).GetField("<EmailVerificationTtlSeconds>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                sentinel: 0);
+            emailVerificationTtlSeconds.AddAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.None);
 
             var lockoutCooldownSeconds = runtimeEntityType.AddProperty(
                 "LockoutCooldownSeconds",
@@ -187,6 +203,14 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
                 fieldInfo: typeof(PlatformSecuritySettingsEntity).GetField("<RequireUppercase>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
                 sentinel: false);
             requireUppercase.AddAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.None);
+
+            var requireVerifiedEmail = runtimeEntityType.AddProperty(
+                "RequireVerifiedEmail",
+                typeof(bool),
+                propertyInfo: typeof(PlatformSecuritySettingsEntity).GetProperty("RequireVerifiedEmail", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                fieldInfo: typeof(PlatformSecuritySettingsEntity).GetField("<RequireVerifiedEmail>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                sentinel: false);
+            requireVerifiedEmail.AddAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.None);
 
             var totpRecoveryCodeCount = runtimeEntityType.AddProperty(
                 "TotpRecoveryCodeCount",

@@ -1,0 +1,34 @@
+@page "/email-verification-preview"
+@model Corely.IAM.WebApp.Pages.Authentication.EmailVerificationPreviewModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Email Verification Preview";
+}
+
+<div class="auth-card">
+    <h2 class="mb-3">Demo Email Preview</h2>
+    <p class="text-muted">
+        This page stands in for the confirmation email in the reference app. A real host sends the link
+        through its own channel instead of showing it here.
+    </p>
+
+    @if (Model.Delivery is not { } delivery)
+    {
+        <div class="alert alert-warning" role="alert">No confirmation link has been sent since the app started.</div>
+    }
+    else
+    {
+        <dl>
+            <dt>To</dt>
+            <dd>@delivery.Email</dd>
+            <dt>User</dt>
+            <dd>@delivery.Username</dd>
+            <dt>Expires</dt>
+            <dd>@delivery.ExpiresUtc.ToString("yyyy-MM-dd HH:mm") UTC</dd>
+        </dl>
+        <p class="small text-muted">If you did not sign up, ignore this email: nothing happens unless the link is opened.</p>
+        <div class="d-grid">
+            <a class="btn btn-primary" href="@Model.ConfirmUrl" target="_blank" rel="noopener">Open the confirmation link</a>
+        </div>
+    }
+</div>

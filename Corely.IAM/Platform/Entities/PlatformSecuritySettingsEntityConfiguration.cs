@@ -36,5 +36,8 @@ internal sealed class PlatformSecuritySettingsEntityConfiguration
         builder.Property(e => e.PlatformAccountApiKeysEnabled).IsRequired();
         builder.Property(e => e.ApiKeyMaxLifetimeDays).IsRequired();
         builder.Property(e => e.ApiKeyResourceTypes).IsRequired();
+        builder.Property(e => e.RequireVerifiedEmail).IsRequired();
+        builder.Property(e => e.EmailVerificationTtlSeconds).IsRequired();
+        builder.Property(e => e.EmailVerificationResendSeconds).IsRequired();
     }
 }

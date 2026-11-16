@@ -5,6 +5,8 @@ using Corely.IAM.Accounts.Models;
 using Corely.IAM.ApiKeys.Providers;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.EmailVerifications.Processors;
+using Corely.IAM.EmailVerifications.Providers;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Security.Enums;
@@ -80,6 +82,8 @@ public class AuthenticationServiceTests
             ),
             _apiKeyAuthenticationProviderMock.Object,
             _sessionTokenProviderMock.Object,
+            _serviceFactory.GetRequiredService<IEmailVerificationProcessor>(),
+            _serviceFactory.GetRequiredService<EmailVerificationRequirement>(),
             _timeProviderMock.Object
         );
     }

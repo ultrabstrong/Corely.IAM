@@ -43,6 +43,18 @@ internal class AuthenticationServiceAuditDecorator(
             r => AuditOutcome.Of(r.ResultCode)
         );
 
+    public Task<SignInResult> CompleteEmailVerificationAsync(
+        CompleteEmailVerificationRequest request
+    ) =>
+        _auditProvider.RecordAsync(
+            new AuditCall(SERVICE, AuthAction.Execute, User.RESOURCE_TYPE)
+            {
+                AccountId = Guid.Empty,
+            },
+            () => _inner.CompleteEmailVerificationAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
     public Task<SignInResult> SignInWithApiKeyAsync(SignInWithApiKeyRequest request) =>
         _auditProvider.RecordAsync(
             new AuditCall(SERVICE, AuthAction.Execute, ApiKey.RESOURCE_TYPE)

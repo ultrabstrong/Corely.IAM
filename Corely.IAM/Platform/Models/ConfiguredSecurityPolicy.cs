@@ -24,6 +24,9 @@ internal sealed record ConfiguredSecurityPolicy(
         nameof(SecurityOptions.PlatformAccountApiKeysEnabled),
         nameof(SecurityOptions.ApiKeyMaxLifetimeDays),
         nameof(SecurityOptions.ApiKeyResourceTypes),
+        nameof(SecurityOptions.RequireVerifiedEmail),
+        nameof(SecurityOptions.EmailVerificationTtlSeconds),
+        nameof(SecurityOptions.EmailVerificationResendSeconds),
     ];
 
     public static ConfiguredSecurityPolicy From(IConfiguration configuration)

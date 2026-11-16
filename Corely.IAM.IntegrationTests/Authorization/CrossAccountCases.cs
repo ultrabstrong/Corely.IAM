@@ -112,6 +112,24 @@ internal static class CrossAccountCases
         [
             $"{nameof(IPasswordRecoveryService)}.{nameof(IPasswordRecoveryService.ResetPasswordWithRecoveryAsync)}"
         ] = "Signed out flow; the recovery token is the credential",
+        [
+            $"{nameof(IAuthenticationService)}.{nameof(IAuthenticationService.CompleteEmailVerificationAsync)}"
+        ] = "Completes a challenge with the challenge token it is given",
+        [
+            $"{nameof(IEmailVerificationService)}.{nameof(IEmailVerificationService.RequestEmailVerificationAsync)}"
+        ] = "Acts on the caller's own email; verification belongs to users, not accounts",
+        [
+            $"{nameof(IEmailVerificationService)}.{nameof(IEmailVerificationService.RequestEmailVerificationForUserAsync)}"
+        ] = "System context only; verification belongs to users, not accounts",
+        [
+            $"{nameof(IEmailVerificationService)}.{nameof(IEmailVerificationService.ResendEmailVerificationAsync)}"
+        ] = "Signed out flow; the challenge token is the credential",
+        [
+            $"{nameof(IEmailVerificationService)}.{nameof(IEmailVerificationService.GetEmailVerificationStatusAsync)}"
+        ] = "Signed out flow; the challenge token is the credential",
+        [
+            $"{nameof(IEmailVerificationService)}.{nameof(IEmailVerificationService.VerifyEmailAsync)}"
+        ] = "Signed out flow; the link's token is the credential",
     };
 
     public static readonly IReadOnlyDictionary<string, Func<CrossAccountAttack, Task>> Cases =

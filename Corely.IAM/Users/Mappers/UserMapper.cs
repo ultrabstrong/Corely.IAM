@@ -14,7 +14,12 @@ internal static class UserMapper
     {
         public User ToUser()
         {
-            return new User { Username = request.Username, Email = request.Email };
+            return new User
+            {
+                Username = request.Username,
+                Email = request.Email,
+                EmailVerifiedUtc = request.EmailVerifiedUtc,
+            };
         }
     }
 
@@ -27,6 +32,7 @@ internal static class UserMapper
                 Id = user.Id,
                 Username = user.Username,
                 Email = user.Email,
+                EmailVerifiedUtc = user.EmailVerifiedUtc,
                 LockedUtc = user.LockedUtc,
                 TotalSuccessfulLogins = user.TotalSuccessfulLogins,
                 LastSuccessfulLoginUtc = user.LastSuccessfulLoginUtc,
@@ -52,6 +58,7 @@ internal static class UserMapper
                 Id = entity.Id,
                 Username = entity.Username,
                 Email = entity.Email,
+                EmailVerifiedUtc = entity.EmailVerifiedUtc,
                 LockedUtc = entity.LockedUtc,
                 TotalSuccessfulLogins = entity.TotalSuccessfulLogins,
                 LastSuccessfulLoginUtc = entity.LastSuccessfulLoginUtc,

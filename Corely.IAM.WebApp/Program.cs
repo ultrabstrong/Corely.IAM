@@ -1,5 +1,6 @@
 using Corely.DataAccess.EntityFramework.Configurations;
 using Corely.IAM;
+using Corely.IAM.EmailVerifications.Providers;
 using Corely.IAM.Invitations.Providers;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Security.Providers;
@@ -9,6 +10,7 @@ using Corely.IAM.WebApp.Api;
 using Corely.IAM.WebApp.Auditing;
 using Corely.IAM.WebApp.Components;
 using Corely.IAM.WebApp.DataAccess;
+using Corely.IAM.WebApp.EmailVerifications;
 using Corely.IAM.WebApp.Invitations;
 using Corely.IAM.WebApp.Security;
 using Microsoft.Extensions.Logging;
@@ -58,6 +60,13 @@ if (
         is not { InvitationPreview: InvitationPreviewMode.Off }
 )
     builder.Services.AddScoped<IInvitationSender, PreviewInvitationSender>();
+builder.Services.AddSingleton<EmailVerificationPreviewStore>();
+if (
+    builder.Environment.IsDevelopment()
+    && builder.Configuration.GetSection(DemoFeaturesOptions.NAME).Get<DemoFeaturesOptions>()
+        is not { EnableEmailVerificationPreview: false }
+)
+    builder.Services.AddScoped<IEmailVerificationSender, PreviewEmailVerificationSender>();
 builder.Services.AddWebAppApi();
 
 var securityConfigProvider = new SecurityConfigurationProvider(builder.Configuration);

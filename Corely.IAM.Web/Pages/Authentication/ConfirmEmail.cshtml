@@ -1,0 +1,22 @@
+@page "/confirm-email"
+@model Corely.IAM.Web.Pages.Authentication.ConfirmEmailModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Confirm Email";
+}
+
+<div class="auth-card">
+    @if (Model.Confirmed)
+    {
+        <h4 class="mb-3">Email confirmed</h4>
+        <p>@Model.Result!.Email is confirmed. If you were signing in, the other tab carries on by itself. You can close this one.</p>
+        <a class="btn btn-primary w-100" href="@Corely.IAM.Web.AppRoutes.SignIn">Sign in</a>
+    }
+    else
+    {
+        <h4 class="mb-3">This link did not work</h4>
+        <div class="alert alert-danger" role="alert">@Model.Result!.Message</div>
+        <p>Sign in to get a new link.</p>
+        <a class="btn btn-primary w-100" href="@Corely.IAM.Web.AppRoutes.SignIn">Sign in</a>
+    }
+</div>

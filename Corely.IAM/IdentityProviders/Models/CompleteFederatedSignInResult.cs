@@ -7,6 +7,7 @@ public enum CompleteFederatedSignInResultCode
 {
     Success,
     MfaRequiredChallenge,
+    EmailVerificationRequiredChallenge,
     ProviderDeclinedError,
     InvalidStateError,
     ExpiredError,

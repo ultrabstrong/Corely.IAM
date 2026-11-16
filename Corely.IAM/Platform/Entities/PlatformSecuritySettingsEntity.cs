@@ -25,6 +25,9 @@ internal class PlatformSecuritySettingsEntity : IHasCreatedUtc, IHasModifiedUtc
     public bool PlatformAccountApiKeysEnabled { get; set; }
     public int ApiKeyMaxLifetimeDays { get; set; }
     public string ApiKeyResourceTypes { get; set; } = string.Empty;
+    public bool RequireVerifiedEmail { get; set; }
+    public int EmailVerificationTtlSeconds { get; set; }
+    public int EmailVerificationResendSeconds { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime? ModifiedUtc { get; set; }
 }

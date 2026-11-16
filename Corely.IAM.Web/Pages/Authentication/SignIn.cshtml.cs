@@ -66,6 +66,9 @@ public class SignInModel(
             return Redirect(AppRoutes.VerifyMfa);
         }
 
+        if (result.ResultCode == SignInResultCode.EmailVerificationRequiredChallenge)
+            return VerifyEmailModel.RedirectFor(this, result, ReturnUrl);
+
         if (result.ResultCode != SignInResultCode.Success)
         {
             ErrorMessage = "Invalid username or password.";

@@ -4,6 +4,7 @@ using Corely.IAM.DataAccess;
 using Corely.IAM.IdentityProviders.Enums;
 using Corely.IAM.Models;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Mappers;
 using Corely.IAM.Platform.Models;
 using Corely.IAM.Roles.Models;
@@ -145,10 +146,11 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
         await Host.QueryAsync(async db =>
         {
             await db.GetService<IMigrator>().MigrateAsync("ApiKeys");
-            db.PlatformSecuritySettings.Add(
-                (SecurityPolicy.Default with { ApiKeyMaxLifetimeDays = 0 }).ToEntity()
+            var p = SecurityPolicy.Default;
+            // The columns as they were at ApiKeys, not the current model's, which has gained more.
+            return await db.Database.ExecuteSqlInterpolatedAsync(
+                $"INSERT INTO PlatformSecuritySettings (Id, ApiKeyMaxLifetimeDays, ApiKeyResourceTypes, ApiKeysEnabled, AuthSessionIdleTimeoutSeconds, AuthSessionTtlSeconds, AuthTokenTtlSeconds, LockoutCooldownSeconds, MaxLoginAttempts, MfaChallengeTimeoutSeconds, PasswordMaximumLength, PasswordMinimumLength, PlatformAccountApiKeysEnabled, RefreshReuseGraceSeconds, RequireDigit, RequireLowercase, RequireNonAlphanumeric, RequireUppercase, TotpRecoveryCodeCount) VALUES ({PlatformSecuritySettingsEntity.SINGLE_ROW_ID}, {0}, {""}, {p.ApiKeysEnabled}, {p.AuthSessionIdleTimeoutSeconds}, {p.AuthSessionTtlSeconds}, {p.AuthTokenTtlSeconds}, {p.LockoutCooldownSeconds}, {p.MaxLoginAttempts}, {p.MfaChallengeTimeoutSeconds}, {p.PasswordMaximumLength}, {p.PasswordMinimumLength}, {p.PlatformAccountApiKeysEnabled}, {p.RefreshReuseGraceSeconds}, {p.RequireDigit}, {p.RequireLowercase}, {p.RequireNonAlphanumeric}, {p.RequireUppercase}, {p.TotpRecoveryCodeCount})"
             );
-            return await db.SaveChangesAsync();
         });
 
         await Host.MigrateAsync();
@@ -187,6 +189,30 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
         Assert.Equal("google-subject", migrated.Subject);
         Assert.Equal("owner@gmail.com", migrated.Email);
         Assert.True(migrated.EmailVerified);
+    }
+
+    [RequiresDockerFact]
+    public async Task Migrate_ConfirmsTheEmail_OfAUserWhoseLinkedProviderVouchedForIt()
+    {
+        var createdUtc = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+        await Host.QueryAsync(async db =>
+        {
+            await db.GetService<IMigrator>().MigrateAsync("HashInvitationTokens");
+            return await db.Database.ExecuteSqlInterpolatedAsync(
+                $"INSERT INTO FederatedIdentities (Id, UserId, ProviderType, Issuer, Subject, Email, EmailVerified, CreatedUtc) SELECT {Guid.CreateVersion7()}, Id, {(int)IdentityProviderType.Google}, {"https://accounts.google.com"}, {"vouched-subject"}, Email, {true}, {createdUtc} FROM Users WHERE Id = {_ownerUserId}"
+            );
+        });
+
+        await Host.MigrateAsync();
+
+        Assert.NotNull(
+            await Host.QueryAsync(db =>
+                db.Users.AsNoTracking()
+                    .Where(u => u.Id == _ownerUserId)
+                    .Select(u => u.EmailVerifiedUtc)
+                    .SingleAsync()
+            )
+        );
     }
 
     [RequiresDockerFact]

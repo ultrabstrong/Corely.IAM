@@ -10,6 +10,7 @@ using Corely.IAM.ApiKeys.Processors;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Models.Extensions;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.EmailVerifications.Processors;
 using Corely.IAM.Extensions;
 using Corely.IAM.Groups.Models;
 using Corely.IAM.Groups.Processors;
@@ -43,9 +44,14 @@ internal class RegistrationService(
     IReauthenticationProvider reauthenticationProvider,
     IValidationProvider validationProvider,
     IUnitOfWorkProvider uowProvider,
-    IAuthenticationProvider authenticationProvider
+    IAuthenticationProvider authenticationProvider,
+    IEmailVerificationProcessor emailVerificationProcessor,
+    TimeProvider timeProvider
 ) : IRegistrationService
 {
+    private readonly IEmailVerificationProcessor _emailVerificationProcessor =
+        emailVerificationProcessor.ThrowIfNull(nameof(emailVerificationProcessor));
+    private readonly TimeProvider _timeProvider = timeProvider.ThrowIfNull(nameof(timeProvider));
     private readonly IAuthenticationProvider _authenticationProvider =
         authenticationProvider.ThrowIfNull(nameof(authenticationProvider));
     private readonly ILogger<RegistrationService> _logger = logger.ThrowIfNull(nameof(logger));
@@ -90,13 +96,28 @@ internal class RegistrationService(
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Registering user {User}", request.Username);
 
+        if (request.EmailVerified && _userContextProvider.GetUserContext()?.IsSystemContext != true)
+        {
+            return new RegisterUserResult(
+                RegisterUserResultCode.UnauthorizedError,
+                "Only the system can register a user whose email is already confirmed",
+                Guid.Empty
+            );
+        }
+
         var uowSucceeded = false;
         try
         {
             await _uowProvider.BeginAsync();
 
+            await _emailVerificationProcessor.ReplaceUnconfirmedHolderAsync(request.Email);
+
             var userResult = await _userProcessor.CreateUserAsync(
-                new(request.Username, request.Email)
+                new(
+                    request.Username,
+                    request.Email,
+                    request.EmailVerified ? _timeProvider.GetUtcNow().UtcDateTime : null
+                )
             );
             if (userResult.ResultCode != CreateUserResultCode.Success)
             {
@@ -153,6 +174,15 @@ internal class RegistrationService(
     {
         ArgumentNullException.ThrowIfNull(request, nameof(request));
         _logger.LogInformation("Registering account {AccountName}", request.AccountName);
+
+        if (await _emailVerificationProcessor.MustConfirmEmailAsync(request.OwnerUserId))
+        {
+            return new RegisterAccountResult(
+                RegisterAccountResultCode.EmailNotVerifiedError,
+                "The owner must confirm their email before creating an account",
+                Guid.Empty
+            );
+        }
 
         var uowSucceeded = false;
         try
@@ -347,6 +377,14 @@ internal class RegistrationService(
             request.UserId,
             accountId
         );
+
+        if (await _emailVerificationProcessor.MustConfirmEmailAsync(request.UserId))
+        {
+            return new RegisterUserWithAccountResult(
+                RegisterUserWithAccountResultCode.EmailNotVerifiedError,
+                "The user must confirm their email before joining an account"
+            );
+        }
 
         var result = await _accountProcessor.AddUserToAccountAsync(new(request.UserId, accountId));
 

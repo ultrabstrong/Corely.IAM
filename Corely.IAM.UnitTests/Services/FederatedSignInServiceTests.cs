@@ -1,5 +1,6 @@
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.DataAccess.Interfaces.UnitOfWork;
+using Corely.IAM.EmailVerifications.Processors;
 using Corely.IAM.FederatedIdentities.Models;
 using Corely.IAM.FederatedIdentities.Processors;
 using Corely.IAM.IdentityProviders.Enums;
@@ -56,6 +57,7 @@ public class FederatedSignInServiceTests
             _serviceFactory.GetRequiredService<AuthenticationService>(),
             _userContext.Object,
             _serviceFactory.GetRequiredService<IUnitOfWorkProvider>(),
+            _serviceFactory.GetRequiredService<IEmailVerificationProcessor>(),
             TimeProvider.System,
             NullLogger<FederatedSignInService>.Instance
         );
@@ -138,11 +140,15 @@ public class FederatedSignInServiceTests
                 )
             );
 
-    private async Task<Guid> CreateUserAsync(string username, string email) =>
+    private async Task<Guid> CreateUserAsync(
+        string username,
+        string email,
+        DateTime? emailVerifiedUtc = null
+    ) =>
         (
             await _serviceFactory
                 .GetRequiredService<IUserProcessor>()
-                .CreateUserAsync(new(username, email))
+                .CreateUserAsync(new(username, email, emailVerifiedUtc))
         ).CreatedId;
 
     [Fact]
@@ -304,9 +310,9 @@ public class FederatedSignInServiceTests
     }
 
     [Fact]
-    public async Task SignIn_NeverJoinsAnExistingUserByEmail()
+    public async Task SignIn_NeverJoinsAConfirmedUserByEmail()
     {
-        await CreateUserAsync("existing", "new.person@example.com");
+        await CreateUserAsync("existing", "new.person@example.com", DateTime.UtcNow);
         Returns(Identity());
 
         var result = await _service.CompleteFederatedSignInAsync(Request());
@@ -316,6 +322,25 @@ public class FederatedSignInServiceTests
             i => i.LinkToNewUserAsync(It.IsAny<Guid>(), It.IsAny<ExternalIdentity>()),
             Times.Never
         );
+    }
+
+    [Fact]
+    public async Task SignIn_ClaimsAnUnconfirmedUserHoldingTheEmail()
+    {
+        var holderId = await CreateUserAsync("existing", "new.person@example.com");
+        Returns(Identity());
+
+        var result = await _service.CompleteFederatedSignInAsync(Request());
+
+        Assert.Equal(CompleteFederatedSignInResultCode.Success, result.ResultCode);
+        _identities.Verify(
+            i => i.LinkToNewUserAsync(holderId, It.IsAny<ExternalIdentity>()),
+            Times.Once
+        );
+        var holder = await _serviceFactory
+            .GetRequiredService<IRepo<UserEntity>>()
+            .GetAsync(u => u.Id == holderId);
+        Assert.NotNull(holder!.EmailVerifiedUtc);
     }
 
     [Fact]

@@ -5,6 +5,7 @@ public enum RegisterUserResultCode
     Success,
     UserCreationError,
     BasicAuthCreationError,
+    UnauthorizedError,
 }
 
 public record RegisterUserResult(

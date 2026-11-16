@@ -6,6 +6,9 @@ using Corely.IAM.ApiKeys.Models.Extensions;
 using Corely.IAM.ApiKeys.Providers;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.EmailVerifications.Models;
+using Corely.IAM.EmailVerifications.Processors;
+using Corely.IAM.EmailVerifications.Providers;
 using Corely.IAM.MfaChallenges.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Platform.Providers;
@@ -35,9 +38,15 @@ internal class AuthenticationService(
     ISecurityPolicyProvider securityPolicyProvider,
     IApiKeyAuthenticationProvider apiKeyAuthenticationProvider,
     ISessionTokenProvider sessionTokenProvider,
+    IEmailVerificationProcessor emailVerificationProcessor,
+    EmailVerificationRequirement emailVerificationRequirement,
     TimeProvider timeProvider
 ) : IAuthenticationService
 {
+    private readonly IEmailVerificationProcessor _emailVerificationProcessor =
+        emailVerificationProcessor.ThrowIfNull(nameof(emailVerificationProcessor));
+    private readonly EmailVerificationRequirement _emailVerificationRequirement =
+        emailVerificationRequirement.ThrowIfNull(nameof(emailVerificationRequirement));
     private readonly ISessionTokenProvider _sessionTokenProvider = sessionTokenProvider.ThrowIfNull(
         nameof(sessionTokenProvider)
     );
@@ -145,8 +154,8 @@ internal class AuthenticationService(
             );
         }
 
-        var result = await GenerateAuthTokenAndSetContextAsync(
-            userEntity.Id,
+        var result = await FinishSignInAsync(
+            userEntity,
             request.AccountId,
             request.DeviceId,
             "sign in"
@@ -205,12 +214,7 @@ internal class AuthenticationService(
             return await CreateMfaChallengeAsync(userEntity.Id, deviceId, accountId);
         }
 
-        var result = await GenerateAuthTokenAndSetContextAsync(
-            userEntity.Id,
-            accountId,
-            deviceId,
-            "federated sign in"
-        );
+        var result = await FinishSignInAsync(userEntity, accountId, deviceId, "federated sign in");
 
         if (result.ResultCode == SignInResultCode.Success)
         {
@@ -293,8 +297,12 @@ internal class AuthenticationService(
 
         _logger.LogDebug("MFA challenge verified for user {UserId}", challenge.UserId);
 
-        var result = await GenerateAuthTokenAndSetContextAsync(
-            challenge.UserId,
+        var userEntity = await _userRepo.GetAsync(u => u.Id == challenge.UserId);
+        if (userEntity == null)
+            return SignInResult.Failed(SignInResultCode.UserNotFoundError, "User not found");
+
+        var result = await FinishSignInAsync(
+            userEntity,
             challenge.AccountId,
             challenge.DeviceId,
             "MFA verification"
@@ -306,6 +314,35 @@ internal class AuthenticationService(
         }
 
         return result;
+    }
+
+    public async Task<SignInResult> CompleteEmailVerificationAsync(
+        CompleteEmailVerificationRequest request
+    )
+    {
+        ArgumentNullException.ThrowIfNull(request, nameof(request));
+
+        var outcome = await _emailVerificationProcessor.CompleteChallengeAsync(
+            request.EmailVerificationChallengeToken
+        );
+        return outcome.ResultCode switch
+        {
+            EmailVerificationChallengeOutcomeCode.Confirmed =>
+                await GenerateAuthTokenAndSetContextAsync(
+                    outcome.UserId,
+                    outcome.AccountId,
+                    outcome.DeviceId,
+                    "email verification"
+                ),
+            EmailVerificationChallengeOutcomeCode.Pending => SignInResult.Failed(
+                SignInResultCode.EmailVerificationPendingError,
+                "The email has not been confirmed yet"
+            ),
+            _ => SignInResult.Failed(
+                SignInResultCode.EmailVerificationChallengeExpiredError,
+                "Sign in again to continue"
+            ),
+        };
     }
 
     public async Task<SignInResult> SignInWithApiKeyAsync(SignInWithApiKeyRequest request)
@@ -640,6 +677,44 @@ internal class AuthenticationService(
             null,
             null,
             challengeToken
+        );
+    }
+
+    private async Task<SignInResult> FinishSignInAsync(
+        UserEntity userEntity,
+        Guid? accountId,
+        string deviceId,
+        string operationName
+    )
+    {
+        if (
+            userEntity.EmailVerifiedUtc == null
+            && await _emailVerificationRequirement.AppliesAsync()
+        )
+        {
+            _logger.LogDebug(
+                "User {UserId} has not confirmed their email, creating an email verification challenge",
+                userEntity.Id
+            );
+            var challengeToken = await _emailVerificationProcessor.CreateChallengeAsync(
+                userEntity.Id,
+                deviceId,
+                accountId
+            );
+            return new SignInResult(
+                SignInResultCode.EmailVerificationRequiredChallenge,
+                "Email verification required",
+                null,
+                null,
+                EmailVerificationChallengeToken: challengeToken
+            );
+        }
+
+        return await GenerateAuthTokenAndSetContextAsync(
+            userEntity.Id,
+            accountId,
+            deviceId,
+            operationName
         );
     }
 

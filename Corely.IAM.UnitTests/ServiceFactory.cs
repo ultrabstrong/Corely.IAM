@@ -12,7 +12,7 @@ public class ServiceFactory
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public ServiceFactory()
+    public ServiceFactory(Action<IServiceCollection>? configure = null)
     {
         var services = new ServiceCollection();
 
@@ -28,6 +28,7 @@ public class ServiceFactory
         );
 
         services.AddIAMServices(options);
+        configure?.Invoke(services);
 
         _serviceProvider = services.BuildServiceProvider();
 

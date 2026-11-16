@@ -71,6 +71,7 @@ public abstract class FunctionalTestBase : IAsyncLifetime
             Assert.Equal(RegisterUserResultCode.Success, owner.ResultCode);
             OwnerUserId = owner.CreatedUserId;
         });
+        await ConfirmEmailAsync(OwnerUserId);
 
         await Factory.WithScopeAsync(async services =>
         {
@@ -191,6 +192,18 @@ public abstract class FunctionalTestBase : IAsyncLifetime
 
     internal Task<T> QueryAsync<T>(Func<IamDbContext, Task<T>> query) =>
         Factory.WithScopeAsync(services => query(services.GetRequiredService<IamDbContext>()));
+
+    internal Task<int> ConfirmEmailAsync(Guid userId) =>
+        QueryAsync(db =>
+            db.Set<UserEntity>()
+                .Where(u => u.Id == userId)
+                .ExecuteUpdateAsync(s => s.SetProperty(u => u.EmailVerifiedUtc, DateTime.UtcNow))
+        );
+
+    internal Task<UserEntity?> GetUserRowAsync(Guid userId) =>
+        QueryAsync(db =>
+            db.Set<UserEntity>().AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId)
+        );
 
     internal Task<AuthTokenEntity?> GetAuthTokenRowAsync(Guid id) =>
         QueryAsync(db => db.AuthTokens.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id));

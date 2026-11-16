@@ -42,6 +42,7 @@ public class HostOwnedPathsTests : BunitContext
 
         Assert.Equal(
             [
+                "ConfirmEmail",
                 "CreateAccount",
                 "FederatedSignInCallback",
                 "FederatedSignInStart",
@@ -52,6 +53,7 @@ public class HostOwnedPathsTests : BunitContext
                 "SignOut",
                 "SwitchAccount",
                 "Terms",
+                "VerifyEmail",
                 "VerifyMfa",
             ],
             names

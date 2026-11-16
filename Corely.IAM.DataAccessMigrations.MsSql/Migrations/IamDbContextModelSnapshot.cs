@@ -354,6 +354,89 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                     b.ToTable("BasicAuths", (string)null);
                 });
 
+            modelBuilder.Entity("Corely.IAM.EmailVerifications.Entities.EmailVerificationChallengeEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AccountId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("DATETIME2")
+                        .HasDefaultValueSql("(SYSUTCDATETIME())");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SecretHash")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("EmailVerificationChallenges", (string)null);
+                });
+
+            modelBuilder.Entity("Corely.IAM.EmailVerifications.Entities.EmailVerificationEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("DATETIME2")
+                        .HasDefaultValueSql("(SYSUTCDATETIME())");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("InvalidatedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SecretHash")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<DateTime>("SentUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("EmailVerifications", (string)null);
+                });
+
             modelBuilder.Entity("Corely.IAM.Entities.ApiKeyGroup", b =>
                 {
                     b.Property<Guid>("ApiKeysId")
@@ -805,6 +888,12 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .HasColumnType("DATETIME2")
                         .HasDefaultValueSql("(SYSUTCDATETIME())");
 
+                    b.Property<int>("EmailVerificationResendSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EmailVerificationTtlSeconds")
+                        .HasColumnType("int");
+
                     b.Property<int>("LockoutCooldownSeconds")
                         .HasColumnType("int");
 
@@ -839,6 +928,9 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("RequireUppercase")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("RequireVerifiedEmail")
                         .HasColumnType("bit");
 
                     b.Property<int>("TotpRecoveryCodeCount")
@@ -1104,6 +1196,9 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                         .HasMaxLength(254)
                         .HasColumnType("nvarchar(254)");
 
+                    b.Property<DateTime?>("EmailVerifiedUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("FailedLoginsSinceLastSuccess")
                         .HasColumnType("int");
 
@@ -1235,6 +1330,28 @@ namespace Corely.IAM.DataAccessMigrations.MsSql.Migrations
                     b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
                         .WithOne("BasicAuth")
                         .HasForeignKey("Corely.IAM.BasicAuths.Entities.BasicAuthEntity", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Corely.IAM.EmailVerifications.Entities.EmailVerificationChallengeEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Corely.IAM.EmailVerifications.Entities.EmailVerificationEntity", b =>
+                {
+                    b.HasOne("Corely.IAM.Users.Entities.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

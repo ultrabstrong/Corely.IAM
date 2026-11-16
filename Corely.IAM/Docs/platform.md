@@ -188,6 +188,9 @@ stricter password rule applies the next time a password is set, never to a store
 | API keys in the platform account | off | | `SecurityOptions:PlatformAccountApiKeysEnabled` |
 | Longest API key secret lifetime | 365 days | 1 to 3650 | `SecurityOptions:ApiKeyMaxLifetimeDays` |
 | Resource types API keys act on | none | registered types | `SecurityOptions:ApiKeyResourceTypes` |
+| Require a confirmed email | on, while the host registers an `IEmailVerificationSender` | | `SecurityOptions:RequireVerifiedEmail` |
+| Confirmation link lifetime | 1800 seconds | 300 to 86400 | `SecurityOptions:EmailVerificationTtlSeconds` |
+| Wait between confirmation links | 60 seconds | 30 to 900 | `SecurityOptions:EmailVerificationResendSeconds` |
 
 A key's permissions on any type outside the last setting are ignored, so removing a type takes it
 from every key at once. A role can still grant such a type, because a role also applies to people, so

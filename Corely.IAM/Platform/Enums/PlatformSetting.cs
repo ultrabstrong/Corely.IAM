@@ -25,4 +25,7 @@ public enum PlatformSetting
     PlatformAccountApiKeysEnabled,
     ApiKeyMaxLifetimeDays,
     ApiKeyResourceTypes,
+    RequireVerifiedEmail,
+    EmailVerificationTtlSeconds,
+    EmailVerificationResendSeconds,
 }

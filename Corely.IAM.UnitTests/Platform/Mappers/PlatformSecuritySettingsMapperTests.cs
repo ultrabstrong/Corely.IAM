@@ -39,7 +39,10 @@ public class PlatformSecuritySettingsMapperTests
         true,
         true,
         30,
-        new ResourceTypeSet(["invoice", "report"])
+        new ResourceTypeSet(["invoice", "report"]),
+        false,
+        900,
+        45
     );
 
     [Fact]

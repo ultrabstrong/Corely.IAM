@@ -2,6 +2,8 @@ using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.EmailVerifications.Models;
+using Corely.IAM.EmailVerifications.Processors;
 using Corely.IAM.PasswordRecoveries.Entities;
 using Corely.IAM.PasswordRecoveries.Models;
 using Corely.IAM.Security.Mappers;
@@ -25,9 +27,12 @@ internal class PasswordRecoveryProcessor(
     ISecretProvider secretProvider,
     IValidationProvider validationProvider,
     TimeProvider timeProvider,
+    IEmailVerificationProcessor emailVerificationProcessor,
     ILogger<PasswordRecoveryProcessor> logger
 ) : IPasswordRecoveryProcessor
 {
+    private readonly IEmailVerificationProcessor _emailVerificationProcessor =
+        emailVerificationProcessor.ThrowIfNull(nameof(emailVerificationProcessor));
     private readonly IRepo<PasswordRecoveryEntity> _passwordRecoveryRepo =
         passwordRecoveryRepo.ThrowIfNull(nameof(passwordRecoveryRepo));
     private readonly IRepo<UserEntity> _userRepo = userRepo.ThrowIfNull(nameof(userRepo));
@@ -194,6 +199,11 @@ internal class PasswordRecoveryProcessor(
         userEntity.LockedUtc = null;
         userEntity.FailedLoginsSinceLastSuccess = 0;
         await _userRepo.UpdateAsync(userEntity);
+
+        await _emailVerificationProcessor.MarkVerifiedAsync(
+            userEntity.Id,
+            EmailProof.PasswordRecovery
+        );
 
         _logger.LogInformation(
             "Password recovery {PasswordRecoveryId} completed for user {UserId}",

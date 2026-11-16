@@ -60,6 +60,9 @@ public class VerifyMfaModel(
             return Redirect(AppRoutes.SignIn);
         }
 
+        if (result.ResultCode == SignInResultCode.EmailVerificationRequiredChallenge)
+            return VerifyEmailModel.RedirectFor(this, result, ReturnUrl.AsLocalUrl());
+
         if (result.ResultCode != SignInResultCode.Success)
         {
             ErrorMessage =

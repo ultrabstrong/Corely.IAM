@@ -23,6 +23,7 @@ internal sealed class UserEntityConfiguration : EntityConfigurationBase<UserEnti
         builder.Property(e => e.Id).ValueGeneratedNever();
 
         builder.Property(e => e.LockedUtc).IsRequired(false);
+        builder.Property(e => e.EmailVerifiedUtc).IsRequired(false);
 
         builder.Property(e => e.Username).HasMaxLength(User.USERNAME_MAX_LENGTH).IsRequired();
 

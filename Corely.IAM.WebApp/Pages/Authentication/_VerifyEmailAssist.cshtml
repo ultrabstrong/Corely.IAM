@@ -1,0 +1,14 @@
+@using Corely.IAM.WebApp
+@using Microsoft.Extensions.Hosting
+@using Microsoft.Extensions.Options
+@inject IHostEnvironment HostEnvironment
+@inject IOptions<DemoFeaturesOptions> DemoFeatures
+@if (HostEnvironment.IsDevelopment() && DemoFeatures.Value.EnableEmailVerificationPreview)
+{
+    <div class="border border-warning rounded p-3 mb-4">
+        <a class="btn btn-outline-warning w-100" href="@WebAppRoutes.EmailVerificationPreview" target="_blank" rel="noopener">
+            Demo only: open the email
+        </a>
+        <div class="form-text">The demo shows the confirmation email on a page instead of sending it.</div>
+    </div>
+}

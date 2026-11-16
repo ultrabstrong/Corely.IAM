@@ -23,7 +23,7 @@ namespace Corely.IAM.CompiledModel.MySql.Generated
                 "Corely.IAM.Users.Entities.UserEntity",
                 typeof(UserEntity),
                 baseEntityType,
-                propertyCount: 11,
+                propertyCount: 12,
                 navigationCount: 6,
                 skipNavigationCount: 3,
                 unnamedIndexCount: 2,
@@ -55,6 +55,13 @@ namespace Corely.IAM.CompiledModel.MySql.Generated
                 propertyInfo: typeof(UserEntity).GetProperty("Email", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
                 fieldInfo: typeof(UserEntity).GetField("<Email>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
                 maxLength: 254);
+
+            var emailVerifiedUtc = runtimeEntityType.AddProperty(
+                "EmailVerifiedUtc",
+                typeof(DateTime?),
+                propertyInfo: typeof(UserEntity).GetProperty("EmailVerifiedUtc", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                fieldInfo: typeof(UserEntity).GetField("<EmailVerifiedUtc>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                nullable: true);
 
             var failedLoginsSinceLastSuccess = runtimeEntityType.AddProperty(
                 "FailedLoginsSinceLastSuccess",

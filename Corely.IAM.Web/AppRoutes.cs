@@ -9,6 +9,8 @@ public static class AppRoutes
     public const string SwitchAccount = "/switch-account";
     public const string CreateAccount = "/create-account";
     public const string VerifyMfa = "/verify-mfa";
+    public const string VerifyEmail = "/verify-email";
+    public const string ConfirmEmail = "/confirm-email";
     public const string FederatedSignInStart = "/signin/start";
     public const string FederatedSignInCallback = "/signin/callback";
 

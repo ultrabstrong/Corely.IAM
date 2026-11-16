@@ -17,11 +17,18 @@ internal partial class Registration : CommandBase
         private bool Create { get; init; }
 
         private readonly IRegistrationService _registrationService;
+        private readonly IAuthenticationService _authenticationService;
 
-        public RegisterUser(IRegistrationService registrationService)
+        public RegisterUser(
+            IRegistrationService registrationService,
+            IAuthenticationService authenticationService
+        )
             : base("user", "Register a new user")
         {
             _registrationService = registrationService.ThrowIfNull(nameof(registrationService));
+            _authenticationService = authenticationService.ThrowIfNull(
+                nameof(authenticationService)
+            );
         }
 
         protected override async Task ExecuteAsync()
@@ -46,6 +53,9 @@ internal partial class Registration : CommandBase
             );
             if (request == null)
                 return;
+
+            if (request.Any(r => r.EmailVerified))
+                _authenticationService.AuthenticateAsSystem("devtools");
 
             foreach (var registerRequest in request)
             {

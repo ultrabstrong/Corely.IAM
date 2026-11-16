@@ -221,7 +221,7 @@ public class FederatedSignInTests : FunctionalTestBase
     }
 
     [Fact]
-    public async Task Callback_NeverSignsIntoAnExistingUser_ByEmail()
+    public async Task Callback_NeverSignsIntoAConfirmedUser_ByEmail()
     {
         var (state, nonce, _) = await StartAsync();
         _google.NextIdToken = _google.IdToken("attacker-subject", SeedData.OwnerEmail, nonce);

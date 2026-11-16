@@ -97,6 +97,9 @@ public class RegisterModel(
             return Redirect(ReturnUrl ?? iamWebOptions.Value.HomePath);
         }
 
+        if (signInResult.ResultCode == SignInResultCode.EmailVerificationRequiredChallenge)
+            return VerifyEmailModel.RedirectFor(this, signInResult, ReturnUrl);
+
         return Redirect(AppRoutes.SignIn.WithReturnUrl(ReturnUrl));
     }
 }

@@ -1,6 +1,6 @@
 # Services
 
-Eleven public services form the API surface of Corely.IAM. All are registered as scoped and wrapped with audit decorators, and all but `IPlatformService` with telemetry decorators. Service-layer authorization decorators remain only on the services that still need context gating before the implementation runs.
+Twelve public services form the API surface of Corely.IAM. All are registered as scoped and wrapped with audit decorators, and all but `IPlatformService` with telemetry decorators. Service-layer authorization decorators remain only on the services that still need context gating before the implementation runs.
 
 ## Service Overview
 
@@ -11,8 +11,9 @@ Eleven public services form the API surface of Corely.IAM. All are registered as
 | `IRetrievalService` | Query entities with filtering, ordering, pagination | 16 |
 | `IModificationService` | Update entity properties, rotate keys | 7 |
 | `IPlatformService` | Bootstrap the [platform account](../platform.md) and complete its owner's permissions | 2 |
-| `IAuthenticationService` | Sign in, sign out, account switching, session management | 9 |
+| `IAuthenticationService` | Sign in, sign out, account switching, session management | 14 |
 | `IPasswordRecoveryService` | Request recovery, validate tokens, reset passwords | 3 |
+| `IEmailVerificationService` | Send, resend and check email confirmation links | 5 |
 | `IMfaService` | TOTP setup, confirmation, status, recovery codes | 5 |
 | `IFederatedSignInService` | Sign in, sign up, link and prove it is you with an identity provider | 3 |
 | `IFederatedIdentityService` | List and unlink identity providers, check auth methods | 2 |
@@ -68,3 +69,4 @@ if (result.ResultCode == RegisterUserResultCode.Success)
 - [Modification](modification.md)
 - [Authentication Service](authentication-service.md)
 - [Password Recovery](password-recovery.md)
+- [Email Verification](email-verification.md)

@@ -10,6 +10,7 @@ public enum AcceptInvitationResultCode
     AddToAccountError,
     EmailMismatchError,
     UnauthorizedError,
+    EmailNotVerifiedError,
 }
 
 public record AcceptInvitationResult(

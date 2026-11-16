@@ -14,6 +14,9 @@ public enum SignInResultCode
     MfaChallengeExpiredError,
     TwoFactorRequiredError,
     InvalidApiKeyError,
+    EmailVerificationRequiredChallenge,
+    EmailVerificationPendingError,
+    EmailVerificationChallengeExpiredError,
 }
 
 public record SignInResult(
@@ -23,7 +26,8 @@ public record SignInResult(
     Guid? AuthTokenId,
     string? MfaChallengeToken = null,
     string? RefreshToken = null,
-    DateTime? RefreshExpiresUtc = null
+    DateTime? RefreshExpiresUtc = null,
+    string? EmailVerificationChallengeToken = null
 )
 {
     internal static SignInResult Failed(SignInResultCode resultCode, string message) =>

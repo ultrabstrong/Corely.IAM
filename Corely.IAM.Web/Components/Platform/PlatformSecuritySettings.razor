@@ -1,4 +1,5 @@
 @inherits EntityPageBase
+@using Corely.IAM.EmailVerifications.Providers
 
 <PlatformSettingsFrame>
 <Alert Message="@_message" Type="@_messageType" OnDismissed="() => _message = null" />
@@ -77,6 +78,33 @@ else
 
     <div class="section-divider mb-4">
         <div class="section-divider-label">
+            @EMAIL
+            @EditButton(EMAIL)
+        </div>
+        <div class="settings-grid mb-3">
+            <span class="prop-label">Confirmation</span>
+            <div class="setting-wide toggle-list">
+                <ToggleSetting Id="requireVerifiedEmail" Label="Users confirm their email before they sign in" @bind-Value="_requireVerifiedEmail" Editing="IsEditing(EMAIL)" />
+            </div>
+            <NumberSetting Label="Link lifetime (seconds)" @bind-Value="_emailVerificationTtlSeconds" Editing="IsEditing(EMAIL)"
+                           Min="SecurityPolicy.EMAIL_VERIFICATION_TTL_SECONDS_MIN" Max="SecurityPolicy.EMAIL_VERIFICATION_TTL_SECONDS_MAX" />
+            <NumberSetting Label="Wait between links (seconds)" @bind-Value="_emailVerificationResendSeconds" Editing="IsEditing(EMAIL)"
+                           Min="SecurityPolicy.EMAIL_VERIFICATION_RESEND_SECONDS_MIN" Max="SecurityPolicy.EMAIL_VERIFICATION_RESEND_SECONDS_MAX" />
+        </div>
+        <ul class="settings-notes">
+            @if (_canSendLink)
+            {
+                <li>While confirmation is on, a user whose email is not confirmed is sent a link when they sign in, and joins no account until they open it.</li>
+            }
+            else
+            {
+                <li>This host sends no email (it registers no <code>IEmailVerificationSender</code>), so confirmation does not apply whatever the setting says.</li>
+            }
+        </ul>
+    </div>
+
+    <div class="section-divider mb-4">
+        <div class="section-divider-label">
             @API_KEYS
             @EditButton(API_KEYS)
         </div>
@@ -122,6 +150,7 @@ else
     private const string SIGN_IN = "Sign in";
     private const string TWO_FACTOR = "Two factor";
     private const string API_KEYS = "API keys";
+    private const string EMAIL = "Email confirmation";
 
     private ConfirmModal _confirmModal = null!;
     private IReadOnlyList<SettingChange> _changes = [];
@@ -147,6 +176,10 @@ else
     private bool _platformAccountApiKeysEnabled;
     private int _apiKeyMaxLifetimeDays;
     private HashSet<string> _apiKeyResourceTypes = new(StringComparer.OrdinalIgnoreCase);
+    private bool _requireVerifiedEmail;
+    private int _emailVerificationTtlSeconds;
+    private int _emailVerificationResendSeconds;
+    private bool _canSendLink;
     private IReadOnlyList<ResourceTypeInfo> _resourceTypes = [];
 
     protected override async Task LoadCoreAsync(IServiceProvider services)
@@ -170,6 +203,8 @@ else
         Reset(SIGN_IN);
         Reset(TWO_FACTOR);
         Reset(API_KEYS);
+        Reset(EMAIL);
+        _canSendLink = services.GetService<IEmailVerificationSender>() != null;
     }
 
     private void Reset(string section)
@@ -202,6 +237,11 @@ else
                 _apiKeyMaxLifetimeDays = _settings.ApiKeyMaxLifetimeDays;
                 _apiKeyResourceTypes = new(_settings.ApiKeyResourceTypes.Types, StringComparer.OrdinalIgnoreCase);
                 break;
+            case EMAIL:
+                _requireVerifiedEmail = _settings!.RequireVerifiedEmail;
+                _emailVerificationTtlSeconds = _settings.EmailVerificationTtlSeconds;
+                _emailVerificationResendSeconds = _settings.EmailVerificationResendSeconds;
+                break;
         }
     }
 
@@ -232,6 +272,12 @@ else
                 PlatformAccountApiKeysEnabled = _platformAccountApiKeysEnabled,
                 ApiKeyMaxLifetimeDays = _apiKeyMaxLifetimeDays,
                 ApiKeyResourceTypes = new ResourceTypeSet(_apiKeyResourceTypes),
+            },
+            EMAIL => _settings! with
+            {
+                RequireVerifiedEmail = _requireVerifiedEmail,
+                EmailVerificationTtlSeconds = _emailVerificationTtlSeconds,
+                EmailVerificationResendSeconds = _emailVerificationResendSeconds,
             },
             _ => _settings! with
             {

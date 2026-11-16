@@ -1,3 +1,3 @@
 ﻿namespace Corely.IAM.Users.Models;
 
-internal record CreateUserRequest(string Username, string Email);
+internal record CreateUserRequest(string Username, string Email, DateTime? EmailVerifiedUtc = null);

@@ -2,6 +2,7 @@ using AutoFixture;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
 using Corely.IAM.Accounts.Models;
+using Corely.IAM.EmailVerifications.Entities;
 using Corely.IAM.Groups.Entities;
 using Corely.IAM.Models;
 using Corely.IAM.Roles.Entities;
@@ -38,6 +39,8 @@ public class UserProcessorTests
             _serviceFactory.GetRequiredService<ISymmetricEncryptionProviderFactory>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<IUserContextProvider>(),
+            _serviceFactory.GetRequiredService<IRepo<EmailVerificationEntity>>(),
+            TimeProvider.System,
             _serviceFactory.GetRequiredService<ILogger<UserProcessor>>()
         );
     }

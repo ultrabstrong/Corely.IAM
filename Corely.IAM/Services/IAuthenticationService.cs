@@ -7,6 +7,7 @@ public interface IAuthenticationService
 {
     Task<SignInResult> SignInAsync(SignInRequest request);
     Task<SignInResult> VerifyMfaAsync(VerifyMfaRequest request);
+    Task<SignInResult> CompleteEmailVerificationAsync(CompleteEmailVerificationRequest request);
     Task<SignInResult> SignInWithApiKeyAsync(SignInWithApiKeyRequest request);
     Task<RenewAuthTokenResult> RenewAuthTokenAsync(RenewAuthTokenRequest request);
     Task<SignInResult> SwitchAccountAsync(SwitchAccountRequest request);

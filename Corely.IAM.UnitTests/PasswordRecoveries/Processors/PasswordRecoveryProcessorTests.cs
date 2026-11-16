@@ -2,6 +2,7 @@ using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.BasicAuths.Entities;
 using Corely.IAM.BasicAuths.Models;
 using Corely.IAM.BasicAuths.Processors;
+using Corely.IAM.EmailVerifications.Processors;
 using Corely.IAM.FederatedIdentities.Entities;
 using Corely.IAM.IdentityProviders.Enums;
 using Corely.IAM.Models;
@@ -35,6 +36,7 @@ public class PasswordRecoveryProcessorTests
             _serviceFactory.GetRequiredService<ISecretProvider>(),
             _serviceFactory.GetRequiredService<IValidationProvider>(),
             _serviceFactory.GetRequiredService<TimeProvider>(),
+            _serviceFactory.GetRequiredService<IEmailVerificationProcessor>(),
             _serviceFactory.GetRequiredService<ILogger<PasswordRecoveryProcessor>>()
         );
     }

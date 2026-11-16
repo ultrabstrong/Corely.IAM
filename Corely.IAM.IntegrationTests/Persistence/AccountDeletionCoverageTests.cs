@@ -20,6 +20,8 @@ public class AccountDeletionCoverageTests : IAsyncLifetime
         ["AuditEntryEntity"] = "No foreign key: PurgeAccountDataAsync deletes it",
         ["AuthTokenEntity"] = "No foreign key: PurgeAccountDataAsync deletes it",
         ["MfaChallengeEntity"] = "No foreign key: PurgeAccountDataAsync deletes it",
+        ["EmailVerificationChallengeEntity"] =
+            "No foreign key to the account: PurgeAccountDataAsync deletes it",
     };
 
     private readonly IamScenario _scenario = new();

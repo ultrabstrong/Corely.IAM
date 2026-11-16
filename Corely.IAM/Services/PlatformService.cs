@@ -2,6 +2,8 @@ using System.Security.Cryptography;
 using Corely.Common.Extensions;
 using Corely.DataAccess.Interfaces.Repos;
 using Corely.IAM.Accounts.Entities;
+using Corely.IAM.EmailVerifications.Models;
+using Corely.IAM.EmailVerifications.Processors;
 using Corely.IAM.FederatedIdentities.Processors;
 using Corely.IAM.IdentityProviders.Entities;
 using Corely.IAM.IdentityProviders.Enums;
@@ -51,9 +53,12 @@ internal class PlatformService(
     IdentityProviderCatalog identityProviderCatalog,
     IFederatedIdentityProcessor federatedIdentityProcessor,
     PlatformSupportDefaults platformSupportDefaults,
+    IEmailVerificationProcessor emailVerificationProcessor,
     ILogger<PlatformService> logger
 ) : IPlatformService
 {
+    private readonly IEmailVerificationProcessor _emailVerificationProcessor =
+        emailVerificationProcessor.ThrowIfNull(nameof(emailVerificationProcessor));
     private readonly IRepo<IdentityProviderEntity> _identityProviderRepo =
         identityProviderRepo.ThrowIfNull(nameof(identityProviderRepo));
     private readonly IIdentityProviderSettingsProvider _identityProviderSettingsProvider =
@@ -124,6 +129,10 @@ internal class PlatformService(
         {
             return Failed(BootstrapPlatformResultCode.OwnerCreationError, user.Message);
         }
+        await _emailVerificationProcessor.MarkVerifiedAsync(
+            user.CreatedUserId,
+            EmailProof.Operator
+        );
 
         var signIn = await _authenticationService.SignInAsync(
             new SignInRequest(request.OwnerUsername, password, BOOTSTRAP_DEVICE_ID)

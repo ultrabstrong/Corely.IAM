@@ -11,7 +11,7 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
     public partial class IamDbContextModel
     {
         private IamDbContextModel()
-            : base(skipDetectChanges: false, modelId: new Guid("9ffde10d-899c-4a76-8d47-806ad40807f7"), entityTypeCount: 31)
+            : base(skipDetectChanges: false, modelId: new Guid("c058bbff-6094-4510-bffd-a139d897d835"), entityTypeCount: 33)
         {
         }
 
@@ -25,6 +25,8 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
             var accountAuditSettingsEntity = AccountAuditSettingsEntityEntityType.Create(this);
             var auditEntryEntity = AuditEntryEntityEntityType.Create(this);
             var basicAuthEntity = BasicAuthEntityEntityType.Create(this);
+            var emailVerificationChallengeEntity = EmailVerificationChallengeEntityEntityType.Create(this);
+            var emailVerificationEntity = EmailVerificationEntityEntityType.Create(this);
             var apiKeyGroup = ApiKeyGroupEntityType.Create(this);
             var apiKeyRole = ApiKeyRoleEntityType.Create(this);
             var groupRole = GroupRoleEntityType.Create(this);
@@ -55,6 +57,8 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
             ApiKeySecretEntityEntityType.CreateForeignKey1(apiKeySecretEntity, apiKeyEntity);
             AccountAuditSettingsEntityEntityType.CreateForeignKey1(accountAuditSettingsEntity, accountEntity);
             BasicAuthEntityEntityType.CreateForeignKey1(basicAuthEntity, userEntity);
+            EmailVerificationChallengeEntityEntityType.CreateForeignKey1(emailVerificationChallengeEntity, userEntity);
+            EmailVerificationEntityEntityType.CreateForeignKey1(emailVerificationEntity, userEntity);
             ApiKeyGroupEntityType.CreateForeignKey1(apiKeyGroup, apiKeyEntity);
             ApiKeyGroupEntityType.CreateForeignKey2(apiKeyGroup, groupEntity);
             ApiKeyRoleEntityType.CreateForeignKey1(apiKeyRole, apiKeyEntity);
@@ -106,6 +110,8 @@ namespace Corely.IAM.CompiledModel.MsSql.Generated
             AccountAuditSettingsEntityEntityType.CreateAnnotations(accountAuditSettingsEntity);
             AuditEntryEntityEntityType.CreateAnnotations(auditEntryEntity);
             BasicAuthEntityEntityType.CreateAnnotations(basicAuthEntity);
+            EmailVerificationChallengeEntityEntityType.CreateAnnotations(emailVerificationChallengeEntity);
+            EmailVerificationEntityEntityType.CreateAnnotations(emailVerificationEntity);
             ApiKeyGroupEntityType.CreateAnnotations(apiKeyGroup);
             ApiKeyRoleEntityType.CreateAnnotations(apiKeyRole);
             GroupRoleEntityType.CreateAnnotations(groupRole);

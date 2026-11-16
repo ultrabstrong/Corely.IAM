@@ -1,0 +1,62 @@
+@page "/verify-email"
+@model Corely.IAM.Web.Pages.Authentication.VerifyEmailModel
+@using Corely.IAM.EmailVerifications.Models
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Confirm Your Email";
+    var status = Model.Status!;
+}
+
+<div class="auth-card" data-email-verification>
+    <h4 class="mb-3">Confirm your email to continue</h4>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert alert-success" role="status">@Model.Message</div>
+    }
+
+    @if (status.State == EmailVerificationState.Expired)
+    {
+        <p>Your link to <strong>@status.Email</strong> has expired. Send a new one to continue.</p>
+    }
+    else if (status.State == EmailVerificationState.NotSent)
+    {
+        <p>We could not send a link to <strong>@status.Email</strong> yet. Send one to continue.</p>
+    }
+    else
+    {
+        <p>We sent a link to <strong>@status.Email</strong>. Open it on any device, then this page carries on by itself.</p>
+        <p class="text-muted small">Nothing there? Check your spam folder.</p>
+    }
+
+    @await Html.PartialAsync("_VerifyEmailAssist")
+
+    <form method="post" action="@(Corely.IAM.Web.AppRoutes.VerifyEmail)?handler=Continue" data-email-verification-continue>
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="ChallengeToken" value="@Model.ChallengeToken" />
+        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+        <button type="submit" data-busy-spinner class="btn btn-primary w-100 mb-2">I have confirmed it</button>
+    </form>
+
+    <form method="post" action="@(Corely.IAM.Web.AppRoutes.VerifyEmail)?handler=Resend">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="ChallengeToken" value="@Model.ChallengeToken" />
+        <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+        <button type="submit" class="btn btn-outline-secondary w-100"
+                data-resend-wait="@Model.ResendWaitSeconds"
+                disabled="@(Model.ResendWaitSeconds > 0)">Send a new link</button>
+    </form>
+
+    <form method="post" action="@(Corely.IAM.Web.AppRoutes.VerifyEmail)?handler=Status" data-email-verification-status hidden>
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="ChallengeToken" value="@Model.ChallengeToken" />
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/_content/Corely.IAM.Web/js/email-verification.js"></script>
+}

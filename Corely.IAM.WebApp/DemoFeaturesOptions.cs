@@ -8,5 +8,7 @@ public sealed class DemoFeaturesOptions
 
     public InvitationPreviewMode InvitationPreview { get; set; } = InvitationPreviewMode.Send;
 
+    public bool EnableEmailVerificationPreview { get; set; } = true;
+
     public string PlatformOwnerTotpSecret { get; set; } = string.Empty;
 }

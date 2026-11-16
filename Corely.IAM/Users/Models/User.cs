@@ -13,6 +13,8 @@ public class User
     public Guid Id { get; set; }
     public string Username { get; set; } = null!;
     public string Email { get; set; } = null!;
+    public DateTime? EmailVerifiedUtc { get; set; }
+    public bool IsEmailVerified => EmailVerifiedUtc.HasValue;
     public DateTime? LockedUtc { get; set; }
     public int TotalSuccessfulLogins { get; set; }
     public DateTime? LastSuccessfulLoginUtc { get; set; }

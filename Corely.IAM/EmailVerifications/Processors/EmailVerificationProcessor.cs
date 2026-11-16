@@ -280,11 +280,67 @@ internal class EmailVerificationProcessor(
         if (!await _requirement.AppliesAsync())
             return false;
 
+        var holder = await _userRepo.GetAsync(u => u.Email == email);
+        if (holder == null || holder.EmailVerifiedUtc != null)
+            return false;
+
+        var deleted = await DeleteUnconfirmedAsync(holder.Id);
+        if (deleted)
+            _logger.LogWarning(
+                "Replaced unconfirmed user {UserId} holding an email a new sign up claimed",
+                holder.Id
+            );
+        return deleted;
+    }
+
+    public async Task<RejectEmailVerificationResult> RejectAsync(VerifyEmailRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var verification = await FindVerificationAsync(request.Token);
+        var user =
+            verification == null
+                ? null
+                : await _userRepo.GetAsync(u => u.Id == verification.UserId);
+        if (
+            verification == null
+            || user == null
+            || !string.Equals(user.Email, verification.Email, StringComparison.OrdinalIgnoreCase)
+        )
+            return new(
+                RejectEmailVerificationResultCode.EmailVerificationNotFoundError,
+                "This link is not valid"
+            );
+
+        if (user.EmailVerifiedUtc != null)
+            return new(
+                RejectEmailVerificationResultCode.AlreadyConfirmedError,
+                "This email is already confirmed. To get back in, reset the password"
+            );
+
+        var removed = await DeleteUnconfirmedAsync(user.Id);
+        if (!removed)
+        {
+            var utcNow = Now();
+            await InvalidatePendingLinksAsync(user.Id, utcNow);
+            await _challengeRepo.ExecuteDeleteAsync(c => c.UserId == user.Id);
+            await _authenticationProvider.RevokeAllUserAuthTokensAsync(user.Id);
+        }
+
+        _logger.LogWarning(
+            "The owner of the email on unconfirmed user {UserId} said they did not sign up",
+            user.Id
+        );
+        return new(RejectEmailVerificationResultCode.Success, string.Empty, removed);
+    }
+
+    private async Task<bool> DeleteUnconfirmedAsync(Guid userId)
+    {
         var holder = await _userRepo.GetAsync(
-            u => u.Email == email,
+            u => u.Id == userId,
             include: q => q.Include(u => u.Accounts).Include(u => u.Groups).Include(u => u.Roles)
         );
-        if (holder == null || holder.EmailVerifiedUtc != null)
+        if (holder == null)
             return false;
 
         foreach (var account in holder.Accounts?.ToList() ?? [])
@@ -301,11 +357,6 @@ internal class EmailVerificationProcessor(
         holder.Groups?.Clear();
         holder.Roles?.Clear();
         await _userRepo.DeleteAsync(holder);
-
-        _logger.LogWarning(
-            "Replaced unconfirmed user {UserId} holding an email a new sign up claimed",
-            holder.Id
-        );
         return true;
     }
 

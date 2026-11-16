@@ -130,6 +130,9 @@ internal static class CrossAccountCases
         [
             $"{nameof(IEmailVerificationService)}.{nameof(IEmailVerificationService.VerifyEmailAsync)}"
         ] = "Signed out flow; the link's token is the credential",
+        [
+            $"{nameof(IEmailVerificationService)}.{nameof(IEmailVerificationService.RejectEmailVerificationAsync)}"
+        ] = "Signed out flow; the link's token is the credential",
     };
 
     public static readonly IReadOnlyDictionary<string, Func<CrossAccountAttack, Task>> Cases =

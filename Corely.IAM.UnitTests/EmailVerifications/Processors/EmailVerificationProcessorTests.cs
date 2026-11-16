@@ -189,6 +189,48 @@ public class EmailVerificationProcessorTests
         Assert.True(await Repo<BasicAuthEntity>().AnyAsync(b => b.UserId == user.Id));
     }
 
+    [Fact]
+    public async Task RejectAsync_RemovesAnUnconfirmedUser_ForTheOwnerOfTheAddress()
+    {
+        var user = await CreateUserAsync();
+        await Processor.RequestForUserAsync(user.Id);
+
+        var result = await Processor.RejectAsync(new(_sent.Single().Token));
+
+        Assert.Equal(RejectEmailVerificationResultCode.Success, result.ResultCode);
+        Assert.True(result.Removed);
+        Assert.Null(await UserAsync(user.Id));
+    }
+
+    [Fact]
+    public async Task RejectAsync_KeepsAConfirmedUser()
+    {
+        var user = await CreateUserAsync();
+        await Processor.RequestForUserAsync(user.Id);
+        await Processor.VerifyEmailAsync(new(_sent.Single().Token));
+
+        var result = await Processor.RejectAsync(new(_sent.Single().Token));
+
+        Assert.Equal(RejectEmailVerificationResultCode.AlreadyConfirmedError, result.ResultCode);
+        Assert.NotNull(await UserAsync(user.Id));
+    }
+
+    [Fact]
+    public async Task RejectAsync_RefusesATamperedSecret()
+    {
+        var user = await CreateUserAsync();
+        await Processor.RequestForUserAsync(user.Id);
+        var id = _sent.Single().Token.Split('.')[0];
+
+        var result = await Processor.RejectAsync(new($"{id}.not-the-secret"));
+
+        Assert.Equal(
+            RejectEmailVerificationResultCode.EmailVerificationNotFoundError,
+            result.ResultCode
+        );
+        Assert.NotNull(await UserAsync(user.Id));
+    }
+
     [Theory]
     [InlineData(EmailProof.IdentityProviderClaim, false)]
     [InlineData(EmailProof.PasswordRecovery, true)]

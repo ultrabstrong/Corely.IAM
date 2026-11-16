@@ -13,6 +13,7 @@ Corely.IAM.Web provides the pages.
 | `ResendEmailVerificationAsync(string challengeToken)` | None; the challenge token is the authority | `RequestEmailVerificationResult` |
 | `GetEmailVerificationStatusAsync(string challengeToken)` | None; the challenge token is the authority | `GetEmailVerificationStatusResult` |
 | `VerifyEmailAsync(VerifyEmailRequest)` | None; the link's token is the authority | `VerifyEmailResult` |
+| `RejectEmailVerificationAsync(VerifyEmailRequest)` | None; the link's token is the authority | `RejectEmailVerificationResult` |
 
 `IAuthenticationService.CompleteEmailVerificationAsync(CompleteEmailVerificationRequest)` exchanges a
 sign in's challenge token for the session once the email is confirmed.
@@ -36,8 +37,11 @@ internal sealed class EmailVerificationSender(IMailer mailer) : IEmailVerificati
 }
 ```
 
-The email should say to ignore it when the reader did not sign up: opening a link confirms the user as
-it stands. With no sender registered, the request methods return the token in the result instead, and
+Corely.IAM.Web's page for the link asks "Confirm my email" or "I didn't sign up"; opening the link
+alone changes nothing. Confirming confirms the user as it stands. Refusing calls
+`RejectEmailVerificationAsync`, which deletes an unconfirmed user (one that is the only owner of an
+account is kept, with its links invalidated and its sessions ended, and `Removed` is false). With no
+sender registered, the request methods return the token in the result instead, and
 confirmation is never required.
 
 ## Requiring confirmation

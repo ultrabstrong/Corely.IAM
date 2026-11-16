@@ -38,6 +38,10 @@ internal class EmailVerificationServiceAuthorizationDecorator(
         string challengeToken
     ) => _inner.GetEmailVerificationStatusAsync(challengeToken);
 
+    public Task<RejectEmailVerificationResult> RejectEmailVerificationAsync(
+        VerifyEmailRequest request
+    ) => _inner.RejectEmailVerificationAsync(request);
+
     public Task<VerifyEmailResult> VerifyEmailAsync(VerifyEmailRequest request) =>
         _inner.VerifyEmailAsync(request);
 

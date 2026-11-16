@@ -65,23 +65,65 @@ public class EmailVerificationTests : FunctionalTestBase
         Assert.NotNull(LastLinkToken());
     }
 
-    [Fact]
-    public async Task ConfirmLink_Confirms_OnAGetFromAnotherSite_AndSignsNobodyIn()
+    private async Task<string> OpenLinkAsync()
     {
-        await SignInToTheWaitingPageAsync();
-
-        using var response = await Client.GetAsync(
+        using var page = await Client.GetAsync(
             $"{AppRoutes.ConfirmEmail}?token={Uri.EscapeDataString(LastLinkToken())}",
             "cross-site"
         );
+        Assert.Equal(HttpStatusCode.OK, page.StatusCode);
+        Assert.Equal("no-referrer", page.Headers.GetValues("Referrer-Policy").Single());
+        return await page.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+    }
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains(
-            "Email confirmed",
-            await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
+    private async Task<string> ChooseOnLinkAsync(string handler)
+    {
+        var html = await OpenLinkAsync();
+        using var response = await Client.PostFormAsync(
+            $"{AppRoutes.ConfirmEmail}?handler={handler}",
+            new Dictionary<string, string> { ["Token"] = Html.InputValue(html, "Token")! },
+            Html.InputValue(html, "__RequestVerificationToken")
         );
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task ConfirmLink_ChangesNothing_WhenOnlyOpened()
+    {
+        await SignInToTheWaitingPageAsync();
+
+        var html = await OpenLinkAsync();
+
+        Assert.Contains("Confirm my email", html);
+        Assert.Null((await GetUserRowAsync(_userId))!.EmailVerifiedUtc);
+    }
+
+    [Fact]
+    public async Task ConfirmLink_Confirms_OnlyWhenChosen_AndSignsNobodyIn()
+    {
+        await SignInToTheWaitingPageAsync();
+
+        var html = await ChooseOnLinkAsync("Confirm");
+
+        Assert.Contains("Email confirmed", html);
         Assert.False(HasAuthCookies);
         Assert.NotNull((await GetUserRowAsync(_userId))!.EmailVerifiedUtc);
+    }
+
+    [Fact]
+    public async Task ConfirmLink_RemovesTheSignUp_AndEndsItsWait_ForSomeoneWhoDidNotSignUp()
+    {
+        var waiting = await SignInToTheWaitingPageAsync();
+
+        var html = await ChooseOnLinkAsync("Reject");
+        using var response = await PostWaitingPageAsync("Continue", waiting);
+
+        Assert.Contains("Account removed", html);
+        Assert.Null(await GetUserRowAsync(_userId));
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(AppRoutes.SignIn, response.Headers.Location!.OriginalString);
+        Assert.False(HasAuthCookies);
     }
 
     [Fact]
@@ -95,12 +137,7 @@ public class EmailVerificationTests : FunctionalTestBase
             Assert.False(HasAuthCookies);
         }
 
-        (
-            await Client.GetAsync(
-                $"{AppRoutes.ConfirmEmail}?token={Uri.EscapeDataString(LastLinkToken())}",
-                "cross-site"
-            )
-        ).Dispose();
+        await ChooseOnLinkAsync("Confirm");
         using var response = await PostWaitingPageAsync("Continue", html);
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);

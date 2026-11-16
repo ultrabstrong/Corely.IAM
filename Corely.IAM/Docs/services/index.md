@@ -13,7 +13,7 @@ Twelve public services form the API surface of Corely.IAM. All are registered as
 | `IPlatformService` | Bootstrap the [platform account](../platform.md) and complete its owner's permissions | 2 |
 | `IAuthenticationService` | Sign in, sign out, account switching, session management | 14 |
 | `IPasswordRecoveryService` | Request recovery, validate tokens, reset passwords | 3 |
-| `IEmailVerificationService` | Send, resend and check email confirmation links | 5 |
+| `IEmailVerificationService` | Send, resend, check and refuse email confirmation links | 6 |
 | `IMfaService` | TOTP setup, confirmation, status, recovery codes | 5 |
 | `IFederatedSignInService` | Sign in, sign up, link and prove it is you with an identity provider | 3 |
 | `IFederatedIdentityService` | List and unlink identity providers, check auth methods | 2 |

@@ -6,17 +6,44 @@
 }
 
 <div class="auth-card">
-    @if (Model.Confirmed)
+    @if (Model.Asking)
+    {
+        <h4 class="mb-3">Confirm your email</h4>
+        <p>Someone signed up with this email address. If it was you, confirm it to finish signing in.</p>
+        <form method="post" action="@(Corely.IAM.Web.AppRoutes.ConfirmEmail)?handler=Confirm" class="mb-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Token" value="@Model.Token" />
+            <button type="submit" data-busy-spinner class="btn btn-primary w-100">Confirm my email</button>
+        </form>
+        <p class="small text-muted mb-2">If you did not sign up, remove the account so nobody can use your address with it.</p>
+        <form method="post" action="@(Corely.IAM.Web.AppRoutes.ConfirmEmail)?handler=Reject">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Token" value="@Model.Token" />
+            <button type="submit" data-busy-spinner class="btn btn-outline-danger w-100">I didn't sign up</button>
+        </form>
+    }
+    else if (Model.ConfirmedEmail is not null)
     {
         <h4 class="mb-3">Email confirmed</h4>
-        <p>@Model.Result!.Email is confirmed. If you were signing in, the other tab carries on by itself. You can close this one.</p>
+        <p>@Model.ConfirmedEmail is confirmed. If you were signing in, the other tab carries on by itself. You can close this one.</p>
         <a class="btn btn-primary w-100" href="@Corely.IAM.Web.AppRoutes.SignIn">Sign in</a>
+    }
+    else if (Model.Rejected && !Model.Removed)
+    {
+        <h4 class="mb-3">Sign up kept</h4>
+        <p>This sign up owns an account, so it was not removed. Its sessions are signed out and its link no longer works. To take it over, reset its password from the sign in page.</p>
+        <a class="btn btn-primary w-100" href="@Corely.IAM.Web.AppRoutes.SignIn">Sign in</a>
+    }
+    else if (Model.Rejected)
+    {
+        <h4 class="mb-3">Account removed</h4>
+        <p>Thanks for letting us know. Nobody can sign in with that sign up, and your address is free to use.</p>
+        <a class="btn btn-outline-secondary w-100" href="@Corely.IAM.Web.AppRoutes.Register">Sign up</a>
     }
     else
     {
         <h4 class="mb-3">This link did not work</h4>
-        <div class="alert alert-danger" role="alert">@Model.Result!.Message</div>
-        <p>Sign in to get a new link.</p>
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
         <a class="btn btn-primary w-100" href="@Corely.IAM.Web.AppRoutes.SignIn">Sign in</a>
     }
 </div>

@@ -32,6 +32,10 @@ internal class EmailVerificationService(
         string challengeToken
     ) => _emailVerificationProcessor.GetStatusAsync(challengeToken);
 
+    public Task<RejectEmailVerificationResult> RejectEmailVerificationAsync(
+        VerifyEmailRequest request
+    ) => _emailVerificationProcessor.RejectAsync(request);
+
     public Task<VerifyEmailResult> VerifyEmailAsync(VerifyEmailRequest request) =>
         _emailVerificationProcessor.VerifyEmailAsync(request);
 }

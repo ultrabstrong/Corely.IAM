@@ -10,6 +10,8 @@ internal interface IEmailVerificationProcessor
 
     Task<VerifyEmailResult> VerifyEmailAsync(VerifyEmailRequest request);
 
+    Task<RejectEmailVerificationResult> RejectAsync(VerifyEmailRequest request);
+
     Task<GetEmailVerificationStatusResult> GetStatusAsync(string challengeToken);
 
     Task<string> CreateChallengeAsync(Guid userId, string deviceId, Guid? accountId);

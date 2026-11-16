@@ -54,16 +54,16 @@ user whose email is not confirmed (after two factor, when the user has it) retur
 
 1. The challenge token is stored in `TempData` and the user is redirected to `/verify-email`, which
    names the address and offers Resend, counting down the wait between links
-2. The host's sender delivers a link to `/confirm-email?token=`; opening it confirms the email and
-   signs nobody in
+2. The host's sender delivers a link to `/confirm-email?token=`. Opening it changes nothing; the page
+   asks "Confirm my email" or "I didn't sign up", each a post. Confirming signs nobody in; refusing
+   removes the unconfirmed user (one that owns an account is kept, signed out, with its link dead)
 3. The waiting page checks the status every few seconds (`email-verification.js`) and, once
    confirmed, posts `IAuthenticationService.CompleteEmailVerificationAsync()`: cookies are set and the
    user proceeds as in the sign-in flow, return URL included
 4. A sign in that expired goes back to `/signin`
 
-The confirmation link confirms on GET when another site (an inbox) opened it. The authority is the
-unguessable token, not the cookie: it confirms only the address it was sent to and signs nobody in, so
-a link someone was tricked into opening can only confirm the trickster's own address.
+Opening the link does nothing by itself, so a mail scanner that opens it first confirms nothing, and
+"I didn't sign up" lets the owner of an address remove a sign up someone else made with it.
 
 Hosts add to the waiting page through the empty `Pages/Authentication/_VerifyEmailAssist.cshtml`
 partial, as the reference app does to open its email preview.

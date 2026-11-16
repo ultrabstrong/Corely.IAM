@@ -51,6 +51,15 @@ internal class EmailVerificationServiceAuditDecorator(
             r => AuditOutcome.Of(r.ResultCode)
         );
 
+    public Task<RejectEmailVerificationResult> RejectEmailVerificationAsync(
+        VerifyEmailRequest request
+    ) =>
+        _auditProvider.RecordAsync(
+            OnUser(AuthAction.Delete),
+            () => _inner.RejectEmailVerificationAsync(request),
+            r => AuditOutcome.Of(r.ResultCode)
+        );
+
     public Task<VerifyEmailResult> VerifyEmailAsync(VerifyEmailRequest request) =>
         _auditProvider.RecordAsync(
             OnUser(AuthAction.Update),

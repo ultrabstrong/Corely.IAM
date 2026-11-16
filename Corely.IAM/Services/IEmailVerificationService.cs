@@ -13,4 +13,6 @@ public interface IEmailVerificationService
     Task<GetEmailVerificationStatusResult> GetEmailVerificationStatusAsync(string challengeToken);
 
     Task<VerifyEmailResult> VerifyEmailAsync(VerifyEmailRequest request);
+
+    Task<RejectEmailVerificationResult> RejectEmailVerificationAsync(VerifyEmailRequest request);
 }

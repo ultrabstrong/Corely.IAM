@@ -32,6 +32,9 @@ internal class EmailVerificationProcessorTelemetryDecorator(
             logResult: true
         );
 
+    public Task<RejectEmailVerificationResult> RejectAsync(VerifyEmailRequest request) =>
+        _logger.ExecuteWithLoggingAsync(NAME, () => _inner.RejectAsync(request), logResult: true);
+
     public Task<GetEmailVerificationStatusResult> GetStatusAsync(string challengeToken) =>
         _logger.ExecuteWithLoggingAsync(
             NAME,

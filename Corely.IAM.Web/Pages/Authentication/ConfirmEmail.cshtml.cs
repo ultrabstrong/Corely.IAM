@@ -7,25 +7,59 @@ namespace Corely.IAM.Web.Pages.Authentication;
 
 public class ConfirmEmailModel(IEmailVerificationService emailVerificationService) : PageModel
 {
+    public const string INVALID_LINK_MESSAGE = "This link is not valid";
+
     [BindProperty(SupportsGet = true)]
     public string? Token { get; set; }
 
-    public VerifyEmailResult? Result { get; private set; }
+    public string? ErrorMessage { get; private set; }
 
-    public bool Confirmed => Result?.ResultCode == VerifyEmailResultCode.Success;
+    public string? ConfirmedEmail { get; private set; }
 
-    // Confirms on GET, from a link another site (an inbox) opens. The token is the authority, not
-    // the cookie: it confirms only the address it was sent to and signs nobody in.
-    public async Task<IActionResult> OnGetAsync()
+    public bool Rejected { get; private set; }
+
+    public bool Removed { get; private set; }
+
+    public bool Asking => ErrorMessage is null && ConfirmedEmail is null && !Rejected;
+
+    // Opening the link changes nothing, so a mail scanner that opens it first confirms nothing and
+    // another site cannot act through it. The reader chooses on the page, which posts.
+    public IActionResult OnGet()
     {
-        // The address carries the token, so no link on the page may pass it on as a referrer.
-        Response.Headers["Referrer-Policy"] = "no-referrer";
-        Result = string.IsNullOrWhiteSpace(Token)
-            ? new VerifyEmailResult(
-                VerifyEmailResultCode.EmailVerificationNotFoundError,
-                "This link is not valid"
-            )
-            : await emailVerificationService.VerifyEmailAsync(new VerifyEmailRequest(Token));
+        NoReferrer();
+        if (string.IsNullOrWhiteSpace(Token))
+            ErrorMessage = INVALID_LINK_MESSAGE;
         return Page();
     }
+
+    public async Task<IActionResult> OnPostConfirmAsync()
+    {
+        NoReferrer();
+        var result = await emailVerificationService.VerifyEmailAsync(
+            new VerifyEmailRequest(Token ?? string.Empty)
+        );
+        if (result.ResultCode == VerifyEmailResultCode.Success)
+            ConfirmedEmail = result.Email;
+        else
+            ErrorMessage = result.Message;
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostRejectAsync()
+    {
+        NoReferrer();
+        var result = await emailVerificationService.RejectEmailVerificationAsync(
+            new VerifyEmailRequest(Token ?? string.Empty)
+        );
+        if (result.ResultCode == RejectEmailVerificationResultCode.Success)
+        {
+            Removed = result.Removed;
+            Rejected = true;
+        }
+        else
+            ErrorMessage = result.Message;
+        return Page();
+    }
+
+    private void NoReferrer() => Response.Headers["Referrer-Policy"] = "no-referrer";
 }

@@ -1,9 +1,16 @@
 using System.Text.RegularExpressions;
+using Corely.IAM.Accounts.Entities;
 using Corely.IAM.ApiKeys.Models;
 using Corely.IAM.DataAccess;
+using Corely.IAM.Groups.Entities;
 using Corely.IAM.IdentityProviders.Enums;
+using Corely.IAM.IntegrationTests.Infrastructure;
 using Corely.IAM.Models;
+using Corely.IAM.Permissions;
+using Corely.IAM.Permissions.Entities;
 using Corely.IAM.Permissions.Models;
+using Corely.IAM.Permissions.Processors;
+using Corely.IAM.Platform;
 using Corely.IAM.Platform.Entities;
 using Corely.IAM.Platform.Mappers;
 using Corely.IAM.Platform.Models;
@@ -17,6 +24,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using SupportGroup = Corely.IAM.Groups.Models.Group;
 
 namespace Corely.IAM.IntegrationTests.Providers;
 
@@ -349,6 +359,84 @@ public abstract class ProviderMatrixTestsBase(ProviderTestHost host) : IAsyncLif
         Assert.True(canReadUsers);
         Assert.Equal(DeregisterRoleResultCode.Success, roleDeleted.ResultCode);
     }
+
+    [RequiresDockerFact]
+    public async Task PlatformDefaultsStartup_CompletesWithoutError_ForTwoInstancesStartingTogether()
+    {
+        await Host.QueryAsync(db =>
+            db.Set<AccountEntity>()
+                .Where(a => a.Id == _accountId)
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsPlatformAccount, true))
+        );
+        var logger = new RecordingLogger<PlatformDefaultsStartup>();
+
+        await StartTogetherAsync(() => new PlatformDefaultsStartup(Host.ScopeFactory, logger));
+
+        Assert.DoesNotContain(logger.Entries, e => e.Level >= LogLevel.Warning);
+        Assert.Equal(
+            1,
+            await Host.QueryAsync(db =>
+                db.Set<GroupEntity>()
+                    .CountAsync(g =>
+                        g.AccountId == _accountId
+                        && g.Name == SupportGroup.ACCOUNT_SUPPORT_GROUP_NAME
+                    )
+            )
+        );
+        Assert.Equal(
+            0,
+            await Host.WithScopeAsync(services =>
+                services
+                    .GetRequiredService<IPlatformService>()
+                    .CompletePlatformOwnerPermissionsAsync()
+            )
+        );
+        Assert.Equal(
+            0,
+            await Host.WithScopeAsync(services =>
+                services.GetRequiredService<PlatformSupportDefaults>().CompleteAsync()
+            )
+        );
+    }
+
+    [RequiresDockerFact]
+    public async Task OwnerDefaultsStartup_CompletesWithoutError_ForTwoInstancesStartingTogether()
+    {
+        await Host.QueryAsync(async db =>
+        {
+            var defaults = await db.Set<PermissionEntity>()
+                .Include(p => p.Roles)
+                .Where(p => p.AccountId == _accountId && p.IsSystemDefined)
+                .ToListAsync();
+            foreach (var permission in defaults)
+            {
+                permission.Roles!.Clear();
+                db.Remove(permission);
+            }
+            return await db.SaveChangesAsync();
+        });
+        var logger = new RecordingLogger<OwnerDefaultsStartup>();
+
+        await StartTogetherAsync(() => new OwnerDefaultsStartup(Host.ScopeFactory, logger));
+
+        Assert.DoesNotContain(logger.Entries, e => e.Level >= LogLevel.Warning);
+        Assert.Equal(
+            0,
+            await Host.WithScopeAsync(services =>
+                services
+                    .GetRequiredService<IPermissionProcessor>()
+                    .CreateMissingOwnerDefaultsAsync()
+            )
+        );
+    }
+
+    private static Task StartTogetherAsync(Func<IHostedService> startup) =>
+        Task.WhenAll(
+            Enumerable
+                .Range(0, 2)
+                .Select(_ => startup())
+                .Select(s => Task.Run(() => s.StartAsync(CancellationToken.None)))
+        );
 
     private Task<SignInResult> SignInAsync(string deviceId) =>
         Host.WithScopeAsync(services =>

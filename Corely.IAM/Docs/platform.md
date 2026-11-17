@@ -99,6 +99,11 @@ completes the account support group from the registered types' support actions. 
 finds everything in place; a type registered later is picked up on the next start. Nothing happens
 when there is no platform account.
 
+The work runs in one transaction. Two applications on one database, such as a web app and a worker,
+start together and both find the same rows missing; the one that commits second fails on the
+first's rows, and tries once more, which finds everything in place. Only a second failure is logged
+as an error.
+
 The Owner role's part is also available as `IPlatformService.CompletePlatformOwnerPermissionsAsync()`.
 
 ## Using it

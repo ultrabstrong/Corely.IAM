@@ -1,3 +1,4 @@
+using Corely.IAM.Extensions;
 using Corely.IAM.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,26 +11,18 @@ internal sealed class PlatformDefaultsStartup(
     ILogger<PlatformDefaultsStartup> logger
 ) : IHostedService
 {
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            await using var scope = scopeFactory.CreateAsyncScope();
-            await scope
-                .ServiceProvider.GetRequiredService<IPlatformService>()
-                .CompletePlatformOwnerPermissionsAsync();
-            await scope
-                .ServiceProvider.GetRequiredService<PlatformSupportDefaults>()
-                .CompleteAsync();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Could not complete the platform account's default roles at startup; it is retried on the next start"
-            );
-        }
-    }
+    public Task StartAsync(CancellationToken cancellationToken) =>
+        scopeFactory.CompleteDefaultsAtStartupAsync(
+            logger,
+            "the platform account's default roles",
+            async services =>
+            {
+                await services
+                    .GetRequiredService<IPlatformService>()
+                    .CompletePlatformOwnerPermissionsAsync();
+                await services.GetRequiredService<PlatformSupportDefaults>().CompleteAsync();
+            }
+        );
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

@@ -1,3 +1,4 @@
+using Corely.IAM.Extensions;
 using Corely.IAM.Permissions.Processors;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,23 +11,15 @@ internal sealed class OwnerDefaultsStartup(
     ILogger<OwnerDefaultsStartup> logger
 ) : IHostedService
 {
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            await using var scope = scopeFactory.CreateAsyncScope();
-            await scope
-                .ServiceProvider.GetRequiredService<IPermissionProcessor>()
-                .CreateMissingOwnerDefaultsAsync();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "Could not give existing Owner roles their missing owner defaults at startup; it is retried on the next start"
-            );
-        }
-    }
+    public Task StartAsync(CancellationToken cancellationToken) =>
+        scopeFactory.CompleteDefaultsAtStartupAsync(
+            logger,
+            "existing Owner roles' missing owner defaults",
+            services =>
+                services
+                    .GetRequiredService<IPermissionProcessor>()
+                    .CreateMissingOwnerDefaultsAsync()
+        );
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

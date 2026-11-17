@@ -91,7 +91,9 @@ At startup, every existing account's Owner role is given the owner default of an
 for, so a type registered after accounts exist reaches their owners on the next start. If the account
 already has a permission with exactly those actions, that row is made system-defined and attached
 rather than duplicated. The platform account is skipped, since its Owner role gets full access on
-every type anyway.
+every type anyway. Like the platform account's defaults, it runs in one transaction and tries once
+more when another application starting on the same database got there first
+([Platform](platform.md#2-let-startup-finish-it)).
 
 This only ever adds. Changing the owner actions of a type an account already has a default for
 affects accounts created afterwards; existing accounts keep their rows, and nothing is taken away

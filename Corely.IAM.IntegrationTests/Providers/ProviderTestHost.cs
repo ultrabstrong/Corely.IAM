@@ -27,6 +27,9 @@ public sealed class ProviderTestHost(DatabaseProvider provider) : IAsyncLifetime
 
     public DatabaseProvider Provider => provider;
 
+    public IServiceScopeFactory ScopeFactory =>
+        _serviceProvider!.GetRequiredService<IServiceScopeFactory>();
+
     public async ValueTask InitializeAsync()
     {
         var connectionString = await StartContainerAsync();

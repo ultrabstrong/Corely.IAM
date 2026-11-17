@@ -255,7 +255,7 @@ public class PostAuthenticationFlowServiceTests
     }
 
     [Fact]
-    public async Task CompleteSignInAsync_GoesHome_ForNoAccountsEvenWithAReturnUrl()
+    public async Task CompleteSignInAsync_ReturnsToTheUrl_ForNoAccounts()
     {
         WithAccounts();
 
@@ -265,7 +265,7 @@ public class PostAuthenticationFlowServiceTests
             LOCAL_RETURN_URL
         );
 
-        Assert.Equal("/", Assert.IsType<RedirectResult>(result).Url);
+        Assert.Equal(LOCAL_RETURN_URL, Assert.IsType<RedirectResult>(result).Url);
     }
 
     [Theory]

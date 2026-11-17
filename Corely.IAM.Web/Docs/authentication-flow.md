@@ -24,7 +24,8 @@ Pre-authentication pages are Razor Pages (server-rendered, no Blazor dependency)
 3. On success: `AuthCookieManager.SetAuthCookies()` stores HttpOnly cookies
 4. If single account: auto-switch to that account and redirect to the return URL, or `IAMWebOptions.HomePath`
 5. If multiple accounts: redirect to the return URL (its page's `AccountScope` switches into the right account), or `/select-account`
-6. If no accounts: redirect to `HomePath` (user can create an account)
+6. If no accounts: redirect to the return URL, such as an invitation being accepted, or else to
+   `HomePath` (user can create an account)
 
 ## Registration Flow
 

@@ -64,7 +64,7 @@ internal class PostAuthenticationFlowService(
         var userContext = _userContextProvider.GetUserContext();
         if (userContext == null || userContext.AvailableAccounts.Count == 0)
         {
-            return new RedirectResult(homePath);
+            return new RedirectResult(localReturnUrl ?? homePath);
         }
 
         if (userContext.AvailableAccounts.Count > 1)

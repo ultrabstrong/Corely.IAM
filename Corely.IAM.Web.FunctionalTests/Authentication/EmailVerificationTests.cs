@@ -52,6 +52,7 @@ public class EmailVerificationTests : FunctionalTestBase
             new Dictionary<string, string>
             {
                 ["ChallengeToken"] = Html.InputValue(html, "ChallengeToken")!,
+                ["ReturnUrl"] = Html.InputValue(html, "ReturnUrl") ?? string.Empty,
             },
             Html.InputValue(html, "__RequestVerificationToken")
         );
@@ -142,6 +143,33 @@ public class EmailVerificationTests : FunctionalTestBase
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.True(HasAuthCookies);
+    }
+
+    [Fact]
+    public async Task WaitingPage_ContinuesToTheReturnUrl_ForANewcomerWithNoAccounts()
+    {
+        const string returnUrl = "/accept-invitation?token=abc";
+        await RegisterNewcomerAsync();
+        using (
+            var signIn = await Client.PostFormAsync(
+                $"{AppRoutes.SignIn}?ReturnUrl={Uri.EscapeDataString(returnUrl)}",
+                new Dictionary<string, string>
+                {
+                    ["Username"] = USERNAME,
+                    ["Password"] = PASSWORD,
+                    ["ReturnUrl"] = returnUrl,
+                }
+            )
+        )
+            Assert.Equal(AppRoutes.VerifyEmail, signIn.Headers.Location!.OriginalString);
+        using var page = await Client.GetAsync(AppRoutes.VerifyEmail);
+        var html = await page.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        await ChooseOnLinkAsync("Confirm");
+        using var response = await PostWaitingPageAsync("Continue", html);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(returnUrl, response.Headers.Location!.OriginalString);
     }
 
     [Fact]

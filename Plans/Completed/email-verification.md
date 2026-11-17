@@ -272,6 +272,12 @@ What turned out differently:
 
     This supersedes the membership parts of the Squatting section and of items 2 and 13.
 
+15. **A newcomer with no accounts returns to where they came from (Web 11.4.1).** The waiting page
+    finishes sign in through `PostAuthenticationFlowService`, which sent a user with no accounts home
+    and dropped the return URL. Signing up from an invitation link then lost the invitation, which
+    sign up had kept before confirmation existed. Found clicking through DocsToData's invitation;
+    a user with no accounts now goes to the local return URL when there is one.
+
 ### Upgrading a consumer
 
 A consumer that builds IAM's schema from a generated script regenerates it. DocsToData's is

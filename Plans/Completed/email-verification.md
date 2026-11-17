@@ -278,6 +278,12 @@ What turned out differently:
     sign up had kept before confirmation existed. Found clicking through DocsToData's invitation;
     a user with no accounts now goes to the local return URL when there is one.
 
+16. **The antiforgery cookie is `Lax` (Web 11.4.2).** Opening the link from a real mailbox is a
+    cross-site visit, which does not carry ASP.NET's default `Strict` antiforgery cookie, so the
+    confirm page issued a new one and the waiting tab's status checks and button answered 400. The
+    local email stub runs on localhost, the same site, so only dev showed it. `AddIAMWeb` now sets the
+    cookie `Lax`, like the auth cookies; `CrossSiteRequestTests` checks it.
+
 ### Upgrading a consumer
 
 A consumer that builds IAM's schema from a generated script regenerates it. DocsToData's is

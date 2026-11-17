@@ -20,6 +20,10 @@ request a page makes in the background, the Blazor circuit's WebSocket among the
 safe, and are tested:
 
 1. **Every POST carries an antiforgery token.** SameSite is defence in depth, not the CSRF defence.
+   `AddIAMWeb` makes the antiforgery cookie `Lax` too. ASP.NET's default is `Strict`, which a link
+   from an email does not carry, so the page it opens would issue a new cookie and every form already
+   open in another tab, the email confirmation waiting page among them, would answer 400. The cookie
+   alone forges nothing: each POST must also carry the token from the page.
 2. **No GET changes state when another site started it.** `/signout` and `/switch-account` act on
    GET only when the browser's `Sec-Fetch-Site` header says `same-origin`, which is how a host's own
    links and `AccountScope` reach them. From anywhere else, or with no header, each shows a

@@ -17,6 +17,7 @@ public static class IamWebServiceExtensions
         public IServiceCollection AddIAMWeb(Action<IAMWebOptions>? configure = null)
         {
             services.AddRazorPages();
+            services.AddAntiforgery(options => options.Cookie.SameSite = SameSiteMode.Lax);
             services.AddHttpContextAccessor();
             services.Configure(configure ?? (_ => { }));
 

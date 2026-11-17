@@ -49,6 +49,19 @@ public class CrossSiteRequestTests : FunctionalTestBase
     }
 
     [Fact]
+    public async Task Get_IssuesALaxAntiforgeryCookie_SoALinkFromElsewhereKeepsOpenFormsWorking()
+    {
+        using (var response = await Client.GetAsync(AppRoutes.SignIn, "cross-site"))
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var antiforgery = Assert.Single(
+            Client.LastSetCookies,
+            c => c.Name.StartsWith(".AspNetCore.Antiforgery.", StringComparison.Ordinal)
+        );
+        Assert.Equal("lax", antiforgery.SameSite, ignoreCase: true);
+    }
+
+    [Fact]
     public async Task FederatedCallback_IsTheExemption_AndChangesNothingWithoutItsOwnCorrelationCookie()
     {
         await SignInSuccessfullyAsync();
